@@ -1,0 +1,31 @@
+{
+    "name": "stancl/tenancy",
+    "description": "A Laravel multi-database tenancy implementation that respects your code.",
+    "keywords": ["laravel", "multi-tenancy", "multi-database", "tenancy"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Samuel Štancl",
+            "email": "samuel.stancl@gmail.com"
+        }
+    ],
+    "require": {
+        "illuminate/support": "^5.7",
+        "webpatser/laravel-uuid": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Stancl\\Tenancy\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Stancl\\Tenancy\\TenancyServiceProvider"
+            ]
+        }
+    }
+}
