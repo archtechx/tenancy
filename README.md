@@ -131,6 +131,25 @@ You can see an example in the [Filesystem](#Filesystem) section of the documenta
 
 # Usage
 
+## Creating a Redis connection for storing tenancy-related data
+
+Add an array like this to `database.redis` config:
+
+```
+'tenancy' => [
+    'host' => env('REDIS_TENANCY_HOST', '127.0.0.1'),
+    'password' => env('REDIS_TENANCY_PASSWORD', null),
+    'port' => env('REDIS_TENANCY_PORT', 6380),
+    'database' => env('REDIS_TENANCY_DB', 3),
+],
+```
+
+Note the different `database` number and the different port.
+
+A different port is used in this example, because if you use Redis for caching, you may want to run one instance with no persistence and another instance with persistence for tenancy-related data. If you want to run only one Redis instance, just make sure you use a different database number to avoid collisions.
+
+Read the [Storage driver](#storage-driver) section for more information.
+
 ## Obtaining a `TenantManager` instance
 
 You can use the `tenancy()` and `tenant()` helpers to resolve `Stancl\Tenancy\TenantManager` out of the service container. These two helpers are exactly the same, the only reason there are two is nice syntax. `tenancy()->init()` sounds better than `tenant()->init()` and `tenant()->create()` sounds better than `tenancy()->create()`.
