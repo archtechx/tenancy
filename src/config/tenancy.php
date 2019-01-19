@@ -3,14 +3,15 @@
 return [
     'storage_driver' => 'Stancl\Tenancy\StorageDrivers\RedisStorageDriver',
     'database' => [
-        'based_on' => 'sqlite',
+        'based_on' => 'mysql',
         'prefix' => 'tenant',
-        'suffix' => '.sqlite',
+        'suffix' => '',
     ],
     'redis' => [
         'prefix_base' => 'tenant',
         'prefixed_connections' => [
             'default',
+            'cache',
         ],
     ],
     'cache' => [
@@ -21,7 +22,7 @@ return [
         'suffix_base' => 'tenant',
         // Disks which should be suffixed with the suffix_base + tenant UUID.
         'disks' => [
-            // 'local',
+            'local',
             // 's3',
         ],
     ],
