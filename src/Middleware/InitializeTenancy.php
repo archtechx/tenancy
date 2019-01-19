@@ -22,10 +22,6 @@ class InitializeTenancy
      */
     public function handle($request, Closure $next)
     {
-        if (in_array($request->getHost(), config('tenancy.exempt_domains', []))) {
-            return $next($request);
-        }
-
         try {
             tenancy()->init();
         } catch (\Exception $e) {

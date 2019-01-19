@@ -71,10 +71,13 @@ protected function mapTenantRoutes()
 }
 ```
 
-And add this line to `map()`:
+And add this to `map()`:
 
 ```php
-$this->mapTenantRoutes();
+// Map tenant routes only if the current domain is not [exempt from tenancy](#exempt-domains).
+if (! in_array(request()->getHost(), config('tenancy.exempt_domains', []))) {
+    $this->mapTenantRoutes();
+}
 ```
 
 Now rename the `routes/web.php` file to `routes/tenant.php`. This file will contain routes accessible only with tenancy.
@@ -88,6 +91,12 @@ php artisan vendor:publish --provider='Stancl\Tenancy\TenancyServiceProvider' --
 ```
 
 You should see something along the lines of `Copied File [...] to [/config/tenancy.php]`.
+
+#### `exempt_domains`
+
+Domains listed in this array won't have tenant routes.
+
+For example, you can put the domain on which you have your landing page here.
 
 #### `database`
 
