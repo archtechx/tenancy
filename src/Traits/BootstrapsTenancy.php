@@ -40,8 +40,7 @@ trait BootstrapsTenancy
     {
         $old = [
             "storage_disks" => [],
-            "storage_path" => $this->app->storagePath,
-            "asset" => asset(''),
+            "storage_path" => $this->app->storagePath(),
         ];
 
         $suffix = $this->app['config']['tenancy.filesystem.suffix_base'] . tenant('uuid');
@@ -49,7 +48,7 @@ trait BootstrapsTenancy
         // Storage facade
         foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
             $root = $this->app['config']["filesystems.disks.{$disk}.root"];
-            
+
             \Storage::disk($disk)->getAdapter()->setPathPrefix(
                 $root . "/{$suffix}"
             );
@@ -59,9 +58,6 @@ trait BootstrapsTenancy
 
         // storage_path()
         $this->app->useStoragePath($this->app->storagePath() . "/{$suffix}");
-
-        // asset()
-        $this->app('url')->forceRootUrl(asset('') . "/{$suffix}");
 
         $this->oldStoragePaths = $old;
     }
