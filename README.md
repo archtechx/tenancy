@@ -283,6 +283,13 @@ tenant('uuid'); // Does the same thing as tenant()->tenant['uuid']
 => true
 ```
 
+Note that deleting a tenant doesn't delete his database. You can do this manually, though. To get the database name of a tenant, you can do use the `TenantManager::getDatabaseName()` method.
+
+```php
+>>> tenant()->getDatabaseName(tenant()->findByDomain('laravel.localhost'))
+=> "tenant67412a60-1c01-11e9-a9e9-f799baa56fd9"
+```
+
 ## Storage driver
 
 Currently, only Redis is supported, but you're free to code your own storage driver which follows the `Stancl\Tenancy\Interfaces\StorageDriver` interface. Just point the `tenancy.storage_driver` setting at your driver.
