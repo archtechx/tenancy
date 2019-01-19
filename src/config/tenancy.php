@@ -2,6 +2,9 @@
 
 return [
     'storage_driver' => 'Stancl\Tenancy\StorageDrivers\RedisStorageDriver',
+    'exempt_domains' => [
+        // 'localhost',
+    ],
     'database' => [
         'based_on' => 'mysql',
         'prefix' => 'tenant',

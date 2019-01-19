@@ -8,7 +8,9 @@ class InitializeTenancy
 {
     public function __construct(Closure $onFail = null)
     {
-        $this->onFail = $onFail ?: function ($e) { throw $e; };
+        $this->onFail = $onFail ?: function ($e) {
+            throw $e;
+        };
     }
 
     /**
@@ -20,8 +22,12 @@ class InitializeTenancy
      */
     public function handle($request, Closure $next)
     {
+        if (in_array($request->getHost(), config('tenancy.exempt_domains', []))) {
+            return $next($request);
+        }
+
         try {
-            tenancy()->init();   
+            tenancy()->init();
         } catch (\Exception $e) {
             // Pass the exception to the onFail function if it takes any parameters.
             $callback = $this->onFail;
