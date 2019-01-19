@@ -4,6 +4,8 @@ namespace Stancl\Tenancy;
 
 trait BootstrapsTenancy
 {
+    public $oldstoragepaths;
+
     public function bootstrap()
     {
         $this->switchDatabaseConnection();
@@ -36,11 +38,31 @@ trait BootstrapsTenancy
 
     public function suffixFilesystemRootPaths()
     {
+        $old = [
+            "storage_disks" => [],
+            "storage_path" => $this->app->storagePath,
+            "asset" => asset(''),
+        ];
+
         $suffix = $this->app['config']['tenancy.filesystem.suffix_base'] . tenant('uuid');
+
+        // Storage facade
         foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
+            $root = $this->app['config']["filesystems.disks.{$disk}.root"];
+            
             \Storage::disk($disk)->getAdapter()->setPathPrefix(
-                $this->app['config']["filesystems.disks.{$disk}.root"] . "/{$suffix}"
+                $root . "/{$suffix}"
             );
+
+            $old['storage_disks'][$disk] = $root;
         }
+
+        // storage_path()
+        $this->app->useStoragePath($this->app->storagePath() . $path);
+
+        // asset()
+        $this->app('url')->forceRootUrl(asset('') . $url);
+
+        $this->oldStoragePaths = $old;
     }
 }
