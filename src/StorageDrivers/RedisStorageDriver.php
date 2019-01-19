@@ -32,6 +32,8 @@ class RedisStorageDriver implements StorageDriver
      */
     public function getTenantById(string $uuid, $fields = []): array
     {
+        $fields = (array) $fields;
+        
         if (! $fields) {
             return $this->redis->hgetall("tenants:$uuid");
         }
