@@ -82,7 +82,7 @@ if (! in_array(request()->getHost(), config('tenancy.exempt_domains', []))) {
 }
 ```
 
-This maps tenant routes only if the current domain is not [exempt from tenancy](#exempt-domains).
+This maps tenant routes only if the current domain is not [exempt from tenancy](#exempt_domains).
 
 Now rename the `routes/web.php` file to `routes/tenant.php`. This file will contain routes accessible only with tenancy.
 
