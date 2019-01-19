@@ -135,7 +135,7 @@ You can see an example in the [Filesystem](#Filesystem) section of the documenta
 
 Add an array like this to `database.redis` config:
 
-```
+```php
 'tenancy' => [
     'host' => env('REDIS_TENANCY_HOST', '127.0.0.1'),
     'password' => env('REDIS_TENANCY_PASSWORD', null),
