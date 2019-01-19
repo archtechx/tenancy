@@ -164,6 +164,8 @@ You can use the `tenancy()` and `tenant()` helpers to resolve `Stancl\Tenancy\Te
    ]
 ```
 
+When you create a new tenant, [tenant migrations](#tenant-migrations) will automatically be executed for that tenant.
+
 ### Starting a session as a tenant
 
 This runs `TenantManager::bootstrap()` which switches the DB connection, prefixes Redis, changes filesystem root paths, etc.
@@ -356,6 +358,10 @@ Listing all tenants.
 #### `tenants:migrate`, `tenants:rollback`, `tenants:seed`
 
 - You may specify the tenant(s) UUIDs using the `--tenants` option.
+
+### Tenant migrations
+
+Tenant migrations are located in `database/migrations/tenant`, so you should move your tenant migrations there.
 
 ## Some tips
 
