@@ -1,5 +1,7 @@
 # Tenancy
 
+![Laravel 5.7](https://img.shields.io/badge/laravel-5.7-red.svg)
+
 ### *A Laravel multi-database tenancy implementation that respects your code.*
 
 You won't have to change a thing in your application's code.
