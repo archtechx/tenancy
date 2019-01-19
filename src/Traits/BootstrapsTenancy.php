@@ -4,7 +4,7 @@ namespace Stancl\Tenancy;
 
 trait BootstrapsTenancy
 {
-    public $oldstoragepaths;
+    public $oldStoragePaths;
 
     public function bootstrap()
     {
