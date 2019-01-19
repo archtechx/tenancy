@@ -58,10 +58,10 @@ trait BootstrapsTenancy
         }
 
         // storage_path()
-        $this->app->useStoragePath($this->app->storagePath() . $path);
+        $this->app->useStoragePath($this->app->storagePath() . "/{$suffix}");
 
         // asset()
-        $this->app('url')->forceRootUrl(asset('') . $url);
+        $this->app('url')->forceRootUrl(asset('') . "/{$suffix}");
 
         $this->oldStoragePaths = $old;
     }
