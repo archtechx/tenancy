@@ -73,14 +73,16 @@ protected function mapTenantRoutes()
 }
 ```
 
-And add this to `map()`:
+And add this code block to `map()`:
 
 ```php
-// Map tenant routes only if the current domain is not [exempt from tenancy](#exempt-domains).
+// Map tenant routes only if the current domain is not exempt from tenancy.
 if (! in_array(request()->getHost(), config('tenancy.exempt_domains', []))) {
     $this->mapTenantRoutes();
 }
 ```
+
+This maps tenant routes only if the current domain is not [exempt from tenancy](#exempt-domains).
 
 Now rename the `routes/web.php` file to `routes/tenant.php`. This file will contain routes accessible only with tenancy.
 
