@@ -4,11 +4,13 @@
 
 ### *A Laravel multi-database tenancy implementation that respects your code.*
 
-You won't have to change a thing in your application's code.
+You won't have to change a thing in your application's code.\*
 
 - :white_check_mark: No model traits to change database connection
 - :white_check_mark: No replacing of Laravel classes (`Cache`, `Storage`, ...) with tenancy-aware classes
 - :white_check_mark: Built-in tenant identification based on hostname
+
+\* depending on how you use the filesystem. Be sure to read [that section](#Filesystem). Everything else will work out of the box.
 
 ## Installation
 
@@ -354,6 +356,23 @@ The `local` filesystem driver will be suffixed with a directory containing `tena
    ]
 >>> Storage::disk('local')->getAdapter()->getPathPrefix()
 => "/var/www/laravel/multitenancy/storage/app/tenantdbe0b330-1a6e-11e9-b4c3-354da4b4f339/"
+```
+
+`storage_path()` will also be suffixed in the same way. Note that this means that each tenant will have their own storage directory.
+
+![The folder structure](https://i.imgur.com/GAXQOnN.png)
+
+If you write to these directories, you will need to create them after you create the tenant. See the docs for [PHP's mkdir](http://php.net/function.mkdir).
+
+Logs will be saved to `storage/logs` regardless of any changes to `storage_path()`.
+
+One thing that you **will** have to change if you use storage similarly to the example on the image is your usage of the helper function `asset()` (that is, if you use it).
+
+You need to make this change to your code:
+
+```diff
+-  asset("storage/images/products/$product_id.png");
++  tenant_asset("images/products/$product_id.png");
 ```
 
 ## Artisan commands
