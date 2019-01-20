@@ -27,10 +27,10 @@ class RedisStorageDriver implements StorageDriver
      * Get information about the tenant based on his uuid.
      *
      * @param string $uuid
-     * @param array|string $fields
+     * @param array $fields
      * @return array
      */
-    public function getTenantById(string $uuid, $fields = []): array
+    public function getTenantById(string $uuid, array $fields = []): array
     {
         $fields = (array) $fields;
         
