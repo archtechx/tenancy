@@ -10,7 +10,7 @@ You won't have to change a thing in your application's code.\*
 - :white_check_mark: No replacing of Laravel classes (`Cache`, `Storage`, ...) with tenancy-aware classes
 - :white_check_mark: Built-in tenant identification based on hostname
 
-\* depending on how you use the filesystem. Be sure to read [that section](#Filesystem). Everything else will work out of the box.
+\* depending on how you use the filesystem. Be sure to read [that section](#filesystemstorage). Everything else will work out of the box.
 
 ## Installation
 
@@ -142,7 +142,7 @@ config('tenancy.filesystem.suffix_base') . $uuid
 
 These changes will only apply for disks listen in `disks`.
 
-You can see an example in the [Filesystem](#Filesystem) section of the documentation.
+You can see an example in the [Filesystem](#filesystemstorage) section of the documentation.
 
 # Usage
 
@@ -329,7 +329,7 @@ Connections listed in the `tenancy.redis.prefixed_connections` config array use 
 Both `cache()` and `Cache` will use `Stancl\Tenancy\CacheManager`, which adds a tag (`prefix_base` + tenant UUID) to all methods called on it.
 
 
-## Filesystem
+## Filesystem/Storage
 
 Assuming the following tenancy config:
 
