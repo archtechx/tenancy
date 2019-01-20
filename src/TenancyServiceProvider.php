@@ -33,6 +33,8 @@ class TenancyServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/config/tenancy.php' => config_path('tenancy.php'),
         ], 'config');
+
+        $this->loadRoutesFrom(__DIR__ . '/routes.php');
     }
 
     /**

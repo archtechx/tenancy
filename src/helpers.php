@@ -13,9 +13,16 @@ if (! function_exists('tenancy')) {
     }
 }
 
-if (!function_exists('tenant')) {
+if (! function_exists('tenant')) {
     function tenant($key = null)
     {
         return tenancy($key);
+    }
+}
+
+if (! function_exists('tenant_asset')) {
+    function tenant_asset($asset)
+    {
+        return route('stancl.tenancy.asset', ['asset' => $asset]);
     }
 }
