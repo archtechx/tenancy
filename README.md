@@ -366,7 +366,7 @@ If you write to these directories, you will need to create them after you create
 
 Logs will be saved to `storage/logs` regardless of any changes to `storage_path()`.
 
-One thing that you **will** have to change if you use storage similarly to the example on the image is your usage of the helper function `asset()` (that is, if you use it).
+One thing that you **will** have to change if you use storage similarly to the example on the image is your use of the helper function `asset()` (that is, if you use it).
 
 You need to make this change to your code:
 
