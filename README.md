@@ -167,7 +167,15 @@ You can use the `tenancy()` and `tenant()` helpers to resolve `Stancl\Tenancy\Te
    ]
 ```
 
-When you create a new tenant, [tenant migrations](#tenant-migrations) will automatically be executed for that tenant.
+When you create a new tenant, you can [migrate](#tenant-migrations) their database like this:
+
+```php
+\Artisan::call('tenants:migrate', [
+    '--tenants' => [$tenant['uuid']]
+]);
+```
+
+You can also seed the database in the same way. The only difference is the command name (`tenants:seed`).
 
 ### Starting a session as a tenant
 

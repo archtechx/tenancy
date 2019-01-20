@@ -79,9 +79,6 @@ class TenantManager
 
         $tenant = $this->storage->createTenant($domain, \Uuid::generate(1, $domain));
         $this->database->create($this->getDatabaseName($tenant));
-        \Artisan::call('tenants:migrate', [
-            '--tenants' => [$tenant['uuid']]
-        ]);
         
         return $tenant;
     }
