@@ -377,7 +377,13 @@ Listing all tenants.
 
 #### `tenants:migrate`, `tenants:rollback`, `tenants:seed`
 
-- You may specify the tenant(s) UUIDs using the `--tenants` option.
+- You may specify the tenant UUID(s) using the `--tenants` option.
+
+```
+$ artisan tenants:seed --tenants=8075a580-1cb8-11e9-8822-49c5d8f8ff23                                                                                                                    
+Tenant: 8075a580-1cb8-11e9-8822-49c5d8f8ff23 (laravel.localhost)
+Database seeding completed successfully.
+```
 
 ### Tenant migrations
 
