@@ -7,6 +7,7 @@ use Stancl\Tenancy\TenantManager;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Commands\Migrate;
 use Stancl\Tenancy\Commands\Rollback;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Commands\TenantList;
 use Stancl\Tenancy\Interfaces\StorageDriver;
@@ -35,6 +36,10 @@ class TenancyServiceProvider extends ServiceProvider
         ], 'config');
 
         $this->loadRoutesFrom(__DIR__ . '/routes.php');
+
+        Route::middlewareGroup('tenancy', [
+            \Stancl\Tenancy\Middleware\InitializeTenancy::class
+        ]);
     }
 
     /**
