@@ -55,7 +55,12 @@ class RedisStorageDriver implements StorageDriver
 
     public function deleteTenant(string $id): bool
     {
-        $domain = $this->getTenantById($id)['domain'];
+        try {
+            $domain = $this->getTenantById($id)['domain'];
+        } catch (\Throwable $th) {
+            throw new \Exception("No tenant with UUID $id exists.");
+        }
+
         $this->redis->del("domains:$domain");
         return (bool) $this->redis->del("tenants:$id");
     }
