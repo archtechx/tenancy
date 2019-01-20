@@ -25,10 +25,11 @@ composer require stancl/tenancy
 The `TenancyServiceProvider` automatically adds the `tenancy` middleware group which can be assigned to routes. You only need to make sure the middleware is top priority.
 
 Open `app/Http/Kernel.php` and make the middleware top priority, so that it gets executed before anything else, making sure things like the database switch connections soon enough.
-    ```php
-    protected $middlewarePriority = [
-        \Stancl\Tenancy\Middleware\InitializeTenancy::class,
-    ```
+
+```php
+protected $middlewarePriority = [
+    \Stancl\Tenancy\Middleware\InitializeTenancy::class,
+```
 
 When a tenant route is visited, but the tenant can't be identified, an exception is thrown. If you want to change this behavior, to a redirect for example, add this to your `app/Providers/AppServiceProvider.php`'s `boot()` method.
 
