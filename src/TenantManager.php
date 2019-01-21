@@ -162,6 +162,12 @@ class TenantManager
         return config('tenancy.database.prefix') . $tenant['uuid'] . config('tenancy.database.suffix');
     }
 
+    public function getStoragePath($tenant = []): ?string
+    {
+        $tenant = $tenant ?: $this->tenant;
+        return config('tenancy.filesystem.suffix_base') . $tenant['uuid'];
+    }
+
     public function setTenant(array $tenant): array
     {
         $this->tenant = $tenant;
@@ -191,33 +197,59 @@ class TenantManager
         return $this->init($domain);
     }
 
-    public function get(string $key)
+    /**
+     * Get a value from the storage for a tenant.
+     *
+     * @param string|array $key
+     * @param string $uuid
+     * @return mixed
+     */
+    public function get($key, string $uuid = null)
     {
+        $uuid = $uuid ?: $this->tenant['uuid'];
+
+        if (is_array($key)) {
+            return $this->storage->getMany($uuid, $key);
+        }
+
         return $this->storage->get($this->tenant['uuid'], $key);
     }
 
     /**
-     * Puts a value into the storage for the current tenant.
+     * Puts a value into the storage for a tenant.
      *
-     * @param string $key
+     * @param string|array $key
      * @param mixed $value
+     * @param string uuid
      * @return mixed
      */
-    public function put(string $key, $value)
+    public function put($key, $value = null, string $uuid = null)
     {
-        // Todo allow $value to be null and $key to be an array.
-        return $this->tenant[$key] = $this->storage->put($this->tenant['uuid'], $key, $value);
+        $uuid = $uuid ?: $this->tenant['uuid'];
+
+        if (! is_null($value)) {
+            return $this->tenant[$key] = $this->storage->put($uuid, $key, $value);
+        }
+
+        if (! is_array($key)) {
+            throw new \Exception("No value supplied for key $key.");
+        }
+
+        return $this->tenant[$key] = $this->storage->putMany($uuid, $key);
     }
 
     /**
      * Alias for put().
      *
-     * @param string $key
+     * @param string|array $key
      * @param mixed $value
+     * @param string $uuid
      * @return mixed
      */
-    public function set(string $key, $value)
+    public function set($key, $value = null, string $uuid = null)
     {
+        $uuid = $uuid ?: $this->tenant['uuid'];
+
         return $this->put($this->put($key, $value));
     }
 }

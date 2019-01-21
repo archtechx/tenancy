@@ -83,9 +83,20 @@ class RedisStorageDriver implements StorageDriver
         return $this->redis->hget("tenants:$uuid", $key);
     }
 
+    public function getMany(string $uuid, array $keys)
+    {
+        return $this->redis->hmget("tenants:$uuid", $keys);
+    }
+
     public function put(string $uuid, string $key, $value)
     {
         $this->redis->hset("tenants:$uuid", $key, $value);
         return $value;
+    }
+
+    public function putMany(string $uuid, string $values)
+    {
+        $this->redis->hmset("tenants:$uuid", $values);
+        return $values;
     }
 }
