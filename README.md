@@ -303,9 +303,19 @@ If your cache driver is Redis and you don't want to use AOF with it, run two Red
 Along with the tenant and database info, you can store your own data in the storage. You can use:
 
 ```php
+get (string|array $key, string $uuid = null) // $uuid defaults to the current tenant's UUID
+put (string|array $key, mixed $value = null, string $uuid = null) // if $key is array, make sure $value is null
+```
+
+```php
 tenancy()->get($key);
+tenancy()->get($key, $uuid);
+tenancy()->get(['key1', 'key2']);
 tenancy()->put($key, $value);
 tenancy()->set($key, $value); // alias for put()
+tenancy()->put($key, $value, $uuid);
+tenancy()->put(['key1' => 'value1', 'key2' => 'value2']);
+tenancy()->put(['key1' => 'value1', 'key2' => 'value2'], null, $uuid);
 ```
 
 Note that `$key` has to be a string.
