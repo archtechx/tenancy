@@ -300,7 +300,7 @@ If your cache driver is Redis and you don't want to use AOF with it, run two Red
 
 ### Storing custom data
 
-Along with the tenant and database info, you can store your own data in the storage. You can use:
+Along with the tenant and database info, you can store your own data in the storage. This is useful, for example, when you want to store tenant-specific config. You can use:
 
 ```php
 get (string|array $key, string $uuid = null) // $uuid defaults to the current tenant's UUID
@@ -318,7 +318,7 @@ tenancy()->put(['key1' => 'value1', 'key2' => 'value2']);
 tenancy()->put(['key1' => 'value1', 'key2' => 'value2'], null, $uuid);
 ```
 
-Note that `$key` has to be a string.
+Note that `$key` has to be a string or an array with string keys.
 
 ## Database
 
