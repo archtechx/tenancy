@@ -229,7 +229,7 @@ class TenantManager
         
         // If $uuid is the uuid of the current tenant, put
         // the value into the $this->tenant array as well.
-        $target = [];
+        $target = []; // black hole
         if (($this->tenant['uuid'] ?? null) === $uuid) {
             $target = &$this->tenant;
         }
