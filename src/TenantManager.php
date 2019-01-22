@@ -226,16 +226,23 @@ class TenantManager
     public function put($key, $value = null, string $uuid = null)
     {
         $uuid = $uuid ?: $this->tenant['uuid'];
+        
+        // If $uuid is the uuid of the current tenant, put
+        // the value into the $this->tenant array as well.
+        $target = [];
+        if (($this->tenant['uuid'] ?? null) === $uuid) {
+            $target = &$this->tenant;
+        }
 
         if (! is_null($value)) {
-            return $this->tenant[$key] = $this->storage->put($uuid, $key, $value);
+            return $target[$key] = $this->storage->put($uuid, $key, $value);
         }
 
         if (! is_array($key)) {
             throw new \Exception("No value supplied for key $key.");
         }
 
-        return $this->tenant[$key] = $this->storage->putMany($uuid, $key);
+        return $target[$key] = $this->storage->putMany($uuid, $key);
     }
 
     /**
