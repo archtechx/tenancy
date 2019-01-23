@@ -13,5 +13,5 @@ interface StorageDriver
     public function get(string $uuid, string $key);
     public function getMany(string $uuid, array $keys);
     public function put(string $uuid, string $key, $value);
-    public function putMany(string $uuid, array $values);
+    public function putMany(string $uuid, array $values); // todo better argument name than "values" for kv pairs?
 }
