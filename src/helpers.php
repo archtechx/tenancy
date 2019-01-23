@@ -6,7 +6,7 @@ if (! function_exists('tenancy')) {
     function tenancy($key = null)
     {
         if ($key) {
-            return app(TenantManager::class)->tenant[$key];
+            return app(TenantManager::class)->tenant[$key] ?? null;
         }
 
         return app(TenantManager::class);
