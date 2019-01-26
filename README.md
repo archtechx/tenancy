@@ -45,38 +45,11 @@ $this->app->bind(InitializeTenancy::class, function ($app) {
 
 ### Creating tenant routes
 
-Add this method into `app/Providers/RouteServiceProvider.php`:
+`Stancl\Tenancy\TenantRouteServiceProvider` maps tenant routes only if the current domain is not [exempt from tenancy](#exempt_domains). Tenant routes are loaded from `routes/tenant.php`.
 
-```php
-/**
- * Define the "tenant" routes for the application.
- *
- * These routes all receive session state, CSRF protection, etc.
- *
- * @return void
- */
-protected function mapTenantRoutes()
-{
-    Route::middleware(['web', 'tenancy'])
-        ->namespace($this->namespace)
-        ->group(base_path('routes/tenant.php'));
-}
-```
+Rename the `routes/web.php` file to `routes/tenant.php`. This file will contain routes accessible only with tenancy.
 
-And add this code block to `map()`:
-
-```php
-// Map tenant routes only if the current domain is not exempt from tenancy.
-if (! in_array(request()->getHost(), config('tenancy.exempt_domains', []))) {
-    $this->mapTenantRoutes();
-}
-```
-
-This maps tenant routes only if the current domain is not [exempt from tenancy](#exempt_domains).
-
-Now rename the `routes/web.php` file to `routes/tenant.php`. This file will contain routes accessible only with tenancy.
-
-Create an empty `routes/web.php` file. This file will contain routes accessible without tenancy (such as the landing page.)
+Create an empty `routes/web.php` file. This file will contain routes accessible without tenancy (such as the routes specific to the part of your app which creates tenants - landing page, sign up page, etc).
 
 ### Publishing the configuration file
 
