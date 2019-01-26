@@ -9,11 +9,6 @@ class TenantRouteServiceProvider extends RouteServiceProvider
 {
     public function map()
     {
-        $this->mapTenantRoutes();
-    }
-
-    protected function mapTenantRoutes()
-    {
         if (! in_array(request()->getHost(), $this->app['config']['tenancy.exempt_domains'] ?? [])) {
             Route::middleware(['web', 'tenancy'])
                 ->namespace($this->app['config']['tenant_route_namespace'] ?? 'App\Http\Controllers')
