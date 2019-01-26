@@ -40,6 +40,8 @@ class TenancyServiceProvider extends ServiceProvider
         Route::middlewareGroup('tenancy', [
             \Stancl\Tenancy\Middleware\InitializeTenancy::class
         ]);
+
+        $this->app->register(TenantRouteServiceProvider::class);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 return [
     'storage_driver' => 'Stancl\Tenancy\StorageDrivers\RedisStorageDriver',
+    'tenant_route_namespace' => 'App\Http\Controllers',
     'exempt_domains' => [
         // 'localhost',
     ],
