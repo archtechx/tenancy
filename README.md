@@ -94,7 +94,7 @@ Cache keys will be tagged with a tag:
 config('tenancy.cache.prefix_base') . $uuid
 ```
 
-### `filesystem`
+#### `filesystem`
 
 Filesystem paths will be suffixed with:
 
