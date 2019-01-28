@@ -22,14 +22,14 @@ class TenantManager
      *
      * @var StorageDriver
      */
-    public $storage;
+    private $storage;
     
     /**
      * Database manager.
      *
      * @var DatabaseManager
      */
-    public $database;
+    private $database;
 
     /**
      * Current tenant.
@@ -225,13 +225,18 @@ class TenantManager
      */
     public function put($key, $value = null, string $uuid = null)
     {
-        $uuid = $uuid ?: $this->tenant['uuid'];
-        
-        // If $uuid is the uuid of the current tenant, put
-        // the value into the $this->tenant array as well.
-        $target = []; // black hole
-        if (($this->tenant['uuid'] ?? null) === $uuid) {
+        if (is_null($uuid)) {
+            if (! isset($this->tenant['uuid'])) {
+                throw new \Exception("No UUID supplied (and no tenant is currently identified).");
+            }
+            
+            $uuid = $this->tenant['uuid'];
+
+            // If $uuid is the uuid of the current tenant, put
+            // the value into the $this->tenant array as well.
             $target = &$this->tenant;
+        } else {
+            $target = []; // black hole
         }
 
         if (! is_null($value)) {
