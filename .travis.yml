@@ -3,4 +3,7 @@ php:
   - '7.1'
   - '7.2'
 
+install:
+  - travis_retry composer install --no-interaction --prefer-source --dev
+
 script: vendor/bin/phpunit
