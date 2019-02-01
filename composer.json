@@ -13,6 +13,10 @@
         "illuminate/support": "^5.7",
         "webpatser/laravel-uuid": "^3.0"
     },
+    "require-dev": {
+        "orchestra/testbench": "~3.0",
+        "laravel/framework": "5.7.*"
+    },
     "autoload": {
         "psr-4": {
             "Stancl\\Tenancy\\": "src/"
@@ -20,6 +24,11 @@
         "files": [
             "src/helpers.php"
         ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Stancl\\Tenancy\\Tests\\": "tests/"
+        }
     },
     "extra": {
         "laravel": {
