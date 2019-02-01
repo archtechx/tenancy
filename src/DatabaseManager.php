@@ -44,6 +44,11 @@ class DatabaseManager
         return DB::statement("CREATE DATABASE `$name` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
     }
 
+    public function delete()
+    {
+        // todo: delete database. similar to create()
+    }
+
     public function getDriver(): ?string
     {
         return config("database.connections.tenant.driver");

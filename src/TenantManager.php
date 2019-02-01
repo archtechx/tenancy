@@ -264,4 +264,19 @@ class TenantManager
 
         return $this->put($this->put($key, $value));
     }
+
+    /**
+     * Return the identified tenant's attribute(s).
+     *
+     * @param string $attribute
+     * @return mixed
+     */
+    public function __invoke($attribute)
+    {
+        if (is_null($attribute)) {
+            return $this->tenant;
+        }
+        
+        return $this->tenant[(string) $attribute];
+    }
 }

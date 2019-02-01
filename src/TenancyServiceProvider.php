@@ -54,6 +54,7 @@ class TenancyServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__ . '/config/tenancy.php', 'tenancy');
 
         $this->app->bind(StorageDriver::class, $this->app['config']['tenancy.storage_driver']);
+        $this->app->bind(ServerConfigManager::class, $this->app['config']['tenancy.server.manager']);
         $this->app->singleton(DatabaseManager::class);
         $this->app->singleton(TenantManager::class, function ($app) {
             return new TenantManager($app, $app[StorageDriver::class], $app[DatabaseManager::class]);

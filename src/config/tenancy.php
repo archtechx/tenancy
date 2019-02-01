@@ -30,4 +30,19 @@ return [
             // 's3',
         ],
     ],
+    'server' => [
+        'manager' => 'Stancl\Tenancy\ServerConfigManagers\NginxConfigManager',
+        'file' => [
+            'single' => true, // single file for all tenant vhosts
+            'path' => '/etc/nginx/sites-available/tenants.conf',
+            /*
+            'single' => false,
+            'path' => [
+                'prefix' => '/etc/nginx/sites-available/tenants/tenant',
+                'suffix' => '.conf',
+                // results in: '/etc/nginx/sites-available/tenants/tenant' . $uuid . '.conf'
+            ]
+            */
+        ]
+    ]
 ];
