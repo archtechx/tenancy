@@ -21,11 +21,16 @@ class ServerManager
         return config('tenancy.server.file.path.prefix') . $this->tenantManager->tenant['uuid'] . config('tenancy.server.file.path.suffix');
     }
 
-    public function create()
+    public function createVhost(string $domain)
     {
+        $this->serverConfigManager->addVhost($domain, $this->getConfigFilePath());
+        $this->serverConfigManager->deployCertificate($domain);
+        if (method_exists($this->serverConfigManager, 'postCertDeploymentChanges')) {
+            $this->serverConfigManager->postCertDeploymentChanges();
+        }
     }
 
-    public function delete()
+    public function deleteVhost()
     {
         // todo
     }

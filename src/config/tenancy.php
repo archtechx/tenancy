@@ -43,6 +43,18 @@ return [
                 // results in: '/etc/nginx/sites-available/tenants/tenant' . $uuid . '.conf'
             ]
             */
-        ]
+        ],
+        'nginx' => [
+            'vhost' => "
+            server {
+                include includes/tenancy;
+                server_name %host%;
+            }",
+            'extra_certbot_args' => [
+                '--must-staple',
+                // '--staging', // obtains a fake cert intended for testing certbot
+                // '--email', 'your@email', // if you haven't created an account in certbot yet
+            ],
+        ],
     ]
 ];

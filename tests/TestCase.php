@@ -17,9 +17,9 @@ class TestCase extends \Orchestra\Testbench\TestCase
 
         Redis::connection('tenancy')->flushdb();
 
-        tenant()->create('phpunit.localhost');
+        tenant()->create('localhost');
 
-        tenancy()->init('phpunit.localhost');
+        tenancy()->init('localhost');
     }
 
     /**
