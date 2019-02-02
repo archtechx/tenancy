@@ -15,8 +15,6 @@ class TestCase extends \Orchestra\Testbench\TestCase
     {
         parent::setUp();
 
-        $this->assertSame('Redis', \Redis::class);  // (travis test) todo remove this line
-
         Redis::connection('tenancy')->flushdb();
 
         tenant()->create('phpunit.localhost');
