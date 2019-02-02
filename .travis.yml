@@ -1,13 +1,14 @@
 language: php
 php:
-  - '7.1'
   - '7.2'
+  - '7.1'
 
 branches:
   only:
     - master
 
 install:
+  - travis_retry pecl install redis
   - travis_retry composer install --no-interaction
 
 script: vendor/bin/phpunit --coverage-clover=coverage.xml
