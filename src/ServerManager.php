@@ -18,7 +18,7 @@ class ServerManager
             return config('tenancy.server.file.path');
         }
 
-        return config('tenancy.server.file.path.prefix') . $this->tenantManager('uuid') . config('tenancy.server.file.path.suffix');
+        return config('tenancy.server.file.path.prefix') . $this->tenantManager->tenant['uuid'] . config('tenancy.server.file.path.suffix');
     }
 
     public function create()

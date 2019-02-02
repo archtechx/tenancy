@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Commands\TenantList;
 use Stancl\Tenancy\Interfaces\StorageDriver;
+use Stancl\Tenancy\Interfaces\ServerConfigManager;
 use Stancl\Tenancy\StorageDrivers\RedisStorageDriver;
 
 class TenancyServiceProvider extends ServiceProvider

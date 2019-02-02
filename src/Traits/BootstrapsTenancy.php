@@ -1,6 +1,9 @@
 <?php
 
-namespace Stancl\Tenancy;
+namespace Stancl\Tenancy\Traits;
+
+use Stancl\Tenancy\CacheManager;
+use Illuminate\Support\Facades\Redis;
 
 trait BootstrapsTenancy
 {
@@ -21,7 +24,6 @@ trait BootstrapsTenancy
 
     public function setPhpRedisPrefix($connections = ['default'])
     {
-        return;
         foreach ($connections as $connection) {
             $prefix = config('tenancy.redis.prefix_base') . $this->tenant['uuid'];
             $client = Redis::connection($connection)->client();
