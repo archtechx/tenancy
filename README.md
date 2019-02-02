@@ -393,3 +393,18 @@ Tenant migrations are located in `database/migrations/tenant`, so you should mov
 ## Some tips
 
 - If you create a tenant using the interactive console (`artisan tinker`) and use sqlite, you might need to change the database's permissions and/or ownership (`chmod`/`chown`) so that the web application can access it.
+
+## HTTPS certificates
+
+todo
+
+```sh
+sudo mkdir /var/lib/letsencrypt_tenancy /var/log/letsencrypt_tenancy /etc/letsencrypt_tenancy
+# replace ubuntu with your username
+sudo chown -R ubuntu:www-data /var/lib/letsencrypt_tenancy /var/log/letsencrypt_tenancy /etc/letsencrypt_tenancy
+sudo chmod -R 775 /var/lib/letsencrypt_tenancy /var/log/letsencrypt_tenancy /etc/letsencrypt_tenancy
+```
+
+## Testing
+
+If you run the tests of this package, please make sure you don't store anything in Redis @ 127.0.0.1:6379 db#14. The contents of this database are flushed everytime the tests are run.
