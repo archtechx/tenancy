@@ -25,7 +25,8 @@ class NginxConfigManager implements ServerConfigManager
         $process = new Process(array_merge([
             config('tenancy.server.certbot_path'),
             '-n',
-            '--nginx',
+            '--webroot',
+            '--webroot-path', config('tenancy.server.nginx.webroot'),
             '--agree-tos',
             '-d', $domain,
             '--preferred-challenges', 'http',

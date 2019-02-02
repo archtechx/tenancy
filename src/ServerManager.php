@@ -23,6 +23,7 @@ class ServerManager
 
     public function createVhost(string $domain)
     {
+        // todo symlink
         $this->serverConfigManager->addVhost($domain, $this->getConfigFilePath());
         $this->serverConfigManager->deployCertificate($domain);
         if (method_exists($this->serverConfigManager, 'postCertDeploymentChanges')) {

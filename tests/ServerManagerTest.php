@@ -61,9 +61,6 @@ class ServerManagerTest extends TestCase
 
         dump(fread($tmpfile, filesize($path)));
         // todo
-        // The following error was encountered:\n
-        // [Errno 13] Permission denied: '/var/log/letsencrypt/.certbot.lock'\n
-        // Either run as root, or set --config-dir, --work-dir, and --logs-dir to writeable paths.\n
     }
 
     public function setupCreateVhost()

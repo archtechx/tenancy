@@ -45,6 +45,7 @@ return [
             */
         ],
         'nginx' => [
+            'webroot' => '/var/www/html',
             'vhost' => "
             server {
                 include includes/tenancy;
@@ -52,7 +53,10 @@ return [
             }",
             'extra_certbot_args' => [
                 '--must-staple',
-                // '--staging', // obtains a fake cert intended for testing certbot
+                '--config-dir', '/etc/letsencrypt_tenancy',
+                '--work-dir', '/var/lib/letsencrypt_tenancy',
+                '--logs-dir', '/var/log/letsencrypt_tenancy',
+                '--staging', // obtains a fake cert intended for testing certbot
                 // '--email', 'your@email', // if you haven't created an account in certbot yet
             ],
         ],
