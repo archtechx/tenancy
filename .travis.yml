@@ -8,7 +8,6 @@ branches:
     - master
 
 install:
-  - travis_retry pecl install redis
   - travis_retry composer install --no-interaction
 
 script: vendor/bin/phpunit --coverage-clover=coverage.xml

@@ -2,7 +2,7 @@
 
 namespace Stancl\Tenancy\Tests;
 
-use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Redis as LaravelRedis; // https://travis-ci.com/stancl/tenancy/jobs/174861107#L615
 
 class TestCase extends \Orchestra\Testbench\TestCase
 {
@@ -15,7 +15,7 @@ class TestCase extends \Orchestra\Testbench\TestCase
     {
         parent::setUp();
 
-        Redis::connection('tenancy')->flushdb();
+        LaravelRedis::connection('tenancy')->flushdb();
 
         tenant()->create('phpunit.localhost');
 
