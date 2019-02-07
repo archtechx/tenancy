@@ -9,9 +9,9 @@
 
 You won't have to change a thing in your application's code.\*
 
-- :white_check_mark: No model traits to change database connection
-- :white_check_mark: No replacing of Laravel classes (`Cache`, `Storage`, ...) with tenancy-aware classes
-- :white_check_mark: Built-in tenant identification based on hostname
+- :heavy_check_mark: No model traits to change database connection
+- :heavy_check_mark: No replacing of Laravel classes (`Cache`, `Storage`, ...) with tenancy-aware classes
+- :heavy_check_mark: Built-in tenant identification based on hostname
 
 \* depending on how you use the filesystem. Be sure to read [that section](#filesystemstorage). Everything else will work out of the box.
 
