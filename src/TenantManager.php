@@ -2,9 +2,9 @@
 
 namespace Stancl\Tenancy;
 
-use Stancl\Tenancy\BootstrapsTenancy;
 use Illuminate\Support\Facades\Redis;
 use Stancl\Tenancy\Interfaces\StorageDriver;
+use Stancl\Tenancy\Traits\BootstrapsTenancy;
 
 class TenantManager
 {
@@ -77,7 +77,7 @@ class TenantManager
             throw new \Exception("Domain $domain is already occupied by tenant $id.");
         }
 
-        $tenant = $this->storage->createTenant($domain, \Uuid::generate(1, $domain));
+        $tenant = $this->storage->createTenant($domain, \Webpatser\Uuid\Uuid::generate(1, $domain));
         $this->database->create($this->getDatabaseName($tenant));
         
         return $tenant;
@@ -263,5 +263,20 @@ class TenantManager
         $uuid = $uuid ?: $this->tenant['uuid'];
 
         return $this->put($this->put($key, $value));
+    }
+
+    /**
+     * Return the identified tenant's attribute(s).
+     *
+     * @param string $attribute
+     * @return mixed
+     */
+    public function __invoke($attribute)
+    {
+        if (is_null($attribute)) {
+            return $this->tenant;
+        }
+        
+        return $this->tenant[(string) $attribute];
     }
 }
