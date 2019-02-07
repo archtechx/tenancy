@@ -10,9 +10,9 @@ class NginxConfigManager implements ServerConfigManager
     public function addVhost(string $domain, string $file): bool
     {
         $f = fopen($file, 'a');
-        fwrite($f, $this->getVhostText($domain));
-        fclose($f);
-        return true;
+        $fw = fwrite($f, $this->getVhostText($domain));
+        $fc = fclose($f);
+        return $fw && $fc;
     }
 
     public function getVhostText(string $domain)
@@ -26,10 +26,10 @@ class NginxConfigManager implements ServerConfigManager
             config('tenancy.server.certbot_path'),
             '-n',
             '--webroot',
-            '--webroot-path', config('tenancy.server.nginx.webroot'),
-            '--agree-tos',
             '-d', $domain,
+            '--agree-tos',
             '--preferred-challenges', 'http',
+            '--webroot-path', config('tenancy.server.nginx.webroot'),
         ], config('tenancy.server.nginx.extra_certbot_args')));
 
         $process->run();
