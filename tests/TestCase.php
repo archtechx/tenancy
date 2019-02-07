@@ -59,6 +59,6 @@ class TestCase extends \Orchestra\Testbench\TestCase
      */
     protected function resolveApplicationHttpKernel($app)
     {
-        $app->singleton('Illuminate\Contracts\Http\Kernel', \Stancl\Tenancy\Testing\HttpKernel::class);
+        $app->singleton('Illuminate\Contracts\Http\Kernel', HttpKernel::class);
     }
 }
