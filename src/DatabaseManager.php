@@ -54,6 +54,11 @@ class DatabaseManager
         }
     }
 
+    public function delete()
+    {
+        // todo: delete database. similar to create()
+    }
+
     public function getDriver(): ?string
     {
         return config("database.connections.tenant.driver");
