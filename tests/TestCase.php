@@ -73,7 +73,8 @@ class TestCase extends \Orchestra\Testbench\TestCase
 
     public function isTravis()
     {
-        // Multiple, just to make sure. Someone might accidentally set one on their computer.
+        // Multiple, just to make sure. Someone might accidentally
+        // set one of these environment vars on their computer.
         return env('CI') && env('TRAVIS') && env('CONTINUOUS_INTEGRATION');
     }
 }
