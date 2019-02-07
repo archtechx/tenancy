@@ -8,8 +8,6 @@ class SQLiteDatabaseCreator implements DatabaseCreator
 {
     public function createDatabase(string $name): bool
     {
-        fclose(fopen(database_path($name), 'w'));
-
-        return true;
+        return fclose(fopen(database_path($name), 'w'));
     }
 }
