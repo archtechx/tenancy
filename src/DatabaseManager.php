@@ -34,14 +34,14 @@ class DatabaseManager
     {
         $this->createTenantConnection($name);
         $driver = $driver ?: $this->getDriver();
-        if ($driver === "sqlite") {
-            $f = fopen(database_path($name), 'w');
-            fclose($f);
-            
-            return;
+
+        $databaseCreators = config('tenancy.database_creators');
+
+        if (! array_key_exists($driver, $databaseCreators)) {
+            throw new \Exception("Database could not be created: no database creator for driver $driver is registered.");
         }
 
-        return DB::statement("CREATE DATABASE `$name` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        app($databaseCreators[$driver])->createDatabase($name);
     }
 
     public function getDriver(): ?string

@@ -21,7 +21,6 @@ return [
     'cache' => [
         'prefix_base' => 'tenant',
     ],
-
     'filesystem' => [
         'suffix_base' => 'tenant',
         // Disks which should be suffixed with the suffix_base + tenant UUID.
@@ -29,5 +28,9 @@ return [
             'local',
             // 's3',
         ],
+    ],
+    'database_creators' => [
+        'sqlite' => 'Stancl\Tenancy\DatabaseCreators\SQLiteDatabaseCreator',
+        'mysql' => 'Stancl\Tenancy\DatabaseCreators\MySQLDatabaseCreator',
     ],
 ];
