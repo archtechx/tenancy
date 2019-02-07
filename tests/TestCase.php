@@ -30,7 +30,9 @@ class TestCase extends \Orchestra\Testbench\TestCase
      */
     protected function getEnvironmentSetUp($app)
     {
-        (new \Dotenv\Dotenv(__DIR__ . '/..'))->load();
+        if (file_exists(__DIR__ . '/../.env')) {
+            (new \Dotenv\Dotenv(__DIR__ . '/..'))->load();
+        }
 
         $app['config']->set([
             'database.redis.client' => 'phpredis',
@@ -47,6 +49,7 @@ class TestCase extends \Orchestra\Testbench\TestCase
                 'prefix' => 'tenant',
                 'suffix' => '.sqlite',
             ],
+            'database.connections.sqlite.database' => ':memory:',
         ]);
     }
 

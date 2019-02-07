@@ -24,10 +24,7 @@ class DatabaseCreationTest extends TestCase
             $this->markTestSkipped('As to not bloat your MySQL instance with test databases, this test is not run by default.');
         }
 
-        config()->set([
-            'database.default' => 'mysql',
-            'database.connections.mysql.database' => 'travis_tenancy',
-        ]);
+        config()->set('database.default', 'mysql');
 
         $db_name = 'testdatabase' . $this->randomString(10);
         app(DatabaseManager::class)->create($db_name, 'mysql');

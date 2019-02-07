@@ -1,3 +1,9 @@
+env:
+  - DB_USERNAME=root
+  - DB_PASSWORD=root
+  - DB_DATABASE=travis_tenancy
+  - CODECOV_TOKEN="24382d15-84e7-4a55-bea4-c4df96a24a9b"
+
 language: php
 php:
   - '7.2'
@@ -18,13 +24,9 @@ install:
   - travis_retry composer install --no-interaction
 
 before_script:
-  - export DB_USERNAME=root
-  - export DB_PASSWORD=root
   - mysql -e 'CREATE DATABASE travis_tenancy;'
-  - export DB_DATABASE=travis_tenancy
 
 script: vendor/bin/phpunit -v --coverage-clover=coverage.xml
 
 after_success:
-  - export CODECOV_TOKEN="24382d15-84e7-4a55-bea4-c4df96a24a9b"
   - bash <(curl -s https://codecov.io/bash)
