@@ -33,4 +33,5 @@ return [
         'sqlite' => 'Stancl\Tenancy\DatabaseCreators\SQLiteDatabaseCreator',
         'mysql' => 'Stancl\Tenancy\DatabaseCreators\MySQLDatabaseCreator',
     ],
+    'queue_database_creation' => false,
 ];
