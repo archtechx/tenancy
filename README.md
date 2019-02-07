@@ -116,10 +116,10 @@ Add an array like this to `database.redis` config:
 
 ```php
 'tenancy' => [
-    'host' => env('REDIS_TENANCY_HOST', '127.0.0.1'),
-    'password' => env('REDIS_TENANCY_PASSWORD', null),
-    'port' => env('REDIS_TENANCY_PORT', 6380),
-    'database' => env('REDIS_TENANCY_DB', 3),
+    'host' => env('TENANCY_REDIS_HOST', '127.0.0.1'),
+    'password' => env('TENANCY_REDIS_PASSWORD', null),
+    'port' => env('TENANCY_REDIS_PORT', 6380),
+    'database' => env('TENANCY_REDIS_DB', 3),
 ],
 ```
 
