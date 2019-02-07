@@ -19,7 +19,7 @@ return [
         ],
     ],
     'cache' => [
-        'prefix_base' => 'tenant',
+        'tag_base' => 'tenant',
     ],
     'filesystem' => [
         'suffix_base' => 'tenant',

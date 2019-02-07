@@ -93,7 +93,7 @@ These changes will only apply for connections listed in `prefixed_connections`.
 Cache keys will be tagged with a tag:
 
 ```php
-config('tenancy.cache.prefix_base') . $uuid
+config('tenancy.cache.tag_base') . $uuid
 ```
 
 #### `filesystem`
