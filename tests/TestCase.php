@@ -16,7 +16,7 @@ class TestCase extends \Orchestra\Testbench\TestCase
     protected function setUp()
     {
         parent::setUp();
-        
+
         Redis::connection('tenancy')->flushdb();
 
         tenant()->create('localhost');
@@ -83,5 +83,10 @@ class TestCase extends \Orchestra\Testbench\TestCase
         // Multiple, just to make sure. Someone might accidentally
         // set one of these environment vars on their computer.
         return env('CI') && env('TRAVIS') && env('CONTINUOUS_INTEGRATION');
+    }
+
+    public function initTenancy($domain = 'localhost')
+    {
+        tenancy()->init($domain);
     }
 }

@@ -12,7 +12,7 @@ class BootstrapsTenancyTest extends TestCase
     public function database_connection_is_switched()
     {
         $old_connection_name = app(\Illuminate\Database\DatabaseManager::class)->connection()->getName();
-        tenancy()->init('localhost');
+        $this->initTenancy();
         $new_connection_name = app(\Illuminate\Database\DatabaseManager::class)->connection()->getName();
 
         $this->assertNotEquals($old_connection_name, $new_connection_name);
@@ -22,7 +22,7 @@ class BootstrapsTenancyTest extends TestCase
     /** @test */
     public function redis_is_prefixed()
     {
-        tenancy()->init('localhost');
+        $this->initTenancy();
         foreach (config('tenancy.redis.prefixed_connections', ['default']) as $connection) {
             $prefix = config('tenancy.redis.prefix_base') . tenant('uuid');
             $client = Redis::connection($connection)->client();
@@ -34,7 +34,7 @@ class BootstrapsTenancyTest extends TestCase
     public function filesystem_is_suffixed()
     {
         $old_storage_path = storage_path();
-        tenancy()->init();
+        $this->initTenancy();
         $new_storage_path = storage_path();
 
         $this->assertEquals($old_storage_path . "/" . config('tenancy.filesystem.suffix_base') . tenant('uuid'), $new_storage_path);
