@@ -3,7 +3,7 @@
 ![Laravel 5.7](https://img.shields.io/badge/laravel-5.7-red.svg)
 ![Beta - experimental](https://img.shields.io/badge/beta-experimental-yellow.svg)
 ![Travis CI build](https://travis-ci.com/stancl/tenancy.svg?branch=master)
-![Code coverage](https://codecov.io/gh/stancl/tenancy/branch/master/graph/badge.svg)
+[![codecov](https://codecov.io/gh/stancl/tenancy/branch/master/graph/badge.svg)](https://codecov.io/gh/stancl/tenancy)
 
 ### *A Laravel multi-database tenancy implementation that respects your code.*
 
