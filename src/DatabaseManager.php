@@ -2,14 +2,9 @@
 
 namespace Stancl\Tenancy;
 
-use Illuminate\Bus\Queueable;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Stancl\Tenancy\Jobs\QueuedDatabaseCreator;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
-use Stancl\Tenancy\Interfaces\DatabaseCreator;
 
 class DatabaseManager
 {
@@ -48,7 +43,7 @@ class DatabaseManager
         }
 
         if (config('tenancy.queue_database_creation', false)) {
-            QueuedDatabaseCreator::dispatch(app($databaseCreators[$driver], $name));
+            QueuedDatabaseCreator::dispatch(app($databaseCreators[$driver]), $name);
         } else {
             app($databaseCreators[$driver])->createDatabase($name);
         }
@@ -75,33 +70,5 @@ class DatabaseManager
         // Change DB name
         $database_name = $this->getDriver() === "sqlite" ? database_path($database_name) : $database_name;
         config()->set(['database.connections.tenant.database' => $database_name]);
-    }
-}
-
-class QueuedDatabaseCreator implements ShouldQueue
-{
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
-    /**
-     * Create a new job instance.
-     *
-     * @param DatabaseCreator $databaseCreator
-     * @param string $databaseName
-     * @return void
-     */
-    public function __construct(DatabaseCreator $databaseCreator, string $databaseName)
-    {
-        $this->databaseCreator = $databaseCreator;
-        $this->databaseName = $databaseName;
-    }
-
-    /**
-     * Execute the job.
-     *
-     * @return void
-     */
-    public function handle()
-    {
-        $this->databaseCreator->createDatabase($databaseName);
     }
 }

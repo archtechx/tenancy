@@ -30,19 +30,23 @@ class TestCase extends \Orchestra\Testbench\TestCase
      */
     protected function getEnvironmentSetUp($app)
     {
-        $app['config']->set('database.redis.client', 'phpredis');
-        $app['config']->set('database.redis.tenancy', [
-            'host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
-            'password' => env('TENANCY_TEST_REDIS_PASSWORD', null),
-            'port' => env('TENANCY_TEST_REDIS_PORT', 6379),
-            // Use the #14 Redis database unless specified otherwise.
-            // Make sure you don't store anything in this db!
-            'database' => env('TENANCY_TEST_REDIS_DB', 14),
-        ]);
-        $app['config']->set('tenancy.database', [
-            'based_on' => 'sqlite',
-            'prefix' => 'tenant',
-            'suffix' => '.sqlite',
+        (new \Dotenv\Dotenv(__DIR__ . '/..'))->load();
+
+        $app['config']->set([
+            'database.redis.client' => 'phpredis',
+            'database.redis.tenancy' => [
+                'host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
+                'password' => env('TENANCY_TEST_REDIS_PASSWORD', null),
+                'port' => env('TENANCY_TEST_REDIS_PORT', 6379),
+                // Use the #14 Redis database unless specified otherwise.
+                // Make sure you don't store anything in this db!
+                'database' => env('TENANCY_TEST_REDIS_DB', 14),
+            ],
+            'tenancy.database' => [
+                'based_on' => 'sqlite',
+                'prefix' => 'tenant',
+                'suffix' => '.sqlite',
+            ],
         ]);
     }
 
@@ -60,5 +64,16 @@ class TestCase extends \Orchestra\Testbench\TestCase
     protected function resolveApplicationHttpKernel($app)
     {
         $app->singleton('Illuminate\Contracts\Http\Kernel', \Stancl\Tenancy\Testing\HttpKernel::class);
+    }
+
+    public function randomString(int $length = 10)
+    {
+        return substr(str_shuffle(str_repeat($x = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', ceil($length / strlen($x)))), 1, $length);
+    }
+
+    public function isTravis()
+    {
+        // Multiple, just to make sure. Someone might accidentally set one on their computer.
+        return env('CI') && env('TRAVIS') && env('CONTINUOUS_INTEGRATION');
     }
 }

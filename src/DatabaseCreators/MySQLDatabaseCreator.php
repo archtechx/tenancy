@@ -2,6 +2,7 @@
 
 namespace Stancl\Tenancy\DatabaseCreators;
 
+use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Interfaces\DatabaseCreator;
 
 class MySQLDatabaseCreator implements DatabaseCreator

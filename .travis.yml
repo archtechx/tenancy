@@ -8,6 +8,7 @@ branches:
     - master
 
 services:
+  - mysql
   - redis-server
 
 before_install:
@@ -16,7 +17,13 @@ before_install:
 install:
   - travis_retry composer install --no-interaction
 
-script: vendor/bin/phpunit --coverage-clover=coverage.xml
+before_script:
+  - export DB_USERNAME=root
+  - export DB_PASSWORD=root
+  - mysql -e 'CREATE DATABASE travis_tenancy;'
+  - export DB_DATABASE=travis_tenancy
+
+script: vendor/bin/phpunit -v --coverage-clover=coverage.xml
 
 after_success:
   - export CODECOV_TOKEN="24382d15-84e7-4a55-bea4-c4df96a24a9b"
