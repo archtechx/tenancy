@@ -326,7 +326,7 @@ Assuming the following tenancy config:
 ],
 ```
 
-The `local` filesystem driver will be suffixed with a directory containing `tenant` and the tenant UUID.
+The `local` filesystem driver will be suffixed with a directory named `tenant` + the tenant UUID.
 
 ```php
 >>> Storage::disk('local')->getAdapter()->getPathPrefix()
@@ -431,3 +431,5 @@ However, you still need to reload nginx configuration to apply the changes to co
 ## Testing
 
 If you run the tests of this package, please make sure you don't store anything in Redis @ 127.0.0.1:6379 db#14. The contents of this database are flushed everytime the tests are run.
+
+Some tests are run only if the `CI`, `TRAVIS` and `CONTINUOUS_INTEGRATION` environment variables are set to `true`. This is to avoid things like bloating your MySQL instance with test databases.

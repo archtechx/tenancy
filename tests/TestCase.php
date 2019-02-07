@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Redis;
 
 class TestCase extends \Orchestra\Testbench\TestCase
 {
+    public $initTenancy = true;
+
     /**
      * Setup the test environment
      *
@@ -14,12 +16,14 @@ class TestCase extends \Orchestra\Testbench\TestCase
     protected function setUp()
     {
         parent::setUp();
-
+        
         Redis::connection('tenancy')->flushdb();
 
         tenant()->create('localhost');
 
-        tenancy()->init('localhost');
+        if ($this->initTenancy) {
+            tenancy()->init('localhost');
+        }
     }
 
     /**
