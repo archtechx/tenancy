@@ -1,8 +1,5 @@
 env:
-  - DB_USERNAME=root
-  - DB_PASSWORD=root
-  - DB_DATABASE=travis_tenancy
-  - CODECOV_TOKEN="24382d15-84e7-4a55-bea4-c4df96a24a9b"
+  - DB_USERNAME=root DB_PASSWORD=root DB_DATABASE=travis_tenancy CODECOV_TOKEN="24382d15-84e7-4a55-bea4-c4df96a24a9b"
 
 language: php
 php:
