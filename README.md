@@ -335,7 +335,14 @@ Assuming the following tenancy config:
 1. The `storage_path()` will be suffixed with a directory named `tenant` + the tenant UUID.
 2. The `local` disk's root will be `storage_path('app')` (which is equivalen to `storage_path() . '/app/'`).
     By default, all disks' roots are suffixed with `tenant` + the tenant UUID. This works for s3 and similar disks. But for local disks, this results in unwanted behavior. The default root for this disk is `storage_path('app')`:
-    https://github.com/laravel/laravel/blob/2a1f3761e89df690190e9f50a6b4ac5ebb8b35a3/config/filesystems.php#L46-L49
+    
+    ```php
+    'local' => [
+        'driver' => 'local',
+        'root' => storage_path('app'),
+    ],
+    ```
+    
     However, this configration file was loaded *before* tenancy was initialized. This means that if we simply suffix this disk's root, we get `/path_to_your_application/storage/app/tenant1e22e620-1cb8-11e9-93b6-8d1b78ac0bcd/`. That's not what we want. We want `/path_to_your_application/storage/tenant1e22e620-1cb8-11e9-93b6-8d1b78ac0bcd/app/`.
     
     This is what the override section of the config is for. `%storage_path%` gets replaced by `storage_path()` *after* tenancy is initialized. **The roots of disks listed in the `root_override` section of the config will be replaced according it. All other disks will be simply suffixed with `tenant` + the tenant UUID.**
