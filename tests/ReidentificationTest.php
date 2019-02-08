@@ -29,7 +29,11 @@ class ReidentificationTest extends TestCase
             if ($override = config("tenancy.filesystem.root_override.{$disk}")) {
                 $correct_path_prefix = str_replace("%storage_path%", storage_path(), $override);
             } else {
-                $correct_path_prefix = $originals[$disk] . "/$suffix/";
+                if ($base = $originals[$disk]) {
+                    $correct_path_prefix = $base . "/$suffix/";
+                } else {
+                    $correct_path_prefix = "$suffix/";
+                }
             }
 
             $this->assertSame($correct_path_prefix, $current_path_prefix);

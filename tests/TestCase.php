@@ -67,6 +67,11 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'suffix' => '.sqlite',
             ],
             'database.connections.sqlite.database' => ':memory:',
+            'tenancy.filesystem.disks' => [
+                'local',
+                'public',
+                's3',
+            ],
         ]);
     }
 

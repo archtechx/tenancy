@@ -16,6 +16,18 @@ class TenantStorageTest extends TestCase
     }
 
     /** @test */
+    public function deleting_a_tenant_works()
+    {
+        $abc = tenant()->create('abc.localhost');
+        
+        $this->assertTrue(tenant()->all()->contains($abc));
+
+        tenant()->delete($abc['uuid']);
+
+        $this->assertFalse(tenant()->all()->contains($abc));
+    }
+
+    /** @test */
     public function put_works_with_key_and_value_as_separate_args()
     {
         tenancy()->put('foo', 'bar');
