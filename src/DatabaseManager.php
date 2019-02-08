@@ -3,7 +3,8 @@
 namespace Stancl\Tenancy;
 
 use Illuminate\Support\Facades\DB;
-use Stancl\Tenancy\Jobs\QueuedDatabaseCreator;
+use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
+use Stancl\Tenancy\Jobs\QueuedTenantDatabaseDeleter;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 
 class DatabaseManager
@@ -36,22 +37,35 @@ class DatabaseManager
         $this->createTenantConnection($name);
         $driver = $driver ?: $this->getDriver();
 
-        $databaseCreators = config('tenancy.database_creators');
+        $databaseManagers = config('tenancy.database_managers');
 
-        if (! array_key_exists($driver, $databaseCreators)) {
-            throw new \Exception("Database could not be created: no database creator for driver $driver is registered.");
+        if (! array_key_exists($driver, $databaseManagers)) {
+            throw new \Exception("Database could not be created: no database manager for driver $driver is registered.");
         }
 
         if (config('tenancy.queue_database_creation', false)) {
-            QueuedDatabaseCreator::dispatch(app($databaseCreators[$driver]), $name);
+            QueuedTenantDatabaseCreator::dispatch(app($databaseManagers[$driver]), $name, 'create');
         } else {
-            app($databaseCreators[$driver])->createDatabase($name);
+            app($databaseManagers[$driver])->createDatabase($name);
         }
     }
 
-    public function delete()
+    public function delete(string $name, string $driver = null)
     {
-        // todo: delete database. similar to create()
+        $this->createTenantConnection($name);
+        $driver = $driver ?: $this->getDriver();
+
+        $databaseManagers = config('tenancy.database_managers');
+
+        if (! array_key_exists($driver, $databaseManagers)) {
+            throw new \Exception("Database could not be deleted: no database manager for driver $driver is registered.");
+        }
+
+        if (config('tenancy.queue_database_deletion', false)) {
+            QueuedTenantDatabaseDeleter::dispatch(app($databaseManagers[$driver]), $name, 'delete');
+        } else {
+            app($databaseManagers[$driver])->deleteDatabase($name);
+        }
     }
 
     public function getDriver(): ?string
