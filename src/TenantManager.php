@@ -163,12 +163,6 @@ class TenantManager
         return config('tenancy.database.prefix') . $tenant['uuid'] . config('tenancy.database.suffix');
     }
 
-    public function getStoragePath($tenant = []): ?string
-    {
-        $tenant = $tenant ?: $this->tenant;
-        return config('tenancy.filesystem.suffix_base') . $tenant['uuid'];
-    }
-
     public function setTenant(array $tenant): array
     {
         $this->tenant = $tenant;
@@ -188,16 +182,17 @@ class TenantManager
         return collect($this->storage->getAllTenants($uuids));
     }
 
-    public function actAsId(string $uuid): array
+    /**
+     * Initialize tenancy based on tenant uuid.
+     *
+     * @param string $uuid
+     * @return array
+     */
+    public function initById(string $uuid): array
     {
         $this->setTenant($this->storage->getTenantById($uuid));
         $this->bootstrap();
         return $this->tenant;
-    }
-
-    public function actAsDomain(string $domain): string
-    {
-        return $this->init($domain);
     }
 
     /**

@@ -28,6 +28,14 @@ class TenantStorageTest extends TestCase
     }
 
     /** @test */
+    public function set_is_a_working_alias_for_put()
+    {
+        tenant()->set('foo', 'bar');
+
+        $this->assertSame('bar', $this->storage->get(tenant('uuid'), 'foo'));
+    }
+
+    /** @test */
     public function put_works_with_key_and_value_as_separate_args()
     {
         tenancy()->put('foo', 'bar');
