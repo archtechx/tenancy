@@ -29,9 +29,10 @@ return [
             // 's3',
         ],
     ],
-    'database_creators' => [
-        'sqlite' => 'Stancl\Tenancy\DatabaseCreators\SQLiteDatabaseCreator',
-        'mysql' => 'Stancl\Tenancy\DatabaseCreators\MySQLDatabaseCreator',
+    'database_managers' => [
+        'sqlite' => 'Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager',
+        'mysql' => 'Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager',
     ],
     'queue_database_creation' => false,
+    'queue_database_deletion' => false,
 ];
