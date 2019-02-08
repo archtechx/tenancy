@@ -5,11 +5,15 @@ namespace Stancl\Tenancy\Commands;
 use Illuminate\Console\Command;
 use Stancl\Tenancy\DatabaseManager;
 use Illuminate\Database\Migrations\Migrator;
+use Stancl\Tenancy\Traits\HasATenantsOption;
+use Stancl\Tenancy\Traits\DealsWithMigrations;
 use Symfony\Component\Console\Input\InputOption;
 use Illuminate\Database\Console\Migrations\MigrateCommand;
 
 class Migrate extends MigrateCommand
 {
+    use HasATenantsOption, DealsWithMigrations;
+
     protected $database;
 
     /**
@@ -53,17 +57,5 @@ class Migrate extends MigrateCommand
             // Migrate
             parent::handle();
         });
-    }
-
-    protected function getOptions()
-    {
-        return array_merge([
-            ['tenants', null, InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, '', null]
-        ], parent::getOptions());
-    }
-
-    protected function getMigrationPaths()
-    {
-        return [database_path('migrations/tenant')];
     }
 }

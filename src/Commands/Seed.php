@@ -4,6 +4,7 @@ namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
 use Stancl\Tenancy\DatabaseManager;
+use Stancl\Tenancy\Traits\HasATenantsOption;
 use Illuminate\Database\Migrations\Migrator;
 use Symfony\Component\Console\Input\InputOption;
 use Illuminate\Database\Console\Seeds\SeedCommand;
@@ -11,6 +12,8 @@ use Illuminate\Database\ConnectionResolverInterface;
 
 class Seed extends SeedCommand
 {
+    use HasATenantsOption;
+
     protected $database;
 
     /**
@@ -51,20 +54,8 @@ class Seed extends SeedCommand
             $this->line("Tenant: {$tenant['uuid']} ({$tenant['domain']})");
             $this->database->connectToTenant($tenant);
 
-            // Migrate
+            // Seed
             parent::handle();
         });
-    }
-
-    protected function getOptions()
-    {
-        return array_merge([
-            ['tenants', null, InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, '', null]
-        ], parent::getOptions());
-    }
-
-    protected function getMigrationPaths()
-    {
-        return [database_path('migrations/tenant')];
     }
 }
