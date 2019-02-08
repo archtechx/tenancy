@@ -6,7 +6,8 @@ use Illuminate\Support\Facades\Redis;
 
 class TestCase extends \Orchestra\Testbench\TestCase
 {
-    public $initTenancy = true;
+    public $autoCreateTenant = true;
+    public $autoInitTenancy = true;
 
     /**
      * Setup the test environment
@@ -19,11 +20,23 @@ class TestCase extends \Orchestra\Testbench\TestCase
 
         Redis::connection('tenancy')->flushdb();
 
-        tenant()->create('localhost');
-
-        if ($this->initTenancy) {
-            tenancy()->init('localhost');
+        if ($this->autoCreateTenant) {
+            $this->createTenant();
         }
+
+        if ($this->autoInitTenancy) {
+            $this->initTenancy();
+        }
+    }
+
+    public function createTenant($domain = 'localhost')
+    {
+        tenant()->create($domain);
+    }
+
+    public function initTenancy($domain = 'localhost')
+    {
+        tenancy()->init($domain);
     }
 
     /**
@@ -83,10 +96,5 @@ class TestCase extends \Orchestra\Testbench\TestCase
         // Multiple, just to make sure. Someone might accidentally
         // set one of these environment vars on their computer.
         return env('CI') && env('TRAVIS') && env('CONTINUOUS_INTEGRATION');
-    }
-
-    public function initTenancy($domain = 'localhost')
-    {
-        tenancy()->init($domain);
     }
 }

@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Redis;
 
 class BootstrapsTenancyTest extends TestCase
 {
-    public $initTenancy = false;
+    public $autoInitTenancy = false;
 
     /** @test */
     public function database_connection_is_switched()

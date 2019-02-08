@@ -212,7 +212,7 @@ class TenantManager
             return $this->storage->getMany($uuid, $key);
         }
 
-        return $this->storage->get($this->tenant['uuid'], $key);
+        return $this->storage->get($uuid, $key);
     }
 
     /**
@@ -247,7 +247,11 @@ class TenantManager
             throw new \Exception("No value supplied for key $key.");
         }
 
-        return $target[$key] = $this->storage->putMany($uuid, $key);
+        foreach ($this->storage->putMany($uuid, $key) as $key => $value) {
+            $target[$key] = $value;
+        }
+
+        return $key;
     }
 
     /**
@@ -260,9 +264,7 @@ class TenantManager
      */
     public function set($key, $value = null, string $uuid = null)
     {
-        $uuid = $uuid ?: $this->tenant['uuid'];
-
-        return $this->put($this->put($key, $value));
+        return $this->put($key, $value, $uuid);
     }
 
     /**
