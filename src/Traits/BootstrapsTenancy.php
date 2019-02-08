@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Redis;
 
 trait BootstrapsTenancy
 {
-    public $oldStoragePaths;
+    public $oldStoragePaths = [];
 
     public function bootstrap()
     {
@@ -40,7 +40,7 @@ trait BootstrapsTenancy
 
     public function suffixFilesystemRootPaths()
     {
-        $old = [
+        $old = $this->oldStoragePaths ?: [
             "storage_disks" => [],
             "storage_path" => $this->app->storagePath(),
         ];
@@ -59,7 +59,7 @@ trait BootstrapsTenancy
         }
 
         // storage_path()
-        $this->app->useStoragePath($this->app->storagePath() . "/{$suffix}");
+        $this->app->useStoragePath($old['storage_path'] . "/{$suffix}");
 
         $this->oldStoragePaths = $old;
     }

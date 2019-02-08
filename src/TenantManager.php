@@ -5,6 +5,7 @@ namespace Stancl\Tenancy;
 use Illuminate\Support\Facades\Redis;
 use Stancl\Tenancy\Interfaces\StorageDriver;
 use Stancl\Tenancy\Traits\BootstrapsTenancy;
+use Illuminate\Contracts\Foundation\Application;
 
 class TenantManager
 {
@@ -13,7 +14,7 @@ class TenantManager
     /**
      * The application instance.
      *
-     * @var \Illuminate\Contracts\Foundation\Application|\Illuminate\Foundation\Application
+     * @var Application
      */
     private $app;
 
@@ -38,7 +39,7 @@ class TenantManager
      */
     public $tenant;
 
-    public function __construct($app, StorageDriver $storage, DatabaseManager $database)
+    public function __construct(Application $app, StorageDriver $storage, DatabaseManager $database)
     {
         $this->app = $app;
         $this->storage = $storage;
@@ -190,7 +191,7 @@ class TenantManager
     public function actAsId(string $uuid): array
     {
         $this->setTenant($this->storage->getTenantById($uuid));
-        $this->bootstrap(); // todo this could break storage_path() for example?
+        $this->bootstrap();
         return $this->tenant;
     }
 

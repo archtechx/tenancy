@@ -34,10 +34,21 @@ class BootstrapsTenancyTest extends TestCase
     public function filesystem_is_suffixed()
     {
         $old_storage_path = storage_path();
-        $this->initTenancy();
-        $new_storage_path = storage_path();
+        $old_storage_facade_roots = [];
+        foreach (config('tenancy.filesystem.disks') as $disk) {
+            $old_storage_facade_roots[$disk] = config("filesystems.disks.{$disk}.root");
+        }
 
+        $this->initTenancy();
+        
+        $new_storage_path = storage_path();
         $this->assertEquals($old_storage_path . "/" . config('tenancy.filesystem.suffix_base') . tenant('uuid'), $new_storage_path);
+
+        foreach (config('tenancy.filesystem.disks') as $disk) {
+            $suffix = config('tenancy.filesystem.suffix_base') . tenant('uuid');
+            $current_path_prefix = \Storage::disk($disk)->getAdapter()->getPathPrefix();
+            $this->assertSame($old_storage_facade_roots[$disk] . "/$suffix/", $current_path_prefix);
+        }
     }
 
     /** @test */
