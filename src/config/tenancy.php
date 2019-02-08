@@ -26,7 +26,13 @@ return [
         // Disks which should be suffixed with the suffix_base + tenant UUID.
         'disks' => [
             'local',
+            'public',
             // 's3',
+        ],
+        'root_override' => [
+            // Disks whose roots should be overriden after storage_path() is suffixed.
+            'local' => '%storage_path%/app/',
+            'public' => '%storage_path%/app/public/',
         ],
     ],
     'database_managers' => [

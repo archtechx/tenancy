@@ -1,5 +1,5 @@
 <?php
 
-Route::get('/tenancy/assets/{path}', 'Stancl\Tenancy\Controllers\TenantAssetController@asset')
+Route::get('/tenancy/assets/{path}', 'Stancl\Tenancy\Controllers\TenantAssetsController@asset')
     ->where('path', '(.*)')
     ->name('stancl.tenancy.asset');

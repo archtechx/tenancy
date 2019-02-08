@@ -104,9 +104,9 @@ Filesystem paths will be suffixed with:
 config('tenancy.filesystem.suffix_base') . $uuid
 ```
 
-These changes will only apply for disks listen in `disks`.
+These changes will only apply for disks listed in `disks`.
 
-You can see an example in the [Filesystem](#filesystemstorage) section of the documentation.
+You can see an example in the [Filesystem](#filesystemstorage) section of the documentation The `filesystem.root_override` section is explained there as well.
 
 # Usage
 
@@ -321,12 +321,24 @@ Assuming the following tenancy config:
     // Disks which should be suffixed with the prefix_base + tenant UUID.
     'disks' => [
         'local',
+        // 'public',
         // 's3',
+    ],
+    'root_override' => [
+        // Disks whose roots should be overriden after storage_path() is suffixed.
+        'local' => '%storage_path%/app/',
+        'public' => '%storage_path%/app/public/',
     ],
 ],
 ```
 
-The `local` filesystem driver will be suffixed with a directory named `tenant` + the tenant UUID.
+1. The `storage_path()` will be suffixed with a directory named `tenant` + the tenant UUID.
+2. The `local` disk's root will be `storage_path('app')` (which is equivalen to `storage_path() . '/app/'`).
+    By default, all disks' roots are suffixed with `tenant` + the tenant UUID. This works for s3 and similar disks. But for local disks, this results in unwanted behavior. The default root for this disk is `storage_path('app')`:
+    https://github.com/laravel/laravel/blob/2a1f3761e89df690190e9f50a6b4ac5ebb8b35a3/config/filesystems.php#L46-L49
+    However, this configration file was loaded *before* tenancy was initialized. This means that if we simply suffix this disk's root, we get `/path_to_your_application/storage/app/tenant1e22e620-1cb8-11e9-93b6-8d1b78ac0bcd/`. That's not what we want. We want `/path_to_your_application/storage/tenant1e22e620-1cb8-11e9-93b6-8d1b78ac0bcd/app/`.
+    
+    This is what the override section of the config is for. `%storage_path%` gets replaced by `storage_path()` *after* tenancy is initialized. **The roots of disks listed in the `root_override` section of the config will be replaced according it. All other disks will be simply suffixed with `tenant` + the tenant UUID.**
 
 ```php
 >>> Storage::disk('local')->getAdapter()->getPathPrefix()
@@ -337,7 +349,7 @@ The `local` filesystem driver will be suffixed with a directory named `tenant` +
      "domain" => "localhost",
    ]
 >>> Storage::disk('local')->getAdapter()->getPathPrefix()
-=> "/var/www/laravel/multitenancy/storage/app/tenantdbe0b330-1a6e-11e9-b4c3-354da4b4f339/"
+=> "/var/www/laravel/multitenancy/storage/tenantdbe0b330-1a6e-11e9-b4c3-354da4b4f339/app/"
 ```
 
 `storage_path()` will also be suffixed in the same way. Note that this means that each tenant will have their own storage directory.
@@ -355,6 +367,21 @@ You need to make this change to your code:
 ```diff
 -  asset("storage/images/products/$product_id.png");
 +  tenant_asset("images/products/$product_id.png");
+```
+
+Note that all (public) tenant assets have to be in the `app/public/` subdirectory of the tenant's storage directory, as shown in the image above.
+
+This is what the backend of `tenant_asset()` returns:
+```php
+// TenantAssetsController
+return response()->file(storage_path('app/public/' . $path));
+```
+
+With default filesystem configuration, these two commands are equivalent:
+
+```php
+Storage::disk('public')->put($filename, $data);
+Storage::disk('local')->put("public/$filename", $data);
 ```
 
 ## Artisan commands

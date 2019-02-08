@@ -4,7 +4,7 @@ namespace Stancl\Tenancy\Controllers;
 
 use Illuminate\Routing\Controller;
 
-class TenantAssetController extends Controller
+class TenantAssetsController extends Controller
 {
     public function __construct()
     {
