@@ -7,22 +7,26 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Stancl\Tenancy\Interfaces\DatabaseCreator;
+use Stancl\Tenancy\Interfaces\TenantDatabaseManager;
 
-class QueuedDatabaseCreator implements ShouldQueue
+class QueuedTenantDatabaseDeleter implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    protected $databaseManager;
+    protected $databaseName;
 
     /**
      * Create a new job instance.
      *
      * @param DatabaseCreator $databaseCreator
      * @param string $databaseName
+     * @param string $action
      * @return void
      */
-    public function __construct(DatabaseCreator $databaseCreator, string $databaseName)
+    public function __construct(TenantDatabaseManager $databaseManager, string $databaseName)
     {
-        $this->databaseCreator = $databaseCreator;
+        $this->databaseManager = $databaseManager;
         $this->databaseName = $databaseName;
     }
 
@@ -33,6 +37,6 @@ class QueuedDatabaseCreator implements ShouldQueue
      */
     public function handle()
     {
-        $this->databaseCreator->createDatabase($databaseName);
+        $this->databaseManager->deleteDatabase($databaseName);
     }
 }
