@@ -16,7 +16,8 @@
     "require-dev": {
         "orchestra/testbench": "~3.0",
         "laravel/framework": "5.7.*",
-        "vlucas/phpdotenv": "^2.2"
+        "vlucas/phpdotenv": "^2.2",
+        "psy/psysh": "@stable"
     },
     "autoload": {
         "psr-4": {

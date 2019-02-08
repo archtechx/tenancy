@@ -189,7 +189,9 @@ class TenantManager
 
     public function actAsId(string $uuid): array
     {
-        return $this->setTenant($this->storage->getTenantById($uuid));
+        $this->setTenant($this->storage->getTenantById($uuid));
+        $this->bootstrap(); // todo this could break storage_path() for example?
+        return $this->tenant;
     }
 
     public function actAsDomain(string $domain): string
