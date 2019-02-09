@@ -23,7 +23,7 @@ You won't have to change a thing in your application's code.\*
 composer require stancl/tenancy
 ```
 
-This package follows [symantic versioning 2.0.0](https://symver.org). Each major release will have its own branch, so that bug fixes can be provided for older versions as well.
+This package follows [symantic versioning 2.0.0](https://semver.org). Each major release will have its own branch, so that bug fixes can be provided for older versions as well.
 
 ### Configuring the `InitializeTenancy` middleware
 
