@@ -41,5 +41,4 @@ return [
     ],
     'queue_database_creation' => false,
     'queue_database_deletion' => false,
-    'migrations_directory' => database_path('migrations/tenant'),
 ];
