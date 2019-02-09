@@ -58,7 +58,7 @@ Create an empty `routes/web.php` file. This file will contain routes accessible 
 
 ### Publishing the configuration file
 
-```
+```php
 php artisan vendor:publish --provider='Stancl\Tenancy\TenancyServiceProvider' --tag=config
 ```
 
