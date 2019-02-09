@@ -7,7 +7,6 @@ use Stancl\Tenancy\DatabaseManager;
 use Illuminate\Database\Migrations\Migrator;
 use Stancl\Tenancy\Traits\HasATenantsOption;
 use Stancl\Tenancy\Traits\DealsWithMigrations;
-use Symfony\Component\Console\Input\InputOption;
 use Illuminate\Database\Console\Migrations\MigrateCommand;
 
 class Migrate extends MigrateCommand
@@ -57,5 +56,7 @@ class Migrate extends MigrateCommand
             // Migrate
             parent::handle();
         });
+
+        $this->database->disconnect();
     }
 }

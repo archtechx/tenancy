@@ -171,6 +171,16 @@ class TenantManager
     }
 
     /**
+     * Reconnects to the default database.
+     *
+     * @return void
+     */
+    public function disconnectDatabase()
+    {
+        $this->database->disconnect();
+    }
+
+    /**
      * Get all tenants.
      *
      * @param array|string $uuids

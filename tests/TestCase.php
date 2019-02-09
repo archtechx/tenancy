@@ -88,7 +88,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
      */
     protected function resolveApplicationHttpKernel($app)
     {
-        $app->singleton('Illuminate\Contracts\Http\Kernel', HttpKernel::class);
+        $app->singleton('Illuminate\Contracts\Http\Kernel', Etc\HttpKernel::class);
     }
 
     public function randomString(int $length = 10)

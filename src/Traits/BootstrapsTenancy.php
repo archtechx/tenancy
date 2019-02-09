@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Storage;
 
 trait BootstrapsTenancy
 {
-    public $oldStoragePaths = [];
+    public $originalSettings = [];
 
     public function bootstrap()
     {
@@ -41,7 +41,7 @@ trait BootstrapsTenancy
 
     public function suffixFilesystemRootPaths()
     {
-        $old = $this->oldStoragePaths ?: [
+        $old = $this->originalSettings ?: [
             "storage_disks" => [],
             "storage_path" => $this->app->storagePath(),
         ];
@@ -64,6 +64,6 @@ trait BootstrapsTenancy
             $old['storage_disks'][$disk] = $root;
         }
 
-        $this->oldStoragePaths = $old;
+        $this->originalSettings = $old;
     }
 }

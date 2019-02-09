@@ -9,8 +9,11 @@ use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 
 class DatabaseManager
 {
+    public $originalDefaultConnection;
+
     public function __construct(BaseDatabaseManager $database)
     {
+        $this->originalDefaultConnection = config('database.default');
         $this->database = $database;
     }
 
@@ -28,8 +31,9 @@ class DatabaseManager
 
     public function disconnect()
     {
-        $this->database->reconnect('default');
-        $this->database->setDefaultConnection('default');
+        $default_connection = $this->originalDefaultConnection;
+        $this->database->reconnect($default_connection);
+        $this->database->setDefaultConnection($default_connection);
     }
 
     public function create(string $name, string $driver = null)

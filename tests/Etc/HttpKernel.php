@@ -1,6 +1,6 @@
 <?php
 
-namespace Stancl\Tenancy\Tests;
+namespace Stancl\Tenancy\Tests\Etc;
 
 use Illuminate\Foundation\Http\Kernel;
 

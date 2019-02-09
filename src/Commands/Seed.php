@@ -6,7 +6,6 @@ use Illuminate\Console\Command;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Traits\HasATenantsOption;
 use Illuminate\Database\Migrations\Migrator;
-use Symfony\Component\Console\Input\InputOption;
 use Illuminate\Database\Console\Seeds\SeedCommand;
 use Illuminate\Database\ConnectionResolverInterface;
 
