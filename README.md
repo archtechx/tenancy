@@ -1,7 +1,7 @@
 # Tenancy
 
 ![Laravel 5.7](https://img.shields.io/badge/laravel-5.7-red.svg)
-![Beta - experimental](https://img.shields.io/badge/beta-experimental-yellow.svg)
+[![Latest Stable Version](https://poser.pugx.org/stancl/tenancy/version)](https://packagist.org/packages/stancl/tenancy)
 ![Travis CI build](https://travis-ci.com/stancl/tenancy.svg?branch=master)
 [![codecov](https://codecov.io/gh/stancl/tenancy/branch/master/graph/badge.svg)](https://codecov.io/gh/stancl/tenancy)
 
