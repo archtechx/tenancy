@@ -51,7 +51,7 @@ class TenantManagerTest extends TestCase
     }
 
     /** @test */
-    public function findWorks()
+    public function find_works()
     {
         tenant()->create('dev.localhost');
         tenancy()->init('dev.localhost');
@@ -60,10 +60,35 @@ class TenantManagerTest extends TestCase
     }
 
     /** @test */
-    public function getTenantByIdWorks()
+    public function getTenantById_works()
     {
         $tenant = tenant()->create('foo.localhost');
         
         $this->assertSame($tenant, tenancy()->getTenantById($tenant['uuid']));
+    }
+
+    /** @test */
+    public function init_returns_the_tenant()
+    {
+        $tenant = tenant()->create('foo.localhost');
+
+        $this->assertSame($tenant, tenancy()->init('foo.localhost'));
+    }
+
+    /** @test */
+    public function initById_returns_the_tenant()
+    {
+        $tenant = tenant()->create('foo.localhost');
+        $uuid = $tenant['uuid'];
+
+        $this->assertSame($tenant, tenancy()->initById($uuid));
+    }
+
+    /** @test */
+    public function create_returns_the_supplied_domain()
+    {
+        $domain = 'foo.localhost';
+
+        $this->assertSame($domain, tenant()->create($domain)['domain']);
     }
 }
