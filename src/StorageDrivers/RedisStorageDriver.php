@@ -49,7 +49,6 @@ class RedisStorageDriver implements StorageDriver
     public function createTenant(string $domain, string $uuid): array
     {
         $this->redis->hmset("domains:$domain", 'tenant_id', $uuid);
-        //$this->redis->hmset("tenants:$uuid", 'uuid', $uuid, 'domain', $domain);
         $this->redis->hmset("tenants:$uuid", 'uuid', json_encode($uuid), 'domain', json_encode($domain));
         return $this->redis->hgetall("tenants:$uuid");
     }
