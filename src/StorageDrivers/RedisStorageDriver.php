@@ -20,7 +20,7 @@ class RedisStorageDriver implements StorageDriver
         if (! $id) {
             throw new \Exception("Tenant could not be identified on domain {$domain}");
         }
-        return array_merge(['uuid' => $id], $this->getTenantById($id));
+        return $this->getTenantById($id);
     }
 
     /**
@@ -49,7 +49,8 @@ class RedisStorageDriver implements StorageDriver
     public function createTenant(string $domain, string $uuid): array
     {
         $this->redis->hmset("domains:$domain", 'tenant_id', $uuid);
-        $this->redis->hmset("tenants:$uuid", 'uuid', $uuid, 'domain', $domain);
+        //$this->redis->hmset("tenants:$uuid", 'uuid', $uuid, 'domain', $domain);
+        $this->redis->hmset("tenants:$uuid", 'uuid', json_encode($uuid), 'domain', json_encode($domain));
         return $this->redis->hgetall("tenants:$uuid");
     }
 
