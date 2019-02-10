@@ -16,21 +16,21 @@ class TenantManager
      *
      * @var Application
      */
-    private $app;
+    protected $app;
 
     /**
      * Storage driver for tenant metadata.
      *
      * @var StorageDriver
      */
-    private $storage;
+    protected $storage;
     
     /**
      * Database manager.
      *
      * @var DatabaseManager
      */
-    private $database;
+    protected $database;
 
     /**
      * Current tenant.
@@ -78,7 +78,7 @@ class TenantManager
             throw new \Exception("Domain $domain is already occupied by tenant $id.");
         }
 
-        $tenant = $this->storage->createTenant($domain, \Webpatser\Uuid\Uuid::generate(1, $domain));
+        $tenant = $this->jsonDecodeArrayValues($this->storage->createTenant($domain, \Webpatser\Uuid\Uuid::generate(1, $domain)));
         $this->database->create($this->getDatabaseName($tenant));
         
         return $tenant;
@@ -99,7 +99,7 @@ class TenantManager
     public function getTenantById(string $uuid, $fields = [])
     {
         $fields = (array) $fields;
-        return $this->storage->getTenantById($uuid, $fields);
+        return $this->jsonDecodeArrayValues($this->storage->getTenantById($uuid, $fields));
     }
 
     /**
@@ -163,8 +163,16 @@ class TenantManager
         return config('tenancy.database.prefix') . $tenant['uuid'] . config('tenancy.database.suffix');
     }
 
+    /**
+     * Set the tenant property to a JSON decoded version of the tenant's data obtained from storage.
+     *
+     * @param array $tenant
+     * @return array
+     */
     public function setTenant(array $tenant): array
     {
+        $tenant = $this->jsonDecodeArrayValues($tenant);
+
         $this->tenant = $tenant;
         
         return $tenant;
@@ -189,7 +197,10 @@ class TenantManager
     public function all($uuids = [])
     {
         $uuid = (array) $uuids;
-        return collect($this->storage->getAllTenants($uuids));
+
+        return collect(array_map(function ($tenant_array) {
+            return $this->jsonDecodeArrayValues($tenant_array);
+        }, $this->storage->getAllTenants($uuids)));
     }
 
     /**
@@ -217,10 +228,10 @@ class TenantManager
         $uuid = $uuid ?: $this->tenant['uuid'];
 
         if (is_array($key)) {
-            return $this->storage->getMany($uuid, $key);
+            return $this->jsonDecodeArrayValues($this->storage->getMany($uuid, $key));
         }
 
-        return $this->storage->get($uuid, $key);
+        return json_decode($this->storage->get($uuid, $key));
     }
 
     /**
@@ -248,18 +259,19 @@ class TenantManager
         }
 
         if (! is_null($value)) {
-            return $target[$key] = $this->storage->put($uuid, $key, $value);
+            return $target[$key] = json_decode($this->storage->put($uuid, $key, json_encode($value)));
         }
 
         if (! is_array($key)) {
             throw new \Exception("No value supplied for key $key.");
         }
 
-        foreach ($this->storage->putMany($uuid, $key) as $key => $value) {
-            $target[$key] = $value;
+        foreach ($key as $k => $v) {
+            $target[$k] = $v;
+            $key[$k] = json_encode($v);
         }
 
-        return $key;
+        return $this->jsonDecodeArrayValues($this->storage->putMany($uuid, $key));
     }
 
     /**
@@ -273,6 +285,15 @@ class TenantManager
     public function set($key, $value = null, string $uuid = null)
     {
         return $this->put($key, $value, $uuid);
+    }
+
+    protected function jsonDecodeArrayValues(array $array)
+    {
+        array_walk($array, function (&$value, $key) {
+            $value = json_decode($value);
+        });
+
+        return $array;
     }
 
     /**

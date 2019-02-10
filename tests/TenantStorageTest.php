@@ -6,14 +6,7 @@ use Stancl\Tenancy\Interfaces\StorageDriver;
 
 class TenantStorageTest extends TestCase
 {
-    public function setUp()
-    {
-        parent::setUp();
-
-        // todo find a way to run this for each storage driver (once there are more of them)
-
-        $this->storage = app(StorageDriver::class);
-    }
+    // todo find a way to run this for each storage driver (once there are more of them)
 
     /** @test */
     public function deleting_a_tenant_works()
@@ -32,7 +25,7 @@ class TenantStorageTest extends TestCase
     {
         tenant()->set('foo', 'bar');
 
-        $this->assertSame('bar', $this->storage->get(tenant('uuid'), 'foo'));
+        $this->assertSame('bar', tenant()->get('foo'));
     }
 
     /** @test */
@@ -40,7 +33,7 @@ class TenantStorageTest extends TestCase
     {
         tenancy()->put('foo', 'bar');
 
-        $this->assertSame('bar', $this->storage->get(tenant('uuid'), 'foo'));
+        $this->assertSame('bar', tenant()->get('foo'));
     }
 
     /** @test */
@@ -90,5 +83,27 @@ class TenantStorageTest extends TestCase
         $this->assertSame($vals, tenancy()->get($keys, $uuid));
         $this->assertNotSame($vals, tenancy()->get($keys));
         $this->assertFalse(array_intersect($data, tenant()->tenant) == $data); // assert array not subset
+    }
+
+    /** @test */
+    public function arrays_can_be_stored()
+    {
+        tenant()->put('foo', [1, 2]);
+
+        $this->assertSame([1, 2], tenant()->get('foo'));
+    }
+
+    /** @test */
+    public function put_returns_the_value_when_two_arguments_are_used()
+    {
+        $this->assertSame('bar', tenant()->put('foo', 'bar'));
+    }
+
+    /** @test */
+    public function put_returns_the_key_value_pairs_when_a_single_argument_is_used()
+    {
+        $value = ['foo' => 'bar', 'abc' => 'xyz'];
+        
+        $this->assertSame($value, tenancy()->put($value));
     }
 }
