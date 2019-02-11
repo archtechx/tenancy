@@ -94,6 +94,15 @@ class TenantStorageTest extends TestCase
     }
 
     /** @test */
+    public function associative_arrays_can_be_stored()
+    {
+        $data = ['a' => 'b', 'c' => 'd'];
+        tenant()->put('foo', $data);
+
+        $this->assertSame($data, tenant()->get('foo'));
+    }
+
+    /** @test */
     public function put_returns_the_value_when_two_arguments_are_used()
     {
         $this->assertSame('bar', tenant()->put('foo', 'bar'));

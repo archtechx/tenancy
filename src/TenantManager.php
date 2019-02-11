@@ -231,7 +231,7 @@ class TenantManager
             return $this->jsonDecodeArrayValues($this->storage->getMany($uuid, $key));
         }
 
-        return json_decode($this->storage->get($uuid, $key));
+        return json_decode($this->storage->get($uuid, $key), true);
     }
 
     /**
@@ -259,7 +259,7 @@ class TenantManager
         }
 
         if (! is_null($value)) {
-            return $target[$key] = json_decode($this->storage->put($uuid, $key, json_encode($value)));
+            return $target[$key] = json_decode($this->storage->put($uuid, $key, json_encode($value)), true);
         }
 
         if (! is_array($key)) {
@@ -290,7 +290,7 @@ class TenantManager
     protected function jsonDecodeArrayValues(array $array)
     {
         array_walk($array, function (&$value, $key) {
-            $value = json_decode($value);
+            $value = json_decode($value, true);
         });
 
         return $array;
