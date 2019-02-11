@@ -296,7 +296,20 @@ tenancy()->put(['key1' => 'value1', 'key2' => 'value2']);
 tenancy()->put(['key1' => 'value1', 'key2' => 'value2'], null, $uuid);
 ```
 
-Note that `$key` has to be a string or an array with string keys.
+Note that `$key` has to be a string or an array with string keys. The value(s) can be of any data type. Example with arrays:
+
+```php
+>>> tenant()->put('foo', ['a' => 'b', 'c' => 'd']);
+=> [ // put() returns the supplied value(s)
+     "a" => "b",
+     "c" => "d",
+   ]
+>>> tenant()->get('foo');
+=> [
+     "a" => "b",
+     "c" => "d",
+   ]
+```
 
 ## Database
 
