@@ -65,8 +65,10 @@ class BootstrapsTenancyTest extends TestCase
     /** @test */
     public function cache_is_tagged()
     {
-        $this->markTestIncomplete('see BootstrapsTenancyTest@cache_is_tagged');
-        // todo check that tags are set
-        // doesn't seem to be possible right now? can't find a way to get TaggedCache's tags
+        $this->assertSame(['foo'], cache()->tags('foo')->getTags()->getNames());
+        $this->initTenancy();
+
+        $expected = [config('tenancy.cache.tag_base') . tenant('uuid'), 'foo', 'bar'];
+        $this->assertEquals($expected, cache()->tags(['foo', 'bar'])->getTags()->getNames());
     }
 }
