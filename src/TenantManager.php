@@ -147,9 +147,15 @@ class TenantManager
      */
     public function findByDomain(string $domain = null, $fields = [])
     {
-        $domain = $domain ?: $this->currentDomain();
+        $domain = $domain ? : $this->currentDomain();
 
-        return $this->find($this->getIdByDomain($domain), $fields);
+        $uuid = $this->getIdByDomain($domain);
+
+        if (is_null($uuid)) {
+            throw new \Exception("Tenant with domain $domain could not be identified.");
+        }
+
+        return $this->find($uuid, $fields);
     }
 
     public static function currentDomain(): ?string

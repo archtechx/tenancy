@@ -91,4 +91,11 @@ class TenantManagerTest extends TestCase
 
         $this->assertSame($domain, tenant()->create($domain)['domain']);
     }
+
+    /** @test */
+    public function find_by_domain_throws_an_exception_when_an_unused_domain_is_supplied()
+    {
+        $this->expectException(\Exception::class);
+        tenancy()->findByDomain('nonexistent.domain');
+    }
 }
