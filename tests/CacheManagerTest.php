@@ -43,8 +43,8 @@ class CacheManagerTest extends TestCase
     {
         tenant()->create('foo.localhost');
         tenancy()->init('foo.localhost');
+
         cache()->put('foo', 'bar', 1);
-        
         $this->assertSame('bar', cache()->get('foo'));
 
         tenant()->create('bar.localhost');
@@ -53,7 +53,6 @@ class CacheManagerTest extends TestCase
         $this->assertNotSame('bar', cache()->get('foo'));
         
         cache()->put('foo', 'xyz', 1);
-
         $this->assertSame('xyz', cache()->get('foo'));
     }
 
@@ -62,8 +61,8 @@ class CacheManagerTest extends TestCase
     {
         tenant()->create('foo.localhost');
         tenancy()->init('foo.localhost');
-        cache(['foo' => 'bar'], 1);
 
+        cache(['foo' => 'bar'], 1);
         $this->assertSame('bar', cache('foo'));
 
         tenant()->create('bar.localhost');
@@ -72,7 +71,6 @@ class CacheManagerTest extends TestCase
         $this->assertNotSame('bar', cache('foo'));
 
         cache(['foo' => 'xyz'], 1);
-
         $this->assertSame('xyz', cache('foo'));
     }
 }
