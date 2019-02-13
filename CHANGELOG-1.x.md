@@ -1,5 +1,11 @@
 # Release Notes for 1.x
 
+## [v1.1.3 (2019-02-13)](https://github.com/stancl/tenancy/compare/v1.1.2...v1.1.3)
+
+### Fixed
+- Fix CacheManager (it merged tags incorrectly), write tests for CacheManager [#31](https://github.com/stancl/tenancy/issues/31) [`a2d68b1`](https://github.com/stancl/tenancy/commit/a2d68b12611350f70befa3eb97fb56c99d006b54)
+
+
 ## [v1.1.2 (2019-02-13)](https://github.com/stancl/tenancy/compare/v1.1.1...v1.1.2)
 
 ### Fixed
