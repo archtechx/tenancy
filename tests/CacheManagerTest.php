@@ -41,12 +41,14 @@ class CacheManagerTest extends TestCase
     /** @test */
     public function tags_separate_cache_well_enough()
     {
+        tenant()->create('foo.localhost');
+        tenancy()->init('foo.localhost');
         cache()->put('foo', 'bar', 1);
         
         $this->assertSame('bar', cache()->get('foo'));
 
-        tenant()->create('foo.localhost');
-        tenancy()->init();
+        tenant()->create('bar.localhost');
+        tenancy()->init('bar.localhost');
 
         $this->assertNotSame('bar', cache()->get('foo'));
         
@@ -58,12 +60,14 @@ class CacheManagerTest extends TestCase
     /** @test */
     public function invoking_the_cache_helper_works()
     {
+        tenant()->create('foo.localhost');
+        tenancy()->init('foo.localhost');
         cache(['foo' => 'bar'], 1);
 
         $this->assertSame('bar', cache('foo'));
 
-        tenant()->create('foo.localhost');
-        tenancy()->init();
+        tenant()->create('bar.localhost');
+        tenancy()->init('bar.localhost');
 
         $this->assertNotSame('bar', cache('foo'));
 
