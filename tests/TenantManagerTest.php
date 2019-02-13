@@ -93,7 +93,7 @@ class TenantManagerTest extends TestCase
     }
 
     /** @test */
-    public function find_by_domain_throws_an_exception_when_an_unused_domain_is_supplied()
+    public function findByDomain_throws_an_exception_when_an_unused_domain_is_supplied()
     {
         $this->expectException(\Exception::class);
         tenancy()->findByDomain('nonexistent.domain');
