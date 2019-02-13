@@ -1,7 +1,5 @@
 <?php
 
-use Stancl\Tenancy\TenantManager;
-
 if (! function_exists('tenancy')) {
     function tenancy($key = null)
     {
