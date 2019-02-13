@@ -11,7 +11,7 @@ class CacheManager extends BaseCacheManager
         $tags = [config('tenancy.cache.tag_base') . tenant('uuid')];
         
         if ($method === "tags") {
-            if (count($parameters == 1) && is_array($parameters[0])) {
+            if (count($parameters) == 1 && is_array($parameters[0])) {
                 $parameters = [$parameters]; // cache()->tags('foo') https://laravel.com/docs/5.7/cache#removing-tagged-cache-items
             }
 
