@@ -37,4 +37,38 @@ class CacheManagerTest extends TestCase
         $this->expectException(\Exception::class);
         cache()->tags(1, 2);
     }
+
+    /** @test */
+    public function tags_separate_cache_well_enough()
+    {
+        cache()->put('foo', 'bar', 1);
+        
+        $this->assertSame('bar', cache()->get('foo'));
+
+        tenant()->create('foo.localhost');
+        tenancy()->init();
+
+        $this->assertNotSame('bar', cache()->get('foo'));
+        
+        cache()->put('foo', 'xyz', 1);
+
+        $this->assertSame('xyz', cache()->get('foo'));
+    }
+
+    /** @test */
+    public function invoking_the_cache_helper_works()
+    {
+        cache(['foo' => 'bar'], 1);
+
+        $this->assertSame('bar', cache('foo'));
+
+        tenant()->create('foo.localhost');
+        tenancy()->init();
+
+        $this->assertNotSame('bar', cache('foo'));
+
+        cache(['foo' => 'xyz'], 1);
+
+        $this->assertSame('xyz', cache('foo'));
+    }
 }
