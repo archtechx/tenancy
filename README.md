@@ -133,7 +133,7 @@ Read the [Storage driver](#storage-driver) section for more information.
 
 ## Obtaining a `TenantManager` instance
 
-You can use the `tenancy()` and `tenant()` helpers to resolve `Stancl\Tenancy\TenantManager` out of the service container. These two helpers are exactly the same, the only reason there are two is nice syntax. `tenancy()->init()` sounds better than `tenant()->init()` and `tenant()->create()` sounds better than `tenancy()->create()`.
+You can use the `tenancy()` and `tenant()` helpers to resolve `Stancl\Tenancy\TenantManager` out of the service container. These two helpers are exactly the same, the only reason there are two is nice syntax. `tenancy()->init()` sounds better than `tenant()->init()` and `tenant()->create()` sounds better than `tenancy()->create()`. **You may also use the `Tenancy` facade.**
 
 ### Creating a new tenant
 

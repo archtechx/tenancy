@@ -37,7 +37,10 @@
         "laravel": {
             "providers": [
                 "Stancl\\Tenancy\\TenancyServiceProvider"
-            ]
+            ],
+            "aliases": {
+                "Tenancy": "Stancl\\Tenancy\\TenancyFacade"
+            }
         }
     }
 }
