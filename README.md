@@ -333,7 +333,7 @@ Assuming the following tenancy config:
 ```php
 'filesystem' => [
     'suffix_base' => 'tenant',
-    // Disks which should be suffixed with the prefix_base + tenant UUID.
+    // Disks which should be suffixed with the suffix_base + tenant UUID.
     'disks' => [
         'local',
         // 'public',
