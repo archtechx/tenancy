@@ -49,6 +49,8 @@ class Migrate extends MigrateCommand
 
         $this->input->setOption('database', 'tenant');
 
+        dd($this->option('tenants'));
+
         tenant()->all($this->option('tenants'))->each(function ($tenant) {
             $this->line("Tenant: {$tenant['uuid']} ({$tenant['domain']})");
             $this->database->connectToTenant($tenant);

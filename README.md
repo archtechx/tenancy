@@ -25,8 +25,6 @@ composer require stancl/tenancy
 
 This package follows [semantic versioning 2.0.0](https://semver.org). Each major release will have its own branch, so that bug fixes can be provided for older versions as well.
 
-Supported versions of Laravel are 5.7 and 5.8.
-
 ### Configuring the `InitializeTenancy` middleware
 
 The `TenancyServiceProvider` automatically adds the `tenancy` middleware group which can be assigned to routes. You only need to make sure the middleware is top priority.
