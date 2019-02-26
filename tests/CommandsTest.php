@@ -19,10 +19,13 @@ class CommandsTest extends TestCase
     /** @test */
     public function migrate_command_doesnt_change_the_db_connection()
     {
+        $this->assertFalse(Schema::hasTable('users'));
+
         $old_connection_name = app(\Illuminate\Database\DatabaseManager::class)->connection()->getName();
         Artisan::call('tenants:migrate');
         $new_connection_name = app(\Illuminate\Database\DatabaseManager::class)->connection()->getName();
 
+        $this->assertFalse(Schema::hasTable('users'));
         $this->assertEquals($old_connection_name, $new_connection_name);
         $this->assertNotEquals('tenant', $new_connection_name);
     }
@@ -33,20 +36,27 @@ class CommandsTest extends TestCase
         $this->assertFalse(Schema::hasTable('users'));
         Artisan::call('tenants:migrate');
         $this->assertFalse(Schema::hasTable('users'));
-        tenancy()->init();
+        tenancy()->init('localhost');
         $this->assertTrue(Schema::hasTable('users'));
     }
 
     /** @test */
     public function migrate_command_works_with_tenants_option()
     {
+        // connection is sqlite
+        dump(Schema::getConnection()->getName());
+        
         $tenant = tenant()->create('test.localhost');
         Artisan::call('tenants:migrate', [
             '--tenants' => [$tenant['uuid']]
         ]);
 
+        // connection should be tenant at this point. is still sqlite
+        dump(Schema::getConnection()->getName());
+        // if you remove line 47, connection will be tenant at this point
+
         $this->assertFalse(Schema::hasTable('users'));
-        tenancy()->init();
+        tenancy()->init('localhost');
         $this->assertFalse(Schema::hasTable('users'));
 
         tenancy()->init('test.localhost');
@@ -58,7 +68,7 @@ class CommandsTest extends TestCase
     {
         Artisan::call('tenants:migrate');
         $this->assertFalse(Schema::hasTable('users'));
-        tenancy()->init();
+        tenancy()->init('localhost');
         $this->assertTrue(Schema::hasTable('users'));
         Artisan::call('tenants:rollback');
         $this->assertFalse(Schema::hasTable('users'));
