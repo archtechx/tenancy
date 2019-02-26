@@ -10,12 +10,12 @@
         }
     ],
     "require": {
-        "illuminate/support": "^5.7",
+        "illuminate/support": "^5.8",
         "webpatser/laravel-uuid": "^3.0"
     },
     "require-dev": {
-        "orchestra/testbench": "~3.0",
-        "laravel/framework": "5.7.*",
+        "orchestra/testbench": "~3.8",
+        "laravel/framework": "5.8.*",
         "vlucas/phpdotenv": "^2.2",
         "psy/psysh": "@stable",
         "league/flysystem-aws-s3-v3": "~1.0"
