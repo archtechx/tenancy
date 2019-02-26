@@ -45,16 +45,18 @@ class CommandsTest extends TestCase
     {
         // connection is sqlite
         dump(Schema::getConnection()->getName());
-        
-        $tenant = tenant()->create('test.localhost');
-        Artisan::call('tenants:migrate', [
-            '--tenants' => [$tenant['uuid']]
-        ]);
+
+        tenancy()->init('localhost'); // reconnect the DB
 
         // connection should be tenant at this point. is still sqlite
         dump(Schema::getConnection()->getName());
         // if you remove line 47, connection will be tenant at this point
         dd('stop');
+
+        $tenant = tenant()->create('test.localhost');
+        Artisan::call('tenants:migrate', [
+            '--tenants' => [$tenant['uuid']]
+        ]);
 
         $this->assertFalse(Schema::hasTable('users'));
         tenancy()->init('localhost');
