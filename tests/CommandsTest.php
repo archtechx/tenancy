@@ -9,7 +9,7 @@ class CommandsTest extends TestCase
 {
     public $autoInitTenancy = false;
 
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
@@ -30,6 +30,7 @@ class CommandsTest extends TestCase
     /** @test */
     public function migrate_command_works_without_options()
     {
+        $this->assertFalse(Schema::hasTable('users'));
         Artisan::call('tenants:migrate');
         $this->assertFalse(Schema::hasTable('users'));
         tenancy()->init();
