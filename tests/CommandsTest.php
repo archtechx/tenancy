@@ -54,6 +54,7 @@ class CommandsTest extends TestCase
         // connection should be tenant at this point. is still sqlite
         dump(Schema::getConnection()->getName());
         // if you remove line 47, connection will be tenant at this point
+        dd('stop');
 
         $this->assertFalse(Schema::hasTable('users'));
         tenancy()->init('localhost');
