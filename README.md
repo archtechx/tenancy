@@ -25,7 +25,7 @@ composer require stancl/tenancy
 
 This package follows [semantic versioning 2.0.0](https://semver.org). Each major release will have its own branch, so that bug fixes can be provided for older versions as well.
 
-Both Laravel 5.7 and 5.8 is supported.
+Both Laravel 5.7 and 5.8 are supported.
 
 ### Configuring the `InitializeTenancy` middleware
 
