@@ -1,5 +1,6 @@
 env:
-  - DB_USERNAME=root DB_PASSWORD="" DB_DATABASE=travis_tenancy CODECOV_TOKEN="24382d15-84e7-4a55-bea4-c4df96a24a9b"
+  - LARAVEL_VERSION="5.7.*" TESTBENCH_VERSION="~3.7"
+  - LARAVEL_VERSION="5.8.*" TESTBENCH_VERSION="~3.8"
 
 language: php
 php:
@@ -14,10 +15,13 @@ before_install:
   - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
 
 install:
+  - composer require "laravel/framework:$LARAVEL_VERSION"
+  - composer require "orchestra/testbench:$TESTBENCH_VERSION"
   - travis_retry composer install --no-interaction
 
 before_script:
   - mysql -e 'CREATE DATABASE travis_tenancy;'
+  - export DB_USERNAME=root DB_PASSWORD="" DB_DATABASE=travis_tenancy CODECOV_TOKEN="24382d15-84e7-4a55-bea4-c4df96a24a9b"
 
 script: vendor/bin/phpunit -v --coverage-clover=coverage.xml
 

@@ -48,7 +48,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     protected function getEnvironmentSetUp($app)
     {
         if (file_exists(__DIR__ . '/../.env')) {
-            \Dotenv\Dotenv::create(__DIR__ . '/..')->load();
+            $this->loadDotEnv();
         }
 
         $app['config']->set([
@@ -73,6 +73,15 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 's3',
             ],
         ]);
+    }
+
+    protected function loadDotEnv()
+    {
+        if (app()::VERSION > '5.8.0') {
+            \Dotenv\Dotenv::create(__DIR__ . '/..')->load();
+        } else {
+            (new \Dotenv\Dotenv(__DIR__ . '/..'))->load();
+        }
     }
 
     protected function getPackageProviders($app)
