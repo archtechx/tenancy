@@ -43,16 +43,6 @@ class CommandsTest extends TestCase
     /** @test */
     public function migrate_command_works_with_tenants_option()
     {
-        // connection is sqlite
-        dump(Schema::getConnection()->getName());
-
-        tenancy()->init('localhost'); // reconnect the DB
-
-        // connection should be tenant at this point. is still sqlite
-        dump(Schema::getConnection()->getName());
-        // if you remove line 47, connection will be tenant at this point
-        dd('stop');
-
         $tenant = tenant()->create('test.localhost');
         Artisan::call('tenants:migrate', [
             '--tenants' => [$tenant['uuid']]
