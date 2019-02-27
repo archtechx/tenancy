@@ -1,9 +1,15 @@
 # Release Notes for 1.x
 
+## [v1.3.0 (2019-02-27)](https://github.com/stancl/tenancy/compare/v1.2.0...v1.3.0)
+
+### Added
+- Add 5.8 support [#33](https://github.com/stancl/tenancy/pull/33)
+
+
 ## [v1.2.0 (2019-02-15)](https://github.com/stancl/tenancy/compare/v1.1.3...v1.2.0)
 
 ### Added
-- Add `Tenancy` facade [#29](https://github.com/stancl/tenancy/issues/29) [`[987c54f`](https://github.com/stancl/tenancy/commit/987c54f04e6ff3bdef068d92da6a9ace847f6c37)
+- Add `Tenancy` facade [#29](https://github.com/stancl/tenancy/issues/29) [`987c54f`](https://github.com/stancl/tenancy/commit/987c54f04e6ff3bdef068d92da6a9ace847f6c37)
 
 
 ## [v1.1.3 (2019-02-13)](https://github.com/stancl/tenancy/compare/v1.1.2...v1.1.3)
