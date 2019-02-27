@@ -102,4 +102,9 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         // set one of these environment vars on their computer.
         return env('CI') && env('TRAVIS') && env('CONTINUOUS_INTEGRATION');
     }
+
+    public function assertArrayIsSubset($subset, $array, string $message = ''): void
+    {
+        parent::assertTrue(array_intersect($subset, $array) == $subset, $message);
+    }
 }
