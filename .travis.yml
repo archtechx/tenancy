@@ -14,8 +14,7 @@ before_install:
   - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
 
 install:
-  - composer require "laravel/framework:$LARAVEL_VERSION"
-  - composer require "orchestra/testbench:$TESTBENCH_VERSION"
+  - composer require "laravel/framework:$LARAVEL_VERSION" "orchestra/testbench:$TESTBENCH_VERSION"
   - travis_retry composer install --no-interaction
 
 before_script:
