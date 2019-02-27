@@ -10,14 +10,14 @@
         }
     ],
     "require": {
-        "illuminate/support": "^5.7",
+        "illuminate/support": "5.7.*||5.8.*",
         "webpatser/laravel-uuid": "^3.0"
     },
     "require-dev": {
-        "orchestra/testbench": "~3.0",
-        "laravel/framework": "5.7.*",
-        "vlucas/phpdotenv": "^2.2",
+        "vlucas/phpdotenv": "^2.2||^3.3",
         "psy/psysh": "@stable",
+        "laravel/framework": "5.7.*||5.8.*",
+        "orchestra/testbench": "~3.7||~3.8",
         "league/flysystem-aws-s3-v3": "~1.0"
     },
     "autoload": {
@@ -42,5 +42,7 @@
                 "Tenancy": "Stancl\\Tenancy\\TenancyFacade"
             }
         }
-    }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }

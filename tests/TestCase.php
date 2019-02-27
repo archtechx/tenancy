@@ -14,7 +14,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
      *
      * @return void
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -48,7 +48,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     protected function getEnvironmentSetUp($app)
     {
         if (file_exists(__DIR__ . '/../.env')) {
-            (new \Dotenv\Dotenv(__DIR__ . '/..'))->load();
+            $this->loadDotEnv();
         }
 
         $app['config']->set([
@@ -73,6 +73,15 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 's3',
             ],
         ]);
+    }
+
+    protected function loadDotEnv()
+    {
+        if (app()::VERSION > '5.8.0') {
+            \Dotenv\Dotenv::create(__DIR__ . '/..')->load();
+        } else {
+            (new \Dotenv\Dotenv(__DIR__ . '/..'))->load();
+        }
     }
 
     protected function getPackageProviders($app)
@@ -101,5 +110,10 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         // Multiple, just to make sure. Someone might accidentally
         // set one of these environment vars on their computer.
         return env('CI') && env('TRAVIS') && env('CONTINUOUS_INTEGRATION');
+    }
+
+    public function assertArrayIsSubset($subset, $array, string $message = ''): void
+    {
+        parent::assertTrue(array_intersect($subset, $array) == $subset, $message);
     }
 }

@@ -9,7 +9,7 @@ class CommandsTest extends TestCase
 {
     public $autoInitTenancy = false;
 
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
@@ -19,10 +19,13 @@ class CommandsTest extends TestCase
     /** @test */
     public function migrate_command_doesnt_change_the_db_connection()
     {
+        $this->assertFalse(Schema::hasTable('users'));
+
         $old_connection_name = app(\Illuminate\Database\DatabaseManager::class)->connection()->getName();
         Artisan::call('tenants:migrate');
         $new_connection_name = app(\Illuminate\Database\DatabaseManager::class)->connection()->getName();
 
+        $this->assertFalse(Schema::hasTable('users'));
         $this->assertEquals($old_connection_name, $new_connection_name);
         $this->assertNotEquals('tenant', $new_connection_name);
     }
@@ -30,9 +33,10 @@ class CommandsTest extends TestCase
     /** @test */
     public function migrate_command_works_without_options()
     {
+        $this->assertFalse(Schema::hasTable('users'));
         Artisan::call('tenants:migrate');
         $this->assertFalse(Schema::hasTable('users'));
-        tenancy()->init();
+        tenancy()->init('localhost');
         $this->assertTrue(Schema::hasTable('users'));
     }
 
@@ -45,7 +49,7 @@ class CommandsTest extends TestCase
         ]);
 
         $this->assertFalse(Schema::hasTable('users'));
-        tenancy()->init();
+        tenancy()->init('localhost');
         $this->assertFalse(Schema::hasTable('users'));
 
         tenancy()->init('test.localhost');
@@ -57,7 +61,7 @@ class CommandsTest extends TestCase
     {
         Artisan::call('tenants:migrate');
         $this->assertFalse(Schema::hasTable('users'));
-        tenancy()->init();
+        tenancy()->init('localhost');
         $this->assertTrue(Schema::hasTable('users'));
         Artisan::call('tenants:rollback');
         $this->assertFalse(Schema::hasTable('users'));

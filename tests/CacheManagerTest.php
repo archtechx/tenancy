@@ -7,7 +7,7 @@ class CacheManagerTest extends TestCase
     /** @test */
     public function default_tag_is_automatically_applied()
     {
-        $this->assertArraySubset([config('tenancy.cache.tag_base') . tenant('uuid')], cache()->tags('foo')->getTags()->getNames());
+        $this->assertArrayIsSubset([config('tenancy.cache.tag_base') . tenant('uuid')], cache()->tags('foo')->getTags()->getNames());
     }
 
     /** @test */

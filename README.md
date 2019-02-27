@@ -1,6 +1,6 @@
 # Tenancy
 
-[![Laravel 5.7](https://img.shields.io/badge/laravel-5.7-red.svg)](https://laravel.com)
+[![Laravel 5.7+](https://img.shields.io/badge/laravel-5.7+-red.svg)](https://laravel.com)
 [![Latest Stable Version](https://poser.pugx.org/stancl/tenancy/version)](https://packagist.org/packages/stancl/tenancy)
 [![Travis CI build](https://travis-ci.com/stancl/tenancy.svg?branch=master)](https://travis-ci.com/stancl/tenancy)
 [![codecov](https://codecov.io/gh/stancl/tenancy/branch/master/graph/badge.svg)](https://codecov.io/gh/stancl/tenancy)
@@ -24,6 +24,8 @@ composer require stancl/tenancy
 ```
 
 This package follows [semantic versioning 2.0.0](https://semver.org). Each major release will have its own branch, so that bug fixes can be provided for older versions as well.
+
+Both Laravel 5.7 and 5.8 are supported.
 
 ### Configuring the `InitializeTenancy` middleware
 
