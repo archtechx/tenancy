@@ -2,7 +2,7 @@
 
 namespace Stancl\Tenancy\Tests;
 
-use Stancl\Tenancy\TenancyFacade as Tenancy;
+use Tenancy;
 
 class FacadeTest extends TestCase
 {

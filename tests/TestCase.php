@@ -89,6 +89,13 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         return [\Stancl\Tenancy\TenancyServiceProvider::class];
     }
 
+    protected function getPackageAliases($app)
+    {
+        return [
+            'Tenancy' => \Stancl\Tenancy\TenancyFacade::class
+        ];
+    }
+
     /**
      * Resolve application HTTP Kernel implementation.
      *
