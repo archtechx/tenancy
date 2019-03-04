@@ -25,13 +25,7 @@ class InitializeTenancy
         try {
             tenancy()->init();
         } catch (\Exception $e) {
-            // Pass the exception to the onFail function if it takes any parameters.
-            $callback = $this->onFail;
-            if ((new \ReflectionFunction($callback))->getNumberOfParameters() > 0) {
-                $callback($e);
-            } else {
-                $callback();
-            }
+            ($this->onFail)($e);
         }
 
         return $next($request);
