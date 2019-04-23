@@ -12,6 +12,6 @@ interface StorageDriver
     public function deleteTenant(string $uuid): bool;
     public function get(string $uuid, string $key);
     public function getMany(string $uuid, array $keys): array;
-    public function put(string $uuid, string $key, $value): array;
-    public function putMany(string $uuid, array $values); // todo better argument name than "values" for kv pairs?
+    public function put(string $uuid, string $key, $value);
+    public function putMany(string $uuid, array $values): array; // todo better argument name than "values" for kv pairs?
 }
