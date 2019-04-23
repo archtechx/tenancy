@@ -23,7 +23,7 @@ class InitializeTenancy
     public function handle($request, Closure $next)
     {
         try {
-            tenancy()->init();
+            \tenancy()->init();
         } catch (\Exception $e) {
             // Pass the exception to the onFail function if it takes any parameters.
             $callback = $this->onFail;

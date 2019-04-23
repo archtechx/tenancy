@@ -38,7 +38,7 @@ class TenantList extends Command
     public function handle()
     {
         $this->info("Listing all tenants.");
-        tenancy()->all()->each(function ($tenant) {
+        \tenancy()->all()->each(function ($tenant) {
             $this->line("[Tenant] uuid: {$tenant['uuid']} @ {$tenant['domain']}");
         });
     }

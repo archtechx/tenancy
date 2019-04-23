@@ -38,7 +38,7 @@ class RedisStorageDriver implements StorageDriver
             return $this->redis->hgetall("tenants:$uuid");
         }
 
-        return array_combine($fields, $this->redis->hmget("tenants:$uuid", $fields));
+        return \array_combine($fields, $this->redis->hmget("tenants:$uuid", $fields));
     }
 
     public function getTenantIdByDomain(string $domain): ?string
@@ -49,7 +49,7 @@ class RedisStorageDriver implements StorageDriver
     public function createTenant(string $domain, string $uuid): array
     {
         $this->redis->hmset("domains:$domain", 'tenant_id', $uuid);
-        $this->redis->hmset("tenants:$uuid", 'uuid', json_encode($uuid), 'domain', json_encode($domain));
+        $this->redis->hmset("tenants:$uuid", 'uuid', \json_encode($uuid), 'domain', \json_encode($domain));
         return $this->redis->hgetall("tenants:$uuid");
     }
 
@@ -67,13 +67,13 @@ class RedisStorageDriver implements StorageDriver
 
     public function getAllTenants(array $uuids = []): array
     {
-        $hashes = array_map(function ($hash) {
+        $hashes = \array_map(function ($hash) {
             return "tenants:{$hash}";
         }, $uuids);
 
         $hashes = $hashes ?: $this->redis->scan(null, 'tenants:*');
 
-        return array_map(function ($tenant) {
+        return \array_map(function ($tenant) {
             return $this->redis->hgetall($tenant);
         }, $hashes);
     }

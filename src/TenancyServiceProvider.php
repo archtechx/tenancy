@@ -12,7 +12,6 @@ use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Commands\TenantList;
 use Stancl\Tenancy\Interfaces\StorageDriver;
 use Stancl\Tenancy\Interfaces\ServerConfigManager;
-use Stancl\Tenancy\StorageDrivers\RedisStorageDriver;
 
 class TenancyServiceProvider extends ServiceProvider
 {
@@ -33,7 +32,7 @@ class TenancyServiceProvider extends ServiceProvider
         }
 
         $this->publishes([
-            __DIR__ . '/config/tenancy.php' => config_path('tenancy.php'),
+            __DIR__ . '/config/tenancy.php' => \config_path('tenancy.php'),
         ], 'config');
 
         $this->loadRoutesFrom(__DIR__ . '/routes.php');

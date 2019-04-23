@@ -13,7 +13,7 @@ class DatabaseManager
 
     public function __construct(BaseDatabaseManager $database)
     {
-        $this->originalDefaultConnection = config('database.default');
+        $this->originalDefaultConnection = \config('database.default');
         $this->database = $database;
     }
 
@@ -26,7 +26,7 @@ class DatabaseManager
 
     public function connectToTenant($tenant)
     {
-        $this->connect(tenant()->getDatabaseName($tenant));
+        $this->connect(\tenant()->getDatabaseName($tenant));
     }
 
     public function disconnect()
@@ -41,16 +41,16 @@ class DatabaseManager
         $this->createTenantConnection($name);
         $driver = $driver ?: $this->getDriver();
 
-        $databaseManagers = config('tenancy.database_managers');
+        $databaseManagers = \config('tenancy.database_managers');
 
-        if (! array_key_exists($driver, $databaseManagers)) {
+        if (! \array_key_exists($driver, $databaseManagers)) {
             throw new \Exception("Database could not be created: no database manager for driver $driver is registered.");
         }
 
-        if (config('tenancy.queue_database_creation', false)) {
-            QueuedTenantDatabaseCreator::dispatch(app($databaseManagers[$driver]), $name, 'create');
+        if (\config('tenancy.queue_database_creation', false)) {
+            QueuedTenantDatabaseCreator::dispatch(\app($databaseManagers[$driver]), $name, 'create');
         } else {
-            app($databaseManagers[$driver])->createDatabase($name);
+            \app($databaseManagers[$driver])->createDatabase($name);
         }
     }
 
