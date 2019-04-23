@@ -78,7 +78,7 @@ class TenantManager
             throw new \Exception("Domain $domain is already occupied by tenant $id.");
         }
 
-        $tenant = $this->jsonDecodeArrayValues($this->storage->createTenant($domain, \Webpatser\Uuid\Uuid::generate(1, $domain)));
+        $tenant = $this->jsonDecodeArrayValues($this->storage->createTenant($domain, (string) \Webpatser\Uuid\Uuid::generate(1, $domain)));
         $this->database->create($this->getDatabaseName($tenant));
         
         return $tenant;
