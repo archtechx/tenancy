@@ -22,9 +22,49 @@ class TenantDatabaseManagerTest extends TestCase
     }
 
     /** @test */
+    public function sqlite_database_can_be_created_and_deleted_using_queued_commands()
+    {
+        $db_name = 'testdatabase' . $this->randomString(10) . '.sqlite';
+
+        $databaseManagers = config('tenancy.database_managers');
+        $job = new QueuedTenantDatabaseCreator(app($databaseManagers['sqlite']), $db_name);
+        $job->handle();
+
+        $this->assertFileExists(database_path($db_name));
+
+        $job = new QueuedTenantDatabaseDeleter(app($databaseManagers['sqlite']), $db_name);
+        $job->handle();
+        $this->assertFileNotExists(database_path($db_name));
+    }
+
+    /** @test */
     public function mysql_database_can_be_created_and_deleted()
     {
         if (! $this->isTravis()) {
+            $this->markTestSkipped('As to not bloat your MySQL instance with test databases, this test is not run by default.');
+        }
+
+        config()->set('database.default', 'mysql');
+
+        $db_name = 'testdatabase' . $this->randomString(10);
+
+        $databaseManagers = config('tenancy.database_managers');
+        $job = new QueuedTenantDatabaseCreator(app($databaseManagers['mysql']), $db_name);
+        $job->handle();
+
+        $this->assertNotEmpty(DB::select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$db_name'"));
+
+        $databaseManagers = config('tenancy.database_managers');
+        $job = new QueuedTenantDatabaseDeleter(app($databaseManagers['mysql']), $db_name);
+        $job->handle();
+
+        $this->assertEmpty(DB::select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$db_name'"));
+    }
+
+    /** @test */
+    public function mysql_database_can_be_created_and_deleted_using_queued_commands()
+    {
+        if (!$this->isTravis()) {
             $this->markTestSkipped('As to not bloat your MySQL instance with test databases, this test is not run by default.');
         }
 
