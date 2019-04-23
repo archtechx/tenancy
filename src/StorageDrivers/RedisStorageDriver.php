@@ -83,7 +83,7 @@ class RedisStorageDriver implements StorageDriver
         return $this->redis->hget("tenants:$uuid", $key);
     }
 
-    public function getMany(string $uuid, array $keys)
+    public function getMany(string $uuid, array $keys): array
     {
         return $this->redis->hmget("tenants:$uuid", $keys);
     }
@@ -94,7 +94,7 @@ class RedisStorageDriver implements StorageDriver
         return $value;
     }
 
-    public function putMany(string $uuid, array $values)
+    public function putMany(string $uuid, array $values): array
     {
         $this->redis->hmset("tenants:$uuid", $values);
         return $values;
