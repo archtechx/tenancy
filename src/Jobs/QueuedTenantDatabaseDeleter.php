@@ -37,6 +37,6 @@ class QueuedTenantDatabaseDeleter implements ShouldQueue
      */
     public function handle()
     {
-        $this->databaseManager->deleteDatabase($databaseName);
+        $this->databaseManager->deleteDatabase($this->databaseName);
     }
 }
