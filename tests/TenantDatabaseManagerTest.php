@@ -47,6 +47,23 @@ class TenantDatabaseManagerTest extends TestCase
         config()->set('database.default', 'mysql');
 
         $db_name = 'testdatabase' . $this->randomString(10);
+        app(DatabaseManager::class)->create($db_name, 'mysql');
+        $this->assertNotEmpty(DB::select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$db_name'"));
+
+        app(DatabaseManager::class)->delete($db_name, 'mysql');
+        $this->assertEmpty(DB::select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$db_name'"));
+    }
+
+    /** @test */
+    public function mysql_database_can_be_created_and_deleted_using_queued_commands()
+    {
+        if (! $this->isTravis()) {
+            $this->markTestSkipped('As to not bloat your MySQL instance with test databases, this test is not run by default.');
+        }
+
+        config()->set('database.default', 'mysql');
+
+        $db_name = 'testdatabase' . $this->randomString(10);
 
         $databaseManagers = config('tenancy.database_managers');
         $job = new QueuedTenantDatabaseCreator(app($databaseManagers['mysql']), $db_name);
@@ -58,23 +75,6 @@ class TenantDatabaseManagerTest extends TestCase
         $job = new QueuedTenantDatabaseDeleter(app($databaseManagers['mysql']), $db_name);
         $job->handle();
 
-        $this->assertEmpty(DB::select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$db_name'"));
-    }
-
-    /** @test */
-    public function mysql_database_can_be_created_and_deleted_using_queued_commands()
-    {
-        if (!$this->isTravis()) {
-            $this->markTestSkipped('As to not bloat your MySQL instance with test databases, this test is not run by default.');
-        }
-
-        config()->set('database.default', 'mysql');
-
-        $db_name = 'testdatabase' . $this->randomString(10);
-        app(DatabaseManager::class)->create($db_name, 'mysql');
-        $this->assertNotEmpty(DB::select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$db_name'"));
-
-        app(DatabaseManager::class)->delete($db_name, 'mysql');
         $this->assertEmpty(DB::select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$db_name'"));
     }
 
