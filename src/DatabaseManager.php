@@ -2,7 +2,6 @@
 
 namespace Stancl\Tenancy;
 
-use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseDeleter;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;

@@ -26,7 +26,7 @@ trait BootstrapsTenancy
     public function setPhpRedisPrefix($connections = ['default'])
     {
         foreach ($connections as $connection) {
-            $prefix = config('tenancy.redis.prefix_base') . $this->tenant['uuid'];
+            $prefix = $this->app['config']['tenancy.redis.prefix_base'] . $this->tenant['uuid'];
             $client = Redis::connection($connection)->client();
             $client->setOption($client::OPT_PREFIX, $prefix);
         }

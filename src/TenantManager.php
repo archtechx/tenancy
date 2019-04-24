@@ -2,7 +2,6 @@
 
 namespace Stancl\Tenancy;
 
-use Illuminate\Support\Facades\Redis;
 use Stancl\Tenancy\Interfaces\StorageDriver;
 use Stancl\Tenancy\Traits\BootstrapsTenancy;
 use Illuminate\Contracts\Foundation\Application;
@@ -166,7 +165,7 @@ class TenantManager
     public function getDatabaseName($tenant = []): string
     {
         $tenant = $tenant ?: $this->tenant;
-        return config('tenancy.database.prefix') . $tenant['uuid'] . config('tenancy.database.suffix');
+        return $this->app['config']['tenancy.database.prefix'] . $tenant['uuid'] . $this->app['config']['tenancy.database.suffix'];
     }
 
     /**
@@ -233,7 +232,7 @@ class TenantManager
     {
         $uuid = $uuid ?: $this->tenant['uuid'];
 
-        if (is_array($key)) {
+        if (\is_array($key)) {
             return $this->jsonDecodeArrayValues($this->storage->getMany($uuid, $key));
         }
 
@@ -250,7 +249,7 @@ class TenantManager
      */
     public function put($key, $value = null, string $uuid = null)
     {
-        if (is_null($uuid)) {
+        if (\is_null($uuid)) {
             if (! isset($this->tenant['uuid'])) {
                 throw new \Exception("No UUID supplied (and no tenant is currently identified).");
             }
@@ -264,11 +263,11 @@ class TenantManager
             $target = []; // black hole
         }
 
-        if (! is_null($value)) {
+        if (! \is_null($value)) {
             return $target[$key] = json_decode($this->storage->put($uuid, $key, json_encode($value)), true);
         }
 
-        if (! is_array($key)) {
+        if (! \is_array($key)) {
             throw new \Exception("No value supplied for key $key.");
         }
 
@@ -310,7 +309,7 @@ class TenantManager
      */
     public function __invoke($attribute)
     {
-        if (is_null($attribute)) {
+        if (\is_null($attribute)) {
             return $this->tenant;
         }
         
