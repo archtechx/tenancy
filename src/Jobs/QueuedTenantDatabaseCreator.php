@@ -19,9 +19,8 @@ class QueuedTenantDatabaseCreator implements ShouldQueue
     /**
      * Create a new job instance.
      *
-     * @param DatabaseCreator $databaseCreator
+     * @param TenantDatabaseManager $databaseManager
      * @param string $databaseName
-     * @param string $action
      * @return void
      */
     public function __construct(TenantDatabaseManager $databaseManager, string $databaseName)
@@ -37,6 +36,6 @@ class QueuedTenantDatabaseCreator implements ShouldQueue
      */
     public function handle()
     {
-        $this->databaseManager->createDatabase($databaseName);
+        $this->databaseManager->createDatabase($this->databaseName);
     }
 }
