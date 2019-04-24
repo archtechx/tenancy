@@ -43,7 +43,7 @@ class DatabaseManager
         $databaseManagers = config('tenancy.database_managers');
 
         if (! array_key_exists($driver, $databaseManagers)) {
-            throw new Exception("Database could not be created: no database manager for driver $driver is registered.");
+            throw new \Exception("Database could not be created: no database manager for driver $driver is registered.");
         }
 
         if (config('tenancy.queue_database_creation', false)) {

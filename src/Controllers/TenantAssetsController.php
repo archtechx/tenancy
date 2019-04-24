@@ -14,7 +14,7 @@ class TenantAssetsController extends Controller
     public function asset($path)
     {
         try {
-            return response()->file(\storage_path("app/public/$path"));
+            return response()->file(storage_path("app/public/$path"));
         } catch (\Throwable $th) {
             abort(404);
         }
