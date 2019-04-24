@@ -81,10 +81,6 @@ class RedisStorageDriver implements StorageDriver
                 $tenant = substr($tenant, strlen($redis_prefix));
             }
 
-<<<<<<< HEAD
-        return \array_map(function ($tenant) {
-=======
->>>>>>> 1.x
             return $this->redis->hgetall($tenant);
         }, $hashes);
     }
