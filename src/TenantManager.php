@@ -202,7 +202,7 @@ class TenantManager
      */
     public function all($uuids = [])
     {
-        $uuid = (array) $uuids;
+        $uuids = (array) $uuids;
 
         return collect(array_map(function ($tenant_array) {
             return $this->jsonDecodeArrayValues($tenant_array);
