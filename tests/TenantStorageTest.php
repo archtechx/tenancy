@@ -6,8 +6,6 @@ use Stancl\Tenancy\Interfaces\StorageDriver;
 
 class TenantStorageTest extends TestCase
 {
-    // todo find a way to run this for each storage driver (once there are more of them)
-
     /** @test */
     public function deleting_a_tenant_works()
     {
