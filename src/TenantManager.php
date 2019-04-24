@@ -159,7 +159,7 @@ class TenantManager
 
     public static function currentDomain(): ?string
     {
-        return \request()->getHost() ?? null;
+        return request()->getHost() ?? null;
     }
 
     public function getDatabaseName($tenant = []): string
@@ -203,7 +203,7 @@ class TenantManager
     {
         $uuids = (array) $uuids;
 
-        return \collect(\array_map(function ($tenant_array) {
+        return collect(array_map(function ($tenant_array) {
             return $this->jsonDecodeArrayValues($tenant_array);
         }, $this->storage->getAllTenants($uuids)));
     }
@@ -236,7 +236,7 @@ class TenantManager
             return $this->jsonDecodeArrayValues($this->storage->getMany($uuid, $key));
         }
 
-        return \json_decode($this->storage->get($uuid, $key), true);
+        return json_decode($this->storage->get($uuid, $key), true);
     }
 
     /**
@@ -264,7 +264,7 @@ class TenantManager
         }
 
         if (! \is_null($value)) {
-            return $target[$key] = \json_decode($this->storage->put($uuid, $key, \json_encode($value)), true);
+            return $target[$key] = json_decode($this->storage->put($uuid, $key, json_encode($value)), true);
         }
 
         if (! \is_array($key)) {
@@ -273,7 +273,7 @@ class TenantManager
 
         foreach ($key as $k => $v) {
             $target[$k] = $v;
-            $key[$k] = \json_encode($v);
+            $key[$k] = json_encode($v);
         }
 
         return $this->jsonDecodeArrayValues($this->storage->putMany($uuid, $key));
@@ -294,8 +294,8 @@ class TenantManager
 
     protected function jsonDecodeArrayValues(array $array)
     {
-        \array_walk($array, function (&$value, $key) {
-            $value = \json_decode($value, true);
+        array_walk($array, function (&$value, $key) {
+            $value = json_decode($value, true);
         });
 
         return $array;

@@ -6,6 +6,6 @@ trait DealsWithMigrations
 {
     protected function getMigrationPaths()
     {
-        return [\config('tenancy.migrations_directory', \database_path('migrations/tenant'))];
+        return [config('tenancy.migrations_directory', database_path('migrations/tenant'))];
     }
 }

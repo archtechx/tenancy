@@ -9,7 +9,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
     public function createDatabase(string $name): bool
     {
         try {
-            return \fclose(\fopen(\database_path($name), 'w'));
+            return fclose(fopen(database_path($name), 'w'));
         } catch (\Throwable $th) {
             return false;
         }
@@ -18,7 +18,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
     public function deleteDatabase(string $name): bool
     {
         try {
-            return \unlink(\database_path($name));
+            return unlink(database_path($name));
         } catch (\Throwable $th) {
             return false;
         }

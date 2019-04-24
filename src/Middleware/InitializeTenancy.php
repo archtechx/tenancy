@@ -23,7 +23,7 @@ class InitializeTenancy
     public function handle($request, Closure $next)
     {
         try {
-            \tenancy()->init();
+            tenancy()->init();
         } catch (\Exception $e) {
             ($this->onFail)($e);
         }
