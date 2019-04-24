@@ -71,9 +71,16 @@ class RedisStorageDriver implements StorageDriver
             return "tenants:{$hash}";
         }, $uuids);
 
-        $hashes = $hashes ?: $this->redis->scan(null, 'tenants:*');
+        // Apparently, the PREFIX is applied to all functions except scan()
+        $redis_prefix = $this->redis->getOption($this->redis->client()::OPT_PREFIX);
+        $hashes = $hashes ?: $this->redis->scan(null, $redis_prefix.'tenants:*');
+        
+        return array_map(function ($tenant) use ($redis_prefix) {
+            // Left strip $redis_prefix from $tenant
+            if (substr($tenant, 0, strlen($redis_prefix)) == $redis_prefix) {
+                $tenant = substr($tenant, strlen($redis_prefix));
+            }
 
-        return array_map(function ($tenant) {
             return $this->redis->hgetall($tenant);
         }, $hashes);
     }
