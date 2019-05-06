@@ -1,5 +1,12 @@
 # Release Notes for 1.x
 
+## [v1.3.1 (2019-05-06)](https://github.com/stancl/tenancy/compare/v1.3.0...v1.3.1)
+
+### Fixed
+- Fix jobs [#38](https://github.com/stancl/tenancy/pull/38)
+- Fix tests for 5.8 [#41](https://github.com/stancl/tenancy/issues/41)
+
+
 ## [v1.3.0 (2019-02-27)](https://github.com/stancl/tenancy/compare/v1.2.0...v1.3.0)
 
 ### Added
