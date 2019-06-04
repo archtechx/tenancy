@@ -17,6 +17,11 @@ You won't have to change a thing in your application's code.\*
 
 ## Installation
 
+### Requirements
+
+- Laravel 5.7 or 5.8
+- phpredis (predis is not supported)
+
 ### Installing the package
 
 ```
@@ -24,8 +29,6 @@ composer require stancl/tenancy
 ```
 
 This package follows [semantic versioning 2.0.0](https://semver.org). Each major release will have its own branch, so that bug fixes can be provided for older versions as well.
-
-Both Laravel 5.7 and 5.8 are supported.
 
 ### Configuring the `InitializeTenancy` middleware
 
@@ -323,7 +326,7 @@ The entire application will use a new database connection. The connection will b
 
 Connections listed in the `tenancy.redis.prefixed_connections` config array use a prefix based on the `tenancy.redis.prefix_base` and the tenant UUID.
 
-**Note: You *must* use phpredis for prefixes to work. Predis doesn't support prefixes.**
+**Note: You *must* use phpredis. Predis doesn't support prefixes.**
 
 ## Cache
 
