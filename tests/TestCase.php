@@ -67,6 +67,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'suffix' => '.sqlite',
             ],
             'database.connections.sqlite.database' => ':memory:',
+            'database.connections.pgsql.username' => 'postgres',
             'tenancy.filesystem.disks' => [
                 'local',
                 'public',
