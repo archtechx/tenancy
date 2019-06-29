@@ -79,6 +79,47 @@ class TenantDatabaseManagerTest extends TestCase
     }
 
     /** @test */
+    public function pgsql_database_can_be_created_and_deleted()
+    {
+        if (! $this->isTravis()) {
+            $this->markTestSkipped('As to not bloat your PostgreSQL instance with test databases, this test is not run by default.');
+        }
+
+        config()->set('database.default', 'pgsql');
+
+        $db_name = 'testdatabase' . $this->randomString(10);
+        app(DatabaseManager::class)->create($db_name, 'pgsql');
+        $this->assertNotEmpty(DB::select("SELECT datname FROM pg_catalog.pg_database WHERE datname = '$db_name'"));
+
+        app(DatabaseManager::class)->delete($db_name, 'pgsql');
+        $this->assertEmpty(DB::select("SELECT datname FROM pg_catalog.pg_database WHERE datname = '$db_name'"));
+    }
+
+    /** @test */
+    public function pgsql_database_can_be_created_and_deleted_using_queued_commands()
+    {
+        if (! $this->isTravis()) {
+            $this->markTestSkipped('As to not bloat your PostgreSQL instance with test databases, this test is not run by default.');
+        }
+
+        config()->set('database.default', 'pgsql');
+
+        $db_name = 'testdatabase' . $this->randomString(10);
+
+        $databaseManagers = config('tenancy.database_managers');
+        $job = new QueuedTenantDatabaseCreator(app($databaseManagers['pgsql']), $db_name);
+        $job->handle();
+
+        $this->assertNotEmpty(DB::select("SELECT datname FROM pg_catalog.pg_database WHERE datname = '$db_name'"));
+
+        $databaseManagers = config('tenancy.database_managers');
+        $job = new QueuedTenantDatabaseDeleter(app($databaseManagers['pgsql']), $db_name);
+        $job->handle();
+
+        $this->assertEmpty(DB::select("SELECT datname FROM pg_catalog.pg_database WHERE datname = '$db_name'"));
+    }
+
+    /** @test */
     public function database_creation_can_be_queued()
     {
         Queue::fake();

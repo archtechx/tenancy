@@ -8,6 +8,7 @@ php:
 
 services:
   - mysql
+  - postgresql
   - redis-server
 
 before_install:
