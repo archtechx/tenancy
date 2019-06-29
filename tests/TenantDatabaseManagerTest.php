@@ -89,10 +89,10 @@ class TenantDatabaseManagerTest extends TestCase
 
         $db_name = 'testdatabase' . $this->randomString(10);
         app(DatabaseManager::class)->create($db_name, 'pgsql');
-        $this->assertNotEmpty(DB::select("SELECT datname FROM pg_catalog.pg_database WHERE datname = '$db_name'"));
+        $this->assertNotEmpty(DB::select("SELECT datname FROM pg_database WHERE datname = '$db_name'"));
 
         app(DatabaseManager::class)->delete($db_name, 'pgsql');
-        $this->assertEmpty(DB::select("SELECT datname FROM pg_catalog.pg_database WHERE datname = '$db_name'"));
+        $this->assertEmpty(DB::select("SELECT datname FROM pg_database WHERE datname = '$db_name'"));
     }
 
     /** @test */
@@ -110,14 +110,13 @@ class TenantDatabaseManagerTest extends TestCase
         $job = new QueuedTenantDatabaseCreator(app($databaseManagers['pgsql']), $db_name);
         $job->handle();
 
-        dd(DB::select("SELECT datname FROM pg_catalog.pg_database WHERE datname = '$db_name'"));
-        $this->assertNotEmpty(DB::select("SELECT datname FROM pg_catalog.pg_database WHERE datname = '$db_name'"));
+        $this->assertNotEmpty(DB::select("SELECT datname FROM pg_database WHERE datname = '$db_name'"));
 
         $databaseManagers = config('tenancy.database_managers');
         $job = new QueuedTenantDatabaseDeleter(app($databaseManagers['pgsql']), $db_name);
         $job->handle();
 
-        $this->assertEmpty(DB::select("SELECT datname FROM pg_catalog.pg_database WHERE datname = '$db_name'"));
+        $this->assertEmpty(DB::select("SELECT datname FROM pg_database WHERE datname = '$db_name'"));
     }
 
     /** @test */
