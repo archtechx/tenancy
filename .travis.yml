@@ -20,9 +20,9 @@ install:
 
 before_script:
   - mysql -e 'CREATE DATABASE travis_tenancy;'
+  - psql -c 'create database travis_tenancy;' -U postgres
   - export DB_USERNAME=root DB_PASSWORD="" DB_DATABASE=travis_tenancy CODECOV_TOKEN="24382d15-84e7-4a55-bea4-c4df96a24a9b"
   - cat vendor/laravel/framework/src/Illuminate/Foundation/Application.php| grep 'const VERSION'
-  - psql -c 'create database travis_ci_default;' -U postgres
 
 script: vendor/bin/phpunit -v --coverage-clover=coverage.xml
 
