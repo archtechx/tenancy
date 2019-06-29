@@ -18,7 +18,8 @@
         "psy/psysh": "@stable",
         "laravel/framework": "5.7.*||5.8.*",
         "orchestra/testbench": "~3.7||~3.8",
-        "league/flysystem-aws-s3-v3": "~1.0"
+        "league/flysystem-aws-s3-v3": "~1.0",
+        "predis/predis": "^1.1"
     },
     "autoload": {
         "psr-4": {

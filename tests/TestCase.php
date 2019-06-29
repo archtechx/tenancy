@@ -36,7 +36,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
     public function initTenancy($domain = 'localhost')
     {
-        tenancy()->init($domain);
+        return tenancy()->init($domain);
     }
 
     /**

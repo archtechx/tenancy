@@ -3,6 +3,8 @@
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Config;
+use Stancl\Tenancy\Exceptions\PhpRedisNotInstalledException;
 
 class BootstrapsTenancyTest extends TestCase
 {
@@ -28,6 +30,26 @@ class BootstrapsTenancyTest extends TestCase
             $client = Redis::connection($connection)->client();
             $this->assertEquals($prefix, $client->getOption($client::OPT_PREFIX));
         }
+    }
+
+    /** @test */
+    public function predis_is_supported()
+    {
+        Config::set('database.redis.client', 'predis');
+        Config::set('tenancy.redis.multitenant', false);
+
+        // assert no exception is thrown from initializing tenancy
+        $this->assertNotNull($this->initTenancy());
+    }
+
+    /** @test */
+    public function predis_is_not_supported_without_disabling_redis_multitenancy()
+    {
+        Config::set('database.redis.client', 'predis');
+        
+        // todo
+        $this->expectException(PhpRedisNotInstalledException::class);
+        $this->initTenancy();
     }
 
     /** @test */
