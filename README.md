@@ -17,6 +17,8 @@ You won't have to change a thing in your application's code.\*
 
 ## Installation
 
+> If you find this documentation hard to follow, **try reading the [tutorial](https://stancl.github.io/blog/how-to-make-any-laravel-app-multi-tenant-in-5-minutes/) first.**
+
 ### Requirements
 
 - Laravel 5.7 or 5.8
