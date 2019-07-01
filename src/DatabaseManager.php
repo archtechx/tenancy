@@ -31,6 +31,7 @@ class DatabaseManager
     public function disconnect()
     {
         $default_connection = $this->originalDefaultConnection;
+        $this->database->purge();
         $this->database->reconnect($default_connection);
         $this->database->setDefaultConnection($default_connection);
     }
