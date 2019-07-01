@@ -72,6 +72,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'public',
                 's3',
             ],
+            'tenancy.migrations_directory' => database_path('../migrations'),
         ]);
     }
 
