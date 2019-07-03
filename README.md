@@ -98,7 +98,11 @@ config('tenancy.redis.prefix_base') . $uuid
 
 These changes will only apply for connections listed in `prefixed_connections`.
 
-> **Note: *If you want Redis to be multi-tenant, you <u>must</u> use phpredis. Predis does not support prefixes.***
+You can enable Redis tenancy by changing the `tenancy.redis.tenancy` config to `true`.
+
+**Note: If you want Redis to be multi-tenant, you *must* use phpredis. Predis does not support prefixes.**
+
+If you're using Laravel 5.7, predis is not supported even if Redis tenancy is disabled.
 
 #### `cache`
 
