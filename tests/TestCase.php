@@ -36,7 +36,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
     public function initTenancy($domain = 'localhost')
     {
-        tenancy()->init($domain);
+        return tenancy()->init($domain);
     }
 
     /**
@@ -72,6 +72,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'public',
                 's3',
             ],
+            'tenancy.redis.tenancy' => true,
             'tenancy.migrations_directory' => database_path('../migrations'),
         ]);
     }

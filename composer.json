@@ -11,7 +11,8 @@
     ],
     "require": {
         "illuminate/support": "5.7.*||5.8.*",
-        "webpatser/laravel-uuid": "^3.0"
+        "webpatser/laravel-uuid": "^3.0",
+        "predis/predis": "^1.1"
     },
     "require-dev": {
         "vlucas/phpdotenv": "^2.2||^3.3",

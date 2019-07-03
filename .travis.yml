@@ -1,6 +1,6 @@
 env:
-  - LARAVEL_VERSION="5.7.*" TESTBENCH_VERSION="~3.7"
-  - LARAVEL_VERSION="5.8.*" TESTBENCH_VERSION="~3.8"
+  - LARAVEL_VERSION="5.7.*" TESTBENCH_VERSION="~3.7" REDIS_DRIVER=phpredis
+  - LARAVEL_VERSION="5.8.*" TESTBENCH_VERSION="~3.8" REDIS_DRIVER=phpredis
 
 language: php
 php:
@@ -14,7 +14,7 @@ before_install:
   - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
 
 install:
-  - composer require "laravel/framework:$LARAVEL_VERSION" "orchestra/testbench:$TESTBENCH_VERSION"
+  - travis_retry composer require "laravel/framework:$LARAVEL_VERSION" "orchestra/testbench:$TESTBENCH_VERSION"
   - travis_retry composer install --no-interaction
 
 before_script:

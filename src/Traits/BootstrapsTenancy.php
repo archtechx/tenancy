@@ -5,6 +5,8 @@ namespace Stancl\Tenancy\Traits;
 use Stancl\Tenancy\CacheManager;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\Debug\Exception\FatalThrowableError;
+use Stancl\Tenancy\Exceptions\PhpRedisNotInstalledException;
 
 trait BootstrapsTenancy
 {
@@ -13,7 +15,9 @@ trait BootstrapsTenancy
     public function bootstrap()
     {
         $this->switchDatabaseConnection();
-        $this->setPhpRedisPrefix($this->app['config']['tenancy.redis.prefixed_connections']);
+        if ($this->app['config']['tenancy.redis.tenancy']) {
+            $this->setPhpRedisPrefix($this->app['config']['tenancy.redis.prefixed_connections']);
+        }
         $this->tagCache();
         $this->suffixFilesystemRootPaths();
     }
@@ -28,7 +32,11 @@ trait BootstrapsTenancy
         foreach ($connections as $connection) {
             $prefix = $this->app['config']['tenancy.redis.prefix_base'] . $this->tenant['uuid'];
             $client = Redis::connection($connection)->client();
-            $client->setOption($client::OPT_PREFIX, $prefix);
+            try {
+                $client->setOption($client::OPT_PREFIX, $prefix);
+            } catch (\Throwable $t) {
+                throw new PhpRedisNotInstalledException();
+            }
         }
     }
 
