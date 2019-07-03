@@ -17,7 +17,7 @@ You won't have to change a thing in your application's code.\*
 
 ## Installation
 
-> If you find this documentation hard to follow, **try reading the [tutorial](https://stancl.github.io/blog/how-to-make-any-laravel-app-multi-tenant-in-5-minutes/) first.**
+> If you're installing this package for the first time, **there's also a [tutorial](https://stancl.github.io/blog/how-to-make-any-laravel-app-multi-tenant-in-5-minutes/).**
 
 ### Requirements
 
