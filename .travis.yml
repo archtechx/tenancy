@@ -12,7 +12,7 @@ services:
   - redis-server
 
 before_install:
-  - if ["$REDIS_DRIVER" = "phpredis"]; then echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
+  - if [[ "$REDIS_DRIVER" = "phpredis" ]]; then echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
 
 install:
   - composer require "laravel/framework:$LARAVEL_VERSION" "orchestra/testbench:$TESTBENCH_VERSION"
