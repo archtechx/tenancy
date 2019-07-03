@@ -72,6 +72,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'public',
                 's3',
             ],
+            'tenancy.redis.tenancy' => true,
         ]);
     }
 

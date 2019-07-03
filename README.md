@@ -20,7 +20,6 @@ You won't have to change a thing in your application's code.\*
 ### Requirements
 
 - Laravel 5.7 or 5.8
-- phpredis (predis is not supported)
 
 ### Installing the package
 
@@ -96,6 +95,8 @@ config('tenancy.redis.prefix_base') . $uuid
 ```
 
 These changes will only apply for connections listed in `prefixed_connections`.
+
+> **Note: *If you want Redis to be multi-tenant, you <u>must</u> use phpredis. Predis does not support prefixes.***
 
 #### `cache`
 
@@ -326,7 +327,7 @@ The entire application will use a new database connection. The connection will b
 
 Connections listed in the `tenancy.redis.prefixed_connections` config array use a prefix based on the `tenancy.redis.prefix_base` and the tenant UUID.
 
-**Note: You *must* use phpredis. Predis doesn't support prefixes.**
+**Note: You *must* use phpredis if you want mutli-tenant Redis. Predis doesn't support prefixes.**
 
 ## Cache
 

@@ -15,7 +15,7 @@ trait BootstrapsTenancy
     public function bootstrap()
     {
         $this->switchDatabaseConnection();
-        if ($this->app['config']['tenancy.redis.multitenant']) {
+        if ($this->app['config']['tenancy.redis.tenancy']) {
             $this->setPhpRedisPrefix($this->app['config']['tenancy.redis.prefixed_connections']);
         }
         $this->tagCache();
