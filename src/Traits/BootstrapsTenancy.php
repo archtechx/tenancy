@@ -34,7 +34,7 @@ trait BootstrapsTenancy
             $client = Redis::connection($connection)->client();
             try {
                 $client->setOption($client::OPT_PREFIX, $prefix);
-            } catch (\Exception $e) {
+            } catch (\Throwable $t) {
                 throw new PhpRedisNotInstalledException();
             }
         }

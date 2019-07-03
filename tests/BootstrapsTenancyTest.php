@@ -36,6 +36,7 @@ class BootstrapsTenancyTest extends TestCase
     public function predis_is_supported()
     {
         Config::set('database.redis.client', 'predis');
+        Redis::setDriver('predis');
         Config::set('tenancy.redis.multitenant', false);
 
         // assert no exception is thrown from initializing tenancy
@@ -46,8 +47,8 @@ class BootstrapsTenancyTest extends TestCase
     public function predis_is_not_supported_without_disabling_redis_multitenancy()
     {
         Config::set('database.redis.client', 'predis');
+        Redis::setDriver('predis');
         
-        // todo
         $this->expectException(PhpRedisNotInstalledException::class);
         $this->initTenancy();
     }
