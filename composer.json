@@ -1,6 +1,6 @@
 {
     "name": "stancl/tenancy",
-    "description": "A Laravel multi-database tenancy implementation that respects your code.",
+    "description": "A Laravel multi-database tenancy package that respects your code.",
     "keywords": ["laravel", "multi-tenancy", "multi-database", "tenancy"],
     "license": "MIT",
     "authors": [

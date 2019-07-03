@@ -5,7 +5,7 @@
 [![Travis CI build](https://travis-ci.com/stancl/tenancy.svg?branch=master)](https://travis-ci.com/stancl/tenancy)
 [![codecov](https://codecov.io/gh/stancl/tenancy/branch/master/graph/badge.svg)](https://codecov.io/gh/stancl/tenancy)
 
-### *A Laravel multi-database tenancy implementation that respects your code.*
+### *A Laravel multi-database tenancy package that respects your code.*
 
 You won't have to change a thing in your application's code.\*
 
