@@ -1,5 +1,11 @@
 # Release Notes for 1.x
 
+## [v1.4.0 (2019-07-03)](https://github.com/stancl/tenancy/compare/v1.3.1...v1.4.0)
+
+### Added
+
+- Predis support [#59](https://github.com/stancl/tenancy/pull/59)
+
 ## [v1.3.1 (2019-05-06)](https://github.com/stancl/tenancy/compare/v1.3.0...v1.3.1)
 
 ### Fixed
