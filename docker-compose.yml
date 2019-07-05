@@ -1,0 +1,43 @@
+version: '3'
+services:
+    test:
+        build:
+            context: .
+        networks:
+            - testnet
+        depends_on:
+            - mysql
+            - postgres
+            - redis
+        volumes:
+            - .:/var/www/html
+        environment:
+            DOCKER: 1
+            DB_PASSWORD: "password"
+            TENANCY_TEST_REDIS_HOST: "redis"
+            TENANCY_TEST_MYSQL_HOST: "mysql"
+            TENANCY_TEST_PGSQL_HOST: "postgres"
+        stdin_open: true
+        tty: true
+    mysql:
+        image: mysql:5.7
+        environment:
+            MYSQL_ROOT_PASSWORD: password
+            MYSQL_DATABASE: main
+            MYSQL_USER: user
+            MYSQL_PASSWORD: password
+        networks:
+            - testnet
+    postgres:
+        image: postgres:11
+        environment:
+            POSTGRES_PASSWORD: ""
+            POSTGRES_USER: user
+            POSTGRES_DB: main
+    redis:
+        image: redis:alpine
+        networks:
+            - testnet
+networks:
+    testnet:
+        driver: bridge

@@ -40,7 +40,7 @@ class TenantDatabaseManagerTest extends TestCase
     /** @test */
     public function mysql_database_can_be_created_and_deleted()
     {
-        if (! $this->isTravis()) {
+        if (! $this->isContainerized()) {
             $this->markTestSkipped('As to not bloat your MySQL instance with test databases, this test is not run by default.');
         }
 
@@ -57,7 +57,7 @@ class TenantDatabaseManagerTest extends TestCase
     /** @test */
     public function mysql_database_can_be_created_and_deleted_using_queued_commands()
     {
-        if (! $this->isTravis()) {
+        if (! $this->isContainerized()) {
             $this->markTestSkipped('As to not bloat your MySQL instance with test databases, this test is not run by default.');
         }
 

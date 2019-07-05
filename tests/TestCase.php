@@ -53,6 +53,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
         $app['config']->set([
             'database.redis.client' => 'phpredis',
+            'database.redis.default.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
             'database.redis.tenancy' => [
                 'host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
                 'password' => env('TENANCY_TEST_REDIS_PASSWORD', null),
@@ -67,6 +68,8 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'suffix' => '.sqlite',
             ],
             'database.connections.sqlite.database' => ':memory:',
+            'database.connections.mysql.host' => env('TENANCY_TESTING_MYSQL_HOST', '127.0.0.1'),
+            'database.connections.pgsql.host' => env('TENANCY_TESTING_PGSQL_HOST', '127.0.0.1'),
             'tenancy.filesystem.disks' => [
                 'local',
                 'public',
@@ -114,11 +117,9 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         return substr(str_shuffle(str_repeat($x = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', ceil($length / strlen($x)))), 1, $length);
     }
 
-    public function isTravis()
+    public function isContainerized()
     {
-        // Multiple, just to make sure. Someone might accidentally
-        // set one of these environment vars on their computer.
-        return env('CI') && env('TRAVIS') && env('CONTINUOUS_INTEGRATION');
+        return env('CONTINUOUS_INTEGRATION') || env('DOCKER');
     }
 
     public function assertArrayIsSubset($subset, $array, string $message = ''): void

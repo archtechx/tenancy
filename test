@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# for development
+docker-compose up -d
+docker-compose exec test vendor/bin/phpunit "$@"
