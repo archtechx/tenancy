@@ -14,10 +14,10 @@ class TenantDatabaseManagerTest extends TestCase
     public function sqlite_database_can_be_created_and_deleted()
     {
         $db_name = 'testdatabase' . $this->randomString(10) . '.sqlite';
-        app(DatabaseManager::class)->create($db_name, 'sqlite');
+        $this->assertTrue(app(DatabaseManager::class)->create($db_name, 'sqlite'));
         $this->assertFileExists(database_path($db_name));
 
-        app(DatabaseManager::class)->delete($db_name, 'sqlite');
+        $this->assertTrue(app(DatabaseManager::class)->delete($db_name, 'sqlite'));
         $this->assertFileNotExists(database_path($db_name));
     }
 
@@ -47,10 +47,10 @@ class TenantDatabaseManagerTest extends TestCase
         config()->set('database.default', 'mysql');
 
         $db_name = 'testdatabase' . $this->randomString(10);
-        app(DatabaseManager::class)->create($db_name, 'mysql');
+        $this->assertTrue(app(DatabaseManager::class)->create($db_name, 'mysql'));
         $this->assertNotEmpty(DB::select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$db_name'"));
 
-        app(DatabaseManager::class)->delete($db_name, 'mysql');
+        $this->assertTrue(app(DatabaseManager::class)->delete($db_name, 'mysql'));
         $this->assertEmpty(DB::select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$db_name'"));
     }
 
@@ -88,10 +88,10 @@ class TenantDatabaseManagerTest extends TestCase
         config()->set('database.default', 'pgsql');
 
         $db_name = 'testdatabase' . $this->randomString(10);
-        app(DatabaseManager::class)->create($db_name, 'pgsql');
+        $this->assertTrue(app(DatabaseManager::class)->create($db_name, 'pgsql'));
         $this->assertNotEmpty(DB::select("SELECT datname FROM pg_database WHERE datname = '$db_name'"));
 
-        app(DatabaseManager::class)->delete($db_name, 'pgsql');
+        $this->assertTrue(app(DatabaseManager::class)->delete($db_name, 'pgsql'));
         $this->assertEmpty(DB::select("SELECT datname FROM pg_database WHERE datname = '$db_name'"));
     }
 
@@ -126,7 +126,7 @@ class TenantDatabaseManagerTest extends TestCase
 
         config()->set('tenancy.queue_database_creation', true);
         $db_name = 'testdatabase' . $this->randomString(10) . '.sqlite';
-        app(DatabaseManager::class)->create($db_name, 'sqlite');
+        $this->assertTrue(app(DatabaseManager::class)->create($db_name, 'sqlite'));
 
         Queue::assertPushed(QueuedTenantDatabaseCreator::class);
     }
@@ -138,7 +138,7 @@ class TenantDatabaseManagerTest extends TestCase
 
         config()->set('tenancy.queue_database_deletion', true);
         $db_name = 'testdatabase' . $this->randomString(10) . '.sqlite';
-        app(DatabaseManager::class)->delete($db_name, 'sqlite');
+        $this->assertTrue(app(DatabaseManager::class)->delete($db_name, 'sqlite'));
         
         Queue::assertPushed(QueuedTenantDatabaseDeleter::class);
     }
