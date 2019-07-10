@@ -93,8 +93,8 @@ class TenantManager
             throw new \Exception("Domain $domain does not exists.");
         }
 
-        if ($aliasUuid = $this->storage->getTenantIdByDomain($alias)) {
-            throw new \Exception("Domain Alias $domain is already occupied in use.");
+        if ($this->storage->getTenantIdByDomain($alias)) {
+            throw new \Exception("Domain Alias $alias is already occupied.");
         }
 
         $tenant = $this->jsonDecodeArrayValues($this->storage->aliasTenant($alias, $uuid));
