@@ -53,6 +53,12 @@ class RedisStorageDriver implements StorageDriver
         return $this->redis->hgetall("tenants:$uuid");
     }
 
+    public function aliasTenant(string $aliasDomain, string $uuid): array
+    {
+        $this->redis->hmset("domains:$aliasDomain", 'tenant_id', $uuid);
+        return $this->redis->hgetall("tenants:$uuid");
+    }
+
     public function deleteTenant(string $id): bool
     {
         try {

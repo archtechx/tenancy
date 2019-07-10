@@ -83,6 +83,26 @@ class TenantManager
         return $tenant;
     }
 
+    public function alias(string $domain, string $alias): array
+    {
+        $domain = $domain ?: $this->currentDomain();
+
+        $uuid = $this->storage->getTenantIdByDomain($domain);
+
+        if (!$uuid) {
+            throw new \Exception("Domain $domain does not exists.");
+        }
+
+        if ($aliasUuid = $this->storage->getTenantIdByDomain($alias)) {
+            throw new \Exception("Domain Alias $domain is already occupied in use.");
+        }
+
+        $tenant = $this->jsonDecodeArrayValues($this->storage->aliasTenant($alias, $uuid));
+        
+        
+        return $tenant;
+    }
+
     public function delete(string $uuid): bool
     {
         return $this->storage->deleteTenant($uuid);

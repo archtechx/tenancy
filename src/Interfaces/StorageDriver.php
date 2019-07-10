@@ -9,6 +9,7 @@ interface StorageDriver
     public function getTenantById(string $uuid, array $fields = []): array;
     public function getTenantIdByDomain(string $domain): ?string;
     public function createTenant(string $domain, string $uuid): array;
+    public function aliasTenant(string $aliasDomain, string $uuid): array;
     public function deleteTenant(string $uuid): bool;
     public function get(string $uuid, string $key);
     public function getMany(string $uuid, array $keys): array;
