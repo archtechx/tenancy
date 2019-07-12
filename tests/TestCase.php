@@ -53,6 +53,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
         $app['config']->set([
             'database.redis.client' => 'phpredis',
+            'database.redis.cache.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
             'database.redis.default.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
             'database.redis.tenancy' => [
                 'host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
@@ -68,8 +69,8 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'suffix' => '.sqlite',
             ],
             'database.connections.sqlite.database' => ':memory:',
-            'database.connections.mysql.host' => env('TENANCY_TESTING_MYSQL_HOST', '127.0.0.1'),
-            'database.connections.pgsql.host' => env('TENANCY_TESTING_PGSQL_HOST', '127.0.0.1'),
+            'database.connections.mysql.host' => env('TENANCY_TEST_MYSQL_HOST', '127.0.0.1'),
+            'database.connections.pgsql.host' => env('TENANCY_TEST_PGSQL_HOST', '127.0.0.1'),
             'tenancy.filesystem.disks' => [
                 'local',
                 'public',
