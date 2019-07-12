@@ -5,7 +5,7 @@
 [![Travis CI build](https://travis-ci.com/stancl/tenancy.svg?branch=master)](https://travis-ci.com/stancl/tenancy)
 [![codecov](https://codecov.io/gh/stancl/tenancy/branch/master/graph/badge.svg)](https://codecov.io/gh/stancl/tenancy)
 
-### *A Laravel multi-database tenancy implementation that respects your code.*
+### *A Laravel multi-database tenancy package that respects your code.*
 
 You won't have to change a thing in your application's code.\*
 
@@ -17,10 +17,11 @@ You won't have to change a thing in your application's code.\*
 
 ## Installation
 
+> If you're installing this package for the first time, **there's also a [tutorial](https://stancl.github.io/blog/how-to-make-any-laravel-app-multi-tenant-in-5-minutes/).**
+
 ### Requirements
 
 - Laravel 5.7 or 5.8
-- phpredis (predis is not supported)
 
 ### Installing the package
 
@@ -96,6 +97,12 @@ config('tenancy.redis.prefix_base') . $uuid
 ```
 
 These changes will only apply for connections listed in `prefixed_connections`.
+
+You can enable Redis tenancy by changing the `tenancy.redis.tenancy` config to `true`.
+
+**Note: If you want Redis to be multi-tenant, you *must* use phpredis. Predis does not support prefixes.**
+
+If you're using Laravel 5.7, predis is not supported even if Redis tenancy is disabled.
 
 #### `cache`
 
@@ -326,7 +333,7 @@ The entire application will use a new database connection. The connection will b
 
 Connections listed in the `tenancy.redis.prefixed_connections` config array use a prefix based on the `tenancy.redis.prefix_base` and the tenant UUID.
 
-**Note: You *must* use phpredis. Predis doesn't support prefixes.**
+**Note: You *must* use phpredis if you want mutli-tenant Redis. Predis doesn't support prefixes.**
 
 ## Cache
 

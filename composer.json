@@ -1,6 +1,6 @@
 {
     "name": "stancl/tenancy",
-    "description": "A Laravel multi-database tenancy implementation that respects your code.",
+    "description": "A Laravel multi-database tenancy package that respects your code.",
     "keywords": ["laravel", "multi-tenancy", "multi-database", "tenancy"],
     "license": "MIT",
     "authors": [
@@ -10,13 +10,14 @@
         }
     ],
     "require": {
-        "illuminate/support": "5.7.*||5.8.*",
-        "webpatser/laravel-uuid": "^3.0"
+        "illuminate/support": "5.8.*||5.7.*",
+        "webpatser/laravel-uuid": "^3.0",
+        "predis/predis": "^1.1"
     },
     "require-dev": {
         "vlucas/phpdotenv": "^2.2||^3.3",
         "psy/psysh": "@stable",
-        "laravel/framework": "5.7.*||5.8.*",
+        "laravel/framework": "5.8.*||5.7.*",
         "orchestra/testbench": "~3.7||~3.8",
         "league/flysystem-aws-s3-v3": "~1.0"
     },

@@ -12,6 +12,7 @@ return [
         'suffix' => '',
     ],
     'redis' => [
+        'tenancy' => false,
         'prefix_base' => 'tenant',
         'prefixed_connections' => [
             'default',

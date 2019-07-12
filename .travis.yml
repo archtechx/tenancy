@@ -1,30 +1,28 @@
 env:
-  - LARAVEL_VERSION="5.7.*" TESTBENCH_VERSION="~3.7"
-  - LARAVEL_VERSION="5.8.*" TESTBENCH_VERSION="~3.8"
+  - LARAVEL_VERSION="5.7.*" TESTBENCH_VERSION="~3.7" REDIS_DRIVER=phpredis
+  - LARAVEL_VERSION="5.8.*" TESTBENCH_VERSION="~3.8" REDIS_DRIVER=phpredis
 
 language: php
 php:
   - '7.2'
 
 services:
-  - mysql
-  - postgresql
-  - redis-server
+  - docker
 
 before_install:
-  - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - docker-compose up -d
 
 install:
-  - composer require "laravel/framework:$LARAVEL_VERSION" "orchestra/testbench:$TESTBENCH_VERSION"
-  - travis_retry composer install --no-interaction
+  - travis_retry docker-compose exec test composer require --no-interaction "laravel/framework:$LARAVEL_VERSION" "orchestra/testbench:$TESTBENCH_VERSION"
 
 before_script:
-  - mysql -e 'CREATE DATABASE travis_tenancy;'
-  - psql -c 'create database travis_tenancy;' -U postgres
-  - export DB_USERNAME=root DB_PASSWORD="" DB_DATABASE=travis_tenancy CODECOV_TOKEN="24382d15-84e7-4a55-bea4-c4df96a24a9b"
+  - export DB_USERNAME=root DB_PASSWORD="" DB_DATABASE=tenancy CODECOV_TOKEN="24382d15-84e7-4a55-bea4-c4df96a24a9b"
   - cat vendor/laravel/framework/src/Illuminate/Foundation/Application.php| grep 'const VERSION'
 
-script: vendor/bin/phpunit -v --coverage-clover=coverage.xml
+script: docker-compose exec test vendor/bin/phpunit -v --coverage-clover=coverage.xml
+
+after_script:
+  - docker-compose down
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

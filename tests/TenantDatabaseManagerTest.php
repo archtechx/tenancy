@@ -40,7 +40,7 @@ class TenantDatabaseManagerTest extends TestCase
     /** @test */
     public function mysql_database_can_be_created_and_deleted()
     {
-        if (! $this->isTravis()) {
+        if (! $this->isContainerized()) {
             $this->markTestSkipped('As to not bloat your MySQL instance with test databases, this test is not run by default.');
         }
 
@@ -57,7 +57,7 @@ class TenantDatabaseManagerTest extends TestCase
     /** @test */
     public function mysql_database_can_be_created_and_deleted_using_queued_commands()
     {
-        if (! $this->isTravis()) {
+        if (! $this->isContainerized()) {
             $this->markTestSkipped('As to not bloat your MySQL instance with test databases, this test is not run by default.');
         }
 
@@ -81,7 +81,7 @@ class TenantDatabaseManagerTest extends TestCase
     /** @test */
     public function pgsql_database_can_be_created_and_deleted()
     {
-        if (! $this->isTravis()) {
+        if (! $this->isContainerized()) {
             $this->markTestSkipped('As to not bloat your PostgreSQL instance with test databases, this test is not run by default.');
         }
 
@@ -98,7 +98,7 @@ class TenantDatabaseManagerTest extends TestCase
     /** @test */
     public function pgsql_database_can_be_created_and_deleted_using_queued_commands()
     {
-        if (! $this->isTravis()) {
+        if (! $this->isContainerized()) {
             $this->markTestSkipped('As to not bloat your PostgreSQL instance with test databases, this test is not run by default.');
         }
 
@@ -126,7 +126,7 @@ class TenantDatabaseManagerTest extends TestCase
 
         config()->set('tenancy.queue_database_creation', true);
         $db_name = 'testdatabase' . $this->randomString(10) . '.sqlite';
-        $this->assertTrue(app(DatabaseManager::class)->create($db_name, 'sqlite'));
+        app(DatabaseManager::class)->create($db_name, 'sqlite');
 
         Queue::assertPushed(QueuedTenantDatabaseCreator::class);
     }
@@ -138,7 +138,7 @@ class TenantDatabaseManagerTest extends TestCase
 
         config()->set('tenancy.queue_database_deletion', true);
         $db_name = 'testdatabase' . $this->randomString(10) . '.sqlite';
-        $this->assertTrue(app(DatabaseManager::class)->delete($db_name, 'sqlite'));
+        app(DatabaseManager::class)->delete($db_name, 'sqlite');
         
         Queue::assertPushed(QueuedTenantDatabaseDeleter::class);
     }
