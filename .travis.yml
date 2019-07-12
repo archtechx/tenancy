@@ -13,13 +13,13 @@ before_install:
   - docker-compose up -d
 
 install:
-  - travis_retry docker-compose exec app composer require --no-interaction "laravel/framework:$LARAVEL_VERSION" "orchestra/testbench:$TESTBENCH_VERSION"
+  - travis_retry docker-compose exec test composer require --no-interaction "laravel/framework:$LARAVEL_VERSION" "orchestra/testbench:$TESTBENCH_VERSION"
 
 before_script:
   - export DB_USERNAME=root DB_PASSWORD="" DB_DATABASE=tenancy CODECOV_TOKEN="24382d15-84e7-4a55-bea4-c4df96a24a9b"
   - cat vendor/laravel/framework/src/Illuminate/Foundation/Application.php| grep 'const VERSION'
 
-script: docker-compose exec app vendor/bin/phpunit -v --coverage-clover=coverage.xml
+script: docker-compose exec test vendor/bin/phpunit -v --coverage-clover=coverage.xml
 
 after_script:
   - docker-compose down
