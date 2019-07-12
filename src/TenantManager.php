@@ -197,7 +197,7 @@ class TenantManager
      * Get all tenants.
      *
      * @param array|string $uuids
-     * @return array
+     * @return \Illuminate\Support\Collection
      */
     public function all($uuids = [])
     {
