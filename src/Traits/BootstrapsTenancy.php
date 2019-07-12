@@ -5,7 +5,6 @@ namespace Stancl\Tenancy\Traits;
 use Stancl\Tenancy\CacheManager;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\Debug\Exception\FatalThrowableError;
 use Stancl\Tenancy\Exceptions\PhpRedisNotInstalledException;
 
 trait BootstrapsTenancy

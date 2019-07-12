@@ -7,22 +7,22 @@ php:
   - '7.2'
 
 services:
-  - mysql
-  - redis-server
+  - docker
 
 before_install:
-  - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - docker-compose up -d
 
 install:
-  - travis_retry composer require "laravel/framework:$LARAVEL_VERSION" "orchestra/testbench:$TESTBENCH_VERSION"
-  - travis_retry composer install --no-interaction
+  - travis_retry docker-compose exec test composer require --no-interaction "laravel/framework:$LARAVEL_VERSION" "orchestra/testbench:$TESTBENCH_VERSION"
 
 before_script:
-  - mysql -e 'CREATE DATABASE travis_tenancy;'
-  - export DB_USERNAME=root DB_PASSWORD="" DB_DATABASE=travis_tenancy CODECOV_TOKEN="24382d15-84e7-4a55-bea4-c4df96a24a9b"
+  - export DB_USERNAME=root DB_PASSWORD="" DB_DATABASE=tenancy CODECOV_TOKEN="24382d15-84e7-4a55-bea4-c4df96a24a9b"
   - cat vendor/laravel/framework/src/Illuminate/Foundation/Application.php| grep 'const VERSION'
 
-script: vendor/bin/phpunit -v --coverage-clover=coverage.xml
+script: docker-compose exec test vendor/bin/phpunit -v --coverage-clover=coverage.xml
+
+after_script:
+  - docker-compose down
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
