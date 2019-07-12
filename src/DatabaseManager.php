@@ -36,6 +36,14 @@ class DatabaseManager
         $this->database->setDefaultConnection($default_connection);
     }
 
+    /**
+     * Create a database.
+     * @todo Should this handle prefixes?
+     *
+     * @param string $name
+     * @param string $driver
+     * @return bool
+     */
     public function create(string $name, string $driver = null)
     {
         $this->createTenantConnection($name);
@@ -50,10 +58,18 @@ class DatabaseManager
         if (config('tenancy.queue_database_creation', false)) {
             QueuedTenantDatabaseCreator::dispatch(app($databaseManagers[$driver]), $name, 'create');
         } else {
-            app($databaseManagers[$driver])->createDatabase($name);
+            return app($databaseManagers[$driver])->createDatabase($name);
         }
     }
 
+    /**
+     * Delete a database.
+     * @todo Should this handle prefixes?
+     *
+     * @param string $name
+     * @param string $driver
+     * @return bool
+     */
     public function delete(string $name, string $driver = null)
     {
         $this->createTenantConnection($name);
@@ -68,7 +84,7 @@ class DatabaseManager
         if (config('tenancy.queue_database_deletion', false)) {
             QueuedTenantDatabaseDeleter::dispatch(app($databaseManagers[$driver]), $name, 'delete');
         } else {
-            app($databaseManagers[$driver])->deleteDatabase($name);
+            return app($databaseManagers[$driver])->deleteDatabase($name);
         }
     }
 

@@ -39,6 +39,7 @@ return [
     'database_managers' => [
         'sqlite' => 'Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager',
         'mysql' => 'Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager',
+        'pgsql' => 'Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager',
     ],
     'queue_database_creation' => false,
     'queue_database_deletion' => false,

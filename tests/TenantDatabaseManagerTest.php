@@ -14,10 +14,10 @@ class TenantDatabaseManagerTest extends TestCase
     public function sqlite_database_can_be_created_and_deleted()
     {
         $db_name = 'testdatabase' . $this->randomString(10) . '.sqlite';
-        app(DatabaseManager::class)->create($db_name, 'sqlite');
+        $this->assertTrue(app(DatabaseManager::class)->create($db_name, 'sqlite'));
         $this->assertFileExists(database_path($db_name));
 
-        app(DatabaseManager::class)->delete($db_name, 'sqlite');
+        $this->assertTrue(app(DatabaseManager::class)->delete($db_name, 'sqlite'));
         $this->assertFileNotExists(database_path($db_name));
     }
 
@@ -47,10 +47,10 @@ class TenantDatabaseManagerTest extends TestCase
         config()->set('database.default', 'mysql');
 
         $db_name = 'testdatabase' . $this->randomString(10);
-        app(DatabaseManager::class)->create($db_name, 'mysql');
+        $this->assertTrue(app(DatabaseManager::class)->create($db_name, 'mysql'));
         $this->assertNotEmpty(DB::select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$db_name'"));
 
-        app(DatabaseManager::class)->delete($db_name, 'mysql');
+        $this->assertTrue(app(DatabaseManager::class)->delete($db_name, 'mysql'));
         $this->assertEmpty(DB::select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$db_name'"));
     }
 
@@ -76,6 +76,47 @@ class TenantDatabaseManagerTest extends TestCase
         $job->handle();
 
         $this->assertEmpty(DB::select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$db_name'"));
+    }
+
+    /** @test */
+    public function pgsql_database_can_be_created_and_deleted()
+    {
+        if (! $this->isContainerized()) {
+            $this->markTestSkipped('As to not bloat your PostgreSQL instance with test databases, this test is not run by default.');
+        }
+
+        config()->set('database.default', 'pgsql');
+
+        $db_name = strtolower('testdatabase' . $this->randomString(10));
+        $this->assertTrue(app(DatabaseManager::class)->create($db_name, 'pgsql'));
+        $this->assertNotEmpty(DB::select("SELECT datname FROM pg_database WHERE datname = '$db_name'"));
+
+        $this->assertTrue(app(DatabaseManager::class)->delete($db_name, 'pgsql'));
+        $this->assertEmpty(DB::select("SELECT datname FROM pg_database WHERE datname = '$db_name'"));
+    }
+
+    /** @test */
+    public function pgsql_database_can_be_created_and_deleted_using_queued_commands()
+    {
+        if (! $this->isContainerized()) {
+            $this->markTestSkipped('As to not bloat your PostgreSQL instance with test databases, this test is not run by default.');
+        }
+
+        config()->set('database.default', 'pgsql');
+
+        $db_name = strtolower('testdatabase' . $this->randomString(10));
+
+        $databaseManagers = config('tenancy.database_managers');
+        $job = new QueuedTenantDatabaseCreator(app($databaseManagers['pgsql']), $db_name);
+        $job->handle();
+
+        $this->assertNotEmpty(DB::select("SELECT datname FROM pg_database WHERE datname = '$db_name'"));
+
+        $databaseManagers = config('tenancy.database_managers');
+        $job = new QueuedTenantDatabaseDeleter(app($databaseManagers['pgsql']), $db_name);
+        $job->handle();
+
+        $this->assertEmpty(DB::select("SELECT datname FROM pg_database WHERE datname = '$db_name'"));
     }
 
     /** @test */

@@ -26,7 +26,7 @@ services:
         environment:
             MYSQL_ROOT_PASSWORD: password
             MYSQL_DATABASE: main
-            MYSQL_USER: user
+            MYSQL_USER: user # redundant
             MYSQL_PASSWORD: password
         networks:
             - testnet
@@ -34,8 +34,10 @@ services:
         image: postgres:11
         environment:
             POSTGRES_PASSWORD: password
-            POSTGRES_USER: user
+            POSTGRES_USER: root # superuser name
             POSTGRES_DB: main
+        networks:
+            - testnet
     redis:
         image: redis:alpine
         networks:
