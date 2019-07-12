@@ -493,6 +493,12 @@ However, you still need to reload nginx configuration to apply the changes to co
 
 ## Testing
 
+### With Docker
+
+If you have Docker installed, simply run `docker-compose exec test vendor/bin/phpunit -v`. If you need to run the tests multiple times during development, run `./test` to run the tests. This script runs `docker-compose up -d` and phpunit via the `test` container. When you're done testing, run `docker-compose down` to shut down the containers.
+
+### Without Docker
+
 If you run the tests of this package, please make sure you don't store anything in Redis @ 127.0.0.1:6379 db#14. The contents of this database are flushed everytime the tests are run.
 
 Some tests are run only if the `CI`, `TRAVIS` and `CONTINUOUS_INTEGRATION` environment variables are set to `true`. This is to avoid things like bloating your MySQL instance with test databases.

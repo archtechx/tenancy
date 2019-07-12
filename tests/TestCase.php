@@ -71,7 +71,6 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'database.connections.sqlite.database' => ':memory:',
             'database.connections.mysql.host' => env('TENANCY_TEST_MYSQL_HOST', '127.0.0.1'),
             'database.connections.pgsql.host' => env('TENANCY_TEST_PGSQL_HOST', '127.0.0.1'),
-            // 'database.connections.pgsql.username' => 'pgsqluser',
             'tenancy.filesystem.disks' => [
                 'local',
                 'public',
