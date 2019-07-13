@@ -2,6 +2,9 @@
 
 namespace Stancl\Tenancy\Tests;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+
 class TenantManagerTest extends TestCase
 {
     public $autoCreateTenant = false;
@@ -97,5 +100,81 @@ class TenantManagerTest extends TestCase
     {
         $this->expectException(\Exception::class);
         tenancy()->findByDomain('nonexistent.domain');
+    }
+
+    /** @test */
+    public function tenancy_can_be_ended()
+    {
+        $originals = [
+            'databasePDO' => DB::connection()->getPDO(),
+            'databaseName' => DB::connection()->getDatabaseName(),
+            'storage_path' => storage_path(),
+            'storage_root' => Storage::disk('local')->getAdapter()->getPathPrefix(),
+            'cache' => app('cache'),
+        ];
+
+        // Verify that these assertions are the right way for testing this
+        $this->assertSame($originals['databaseName'], DB::connection()->getDatabaseName());
+        $this->assertSame($originals['storage_path'], storage_path());
+        $this->assertSame($originals['storage_root'], Storage::disk('local')->getAdapter()->getPathPrefix());
+        $this->assertSame($originals['cache'], app('cache'));
+
+        tenant()->create('foo.localhost');
+        tenancy()->init('foo.localhost');
+    
+        $this->assertNotSame($originals['databaseName'], DB::connection()->getDatabaseName());
+        $this->assertNotSame($originals['storage_path'], storage_path());
+        $this->assertNotSame($originals['storage_root'], Storage::disk('local')->getAdapter()->getPathPrefix());
+        $this->assertNotSame($originals['cache'], app('cache'));
+
+        tenancy()->end();
+
+        $this->assertSame($originals['databaseName'], DB::connection()->getDatabaseName());
+        $this->assertSame($originals['storage_path'], storage_path());
+        $this->assertSame($originals['storage_root'], Storage::disk('local')->getAdapter()->getPathPrefix());
+        $this->assertSame($originals['cache'], app('cache'));
+    }
+
+    /** @test */
+    public function tenancy_can_be_ended_after_reidentification()
+    {
+        $originals = [
+            'databasePDO' => DB::connection()->getPDO(),
+            'databaseName' => DB::connection()->getDatabaseName(),
+            'storage_path' => storage_path(),
+            'storage_root' => Storage::disk('local')->getAdapter()->getPathPrefix(),
+            'cache' => app('cache'),
+        ];
+
+        tenant()->create('foo.localhost');
+        tenancy()->init('foo.localhost');
+    
+        $this->assertNotSame($originals['databaseName'], DB::connection()->getDatabaseName());
+        $this->assertNotSame($originals['storage_path'], storage_path());
+        $this->assertNotSame($originals['storage_root'], Storage::disk('local')->getAdapter()->getPathPrefix());
+        $this->assertNotSame($originals['cache'], app('cache'));
+
+        tenancy()->end();
+
+        $this->assertSame($originals['databaseName'], DB::connection()->getDatabaseName());
+        $this->assertSame($originals['storage_path'], storage_path());
+        $this->assertSame($originals['storage_root'], Storage::disk('local')->getAdapter()->getPathPrefix());
+        $this->assertSame($originals['cache'], app('cache'));
+
+        // Reidentify tenant
+        tenant()->create('bar.localhost');
+        tenancy()->init('bar.localhost');
+
+        $this->assertNotSame($originals['databaseName'], DB::connection()->getDatabaseName());
+        $this->assertNotSame($originals['storage_path'], storage_path());
+        $this->assertNotSame($originals['storage_root'], Storage::disk('local')->getAdapter()->getPathPrefix());
+        $this->assertNotSame($originals['cache'], app('cache'));
+
+        tenancy()->end();
+
+        $this->assertSame($originals['databaseName'], DB::connection()->getDatabaseName());
+        $this->assertSame($originals['storage_path'], storage_path());
+        $this->assertSame($originals['storage_root'], Storage::disk('local')->getAdapter()->getPathPrefix());
+        $this->assertSame($originals['cache'], app('cache'));
     }
 }
