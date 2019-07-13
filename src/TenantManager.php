@@ -185,6 +185,7 @@ class TenantManager
 
     /**
      * Reconnects to the default database.
+     * @todo More descriptive name?
      *
      * @return void
      */
