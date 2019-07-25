@@ -1,5 +1,12 @@
 # Release Notes for 1.x
 
+## [v1.5.1 (2019-07-25)](https://github.com/stancl/tenancy/compare/v1.5.0...v1.5.1)
+
+### Fixed
+
+- Database is reconnected after migrating/rolling back/seeding is done [#71](https://github.com/stancl/tenancy/pull/71)
+- Fixed tenant()->delete() (it used to delete the record from the `tenants` namespace but not the `domains` namespace) [#73](https://github.com/stancl/tenancy/pull/73)
+
 ## [v1.5.0 (2019-07-13)](https://github.com/stancl/tenancy/compare/v1.4.0...v1.5.0)
 
 ### Added
