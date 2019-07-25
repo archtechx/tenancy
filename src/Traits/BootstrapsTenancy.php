@@ -10,9 +10,17 @@ use Stancl\Tenancy\Exceptions\PhpRedisNotInstalledException;
 trait BootstrapsTenancy
 {
     public $originalSettings = [];
+    /**
+     * Was tenancy initialized/bootstrapped?
+     *
+     * @var boolean
+     */
+    public $initialized = false;
 
     public function bootstrap()
     {
+        $this->initialized = true;
+
         $this->switchDatabaseConnection();
         if ($this->app['config']['tenancy.redis.tenancy']) {
             $this->setPhpRedisPrefix($this->app['config']['tenancy.redis.prefixed_connections']);
@@ -23,6 +31,8 @@ trait BootstrapsTenancy
 
     public function end()
     {
+        $this->initialized = false;
+
         $this->disconnectDatabase();
         if ($this->app['config']['tenancy.redis.tenancy']) {
             $this->resetPhpRedisPrefix($this->app['config']['tenancy.redis.prefixed_connections']);
@@ -53,7 +63,8 @@ trait BootstrapsTenancy
         }
     }
 
-    public function resetPhpRedisPrefix($connections = ['default']) {
+    public function resetPhpRedisPrefix($connections = ['default'])
+    {
         foreach ($connections as $connection) {
             $client = Redis::connection($connection)->client();
             

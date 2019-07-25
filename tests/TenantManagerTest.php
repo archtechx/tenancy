@@ -106,7 +106,6 @@ class TenantManagerTest extends TestCase
     public function tenancy_can_be_ended()
     {
         $originals = [
-            'databasePDO' => DB::connection()->getPDO(),
             'databaseName' => DB::connection()->getDatabaseName(),
             'storage_path' => storage_path(),
             'storage_root' => Storage::disk('local')->getAdapter()->getPathPrefix(),
@@ -139,7 +138,6 @@ class TenantManagerTest extends TestCase
     public function tenancy_can_be_ended_after_reidentification()
     {
         $originals = [
-            'databasePDO' => DB::connection()->getPDO(),
             'databaseName' => DB::connection()->getDatabaseName(),
             'storage_path' => storage_path(),
             'storage_root' => Storage::disk('local')->getAdapter()->getPathPrefix(),

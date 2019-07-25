@@ -56,5 +56,11 @@ class Rollback extends RollbackCommand
             // Migrate
             parent::handle();
         });
+
+        if (tenancy()->initialized) {
+            tenancy()->switchDatabaseConnection();
+        } else {
+            $this->database->disconnect();
+        }
     }
 }

@@ -4,6 +4,8 @@ namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
 
 class CommandsTest extends TestCase
 {
@@ -71,5 +73,28 @@ class CommandsTest extends TestCase
     public function seed_command_works()
     {
         $this->markTestIncomplete();
+    }
+
+    /** @test */
+    public function database_connection_is_switched_to_default_after_migrating_or_seeding_or_rolling_back()
+    {
+        $originalDBName = DB::connection()->getDatabaseName();
+        
+        Artisan::call('tenants:migrate');
+        $this->assertSame($originalDBName, DB::connection()->getDatabaseName());
+
+        Artisan::call('tenants:seed', ['--class' => ExampleSeeder::class]);
+        $this->assertSame($originalDBName, DB::connection()->getDatabaseName());
+
+        Artisan::call('tenants:rollback');
+        $this->assertSame($originalDBName, DB::connection()->getDatabaseName());
+    }
+
+    /** @test */
+    public function database_connection_is_switched_to_default_after_migrating_or_seeding_or_rolling_back_when_tenancy_has_been_initialized()
+    {
+        tenancy()->init('localhost');
+        
+        $this->database_connection_is_switched_to_default_after_migrating_or_seeding_or_rolling_back();
     }
 }

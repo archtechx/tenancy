@@ -2,10 +2,8 @@
 
 namespace Stancl\Tenancy\Commands;
 
-use Illuminate\Console\Command;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Traits\HasATenantsOption;
-use Illuminate\Database\Migrations\Migrator;
 use Illuminate\Database\Console\Seeds\SeedCommand;
 use Illuminate\Database\ConnectionResolverInterface;
 
@@ -56,5 +54,11 @@ class Seed extends SeedCommand
             // Seed
             parent::handle();
         });
+
+        if (tenancy()->initialized) {
+            tenancy()->switchDatabaseConnection();
+        } else {
+            $this->database->disconnect();
+        }
     }
 }

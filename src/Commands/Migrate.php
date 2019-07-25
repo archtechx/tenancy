@@ -57,6 +57,10 @@ class Migrate extends MigrateCommand
             parent::handle();
         });
 
-        $this->database->disconnect();
+        if (tenancy()->initialized) {
+            tenancy()->switchDatabaseConnection();
+        } else {
+            $this->database->disconnect();
+        }
     }
 }
