@@ -1,5 +1,16 @@
 # Release Notes for 1.x
 
+## [v1.5.0 (2019-07-13)](https://github.com/stancl/tenancy/compare/v1.4.0...v1.5.0)
+
+### Added
+
+- PostgreSQL DB manager [#52](https://github.com/stancl/tenancy/pull/52)
+- `tenancy()->end()` [#68](https://github.com/stancl/tenancy/pull/68)
+
+### Fixed
+
+- Return type docblock for `TenantManager::all()` [#63](https://github.com/stancl/tenancy/issue/63)
+
 ## [v1.4.0 (2019-07-03)](https://github.com/stancl/tenancy/compare/v1.3.1...v1.4.0)
 
 ### Added
