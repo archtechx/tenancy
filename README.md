@@ -331,7 +331,7 @@ The entire application will use a new database connection. The connection will b
 
 ## Redis
 
-Connections listed in the `tenancy.redis.prefixed_connections` config array use a prefix based on the `tenancy.redis.prefix_base` and the tenant UUID.
+Connections listed in the `tenancy.redis.prefixed_connections` config array use a prefix based on the `tenancy.redis.prefix_base` and the tenant UUID. This separates tenant data. **However note that `Redis::scan()` does not respect the prefix.**
 
 **Note: You *must* use phpredis if you want mutli-tenant Redis. Predis doesn't support prefixes.**
 
