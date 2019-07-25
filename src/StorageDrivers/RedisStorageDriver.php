@@ -53,10 +53,17 @@ class RedisStorageDriver implements StorageDriver
         return $this->redis->hgetall("tenants:$uuid");
     }
 
+    /**
+     * @inheritDoc
+     *
+     * @param string $id
+     * @return boolean
+     * @todo Make tenant & domain deletion atomic.
+     */
     public function deleteTenant(string $id): bool
     {
         try {
-            $domain = $this->getTenantById($id)['domain'];
+            $domain = json_decode($this->getTenantById($id)['domain']);
         } catch (\Throwable $th) {
             throw new \Exception("No tenant with UUID $id exists.");
         }

@@ -177,4 +177,15 @@ class TenantManagerTest extends TestCase
         $this->assertSame($originals['storage_root'], Storage::disk('local')->getAdapter()->getPathPrefix());
         $this->assertSame($originals['cache'], app('cache'));
     }
+
+    /** @test */
+    public function tenant_can_be_deleted()
+    {
+        $tenant = tenant()->create('foo.localhost');
+        tenant()->delete($tenant['uuid']);
+        $this->assertSame([], tenancy()->all()->toArray());
+        
+        $tenant = tenant()->create('foo.localhost');
+        $this->assertSame([$tenant], tenancy()->all()->toArray());
+    }
 }
