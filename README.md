@@ -15,6 +15,10 @@ You won't have to change a thing in your application's code.\*
 
 \* depending on how you use the filesystem. Be sure to read [that section](#filesystemstorage). Everything else will work out of the box.
 
+## Stay updated
+
+If you'd like to be notified about new versions and related stuff, [sign up for e-mail notifications](http://eepurl.com/gyCnbf) or join our [Telegram channel](https://t.me/joinchat/AAAAAFjdrbSJg0ZCHTzxLA).
+
 ## Installation
 
 > If you're installing this package for the first time, **there's also a [tutorial](https://stancl.github.io/blog/how-to-make-any-laravel-app-multi-tenant-in-5-minutes/).**
