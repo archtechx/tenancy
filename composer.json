@@ -40,7 +40,8 @@
                 "Stancl\\Tenancy\\TenancyServiceProvider"
             ],
             "aliases": {
-                "Tenancy": "Stancl\\Tenancy\\TenancyFacade"
+                "Tenancy": "Stancl\\Tenancy\\TenancyFacade",
+                "GlobalCache": "Stancl\\Tenancy\\GlobalCacheFacade"
             }
         }
     },
