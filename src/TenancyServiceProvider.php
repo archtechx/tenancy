@@ -12,6 +12,7 @@ use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Commands\TenantList;
 use Stancl\Tenancy\Interfaces\StorageDriver;
 use Stancl\Tenancy\Interfaces\ServerConfigManager;
+use Illuminate\Cache\CacheManager;
 
 class TenancyServiceProvider extends ServiceProvider
 {
@@ -68,6 +69,10 @@ class TenancyServiceProvider extends ServiceProvider
         });
         $this->app->singleton(Seed::class, function ($app) {
             return new Seed($app['db'], $app[DatabaseManager::class]);
+        });
+
+        $this->app->bind('globalCache', function ($app) {
+            return new CacheManager($app);
         });
     }
 }
