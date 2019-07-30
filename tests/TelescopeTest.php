@@ -4,7 +4,7 @@ namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Artisan;
 
-class CacheManagerTest extends TestCase
+class TelescopeTest extends TestCase
 {
     public function setUp(): void
     {
