@@ -73,4 +73,19 @@ class CacheManagerTest extends TestCase
         cache(['foo' => 'xyz'], 1);
         $this->assertSame('xyz', cache('foo'));
     }
+
+    /** @test */
+    public function cache_is_persisted()
+    {
+        tenant()->create('foo.localhost');
+        tenancy()->init('foo.localhost');
+
+        cache(['foo' => 'bar'], 10);
+        $this->assertSame('bar', cache('foo'));
+
+        tenancy()->end();
+
+        tenancy()->init('foo.localhost');
+        $this->assertSame('bar', cache('foo'));
+    }
 }
