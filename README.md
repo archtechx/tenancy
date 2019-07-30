@@ -392,8 +392,9 @@ Connections listed in the `tenancy.redis.prefixed_connections` config array use 
 
 ## Cache
 
-Both `cache()` and `Cache` will use `Stancl\Tenancy\CacheManager`, which adds a tag (`prefix_base` + tenant UUID) to all methods called on it.
+Both the `cache()` helper and the `Cache` facade will use `Stancl\Tenancy\CacheManager`, which adds a tag (`prefix_base` + tenant UUID) to all methods called on it.
 
+If you need to store something in global, non-tenant cache, you can use the `GlobalCache` facade the same way you'd use the `Cache` facade.
 
 ## Filesystem/Storage
 
@@ -474,6 +475,8 @@ With default filesystem configuration, these two commands are equivalent:
 Storage::disk('public')->put($filename, $data);
 Storage::disk('local')->put("public/$filename", $data);
 ```
+
+If you want to store something globally, simply create a new disk and *don't* add it to the `tenancy.filesystem.disks` config.
 
 ## Artisan commands
 
