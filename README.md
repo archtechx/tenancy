@@ -15,7 +15,57 @@ You won't have to change a thing in your application's code.\*
 
 \* depending on how you use the filesystem. Be sure to read [that section](#filesystemstorage). Everything else will work out of the box.
 
-## Installation
+## Table Of Contents
+
+<details open="open">
+<summary><strong>Click to collapse/expand</strong></summary>
+
+- [Tenancy](#tenancy)
+    + [*A Laravel multi-database tenancy package that respects your code.*](#-a-laravel-multi-database-tenancy-package-that-respects-your-code-)
+- [Installation](#installation)
+    + [Requirements](#requirements)
+    + [Installing the package](#installing-the-package)
+    + [Configuring the `InitializeTenancy` middleware](#configuring-the--initializetenancy--middleware)
+    + [Creating tenant routes](#creating-tenant-routes)
+    + [Publishing the configuration file](#publishing-the-configuration-file)
+      - [`exempt_domains`](#-exempt-domains-)
+      - [`database`](#-database-)
+      - [`redis`](#-redis-)
+      - [`cache`](#-cache-)
+      - [`filesystem`](#-filesystem-)
+- [Usage](#usage)
+  * [Creating a Redis connection for storing tenancy-related data](#creating-a-redis-connection-for-storing-tenancy-related-data)
+  * [Obtaining a `TenantManager` instance](#obtaining-a--tenantmanager--instance)
+    + [Creating a new tenant](#creating-a-new-tenant)
+    + [Starting a session as a tenant](#starting-a-session-as-a-tenant)
+    + [Getting tenant information based on his UUID](#getting-tenant-information-based-on-his-uuid)
+    + [Getting tenant UUID based on his domain](#getting-tenant-uuid-based-on-his-domain)
+    + [Getting tenant information based on his domain](#getting-tenant-information-based-on-his-domain)
+    + [Getting current tenant information](#getting-current-tenant-information)
+    + [Listing all tenants](#listing-all-tenants)
+    + [Deleting a tenant](#deleting-a-tenant)
+  * [Storage driver](#storage-driver)
+    + [Storing custom data](#storing-custom-data)
+  * [Database](#database)
+  * [Redis](#redis)
+  * [Cache](#cache)
+  * [Filesystem/Storage](#filesystem-storage)
+  * [Artisan commands](#artisan-commands)
+      - [`tenants:list`](#-tenants-list-)
+      - [`tenants:migrate`, `tenants:rollback`, `tenants:seed`](#-tenants-migrate----tenants-rollback----tenants-seed-)
+    + [Tenant migrations](#tenant-migrations)
+- [Tips](#tips)
+  * [HTTPS certificates](#https-certificates)
+    + [1. Use nginx with the lua module](#1-use-nginx-with-the-lua-module)
+    + [2. Add a simple server block for each tenant](#2-add-a-simple-server-block-for-each-tenant)
+    + [Generating certificates](#generating-certificates)
+- [Testing](#testing)
+    + [With Docker](#with-docker)
+    + [Without Docker](#without-docker)
+
+</details>
+
+# Installation
 
 > If you're installing this package for the first time, **there's also a [tutorial](https://stancl.github.io/blog/how-to-make-any-laravel-app-multi-tenant-in-5-minutes/).**
 
@@ -453,7 +503,7 @@ Database seeding completed successfully.
 
 Tenant migrations are located in `database/migrations/tenant`, so you should move your tenant migrations there.
 
-## Some tips
+# Tips
 
 - If you create a tenant using the interactive console (`artisan tinker`) and use sqlite, you might need to change the database's permissions and/or ownership (`chmod`/`chown`) so that the web application can access it.
 
@@ -491,7 +541,7 @@ Creating this config dynamically from PHP is not easy, but is probably feasible.
 
 However, you still need to reload nginx configuration to apply the changes to configuration. This is problematic and I'm not sure if there is a simple and secure way to do this from PHP.
 
-## Testing
+# Testing
 
 ### With Docker
 
