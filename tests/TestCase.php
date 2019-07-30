@@ -19,6 +19,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         parent::setUp();
 
         Redis::connection('tenancy')->flushdb();
+        Redis::connection('cache')->flushdb();
 
         if ($this->autoCreateTenant) {
             $this->createTenant();
@@ -77,6 +78,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 's3',
             ],
             'tenancy.redis.tenancy' => true,
+            'tenancy.redis.prefixed_connections' => ['default'],
             'tenancy.migrations_directory' => database_path('../migrations'),
         ]);
     }

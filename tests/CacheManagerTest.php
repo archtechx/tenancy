@@ -88,4 +88,21 @@ class CacheManagerTest extends TestCase
         tenancy()->init('foo.localhost');
         $this->assertSame('bar', cache('foo'));
     }
+
+    /** @test */
+    public function cache_is_persisted_when_reidentification_is_used()
+    {
+        tenant()->create('foo.localhost');
+        tenant()->create('bar.localhost');
+        tenancy()->init('foo.localhost');
+
+        cache(['foo' => 'bar'], 10);
+        $this->assertSame('bar', cache('foo'));
+
+        tenancy()->init('bar.localhost');
+        tenancy()->end();
+
+        tenancy()->init('foo.localhost');
+        $this->assertSame('bar', cache('foo'));
+    }
 }

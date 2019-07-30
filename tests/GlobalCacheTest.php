@@ -21,7 +21,7 @@ class GlobalCacheTest extends TestCase
         $this->assertSame('bar', GlobalCache::get('foo'));
         
         GlobalCache::put(['abc' => 'xyz'], 1);
-        cache(['def' => 'ghi'], 1);
+        cache(['def' => 'ghi'], 10);
         $this->assertSame('ghi', cache('def'));
         
         tenancy()->end();
