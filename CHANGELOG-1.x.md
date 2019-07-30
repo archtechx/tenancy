@@ -1,5 +1,11 @@
 # Release Notes for 1.x
 
+## [v1.6.0 (2019-07-30)](https://github.com/stancl/tenancy/compare/v1.5.1...v1.6.0)
+
+### Added
+
+- `GlobalCache` facade [#78](https://github.com/stancl/tenancy/pull/78)
+
 ## [v1.5.1 (2019-07-25)](https://github.com/stancl/tenancy/compare/v1.5.0...v1.5.1)
 
 ### Fixed
