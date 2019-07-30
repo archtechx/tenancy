@@ -17,8 +17,8 @@ You won't have to change a thing in your application's code.\*
 
 ## Table Of Contents
 
-<details open="open">
-<summary><strong>Click to collapse/expand</strong></summary>
+<details>
+<summary><strong>Click to expand/collapse</strong></summary>
 
 - [Tenancy](#tenancy)
     + [*A Laravel multi-database tenancy package that respects your code.*](#-a-laravel-multi-database-tenancy-package-that-respects-your-code-)
