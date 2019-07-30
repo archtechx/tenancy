@@ -12,16 +12,32 @@ class GlobalCacheTest extends TestCase
     /** @test */
     public function global_cache_manager_stores_data_in_global_cache()
     {
-        dd(app('globalCache'));
-        dd(cache());
         $this->assertSame(null, cache('foo'));
-        cache(['foo' => 'bar'], 1);
-        $this->assertSame('bar', cache('foo'));
-        // $this->assertSame('bar', GlobalCache::get('foo'));
-        // GlobalCache::put('foo', 'bar');
-        dd(GlobalCache::get('foo'));
+        GlobalCache::put(['foo' => 'bar'], 1);
+        $this->assertSame('bar', GlobalCache::get('foo'));
 
         tenant()->create('foo.localhost');
         tenancy()->init('foo.localhost');
+        $this->assertSame('bar', GlobalCache::get('foo'));
+        
+        GlobalCache::put(['abc' => 'xyz'], 1);
+        cache(['def' => 'ghi'], 1);
+        $this->assertSame('ghi', cache('def'));
+        
+        tenancy()->end();
+        $this->assertSame('xyz', GlobalCache::get('abc'));
+        $this->assertSame('bar', GlobalCache::get('foo'));
+        $this->assertSame(null, cache('def'));
+        
+        tenant()->create('bar.localhost');
+        tenancy()->init('bar.localhost');
+        $this->assertSame('xyz', GlobalCache::get('abc'));
+        $this->assertSame('bar', GlobalCache::get('foo'));
+        $this->assertSame(null, cache('def'));
+        cache(['def' => 'xxx'], 1);
+        $this->assertSame('xxx', cache('def'));
+
+        tenancy()->init('foo.localhost');
+        $this->assertSame('ghi', cache('def'));
     }
 }
