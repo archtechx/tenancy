@@ -1,4 +1,4 @@
-# Tenancy
+# [stancl/tenancy](https://stancl.github.io/tenancy/)
 
 [![Laravel 5.7+](https://img.shields.io/badge/laravel-5.7+-red.svg)](https://laravel.com)
 [![Latest Stable Version](https://poser.pugx.org/stancl/tenancy/version)](https://packagist.org/packages/stancl/tenancy)
@@ -20,7 +20,7 @@ You won't have to change a thing in your application's code.\*
 <details>
 <summary><strong>Click to expand/collapse</strong></summary>
 
-- [Tenancy](#tenancy)
+- [stancl/tenancy](#stancltenancy)
     + [*A Laravel multi-database tenancy package that respects your code.*](#-a-laravel-multi-database-tenancy-package-that-respects-your-code-)
 - [Installation](#installation)
     + [Requirements](#requirements)
