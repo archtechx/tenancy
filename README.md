@@ -1,4 +1,4 @@
-# Tenancy
+# [stancl/tenancy](https://stancl.github.io/tenancy/)
 
 [![Laravel 5.7+](https://img.shields.io/badge/laravel-5.7+-red.svg)](https://laravel.com)
 [![Latest Stable Version](https://poser.pugx.org/stancl/tenancy/version)](https://packagist.org/packages/stancl/tenancy)
@@ -20,7 +20,7 @@ You won't have to change a thing in your application's code.\*
 <details>
 <summary><strong>Click to expand/collapse</strong></summary>
 
-- [Tenancy](#tenancy)
+- [stancl/tenancy](#stancltenancy)
     + [*A Laravel multi-database tenancy package that respects your code.*](#-a-laravel-multi-database-tenancy-package-that-respects-your-code-)
 - [Installation](#installation)
     + [Requirements](#requirements)
@@ -392,8 +392,9 @@ Connections listed in the `tenancy.redis.prefixed_connections` config array use 
 
 ## Cache
 
-Both `cache()` and `Cache` will use `Stancl\Tenancy\CacheManager`, which adds a tag (`prefix_base` + tenant UUID) to all methods called on it.
+Both the `cache()` helper and the `Cache` facade will use `Stancl\Tenancy\CacheManager`, which adds a tag (`prefix_base` + tenant UUID) to all methods called on it.
 
+If you need to store something in global, non-tenant cache, you can use the `GlobalCache` facade the same way you'd use the `Cache` facade.
 
 ## Filesystem/Storage
 
@@ -474,6 +475,8 @@ With default filesystem configuration, these two commands are equivalent:
 Storage::disk('public')->put($filename, $data);
 Storage::disk('local')->put("public/$filename", $data);
 ```
+
+If you want to store something globally, simply create a new disk and *don't* add it to the `tenancy.filesystem.disks` config.
 
 ## Artisan commands
 
