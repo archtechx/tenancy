@@ -2,9 +2,10 @@
 
 namespace Stancl\Tenancy;
 
-use Stancl\Tenancy\Commands\Seed;
 use Laravel\Telescope\Telescope;
 use Stancl\Tenancy\TenantManager;
+use Stancl\Tenancy\Commands\Seed;
+use Illuminate\Cache\CacheManager;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Commands\Migrate;
 use Stancl\Tenancy\Commands\Rollback;
@@ -13,7 +14,6 @@ use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Commands\TenantList;
 use Stancl\Tenancy\Interfaces\StorageDriver;
 use Stancl\Tenancy\Interfaces\ServerConfigManager;
-use Illuminate\Cache\CacheManager;
 
 class TenancyServiceProvider extends ServiceProvider
 {
@@ -40,18 +40,18 @@ class TenancyServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__ . '/routes.php');
 
         Route::middlewareGroup('tenancy', [
-            \Stancl\Tenancy\Middleware\InitializeTenancy::class
+            \Stancl\Tenancy\Middleware\InitializeTenancy::class,
         ]);
 
         $this->app->register(TenantRouteServiceProvider::class);
 
         if (class_exists(Telescope::class)) {
             $original_callback = Telescope::tagUsing;
-            
+
             Telescope::tag(function (\Laravel\Telescope\IncomingEntry $entry) use ($original_callback) {
                 $tags = [];
                 if (tenancy()->initialized) {
-                    $tags = ['tenant:'.tenanct('uuid')];
+                    $tags = ['tenant:' . tenant('uuid')];
                 }
 
                 return array_merge($original_callback($entry), $tags);
