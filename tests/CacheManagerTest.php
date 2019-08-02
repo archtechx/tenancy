@@ -51,7 +51,7 @@ class CacheManagerTest extends TestCase
         tenancy()->init('bar.localhost');
 
         $this->assertNotSame('bar', cache()->get('foo'));
-        
+
         cache()->put('foo', 'xyz', 1);
         $this->assertSame('xyz', cache()->get('foo'));
     }

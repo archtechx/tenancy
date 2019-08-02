@@ -2,11 +2,11 @@
 
 namespace Stancl\Tenancy\Tests;
 
-use Illuminate\Support\Facades\Redis;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Storage;
 
 class DataSeparationTest extends TestCase
 {
@@ -19,7 +19,7 @@ class DataSeparationTest extends TestCase
         $tenant1 = tenancy()->create('tenant1.localhost');
         $tenant2 = tenancy()->create('tenant2.localhost');
         \Artisan::call('tenants:migrate', [
-            '--tenants' => [$tenant1['uuid'], $tenant2['uuid']]
+            '--tenants' => [$tenant1['uuid'], $tenant2['uuid']],
         ]);
 
         tenancy()->init('tenant1.localhost');
@@ -31,7 +31,7 @@ class DataSeparationTest extends TestCase
             'remember_token' => Str::random(10),
         ]);
         $this->assertSame('foo', User::first()->name);
-        
+
         tenancy()->init('tenant2.localhost');
         $this->assertSame(null, User::first());
 
@@ -52,7 +52,7 @@ class DataSeparationTest extends TestCase
 
         $tenant3 = tenancy()->create('tenant3.localhost');
         \Artisan::call('tenants:migrate', [
-            '--tenants' => [$tenant1['uuid'], $tenant3['uuid']]
+            '--tenants' => [$tenant1['uuid'], $tenant3['uuid']],
         ]);
 
         tenancy()->init('tenant3.localhost');
@@ -72,7 +72,7 @@ class DataSeparationTest extends TestCase
         tenancy()->init('tenant1.localhost');
         Redis::set('foo', 'bar');
         $this->assertSame('bar', Redis::get('foo'));
-        
+
         tenancy()->init('tenant2.localhost');
         $this->assertSame(null, Redis::get('foo'));
         Redis::set('foo', 'xyz');
@@ -99,7 +99,7 @@ class DataSeparationTest extends TestCase
         tenancy()->init('tenant1.localhost');
         Cache::put('foo', 'bar', 60);
         $this->assertSame('bar', Cache::get('foo'));
-        
+
         tenancy()->init('tenant2.localhost');
         $this->assertSame(null, Cache::get('foo'));
         Cache::put('foo', 'xyz', 60);
@@ -126,7 +126,7 @@ class DataSeparationTest extends TestCase
         tenancy()->init('tenant1.localhost');
         Storage::disk('public')->put('foo', 'bar');
         $this->assertSame('bar', Storage::disk('public')->get('foo'));
-        
+
         tenancy()->init('tenant2.localhost');
         $this->assertFalse(Storage::disk('public')->exists('foo'));
         Storage::disk('public')->put('foo', 'xyz');

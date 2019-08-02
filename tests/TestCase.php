@@ -10,7 +10,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     public $autoInitTenancy = true;
 
     /**
-     * Setup the test environment
+     * Setup the test environment.
      *
      * @return void
      */

@@ -13,7 +13,7 @@ trait BootstrapsTenancy
     /**
      * Was tenancy initialized/bootstrapped?
      *
-     * @var boolean
+     * @var bool
      */
     public $initialized = false;
 
@@ -53,7 +53,7 @@ trait BootstrapsTenancy
         foreach ($connections as $connection) {
             $prefix = $this->app['config']['tenancy.redis.prefix_base'] . $this->tenant['uuid'];
             $client = Redis::connection($connection)->client();
-            
+
             try {
                 $this->originalSettings['redis'][$connection] = $client->getOption($client::OPT_PREFIX);
                 $client->setOption($client::OPT_PREFIX, $prefix);
@@ -67,7 +67,7 @@ trait BootstrapsTenancy
     {
         foreach ($connections as $connection) {
             $client = Redis::connection($connection)->client();
-            
+
             try {
                 $client->setOption($client::OPT_PREFIX, $this->originalSettings['redis'][$connection]);
             } catch (\Throwable $t) {
@@ -106,12 +106,12 @@ trait BootstrapsTenancy
         // Storage facade
         foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
             $old['disks'][$disk] = Storage::disk($disk)->getAdapter()->getPathPrefix();
-            
+
             if ($root = str_replace('%storage_path%', storage_path(), $this->app['config']["tenancy.filesystem.root_override.{$disk}"])) {
                 Storage::disk($disk)->getAdapter()->setPathPrefix($root);
             } else {
                 $root = $this->app['config']["filesystems.disks.{$disk}.root"];
-    
+
                 Storage::disk($disk)->getAdapter()->setPathPrefix($root . "/{$suffix}");
             }
         }
