@@ -3,13 +3,13 @@
 namespace Stancl\Tenancy;
 
 use Laravel\Telescope\Telescope;
-use Stancl\Tenancy\TenantManager;
 use Stancl\Tenancy\Commands\Seed;
+use Stancl\Tenancy\TenantManager;
 use Illuminate\Cache\CacheManager;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Commands\Migrate;
-use Stancl\Tenancy\Commands\Rollback;
 use Illuminate\Support\Facades\Route;
+use Stancl\Tenancy\Commands\Rollback;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Commands\TenantList;
 use Stancl\Tenancy\Interfaces\StorageDriver;
