@@ -1,0 +1,4 @@
+preset: laravel
+disabled:
+- concat_without_spaces
+- ternary_operator_spaces
