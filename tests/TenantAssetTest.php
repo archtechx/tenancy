@@ -10,7 +10,7 @@ class TenantAssetTest extends TestCase
         $filename = 'testfile' . $this->randomString(10);
         \Storage::disk('public')->put($filename, 'bar');
         $path = storage_path("app/public/$filename");
-        
+
         // response()->file() returns BinaryFileResponse whose content is
         // inaccessible via getContent, so ->assertSee() can't be used
         $this->get(tenant_asset($filename))->assertSuccessful();

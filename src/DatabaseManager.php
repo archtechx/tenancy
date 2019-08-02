@@ -90,7 +90,7 @@ class DatabaseManager
 
     public function getDriver(): ?string
     {
-        return config("database.connections.tenant.driver");
+        return config('database.connections.tenant.driver');
     }
 
     public function createTenantConnection(string $database_name)
@@ -98,11 +98,11 @@ class DatabaseManager
         // Create the `tenancy` database connection.
         $based_on = config('tenancy.database.based_on') ?: config('database.default');
         config()->set([
-            'database.connections.tenant' => config('database.connections.' . $based_on)
+            'database.connections.tenant' => config('database.connections.' . $based_on),
         ]);
 
         // Change DB name
-        $database_name = $this->getDriver() === "sqlite" ? database_path($database_name) : $database_name;
+        $database_name = $this->getDriver() === 'sqlite' ? database_path($database_name) : $database_name;
         config()->set(['database.connections.tenant.database' => $database_name]);
     }
 }

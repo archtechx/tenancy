@@ -10,7 +10,7 @@ class CacheManager extends BaseCacheManager
     {
         $tags = [config('tenancy.cache.tag_base') . tenant('uuid')];
 
-        if ($method === "tags") {
+        if ($method === 'tags') {
             if (\count($parameters) !== 1) {
                 throw new \Exception("Method tags() takes exactly 1 argument. {count($parameters)} passed.");
             }

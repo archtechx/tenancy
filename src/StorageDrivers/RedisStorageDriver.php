@@ -20,6 +20,7 @@ class RedisStorageDriver implements StorageDriver
         if (! $id) {
             throw new \Exception("Tenant could not be identified on domain {$domain}");
         }
+
         return $this->getTenantById($id);
     }
 
@@ -33,7 +34,7 @@ class RedisStorageDriver implements StorageDriver
     public function getTenantById(string $uuid, array $fields = []): array
     {
         $fields = (array) $fields;
-        
+
         if (! $fields) {
             return $this->redis->hgetall("tenants:$uuid");
         }
@@ -50,14 +51,15 @@ class RedisStorageDriver implements StorageDriver
     {
         $this->redis->hmset("domains:$domain", 'tenant_id', $uuid);
         $this->redis->hmset("tenants:$uuid", 'uuid', json_encode($uuid), 'domain', json_encode($domain));
+
         return $this->redis->hgetall("tenants:$uuid");
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      *
      * @param string $id
-     * @return boolean
+     * @return bool
      * @todo Make tenant & domain deletion atomic.
      */
     public function deleteTenant(string $id): bool
@@ -69,6 +71,7 @@ class RedisStorageDriver implements StorageDriver
         }
 
         $this->redis->del("domains:$domain");
+
         return (bool) $this->redis->del("tenants:$id");
     }
 
@@ -91,7 +94,7 @@ class RedisStorageDriver implements StorageDriver
                 return substr($hash, strlen($redis_prefix));
             }, $this->redis->scan(null, $redis_prefix.'tenants:*'));
         }
-        
+
         return array_map(function ($tenant) {
             return $this->redis->hgetall($tenant);
         }, $hashes);
@@ -110,12 +113,14 @@ class RedisStorageDriver implements StorageDriver
     public function put(string $uuid, string $key, $value)
     {
         $this->redis->hset("tenants:$uuid", $key, $value);
+
         return $value;
     }
 
     public function putMany(string $uuid, array $values): array
     {
         $this->redis->hmset("tenants:$uuid", $values);
+
         return $values;
     }
 }

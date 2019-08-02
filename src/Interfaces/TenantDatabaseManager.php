@@ -8,7 +8,7 @@ interface TenantDatabaseManager
      * Create a database.
      *
      * @param  string $name Name of the database.
-     * @return boolean
+     * @return bool
      */
     public function createDatabase(string $name): bool;
 
@@ -16,7 +16,7 @@ interface TenantDatabaseManager
      * Delete a database.
      *
      * @param  string $name Name of the database.
-     * @return boolean
+     * @return bool
      */
     public function deleteDatabase(string $name): bool;
 }
