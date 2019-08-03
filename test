@@ -2,4 +2,26 @@
 
 # for development
 docker-compose up -d
-docker-compose exec test vendor/bin/phpunit "$@"
+
+# Specify variant using `export VARIANT=1`
+if [[ -z "${VARIANT}" ]]; then
+    variants=(1 2)
+else
+    variants=( $VARIANT )
+fi
+
+for variant in "${variants[@]}"
+    do
+        export filename_base="phpunit_var_$variant"
+        
+        (cat phpunit.xml | sed -e "s/\"STANCL_TENANCY_TEST_VARIANT\" value=\"1\"/\"STANCL_TENANCY_TEST_VARIANT\" value=\"$variant\"/g") > "$filename_base.xml"
+        
+        printf "Test variant: $variant\n\n"
+
+        docker-compose exec test vendor/bin/phpunit \
+        --configuration "$filename_base.xml" \
+        --coverage-php "$filename_base.cov" \
+        "$@"
+done
+
+# todo merge cov reports

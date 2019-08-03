@@ -2,8 +2,6 @@
 
 namespace Stancl\Tenancy\Tests;
 
-use Stancl\Tenancy\Interfaces\StorageDriver;
-
 class TenantStorageTest extends TestCase
 {
     /** @test */

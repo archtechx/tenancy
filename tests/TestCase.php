@@ -9,6 +9,13 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     public $autoCreateTenant = true;
     public $autoInitTenancy = true;
 
+    private function checkRequirements(): void
+    {
+        parent::checkRequirements();
+
+        dd($this->getAnnotations());
+    }
+
     /**
      * Setup the test environment
      *
@@ -81,6 +88,20 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'tenancy.redis.prefixed_connections' => ['default'],
             'tenancy.migrations_directory' => database_path('../migrations'),
         ]);
+
+        switch((string) env('STANCL_TENANCY_TEST_VARIANT', '1')) {
+            case '2':
+                $app['config']->set([
+                    'tenancy.redis.tenancy' => true,
+                    'database.redis.client' => 'phpredis',
+                ]);
+                break;
+            default:
+                $app['config']->set([
+                    'tenancy.redis.tenancy' => false,
+                    'database.redis.client' => 'predis',
+                ]);
+        };
     }
 
     protected function loadDotEnv()
