@@ -85,7 +85,7 @@ class RedisStorageDriver implements StorageDriver
             // Prefix is applied to all functions except scan().
             // This code applies the correct prefix manually.
             $redis_prefix = config('database.redis.options.prefix');
-            
+
             if (config('database.redis.client') === 'phpredis') {
                 $redis_prefix = $this->redis->getOption($this->redis->client()::OPT_PREFIX) ?? $redis_prefix;
                 $all_keys = $this->redis->scan(null, $redis_prefix . 'tenants:*');
