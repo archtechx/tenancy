@@ -1,5 +1,17 @@
 # Release Notes for 1.x
 
+## [v1.6.1 (2019-08-04)](https://github.com/stancl/tenancy/compare/v1.6.0...v1.6.1)
+
+Multiple phpunit.xml configs are now generated to run the tests with different configurations, such as different Redis drivers.
+
+### Fixed
+
+- `tenancy()->all()` with predis [`0dc8c80`](https://github.com/stancl/tenancy/commit/0dc8c80a02efbee5676cc72e648e108037ca5268)
+
+### Dropped
+
+- Laravel 5.7 support [`65b3882`](https://github.com/stancl/tenancy/commit/65b38827d5a2fa183838a9dce9fb6a157fd7e859)
+
 ## [v1.6.0 (2019-07-30)](https://github.com/stancl/tenancy/compare/v1.5.1...v1.6.0)
 
 ### Added
