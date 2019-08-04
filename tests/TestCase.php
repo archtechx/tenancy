@@ -101,7 +101,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                     'tenancy.redis.tenancy' => false,
                     'database.redis.client' => 'predis',
                 ]);
-        };
+        }
     }
 
     protected function loadDotEnv()
