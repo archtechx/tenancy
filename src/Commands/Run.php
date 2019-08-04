@@ -5,7 +5,7 @@ namespace Stancl\Tenancy\Commands;
 use Illuminate\Console\Command;
 use Stancl\Tenancy\DatabaseManager;
 
-class Migrate extends Command
+class Run extends Command
 {
     protected $database;
 
