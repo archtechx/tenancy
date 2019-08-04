@@ -9,6 +9,9 @@ php:
 services:
   - docker
 
+before_install:
+  - docker-compose up -d
+
 install:
   - travis_retry docker-compose exec test composer require --no-interaction "laravel/framework:$LARAVEL_VERSION" "orchestra/testbench:$TESTBENCH_VERSION"
 
