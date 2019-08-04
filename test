@@ -1,27 +1,25 @@
-#!/bin/bash
+#!/usr/bin/env python3
+from os import system
+import argparse
 
-# for development
-docker-compose up -d
+system('docker-compose up -d')
 
-# Specify variant using `export VARIANT=1`
-if [[ -z "${VARIANT}" ]]; then
-    variants=(1 2)
-else
-    variants=( $VARIANT )
-fi
+parser = argparse.ArgumentParser()
+parser.add_argument("--variants", default='1,2',
+                    help="Comma-separated values. Which test variants should be run.")
+args, other = parser.parse_known_args()
 
-for variant in "${variants[@]}"
-    do
-        export filename_base="phpunit_var_$variant"
-        
-        (cat phpunit.xml | sed -e "s/\"STANCL_TENANCY_TEST_VARIANT\" value=\"1\"/\"STANCL_TENANCY_TEST_VARIANT\" value=\"$variant\"/g") > "$filename_base.xml"
-        
-        printf "Test variant: $variant\n\n"
+variants = args.variants.split(',')
 
-        docker-compose exec test vendor/bin/phpunit \
-        --configuration "$filename_base.xml" \
-        --coverage-php "$filename_base.cov" \
-        "$@"
-done
+for variant in variants:
+    filename_base = "phpunit_var_" + variant
+    with open('phpunit.xml', 'r') as inp, open(filename_base + '.xml', 'w') as out:
+        out.write(inp.read().replace('"STANCL_TENANCY_TEST_VARIANT" value="1"',
+                                 '"STANCL_TENANCY_TEST_VARIANT" value="%s"' % variant))
 
-# todo merge cov reports
+    print("Test variant: %s\n" % variant)
+
+    system('docker-compose exec test vendor/bin/phpunit --configuration "%s" --coverage-php %s %s'
+           %  (filename_base + '.xml', 'coverage/' + filename_base + '.cov', ' '.join(other)))
+
+system("docker-compose exec test vendor/bin/phpcov merge --clover clover.xml coverage/")

@@ -1,0 +1,592 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1564933065">
+  <project timestamp="1564933065">
+    <package name="Stancl\Tenancy">
+      <file name="/var/www/html/src/CacheManager.php">
+        <class name="Stancl\Tenancy\CacheManager" namespace="Stancl\Tenancy">
+          <metrics complexity="3" methods="1" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="8" coveredstatements="0" elements="9" coveredelements="0"/>
+        </class>
+        <line num="9" type="method" name="__call" visibility="public" complexity="3" crap="12.00" count="0"/>
+        <line num="11" type="stmt" count="0"/>
+        <line num="13" type="stmt" count="0"/>
+        <line num="14" type="stmt" count="0"/>
+        <line num="15" type="stmt" count="0"/>
+        <line num="18" type="stmt" count="0"/>
+        <line num="19" type="stmt" count="0"/>
+        <line num="21" type="stmt" count="0"/>
+        <line num="24" type="stmt" count="0"/>
+        <metrics loc="26" ncloc="24" classes="1" methods="1" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="8" coveredstatements="0" elements="9" coveredelements="0"/>
+      </file>
+      <file name="/var/www/html/src/DatabaseManager.php">
+        <class name="Stancl\Tenancy\DatabaseManager" namespace="Stancl\Tenancy">
+          <metrics complexity="17" methods="8" coveredmethods="3" conditionals="0" coveredconditionals="0" statements="39" coveredstatements="16" elements="47" coveredelements="19"/>
+        </class>
+        <line num="13" type="method" name="__construct" visibility="public" complexity="1" crap="1" count="1"/>
+        <line num="15" type="stmt" count="1"/>
+        <line num="16" type="stmt" count="1"/>
+        <line num="17" type="stmt" count="1"/>
+        <line num="19" type="method" name="connect" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="21" type="stmt" count="0"/>
+        <line num="22" type="stmt" count="0"/>
+        <line num="23" type="stmt" count="0"/>
+        <line num="24" type="stmt" count="0"/>
+        <line num="26" type="method" name="connectToTenant" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="28" type="stmt" count="0"/>
+        <line num="29" type="stmt" count="0"/>
+        <line num="31" type="method" name="disconnect" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="33" type="stmt" count="0"/>
+        <line num="34" type="stmt" count="0"/>
+        <line num="35" type="stmt" count="0"/>
+        <line num="36" type="stmt" count="0"/>
+        <line num="37" type="stmt" count="0"/>
+        <line num="47" type="method" name="create" visibility="public" complexity="4" crap="4.59" count="1"/>
+        <line num="49" type="stmt" count="1"/>
+        <line num="50" type="stmt" count="1"/>
+        <line num="52" type="stmt" count="1"/>
+        <line num="54" type="stmt" count="1"/>
+        <line num="55" type="stmt" count="0"/>
+        <line num="58" type="stmt" count="1"/>
+        <line num="59" type="stmt" count="0"/>
+        <line num="61" type="stmt" count="1"/>
+        <line num="63" type="stmt" count="0"/>
+        <line num="73" type="method" name="delete" visibility="public" complexity="4" crap="20.00" count="0"/>
+        <line num="75" type="stmt" count="0"/>
+        <line num="76" type="stmt" count="0"/>
+        <line num="78" type="stmt" count="0"/>
+        <line num="80" type="stmt" count="0"/>
+        <line num="81" type="stmt" count="0"/>
+        <line num="84" type="stmt" count="0"/>
+        <line num="85" type="stmt" count="0"/>
+        <line num="87" type="stmt" count="0"/>
+        <line num="89" type="stmt" count="0"/>
+        <line num="91" type="method" name="getDriver" visibility="public" complexity="2" crap="2" count="1"/>
+        <line num="93" type="stmt" count="1"/>
+        <line num="96" type="method" name="createTenantConnection" visibility="public" complexity="3" crap="3" count="1"/>
+        <line num="99" type="stmt" count="1"/>
+        <line num="100" type="stmt" count="1"/>
+        <line num="101" type="stmt" count="1"/>
+        <line num="105" type="stmt" count="1"/>
+        <line num="106" type="stmt" count="1"/>
+        <line num="107" type="stmt" count="1"/>
+        <metrics loc="108" ncloc="88" classes="1" methods="8" coveredmethods="3" conditionals="0" coveredconditionals="0" statements="39" coveredstatements="16" elements="47" coveredelements="19"/>
+      </file>
+      <file name="/var/www/html/src/GlobalCacheFacade.php">
+        <class name="Stancl\Tenancy\GlobalCacheFacade" namespace="Stancl\Tenancy">
+          <metrics complexity="1" methods="1" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="1" coveredstatements="0" elements="2" coveredelements="0"/>
+        </class>
+        <line num="9" type="method" name="getFacadeAccessor" visibility="protected" complexity="1" crap="2.00" count="0"/>
+        <line num="11" type="stmt" count="0"/>
+        <metrics loc="12" ncloc="12" classes="1" methods="1" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="1" coveredstatements="0" elements="2" coveredelements="0"/>
+      </file>
+      <file name="/var/www/html/src/TenancyFacade.php">
+        <class name="Stancl\Tenancy\TenancyFacade" namespace="Stancl\Tenancy">
+          <metrics complexity="1" methods="1" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="1" coveredstatements="0" elements="2" coveredelements="0"/>
+        </class>
+        <line num="9" type="method" name="getFacadeAccessor" visibility="protected" complexity="1" crap="2.00" count="0"/>
+        <line num="11" type="stmt" count="0"/>
+        <metrics loc="13" ncloc="13" classes="1" methods="1" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="1" coveredstatements="0" elements="2" coveredelements="0"/>
+      </file>
+      <file name="/var/www/html/src/TenancyServiceProvider.php">
+        <class name="Stancl\Tenancy\TenancyServiceProvider" namespace="Stancl\Tenancy">
+          <metrics complexity="3" methods="2" coveredmethods="1" conditionals="0" coveredconditionals="0" statements="26" coveredstatements="22" elements="28" coveredelements="23"/>
+        </class>
+        <line num="24" type="method" name="boot" visibility="public" complexity="2" crap="2" count="1"/>
+        <line num="26" type="stmt" count="1"/>
+        <line num="27" type="stmt" count="1"/>
+        <line num="28" type="stmt" count="1"/>
+        <line num="35" type="stmt" count="1"/>
+        <line num="36" type="stmt" count="1"/>
+        <line num="37" type="stmt" count="1"/>
+        <line num="39" type="stmt" count="1"/>
+        <line num="41" type="stmt" count="1"/>
+        <line num="42" type="stmt" count="1"/>
+        <line num="45" type="stmt" count="1"/>
+        <line num="46" type="stmt" count="1"/>
+        <line num="53" type="method" name="register" visibility="public" complexity="1" crap="1.02" count="1"/>
+        <line num="55" type="stmt" count="1"/>
+        <line num="57" type="stmt" count="1"/>
+        <line num="58" type="stmt" count="1"/>
+        <line num="59" type="stmt" count="1"/>
+        <line num="61" type="stmt" count="1"/>
+        <line num="62" type="stmt" count="1"/>
+        <line num="65" type="stmt" count="0"/>
+        <line num="66" type="stmt" count="1"/>
+        <line num="68" type="stmt" count="0"/>
+        <line num="69" type="stmt" count="1"/>
+        <line num="71" type="stmt" count="0"/>
+        <line num="72" type="stmt" count="1"/>
+        <line num="75" type="stmt" count="0"/>
+        <line num="76" type="stmt" count="1"/>
+        <line num="77" type="stmt" count="1"/>
+        <metrics loc="78" ncloc="68" classes="1" methods="2" coveredmethods="1" conditionals="0" coveredconditionals="0" statements="26" coveredstatements="22" elements="28" coveredelements="23"/>
+      </file>
+      <file name="/var/www/html/src/TenantManager.php">
+        <class name="Stancl\Tenancy\TenantManager" namespace="Stancl\Tenancy">
+          <metrics complexity="42" methods="21" coveredmethods="5" conditionals="0" coveredconditionals="0" statements="71" coveredstatements="18" elements="92" coveredelements="23"/>
+        </class>
+        <line num="41" type="method" name="__construct" visibility="public" complexity="1" crap="1" count="1"/>
+        <line num="43" type="stmt" count="1"/>
+        <line num="44" type="stmt" count="1"/>
+        <line num="45" type="stmt" count="1"/>
+        <line num="46" type="stmt" count="1"/>
+        <line num="48" type="method" name="init" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="50" type="stmt" count="0"/>
+        <line num="51" type="stmt" count="0"/>
+        <line num="52" type="stmt" count="0"/>
+        <line num="55" type="method" name="identify" visibility="public" complexity="6" crap="42.00" count="0"/>
+        <line num="57" type="stmt" count="0"/>
+        <line num="59" type="stmt" count="0"/>
+        <line num="60" type="stmt" count="0"/>
+        <line num="63" type="stmt" count="0"/>
+        <line num="65" type="stmt" count="0"/>
+        <line num="66" type="stmt" count="0"/>
+        <line num="69" type="stmt" count="0"/>
+        <line num="72" type="method" name="create" visibility="public" complexity="3" crap="3.04" count="1"/>
+        <line num="74" type="stmt" count="1"/>
+        <line num="76" type="stmt" count="1"/>
+        <line num="77" type="stmt" count="0"/>
+        <line num="80" type="stmt" count="1"/>
+        <line num="81" type="stmt" count="1"/>
+        <line num="83" type="stmt" count="1"/>
+        <line num="86" type="method" name="delete" visibility="public" complexity="1" crap="1" count="1"/>
+        <line num="88" type="stmt" count="1"/>
+        <line num="98" type="method" name="getTenantById" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="100" type="stmt" count="0"/>
+        <line num="101" type="stmt" count="0"/>
+        <line num="111" type="method" name="find" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="113" type="stmt" count="0"/>
+        <line num="122" type="method" name="getTenantIdByDomain" visibility="public" complexity="3" crap="12.00" count="0"/>
+        <line num="124" type="stmt" count="0"/>
+        <line num="126" type="stmt" count="0"/>
+        <line num="135" type="method" name="getIdByDomain" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="137" type="stmt" count="0"/>
+        <line num="147" type="method" name="findByDomain" visibility="public" complexity="3" crap="12.00" count="0"/>
+        <line num="149" type="stmt" count="0"/>
+        <line num="151" type="stmt" count="0"/>
+        <line num="153" type="stmt" count="0"/>
+        <line num="154" type="stmt" count="0"/>
+        <line num="157" type="stmt" count="0"/>
+        <line num="160" type="method" name="currentDomain" visibility="public" complexity="2" crap="6.00" count="0"/>
+        <line num="162" type="stmt" count="0"/>
+        <line num="165" type="method" name="getDatabaseName" visibility="public" complexity="2" crap="2" count="1"/>
+        <line num="167" type="stmt" count="1"/>
+        <line num="168" type="stmt" count="1"/>
+        <line num="177" type="method" name="setTenant" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="179" type="stmt" count="0"/>
+        <line num="181" type="stmt" count="0"/>
+        <line num="183" type="stmt" count="0"/>
+        <line num="192" type="method" name="disconnectDatabase" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="194" type="stmt" count="0"/>
+        <line num="195" type="stmt" count="0"/>
+        <line num="203" type="method" name="all" visibility="public" complexity="1" crap="1" count="1"/>
+        <line num="205" type="stmt" count="1"/>
+        <line num="208" type="stmt" count="1"/>
+        <line num="209" type="stmt" count="1"/>
+        <line num="218" type="method" name="initById" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="220" type="stmt" count="0"/>
+        <line num="221" type="stmt" count="0"/>
+        <line num="222" type="stmt" count="0"/>
+        <line num="232" type="method" name="get" visibility="public" complexity="3" crap="12.00" count="0"/>
+        <line num="234" type="stmt" count="0"/>
+        <line num="236" type="stmt" count="0"/>
+        <line num="237" type="stmt" count="0"/>
+        <line num="240" type="stmt" count="0"/>
+        <line num="251" type="method" name="put" visibility="public" complexity="6" crap="42.00" count="0"/>
+        <line num="253" type="stmt" count="0"/>
+        <line num="254" type="stmt" count="0"/>
+        <line num="255" type="stmt" count="0"/>
+        <line num="258" type="stmt" count="0"/>
+        <line num="262" type="stmt" count="0"/>
+        <line num="264" type="stmt" count="0"/>
+        <line num="267" type="stmt" count="0"/>
+        <line num="268" type="stmt" count="0"/>
+        <line num="271" type="stmt" count="0"/>
+        <line num="272" type="stmt" count="0"/>
+        <line num="275" type="stmt" count="0"/>
+        <line num="276" type="stmt" count="0"/>
+        <line num="277" type="stmt" count="0"/>
+        <line num="280" type="stmt" count="0"/>
+        <line num="291" type="method" name="set" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="293" type="stmt" count="0"/>
+        <line num="296" type="method" name="jsonDecodeArrayValues" visibility="protected" complexity="1" crap="1" count="1"/>
+        <line num="299" type="stmt" count="1"/>
+        <line num="300" type="stmt" count="1"/>
+        <line num="302" type="stmt" count="1"/>
+        <line num="311" type="method" name="__invoke" visibility="public" complexity="2" crap="6.00" count="0"/>
+        <line num="313" type="stmt" count="0"/>
+        <line num="314" type="stmt" count="0"/>
+        <line num="317" type="stmt" count="0"/>
+        <metrics loc="319" ncloc="207" classes="1" methods="21" coveredmethods="5" conditionals="0" coveredconditionals="0" statements="71" coveredstatements="18" elements="92" coveredelements="23"/>
+      </file>
+      <file name="/var/www/html/src/TenantRouteServiceProvider.php">
+        <class name="Stancl\Tenancy\TenantRouteServiceProvider" namespace="Stancl\Tenancy">
+          <metrics complexity="3" methods="1" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="6" coveredstatements="3" elements="7" coveredelements="3"/>
+        </class>
+        <line num="10" type="method" name="map" visibility="public" complexity="3" crap="4.12" count="1"/>
+        <line num="12" type="stmt" count="1"/>
+        <line num="13" type="stmt" count="1"/>
+        <line num="14" type="stmt" count="0"/>
+        <line num="15" type="stmt" count="0"/>
+        <line num="16" type="stmt" count="0"/>
+        <line num="18" type="stmt" count="1"/>
+        <metrics loc="19" ncloc="19" classes="1" methods="1" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="6" coveredstatements="3" elements="7" coveredelements="3"/>
+      </file>
+    </package>
+    <package name="Stancl\Tenancy\Commands">
+      <file name="/var/www/html/src/Commands/Migrate.php">
+        <class name="Stancl\Tenancy\Commands\Migrate" namespace="Stancl\Tenancy\Commands">
+          <metrics complexity="4" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="16" coveredstatements="0" elements="18" coveredelements="0"/>
+        </class>
+        <line num="30" type="method" name="__construct" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="32" type="stmt" count="0"/>
+        <line num="33" type="stmt" count="0"/>
+        <line num="35" type="stmt" count="0"/>
+        <line num="36" type="stmt" count="0"/>
+        <line num="37" type="stmt" count="0"/>
+        <line num="44" type="method" name="handle" visibility="public" complexity="3" crap="12.00" count="0"/>
+        <line num="46" type="stmt" count="0"/>
+        <line num="47" type="stmt" count="0"/>
+        <line num="50" type="stmt" count="0"/>
+        <line num="53" type="stmt" count="0"/>
+        <line num="54" type="stmt" count="0"/>
+        <line num="57" type="stmt" count="0"/>
+        <line num="58" type="stmt" count="0"/>
+        <line num="60" type="stmt" count="0"/>
+        <line num="61" type="stmt" count="0"/>
+        <line num="63" type="stmt" count="0"/>
+        <line num="65" type="stmt" count="0"/>
+        <metrics loc="66" ncloc="49" classes="1" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="16" coveredstatements="0" elements="18" coveredelements="0"/>
+      </file>
+      <file name="/var/www/html/src/Commands/Rollback.php">
+        <class name="Stancl\Tenancy\Commands\Rollback" namespace="Stancl\Tenancy\Commands">
+          <metrics complexity="4" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="16" coveredstatements="0" elements="18" coveredelements="0"/>
+        </class>
+        <line num="30" type="method" name="__construct" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="32" type="stmt" count="0"/>
+        <line num="33" type="stmt" count="0"/>
+        <line num="35" type="stmt" count="0"/>
+        <line num="36" type="stmt" count="0"/>
+        <line num="37" type="stmt" count="0"/>
+        <line num="44" type="method" name="handle" visibility="public" complexity="3" crap="12.00" count="0"/>
+        <line num="46" type="stmt" count="0"/>
+        <line num="47" type="stmt" count="0"/>
+        <line num="50" type="stmt" count="0"/>
+        <line num="53" type="stmt" count="0"/>
+        <line num="54" type="stmt" count="0"/>
+        <line num="57" type="stmt" count="0"/>
+        <line num="58" type="stmt" count="0"/>
+        <line num="60" type="stmt" count="0"/>
+        <line num="61" type="stmt" count="0"/>
+        <line num="63" type="stmt" count="0"/>
+        <line num="65" type="stmt" count="0"/>
+        <metrics loc="66" ncloc="49" classes="1" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="16" coveredstatements="0" elements="18" coveredelements="0"/>
+      </file>
+      <file name="/var/www/html/src/Commands/Seed.php">
+        <class name="Stancl\Tenancy\Commands\Seed" namespace="Stancl\Tenancy\Commands">
+          <metrics complexity="4" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="16" coveredstatements="0" elements="18" coveredelements="0"/>
+        </class>
+        <line num="28" type="method" name="__construct" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="30" type="stmt" count="0"/>
+        <line num="31" type="stmt" count="0"/>
+        <line num="33" type="stmt" count="0"/>
+        <line num="34" type="stmt" count="0"/>
+        <line num="35" type="stmt" count="0"/>
+        <line num="42" type="method" name="handle" visibility="public" complexity="3" crap="12.00" count="0"/>
+        <line num="44" type="stmt" count="0"/>
+        <line num="45" type="stmt" count="0"/>
+        <line num="48" type="stmt" count="0"/>
+        <line num="51" type="stmt" count="0"/>
+        <line num="52" type="stmt" count="0"/>
+        <line num="55" type="stmt" count="0"/>
+        <line num="56" type="stmt" count="0"/>
+        <line num="58" type="stmt" count="0"/>
+        <line num="59" type="stmt" count="0"/>
+        <line num="61" type="stmt" count="0"/>
+        <line num="63" type="stmt" count="0"/>
+        <metrics loc="64" ncloc="47" classes="1" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="16" coveredstatements="0" elements="18" coveredelements="0"/>
+      </file>
+      <file name="/var/www/html/src/Commands/TenantList.php">
+        <class name="Stancl\Tenancy\Commands\TenantList" namespace="Stancl\Tenancy\Commands">
+          <metrics complexity="2" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="6" coveredstatements="0" elements="8" coveredelements="0"/>
+        </class>
+        <line num="28" type="method" name="__construct" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="30" type="stmt" count="0"/>
+        <line num="31" type="stmt" count="0"/>
+        <line num="38" type="method" name="handle" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="40" type="stmt" count="0"/>
+        <line num="42" type="stmt" count="0"/>
+        <line num="43" type="stmt" count="0"/>
+        <line num="44" type="stmt" count="0"/>
+        <metrics loc="45" ncloc="25" classes="1" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="6" coveredstatements="0" elements="8" coveredelements="0"/>
+      </file>
+    </package>
+    <package name="Stancl\Tenancy\Controllers">
+      <file name="/var/www/html/src/Controllers/TenantAssetsController.php">
+        <class name="Stancl\Tenancy\Controllers\TenantAssetsController" namespace="Stancl\Tenancy\Controllers">
+          <metrics complexity="3" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="6" coveredstatements="0" elements="8" coveredelements="0"/>
+        </class>
+        <line num="9" type="method" name="__construct" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="11" type="stmt" count="0"/>
+        <line num="12" type="stmt" count="0"/>
+        <line num="14" type="method" name="asset" visibility="public" complexity="2" crap="6.00" count="0"/>
+        <line num="17" type="stmt" count="0"/>
+        <line num="18" type="stmt" count="0"/>
+        <line num="19" type="stmt" count="0"/>
+        <line num="21" type="stmt" count="0"/>
+        <metrics loc="22" ncloc="22" classes="1" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="6" coveredstatements="0" elements="8" coveredelements="0"/>
+      </file>
+    </package>
+    <package name="Stancl\Tenancy\Exceptions">
+      <file name="/var/www/html/src/Exceptions/PhpRedisNotInstalledException.php">
+        <class name="Stancl\Tenancy\Exceptions\PhpRedisNotInstalledException" namespace="Stancl\Tenancy\Exceptions">
+          <metrics complexity="0" methods="0" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="0" coveredstatements="0" elements="0" coveredelements="0"/>
+        </class>
+        <metrics loc="8" ncloc="8" classes="0" methods="0" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="0" coveredstatements="0" elements="0" coveredelements="0"/>
+      </file>
+    </package>
+    <file name="/var/www/html/src/Interfaces/StorageDriver.php">
+      <metrics loc="17" ncloc="17" classes="0" methods="0" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="0" coveredstatements="0" elements="0" coveredelements="0"/>
+    </file>
+    <file name="/var/www/html/src/Interfaces/TenantDatabaseManager.php">
+      <metrics loc="22" ncloc="10" classes="0" methods="0" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="0" coveredstatements="0" elements="0" coveredelements="0"/>
+    </file>
+    <package name="Stancl\Tenancy\Jobs">
+      <file name="/var/www/html/src/Jobs/QueuedTenantDatabaseCreator.php">
+        <class name="Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator" namespace="Stancl\Tenancy\Jobs">
+          <metrics complexity="2" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="5" coveredstatements="0" elements="7" coveredelements="0"/>
+        </class>
+        <line num="26" type="method" name="__construct" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="28" type="stmt" count="0"/>
+        <line num="29" type="stmt" count="0"/>
+        <line num="30" type="stmt" count="0"/>
+        <line num="37" type="method" name="handle" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="39" type="stmt" count="0"/>
+        <line num="40" type="stmt" count="0"/>
+        <metrics loc="41" ncloc="29" classes="1" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="5" coveredstatements="0" elements="7" coveredelements="0"/>
+      </file>
+      <file name="/var/www/html/src/Jobs/QueuedTenantDatabaseDeleter.php">
+        <class name="Stancl\Tenancy\Jobs\QueuedTenantDatabaseDeleter" namespace="Stancl\Tenancy\Jobs">
+          <metrics complexity="2" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="5" coveredstatements="0" elements="7" coveredelements="0"/>
+        </class>
+        <line num="26" type="method" name="__construct" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="28" type="stmt" count="0"/>
+        <line num="29" type="stmt" count="0"/>
+        <line num="30" type="stmt" count="0"/>
+        <line num="37" type="method" name="handle" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="39" type="stmt" count="0"/>
+        <line num="40" type="stmt" count="0"/>
+        <metrics loc="41" ncloc="29" classes="1" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="5" coveredstatements="0" elements="7" coveredelements="0"/>
+      </file>
+    </package>
+    <package name="Stancl\Tenancy\Middleware">
+      <file name="/var/www/html/src/Middleware/InitializeTenancy.php">
+        <class name="Stancl\Tenancy\Middleware\InitializeTenancy" namespace="Stancl\Tenancy\Middleware">
+          <metrics complexity="4" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="7" coveredstatements="0" elements="9" coveredelements="0"/>
+        </class>
+        <line num="9" type="method" name="__construct" visibility="public" complexity="2" crap="6.00" count="0"/>
+        <line num="12" type="stmt" count="0"/>
+        <line num="13" type="stmt" count="0"/>
+        <line num="14" type="stmt" count="0"/>
+        <line num="23" type="method" name="handle" visibility="public" complexity="2" crap="6.00" count="0"/>
+        <line num="26" type="stmt" count="0"/>
+        <line num="27" type="stmt" count="0"/>
+        <line num="28" type="stmt" count="0"/>
+        <line num="31" type="stmt" count="0"/>
+        <metrics loc="33" ncloc="26" classes="1" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="7" coveredstatements="0" elements="9" coveredelements="0"/>
+      </file>
+    </package>
+    <package name="Stancl\Tenancy\StorageDrivers">
+      <file name="/var/www/html/src/StorageDrivers/RedisStorageDriver.php">
+        <class name="Stancl\Tenancy\StorageDrivers\RedisStorageDriver" namespace="Stancl\Tenancy\StorageDrivers">
+          <metrics complexity="18" methods="11" coveredmethods="3" conditionals="0" coveredconditionals="0" statements="35" coveredstatements="21" elements="46" coveredelements="24"/>
+        </class>
+        <line num="12" type="method" name="__construct" visibility="public" complexity="1" crap="1" count="1"/>
+        <line num="14" type="stmt" count="1"/>
+        <line num="15" type="stmt" count="1"/>
+        <line num="17" type="method" name="identifyTenant" visibility="public" complexity="2" crap="6.00" count="0"/>
+        <line num="19" type="stmt" count="0"/>
+        <line num="20" type="stmt" count="0"/>
+        <line num="21" type="stmt" count="0"/>
+        <line num="23" type="stmt" count="0"/>
+        <line num="33" type="method" name="getTenantById" visibility="public" complexity="2" crap="2.06" count="1"/>
+        <line num="35" type="stmt" count="1"/>
+        <line num="37" type="stmt" count="1"/>
+        <line num="38" type="stmt" count="1"/>
+        <line num="41" type="stmt" count="0"/>
+        <line num="44" type="method" name="getTenantIdByDomain" visibility="public" complexity="3" crap="3" count="1"/>
+        <line num="46" type="stmt" count="1"/>
+        <line num="49" type="method" name="createTenant" visibility="public" complexity="1" crap="1" count="1"/>
+        <line num="51" type="stmt" count="1"/>
+        <line num="52" type="stmt" count="1"/>
+        <line num="53" type="stmt" count="1"/>
+        <line num="63" type="method" name="deleteTenant" visibility="public" complexity="2" crap="2.26" count="1"/>
+        <line num="66" type="stmt" count="1"/>
+        <line num="67" type="stmt" count="0"/>
+        <line num="68" type="stmt" count="0"/>
+        <line num="71" type="stmt" count="1"/>
+        <line num="72" type="stmt" count="1"/>
+        <line num="75" type="method" name="getAllTenants" visibility="public" complexity="3" crap="3.01" count="1"/>
+        <line num="78" type="stmt" count="0"/>
+        <line num="79" type="stmt" count="1"/>
+        <line num="81" type="stmt" count="1"/>
+        <line num="85" type="stmt" count="1"/>
+        <line num="86" type="stmt" count="1"/>
+        <line num="87" type="stmt" count="1"/>
+        <line num="91" type="stmt" count="1"/>
+        <line num="92" type="stmt" count="1"/>
+        <line num="96" type="stmt" count="1"/>
+        <line num="97" type="stmt" count="1"/>
+        <line num="100" type="method" name="get" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="102" type="stmt" count="0"/>
+        <line num="105" type="method" name="getMany" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="107" type="stmt" count="0"/>
+        <line num="110" type="method" name="put" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="112" type="stmt" count="0"/>
+        <line num="113" type="stmt" count="0"/>
+        <line num="116" type="method" name="putMany" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="118" type="stmt" count="0"/>
+        <line num="119" type="stmt" count="0"/>
+        <metrics loc="121" ncloc="99" classes="1" methods="11" coveredmethods="3" conditionals="0" coveredconditionals="0" statements="35" coveredstatements="21" elements="46" coveredelements="24"/>
+      </file>
+    </package>
+    <package name="Stancl\Tenancy\TenantDatabaseManagers">
+      <file name="/var/www/html/src/TenantDatabaseManagers/MySQLDatabaseManager.php">
+        <class name="Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager" namespace="Stancl\Tenancy\TenantDatabaseManagers">
+          <metrics complexity="2" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="2" coveredstatements="0" elements="4" coveredelements="0"/>
+        </class>
+        <line num="10" type="method" name="createDatabase" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="12" type="stmt" count="0"/>
+        <line num="15" type="method" name="deleteDatabase" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="17" type="stmt" count="0"/>
+        <metrics loc="19" ncloc="19" classes="1" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="2" coveredstatements="0" elements="4" coveredelements="0"/>
+      </file>
+      <file name="/var/www/html/src/TenantDatabaseManagers/PostgreSQLDatabaseManager.php">
+        <class name="Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager" namespace="Stancl\Tenancy\TenantDatabaseManagers">
+          <metrics complexity="2" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="2" coveredstatements="0" elements="4" coveredelements="0"/>
+        </class>
+        <line num="10" type="method" name="createDatabase" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="12" type="stmt" count="0"/>
+        <line num="15" type="method" name="deleteDatabase" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="17" type="stmt" count="0"/>
+        <metrics loc="19" ncloc="19" classes="1" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="2" coveredstatements="0" elements="4" coveredelements="0"/>
+      </file>
+      <file name="/var/www/html/src/TenantDatabaseManagers/SQLiteDatabaseManager.php">
+        <class name="Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager" namespace="Stancl\Tenancy\TenantDatabaseManagers">
+          <metrics complexity="4" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="6" coveredstatements="1" elements="8" coveredelements="1"/>
+        </class>
+        <line num="9" type="method" name="createDatabase" visibility="public" complexity="2" crap="3.19" count="1"/>
+        <line num="12" type="stmt" count="1"/>
+        <line num="13" type="stmt" count="0"/>
+        <line num="14" type="stmt" count="0"/>
+        <line num="18" type="method" name="deleteDatabase" visibility="public" complexity="2" crap="6.00" count="0"/>
+        <line num="21" type="stmt" count="0"/>
+        <line num="22" type="stmt" count="0"/>
+        <line num="23" type="stmt" count="0"/>
+        <metrics loc="26" ncloc="26" classes="1" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="6" coveredstatements="1" elements="8" coveredelements="1"/>
+      </file>
+    </package>
+    <package name="Stancl\Tenancy\Traits">
+      <file name="/var/www/html/src/Traits/BootstrapsTenancy.php">
+        <class name="BootstrapsTenancy" namespace="Stancl\Tenancy\Traits">
+          <metrics complexity="18" methods="9" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="55" coveredstatements="0" elements="64" coveredelements="0"/>
+        </class>
+        <line num="20" type="method" name="bootstrap" visibility="public" complexity="2" crap="6.00" count="0"/>
+        <line num="22" type="stmt" count="0"/>
+        <line num="24" type="stmt" count="0"/>
+        <line num="25" type="stmt" count="0"/>
+        <line num="26" type="stmt" count="0"/>
+        <line num="28" type="stmt" count="0"/>
+        <line num="29" type="stmt" count="0"/>
+        <line num="30" type="stmt" count="0"/>
+        <line num="32" type="method" name="end" visibility="public" complexity="2" crap="6.00" count="0"/>
+        <line num="34" type="stmt" count="0"/>
+        <line num="36" type="stmt" count="0"/>
+        <line num="37" type="stmt" count="0"/>
+        <line num="38" type="stmt" count="0"/>
+        <line num="40" type="stmt" count="0"/>
+        <line num="41" type="stmt" count="0"/>
+        <line num="42" type="stmt" count="0"/>
+        <line num="44" type="method" name="switchDatabaseConnection" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="46" type="stmt" count="0"/>
+        <line num="47" type="stmt" count="0"/>
+        <line num="49" type="method" name="setPhpRedisPrefix" visibility="public" complexity="3" crap="12.00" count="0"/>
+        <line num="51" type="stmt" count="0"/>
+        <line num="53" type="stmt" count="0"/>
+        <line num="54" type="stmt" count="0"/>
+        <line num="55" type="stmt" count="0"/>
+        <line num="58" type="stmt" count="0"/>
+        <line num="59" type="stmt" count="0"/>
+        <line num="60" type="stmt" count="0"/>
+        <line num="61" type="stmt" count="0"/>
+        <line num="64" type="stmt" count="0"/>
+        <line num="66" type="method" name="resetPhpRedisPrefix" visibility="public" complexity="3" crap="12.00" count="0"/>
+        <line num="68" type="stmt" count="0"/>
+        <line num="69" type="stmt" count="0"/>
+        <line num="72" type="stmt" count="0"/>
+        <line num="73" type="stmt" count="0"/>
+        <line num="74" type="stmt" count="0"/>
+        <line num="77" type="stmt" count="0"/>
+        <line num="79" type="method" name="tagCache" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="81" type="stmt" count="0"/>
+        <line num="83" type="stmt" count="0"/>
+        <line num="84" type="stmt" count="0"/>
+        <line num="85" type="stmt" count="0"/>
+        <line num="87" type="method" name="untagCache" visibility="public" complexity="1" crap="2.00" count="0"/>
+        <line num="90" type="stmt" count="0"/>
+        <line num="91" type="stmt" count="0"/>
+        <line num="92" type="stmt" count="0"/>
+        <line num="94" type="method" name="suffixFilesystemRootPaths" visibility="public" complexity="3" crap="12.00" count="0"/>
+        <line num="96" type="stmt" count="0"/>
+        <line num="97" type="stmt" count="0"/>
+        <line num="98" type="stmt" count="0"/>
+        <line num="101" type="stmt" count="0"/>
+        <line num="104" type="stmt" count="0"/>
+        <line num="107" type="stmt" count="0"/>
+        <line num="108" type="stmt" count="0"/>
+        <line num="110" type="stmt" count="0"/>
+        <line num="111" type="stmt" count="0"/>
+        <line num="113" type="stmt" count="0"/>
+        <line num="115" type="stmt" count="0"/>
+        <line num="119" type="stmt" count="0"/>
+        <line num="120" type="stmt" count="0"/>
+        <line num="122" type="method" name="resetFilesystemRootPaths" visibility="public" complexity="2" crap="6.00" count="0"/>
+        <line num="125" type="stmt" count="0"/>
+        <line num="128" type="stmt" count="0"/>
+        <line num="129" type="stmt" count="0"/>
+        <line num="131" type="stmt" count="0"/>
+        <metrics loc="132" ncloc="119" classes="1" methods="9" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="55" coveredstatements="0" elements="64" coveredelements="0"/>
+      </file>
+      <file name="/var/www/html/src/Traits/DealsWithMigrations.php">
+        <class name="DealsWithMigrations" namespace="Stancl\Tenancy\Traits">
+          <metrics complexity="1" methods="1" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="1" coveredstatements="0" elements="2" coveredelements="0"/>
+        </class>
+        <line num="7" type="method" name="getMigrationPaths" visibility="protected" complexity="1" crap="2.00" count="0"/>
+        <line num="9" type="stmt" count="0"/>
+        <metrics loc="11" ncloc="11" classes="1" methods="1" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="1" coveredstatements="0" elements="2" coveredelements="0"/>
+      </file>
+      <file name="/var/www/html/src/Traits/HasATenantsOption.php">
+        <class name="HasATenantsOption" namespace="Stancl\Tenancy\Traits">
+          <metrics complexity="1" methods="1" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="3" coveredstatements="0" elements="4" coveredelements="0"/>
+        </class>
+        <line num="9" type="method" name="getOptions" visibility="protected" complexity="1" crap="2.00" count="0"/>
+        <line num="11" type="stmt" count="0"/>
+        <line num="12" type="stmt" count="0"/>
+        <line num="13" type="stmt" count="0"/>
+        <metrics loc="15" ncloc="15" classes="1" methods="1" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="3" coveredstatements="0" elements="4" coveredelements="0"/>
+      </file>
+    </package>
+    <file name="/var/www/html/src/config/tenancy.php">
+      <line num="4" type="stmt" count="1"/>
+      <metrics loc="46" ncloc="38" classes="0" methods="0" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="1" coveredstatements="1" elements="1" coveredelements="1"/>
+    </file>
+    <file name="/var/www/html/src/helpers.php">
+      <line num="8" type="stmt" count="1"/>
+      <line num="9" type="stmt" count="0"/>
+      <line num="12" type="stmt" count="1"/>
+      <line num="19" type="stmt" count="1"/>
+      <line num="26" type="stmt" count="0"/>
+      <metrics loc="28" ncloc="28" classes="0" methods="0" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="5" coveredstatements="3" elements="5" coveredelements="3"/>
+    </file>
+    <metrics files="27" loc="1417" ncloc="1116" classes="22" methods="79" coveredmethods="12" conditionals="0" coveredconditionals="0" statements="339" coveredstatements="85" elements="418" coveredelements="97"/>
+  </project>
+</coverage>

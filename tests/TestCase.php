@@ -89,7 +89,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'tenancy.migrations_directory' => database_path('../migrations'),
         ]);
 
-        switch((string) env('STANCL_TENANCY_TEST_VARIANT', '1')) {
+        switch ((string) env('STANCL_TENANCY_TEST_VARIANT', '1')) {
             case '2':
                 $app['config']->set([
                     'tenancy.redis.tenancy' => true,

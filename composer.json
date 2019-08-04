@@ -19,7 +19,8 @@
         "psy/psysh": "@stable",
         "laravel/framework": "5.8.*||5.7.*",
         "orchestra/testbench": "~3.7||~3.8",
-        "league/flysystem-aws-s3-v3": "~1.0"
+        "league/flysystem-aws-s3-v3": "~1.0",
+        "phpunit/phpcov": "^6.0"
     },
     "autoload": {
         "psr-4": {

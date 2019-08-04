@@ -553,7 +553,7 @@ However, you still need to reload nginx configuration to apply the changes to co
 
 ### With Docker
 
-If you have Docker installed, simply run `docker-compose exec test vendor/bin/phpunit -v`. If you need to run the tests multiple times during development, run `./test` to run the tests. This script runs `docker-compose up -d` and phpunit via the `test` container. When you're done testing, run `docker-compose down` to shut down the containers.
+If you have Docker installed, simply run `./test`. When you're done testing, run `docker-compose down` to shut down the containers.
 
 ### Without Docker
 
