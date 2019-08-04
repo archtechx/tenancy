@@ -1,5 +1,4 @@
 env:
-  - LARAVEL_VERSION="5.7.*" TESTBENCH_VERSION="~3.7" REDIS_DRIVER=phpredis
   - LARAVEL_VERSION="5.8.*" TESTBENCH_VERSION="~3.8" REDIS_DRIVER=phpredis
 
 language: php
