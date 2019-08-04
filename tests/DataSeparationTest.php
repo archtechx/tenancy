@@ -66,6 +66,10 @@ class DataSeparationTest extends TestCase
     /** @test */
     public function redis_is_separated()
     {
+        if (! config('tenancy.redis.tenancy')) {
+            $this->markTestSkipped('Redis tenancy disabled.');
+        }
+
         tenancy()->create('tenant1.localhost');
         tenancy()->create('tenant2.localhost');
 

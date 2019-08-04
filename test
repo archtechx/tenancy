@@ -22,4 +22,5 @@ for variant in variants:
     system('docker-compose exec test vendor/bin/phpunit --configuration "%s" --coverage-php %s %s'
            %  (filename_base + '.xml', 'coverage/' + filename_base + '.cov', ' '.join(other)))
 
+# todo delete folder contents first?
 system("docker-compose exec test vendor/bin/phpcov merge --clover clover.xml coverage/")

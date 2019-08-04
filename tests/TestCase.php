@@ -63,6 +63,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'database.redis.client' => 'phpredis',
             'database.redis.cache.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
             'database.redis.default.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
+            'database.redis.options.prefix' => 'foo',
             'database.redis.tenancy' => [
                 'host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
                 'password' => env('TENANCY_TEST_REDIS_PASSWORD', null),
@@ -70,6 +71,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 // Use the #14 Redis database unless specified otherwise.
                 // Make sure you don't store anything in this db!
                 'database' => env('TENANCY_TEST_REDIS_DB', 14),
+                'prefix' => 'abc', // todo unrelated to tenancy, but this doesn't seem to have an effect? try to replicate in a fresh laravel installation
             ],
             'tenancy.database' => [
                 'based_on' => 'sqlite',
@@ -92,14 +94,14 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         switch ((string) env('STANCL_TENANCY_TEST_VARIANT', '1')) {
             case '2':
                 $app['config']->set([
-                    'tenancy.redis.tenancy' => true,
-                    'database.redis.client' => 'phpredis',
+                    'tenancy.redis.tenancy' => false,
+                    'database.redis.client' => 'predis',
                 ]);
                 break;
             default:
                 $app['config']->set([
-                    'tenancy.redis.tenancy' => false,
-                    'database.redis.client' => 'predis',
+                    'tenancy.redis.tenancy' => true,
+                    'database.redis.client' => 'phpredis',
                 ]);
         }
     }

@@ -24,6 +24,10 @@ class BootstrapsTenancyTest extends TestCase
     /** @test */
     public function redis_is_prefixed()
     {
+        if (! config('tenancy.redis.tenancy')) {
+            $this->markTestSkipped('Redis tenancy disabled.');
+        }
+
         $this->initTenancy();
         foreach (config('tenancy.redis.prefixed_connections', ['default']) as $connection) {
             $prefix = config('tenancy.redis.prefix_base') . tenant('uuid');
@@ -35,6 +39,7 @@ class BootstrapsTenancyTest extends TestCase
     /** @test */
     public function predis_is_supported()
     {
+        // No setDriver() before that version.
         if (app()->version() < 'v5.8.27') {
             $this->markTestSkipped();
         }

@@ -82,17 +82,21 @@ class RedisStorageDriver implements StorageDriver
         }, $uuids);
 
         if (! $hashes) {
-            // Apparently, the PREFIX is applied to all functions except scan().
-            // Therefore, if the `tenancy` Redis connection has a prefix set
-            // (and PhpRedis is used), prepend the prefix to the search.
-            $redis_prefix = '';
+            // Prefix is applied to all functions except scan().
+            // This code applies the correct prefix manually.
+            $redis_prefix = config('database.redis.options.prefix');
+            
             if (config('database.redis.client') === 'phpredis') {
-                $redis_prefix = $this->redis->getOption($this->redis->client()::OPT_PREFIX);
+                $redis_prefix = $this->redis->getOption($this->redis->client()::OPT_PREFIX) ?? $redis_prefix;
+                $all_keys = $this->redis->scan(null, $redis_prefix . 'tenants:*');
+            } else {
+                $all_keys = $this->redis->scan(null, 'MATCH', $redis_prefix . 'tenants:*')[1];
             }
-            $hashes = array_map(function ($hash) use ($redis_prefix) {
-                // Left strip $redis_prefix from $hash
-                return substr($hash, strlen($redis_prefix));
-            }, $this->redis->scan(null, $redis_prefix.'tenants:*'));
+
+            $hashes = array_map(function ($key) use ($redis_prefix) {
+                // Left strip $redis_prefix from $key
+                return substr($key, strlen($redis_prefix));
+            }, $all_keys);
         }
 
         return array_map(function ($tenant) {

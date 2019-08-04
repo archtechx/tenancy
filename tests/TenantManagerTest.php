@@ -186,4 +186,12 @@ class TenantManagerTest extends TestCase
         $tenant = tenant()->create('foo.localhost');
         $this->assertSame([$tenant], tenancy()->all()->toArray());
     }
+
+    /** @test */
+    public function all_returns_a_list_of_all_tenants()
+    {
+        $tenant1 = tenant()->create('foo.localhost');
+        $tenant2 = tenant()->create('bar.localhost');
+        $this->assertEqualsCanonicalizing([$tenant1, $tenant2], tenant()->all()->toArray());
+    }
 }
