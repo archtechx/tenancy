@@ -3,16 +3,14 @@
 namespace Stancl\Tenancy;
 
 use Stancl\Tenancy\Commands\Seed;
-use Stancl\Tenancy\TenantManager;
-use Stancl\Tenancy\DatabaseManager;
+use Illuminate\Cache\CacheManager;
 use Stancl\Tenancy\Commands\Migrate;
-use Stancl\Tenancy\Commands\Rollback;
 use Illuminate\Support\Facades\Route;
+use Stancl\Tenancy\Commands\Rollback;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Commands\TenantList;
 use Stancl\Tenancy\Interfaces\StorageDriver;
 use Stancl\Tenancy\Interfaces\ServerConfigManager;
-use Illuminate\Cache\CacheManager;
 
 class TenancyServiceProvider extends ServiceProvider
 {
@@ -39,7 +37,7 @@ class TenancyServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__ . '/routes.php');
 
         Route::middlewareGroup('tenancy', [
-            \Stancl\Tenancy\Middleware\InitializeTenancy::class
+            \Stancl\Tenancy\Middleware\InitializeTenancy::class,
         ]);
 
         $this->app->register(TenantRouteServiceProvider::class);

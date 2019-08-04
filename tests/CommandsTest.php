@@ -2,9 +2,9 @@
 
 namespace Stancl\Tenancy\Tests;
 
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Artisan;
 use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
 
 class CommandsTest extends TestCase
@@ -47,7 +47,7 @@ class CommandsTest extends TestCase
     {
         $tenant = tenant()->create('test.localhost');
         Artisan::call('tenants:migrate', [
-            '--tenants' => [$tenant['uuid']]
+            '--tenants' => [$tenant['uuid']],
         ]);
 
         $this->assertFalse(Schema::hasTable('users'));
@@ -79,7 +79,7 @@ class CommandsTest extends TestCase
     public function database_connection_is_switched_to_default_after_migrating_or_seeding_or_rolling_back()
     {
         $originalDBName = DB::connection()->getDatabaseName();
-        
+
         Artisan::call('tenants:migrate');
         $this->assertSame($originalDBName, DB::connection()->getDatabaseName());
 
@@ -94,7 +94,7 @@ class CommandsTest extends TestCase
     public function database_connection_is_switched_to_default_after_migrating_or_seeding_or_rolling_back_when_tenancy_has_been_initialized()
     {
         tenancy()->init('localhost');
-        
+
         $this->database_connection_is_switched_to_default_after_migrating_or_seeding_or_rolling_back();
     }
 }

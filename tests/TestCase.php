@@ -17,7 +17,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     }
 
     /**
-     * Setup the test environment
+     * Setup the test environment.
      *
      * @return void
      */

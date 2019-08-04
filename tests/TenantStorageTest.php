@@ -8,7 +8,7 @@ class TenantStorageTest extends TestCase
     public function deleting_a_tenant_works()
     {
         $abc = tenant()->create('abc.localhost');
-        
+
         $this->assertTrue(tenant()->all()->contains($abc));
 
         tenant()->delete($abc['uuid']);
@@ -108,7 +108,7 @@ class TenantStorageTest extends TestCase
     public function put_returns_the_key_value_pairs_when_a_single_argument_is_used()
     {
         $value = ['foo' => 'bar', 'abc' => 'xyz'];
-        
+
         $this->assertSame($value, tenancy()->put($value));
     }
 }
