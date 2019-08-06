@@ -54,12 +54,14 @@ You won't have to change a thing in your application's code.\*
       - [`tenants:list`](#-tenants-list-)
       - [`tenants:migrate`, `tenants:rollback`, `tenants:seed`](#-tenants-migrate----tenants-rollback----tenants-seed-)
     + [Tenant migrations](#tenant-migrations)
+  * [Testing](#testing)
 - [Tips](#tips)
   * [HTTPS certificates](#https-certificates)
     + [1. Use nginx with the lua module](#1-use-nginx-with-the-lua-module)
     + [2. Add a simple server block for each tenant](#2-add-a-simple-server-block-for-each-tenant)
     + [Generating certificates](#generating-certificates)
-- [Testing](#testing)
+- [Development](#development)
+  * [Running tests](#running-tests)
     + [With Docker](#with-docker)
     + [Without Docker](#without-docker)
 
@@ -511,6 +513,17 @@ Database seeding completed successfully.
 
 Tenant migrations are located in `database/migrations/tenant`, so you should move your tenant migrations there.
 
+## Testing
+
+To test your multi-tenant application, simply run the following at the beginning of every test:
+
+```php
+tenant()->create('test.localhost')
+tenancy()->init('test.localhost')
+```
+
+To do this automatically, you can make this part of your `TestCase::setUp()` method. [Here](https://github.com/stancl/tenancy/blob/13048002ef687c3c85207df1fbf8b09ce89fb430/tests/TestCase.php#L31-L37)'s how this package handles it.
+
 # Tips
 
 - If you create a tenant using the interactive console (`artisan tinker`) and use sqlite, you might need to change the database's permissions and/or ownership (`chmod`/`chown`) so that the web application can access it.
@@ -549,7 +562,9 @@ Creating this config dynamically from PHP is not easy, but is probably feasible.
 
 However, you still need to reload nginx configuration to apply the changes to configuration. This is problematic and I'm not sure if there is a simple and secure way to do this from PHP.
 
-# Testing
+# Development
+
+## Running tests
 
 ### With Docker
 
