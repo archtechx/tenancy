@@ -9,8 +9,15 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     public $autoCreateTenant = true;
     public $autoInitTenancy = true;
 
+    private function checkRequirements(): void
+    {
+        parent::checkRequirements();
+
+        dd($this->getAnnotations());
+    }
+
     /**
-     * Setup the test environment
+     * Setup the test environment.
      *
      * @return void
      */
@@ -49,13 +56,14 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     protected function getEnvironmentSetUp($app)
     {
         if (file_exists(__DIR__ . '/../.env')) {
-            $this->loadDotEnv();
+            \Dotenv\Dotenv::create(__DIR__ . '/..')->load();
         }
 
         $app['config']->set([
             'database.redis.client' => 'phpredis',
             'database.redis.cache.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
             'database.redis.default.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
+            'database.redis.options.prefix' => 'foo',
             'database.redis.tenancy' => [
                 'host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
                 'password' => env('TENANCY_TEST_REDIS_PASSWORD', null),
@@ -63,6 +71,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 // Use the #14 Redis database unless specified otherwise.
                 // Make sure you don't store anything in this db!
                 'database' => env('TENANCY_TEST_REDIS_DB', 14),
+                'prefix' => 'abc', // todo unrelated to tenancy, but this doesn't seem to have an effect? try to replicate in a fresh laravel installation
             ],
             'tenancy.database' => [
                 'based_on' => 'sqlite',
@@ -81,14 +90,19 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'tenancy.redis.prefixed_connections' => ['default'],
             'tenancy.migrations_directory' => database_path('../migrations'),
         ]);
-    }
 
-    protected function loadDotEnv()
-    {
-        if (app()::VERSION > '5.8.0') {
-            \Dotenv\Dotenv::create(__DIR__ . '/..')->load();
-        } else {
-            (new \Dotenv\Dotenv(__DIR__ . '/..'))->load();
+        switch ((string) env('STANCL_TENANCY_TEST_VARIANT', '1')) {
+            case '2':
+                $app['config']->set([
+                    'tenancy.redis.tenancy' => false,
+                    'database.redis.client' => 'predis',
+                ]);
+                break;
+            default:
+                $app['config']->set([
+                    'tenancy.redis.tenancy' => true,
+                    'database.redis.client' => 'phpredis',
+                ]);
         }
     }
 

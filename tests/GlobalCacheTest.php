@@ -19,16 +19,16 @@ class GlobalCacheTest extends TestCase
         tenant()->create('foo.localhost');
         tenancy()->init('foo.localhost');
         $this->assertSame('bar', GlobalCache::get('foo'));
-        
+
         GlobalCache::put(['abc' => 'xyz'], 1);
         cache(['def' => 'ghi'], 10);
         $this->assertSame('ghi', cache('def'));
-        
+
         tenancy()->end();
         $this->assertSame('xyz', GlobalCache::get('abc'));
         $this->assertSame('bar', GlobalCache::get('foo'));
         $this->assertSame(null, cache('def'));
-        
+
         tenant()->create('bar.localhost');
         tenancy()->init('bar.localhost');
         $this->assertSame('xyz', GlobalCache::get('abc'));

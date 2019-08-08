@@ -66,7 +66,7 @@ class TenantManagerTest extends TestCase
     public function getTenantById_works()
     {
         $tenant = tenant()->create('foo.localhost');
-        
+
         $this->assertSame($tenant, tenancy()->getTenantById($tenant['uuid']));
     }
 
@@ -120,7 +120,7 @@ class TenantManagerTest extends TestCase
 
         tenant()->create('foo.localhost');
         tenancy()->init('foo.localhost');
-    
+
         $this->assertNotSame($originals['databaseName'], DB::connection()->getDatabaseName());
         $this->assertNotSame($originals['storage_path'], storage_path());
         $this->assertNotSame($originals['storage_root'], Storage::disk('local')->getAdapter()->getPathPrefix());
@@ -146,7 +146,7 @@ class TenantManagerTest extends TestCase
 
         tenant()->create('foo.localhost');
         tenancy()->init('foo.localhost');
-    
+
         $this->assertNotSame($originals['databaseName'], DB::connection()->getDatabaseName());
         $this->assertNotSame($originals['storage_path'], storage_path());
         $this->assertNotSame($originals['storage_root'], Storage::disk('local')->getAdapter()->getPathPrefix());
@@ -182,8 +182,16 @@ class TenantManagerTest extends TestCase
         $tenant = tenant()->create('foo.localhost');
         tenant()->delete($tenant['uuid']);
         $this->assertSame([], tenancy()->all()->toArray());
-        
+
         $tenant = tenant()->create('foo.localhost');
         $this->assertSame([$tenant], tenancy()->all()->toArray());
+    }
+
+    /** @test */
+    public function all_returns_a_list_of_all_tenants()
+    {
+        $tenant1 = tenant()->create('foo.localhost');
+        $tenant2 = tenant()->create('bar.localhost');
+        $this->assertEqualsCanonicalizing([$tenant1, $tenant2], tenant()->all()->toArray());
     }
 }

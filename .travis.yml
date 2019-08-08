@@ -1,5 +1,4 @@
 env:
-  - LARAVEL_VERSION="5.7.*" TESTBENCH_VERSION="~3.7" REDIS_DRIVER=phpredis
   - LARAVEL_VERSION="5.8.*" TESTBENCH_VERSION="~3.8" REDIS_DRIVER=phpredis
 
 language: php
@@ -19,10 +18,7 @@ before_script:
   - export DB_USERNAME=root DB_PASSWORD="" DB_DATABASE=tenancy CODECOV_TOKEN="24382d15-84e7-4a55-bea4-c4df96a24a9b"
   - cat vendor/laravel/framework/src/Illuminate/Foundation/Application.php| grep 'const VERSION'
 
-script: docker-compose exec test vendor/bin/phpunit -v --coverage-clover=coverage.xml
-
-after_script:
-  - docker-compose down
+script: ./test
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

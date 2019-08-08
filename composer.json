@@ -10,17 +10,18 @@
         }
     ],
     "require": {
-        "illuminate/support": "5.8.*||5.7.*",
+        "illuminate/support": "5.8.*",
         "webpatser/laravel-uuid": "^3.0",
         "predis/predis": "^1.1"
     },
     "require-dev": {
-        "vlucas/phpdotenv": "^2.2||^3.3",
+        "vlucas/phpdotenv": "^3.3",
         "psy/psysh": "@stable",
-        "laravel/framework": "5.8.*||5.7.*",
-        "orchestra/testbench": "~3.7||~3.8",
         "league/flysystem-aws-s3-v3": "~1.0",
-        "laravel/telescope": "^2.0"
+        "laravel/telescope": "^2.0",
+        "laravel/framework": "5.8.*",
+        "orchestra/testbench": "~3.8",
+        "phpunit/phpcov": "^6.0"
     },
     "autoload": {
         "psr-4": {

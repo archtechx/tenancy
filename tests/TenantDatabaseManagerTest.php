@@ -139,7 +139,7 @@ class TenantDatabaseManagerTest extends TestCase
         config()->set('tenancy.queue_database_deletion', true);
         $db_name = 'testdatabase' . $this->randomString(10) . '.sqlite';
         app(DatabaseManager::class)->delete($db_name, 'sqlite');
-        
+
         Queue::assertPushed(QueuedTenantDatabaseDeleter::class);
     }
 }

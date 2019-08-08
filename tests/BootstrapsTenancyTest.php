@@ -24,6 +24,10 @@ class BootstrapsTenancyTest extends TestCase
     /** @test */
     public function redis_is_prefixed()
     {
+        if (! config('tenancy.redis.tenancy')) {
+            $this->markTestSkipped('Redis tenancy disabled.');
+        }
+
         $this->initTenancy();
         foreach (config('tenancy.redis.prefixed_connections', ['default']) as $connection) {
             $prefix = config('tenancy.redis.prefix_base') . tenant('uuid');
@@ -35,6 +39,7 @@ class BootstrapsTenancyTest extends TestCase
     /** @test */
     public function predis_is_supported()
     {
+        // No setDriver() before that version.
         if (app()->version() < 'v5.8.27') {
             $this->markTestSkipped();
         }
@@ -57,7 +62,7 @@ class BootstrapsTenancyTest extends TestCase
         Config::set('database.redis.client', 'predis');
         Redis::setDriver('predis');
         Config::set('tenancy.redis.tenancy', true);
-        
+
         $this->expectException(PhpRedisNotInstalledException::class);
         $this->initTenancy();
     }
@@ -72,16 +77,16 @@ class BootstrapsTenancyTest extends TestCase
         }
 
         $this->initTenancy();
-        
+
         $new_storage_path = storage_path();
-        $this->assertEquals($old_storage_path . "/" . config('tenancy.filesystem.suffix_base') . tenant('uuid'), $new_storage_path);
+        $this->assertEquals($old_storage_path . '/' . config('tenancy.filesystem.suffix_base') . tenant('uuid'), $new_storage_path);
 
         foreach (config('tenancy.filesystem.disks') as $disk) {
             $suffix = config('tenancy.filesystem.suffix_base') . tenant('uuid');
             $current_path_prefix = \Storage::disk($disk)->getAdapter()->getPathPrefix();
 
             if ($override = config("tenancy.filesystem.root_override.{$disk}")) {
-                $correct_path_prefix = str_replace("%storage_path%", storage_path(), $override);
+                $correct_path_prefix = str_replace('%storage_path%', storage_path(), $override);
             } else {
                 if ($base = $old_storage_facade_roots[$disk]) {
                     $correct_path_prefix = $base . "/$suffix/";

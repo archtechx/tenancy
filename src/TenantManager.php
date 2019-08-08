@@ -23,7 +23,7 @@ class TenantManager
      * @var StorageDriver
      */
     protected $storage;
-    
+
     /**
      * Database manager.
      *
@@ -49,6 +49,7 @@ class TenantManager
     {
         $this->setTenant($this->identify($domain));
         $this->bootstrap();
+
         return $this->tenant;
     }
 
@@ -57,7 +58,7 @@ class TenantManager
         $domain = $domain ?: $this->currentDomain();
 
         if (! $domain) {
-            throw new \Exception("No domain supplied nor detected.");
+            throw new \Exception('No domain supplied nor detected.');
         }
 
         $tenant = $this->storage->identifyTenant($domain);
@@ -79,7 +80,7 @@ class TenantManager
 
         $tenant = $this->jsonDecodeArrayValues($this->storage->createTenant($domain, (string) \Webpatser\Uuid\Uuid::generate(1, $domain)));
         $this->database->create($this->getDatabaseName($tenant));
-        
+
         return $tenant;
     }
 
@@ -98,6 +99,7 @@ class TenantManager
     public function getTenantById(string $uuid, $fields = [])
     {
         $fields = (array) $fields;
+
         return $this->jsonDecodeArrayValues($this->storage->getTenantById($uuid, $fields));
     }
 
@@ -165,6 +167,7 @@ class TenantManager
     public function getDatabaseName($tenant = []): string
     {
         $tenant = $tenant ?: $this->tenant;
+
         return $this->app['config']['tenancy.database.prefix'] . $tenant['uuid'] . $this->app['config']['tenancy.database.suffix'];
     }
 
@@ -179,7 +182,7 @@ class TenantManager
         $tenant = $this->jsonDecodeArrayValues($tenant);
 
         $this->tenant = $tenant;
-        
+
         return $tenant;
     }
 
@@ -219,6 +222,7 @@ class TenantManager
     {
         $this->setTenant($this->storage->getTenantById($uuid));
         $this->bootstrap();
+
         return $this->tenant;
     }
 
@@ -252,9 +256,9 @@ class TenantManager
     {
         if (\is_null($uuid)) {
             if (! isset($this->tenant['uuid'])) {
-                throw new \Exception("No UUID supplied (and no tenant is currently identified).");
+                throw new \Exception('No UUID supplied (and no tenant is currently identified).');
             }
-            
+
             $uuid = $this->tenant['uuid'];
 
             // If $uuid is the uuid of the current tenant, put
@@ -313,7 +317,7 @@ class TenantManager
         if (\is_null($attribute)) {
             return $this->tenant;
         }
-        
+
         return $this->tenant[(string) $attribute];
     }
 }
