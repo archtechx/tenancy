@@ -2,8 +2,8 @@
 
 namespace Stancl\Tenancy\StorageDrivers;
 
-use Stancl\Tenancy\Interfaces\StorageDriver;
 use Stancl\Tenancy\Tenant;
+use Stancl\Tenancy\Interfaces\StorageDriver;
 
 class DatabaseStorageDriver implements StorageDriver
 {
@@ -26,13 +26,7 @@ class DatabaseStorageDriver implements StorageDriver
      */
     public function getTenantById(string $uuid, array $fields = []): array
     {
-        $fields = (array) $fields;
-
-        if (! $fields) {
-            return $this->redis->hgetall("tenants:$uuid");
-        }
-
-        return array_combine($fields, $this->redis->hmget("tenants:$uuid", $fields));
+        return Tenant::find($uuid)->only($fields)->toArray();
     }
 
     public function getTenantIdByDomain(string $domain): ?string
@@ -47,21 +41,11 @@ class DatabaseStorageDriver implements StorageDriver
 
     public function deleteTenant(string $id): bool
     {
-        try {
-            $domain = json_decode($this->getTenantById($id)['domain']);
-        } catch (\Throwable $th) {
-            throw new \Exception("No tenant with UUID $id exists.");
-        }
-
         return Tenant::find($id)->delete();
     }
 
     public function getAllTenants(array $uuids = []): array
     {
-        $hashes = array_map(function ($hash) {
-            return "tenants:{$hash}";
-        }, $uuids);
-
         return Tenant::all()->map(function ($model) {
             return $model->toArray();
         })->toArray();
@@ -70,6 +54,7 @@ class DatabaseStorageDriver implements StorageDriver
     public function get(string $uuid, string $key)
     {
         $tenant = Tenant::find($uuid);
+
         return $tenant->$key ?? json_decode($tenant->data)[$key] ?? null;
     }
 
@@ -80,24 +65,27 @@ class DatabaseStorageDriver implements StorageDriver
         $tenant_data = null; // cache - json_decode() can be expensive
         $get_from_tenant_data = function ($key) use ($tenant, &$tenant_data) {
             $tenant_data = $tenant_data ?? json_decode($tenant->data);
+
             return $tenant_data[$key] ?? null;
         };
 
         return array_reduce($keys, function ($keys, $key) use ($tenant, $get_from_tenant_data) {
             $keys[$key] = $tenant->$key ?? $get_from_tenant_data($key) ?? null;
+
             return $keys;
         }, []);
     }
 
     public function put(string $uuid, string $key, $value)
     {
-        // return Tenant::find($uuid) TODO
+        return Tenant::find($uuid)->put($key, $value);
     }
 
     public function putMany(string $uuid, array $values): array
     {
-        // todo
-        // $this->redis->hmset("tenants:$uuid", $values);
+        foreach ($values as $key => $value) {
+            Tenant::find($uuid)->put($key, $value);
+        }
 
         return $values;
     }
