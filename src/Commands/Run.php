@@ -3,12 +3,10 @@
 namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
-use Stancl\Tenancy\DatabaseManager;
+use Illuminate\Support\Facades\Artisan;
 
 class Run extends Command
 {
-    protected $database;
-
     /**
      * The console command description.
      *
@@ -21,18 +19,7 @@ class Run extends Command
      *
      * @var string
      */
-    protected $signature = 'tenants:run {command} {--tenants} {args*}';
-
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct(DatabaseManager $database)
-    {
-        parent::__construct();
-        $this->database = $database;
-    }
+    protected $signature = 'tenants:run {commandname} {--tenants=} {args*}';
 
     /**
      * Execute the console command.
@@ -41,8 +28,8 @@ class Run extends Command
      */
     public function handle()
     {
-        if (! $this->confirmToProceed()) {
-            return;
+        if ($tenancy_was_initialized = tenancy()->initialized) {
+            $previous_tenants_domain = tenant('domain');
         }
 
         tenant()->all($this->option('tenants'))->each(function ($tenant) {
@@ -50,9 +37,14 @@ class Run extends Command
             tenancy()->init($tenant['domain']);
 
             // Run command
-            // todo
+            Artisan::call($this->argument('commandname'), [
+                'args' => $this->argument('args') // todo find a better way to pass args
+            ]);
+            tenancy()->end();
         });
 
-        // todo reconnect to previous tenant or end tenancy if it hadn't been started
+        if ($tenancy_was_initialized) {
+            tenancy()->init($previous_tenants_domain);
+        }
     }
 }

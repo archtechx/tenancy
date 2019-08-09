@@ -2,6 +2,7 @@
 
 namespace Stancl\Tenancy;
 
+use Stancl\Tenancy\Commands\Run;
 use Stancl\Tenancy\Commands\Seed;
 use Illuminate\Cache\CacheManager;
 use Stancl\Tenancy\Commands\Migrate;
@@ -23,9 +24,10 @@ class TenancyServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->commands([
+                Run::class,
+                Seed::class,
                 Migrate::class,
                 Rollback::class,
-                Seed::class,
                 TenantList::class,
             ]);
         }

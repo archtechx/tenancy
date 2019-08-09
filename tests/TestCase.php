@@ -139,6 +139,17 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         $app->singleton('Illuminate\Contracts\Http\Kernel', Etc\HttpKernel::class);
     }
 
+    /**
+     * Resolve application Console Kernel implementation.
+     *
+     * @param  \Illuminate\Foundation\Application  $app
+     * @return void
+     */
+    protected function resolveApplicationConsoleKernel($app)
+    {
+        $app->singleton('Illuminate\Contracts\Console\Kernel', Etc\ConsoleKernel::class);
+    }
+
     public function randomString(int $length = 10)
     {
         return substr(str_shuffle(str_repeat($x = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', ceil($length / strlen($x)))), 1, $length);
