@@ -530,6 +530,9 @@ To do this automatically, you can make this part of your `TestCase::setUp()` met
 
 ## HTTPS certificates
 
+<details>
+<summary><strong>Click to expand/collapse</strong></summary>
+
 HTTPS certificates are very easy to deal with if you use the `yourclient1.yourapp.com`, `yourclient2.yourapp.com` model. You can use a wildcard HTTPS certificate.
 
 If you use the model where second level domains are used, there are multiple ways you can solve this.
@@ -561,6 +564,8 @@ You can generate a certificate using certbot. If you use the `--nginx` flag, you
 Creating this config dynamically from PHP is not easy, but is probably feasible. Giving `www-data` write access to `/etc/nginx/sites-available/tenants.conf` should work.
 
 However, you still need to reload nginx configuration to apply the changes to configuration. This is problematic and I'm not sure if there is a simple and secure way to do this from PHP.
+
+</details>
 
 # Development
 
