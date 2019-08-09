@@ -108,8 +108,9 @@ class CommandsTest extends TestCase
         
         Artisan::call('tenants:migrate', ['--tenants' => $uuid]);
         
-        $this->artisan("tenants:run foo --tenants=$uuid a b")
+        $this->artisan("tenants:run foo --tenants=$uuid --argument='a=foo' --option='b=bar' --option='c=xyz'")
             ->expectsOutput("User's name is Test command")
-            ->expectsOutput('a;b');
+            ->expectsOutput('foo')
+            ->expectsOutput('xyz');
     }
 }

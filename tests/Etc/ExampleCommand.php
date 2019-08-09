@@ -11,7 +11,7 @@ class ExampleCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'foo {args*}';
+    protected $signature = 'foo {a} {--b=} {--c=}';
 
     /**
      * Execute the console command.
@@ -28,7 +28,8 @@ class ExampleCommand extends Command
         ]);
 
         $this->line("User's name is " . User::find(999)->name);
-        $this->line(implode(';', $this->argument('args')));
+        $this->line($this->argument('a'));
+        $this->line($this->option('c'));
     }
 }
 
