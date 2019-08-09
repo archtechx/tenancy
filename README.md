@@ -516,7 +516,7 @@ You can use the `tenants:run` command to run your own commands for tenants.
 If your command's signature were `email:send {user} {--queue} {--subject} {body}`, you would run this command like this:
 
 ```
-artisan tenants:run email:send --tenants=8075a580-1cb8-11e9-8822-49c5d8f8ff23 --option="queue=1" --option="subject=New Feature" --argument="body=We have launched a new feature. ..."
+$ artisan tenants:run email:send --tenants=8075a580-1cb8-11e9-8822-49c5d8f8ff23 --option="queue=1" --option="subject=New Feature" --argument="body=We have launched a new feature. ..."
 ```
 
 The `=` separates the argument/option name from its value, but you can still use `=` in the argument's value.
