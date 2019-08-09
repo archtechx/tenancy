@@ -41,17 +41,17 @@ class Run extends Command
 
             $callback = function ($prefix = '') {
                 return function ($arguments, $argument) use ($prefix) {
-                    [$key, $value] = explode('=', $argument);
+                    [$key, $value] = explode('=', $argument, 2);
                     $arguments[$prefix . $key] = $value;
     
                     return $arguments;
                 };
             };
 
-            // Turns ['foo=bar', 'abc=xyz'] into ['foo' => 'bar', 'abc' => 'xyz']
+            // Turns ['foo=bar', 'abc=xyz=zzz'] into ['foo' => 'bar', 'abc' => 'xyz=zzz']
             $arguments = array_reduce($this->option('argument'), $callback(), []);
 
-            // Turns ['foo=bar', 'abc=xyz'] into ['--foo' => 'bar', '--abc' => 'xyz']
+            // Turns ['foo=bar', 'abc=xyz=zzz'] into ['--foo' => 'bar', '--abc' => 'xyz=zzz']
             $options = array_reduce($this->option('option'), $callback('--'), []);
 
             // Run command
