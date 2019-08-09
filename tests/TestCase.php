@@ -10,13 +10,6 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     public $autoCreateTenant = true;
     public $autoInitTenancy = true;
 
-    private function checkRequirements(): void
-    {
-        parent::checkRequirements();
-
-        dd($this->getAnnotations());
-    }
-
     /**
      * Setup the test environment.
      *
@@ -28,6 +21,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
         Redis::connection('tenancy')->flushdb();
         Redis::connection('cache')->flushdb();
+        Artisan::call('migrate');
 
         if ($this->autoCreateTenant) {
             $this->createTenant();

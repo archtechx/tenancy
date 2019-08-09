@@ -109,6 +109,8 @@ class TenantStorageTest extends TestCase
     {
         $value = ['foo' => 'bar', 'abc' => 'xyz'];
 
+        dd(\Stancl\Tenancy\Tenant::find(tenant('uuid')));
+
         $this->assertSame($value, tenancy()->put($value));
     }
 }

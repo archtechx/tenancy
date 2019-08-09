@@ -9,6 +9,8 @@ class Tenant extends Model
     protected $dataColumn = 'data';
     protected $specialColumns = [];
     protected $guarded = [];
+    protected $publicKey = 'uuid';
+    public $incrementing = false;
 
     /**
      * Decoded data from the data column.
