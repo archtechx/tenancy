@@ -3,6 +3,7 @@
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Redis;
+use Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
@@ -92,6 +93,13 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         ]);
 
         switch ((string) env('STANCL_TENANCY_TEST_VARIANT', '1')) {
+            case '3':
+                $app['config']->set([
+                    'tenancy.redis.tenancy' => true,
+                    'database.redis.client' => 'phpredis',
+                    'tenancy.storage_driver' => DatabaseStorageDriver::class,
+                ]);
+                break;
             case '2':
                 $app['config']->set([
                     'tenancy.redis.tenancy' => false,
