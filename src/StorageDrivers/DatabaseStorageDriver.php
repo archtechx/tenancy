@@ -53,27 +53,12 @@ class DatabaseStorageDriver implements StorageDriver
 
     public function get(string $uuid, string $key)
     {
-        $tenant = Tenant::find($uuid);
-
-        return $tenant->$key ?? json_decode($tenant->data)[$key] ?? null;
+        return Tenant::find($uuid)->get($key);
     }
 
     public function getMany(string $uuid, array $keys): array
     {
-        // todo move this logic to the model?
-        $tenant = Tenant::find($uuid);
-        $tenant_data = null; // cache - json_decode() can be expensive
-        $get_from_tenant_data = function ($key) use ($tenant, &$tenant_data) {
-            $tenant_data = $tenant_data ?? json_decode($tenant->data);
-
-            return $tenant_data[$key] ?? null;
-        };
-
-        return array_reduce($keys, function ($keys, $key) use ($tenant, $get_from_tenant_data) {
-            $keys[$key] = $tenant->$key ?? $get_from_tenant_data($key) ?? null;
-
-            return $keys;
-        }, []);
+        return Tenant::getMany($keys);
     }
 
     public function put(string $uuid, string $key, $value)
