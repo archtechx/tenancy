@@ -2,7 +2,6 @@
 
 namespace Stancl\Tenancy\Tests\Etc;
 
-use Stancl\Tenancy\Tests\Etc\ExampleCommand;
 use Orchestra\Testbench\Console\Kernel;
 
 class ConsoleKernel extends Kernel
