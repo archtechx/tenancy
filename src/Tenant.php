@@ -26,6 +26,7 @@ class Tenant extends Model
     public function getFromData(string $key)
     {
         $this->dataObject = $this->dataObject ?? json_decode($this->{$this->dataColumn});
+
         return $this->dataObject->$key;
     }
 
