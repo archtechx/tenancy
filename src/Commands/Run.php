@@ -3,7 +3,6 @@
 namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Artisan;
 
 class Run extends Command
 {
@@ -43,7 +42,7 @@ class Run extends Command
                 return function ($arguments, $argument) use ($prefix) {
                     [$key, $value] = explode('=', $argument, 2);
                     $arguments[$prefix . $key] = $value;
-    
+
                     return $arguments;
                 };
             };
