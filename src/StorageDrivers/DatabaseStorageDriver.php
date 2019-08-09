@@ -2,8 +2,8 @@
 
 namespace Stancl\Tenancy\StorageDrivers;
 
-use Stancl\Tenancy\Interfaces\StorageDriver;
 use Stancl\Tenancy\Tenant;
+use Stancl\Tenancy\Interfaces\StorageDriver;
 
 class DatabaseStorageDriver implements StorageDriver
 {
@@ -70,6 +70,7 @@ class DatabaseStorageDriver implements StorageDriver
     public function get(string $uuid, string $key)
     {
         $tenant = Tenant::find($uuid);
+
         return $tenant->$key ?? json_decode($tenant->data)[$key] ?? null;
     }
 
@@ -80,11 +81,13 @@ class DatabaseStorageDriver implements StorageDriver
         $tenant_data = null; // cache - json_decode() can be expensive
         $get_from_tenant_data = function ($key) use ($tenant, &$tenant_data) {
             $tenant_data = $tenant_data ?? json_decode($tenant->data);
+
             return $tenant_data[$key] ?? null;
         };
 
         return array_reduce($keys, function ($keys, $key) use ($tenant, $get_from_tenant_data) {
             $keys[$key] = $tenant->$key ?? $get_from_tenant_data($key) ?? null;
+
             return $keys;
         }, []);
     }
