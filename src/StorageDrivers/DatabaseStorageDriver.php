@@ -3,14 +3,10 @@
 namespace Stancl\Tenancy\StorageDrivers;
 
 use Stancl\Tenancy\Interfaces\StorageDriver;
+use Stancl\Tenancy\Tenant;
 
 class DatabaseStorageDriver implements StorageDriver
 {
-    public function __construct()
-    {
-        //
-    }
-
     public function identifyTenant(string $domain): array
     {
         $id = $this->getTenantIdByDomain($domain);
@@ -41,24 +37,14 @@ class DatabaseStorageDriver implements StorageDriver
 
     public function getTenantIdByDomain(string $domain): ?string
     {
-        return $this->redis->hget("domains:$domain", 'tenant_id') ?: null;
+        return Tenant::where('domain', $domain)->first()->uuid ?? null;
     }
 
     public function createTenant(string $domain, string $uuid): array
     {
-        $this->redis->hmset("domains:$domain", 'tenant_id', $uuid);
-        $this->redis->hmset("tenants:$uuid", 'uuid', json_encode($uuid), 'domain', json_encode($domain));
-
-        return $this->redis->hgetall("tenants:$uuid");
+        return Tenant::create(['uuid' => $uuid, 'domain' => $domain])->toArray();
     }
 
-    /**
-     * {@inheritdoc}
-     *
-     * @param string $id
-     * @return bool
-     * @todo Make tenant & domain deletion atomic.
-     */
     public function deleteTenant(string $id): bool
     {
         try {
@@ -67,9 +53,7 @@ class DatabaseStorageDriver implements StorageDriver
             throw new \Exception("No tenant with UUID $id exists.");
         }
 
-        $this->redis->del("domains:$domain");
-
-        return (bool) $this->redis->del("tenants:$id");
+        return Tenant::find($id)->delete();
     }
 
     public function getAllTenants(array $uuids = []): array
@@ -78,49 +62,42 @@ class DatabaseStorageDriver implements StorageDriver
             return "tenants:{$hash}";
         }, $uuids);
 
-        if (! $hashes) {
-            // Prefix is applied to all functions except scan().
-            // This code applies the correct prefix manually.
-            $redis_prefix = config('database.redis.options.prefix');
-
-            if (config('database.redis.client') === 'phpredis') {
-                $redis_prefix = $this->redis->getOption($this->redis->client()::OPT_PREFIX) ?? $redis_prefix;
-                $all_keys = $this->redis->scan(null, $redis_prefix . 'tenants:*');
-            } else {
-                $all_keys = $this->redis->scan(null, 'MATCH', $redis_prefix . 'tenants:*')[1];
-            }
-
-            $hashes = array_map(function ($key) use ($redis_prefix) {
-                // Left strip $redis_prefix from $key
-                return substr($key, strlen($redis_prefix));
-            }, $all_keys);
-        }
-
-        return array_map(function ($tenant) {
-            return $this->redis->hgetall($tenant);
-        }, $hashes);
+        return Tenant::all()->map(function ($model) {
+            return $model->toArray();
+        })->toArray();
     }
 
     public function get(string $uuid, string $key)
     {
-        return $this->redis->hget("tenants:$uuid", $key);
+        $tenant = Tenant::find($uuid);
+        return $tenant->$key ?? json_decode($tenant->data)[$key] ?? null;
     }
 
     public function getMany(string $uuid, array $keys): array
     {
-        return $this->redis->hmget("tenants:$uuid", $keys);
+        // todo move this logic to the model?
+        $tenant = Tenant::find($uuid);
+        $tenant_data = null; // cache - json_decode() can be expensive
+        $get_from_tenant_data = function ($key) use ($tenant, &$tenant_data) {
+            $tenant_data = $tenant_data ?? json_decode($tenant->data);
+            return $tenant_data[$key] ?? null;
+        };
+
+        return array_reduce($keys, function ($keys, $key) use ($tenant, $get_from_tenant_data) {
+            $keys[$key] = $tenant->$key ?? $get_from_tenant_data($key) ?? null;
+            return $keys;
+        }, []);
     }
 
     public function put(string $uuid, string $key, $value)
     {
-        $this->redis->hset("tenants:$uuid", $key, $value);
-
-        return $value;
+        // return Tenant::find($uuid) TODO
     }
 
     public function putMany(string $uuid, array $values): array
     {
-        $this->redis->hmset("tenants:$uuid", $values);
+        // todo
+        // $this->redis->hmset("tenants:$uuid", $values);
 
         return $values;
     }

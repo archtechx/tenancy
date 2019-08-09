@@ -6,6 +6,7 @@ interface StorageDriver
 {
     public function identifyTenant(string $domain): array;
 
+    /** @return array[] */
     public function getAllTenants(array $uuids = []): array;
 
     public function getTenantById(string $uuid, array $fields = []): array;
