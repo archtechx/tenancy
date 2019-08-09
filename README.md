@@ -53,6 +53,7 @@ You won't have to change a thing in your application's code.\*
   * [Artisan commands](#artisan-commands)
       - [`tenants:list`](#-tenants-list-)
       - [`tenants:migrate`, `tenants:rollback`, `tenants:seed`](#-tenants-migrate----tenants-rollback----tenants-seed-)
+      - [Running your commands for tenants](#running-your-commands-for-tenants)
     + [Tenant migrations](#tenant-migrations)
   * [Testing](#testing)
 - [Tips](#tips)
@@ -487,6 +488,7 @@ Available commands for the "tenants" namespace:
   tenants:list      List tenants.
   tenants:migrate   Run migrations for tenant(s)
   tenants:rollback  Rollback migrations for tenant(s).
+  tenants:run       Run a command for tenant(s).
   tenants:seed      Seed tenant database(s).
 ```
 
@@ -508,6 +510,18 @@ $ artisan tenants:seed --tenants=8075a580-1cb8-11e9-8822-49c5d8f8ff23
 Tenant: 8075a580-1cb8-11e9-8822-49c5d8f8ff23 (laravel.localhost)
 Database seeding completed successfully.
 ```
+
+### Running your commands for tenants
+
+You can use the `tenants:run` command to run your own commands for tenants.
+
+If your command's signature were `email:send {user} {--queue} {--subject} {body}`, you would run this command like this:
+
+```
+$ artisan tenants:run email:send --tenants=8075a580-1cb8-11e9-8822-49c5d8f8ff23 --option="queue=1" --option="subject=New Feature" --argument="body=We have launched a new feature. ..."
+```
+
+The `=` separates the argument/option name from its value, but you can still use `=` in the argument's value.
 
 ### Tenant migrations
 
