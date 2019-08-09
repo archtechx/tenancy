@@ -38,7 +38,7 @@ class Run extends Command
 
             // Run command
             Artisan::call($this->argument('commandname'), [
-                'args' => $this->argument('args') // todo find a better way to pass args
+                'args' => $this->argument('args'), // todo find a better way to pass args
             ]);
             tenancy()->end();
         });
