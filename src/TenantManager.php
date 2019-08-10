@@ -337,7 +337,7 @@ class TenantManager
         if (is_string($driver)) {
             $driver = $this->app->make($driver);
         }
-        
+
         $this->storage = $driver;
     }
 }
