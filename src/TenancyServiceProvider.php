@@ -38,7 +38,7 @@ class TenancyServiceProvider extends ServiceProvider
         ], 'config');
 
         $this->publishes([
-            __DIR__ . '/assets/2019_08_08_000000_create_tenants_table.php' => database_path('migrations'),
+            __DIR__ . '/assets/migrations/2019_08_08_000000_create_tenants_table.php' => database_path('migrations'),
         ], 'migrations');
 
         $this->loadRoutesFrom(__DIR__ . '/routes.php');

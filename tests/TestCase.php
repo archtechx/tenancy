@@ -25,7 +25,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
         // $this->loadLaravelMigrations();
 
-        $this->loadMigrationsFrom(__DIR__ . '/../src/assets/migrations');
+        $this->loadMigrationsFrom(realpath(__DIR__ . '/../src/assets/migrations'));
 
         // Artisan::call('migrate:fresh', [
         //     '--path' => __DIR__ . '/../src/assets/migrations'
@@ -108,7 +108,9 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
     protected function getPackageProviders($app)
     {
-        return [\Stancl\Tenancy\TenancyServiceProvider::class];
+        return [
+            \Stancl\Tenancy\TenancyServiceProvider::class,
+        ];
     }
 
     protected function getPackageAliases($app)
