@@ -31,7 +31,11 @@ class DatabaseStorageDriver implements StorageDriver
      */
     public function getTenantById(string $uuid, array $fields = []): array
     {
-        return $this->tenant->find($uuid)->only($fields);
+        if ($fields) {
+            return $this->tenant->find($uuid)->only($fields);
+        } else {
+            return $this->tenant->find($uuid)->toArray();
+        }
     }
 
     public function getTenantIdByDomain(string $domain): ?string
