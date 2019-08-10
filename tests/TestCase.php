@@ -24,7 +24,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         Redis::connection('cache')->flushdb();
 
         Artisan::call('migrate:fresh', [
-            '--path' => __DIR__ . '/../src/assets/migrations'
+            '--path' => __DIR__ . '/../src/assets/migrations',
         ]);
         // dd(Artisan::output());
         // $this->loadLaravelMigrations();
@@ -99,10 +99,9 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'database.redis.client' => 'phpredis',
                 'tenancy.storage_driver' => DatabaseStorageDriver::class,
             ]);
-            
+
             tenancy()->setStorageDriver(DatabaseStorageDriver::class);
         }
-
     }
 
     protected function getPackageProviders($app)
