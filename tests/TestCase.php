@@ -60,7 +60,6 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         }
 
         $app['config']->set([
-            'database.redis.client' => 'phpredis',
             'database.redis.cache.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
             'database.redis.default.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
             'database.redis.options.prefix' => 'foo',
@@ -86,24 +85,11 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'public',
                 's3',
             ],
-            'tenancy.redis.tenancy' => true,
+            'tenancy.redis.tenancy' => env('TENANCY_TEST_REDIS_TENANCY', true),
+            'database.redis.client' => env('TENANCY_TEST_REDIS_CLIENT', 'phpredis'),
             'tenancy.redis.prefixed_connections' => ['default'],
             'tenancy.migrations_directory' => database_path('../migrations'),
         ]);
-
-        switch ((string) env('STANCL_TENANCY_TEST_VARIANT', '1')) {
-            case '2':
-                $app['config']->set([
-                    'tenancy.redis.tenancy' => false,
-                    'database.redis.client' => 'predis',
-                ]);
-                break;
-            default:
-                $app['config']->set([
-                    'tenancy.redis.tenancy' => true,
-                    'database.redis.client' => 'phpredis',
-                ]);
-        }
     }
 
     protected function getPackageProviders($app)

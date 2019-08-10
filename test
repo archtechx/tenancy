@@ -1,26 +1,9 @@
-#!/usr/bin/env python3
-from os import system
-import argparse
+#!/bin/bash
 
-system('docker-compose up -d')
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--variants", default='1,2',
-                    help="Comma-separated values. Which test variants should be run.")
-args, other = parser.parse_known_args()
-
-variants = args.variants.split(',')
-
-for variant in variants:
-    filename_base = "phpunit_var_" + variant
-    with open('phpunit.xml', 'r') as inp, open(filename_base + '.xml', 'w') as out:
-        out.write(inp.read().replace('"STANCL_TENANCY_TEST_VARIANT" value="1"',
-                                 '"STANCL_TENANCY_TEST_VARIANT" value="%s"' % variant))
-
-    print("Test variant: %s\n" % variant)
-
-    system('docker-compose exec test vendor/bin/phpunit --configuration "%s" --coverage-php %s %s'
-           %  (filename_base + '.xml', 'coverage/' + filename_base + '.cov', ' '.join(other)))
-
-# todo delete folder contents first?
-system("docker-compose exec test vendor/bin/phpcov merge --clover clover.xml coverage/")
+# for development
+docker-compose up -d
+printf "Variant 1\n\n"
+TENANCY_TEST_REDIS_TENANCY=1 TENANCY_TEST_REDIS_CLIENT=phpredis docker-compose exec test vendor/bin/phpunit --coverage-php coverage/1.cov "$@"
+printf "Variant 2\n\n"
+TENANCY_TEST_REDIS_TENANCY=0 TENANCY_TEST_REDIS_CLIENT=predis docker-compose exec test vendor/bin/phpunit --coverage-php coverage/2.cov "$@"
+docker-compose exec test vendor/bin/phpcov merge --clover clover.xml coverage/
