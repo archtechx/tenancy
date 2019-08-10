@@ -2,8 +2,8 @@
 
 namespace Stancl\Tenancy\StorageDrivers;
 
-use Stancl\Tenancy\Interfaces\StorageDriver;
 use Stancl\Tenancy\Interfaces\TenantModel;
+use Stancl\Tenancy\Interfaces\StorageDriver;
 
 class DatabaseStorageDriver implements StorageDriver
 {
