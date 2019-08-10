@@ -3,12 +3,9 @@
 namespace Stancl\Tenancy;
 
 use Illuminate\Database\Eloquent\Model;
-use Stancl\Tenancy\Interfaces\TenantModel;
 
-class Tenant extends Model implements TenantModel
+class Tenant extends Model
 {
-    protected $dataColumn = 'data'; // todo load this from config
-    protected $specialColumns = []; // todo load this from config
     protected $guarded = [];
     protected $primaryKey = 'uuid';
     public $incrementing = false;
@@ -21,9 +18,19 @@ class Tenant extends Model implements TenantModel
      */
     private $dataObject;
 
+    public function dataColumn()
+    {
+        return config('tenancy.db_storage.data_column');
+    }
+
+    public function customColumns()
+    {
+        return config('tenancy.db_storage.custom_columns');
+    }
+
     public function getFromData(string $key)
     {
-        $this->dataObject = $this->dataObject ?? json_decode($this->{$this->dataColumn});
+        $this->dataObject = $this->dataObject ?? json_decode($this->{$this->dataColumn()});
 
         return $this->dataObject->$key;
     }
@@ -44,10 +51,10 @@ class Tenant extends Model implements TenantModel
 
     public function put(string $key, $value)
     {
-        if (array_key_exists($key, $this->specialColumns)) {
+        if (array_key_exists($key, $this->customColumns())) {
             $this->update([$key => $value]);
         } else {
-            $obj = json_decode($this->{$this->dataColumn});
+            $obj = json_decode($this->{$this->dataColumn()});
             $obj->$key = $value;
 
             $this->update([$this->getDataColumn() => json_encode($obj)]);
