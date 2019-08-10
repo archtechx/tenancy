@@ -2,8 +2,8 @@
 
 namespace Stancl\Tenancy\Tests;
 
-use Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver;
 use Stancl\Tenancy\StorageDrivers\RedisStorageDriver;
+use Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver;
 
 class TenantStorageTest extends TestCase
 {
