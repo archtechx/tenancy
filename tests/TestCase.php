@@ -23,16 +23,13 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         Redis::connection('tenancy')->flushdb();
         Redis::connection('cache')->flushdb();
 
-<<<<<<< HEAD
-=======
-        Artisan::call('migrate:fresh', [
-            '--path' => __DIR__ . '/../src/assets/migrations',
-        ]);
-        // dd(Artisan::output());
->>>>>>> 7fd274d2ced8467761315d490e5e1bb31bdb0ab7
         // $this->loadLaravelMigrations();
+
         $this->loadMigrationsFrom(__DIR__ . '/../src/assets/migrations');
-        Artisan::call('migrate:fresh');
+        
+        // Artisan::call('migrate:fresh', [
+        //     '--path' => __DIR__ . '/../src/assets/migrations'
+        // ]);
         // dd(Artisan::output());
 
         if ($this->autoCreateTenant) {
