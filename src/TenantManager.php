@@ -320,4 +320,9 @@ class TenantManager
 
         return $this->tenant[(string) $attribute];
     }
+
+    public function getStorageDriver(): Interfaces\StorageDriver
+    {
+        return $this->storage;
+    }
 }

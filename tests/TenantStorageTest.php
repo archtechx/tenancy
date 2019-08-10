@@ -2,6 +2,9 @@
 
 namespace Stancl\Tenancy\Tests;
 
+use Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver;
+use Stancl\Tenancy\StorageDrivers\RedisStorageDriver;
+
 class TenantStorageTest extends TestCase
 {
     /** @test */
@@ -109,8 +112,16 @@ class TenantStorageTest extends TestCase
     {
         $value = ['foo' => 'bar', 'abc' => 'xyz'];
 
-        dd(\Stancl\Tenancy\Tenant::find(tenant('uuid')));
-
         $this->assertSame($value, tenancy()->put($value));
+    }
+
+    /** @test */
+    public function correct_storage_driver_is_used()
+    {
+        if (config('tenancy.storage_driver') == DatabaseStorageDriver::class) {
+            $this->assertSame('DatabaseStorageDriver', class_basename(tenancy()->getStorageDriver()));
+        } elseif (config('tenancy.storage_driver') == RedisStorageDriver::class) {
+            $this->assertSame('RedisStorageDriver', class_basename(tenancy()->getStorageDriver()));
+        }
     }
 }

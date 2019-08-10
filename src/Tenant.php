@@ -3,6 +3,7 @@
 namespace Stancl\Tenancy;
 
 use Illuminate\Database\Eloquent\Model;
+use Stancl\Tenancy\Interfaces\TenantModel;
 
 class Tenant extends Model implements TenantModel
 {

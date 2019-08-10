@@ -3,6 +3,7 @@
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Artisan;
 use Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
@@ -21,7 +22,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
         Redis::connection('tenancy')->flushdb();
         Redis::connection('cache')->flushdb();
-        Artisan::call('migrate');
+        Artisan::call('migrate'); // todo load default migration
 
         if ($this->autoCreateTenant) {
             $this->createTenant();
