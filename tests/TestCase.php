@@ -26,7 +26,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         // $this->loadLaravelMigrations();
 
         $this->loadMigrationsFrom(__DIR__ . '/../src/assets/migrations');
-        
+
         // Artisan::call('migrate:fresh', [
         //     '--path' => __DIR__ . '/../src/assets/migrations'
         // ]);
