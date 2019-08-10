@@ -94,6 +94,8 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                     'database.redis.client' => 'phpredis',
                     'tenancy.storage_driver' => DatabaseStorageDriver::class,
                 ]);
+                tenancy()->setStorageDriver(DatabaseStorageDriver::class);
+                
                 break;
             case '2':
                 $app['config']->set([

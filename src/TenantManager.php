@@ -325,4 +325,19 @@ class TenantManager
     {
         return $this->storage;
     }
+
+    /**
+     * Set the storage driver.
+     *
+     * @param Interfaces\StorageDriver|string $driver
+     * @return void
+     */
+    public function setStorageDriver($driver)
+    {
+        if (is_string($driver)) {
+            $driver = $this->app->make($driver);
+        }
+        
+        $this->storage = $driver;
+    }
 }
