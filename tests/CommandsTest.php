@@ -76,7 +76,7 @@ class CommandsTest extends TestCase
     }
 
     /** @test */
-    public function database_connection_is_switched_to_default_after_migrating_or_seeding_or_rolling_back()
+    public function database_connection_is_switched_to_default()
     {
         $originalDBName = DB::connection()->getDatabaseName();
 
@@ -88,13 +88,29 @@ class CommandsTest extends TestCase
 
         Artisan::call('tenants:rollback');
         $this->assertSame($originalDBName, DB::connection()->getDatabaseName());
+
+        $this->run_commands_works();
+        $this->assertSame($originalDBName, DB::connection()->getDatabaseName());
     }
 
     /** @test */
-    public function database_connection_is_switched_to_default_after_migrating_or_seeding_or_rolling_back_when_tenancy_has_been_initialized()
+    public function database_connection_is_switched_to_default_when_tenancy_has_been_initialized()
     {
         tenancy()->init('localhost');
 
-        $this->database_connection_is_switched_to_default_after_migrating_or_seeding_or_rolling_back();
+        $this->database_connection_is_switched_to_default();
+    }
+
+    /** @test */
+    public function run_commands_works()
+    {
+        $uuid = tenant()->create('run.localhost')['uuid'];
+
+        Artisan::call('tenants:migrate', ['--tenants' => $uuid]);
+
+        $this->artisan("tenants:run foo --tenants=$uuid --argument='a=foo' --option='b=bar' --option='c=xyz'")
+            ->expectsOutput("User's name is Test command")
+            ->expectsOutput('foo')
+            ->expectsOutput('xyz');
     }
 }

@@ -53,6 +53,7 @@ You won't have to change a thing in your application's code.\*
   * [Artisan commands](#artisan-commands)
       - [`tenants:list`](#-tenants-list-)
       - [`tenants:migrate`, `tenants:rollback`, `tenants:seed`](#-tenants-migrate----tenants-rollback----tenants-seed-)
+      - [Running your commands for tenants](#running-your-commands-for-tenants)
     + [Tenant migrations](#tenant-migrations)
   * [Testing](#testing)
 - [Tips](#tips)
@@ -487,6 +488,7 @@ Available commands for the "tenants" namespace:
   tenants:list      List tenants.
   tenants:migrate   Run migrations for tenant(s)
   tenants:rollback  Rollback migrations for tenant(s).
+  tenants:run       Run a command for tenant(s).
   tenants:seed      Seed tenant database(s).
 ```
 
@@ -509,6 +511,18 @@ Tenant: 8075a580-1cb8-11e9-8822-49c5d8f8ff23 (laravel.localhost)
 Database seeding completed successfully.
 ```
 
+### Running your commands for tenants
+
+You can use the `tenants:run` command to run your own commands for tenants.
+
+If your command's signature were `email:send {user} {--queue} {--subject} {body}`, you would run this command like this:
+
+```
+$ artisan tenants:run email:send --tenants=8075a580-1cb8-11e9-8822-49c5d8f8ff23 --option="queue=1" --option="subject=New Feature" --argument="body=We have launched a new feature. ..."
+```
+
+The `=` separates the argument/option name from its value, but you can still use `=` in the argument's value.
+
 ### Tenant migrations
 
 Tenant migrations are located in `database/migrations/tenant`, so you should move your tenant migrations there.
@@ -529,6 +543,9 @@ To do this automatically, you can make this part of your `TestCase::setUp()` met
 - If you create a tenant using the interactive console (`artisan tinker`) and use sqlite, you might need to change the database's permissions and/or ownership (`chmod`/`chown`) so that the web application can access it.
 
 ## HTTPS certificates
+
+<details>
+<summary><strong>Click to expand/collapse</strong></summary>
 
 HTTPS certificates are very easy to deal with if you use the `yourclient1.yourapp.com`, `yourclient2.yourapp.com` model. You can use a wildcard HTTPS certificate.
 
@@ -561,6 +578,8 @@ You can generate a certificate using certbot. If you use the `--nginx` flag, you
 Creating this config dynamically from PHP is not easy, but is probably feasible. Giving `www-data` write access to `/etc/nginx/sites-available/tenants.conf` should work.
 
 However, you still need to reload nginx configuration to apply the changes to configuration. This is problematic and I'm not sure if there is a simple and secure way to do this from PHP.
+
+</details>
 
 # Development
 
