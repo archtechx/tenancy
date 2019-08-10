@@ -4,12 +4,12 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Tenant extends Model
+class Tenant extends Model implements TenantModel
 {
     protected $dataColumn = 'data';
     protected $specialColumns = [];
     protected $guarded = [];
-    protected $publicKey = 'uuid';
+    protected $primaryKey = 'uuid';
     public $incrementing = false;
 
     /**
@@ -19,12 +19,6 @@ class Tenant extends Model
      */
     private $dataObject;
 
-    /**
-     * Get data from the data column.
-     *
-     * @param string $key
-     * @return mixed
-     */
     public function getFromData(string $key)
     {
         $this->dataObject = $this->dataObject ?? json_decode($this->{$this->dataColumn});
@@ -32,23 +26,11 @@ class Tenant extends Model
         return $this->dataObject->$key;
     }
 
-    /**
-     * Get data from tenant storage.
-     *
-     * @param string $key
-     * @return mixed
-     */
     public function get(string $key)
     {
         return $this->$key ?? $this->getFromData($key) ?? null;
     }
 
-    /**
-     * Get multiple values from tenant storage.
-     *
-     * @param array $keys
-     * @return array
-     */
     public function getMany(array $keys): array
     {
         return array_reduce($keys, function ($keys, $key) {
@@ -58,13 +40,6 @@ class Tenant extends Model
         }, []);
     }
 
-    /**
-     * Put data into tenant storage.
-     *
-     * @param string $key
-     * @param mixed $value
-     * @return mixed
-     */
     public function put(string $key, $value)
     {
         if (array_key_exists($key, $this->specialColumns)) {

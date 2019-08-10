@@ -2,11 +2,16 @@
 
 namespace Stancl\Tenancy\StorageDrivers;
 
-use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\Interfaces\StorageDriver;
+use Stancl\Tenancy\Interfaces\TenantModel;
 
 class DatabaseStorageDriver implements StorageDriver
 {
+    public function __construct(TenantModel $tenant)
+    {
+        $this->tenant = $tenant;
+    }
+
     public function identifyTenant(string $domain): array
     {
         $id = $this->getTenantIdByDomain($domain);
@@ -26,50 +31,50 @@ class DatabaseStorageDriver implements StorageDriver
      */
     public function getTenantById(string $uuid, array $fields = []): array
     {
-        return Tenant::find($uuid)->only($fields)->toArray();
+        return $this->tenant->find($uuid)->only($fields);
     }
 
     public function getTenantIdByDomain(string $domain): ?string
     {
-        return Tenant::where('domain', $domain)->first()->uuid ?? null;
+        return $this->tenant->where('domain', $domain)->first()->uuid ?? null;
     }
 
     public function createTenant(string $domain, string $uuid): array
     {
-        return Tenant::create(['uuid' => $uuid, 'domain' => $domain])->toArray();
+        return $this->tenant->create(['uuid' => $uuid, 'domain' => $domain])->toArray();
     }
 
     public function deleteTenant(string $id): bool
     {
-        return Tenant::find($id)->delete();
+        return $this->tenant->find($id)->delete();
     }
 
     public function getAllTenants(array $uuids = []): array
     {
-        return Tenant::all()->map(function ($model) {
+        return $this->tenant->all()->map(function ($model) {
             return $model->toArray();
         })->toArray();
     }
 
     public function get(string $uuid, string $key)
     {
-        return Tenant::find($uuid)->get($key);
+        return $this->tenant->find($uuid)->get($key);
     }
 
     public function getMany(string $uuid, array $keys): array
     {
-        return Tenant::getMany($keys);
+        return $this->tenant->getMany($keys);
     }
 
     public function put(string $uuid, string $key, $value)
     {
-        return Tenant::find($uuid)->put($key, $value);
+        return $this->tenant->find($uuid)->put($key, $value);
     }
 
     public function putMany(string $uuid, array $values): array
     {
         foreach ($values as $key => $value) {
-            Tenant::find($uuid)->put($key, $value);
+            $this->tenant->find($uuid)->put($key, $value);
         }
 
         return $values;
