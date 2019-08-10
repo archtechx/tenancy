@@ -7,8 +7,8 @@ use Stancl\Tenancy\Interfaces\TenantModel;
 
 class Tenant extends Model implements TenantModel
 {
-    protected $dataColumn = 'data';
-    protected $specialColumns = [];
+    protected $dataColumn = 'data'; // todo load this from config
+    protected $specialColumns = []; // todo load this from config
     protected $guarded = [];
     protected $primaryKey = 'uuid';
     public $incrementing = false;

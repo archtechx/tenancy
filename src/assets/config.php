@@ -1,14 +1,14 @@
 <?php
 
 return [
-    'storage_driver' => 'Stancl\Tenancy\StorageDrivers\RedisStorageDriver',
+    'storage_driver' => 'Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver',
     'tenant_model' => 'Stancl\Tenancy\Tenant',
     'tenant_route_namespace' => 'App\Http\Controllers',
     'exempt_domains' => [
         // 'localhost',
     ],
     'database' => [
-        'based_on' => 'mysql',
+        'based_on' => 'sqlite',
         'prefix' => 'tenant',
         'suffix' => '',
     ],

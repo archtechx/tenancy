@@ -340,7 +340,35 @@ Note that deleting a tenant doesn't delete his database. You can do this manuall
 
 ## Storage driver
 
-Currently, only Redis is supported, but you're free to code your own storage driver which follows the `Stancl\Tenancy\Interfaces\StorageDriver` interface. Just point the `tenancy.storage_driver` setting at your driver.
+### Database
+
+The database storage driver lets you store information about tenants in a relational database like MySQL, PostgreSQL and SQLite.
+
+To use this storage driver, publish the `create_tenants_table` migration:
+
+```
+php artisan vendor:publish --provider='Stancl\Tenancy\TenancyServiceProvider' --tag=migrations
+```
+
+By default, the table contains only `uuid`, `domain` and `data` columns.
+
+The `data` column is used to store information about a tenant, such as their selected plan, in JSON form. This package does not store anything in the column by default.
+
+You can store specific keys in your own columns. This is useful if you want to use RDBMS features like indexes.
+
+If you don't need any custom columns, you can skip the next section and run:
+
+```
+php artisan migrate
+```
+
+#### Adding your own columns
+
+To add your own columns, TODO.
+
+### Redis
+
+Using Redis as your storage driver is recommended due to its low overhead compared to a relational database like MySQL.
 
 **Note that you need to configure persistence on your Redis instance** if you don't want to lose all information about tenants.
 
