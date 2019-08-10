@@ -23,12 +23,10 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         Redis::connection('tenancy')->flushdb();
         Redis::connection('cache')->flushdb();
 
-        Artisan::call('migrate:fresh', [
-            '--path' => __DIR__ . '/../src/assets/migrations'
-        ]);
-        // dd(Artisan::output());
         // $this->loadLaravelMigrations();
-        // $this->loadMigrationsFrom(__DIR__ . '/../src/assets/migrations');
+        $this->loadMigrationsFrom(__DIR__ . '/../src/assets/migrations');
+        Artisan::call('migrate:fresh');
+        // dd(Artisan::output());
 
         if ($this->autoCreateTenant) {
             $this->createTenant();
@@ -102,7 +100,6 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             
             tenancy()->setStorageDriver(DatabaseStorageDriver::class);
         }
-
     }
 
     protected function getPackageProviders($app)
