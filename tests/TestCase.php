@@ -22,7 +22,10 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
         Redis::connection('tenancy')->flushdb();
         Redis::connection('cache')->flushdb();
-        Artisan::call('migrate'); // todo load default migration
+
+        Artisan::call('migrate:fresh');
+        $this->loadLaravelMigrations();
+        $this->loadMigrationsFrom(__DIR__ . '/../src/assets/migrations');
 
         if ($this->autoCreateTenant) {
             $this->createTenant();
@@ -95,7 +98,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                     'tenancy.storage_driver' => DatabaseStorageDriver::class,
                 ]);
                 tenancy()->setStorageDriver(DatabaseStorageDriver::class);
-                
+
                 break;
             case '2':
                 $app['config']->set([

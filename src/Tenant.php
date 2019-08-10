@@ -12,6 +12,7 @@ class Tenant extends Model implements TenantModel
     protected $guarded = [];
     protected $primaryKey = 'uuid';
     public $incrementing = false;
+    public $timestamps = false;
 
     /**
      * Decoded data from the data column.
