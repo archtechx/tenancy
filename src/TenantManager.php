@@ -86,7 +86,7 @@ class TenantManager
         }
 
         $tenant = $this->jsonDecodeArrayValues($this->storage->createTenant($domain, (string) \Webpatser\Uuid\Uuid::generate(1, $domain)));
-        
+
         if ($data) {
             $this->put($data, null, $tenant['uuid']);
 
