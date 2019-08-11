@@ -70,7 +70,14 @@ class TenantManager
         return $tenant;
     }
 
-    public function create(string $domain = null): array
+    /**
+     * Create a tenant.
+     *
+     * @param string $domain
+     * @param array $data
+     * @return array
+     */
+    public function create(string $domain = null, array $data = []): array
     {
         $domain = $domain ?: $this->currentDomain();
 
@@ -79,6 +86,13 @@ class TenantManager
         }
 
         $tenant = $this->jsonDecodeArrayValues($this->storage->createTenant($domain, (string) \Webpatser\Uuid\Uuid::generate(1, $domain)));
+        
+        if ($data) {
+            $this->put($data, null, $tenant['uuid']);
+
+            $tenant = array_merge($tenant, $data);
+        }
+
         $this->database->create($this->getDatabaseName($tenant));
 
         return $tenant;
@@ -167,6 +181,12 @@ class TenantManager
     public function getDatabaseName($tenant = []): string
     {
         $tenant = $tenant ?: $this->tenant;
+
+        if ($key = $this->app['config']['tenancy.database_name_key']) {
+            if (isset($tenant[$key])) {
+                return $tenant[$key];
+            }
+        }
 
         return $this->app['config']['tenancy.database.prefix'] . $tenant['uuid'] . $this->app['config']['tenancy.database.suffix'];
     }
