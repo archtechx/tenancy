@@ -2,7 +2,7 @@
 
 namespace Stancl\Tenancy\StorageDrivers;
 
-use Stancl\Tenancy\Interfaces\TenantModel;
+use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\Interfaces\StorageDriver;
 
 class DatabaseStorageDriver implements StorageDriver
@@ -50,9 +50,13 @@ class DatabaseStorageDriver implements StorageDriver
 
     public function getAllTenants(array $uuids = []): array
     {
-        return Tenant::all()->map(function ($model) {
-            return $model->toArray();
-        })->toArray();
+        if ($uuids) {
+            $tenants = Tenant::find($uuids);
+        } else {
+            $tenants = Tenant::all();
+        }
+        
+        return $tenants->toArray();
     }
 
     public function get(string $uuid, string $key)
