@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Commands\Rollback;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Commands\TenantList;
-use Stancl\Tenancy\Interfaces\TenantModel;
 use Stancl\Tenancy\Interfaces\StorageDriver;
 use Stancl\Tenancy\Interfaces\ServerConfigManager;
 
