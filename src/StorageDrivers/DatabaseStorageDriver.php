@@ -55,7 +55,7 @@ class DatabaseStorageDriver implements StorageDriver
         } else {
             $tenants = Tenant::all();
         }
-        
+
         return $tenants->toArray();
     }
 
