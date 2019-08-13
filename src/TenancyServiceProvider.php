@@ -22,15 +22,13 @@ class TenancyServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        if ($this->app->runningInConsole()) {
-            $this->commands([
-                Run::class,
-                Seed::class,
-                Migrate::class,
-                Rollback::class,
-                TenantList::class,
-            ]);
-        }
+        $this->commands([
+            Run::class,
+            Seed::class,
+            Migrate::class,
+            Rollback::class,
+            TenantList::class,
+        ]);
 
         $this->publishes([
             __DIR__ . '/config/tenancy.php' => config_path('tenancy.php'),
