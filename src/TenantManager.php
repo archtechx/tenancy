@@ -275,11 +275,12 @@ class TenantManager
      */
     public function put($key, $value = null, string $uuid = null)
     {
-        if (in_array($key, ['uuid', 'domain'], true) ||
-            (is_array($key) && array_reduce(array_keys($key), function ($result, $k) {
-                return $result || in_array($k, ['uuid', 'domain']);
-            }, false))
-        ) {
+        if (in_array($key, ['uuid', 'domain'], true) || (
+            is_array($key) && (
+                in_array('uuid', array_keys($key), true) ||
+                in_array('domain', array_keys($key), true)
+            )
+        )) {
             throw new CannotChangeUuidOrDomainException;
         }
 
