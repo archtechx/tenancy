@@ -216,7 +216,7 @@ class TenantManagerTest extends TestCase
         config(['tenancy.database_name_key' => '_stancl_tenancy_database_name']);
 
         $tenant = tenant()->create('foo.localhost', [
-            '_stancl_tenancy_database_name' => $database
+            '_stancl_tenancy_database_name' => $database,
         ]);
 
         $this->assertSame($database, tenant()->getDatabaseName($tenant));

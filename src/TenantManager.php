@@ -275,7 +275,7 @@ class TenantManager
      */
     public function put($key, $value = null, string $uuid = null)
     {
-        if (in_array($key, ['uuid', 'domain'], true) || 
+        if (in_array($key, ['uuid', 'domain'], true) ||
             (is_array($key) && array_reduce(array_keys($key), function ($result, $k) {
                 return $result || in_array($k, ['uuid', 'domain']);
             }, false))
