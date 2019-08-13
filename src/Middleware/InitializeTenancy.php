@@ -8,7 +8,7 @@ class InitializeTenancy
 {
     public function __construct(Closure $onFail = null)
     {
-        $this->onFail = $onFail ?: function ($e) {
+        $this->onFail = $onFail ?? function ($e) {
             throw $e;
         };
     }
