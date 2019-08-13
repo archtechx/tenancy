@@ -5,6 +5,7 @@ namespace Stancl\Tenancy;
 use Stancl\Tenancy\Interfaces\StorageDriver;
 use Stancl\Tenancy\Traits\BootstrapsTenancy;
 use Illuminate\Contracts\Foundation\Application;
+use Stancl\Tenancy\Exceptions\CannotChangeUuidOrDomainException;
 
 class TenantManager
 {
@@ -274,6 +275,14 @@ class TenantManager
      */
     public function put($key, $value = null, string $uuid = null)
     {
+        if (in_array($key, ['uuid', 'domain'], true) || 
+            (is_array($key) && array_reduce(array_keys($key), function ($result, $k) {
+                return $result || in_array($k, ['uuid', 'domain']);
+            }, false))
+        ) {
+            throw new CannotChangeUuidOrDomainException;
+        }
+
         if (\is_null($uuid)) {
             if (! isset($this->tenant['uuid'])) {
                 throw new \Exception('No UUID supplied (and no tenant is currently identified).');
