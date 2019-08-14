@@ -9,6 +9,8 @@ use Stancl\Tenancy\Exceptions\PhpRedisNotInstalledException;
 
 trait BootstrapsTenancy
 {
+    use TenantManagerEvents;
+
     public $originalSettings = [];
     /**
      * Was tenancy initialized/bootstrapped?
@@ -19,6 +21,10 @@ trait BootstrapsTenancy
 
     public function bootstrap()
     {
+        array_map(function ($listener) {
+            $listener($this);
+        }, $this->listeners['bootstrapping']);
+
         $this->initialized = true;
 
         $this->switchDatabaseConnection();
@@ -27,6 +33,10 @@ trait BootstrapsTenancy
         }
         $this->tagCache();
         $this->suffixFilesystemRootPaths();
+
+        array_map(function ($listener) {
+            $listener($this);
+        }, $this->listeners['bootstrapped']);
     }
 
     public function end()
