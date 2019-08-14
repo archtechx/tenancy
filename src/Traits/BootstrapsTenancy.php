@@ -41,9 +41,9 @@ trait BootstrapsTenancy
 
     public function end()
     {
-        // array_map(function ($listener) {
-        //     $listener($this);
-        // }, $this->listeners['ending']);
+        array_map(function ($listener) {
+            $listener($this);
+        }, $this->listeners['ending']);
 
         $this->initialized = false;
 
