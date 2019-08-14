@@ -2,6 +2,7 @@
 
 namespace Stancl\Tenancy\Tests;
 
+use Tenancy;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Exceptions\CannotChangeUuidOrDomainException;
@@ -240,5 +241,35 @@ class TenantManagerTest extends TestCase
 
         $this->expectException(CannotChangeUuidOrDomainException::class);
         tenant()->put(['uuid' => 'foo']);
+    }
+
+    /** @test */
+    public function bootstrapping_event_works()
+    {
+        $uuid = tenant()->create('foo.localhost')['uuid'];
+
+        Tenancy::bootstrapping(function ($tenantManager) use ($uuid) {
+            if ($tenantManager->tenant['uuid'] === $uuid) {
+                config(['tenancy.foo' => 'bar']);
+            }
+        });
+
+        tenancy()->init('foo.localhost');
+        $this->assertSame('bar', config('tenancy.foo'));
+    }
+
+    /** @test */
+    public function bootstrapped_event_works()
+    {
+        $uuid = tenant()->create('foo.localhost')['uuid'];
+
+        Tenancy::bootstrapped(function ($tenantManager) use ($uuid) {
+            if ($tenantManager->tenant['uuid'] === $uuid) {
+                config(['tenancy.foo' => 'bar']);
+            }
+        });
+
+        tenancy()->init('foo.localhost');
+        $this->assertSame('bar', config('tenancy.foo'));
     }
 }

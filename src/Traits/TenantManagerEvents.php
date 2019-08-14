@@ -10,8 +10,8 @@ trait TenantManagerEvents
      * @var callable[][]
      */
     protected $listeners = [
-        'boostrapping' => [],
-        'boostrapped' => [],
+        'bootstrapping' => [],
+        'bootstrapped' => [],
         'ending' => [],
         'ended' => [],
     ];
@@ -35,7 +35,7 @@ trait TenantManagerEvents
      * @param callable $callback
      * @return self
      */
-    public function boostrapped(callable $callback)
+    public function bootstrapped(callable $callback)
     {
         $this->listeners['bootstrapped'][] = $callback;
 

@@ -23,7 +23,7 @@ trait BootstrapsTenancy
     {
         array_map(function ($listener) {
             $listener($this);
-        }, $this->listeners['boostrapping']);
+        }, $this->listeners['bootstrapping']);
 
         $this->initialized = true;
 
@@ -36,7 +36,7 @@ trait BootstrapsTenancy
 
         array_map(function ($listener) {
             $listener($this);
-        }, $this->listeners['boostrapped']);
+        }, $this->listeners['bootstrapped']);
     }
 
     public function end()
