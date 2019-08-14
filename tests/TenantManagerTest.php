@@ -254,6 +254,7 @@ class TenantManagerTest extends TestCase
             }
         });
 
+        $this->assertSame(null, config('tenancy.foo'));
         tenancy()->init('foo.localhost');
         $this->assertSame('bar', config('tenancy.foo'));
     }
@@ -269,7 +270,44 @@ class TenantManagerTest extends TestCase
             }
         });
 
+        $this->assertSame(null, config('tenancy.foo'));
         tenancy()->init('foo.localhost');
+        $this->assertSame('bar', config('tenancy.foo'));
+    }
+
+    /** @test */
+    public function ending_event_works()
+    {
+        $uuid = tenant()->create('foo.localhost')['uuid'];
+
+        Tenancy::ending(function ($tenantManager) use ($uuid) {
+            if ($tenantManager->tenant['uuid'] === $uuid) {
+                config(['tenancy.foo' => 'bar']);
+            }
+        });
+
+        $this->assertSame(null, config('tenancy.foo'));
+        tenancy()->init('foo.localhost');
+        $this->assertSame(null, config('tenancy.foo'));
+        tenancy()->end();
+        $this->assertSame('bar', config('tenancy.foo'));
+    }
+
+    /** @test */
+    public function ended_event_works()
+    {
+        $uuid = tenant()->create('foo.localhost')['uuid'];
+
+        Tenancy::ended(function ($tenantManager) use ($uuid) {
+            if ($tenantManager->tenant['uuid'] === $uuid) {
+                config(['tenancy.foo' => 'bar']);
+            }
+        });
+
+        $this->assertSame(null, config('tenancy.foo'));
+        tenancy()->init('foo.localhost');
+        $this->assertSame(null, config('tenancy.foo'));
+        tenancy()->end();
         $this->assertSame('bar', config('tenancy.foo'));
     }
 }
