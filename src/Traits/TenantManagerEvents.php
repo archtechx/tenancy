@@ -5,7 +5,7 @@ namespace Stancl\Tenancy\Traits;
 trait TenantManagerEvents
 {
     /**
-     * Event listeners
+     * Event listeners.
      *
      * @var callable[][]
      */
