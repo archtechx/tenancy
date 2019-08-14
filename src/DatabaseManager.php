@@ -105,7 +105,8 @@ final class DatabaseManager
         config()->set(['database.connections.tenant.database' => $database_name]);
     }
 
-    public function useConnection(string $connection) {
+    public function useConnection(string $connection)
+    {
         $this->database->setDefaultConnection($connection);
         $this->database->reconnect($connection);
     }
