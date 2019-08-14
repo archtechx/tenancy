@@ -111,4 +111,26 @@ class TenantManagerEventsTest extends TestCase
         tenancy()->init('abc.localhost');
         $this->assertSame('tenantabc', \DB::connection()->getConfig()['name']);
     }
+
+    /** @test */
+    public function database_cannot_be_reconnected_without_using_prevents()
+    {
+        config(['database.connections.tenantabc' => [
+            'driver' => 'sqlite',
+            'database' => database_path('some_special_database.sqlite'),
+        ]]);
+
+        $uuid = Tenant::create('abc.localhost')['uuid'];
+
+        Tenancy::bootstrapping(function ($tenancy) use ($uuid) {
+            if ($tenancy->tenant['uuid'] === $uuid) {
+                $tenancy->database->useConnection('tenantabc');
+                // return ['database'];
+            }
+        });
+
+        $this->assertNotSame('tenantabc', \DB::connection()->getConfig()['name']);
+        tenancy()->init('abc.localhost');
+        $this->assertSame('tenant', \DB::connection()->getConfig()['name']);
+    }
 }
