@@ -103,6 +103,7 @@ class TenantManagerEventsTest extends TestCase
         Tenancy::bootstrapping(function ($tenancy) use ($uuid) {
             if ($tenancy->tenant['uuid'] === $uuid) {
                 $tenancy->database->useConnection('tenantabc');
+
                 return ['database'];
             }
         });
