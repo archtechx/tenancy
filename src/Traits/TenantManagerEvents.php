@@ -2,6 +2,8 @@
 
 namespace Stancl\Tenancy\Traits;
 
+use Illuminate\Support\Collection;
+
 trait TenantManagerEvents
 {
     /**
@@ -66,5 +68,18 @@ trait TenantManagerEvents
         $this->listeners['ended'][] = $callback;
 
         return $this;
+    }
+
+    /**
+     * Fire an event.
+     *
+     * @param string $name Event name
+     * @return Collection Prevented events
+     */
+    public function event(string $name): Collection
+    {
+        return array_reduce($this->listeners[$name], function ($prevents, $listener) {
+            return $prevents->merge($listener($this));
+        }, collect([]));
     }
 }

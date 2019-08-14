@@ -21,42 +21,55 @@ trait BootstrapsTenancy
 
     public function bootstrap()
     {
-        array_map(function ($listener) {
-            $listener($this);
-        }, $this->listeners['bootstrapping']);
-
+        $prevented = $this->event('bootstrapping');
         $this->initialized = true;
 
-        $this->switchDatabaseConnection();
-        if ($this->app['config']['tenancy.redis.tenancy']) {
-            $this->setPhpRedisPrefix($this->app['config']['tenancy.redis.prefixed_connections']);
+        if (! $prevented->contains('database')) {
+            $this->switchDatabaseConnection();
         }
-        $this->tagCache();
-        $this->suffixFilesystemRootPaths();
 
-        array_map(function ($listener) {
-            $listener($this);
-        }, $this->listeners['bootstrapped']);
+        if (! $prevented->contains('redis')) {
+            if ($this->app['config']['tenancy.redis.tenancy']) {
+                $this->setPhpRedisPrefix($this->app['config']['tenancy.redis.prefixed_connections']);
+            }
+        }
+
+        if (! $prevented->contains('cache')) {
+            $this->tagCache();
+        }
+
+        if (! $prevented->contains('filesystem')) {
+            $this->suffixFilesystemRootPaths();
+        }
+
+        $this->event('bootstrapped');
     }
 
     public function end()
     {
-        array_map(function ($listener) {
-            $listener($this);
-        }, $this->listeners['ending']);
+        $prevented = $this->event('ending');
 
         $this->initialized = false;
 
-        $this->disconnectDatabase();
-        if ($this->app['config']['tenancy.redis.tenancy']) {
-            $this->resetPhpRedisPrefix($this->app['config']['tenancy.redis.prefixed_connections']);
+        if (! $prevented->contains('database')) {
+            $this->disconnectDatabase();
         }
-        $this->untagCache();
-        $this->resetFileSystemRootPaths();
 
-        array_map(function ($listener) {
-            $listener($this);
-        }, $this->listeners['ended']);
+        if (! $prevented->contains('redis')) {
+            if ($this->app['config']['tenancy.redis.tenancy']) {
+                $this->resetPhpRedisPrefix($this->app['config']['tenancy.redis.prefixed_connections']);
+            }
+        }
+
+        if (! $prevented->contains('cache')) {
+            $this->untagCache();
+        }
+
+        if (! $prevented->contains('filesystem')) {
+            $this->resetFileSystemRootPaths();
+        }
+
+        $this->event('ended');
     }
 
     public function switchDatabaseConnection()
