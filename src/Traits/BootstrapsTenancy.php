@@ -41,6 +41,10 @@ trait BootstrapsTenancy
 
     public function end()
     {
+        array_map(function ($listener) {
+            $listener($this);
+        }, $this->listeners['ending']);
+
         $this->initialized = false;
 
         $this->disconnectDatabase();
@@ -49,6 +53,10 @@ trait BootstrapsTenancy
         }
         $this->untagCache();
         $this->resetFileSystemRootPaths();
+
+        array_map(function ($listener) {
+            $listener($this);
+        }, $this->listeners['ended']);
     }
 
     public function switchDatabaseConnection()
