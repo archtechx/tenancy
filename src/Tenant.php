@@ -18,19 +18,34 @@ class Tenant extends Model
      */
     private $dataObject;
 
-    public function dataColumn()
+    public static function dataColumn()
     {
         return config('tenancy.storage.db.data_column', 'data');
     }
 
-    public function customColumns()
+    public static function customColumns()
     {
         return config('tenancy.storage.db.custom_columns', []);
     }
 
     public function getConnectionName()
     {
-        return config('tenancy.storage.db.connection');
+        return config('tenancy.storage.db.connection', 'central');
+    }
+
+    public static function getAllTenants(array $uuids)
+    {
+        $tenants = $uuids ? static::findMany($uuids) : static::all();
+
+        return $tenants->map(function ($tenant) {
+            $tenant = (array) $tenant->attributes;
+            foreach (json_decode($tenant[static::dataColumn()], true) as $key => $value) {
+                $tenant[$key] = $value;
+            }
+            unset($tenant[static::dataColumn()]); // todo what if 'data' key is stored in tenant storage?
+
+            return $tenant;
+        })->toBase();
     }
 
     public function getFromData(string $key)

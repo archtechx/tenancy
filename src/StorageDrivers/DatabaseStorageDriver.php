@@ -7,6 +7,10 @@ use Stancl\Tenancy\Interfaces\StorageDriver;
 
 class DatabaseStorageDriver implements StorageDriver
 {
+    public $useJson = false;
+
+    // todo use an instance of tenant model?
+
     public function identifyTenant(string $domain): array
     {
         $id = $this->getTenantIdByDomain($domain);
@@ -50,13 +54,7 @@ class DatabaseStorageDriver implements StorageDriver
 
     public function getAllTenants(array $uuids = []): array
     {
-        if ($uuids) {
-            $tenants = Tenant::find($uuids);
-        } else {
-            $tenants = Tenant::all();
-        }
-
-        return $tenants->toArray();
+        return Tenant::getAllTenants($uuids)->toArray();
     }
 
     public function get(string $uuid, string $key)

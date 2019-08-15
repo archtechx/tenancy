@@ -25,6 +25,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         Redis::connection('cache')->flushdb();
 
         config(['database.default' => 'central']);
+        $this->loadLaravelMigrations();
         $this->loadMigrationsFrom(realpath(__DIR__ . '/../src/assets/migrations'));
 
         if ($this->autoCreateTenant) {
