@@ -72,6 +72,6 @@ Route::get('/your/application/homepage', function () {
         }
 
         $this->line('');
-        $this->info('✨️  stancl/tenancy installed successfully.');
+        $this->comment('✨️ stancl/tenancy installed successfully.');
     }
 }
