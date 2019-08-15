@@ -10,8 +10,9 @@ class DatabaseStorageDriver implements StorageDriver
     public $useJson = false;
 
     // todo use an instance of tenant model?
+    // todo write tests verifying that data is decoded and added to the array
 
-    public function identifyTenant(string $domain): array
+    public function identifyTenant(string $domain): array // todo returns data col
     {
         $id = $this->getTenantIdByDomain($domain);
         if (! $id) {
@@ -64,7 +65,7 @@ class DatabaseStorageDriver implements StorageDriver
 
     public function getMany(string $uuid, array $keys): array
     {
-        return Tenant::getMany($keys);
+        return Tenant::find($uuid)->getMany($keys);
     }
 
     public function put(string $uuid, string $key, $value)

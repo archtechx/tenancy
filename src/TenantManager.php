@@ -203,7 +203,9 @@ final class TenantManager
      */
     public function setTenant(array $tenant): array
     {
-        $tenant = $this->jsonDecodeArrayValues($tenant);
+        if ($this->useJson()) {
+            $tenant = $this->jsonDecodeArrayValues($tenant);
+        }
 
         $this->tenant = $tenant;
 

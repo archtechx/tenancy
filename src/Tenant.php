@@ -77,7 +77,7 @@ class Tenant extends Model
             $obj = json_decode($this->{$this->dataColumn()});
             $obj->$key = $value;
 
-            $this->update([$this->getDataColumn() => json_encode($obj)]);
+            $this->update([$this->dataColumn() => json_encode($obj)]);
         }
 
         return $value;
