@@ -5,6 +5,7 @@ namespace Stancl\Tenancy\Tests;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Artisan;
 use Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver;
+use Stancl\Tenancy\StorageDrivers\RedisStorageDriver;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
@@ -25,10 +26,10 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
         // $this->loadLaravelMigrations();
 
-        $this->loadMigrationsFrom(realpath(__DIR__ . '/../src/assets/migrations'));
+        $this->loadMigrationsFrom(realpath(__DIR__ . '/../src/assets/migrations/'));
 
         // Artisan::call('migrate:fresh', [
-        //     '--path' => __DIR__ . '/../src/assets/migrations'
+        //     '--path' => __DIR__ . '/../src/assets/migrations/'
         // ]);
         // dd(Artisan::output());
 
@@ -95,14 +96,18 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'tenancy.migrations_directory' => database_path('../migrations'),
         ]);
 
-        if (env('TENANCY_TEST_STORAGE_DRIVER', 'redis') === 'db') {
+        if (env('TENANCY_TEST_STORAGE_DRIVER', 'redis') === 'redis') {
             $app['config']->set([
-                'tenancy.redis.tenancy' => true,
-                'database.redis.client' => 'phpredis',
+                'tenancy.storage_driver' => RedisStorageDriver::class,
+            ]);
+
+            tenancy()->storage = $app->make(RedisStorageDriver::class);
+        } elseif (env('TENANCY_TEST_STORAGE_DRIVER', 'redis') === 'db') {
+            $app['config']->set([
                 'tenancy.storage_driver' => DatabaseStorageDriver::class,
             ]);
 
-            tenancy()->setStorageDriver(DatabaseStorageDriver::class);
+            tenancy()->storage = $app->make(DatabaseStorageDriver::class);
         }
     }
 

@@ -23,7 +23,7 @@ final class TenantManager
      *
      * @var StorageDriver
      */
-    protected $storage;
+    public $storage;
 
     /**
      * Database manager.
@@ -349,25 +349,5 @@ final class TenantManager
         }
 
         return $this->tenant[(string) $attribute];
-    }
-
-    public function getStorageDriver(): Interfaces\StorageDriver
-    {
-        return $this->storage;
-    }
-
-    /**
-     * Set the storage driver.
-     *
-     * @param Interfaces\StorageDriver|string $driver
-     * @return void
-     */
-    public function setStorageDriver($driver)
-    {
-        if (is_string($driver)) {
-            $driver = $this->app->make($driver);
-        }
-
-        $this->storage = $driver;
     }
 }
