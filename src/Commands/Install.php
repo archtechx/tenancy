@@ -71,7 +71,6 @@ Route::get('/your/application/homepage', function () {
             $this->info('✔️  Created migration.');
         }
 
-        $this->line('');
         $this->comment('✨️ stancl/tenancy installed successfully.');
     }
 }
