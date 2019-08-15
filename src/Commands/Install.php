@@ -27,19 +27,19 @@ class Install extends Command
      */
     public function handle()
     {
-        $this->line('Installing stancl/tenancy... ⌛');
-        $this->call('vendor:publish', [
+        $this->comment('Installing stancl/tenancy... ⌛');
+        $this->callSilent('vendor:publish', [
             '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
             '--tag' => 'config',
             ]);
-        $this->info('✔️ Created config/tenancy.php');
+        $this->info('✔️  Created config/tenancy.php');
 
         file_put_contents(app_path('Http/Kernel.php'), str_replace(
             'protected $middlewarePriority = [',
             'protected $middlewarePriority = [\n        \Stancl\Tenancy\Middleware\InitializeTenancy::class',
             file_get_contents(app_path('Http/Kernel.php'))
         ));
-        $this->info('✔️ Set middleware priority');
+        $this->info('✔️  Set middleware priority');
 
         file_put_contents(base_path('routes/tenant.php'),
 "<?php
@@ -59,18 +59,20 @@ Route::get('/your/application/homepage', function () {
 });
 */
 ");
-        $this->info('✔️ Created routes/tenant.php');
+        $this->info('✔️  Created routes/tenant.php');
 
+        $this->line('');
         $this->line("The package lets you store data about tenants either in Redis or in a relational database like MySQL. If you're going to use the database storage, you need to create a tenants table.");
         $migration = $this->ask('Do you want to publish the default database migration? [yes/no]', 'yes');
         if (\strtolower($migration) === 'yes') {
-            $this->call('vendor:publish', [
+            $this->callSilent('vendor:publish', [
             '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
             '--tag' => 'migrations',
             ]);
-            $this->info('✔️ Created migration.');
+            $this->info('✔️  Created migration.');
         }
 
-        $this->info('\n✔️stancl/tenancy installed successfully ✨.');
+        $this->line('');
+        $this->info('✔️  stancl/tenancy installed successfully ✨.');
     }
 }
