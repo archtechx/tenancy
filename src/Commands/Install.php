@@ -35,13 +35,8 @@ class Install extends Command
         $this->info('✔️  Created config/tenancy.php');
 
         file_put_contents(app_path('Http/Kernel.php'), str_replace(
-<<<<<<< HEAD
             "protected \$middlewarePriority = [",
             "protected \$middlewarePriority = [\n        \Stancl\Tenancy\Middleware\InitializeTenancy::class,",
-=======
-            'protected $middlewarePriority = [',
-            "protected \$middlewarePriority = [\n        \Stancl\Tenancy\Middleware\InitializeTenancy::class",
->>>>>>> 01102f481e2d4ae09c812bd93493866b72b7a1b6
             file_get_contents(app_path('Http/Kernel.php'))
         ));
         $this->info('✔️  Set middleware priority');
