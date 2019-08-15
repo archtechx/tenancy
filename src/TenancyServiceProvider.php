@@ -5,6 +5,7 @@ namespace Stancl\Tenancy;
 use Stancl\Tenancy\Commands\Run;
 use Stancl\Tenancy\Commands\Seed;
 use Illuminate\Cache\CacheManager;
+use Stancl\Tenancy\Commands\Install;
 use Stancl\Tenancy\Commands\Migrate;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Commands\Rollback;
