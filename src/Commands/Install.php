@@ -63,7 +63,7 @@ Route::get('/your/application/homepage', function () {
 
         $this->line('');
         $this->line("This package lets you store data about tenants either in Redis or in a relational database like MySQL. If you're going to use the database storage, you need to create a tenants table.");
-        if ($this->confirm('Do you want to publish the default database migration?')) {
+        if ($this->confirm('Do you want to publish the default database migration?', true)) {
             $this->callSilent('vendor:publish', [
             '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
             '--tag' => 'migrations',
