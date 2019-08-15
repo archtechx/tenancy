@@ -37,6 +37,13 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         }
     }
 
+    protected function tearDown(): void
+    {
+        config(['database.default' => 'central']);
+
+        parent::tearDown();
+    }
+
     public function createTenant($domain = 'localhost')
     {
         tenant()->create($domain);
