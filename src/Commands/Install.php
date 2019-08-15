@@ -36,7 +36,7 @@ class Install extends Command
 
         file_put_contents(app_path('Http/Kernel.php'), str_replace(
             "protected \$middlewarePriority = [",
-            "protected \$middlewarePriority = [\n        \Stancl\Tenancy\Middleware\InitializeTenancy::class",
+            "protected \$middlewarePriority = [\n        \Stancl\Tenancy\Middleware\InitializeTenancy::class,",
             file_get_contents(app_path('Http/Kernel.php'))
         ));
         $this->info('✔️  Set middleware priority');
@@ -46,25 +46,24 @@ class Install extends Command
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes
+| Tenant Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register tenat routes for your application. These
+| Here is where you can register tenant routes for your application. These
 | routes are loaded by the TenantRouteServiceProvider within a group
 | which contains the \"InitializeTenancy\" middleware. Good luck!
 |
+*/
 
 Route::get('/your/application/homepage', function () {
     return 'This is your multi-tenant application. The uuid of the current tenant is ' . tenant('uuid');
 });
-*/
 ");
         $this->info('✔️  Created routes/tenant.php');
 
         $this->line('');
-        $this->line("The package lets you store data about tenants either in Redis or in a relational database like MySQL. If you're going to use the database storage, you need to create a tenants table.");
-        $migration = $this->ask('Do you want to publish the default database migration? [yes/no]', 'yes');
-        if (\strtolower($migration) === 'yes') {
+        $this->line("This package lets you store data about tenants either in Redis or in a relational database like MySQL. If you're going to use the database storage, you need to create a tenants table.");
+        if ($this->confirm('Do you want to publish the default database migration?')) {
             $this->callSilent('vendor:publish', [
             '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
             '--tag' => 'migrations',
