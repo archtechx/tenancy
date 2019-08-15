@@ -4,8 +4,8 @@ namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Artisan;
-use Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver;
 use Stancl\Tenancy\StorageDrivers\RedisStorageDriver;
+use Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
