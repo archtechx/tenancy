@@ -119,9 +119,9 @@ class TenantStorageTest extends TestCase
     public function correct_storage_driver_is_used()
     {
         if (config('tenancy.storage_driver') == DatabaseStorageDriver::class) {
-            $this->assertSame('DatabaseStorageDriver', class_basename(tenancy()->getStorageDriver()));
+            $this->assertSame('DatabaseStorageDriver', class_basename(tenancy()->storage));
         } elseif (config('tenancy.storage_driver') == RedisStorageDriver::class) {
-            $this->assertSame('RedisStorageDriver', class_basename(tenancy()->getStorageDriver()));
+            $this->assertSame('RedisStorageDriver', class_basename(tenancy()->storage));
         }
     }
 }
