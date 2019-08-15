@@ -27,7 +27,7 @@ class Install extends Command
      */
     public function handle()
     {
-        $this->comment('Installing stancl/tenancy... ⌛');
+        $this->comment('Installing stancl/tenancy...');
         $this->callSilent('vendor:publish', [
             '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
             '--tag' => 'config',
