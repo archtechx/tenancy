@@ -5,8 +5,9 @@ namespace Stancl\Tenancy;
 use Stancl\Tenancy\Interfaces\StorageDriver;
 use Stancl\Tenancy\Traits\BootstrapsTenancy;
 use Illuminate\Contracts\Foundation\Application;
+use Stancl\Tenancy\Exceptions\CannotChangeUuidOrDomainException;
 
-class TenantManager
+final class TenantManager
 {
     use BootstrapsTenancy;
 
@@ -29,7 +30,7 @@ class TenantManager
      *
      * @var DatabaseManager
      */
-    protected $database;
+    public $database;
 
     /**
      * Current tenant.
@@ -70,7 +71,14 @@ class TenantManager
         return $tenant;
     }
 
-    public function create(string $domain = null): array
+    /**
+     * Create a tenant.
+     *
+     * @param string $domain
+     * @param array $data
+     * @return array
+     */
+    public function create(string $domain = null, array $data = []): array
     {
         $domain = $domain ?: $this->currentDomain();
 
@@ -79,6 +87,13 @@ class TenantManager
         }
 
         $tenant = $this->jsonDecodeArrayValues($this->storage->createTenant($domain, (string) \Webpatser\Uuid\Uuid::generate(1, $domain)));
+
+        if ($data) {
+            $this->put($data, null, $tenant['uuid']);
+
+            $tenant = array_merge($tenant, $data);
+        }
+
         $this->database->create($this->getDatabaseName($tenant));
 
         return $tenant;
@@ -168,6 +183,12 @@ class TenantManager
     {
         $tenant = $tenant ?: $this->tenant;
 
+        if ($key = $this->app['config']['tenancy.database_name_key']) {
+            if (isset($tenant[$key])) {
+                return $tenant[$key];
+            }
+        }
+
         return $this->app['config']['tenancy.database.prefix'] . $tenant['uuid'] . $this->app['config']['tenancy.database.suffix'];
     }
 
@@ -254,6 +275,15 @@ class TenantManager
      */
     public function put($key, $value = null, string $uuid = null)
     {
+        if (in_array($key, ['uuid', 'domain'], true) || (
+            is_array($key) && (
+                in_array('uuid', array_keys($key), true) ||
+                in_array('domain', array_keys($key), true)
+            )
+        )) {
+            throw new CannotChangeUuidOrDomainException;
+        }
+
         if (\is_null($uuid)) {
             if (! isset($this->tenant['uuid'])) {
                 throw new \Exception('No UUID supplied (and no tenant is currently identified).');

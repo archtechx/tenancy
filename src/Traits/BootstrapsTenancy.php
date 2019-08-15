@@ -9,6 +9,8 @@ use Stancl\Tenancy\Exceptions\PhpRedisNotInstalledException;
 
 trait BootstrapsTenancy
 {
+    use TenantManagerEvents;
+
     public $originalSettings = [];
     /**
      * Was tenancy initialized/bootstrapped?
@@ -19,26 +21,55 @@ trait BootstrapsTenancy
 
     public function bootstrap()
     {
+        $prevented = $this->event('bootstrapping');
         $this->initialized = true;
 
-        $this->switchDatabaseConnection();
-        if ($this->app['config']['tenancy.redis.tenancy']) {
-            $this->setPhpRedisPrefix($this->app['config']['tenancy.redis.prefixed_connections']);
+        if (! $prevented->contains('database')) {
+            $this->switchDatabaseConnection();
         }
-        $this->tagCache();
-        $this->suffixFilesystemRootPaths();
+
+        if (! $prevented->contains('redis')) {
+            if ($this->app['config']['tenancy.redis.tenancy']) {
+                $this->setPhpRedisPrefix($this->app['config']['tenancy.redis.prefixed_connections']);
+            }
+        }
+
+        if (! $prevented->contains('cache')) {
+            $this->tagCache();
+        }
+
+        if (! $prevented->contains('filesystem')) {
+            $this->suffixFilesystemRootPaths();
+        }
+
+        $this->event('bootstrapped');
     }
 
     public function end()
     {
+        $prevented = $this->event('ending');
+
         $this->initialized = false;
 
-        $this->disconnectDatabase();
-        if ($this->app['config']['tenancy.redis.tenancy']) {
-            $this->resetPhpRedisPrefix($this->app['config']['tenancy.redis.prefixed_connections']);
+        if (! $prevented->contains('database')) {
+            $this->disconnectDatabase();
         }
-        $this->untagCache();
-        $this->resetFileSystemRootPaths();
+
+        if (! $prevented->contains('redis')) {
+            if ($this->app['config']['tenancy.redis.tenancy']) {
+                $this->resetPhpRedisPrefix($this->app['config']['tenancy.redis.prefixed_connections']);
+            }
+        }
+
+        if (! $prevented->contains('cache')) {
+            $this->untagCache();
+        }
+
+        if (! $prevented->contains('filesystem')) {
+            $this->resetFileSystemRootPaths();
+        }
+
+        $this->event('ended');
     }
 
     public function switchDatabaseConnection()

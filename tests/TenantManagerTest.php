@@ -4,6 +4,7 @@ namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Stancl\Tenancy\Exceptions\CannotChangeUuidOrDomainException;
 
 class TenantManagerTest extends TestCase
 {
@@ -193,5 +194,51 @@ class TenantManagerTest extends TestCase
         $tenant1 = tenant()->create('foo.localhost');
         $tenant2 = tenant()->create('bar.localhost');
         $this->assertEqualsCanonicalizing([$tenant1, $tenant2], tenant()->all()->toArray());
+    }
+
+    /** @test */
+    public function properites_can_be_passed_in_the_create_method()
+    {
+        $data = ['plan' => 'free', 'subscribed_until' => '2020-01-01'];
+        $tenant = tenant()->create('foo.localhost', $data);
+
+        $tenant_data = $tenant;
+        unset($tenant_data['uuid']);
+        unset($tenant_data['domain']);
+
+        $this->assertSame($data, $tenant_data);
+    }
+
+    /** @test */
+    public function database_name_can_be_passed_in_the_create_method()
+    {
+        $database = 'abc';
+        config(['tenancy.database_name_key' => '_stancl_tenancy_database_name']);
+
+        $tenant = tenant()->create('foo.localhost', [
+            '_stancl_tenancy_database_name' => $database,
+        ]);
+
+        $this->assertSame($database, tenant()->getDatabaseName($tenant));
+    }
+
+    /** @test */
+    public function uuid_and_domain_cannot_be_changed()
+    {
+        $tenant = tenant()->create('foo.localhost');
+
+        $this->expectException(CannotChangeUuidOrDomainException::class);
+        tenant()->put('uuid', 'foo', $tenant['uuid']);
+
+        $this->expectException(CannotChangeUuidOrDomainException::class);
+        tenant()->put(['uuid' => 'foo'], null, $tenant['uuid']);
+
+        tenancy()->init('foo.localhost');
+
+        $this->expectException(CannotChangeUuidOrDomainException::class);
+        tenant()->put('uuid', 'foo');
+
+        $this->expectException(CannotChangeUuidOrDomainException::class);
+        tenant()->put(['uuid' => 'foo']);
     }
 }

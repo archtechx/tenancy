@@ -2,8 +2,10 @@
 
 namespace Stancl\Tenancy;
 
+use Stancl\Tenancy\Commands\Run;
 use Stancl\Tenancy\Commands\Seed;
 use Illuminate\Cache\CacheManager;
+use Stancl\Tenancy\Commands\Install;
 use Stancl\Tenancy\Commands\Migrate;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Commands\Rollback;
@@ -21,14 +23,14 @@ class TenancyServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        if ($this->app->runningInConsole()) {
-            $this->commands([
-                Migrate::class,
-                Rollback::class,
-                Seed::class,
-                TenantList::class,
-            ]);
-        }
+        $this->commands([
+            Run::class,
+            Seed::class,
+            Install::class,
+            Migrate::class,
+            Rollback::class,
+            TenantList::class,
+        ]);
 
         $this->publishes([
             __DIR__ . '/config/tenancy.php' => config_path('tenancy.php'),
