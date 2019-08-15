@@ -7,7 +7,7 @@ use Stancl\Tenancy\Traits\BootstrapsTenancy;
 use Illuminate\Contracts\Foundation\Application;
 use Stancl\Tenancy\Exceptions\CannotChangeUuidOrDomainException;
 
-class TenantManager
+final class TenantManager
 {
     use BootstrapsTenancy;
 
@@ -30,7 +30,7 @@ class TenantManager
      *
      * @var DatabaseManager
      */
-    protected $database;
+    public $database;
 
     /**
      * Current tenant.

@@ -6,7 +6,7 @@ use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseDeleter;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 
-class DatabaseManager
+final class DatabaseManager
 {
     public $originalDefaultConnection;
 
@@ -19,8 +19,7 @@ class DatabaseManager
     public function connect(string $database)
     {
         $this->createTenantConnection($database);
-        $this->database->setDefaultConnection('tenant');
-        $this->database->reconnect('tenant');
+        $this->useConnection('tenant');
     }
 
     public function connectToTenant($tenant)
@@ -104,5 +103,11 @@ class DatabaseManager
         // Change DB name
         $database_name = $this->getDriver() === 'sqlite' ? database_path($database_name) : $database_name;
         config()->set(['database.connections.tenant.database' => $database_name]);
+    }
+
+    public function useConnection(string $connection)
+    {
+        $this->database->setDefaultConnection($connection);
+        $this->database->reconnect($connection);
     }
 }

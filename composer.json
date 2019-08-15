@@ -41,6 +41,7 @@
             ],
             "aliases": {
                 "Tenancy": "Stancl\\Tenancy\\TenancyFacade",
+                "Tenant": "Stancl\\Tenancy\\TenancyFacade",
                 "GlobalCache": "Stancl\\Tenancy\\GlobalCacheFacade"
             }
         }

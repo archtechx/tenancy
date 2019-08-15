@@ -117,6 +117,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     {
         return [
             'Tenancy' => \Stancl\Tenancy\TenancyFacade::class,
+            'Tenant' => \Stancl\Tenancy\TenancyFacade::class,
             'GlobalCache' => \Stancl\Tenancy\GlobalCacheFacade::class,
         ];
     }
