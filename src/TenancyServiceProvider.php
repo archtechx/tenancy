@@ -25,6 +25,7 @@ class TenancyServiceProvider extends ServiceProvider
         $this->commands([
             Run::class,
             Seed::class,
+            Install::class,
             Migrate::class,
             Rollback::class,
             TenantList::class,
