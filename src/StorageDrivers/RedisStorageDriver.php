@@ -11,7 +11,7 @@ class RedisStorageDriver implements StorageDriver
 
     public function __construct()
     {
-        $this->redis = Redis::connection('tenancy');
+        $this->redis = Redis::connection(config('tenancy.redis.connection', 'tenancy'));
     }
 
     public function identifyTenant(string $domain): array

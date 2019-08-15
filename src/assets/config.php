@@ -2,9 +2,17 @@
 
 return [
     'storage_driver' => 'Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver',
-    'db_storage' => [
-        'data_column' => 'data',
-        'custom_columns' => [],
+    'storage' => [
+        'db' => [
+            'data_column' => 'data',
+            'custom_columns' => [
+                // 'plan',
+            ],
+            'connection' => 'central',
+        ],
+        'redis' => [
+            'connection' => 'tenancy',
+        ],
     ],
     'tenant_route_namespace' => 'App\Http\Controllers',
     'exempt_domains' => [

@@ -20,12 +20,17 @@ class Tenant extends Model
 
     public function dataColumn()
     {
-        return config('tenancy.db_storage.data_column', 'data');
+        return config('tenancy.storage.db.data_column', 'data');
     }
 
     public function customColumns()
     {
-        return config('tenancy.db_storage.custom_columns', []);
+        return config('tenancy.storage.db.custom_columns', []);
+    }
+
+    public function getConnectionName()
+    {
+        return config('tenancy.storage.db.connection');
     }
 
     public function getFromData(string $key)

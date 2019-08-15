@@ -24,14 +24,8 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         Redis::connection('tenancy')->flushdb();
         Redis::connection('cache')->flushdb();
 
-        // $this->loadLaravelMigrations();
-
-        Artisan::call('migrate:install');
-        // $this->loadMigrationsFrom(realpath(__DIR__ . '/../src/assets/migrations'));
-
-        // Artisan::call('migrate:fresh', [
-        //     '--path' => __DIR__ . '/../src/assets/migrations'
-        // ]);
+        config(['database.default' => 'central']);
+        $this->loadMigrationsFrom(realpath(__DIR__ . '/../src/assets/migrations'));
 
         if ($this->autoCreateTenant) {
             $this->createTenant();
@@ -64,6 +58,8 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             \Dotenv\Dotenv::create(__DIR__ . '/..')->load();
         }
 
+        fclose(fopen(database_path('central.sqlite'), 'w'));
+
         $app['config']->set([
             'database.redis.cache.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
             'database.redis.default.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
@@ -76,6 +72,10 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 // Make sure you don't store anything in this db!
                 'database' => env('TENANCY_TEST_REDIS_DB', 14),
                 'prefix' => 'abc', // todo unrelated to tenancy, but this doesn't seem to have an effect? try to replicate in a fresh laravel installation
+            ],
+            'database.connections.central' => [
+                'driver' => 'sqlite',
+                'database' => database_path('central.sqlite'),
             ],
             'tenancy.database' => [
                 'based_on' => 'sqlite',
