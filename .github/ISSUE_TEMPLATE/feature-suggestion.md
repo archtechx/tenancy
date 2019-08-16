@@ -1,5 +1,5 @@
 ---
-name: Feature suggestion
+name: "\U0001F4A1 Feature Suggestion"
 about: Suggest an idea for stancl/tenancy.
 title: ''
 labels: feature
