@@ -23,9 +23,11 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         Redis::connection('tenancy')->flushdb();
         Redis::connection('cache')->flushdb();
 
-        config(['database.default' => 'central']);
-        $this->loadLaravelMigrations(['--database' => 'central']);
-        $this->loadMigrationsFrom(realpath(__DIR__ . '/../src/assets/migrations'));
+        $this->loadMigrationsFrom([
+            '--path' => realpath(__DIR__ . '/../src/assets/migrations'),
+            '--database' => 'central',
+        ]);
+        config(['database.default' => 'sqlite']); // fix issue caused by loadMigrationsFrom
 
         if ($this->autoCreateTenant) {
             $this->createTenant();
@@ -38,7 +40,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
     protected function tearDown(): void
     {
-        config(['database.default' => 'central']);
+        // config(['database.default' => 'central']);
 
         parent::tearDown();
     }
