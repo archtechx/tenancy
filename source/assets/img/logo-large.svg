@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="318px" height="350px" viewBox="0 0 318 350" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 51.3 (57544) - http://www.bohemiancoding.com/sketch -->
+    <title>Group 2</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <linearGradient x1="-83.2348064%" y1="106.401351%" x2="140.023112%" y2="-13.2029998%" id="linearGradient-1">
+            <stop stop-color="#F8FAFC" offset="0%"></stop>
+            <stop stop-color="#F8FAFC" offset="21.7972142%"></stop>
+            <stop stop-color="#BBDBF5" offset="100%"></stop>
+            <stop stop-color="#B9DAF5" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="04-docs-start-copy-3" transform="translate(-714.000000, -205.000000)">
+            <g id="Group-2" transform="translate(714.000000, 205.000000)">
+                <path d="M159.9,41.23566 L29.5,106.216315 L29.5,268.671884 L159.9,333.652539 L290.3,268.671884 L290.3,106.216315 L159.9,41.23566 Z" id="Rectangle-3-Copy" stroke="#B9DAF5"></path>
+                <polygon id="Rectangle-3-Copy-2" fill="url(#linearGradient-1)" points="129.8 186.334516 129.8 349.670807 0 284.336291 0 121"></polygon>
+                <path d="M317.3,186.64261 L188.5,121.811441 L188.5,284.028197 L317.3,348.859366 L317.3,186.64261 Z" id="Rectangle-3-Copy-4" stroke="#338CD6" transform="translate(252.900000, 235.335404) scale(1, -1) translate(-252.900000, -235.335404) "></path>
+                <path d="M159.9,41.2359725 L30.1185393,106.090062 L159.9,170.944152 L289.681461,106.090062 L159.9,41.2359725 Z" id="Rectangle-3" stroke="#B9DAF5"></path>
+                <path d="M159.9,0.558953879 L30.1185393,65.4130435 L159.9,130.267133 L289.681461,65.4130435 L159.9,0.558953879 Z" id="Rectangle-3-Copy-3" stroke="#338CD6"></path>
+                <path d="M160.175,170.953416 L160.175,332.562112" id="Line" stroke="#B9DAF5" stroke-linecap="square" fill-rule="nonzero"></path>
+                <path d="M160.358333,130.484509 L160.358333,165.798482" id="Line-2-Copy-3" stroke="#C7CFDA" stroke-linecap="square" stroke-dasharray="2,4" fill-rule="nonzero"></path>
+                <path d="M290.158333,68.178117 L290.158333,103.49209" id="Line-2-Copy-4" stroke="#C7CFDA" stroke-linecap="square" stroke-dasharray="2,4" fill-rule="nonzero"></path>
+                <path d="M133.55,185.742236 L159.95,172.549689" id="Line-2" stroke="#C7CFDA" stroke-linecap="square" stroke-dasharray="2,4" fill-rule="nonzero"></path>
+                <path d="M133.55,348.742236 L159.95,335.549689" id="Line-2-Copy" stroke="#C7CFDA" stroke-linecap="square" stroke-dasharray="2,4" fill-rule="nonzero"></path>
+                <path d="M292.35,283.586957 L318.75,270.39441" id="Line-2" stroke="#C7CFDA" stroke-linecap="square" stroke-dasharray="2,4" fill-rule="nonzero" transform="translate(305.550000, 276.990683) scale(1, -1) translate(-305.550000, -276.990683) "></path>
+                <path d="M162.55,348.742236 L188.95,335.549689" id="Line-2-Copy-2" stroke="#C7CFDA" stroke-linecap="square" stroke-dasharray="2,4" fill-rule="nonzero" transform="translate(175.750000, 342.145963) scale(1, -1) translate(-175.750000, -342.145963) "></path>
+                <path d="M291.55,119.742236 L317.95,106.549689" id="Line-2-Copy" stroke="#C7CFDA" stroke-linecap="square" stroke-dasharray="2,4" fill-rule="nonzero" transform="translate(304.750000, 113.145963) scale(1, -1) translate(-304.750000, -113.145963) "></path>
+                <path d="M162.55,185.742236 L188.95,172.549689" id="Line-2-Copy-5" stroke="#C7CFDA" stroke-linecap="square" stroke-dasharray="2,4" fill-rule="nonzero" transform="translate(175.750000, 179.145963) scale(1, -1) translate(-175.750000, -179.145963) "></path>
+            </g>
+        </g>
+    </g>
+</svg>

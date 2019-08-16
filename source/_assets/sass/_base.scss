@@ -1,0 +1,130 @@
+body {
+    font-size: 17px;
+}
+
+a {
+    @apply .font-semibold;
+    @apply .no-underline;
+    @apply .text-blue-dark;
+
+    &:hover {
+        @apply .text-blue-darker;
+    }
+}
+
+blockquote {
+    @apply .border-blue-light;
+    @apply .border-l-4;
+    @apply .font-normal;
+    @apply .italic;
+    @apply .my-8;
+    @apply .pl-6;
+    @apply .text-grey-darker;
+    @apply .text-lg;
+}
+
+code {
+    @apply .bg-grey-light;
+    @apply .px-2;
+    @apply .py-px;
+    @apply .rounded;
+    @apply .text-sm;
+}
+
+code.hljs {
+    @apply .bg-transparent;
+    @apply .p-0;
+
+    .hljs-comment,
+    .hljs-keyword,
+    .hljs-meta {
+        @apply .font-normal;
+        @apply .roman;
+    }
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    @apply .leading-tight;
+    @apply .mb-4;
+    @apply .mt-8;
+    @apply .text-black;
+
+    &:first-child {
+        @apply .mt-0;
+    }
+}
+
+h1 {
+    @apply .font-extrabold;
+    @apply .text-5xl;
+}
+
+h2 {
+    @apply .font-bold;
+    @apply .text-4xl;
+}
+
+h3 {
+    @apply .font-bold;
+    @apply .text-3xl;
+}
+
+h4 {
+    @apply .font-normal;
+    @apply .text-2xl;
+}
+
+h5 {
+    @apply .font-normal;
+    @apply .text-xl;
+}
+
+h6 {
+    @apply .font-light;
+    @apply .text-lg;
+}
+
+hr {
+    @apply .border-b;
+    @apply .border-blue-lighter;
+    @apply .my-12;
+    @apply .rounded-full;
+}
+
+li {
+    ul,
+    ol {
+        @apply .my-0;
+    }
+}
+
+ol,
+ul {
+    @apply .my-4;
+}
+
+p {
+    @apply .my-6;
+}
+
+pre {
+    @apply .bg-grey-lighter;
+    @apply .leading-loose;
+    @apply .my-6;
+    @apply .overflow-x-auto;
+    @apply .p-4;
+    @apply .rounded;
+    @apply .shadow;
+    @apply .text-base;
+
+    code {
+        @apply .bg-transparent;
+        @apply .block;
+        @apply .p-0;
+    }
+}
