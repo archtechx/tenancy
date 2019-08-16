@@ -37,15 +37,35 @@ class Tenant extends Model
     {
         $tenants = $uuids ? static::findMany($uuids) : static::all();
 
-        return $tenants->map(function ($tenant) {
-            $tenant = (array) $tenant->attributes;
-            foreach (json_decode($tenant[static::dataColumn()], true) as $key => $value) {
-                $tenant[$key] = $value;
-            }
-            unset($tenant[static::dataColumn()]); // todo what if 'data' key is stored in tenant storage?
+        return $tenants->map([__CLASS__, 'decodeData'])->toBase();
+    }
 
-            return $tenant;
-        })->toBase();
+    public function decoded()
+    {
+        return static::decodeData($this);
+    }
+
+    /**
+     * Return a tenant array with data decoded into separate keys.
+     *
+     * @param Tenant|array $tenant
+     * @return array
+     */
+    public static function decodeData($tenant)
+    {
+        $tenant = $tenant instanceof self ? (array) $tenant->attributes : $tenant;
+        $decoded = json_decode($tenant[$dataColumn = static::dataColumn()], true);
+
+        foreach ($decoded as $key => $value) {
+            $tenant[$key] = $value;
+        }
+        
+        // If $tenant[$dataColumn] has been overriden by a value, don't delete the key.
+        if (! array_key_exists($dataColumn, $decoded)) {
+            unset($tenant[$dataColumn]);
+        }
+
+        return $tenant;
     }
 
     public function getFromData(string $key)

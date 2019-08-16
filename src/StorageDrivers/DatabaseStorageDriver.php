@@ -32,9 +32,9 @@ class DatabaseStorageDriver implements StorageDriver
     public function getTenantById(string $uuid, array $fields = []): array
     {
         if ($fields) {
-            return Tenant::find($uuid)->only($fields);
+            return Tenant::decodeData(Tenant::find($uuid)->only($fields));
         } else {
-            return Tenant::find($uuid)->toArray();
+            return Tenant::find($uuid)->decoded();
         }
     }
 
