@@ -23,6 +23,7 @@ return [
         'children' => [
             'Middleware Configuration' => 'docs/middleware-configuration',
             'Custom Database Names'    => 'docs/custom-database-names',
+            'Tenancy Initialization'   => 'docs/tenancy-initialization',
             'Development'              => 'docs/development',
         ],
     ],
