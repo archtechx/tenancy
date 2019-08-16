@@ -59,7 +59,7 @@ class Tenant extends Model
         foreach ($decoded as $key => $value) {
             $tenant[$key] = $value;
         }
-        
+
         // If $tenant[$dataColumn] has been overriden by a value, don't delete the key.
         if (! array_key_exists($dataColumn, $decoded)) {
             unset($tenant[$dataColumn]);
