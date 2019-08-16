@@ -124,4 +124,20 @@ class TenantStorageTest extends TestCase
             $this->assertSame('RedisStorageDriver', class_basename(tenancy()->storage));
         }
     }
+
+    /** @test */
+    public function data_is_stored_with_correct_data_types()
+    {
+        tenancy()->put('someBool', false);
+        $this->assertSame('boolean', gettype(tenancy()->get('someBool')));
+
+        tenancy()->put('someInt', 5);
+        $this->assertSame('integer', gettype(tenancy()->get('someInt')));
+
+        tenancy()->put('someDouble', 11.40);
+        $this->assertSame('double', gettype(tenancy()->get('someDouble')));
+
+        tenancy()->put('string', 'foo');
+        $this->assertSame('string', gettype(tenancy()->get('string')));
+    }
 }
