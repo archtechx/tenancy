@@ -77,7 +77,7 @@ class Tenant extends Model
 
     public function get(string $key)
     {
-        return $this->$key ?? $this->getFromData($key) ?? null;
+        return $this->attributes[$key] ?? $this->getFromData($key) ?? null;
     }
 
     /** @todo In v2, this should return an associative array. */
