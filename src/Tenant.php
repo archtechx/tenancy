@@ -80,13 +80,10 @@ class Tenant extends Model
         return $this->$key ?? $this->getFromData($key) ?? null;
     }
 
+    /** @todo In v2, this should return an associative array. */
     public function getMany(array $keys): array
     {
-        return array_reduce($keys, function ($keys, $key) {
-            $keys[$key] = $this->get($key);
-
-            return $keys;
-        }, []);
+        return array_map([$this, 'get'], $keys);
     }
 
     public function put(string $key, $value)
