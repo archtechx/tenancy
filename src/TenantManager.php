@@ -37,7 +37,7 @@ final class TenantManager
      *
      * @var array
      */
-    public $tenant;
+    public $tenant = [];
 
     public function __construct(Application $app, StorageDriver $storage, DatabaseManager $database)
     {
