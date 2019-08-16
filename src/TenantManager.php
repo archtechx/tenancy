@@ -23,7 +23,7 @@ final class TenantManager
      *
      * @var StorageDriver
      */
-    protected $storage;
+    public $storage;
 
     /**
      * Database manager.
@@ -86,7 +86,10 @@ final class TenantManager
             throw new \Exception("Domain $domain is already occupied by tenant $id.");
         }
 
-        $tenant = $this->jsonDecodeArrayValues($this->storage->createTenant($domain, (string) \Webpatser\Uuid\Uuid::generate(1, $domain)));
+        $tenant = $this->storage->createTenant($domain, (string) \Webpatser\Uuid\Uuid::generate(1, $domain));
+        if ($this->useJson()) {
+            $tenant = $this->jsonDecodeArrayValues($tenant);
+        }
 
         if ($data) {
             $this->put($data, null, $tenant['uuid']);
@@ -115,7 +118,12 @@ final class TenantManager
     {
         $fields = (array) $fields;
 
-        return $this->jsonDecodeArrayValues($this->storage->getTenantById($uuid, $fields));
+        $tenant = $this->storage->getTenantById($uuid, $fields);
+        if ($this->useJson()) {
+            $tenant = $this->jsonDecodeArrayValues($tenant);
+        }
+
+        return $tenant;
     }
 
     /**
@@ -200,7 +208,9 @@ final class TenantManager
      */
     public function setTenant(array $tenant): array
     {
-        $tenant = $this->jsonDecodeArrayValues($tenant);
+        if ($this->useJson()) {
+            $tenant = $this->jsonDecodeArrayValues($tenant);
+        }
 
         $this->tenant = $tenant;
 
@@ -227,10 +237,15 @@ final class TenantManager
     public function all($uuids = [])
     {
         $uuids = (array) $uuids;
+        $tenants = $this->storage->getAllTenants($uuids);
 
-        return collect(array_map(function ($tenant_array) {
-            return $this->jsonDecodeArrayValues($tenant_array);
-        }, $this->storage->getAllTenants($uuids)));
+        if ($this->useJson()) {
+            $tenants = array_map(function ($tenant_array) {
+                return $this->jsonDecodeArrayValues($tenant_array);
+            }, $tenants);
+        }
+
+        return collect($tenants);
     }
 
     /**
@@ -334,6 +349,15 @@ final class TenantManager
         });
 
         return $array;
+    }
+
+    public function useJson()
+    {
+        if (property_exists($this->storage, 'useJson') && $this->storage->useJson === false) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

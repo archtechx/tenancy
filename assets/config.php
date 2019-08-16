@@ -1,13 +1,25 @@
 <?php
 
 return [
-    'storage_driver' => 'Stancl\Tenancy\StorageDrivers\RedisStorageDriver',
+    'storage_driver' => 'Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver',
+    'storage' => [
+        'db' => [ // Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver
+            'data_column' => 'data',
+            'custom_columns' => [
+                // 'plan',
+            ],
+            'connection' => 'central',
+        ],
+        'redis' => [ // Stancl\Tenancy\StorageDrivers\RedisStorageDriver
+            'connection' => 'tenancy',
+        ],
+    ],
     'tenant_route_namespace' => 'App\Http\Controllers',
     'exempt_domains' => [
         // 'localhost',
     ],
     'database' => [
-        'based_on' => 'mysql',
+        'based_on' => 'sqlite',
         'prefix' => 'tenant',
         'suffix' => '',
     ],

@@ -11,7 +11,7 @@ class RedisStorageDriver implements StorageDriver
 
     public function __construct()
     {
-        $this->redis = Redis::connection('tenancy');
+        $this->redis = Redis::connection(config('tenancy.redis.connection', 'tenancy'));
     }
 
     public function identifyTenant(string $domain): array
@@ -33,8 +33,6 @@ class RedisStorageDriver implements StorageDriver
      */
     public function getTenantById(string $uuid, array $fields = []): array
     {
-        $fields = (array) $fields;
-
         if (! $fields) {
             return $this->redis->hgetall("tenants:$uuid");
         }

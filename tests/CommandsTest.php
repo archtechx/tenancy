@@ -210,6 +210,7 @@ class Kernel extends HttpKernel
             ->expectsQuestion('Do you want to publish the default database migration?', 'yes');
         $this->assertFileExists(base_path('routes/tenant.php'));
         $this->assertFileExists(base_path('config/tenancy.php'));
+        $this->assertFileExists(database_path('migrations/2019_08_08_000000_create_tenants_table.php'));
         $this->assertSame("<?php
 
 namespace App\Http;

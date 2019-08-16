@@ -2,6 +2,9 @@
 
 namespace Stancl\Tenancy\Tests;
 
+use Stancl\Tenancy\StorageDrivers\RedisStorageDriver;
+use Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver;
+
 class TenantStorageTest extends TestCase
 {
     /** @test */
@@ -110,5 +113,31 @@ class TenantStorageTest extends TestCase
         $value = ['foo' => 'bar', 'abc' => 'xyz'];
 
         $this->assertSame($value, tenancy()->put($value));
+    }
+
+    /** @test */
+    public function correct_storage_driver_is_used()
+    {
+        if (config('tenancy.storage_driver') == DatabaseStorageDriver::class) {
+            $this->assertSame('DatabaseStorageDriver', class_basename(tenancy()->storage));
+        } elseif (config('tenancy.storage_driver') == RedisStorageDriver::class) {
+            $this->assertSame('RedisStorageDriver', class_basename(tenancy()->storage));
+        }
+    }
+
+    /** @test */
+    public function data_is_stored_with_correct_data_types()
+    {
+        tenancy()->put('someBool', false);
+        $this->assertSame('boolean', gettype(tenancy()->get('someBool')));
+
+        tenancy()->put('someInt', 5);
+        $this->assertSame('integer', gettype(tenancy()->get('someInt')));
+
+        tenancy()->put('someDouble', 11.40);
+        $this->assertSame('double', gettype(tenancy()->get('someDouble')));
+
+        tenancy()->put('string', 'foo');
+        $this->assertSame('string', gettype(tenancy()->get('string')));
     }
 }
