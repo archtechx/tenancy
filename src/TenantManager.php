@@ -273,6 +273,10 @@ final class TenantManager
     {
         $uuid = $uuid ?: $this->tenant['uuid'];
 
+        if (isset($this->tenant['uuid']) && $uuid === $this->tenant['uuid'] && isset($this->tenant[$key])) {
+            return $this->tenant[$key];
+        }
+
         if (\is_array($key)) {
             return $this->jsonDecodeArrayValues($this->storage->getMany($uuid, $key));
         }
@@ -372,6 +376,6 @@ final class TenantManager
             return $this->tenant;
         }
 
-        return $this->tenant[(string) $attribute];
+        return $this->get((string) $attribute);
     }
 }
