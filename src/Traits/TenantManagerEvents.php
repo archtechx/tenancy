@@ -78,7 +78,7 @@ trait TenantManagerEvents
      */
     public function event(string $name): Collection
     {
-        return array_reduce($this->listeners[$name], function ($prevents, $listener) {
+        return \array_reduce($this->listeners[$name], function ($prevents, $listener) {
             return $prevents->merge($listener($this) ?? []);
         }, collect([]));
     }

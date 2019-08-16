@@ -16,9 +16,9 @@ class TenantAssetTest extends TestCase
         $this->get(tenant_asset($filename))->assertSuccessful();
         $this->assertFileExists($path);
 
-        $f = fopen($path, 'r');
-        $content = fread($f, filesize($path));
-        fclose($f);
+        $f = \fopen($path, 'r');
+        $content = \fread($f, \filesize($path));
+        \fclose($f);
 
         $this->assertSame('bar', $content);
     }

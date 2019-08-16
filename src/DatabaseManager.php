@@ -50,7 +50,7 @@ final class DatabaseManager
 
         $databaseManagers = config('tenancy.database_managers');
 
-        if (! array_key_exists($driver, $databaseManagers)) {
+        if (! \array_key_exists($driver, $databaseManagers)) {
             throw new \Exception("Database could not be created: no database manager for driver $driver is registered.");
         }
 
@@ -76,7 +76,7 @@ final class DatabaseManager
 
         $databaseManagers = config('tenancy.database_managers');
 
-        if (! array_key_exists($driver, $databaseManagers)) {
+        if (! \array_key_exists($driver, $databaseManagers)) {
             throw new \Exception("Database could not be deleted: no database manager for driver $driver is registered.");
         }
 
