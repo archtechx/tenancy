@@ -43,6 +43,7 @@ class TenantStorageTest extends TestCase
         $data = array_combine($keys, $vals);
 
         tenancy()->put($data);
+        dd(tenant()->get($keys));
 
         $this->assertSame($vals, tenant()->get($keys));
     }
