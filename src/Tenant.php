@@ -70,9 +70,9 @@ class Tenant extends Model
 
     public function getFromData(string $key)
     {
-        $this->dataObject = $this->dataObject ?? json_decode($this->{$this->dataColumn()});
+        $this->dataArray = $this->dataArray ?? json_decode($this->{$this->dataColumn()}, true);
 
-        return $this->dataObject->$key;
+        return $this->dataArray[$key] ?? null;
     }
 
     public function get(string $key)

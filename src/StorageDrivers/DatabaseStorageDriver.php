@@ -12,7 +12,7 @@ class DatabaseStorageDriver implements StorageDriver
     // todo use an instance of tenant model?
     // todo write tests verifying that data is decoded and added to the array
 
-    public function identifyTenant(string $domain): array // todo returns data col
+    public function identifyTenant(string $domain): array
     {
         $id = $this->getTenantIdByDomain($domain);
         if (! $id) {

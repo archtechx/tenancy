@@ -274,7 +274,7 @@ final class TenantManager
         $uuid = $uuid ?: $this->tenant['uuid'];
 
         if (\is_array($key)) {
-            return $this->jsonDecodeArrayValues($this->storage->getMany($uuid, $key)); // todo is this correct?
+            return $this->jsonDecodeArrayValues($this->storage->getMany($uuid, $key));
         }
 
         return json_decode($this->storage->get($uuid, $key), true);
@@ -326,7 +326,7 @@ final class TenantManager
             $key[$k] = json_encode($v);
         }
 
-        return $this->jsonDecodeArrayValues($this->storage->putMany($uuid, $key)); // todo is this correct?
+        return $this->jsonDecodeArrayValues($this->storage->putMany($uuid, $key));
     }
 
     /**
