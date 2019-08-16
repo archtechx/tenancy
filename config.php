@@ -1,13 +1,13 @@
 <?php
 
 return [
-    'baseUrl' => '',
-    'production' => false,
-    'siteName' => 'stancl/tenancy documentation',
+    'baseUrl'         => '',
+    'production'      => false,
+    'siteName'        => 'stancl/tenancy documentation',
     'siteDescription' => 'A Laravel multi-database tenanyc package that respects your code.',
 
     // Algolia DocSearch credentials
-    'docsearchApiKey' => '',
+    'docsearchApiKey'    => '',
     'docsearchIndexName' => '',
 
     // navigation menu
@@ -25,6 +25,6 @@ return [
         }
     },
     'url' => function ($page, $path) {
-        return starts_with($path, 'http') ? $path : '/' . trimPath($path);
+        return starts_with($path, 'http') ? $path : '/'.trimPath($path);
     },
 ];
