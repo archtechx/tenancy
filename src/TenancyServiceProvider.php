@@ -56,7 +56,7 @@ class TenancyServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->mergeConfigFrom(__DIR__ . '/assets/config.php', 'tenancy');
+        $this->mergeConfigFrom(__DIR__ . '/../assets/config.php', 'tenancy');
 
         $this->app->bind(StorageDriver::class, $this->app['config']['tenancy.storage_driver']);
         $this->app->bind(ServerConfigManager::class, $this->app['config']['tenancy.server.manager']);
