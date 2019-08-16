@@ -138,7 +138,7 @@ trait BootstrapsTenancy
         foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
             $old['disks'][$disk] = Storage::disk($disk)->getAdapter()->getPathPrefix();
 
-            if ($root = str_replace('%storage_path%', storage_path(), $this->app['config']["tenancy.filesystem.root_override.{$disk}"])) {
+            if ($root = \str_replace('%storage_path%', storage_path(), $this->app['config']["tenancy.filesystem.root_override.{$disk}"])) {
                 Storage::disk($disk)->getAdapter()->setPathPrefix($root);
             } else {
                 $root = $this->app['config']["filesystems.disks.{$disk}.root"];

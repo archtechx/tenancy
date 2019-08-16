@@ -117,14 +117,14 @@ class CommandsTest extends TestCase
     /** @test */
     public function install_command_works()
     {
-        if (! is_dir($dir = app_path('Http'))) {
-            mkdir($dir, 0777, true);
+        if (! \is_dir($dir = app_path('Http'))) {
+            \mkdir($dir, 0777, true);
         }
-        if (! is_dir($dir = base_path('routes'))) {
-            mkdir($dir, 0777, true);
+        if (! \is_dir($dir = base_path('routes'))) {
+            \mkdir($dir, 0777, true);
         }
 
-        file_put_contents(app_path('Http/Kernel.php'), "<?php
+        \file_put_contents(app_path('Http/Kernel.php'), "<?php
 
 namespace App\Http;
 

@@ -27,7 +27,7 @@ class ReidentificationTest extends TestCase
             $current_path_prefix = \Storage::disk($disk)->getAdapter()->getPathPrefix();
 
             if ($override = config("tenancy.filesystem.root_override.{$disk}")) {
-                $correct_path_prefix = str_replace('%storage_path%', storage_path(), $override);
+                $correct_path_prefix = \str_replace('%storage_path%', storage_path(), $override);
             } else {
                 if ($base = $originals[$disk]) {
                     $correct_path_prefix = $base . "/$suffix/";

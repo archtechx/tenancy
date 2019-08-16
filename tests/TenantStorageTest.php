@@ -40,7 +40,7 @@ class TenantStorageTest extends TestCase
     {
         $keys = ['foo', 'abc'];
         $vals = ['bar', 'xyz'];
-        $data = array_combine($keys, $vals);
+        $data = \array_combine($keys, $vals);
 
         tenancy()->put($data);
         dd(tenant()->get($keys));
@@ -76,13 +76,13 @@ class TenantStorageTest extends TestCase
 
         $keys = ['foo', 'abc'];
         $vals = ['bar', 'xyz'];
-        $data = array_combine($keys, $vals);
+        $data = \array_combine($keys, $vals);
 
         tenancy()->put($data, null, $uuid);
 
         $this->assertSame($vals, tenancy()->get($keys, $uuid));
         $this->assertNotSame($vals, tenancy()->get($keys));
-        $this->assertFalse(array_intersect($data, tenant()->tenant) == $data); // assert array not subset
+        $this->assertFalse(\array_intersect($data, tenant()->tenant) == $data); // assert array not subset
     }
 
     /** @test */
@@ -130,15 +130,15 @@ class TenantStorageTest extends TestCase
     public function data_is_stored_with_correct_data_types()
     {
         tenancy()->put('someBool', false);
-        $this->assertSame('boolean', gettype(tenancy()->get('someBool')));
+        $this->assertSame('boolean', \gettype(tenancy()->get('someBool')));
 
         tenancy()->put('someInt', 5);
-        $this->assertSame('integer', gettype(tenancy()->get('someInt')));
+        $this->assertSame('integer', \gettype(tenancy()->get('someInt')));
 
         tenancy()->put('someDouble', 11.40);
-        $this->assertSame('double', gettype(tenancy()->get('someDouble')));
+        $this->assertSame('double', \gettype(tenancy()->get('someDouble')));
 
         tenancy()->put('string', 'foo');
-        $this->assertSame('string', gettype(tenancy()->get('string')));
+        $this->assertSame('string', \gettype(tenancy()->get('string')));
     }
 }
