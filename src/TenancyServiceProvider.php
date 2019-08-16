@@ -33,11 +33,11 @@ class TenancyServiceProvider extends ServiceProvider
         ]);
 
         $this->publishes([
-            __DIR__ . '/assets/config.php' => config_path('tenancy.php'),
+            __DIR__ . '/../assets/config.php' => config_path('tenancy.php'),
         ], 'config');
 
         $this->publishes([
-            __DIR__ . '/assets/migrations/' => database_path('migrations'),
+            __DIR__ . '/../assets/migrations/' => database_path('migrations'),
         ], 'migrations');
 
         $this->loadRoutesFrom(__DIR__ . '/routes.php');

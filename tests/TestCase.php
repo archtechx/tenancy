@@ -24,7 +24,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         Redis::connection('cache')->flushdb();
 
         $this->loadMigrationsFrom([
-            '--path' => realpath(__DIR__ . '/../src/assets/migrations'),
+            '--path' => realpath(__DIR__ . '/../assets/migrations'),
             '--database' => 'central',
         ]);
         config(['database.default' => 'sqlite']); // fix issue caused by loadMigrationsFrom
