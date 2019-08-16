@@ -26,7 +26,7 @@ class TenantManagerTest extends TestCase
     {
         tenant()->create('foo.localhost');
         tenancy()->init('foo.localhost');
-        
+
         $this->assertSame(tenant('uuid'), tenant()('uuid'));
     }
 
