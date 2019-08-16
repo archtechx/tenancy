@@ -3,14 +3,14 @@
 return [
     'storage_driver' => 'Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver',
     'storage' => [
-        'db' => [
+        'db' => [ // Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver
             'data_column' => 'data',
             'custom_columns' => [
                 // 'plan',
             ],
             'connection' => 'central',
         ],
-        'redis' => [
+        'redis' => [ // Stancl\Tenancy\StorageDrivers\RedisStorageDriver
             'connection' => 'tenancy',
         ],
     ],
