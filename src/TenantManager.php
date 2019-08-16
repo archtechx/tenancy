@@ -274,7 +274,7 @@ final class TenantManager
         $uuid = $uuid ?: $this->tenant['uuid'];
 
         if (array_key_exists('uuid', $this->tenant) && $uuid === $this->tenant['uuid'] &&
-            array_key_exists($key, $this->tenant) && ! is_array($key)) {
+            ! is_array($key) && array_key_exists($key, $this->tenant)) {
             return $this->tenant[$key];
         }
 
