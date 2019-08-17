@@ -9,7 +9,7 @@ use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 final class DatabaseManager
 {
     public $originalDefaultConnection;
-    
+
     protected $defaultTenantConnectionName = 'tenant';
 
     public function __construct(BaseDatabaseManager $database)
