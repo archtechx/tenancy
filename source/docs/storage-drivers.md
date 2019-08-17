@@ -26,6 +26,13 @@ php artisan vendor:publish --provider='Stancl\Tenancy\TenancyServiceProvider' --
 
 By default, all of your data will be stored in the JSON column `data`. If you want to store some data in a dedicated column (to leverage indexing, for example), add the column to the migration and to `tenancy.custom_columns` config.
 
+Finally, run the migration:
+```
+php artisan migrate
+```
+
+> Note: If you have existing migrations related to your app in `database/migrations`, move them to `database/migrations/tenant`. You can read more about tenant migrations [here](/docs/console-commands/#migrate).
+
 ## Redis {#redis}
 
 The Redis storage driver lets you store tenant information in Redis, a high-performance key-value store.
