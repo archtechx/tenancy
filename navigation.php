@@ -4,10 +4,10 @@ return [
     'Getting Started' => [
         'url'      => 'docs/getting-started',
         'children' => [
-            'Installation'    => 'docs/installation',
-            'Storage Drivers' => 'docs/storage-drivers',
+            'Installation'             => 'docs/installation',
+            'Storage Drivers'          => 'docs/storage-drivers',
             'This Package vs Others'   => 'docs/difference-between-this-package-and-others',
-            'Configuration'   => 'docs/configuration',
+            'Configuration'            => 'docs/configuration',
         ],
     ],
     'Usage' => [
