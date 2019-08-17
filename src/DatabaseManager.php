@@ -89,9 +89,11 @@ final class DatabaseManager
         }
     }
 
-    public function getDriver(): ?string
+    public function getDriver($connectionName = null): ?string
     {
-        return config('database.connections.tenant.driver');
+        $connectionName = $connectionName ?: $this->defaultTenantConnectionName;
+
+        return config("database.connections.$connectionName.driver");
     }
 
     public function createTenantConnection(string $databaseName, string $connectionName = null)
@@ -105,7 +107,7 @@ final class DatabaseManager
         ]);
 
         // Change DB name
-        $databaseName = $this->getDriver() === 'sqlite' ? database_path($databaseName) : $databaseName;
+        $databaseName = $this->getDriver($connectionName) === 'sqlite' ? database_path($databaseName) : $databaseName;
         config()->set(["database.connections.$connectionName.database" => $databaseName]);
     }
 
