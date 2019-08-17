@@ -7,7 +7,7 @@ section: content
 
 # Console Commands {#console-commands}
 
-The package comes with a couple of artisan commands.
+The package comes with some artisan commands that will help you during development.
 
 ## Migrate {#migrate}
 
@@ -38,7 +38,7 @@ Similarly to [migrate](#migrate), these commands accept a `--tenants` option.
 
 You can use the tenants:run command to run your own commands for tenants.
 
-If your command's signature were email:send {user} {--queue} {--subject} {body}, you would run this command like this:
+If your command's signature were `email:send {--queue} {--subject=} {body}`, you would run this command like this:
 ```
 php artisan tenants:run email:send --tenants=8075a580-1cb8-11e9-8822-49c5d8f8ff23 --option="queue=1" --option="subject=New Feature" --argument="body=We have launched a new feature. ..."
 ```
@@ -51,3 +51,12 @@ Listing all tenants.
 [Tenant] uuid: dbe0b330-1a6e-11e9-b4c3-354da4b4f339 @ localhost
 [Tenant] uuid: 49670df0-1a87-11e9-b7ba-cf5353777957 @ dev.localhost
 ```
+
+## Selectively clearing tenant cache {#selectively-clearing-tenant-cache}
+
+You can delete specific tenants' cache by using the `--tags` option on `cache:clear`:
+```
+php artisan cache:clear --tags=tenantdbe0b330-1a6e-11e9-b4c3-354da4b4f339
+```
+
+The tag is `config('tenancy.cache.tag_base') . $uuid`.

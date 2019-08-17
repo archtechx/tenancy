@@ -7,7 +7,11 @@ section: content
 
 # Tenancy Initialization {#tenancy-initialization}
 
-When you, or the `InitializeTenancy` middleware, run `tenancy()->init()`, the `bootstrap()` method is called.
+Tenancy can be initialized by calling `tenancy()->init()`. The `InitializeTenancy` middleware calls this method automatically.
+
+You can end a tenancy session using `tenancy()->end()`. This is useful if you need to run multiple tenant sessions or a mixed tenant/non-tenant session in a single request/command.
+
+The `tenancy()->init()` method calls `bootstrap()`.
 
 This method switches database connection, Redis connection (if Redis tenancy is enabled), cache and filesystem root paths.
 
@@ -49,7 +53,7 @@ public function connect(string $database)
 
 public function createTenantConnection(string $database_name)
 {
-    // Create the `tenancy` database connection.
+    // Create the `tenant` database connection.
     $based_on = config('tenancy.database.based_on') ?: config('database.default');
     config()->set([
         'database.connections.tenant' => config('database.connections.' . $based_on),
