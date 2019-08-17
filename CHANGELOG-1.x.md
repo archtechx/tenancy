@@ -1,5 +1,22 @@
 # Release Notes for 1.x
 
+## [v1.7.0 (2019-08-17)](https://github.com/stancl/tenancy/compare/v1.6.1...v1.7.0)
+
+### Added:
+
+- DB storage driver - you don't have to use Redis to store tenants anymore. Relational databases are now supported as well. [more info](https://stancl-tenancy.netlify.com/docs/storage-drivers/#database)
+- `tenancy:install` will do everything except DB/Redis connection creation for you. It will make changes to Http/Kernel.php, create `routes/tenant.php`, publish config, and (optionally) publish the migration. [more info](https://stancl-tenancy.netlify.com/docs/installation/)
+- `tenants:run` [more info](https://stancl-tenancy.netlify.com/docs/console-commands/#run)
+- New documentation: https://stancl-tenancy.netlify.com
+- Custom tenant DB names [more info](https://stancl-tenancy.netlify.com/docs/custom-database-names/)
+- stancl/tenancy events [more info](https://stancl-tenancy.netlify.com/docs/event-system/)
+
+### Fixed:
+
+- #89 *Command "tenants:migrate" cannot be found when used in app code*
+- #87 *Unable to migrate multiple tenants at once when using MySQL*
+- #96 *Issue w/ redis->scan() in getAllTenants logic.*
+
 ## [v1.6.1 (2019-08-04)](https://github.com/stancl/tenancy/compare/v1.6.0...v1.6.1)
 
 Multiple phpunit.xml configs are now generated to run the tests with different configurations, such as different Redis drivers.
