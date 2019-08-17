@@ -13,6 +13,8 @@ To create a tenant, you can use
 tenant()->create('tenant1.yourapp.com');
 ```
 
+> Tip: All domains under `.localhost` are routed to 127.0.0.1 on most operating systems. This is useful for development.
+
 If you want to set some data while creating the tenant, you can pass an array with the data as the second argument:
 
 ```php
