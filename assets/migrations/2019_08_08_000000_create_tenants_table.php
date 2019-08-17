@@ -19,7 +19,7 @@ class CreateTenantsTable extends Migration
 
             // your indexed columns go here
 
-            $table->json('data')->default('{}');
+            $table->json('data');
         });
     }
 
