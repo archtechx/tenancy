@@ -114,17 +114,19 @@ class CommandsTest extends TestCase
             ->expectsOutput('xyz');
     }
 
+    // todo check that multiple tenants can be migrated at once using all database engines
+
     /** @test */
     public function install_command_works()
     {
-        if (! is_dir($dir = app_path('Http'))) {
-            mkdir($dir, 0777, true);
+        if (! \is_dir($dir = app_path('Http'))) {
+            \mkdir($dir, 0777, true);
         }
-        if (! is_dir($dir = base_path('routes'))) {
-            mkdir($dir, 0777, true);
+        if (! \is_dir($dir = base_path('routes'))) {
+            \mkdir($dir, 0777, true);
         }
 
-        file_put_contents(app_path('Http/Kernel.php'), "<?php
+        \file_put_contents(app_path('Http/Kernel.php'), "<?php
 
 namespace App\Http;
 
@@ -210,6 +212,8 @@ class Kernel extends HttpKernel
             ->expectsQuestion('Do you want to publish the default database migration?', 'yes');
         $this->assertFileExists(base_path('routes/tenant.php'));
         $this->assertFileExists(base_path('config/tenancy.php'));
+        $this->assertFileExists(database_path('migrations/2019_08_08_000000_create_tenants_table.php'));
+        $this->assertDirectoryExists(database_path('migrations/tenant'));
         $this->assertSame("<?php
 
 namespace App\Http;

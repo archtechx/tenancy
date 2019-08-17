@@ -40,7 +40,7 @@ class Run extends Command
 
             $callback = function ($prefix = '') {
                 return function ($arguments, $argument) use ($prefix) {
-                    [$key, $value] = explode('=', $argument, 2);
+                    [$key, $value] = \explode('=', $argument, 2);
                     $arguments[$prefix . $key] = $value;
 
                     return $arguments;
@@ -48,13 +48,13 @@ class Run extends Command
             };
 
             // Turns ['foo=bar', 'abc=xyz=zzz'] into ['foo' => 'bar', 'abc' => 'xyz=zzz']
-            $arguments = array_reduce($this->option('argument'), $callback(), []);
+            $arguments = \array_reduce($this->option('argument'), $callback(), []);
 
             // Turns ['foo=bar', 'abc=xyz=zzz'] into ['--foo' => 'bar', '--abc' => 'xyz=zzz']
-            $options = array_reduce($this->option('option'), $callback('--'), []);
+            $options = \array_reduce($this->option('option'), $callback('--'), []);
 
             // Run command
-            $this->call($this->argument('commandname'), array_merge($arguments, $options));
+            $this->call($this->argument('commandname'), \array_merge($arguments, $options));
 
             tenancy()->end();
         });

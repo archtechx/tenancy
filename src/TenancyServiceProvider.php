@@ -34,8 +34,12 @@ class TenancyServiceProvider extends ServiceProvider
         ]);
 
         $this->publishes([
-            __DIR__ . '/config/tenancy.php' => config_path('tenancy.php'),
+            __DIR__ . '/../assets/config.php' => config_path('tenancy.php'),
         ], 'config');
+
+        $this->publishes([
+            __DIR__ . '/../assets/migrations/' => database_path('migrations'),
+        ], 'migrations');
 
         $this->loadRoutesFrom(__DIR__ . '/routes.php');
 
@@ -75,7 +79,7 @@ class TenancyServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->mergeConfigFrom(__DIR__ . '/config/tenancy.php', 'tenancy');
+        $this->mergeConfigFrom(__DIR__ . '/../assets/config.php', 'tenancy');
 
         $this->app->bind(StorageDriver::class, $this->app['config']['tenancy.storage_driver']);
         $this->app->bind(ServerConfigManager::class, $this->app['config']['tenancy.server.manager']);

@@ -2,6 +2,10 @@
 
 namespace Stancl\Tenancy\Tests;
 
+use Stancl\Tenancy\Tenant;
+use Stancl\Tenancy\StorageDrivers\RedisStorageDriver;
+use Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver;
+
 class TenantStorageTest extends TestCase
 {
     /** @test */
@@ -37,7 +41,7 @@ class TenantStorageTest extends TestCase
     {
         $keys = ['foo', 'abc'];
         $vals = ['bar', 'xyz'];
-        $data = array_combine($keys, $vals);
+        $data = \array_combine($keys, $vals);
 
         tenancy()->put($data);
 
@@ -72,13 +76,13 @@ class TenantStorageTest extends TestCase
 
         $keys = ['foo', 'abc'];
         $vals = ['bar', 'xyz'];
-        $data = array_combine($keys, $vals);
+        $data = \array_combine($keys, $vals);
 
         tenancy()->put($data, null, $uuid);
 
         $this->assertSame($vals, tenancy()->get($keys, $uuid));
         $this->assertNotSame($vals, tenancy()->get($keys));
-        $this->assertFalse(array_intersect($data, tenant()->tenant) == $data); // assert array not subset
+        $this->assertFalse(\array_intersect($data, tenant()->tenant) == $data); // assert array not subset
     }
 
     /** @test */
@@ -110,5 +114,42 @@ class TenantStorageTest extends TestCase
         $value = ['foo' => 'bar', 'abc' => 'xyz'];
 
         $this->assertSame($value, tenancy()->put($value));
+    }
+
+    /** @test */
+    public function correct_storage_driver_is_used()
+    {
+        if (config('tenancy.storage_driver') == DatabaseStorageDriver::class) {
+            $this->assertSame('DatabaseStorageDriver', class_basename(tenancy()->storage));
+        } elseif (config('tenancy.storage_driver') == RedisStorageDriver::class) {
+            $this->assertSame('RedisStorageDriver', class_basename(tenancy()->storage));
+        }
+    }
+
+    /** @test */
+    public function data_is_stored_with_correct_data_types()
+    {
+        tenancy()->put('someBool', false);
+        $this->assertSame('boolean', \gettype(tenancy()->get('someBool')));
+
+        tenancy()->put('someInt', 5);
+        $this->assertSame('integer', \gettype(tenancy()->get('someInt')));
+
+        tenancy()->put('someDouble', 11.40);
+        $this->assertSame('double', \gettype(tenancy()->get('someDouble')));
+
+        tenancy()->put('string', 'foo');
+        $this->assertSame('string', \gettype(tenancy()->get('string')));
+    }
+
+    /** @test */
+    public function tenant_model_uses_correct_connection()
+    {
+        config(['tenancy.storage.db.connection' => 'foo']);
+        $this->assertSame('foo', (new Tenant)->getConnectionName());
+
+        config(['tenancy.storage.db.connection' => null]);
+        config(['database.default' => 'foobar']);
+        $this->assertSame('foobar', (new Tenant)->getConnectionName());
     }
 }

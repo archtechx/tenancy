@@ -10,21 +10,23 @@ final class DatabaseManager
 {
     public $originalDefaultConnection;
 
+    protected $defaultTenantConnectionName = 'tenant';
+
     public function __construct(BaseDatabaseManager $database)
     {
         $this->originalDefaultConnection = config('database.default');
         $this->database = $database;
     }
 
-    public function connect(string $database)
+    public function connect(string $database, string $connectionName = null)
     {
-        $this->createTenantConnection($database);
-        $this->useConnection('tenant');
+        $this->createTenantConnection($database, $connectionName);
+        $this->useConnection($connectionName);
     }
 
-    public function connectToTenant($tenant)
+    public function connectToTenant($tenant, string $connectionName = null)
     {
-        $this->connect(tenant()->getDatabaseName($tenant));
+        $this->connect(tenant()->getDatabaseName($tenant), $connectionName);
     }
 
     public function disconnect()
@@ -50,7 +52,7 @@ final class DatabaseManager
 
         $databaseManagers = config('tenancy.database_managers');
 
-        if (! array_key_exists($driver, $databaseManagers)) {
+        if (! \array_key_exists($driver, $databaseManagers)) {
             throw new \Exception("Database could not be created: no database manager for driver $driver is registered.");
         }
 
@@ -76,7 +78,7 @@ final class DatabaseManager
 
         $databaseManagers = config('tenancy.database_managers');
 
-        if (! array_key_exists($driver, $databaseManagers)) {
+        if (! \array_key_exists($driver, $databaseManagers)) {
             throw new \Exception("Database could not be deleted: no database manager for driver $driver is registered.");
         }
 
@@ -87,26 +89,32 @@ final class DatabaseManager
         }
     }
 
-    public function getDriver(): ?string
+    public function getDriver($connectionName = null): ?string
     {
-        return config('database.connections.tenant.driver');
+        $connectionName = $connectionName ?: $this->defaultTenantConnectionName;
+
+        return config("database.connections.$connectionName.driver");
     }
 
-    public function createTenantConnection(string $database_name)
+    public function createTenantConnection(string $databaseName, string $connectionName = null)
     {
-        // Create the `tenancy` database connection.
+        $connectionName = $connectionName ?: $this->defaultTenantConnectionName;
+
+        // Create the database connection.
         $based_on = config('tenancy.database.based_on') ?: config('database.default');
         config()->set([
-            'database.connections.tenant' => config('database.connections.' . $based_on),
+            "database.connections.$connectionName" => config('database.connections.' . $based_on),
         ]);
 
         // Change DB name
-        $database_name = $this->getDriver() === 'sqlite' ? database_path($database_name) : $database_name;
-        config()->set(['database.connections.tenant.database' => $database_name]);
+        $databaseName = $this->getDriver($connectionName) === 'sqlite' ? database_path($databaseName) : $databaseName;
+        config()->set(["database.connections.$connectionName.database" => $databaseName]);
     }
 
-    public function useConnection(string $connection)
+    public function useConnection(string $connection = null)
     {
+        $connection = $connection ?: $this->defaultTenantConnectionName;
+
         $this->database->setDefaultConnection($connection);
         $this->database->reconnect($connection);
     }

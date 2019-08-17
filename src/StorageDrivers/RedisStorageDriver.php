@@ -11,7 +11,7 @@ class RedisStorageDriver implements StorageDriver
 
     public function __construct()
     {
-        $this->redis = Redis::connection('tenancy');
+        $this->redis = Redis::connection(config('tenancy.redis.connection', 'tenancy'));
     }
 
     public function identifyTenant(string $domain): array
@@ -33,13 +33,11 @@ class RedisStorageDriver implements StorageDriver
      */
     public function getTenantById(string $uuid, array $fields = []): array
     {
-        $fields = (array) $fields;
-
         if (! $fields) {
             return $this->redis->hgetall("tenants:$uuid");
         }
 
-        return array_combine($fields, $this->redis->hmget("tenants:$uuid", $fields));
+        return \array_combine($fields, $this->redis->hmget("tenants:$uuid", $fields));
     }
 
     public function getTenantIdByDomain(string $domain): ?string
@@ -50,7 +48,7 @@ class RedisStorageDriver implements StorageDriver
     public function createTenant(string $domain, string $uuid): array
     {
         $this->redis->hmset("domains:$domain", 'tenant_id', $uuid);
-        $this->redis->hmset("tenants:$uuid", 'uuid', json_encode($uuid), 'domain', json_encode($domain));
+        $this->redis->hmset("tenants:$uuid", 'uuid', \json_encode($uuid), 'domain', \json_encode($domain));
 
         return $this->redis->hgetall("tenants:$uuid");
     }
@@ -65,7 +63,7 @@ class RedisStorageDriver implements StorageDriver
     public function deleteTenant(string $id): bool
     {
         try {
-            $domain = json_decode($this->getTenantById($id)['domain']);
+            $domain = \json_decode($this->getTenantById($id)['domain']);
         } catch (\Throwable $th) {
             throw new \Exception("No tenant with UUID $id exists.");
         }
@@ -77,7 +75,7 @@ class RedisStorageDriver implements StorageDriver
 
     public function getAllTenants(array $uuids = []): array
     {
-        $hashes = array_map(function ($hash) {
+        $hashes = \array_map(function ($hash) {
             return "tenants:{$hash}";
         }, $uuids);
 
@@ -88,18 +86,17 @@ class RedisStorageDriver implements StorageDriver
 
             if (config('database.redis.client') === 'phpredis') {
                 $redis_prefix = $this->redis->getOption($this->redis->client()::OPT_PREFIX) ?? $redis_prefix;
-                $all_keys = $this->redis->scan(null, $redis_prefix . 'tenants:*');
-            } else {
-                $all_keys = $this->redis->scan(null, 'MATCH', $redis_prefix . 'tenants:*')[1];
             }
 
-            $hashes = array_map(function ($key) use ($redis_prefix) {
+            $all_keys = $this->redis->keys('tenants:*');
+
+            $hashes = \array_map(function ($key) use ($redis_prefix) {
                 // Left strip $redis_prefix from $key
-                return substr($key, strlen($redis_prefix));
+                return \substr($key, \strlen($redis_prefix));
             }, $all_keys);
         }
 
-        return array_map(function ($tenant) {
+        return \array_map(function ($tenant) {
             return $this->redis->hgetall($tenant);
         }, $hashes);
     }

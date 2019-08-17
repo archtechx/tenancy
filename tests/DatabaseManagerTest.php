@@ -2,6 +2,8 @@
 
 namespace Stancl\Tenancy\Tests;
 
+use Stancl\Tenancy\DatabaseManager;
+
 class DatabaseManagerTest extends TestCase
 {
     public $autoInitTenancy = false;
@@ -16,5 +18,15 @@ class DatabaseManagerTest extends TestCase
 
         $this->assertSame($old_connection_name, $new_connection_name);
         $this->assertNotEquals('tenant', $new_connection_name);
+    }
+
+    /** @test */
+    public function db_name_is_prefixed_with_db_path_when_sqlite_is_used()
+    {
+        // make `tenant` not sqlite so that it has to detect sqlite from fooconn
+        config(['database.connections.tenant.driver' => 'mysql']);
+        app(DatabaseManager::class)->createTenantConnection('foodb', 'fooconn');
+
+        $this->assertSame(config('database.connections.fooconn.database'), database_path('foodb'));
     }
 }
