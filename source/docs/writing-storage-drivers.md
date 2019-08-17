@@ -1,3 +1,10 @@
+---
+title: Writing Storage Drivers
+description: Writing Storage Drivers with stancl/tenancy — A Laravel multi-database tenancy package that respects your code..
+extends: _layouts.documentation
+section: content
+---
+
 # Writing Storage Drivers
 
 If you don't want to use the provided DB/Redis storage drivers, you can write your own driver.
