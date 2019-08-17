@@ -37,7 +37,7 @@ final class TenantManager
      *
      * @var array
      */
-    public $tenant;
+    public $tenant = [];
 
     public function __construct(Application $app, StorageDriver $storage, DatabaseManager $database)
     {
@@ -64,7 +64,7 @@ final class TenantManager
 
         $tenant = $this->storage->identifyTenant($domain);
 
-        if (! $tenant || ! array_key_exists('uuid', $tenant) || ! $tenant['uuid']) {
+        if (! $tenant || ! \array_key_exists('uuid', $tenant) || ! $tenant['uuid']) {
             throw new \Exception("Tenant could not be identified on domain {$domain}.");
         }
 
@@ -94,7 +94,7 @@ final class TenantManager
         if ($data) {
             $this->put($data, null, $tenant['uuid']);
 
-            $tenant = array_merge($tenant, $data);
+            $tenant = \array_merge($tenant, $data);
         }
 
         $this->database->create($this->getDatabaseName($tenant));
@@ -175,7 +175,7 @@ final class TenantManager
 
         $uuid = $this->getIdByDomain($domain);
 
-        if (is_null($uuid)) {
+        if (\is_null($uuid)) {
             throw new \Exception("Tenant with domain $domain could not be identified.");
         }
 
@@ -240,7 +240,7 @@ final class TenantManager
         $tenants = $this->storage->getAllTenants($uuids);
 
         if ($this->useJson()) {
-            $tenants = array_map(function ($tenant_array) {
+            $tenants = \array_map(function ($tenant_array) {
                 return $this->jsonDecodeArrayValues($tenant_array);
             }, $tenants);
         }
@@ -273,11 +273,16 @@ final class TenantManager
     {
         $uuid = $uuid ?: $this->tenant['uuid'];
 
+        if (\array_key_exists('uuid', $this->tenant) && $uuid === $this->tenant['uuid'] &&
+            ! \is_array($key) && \array_key_exists($key, $this->tenant)) {
+            return $this->tenant[$key];
+        }
+
         if (\is_array($key)) {
             return $this->jsonDecodeArrayValues($this->storage->getMany($uuid, $key));
         }
 
-        return json_decode($this->storage->get($uuid, $key), true);
+        return \json_decode($this->storage->get($uuid, $key), true);
     }
 
     /**
@@ -290,10 +295,10 @@ final class TenantManager
      */
     public function put($key, $value = null, string $uuid = null)
     {
-        if (in_array($key, ['uuid', 'domain'], true) || (
-            is_array($key) && (
-                in_array('uuid', array_keys($key), true) ||
-                in_array('domain', array_keys($key), true)
+        if (\in_array($key, ['uuid', 'domain'], true) || (
+            \is_array($key) && (
+                \in_array('uuid', \array_keys($key), true) ||
+                \in_array('domain', \array_keys($key), true)
             )
         )) {
             throw new CannotChangeUuidOrDomainException;
@@ -314,7 +319,7 @@ final class TenantManager
         }
 
         if (! \is_null($value)) {
-            return $target[$key] = json_decode($this->storage->put($uuid, $key, json_encode($value)), true);
+            return $target[$key] = \json_decode($this->storage->put($uuid, $key, \json_encode($value)), true);
         }
 
         if (! \is_array($key)) {
@@ -323,7 +328,7 @@ final class TenantManager
 
         foreach ($key as $k => $v) {
             $target[$k] = $v;
-            $key[$k] = json_encode($v);
+            $key[$k] = \json_encode($v);
         }
 
         return $this->jsonDecodeArrayValues($this->storage->putMany($uuid, $key));
@@ -344,8 +349,8 @@ final class TenantManager
 
     protected function jsonDecodeArrayValues(array $array)
     {
-        array_walk($array, function (&$value, $key) {
-            $value = json_decode($value, true);
+        \array_walk($array, function (&$value, $key) {
+            $value = \json_decode($value, true);
         });
 
         return $array;
@@ -353,7 +358,7 @@ final class TenantManager
 
     public function useJson()
     {
-        if (property_exists($this->storage, 'useJson') && $this->storage->useJson === false) {
+        if (\property_exists($this->storage, 'useJson') && $this->storage->useJson === false) {
             return false;
         }
 
@@ -365,6 +370,7 @@ final class TenantManager
      *
      * @param string $attribute
      * @return mixed
+     * @todo Deprecate this in v2.
      */
     public function __invoke($attribute)
     {
@@ -372,6 +378,6 @@ final class TenantManager
             return $this->tenant;
         }
 
-        return $this->tenant[(string) $attribute];
+        return $this->get((string) $attribute);
     }
 }

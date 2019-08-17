@@ -54,14 +54,14 @@ class Tenant extends Model
     public static function decodeData($tenant)
     {
         $tenant = $tenant instanceof self ? (array) $tenant->attributes : $tenant;
-        $decoded = json_decode($tenant[$dataColumn = static::dataColumn()], true);
+        $decoded = \json_decode($tenant[$dataColumn = static::dataColumn()], true);
 
         foreach ($decoded as $key => $value) {
             $tenant[$key] = $value;
         }
 
         // If $tenant[$dataColumn] has been overriden by a value, don't delete the key.
-        if (! array_key_exists($dataColumn, $decoded)) {
+        if (! \array_key_exists($dataColumn, $decoded)) {
             unset($tenant[$dataColumn]);
         }
 
@@ -70,31 +70,31 @@ class Tenant extends Model
 
     public function getFromData(string $key)
     {
-        $this->dataArray = $this->dataArray ?? json_decode($this->{$this->dataColumn()}, true);
+        $this->dataArray = $this->dataArray ?? \json_decode($this->{$this->dataColumn()}, true);
 
         return $this->dataArray[$key] ?? null;
     }
 
     public function get(string $key)
     {
-        return $this->$key ?? $this->getFromData($key) ?? null;
+        return $this->attributes[$key] ?? $this->getFromData($key) ?? null;
     }
 
     /** @todo In v2, this should return an associative array. */
     public function getMany(array $keys): array
     {
-        return array_map([$this, 'get'], $keys);
+        return \array_map([$this, 'get'], $keys);
     }
 
     public function put(string $key, $value)
     {
-        if (array_key_exists($key, $this->customColumns())) {
+        if (\array_key_exists($key, $this->customColumns())) {
             $this->update([$key => $value]);
         } else {
-            $obj = json_decode($this->{$this->dataColumn()});
+            $obj = \json_decode($this->{$this->dataColumn()});
             $obj->$key = $value;
 
-            $this->update([$this->dataColumn() => json_encode($obj)]);
+            $this->update([$this->dataColumn() => \json_encode($obj)]);
         }
 
         return $value;
