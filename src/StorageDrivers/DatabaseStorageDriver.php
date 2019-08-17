@@ -45,7 +45,7 @@ class DatabaseStorageDriver implements StorageDriver
 
     public function createTenant(string $domain, string $uuid): array
     {
-        return Tenant::create(['uuid' => $uuid, 'domain' => $domain])->toArray();
+        return Tenant::create(['uuid' => $uuid, 'domain' => $domain, 'data' => '{}'])->toArray();
     }
 
     public function deleteTenant(string $id): bool
