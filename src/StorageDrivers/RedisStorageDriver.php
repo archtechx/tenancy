@@ -88,7 +88,7 @@ class RedisStorageDriver implements StorageDriver
                 $redis_prefix = $this->redis->getOption($this->redis->client()::OPT_PREFIX) ?? $redis_prefix;
             }
 
-            $all_keys = $this->redis->keys($redis_prefix . 'tenants:*');
+            $all_keys = $this->redis->keys('tenants:*');
 
             $hashes = array_map(function ($key) use ($redis_prefix) {
                 // Left strip $redis_prefix from $key
