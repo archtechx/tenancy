@@ -2,8 +2,8 @@
 
 namespace Stancl\Tenancy;
 
-use Stancl\Tenancy\Commands\Run;
 use Laravel\Telescope\Telescope;
+use Stancl\Tenancy\Commands\Run;
 use Stancl\Tenancy\Commands\Seed;
 use Illuminate\Cache\CacheManager;
 use Stancl\Tenancy\Commands\Install;

@@ -3,7 +3,6 @@
 namespace Stancl\Tenancy\Middleware;
 
 use Closure;
-use Laravel\Telescope\Telescope;
 
 class InitializeTenancy
 {
