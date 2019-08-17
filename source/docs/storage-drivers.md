@@ -17,17 +17,9 @@ The database storage driver lets you store tenant information in a relational da
 
 The benefit of this storage driver is that you don't have to use both Redis and a database for your data. Also you don't have to do as much configuration.
 
-To use this driver, you need to have a `tenants` table in the database associated with the `central` connection. So copy your currenty used connection (`mysql`, `sqlite`, ...) and add it to `database.connections` (`config/database.php`) under the name `central`. For example, if I wanted to use sqlite:
+To use this driver, you need to have a `tenants` table. You may also use a custom database connection. By default, `tenancy.storage.db.connection` is set to `central`, which means that the `central` database connection will be used to store tenants. This connection is not automatically created, so you'd have to create it manually.
 
-```php
-'central' => [
-    'driver' => 'sqlite',
-    'url' => env('DATABASE_URL'),
-    'database' => env('DB_DATABASE', database_path('database.sqlite')),
-    'prefix' => '',
-    'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
-],
-```
+If you'd like to use an existing connection, you can set this config to the name of the connection, e.g. `mysql`. You can also set this value to `null` and the package will use the `database.default` connection. 
 
 To create the `tenants` table, you can use the migration that comes with this package. If you haven't published it during the installation, publish it now:
 ```
