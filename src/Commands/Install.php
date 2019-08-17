@@ -74,7 +74,7 @@ Route::get('/your/application/homepage', function () {
         }
 
         if (! \is_dir(database_path('migrations/tenant'))) {
-            mkdir(database_path('migrations/tenant'));
+            \mkdir(database_path('migrations/tenant'));
             $this->info('✔️  Created database/migrations/tenant folder.');
         }
 
