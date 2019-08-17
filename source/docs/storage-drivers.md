@@ -17,7 +17,7 @@ The database storage driver lets you store tenant information in a relational da
 
 The benefit of this storage driver is that you don't have to use both Redis and a database for your data. Also you don't have to do as much configuration.
 
-To use this driver, you need to have a `tenants` table in the database associated with the `central` connection. So copy your currenty used connection (`mysql`, `sqlite`, ...) and add it to `database.connections` under the name `central`. For example, if I wanted to use sqlite:
+To use this driver, you need to have a `tenants` table in the database associated with the `central` connection. So copy your currenty used connection (`mysql`, `sqlite`, ...) and add it to `database.connections` (`config/database.php`) under the name `central`. For example, if I wanted to use sqlite:
 
 ```php
 'central' => [
@@ -55,7 +55,7 @@ Read the [Redis documentation page on persistence](https://redis.io/topics/persi
 
 If your cache driver is Redis and you don't want to use AOF with it, run two Redis instances. Otherwise, just make sure you use a different database (number) for tenancy and for anything else.
 
-To use this driver, create a new Redis connection in the `database.redis` configuration called `tenancy`.
+To use this driver, create a new Redis connection in the `database.redis` configuration (`config/database.php`) called `tenancy`.
 
 ```php
 'tenancy' => [
