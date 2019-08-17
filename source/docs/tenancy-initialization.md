@@ -128,7 +128,7 @@ class CacheManager extends BaseCacheManager
 
 ## Filesystem tenancy {#filesystem-tenancy}
 
-`bootstrap()` calls `suffiexFilesystemRootPaths()`. This method changes `storage_path()` and the roots of disks listed in `config('tenancy.filesystem.disks)`. You can read more about this on the [Filesystem Tenancy](filesystem-tenancy) page.
+`bootstrap()` calls `suffiexFilesystemRootPaths()`. This method changes `storage_path()` and the roots of disks listed in `config('tenancy.filesystem.disks)`. You can read more about this on the [Filesystem Tenancy](/docs/filesystem-tenancy) page.
 
 ```php
 public function suffixFilesystemRootPaths()

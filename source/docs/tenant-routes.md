@@ -11,7 +11,7 @@ Routes within `routes/tenant.php` will have the `web` middleware group and the `
 
 Just like `routes/web.php`, these routes use the `App\Http\Controllers` namespace.
 
-> If a tenant cannot be identified,  anexception will be thrown. If you want to change this behavior (to a redirect, for example) read the [Middleware Configuration](middleware-configuration) page.
+> If a tenant cannot be identified,  anexception will be thrown. If you want to change this behavior (to a redirect, for example) read the [Middleware Configuration](/docs/middleware-configuration) page.
 
 ## Exempt routes {#exempt-routes}
 

@@ -13,7 +13,7 @@ The `config/tenancy.php` file lets you configure how the package behaves.
 
 ### `storage_driver, storage`
 
-This lets you configure the driver for tenant storage, i.e. what will be used to store information about your tenants. You can read more about this on the [Storage Drivers](storage-drivers) page.
+This lets you configure the driver for tenant storage, i.e. what will be used to store information about your tenants. You can read more about this on the [Storage Drivers](/docs/storage-drivers) page.
 
 Available storage drivers:
 - `Stancl\Tenancy\StorageDrivers\RedisStorageDriver`
@@ -53,4 +53,4 @@ The root of each disk listed in `tenancy.filesystem.disks` will be suffixed with
 
 For disks listed in `root_override`, the root will be that string with `%storage_path%` replaced by `storage_path()` *after* tenancy has been initialized. All other disks will be simply suffixed with `tenancy.filesystem.suffix_base` + the tenant UUID.
 
-Read more about this on the [Filesystem Tenancy](filesystem-tenancy) page.
+Read more about this on the [Filesystem Tenancy](/docs/filesystem-tenancy) page.

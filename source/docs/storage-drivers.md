@@ -9,7 +9,7 @@ section: content
 
 Storage drivers are used to store a list of all tenants, their domains and any extra information you store about your tenants (e.g. their plan).
 
-Currently, database and Redis storage drivers are available as part of the package. However, you can [write your own](writing-storage-drivers) (and contribute ❤️) storage drivers.
+Currently, database and Redis storage drivers are available as part of the package. However, you can [write your own](/docs/writing-storage-drivers) (and contribute ❤️) storage drivers.
 
 ## Database {#database}
 

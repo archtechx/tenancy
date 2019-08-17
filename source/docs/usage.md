@@ -13,7 +13,7 @@ Most pages will use the `tenancy()` helper function. This package comes with two
 
 `tenant()->create()` reads better than `tenancy()->create()`, but `tenancy()->init()` reads better than `tenant()->init()`.
 
-You can pass an argument to the helper function to get a value out of the tenant storage. `tenant('plan')` is identical to [`tenant()->get('plan')`](tenant-storage).
+You can pass an argument to the helper function to get a value out of the tenant storage. `tenant('plan')` is identical to [`tenant()->get('plan')`](/docs/tenant-storage).
 
 The package also comes with two facades. `Tenancy` and `Tenant`. Use what feels the best.
 
