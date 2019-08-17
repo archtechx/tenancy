@@ -47,11 +47,14 @@ class Migrate extends MigrateCommand
             return;
         }
 
-        $this->input->setOption('database', 'tenant');
-
         tenant()->all($this->option('tenants'))->each(function ($tenant) {
             $this->line("Tenant: {$tenant['uuid']} ({$tenant['domain']})");
-            $this->database->connectToTenant($tenant);
+            
+            // See Illuminate\Database\Migrations\DatabaseMigrationRepository::getConnection.
+            // Database connections are cached by Illuminate\Database\ConnectionResolver.
+            $connectionName = "tenant{$tenant['uuid']}";
+            $this->input->setOption('database', $connectionName);
+            $this->database->connectToTenant($tenant, $connectionName);
 
             // Migrate
             parent::handle();

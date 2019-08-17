@@ -9,6 +9,8 @@ use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 final class DatabaseManager
 {
     public $originalDefaultConnection;
+    
+    protected $defaultTenantConnectionName = 'tenant';
 
     public function __construct(BaseDatabaseManager $database)
     {
@@ -16,15 +18,15 @@ final class DatabaseManager
         $this->database = $database;
     }
 
-    public function connect(string $database)
+    public function connect(string $database, string $connectionName = null)
     {
-        $this->createTenantConnection($database);
-        $this->useConnection('tenant');
+        $this->createTenantConnection($database, $connectionName);
+        $this->useConnection($connectionName);
     }
 
-    public function connectToTenant($tenant)
+    public function connectToTenant($tenant, string $connectionName = null)
     {
-        $this->connect(tenant()->getDatabaseName($tenant));
+        $this->connect(tenant()->getDatabaseName($tenant), $connectionName);
     }
 
     public function disconnect()
@@ -92,21 +94,25 @@ final class DatabaseManager
         return config('database.connections.tenant.driver');
     }
 
-    public function createTenantConnection(string $database_name)
+    public function createTenantConnection(string $databaseName, string $connectionName = null)
     {
-        // Create the `tenant` database connection.
+        $connectionName = $connectionName ?: $this->defaultTenantConnectionName;
+
+        // Create the database connection.
         $based_on = config('tenancy.database.based_on') ?: config('database.default');
         config()->set([
-            'database.connections.tenant' => config('database.connections.' . $based_on),
+            "database.connections.$connectionName" => config('database.connections.' . $based_on),
         ]);
 
         // Change DB name
-        $database_name = $this->getDriver() === 'sqlite' ? database_path($database_name) : $database_name;
-        config()->set(['database.connections.tenant.database' => $database_name]);
+        $databaseName = $this->getDriver() === 'sqlite' ? database_path($databaseName) : $databaseName;
+        config()->set(["database.connections.$connectionName.database" => $databaseName]);
     }
 
-    public function useConnection(string $connection)
+    public function useConnection(string $connection = null)
     {
+        $connection = $connection ?: $this->defaultTenantConnectionName;
+
         $this->database->setDefaultConnection($connection);
         $this->database->reconnect($connection);
     }
