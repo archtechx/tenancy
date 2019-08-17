@@ -3,6 +3,7 @@
 namespace Stancl\Tenancy;
 
 use Stancl\Tenancy\Commands\Run;
+use Laravel\Telescope\Telescope;
 use Stancl\Tenancy\Commands\Seed;
 use Illuminate\Cache\CacheManager;
 use Stancl\Tenancy\Commands\Install;
@@ -43,6 +44,28 @@ class TenancyServiceProvider extends ServiceProvider
         ]);
 
         $this->app->register(TenantRouteServiceProvider::class);
+
+        if (class_exists(Telescope::class)) {
+            $this->setTelescopeTags();
+        }
+    }
+
+    public function setTelescopeTags()
+    {
+        $original_callback = Telescope::$tagUsing;
+
+        Telescope::tag(function (\Laravel\Telescope\IncomingEntry $entry) use ($original_callback) {
+            $tags = [];
+            if (! is_null($original_callback)) {
+                $tags = $original_callback($entry);
+            }
+
+            if (in_array('tenancy', request()->route()->middleware())) {
+                $tags = array_merge($tags, ['tenant:' . tenant('uuid')]);
+            }
+
+            return $tags;
+        });
     }
 
     /**
