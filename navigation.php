@@ -27,6 +27,7 @@ return [
             'Custom Database Names'    => 'docs/custom-database-names',
             'Tenancy Initialization'   => 'docs/tenancy-initialization',
             'Filesystem Tenancy'       => 'docs/filesystem-tenancy',
+            'Writing Storage Drivers'  => 'docs/writing-storage-drivers',
             'Development'              => 'docs/development',
         ],
     ],
