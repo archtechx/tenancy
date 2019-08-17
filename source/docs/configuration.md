@@ -47,14 +47,10 @@ If you need to store something in global, non-tenant cache,
 
 ### `filesystem`
 
-> Note: It's important to differentiate(?TODO) storage_path() and the Storage facade. TODO
-
 The `storage_path()` will be suffixed with a directory named `config('tenancy.filesystem.suffix_base') . $uuid`.
 
 The root of each disk listed in `tenancy.filesystem.disks` will be suffixed with `config('tenancy.filesystem.suffix_base') . $uuid`.
 
-**However, this alone would cause unwanted behavior.** It would work for S3 and similar disks, but for local disks, this would result in `/path_to_your_application/storage/app/tenant1e22e620-1cb8-11e9-93b6-8d1b78ac0bcd/`. That's not what we want. We want `/path_to_your_application/storage/tenant1e22e620-1cb8-11e9-93b6-8d1b78ac0bcd/app/`.
+For disks listed in `root_override`, the root will be that string with `%storage_path%` replaced by `storage_path()` *after* tenancy has been initialized. All other disks will be simply suffixed with `tenancy.filesystem.suffix_base` + the tenant UUID.
 
-That's what the `root_override` section is for. `%storage_path%` gets replaced by `storage_path()` *after* tenancy has been initialized. The roots of disks listed in the `root_override` section of the config will be replaced accordingly. All other disks will be simply suffixed with `tenancy.filesystem.suffix_base` + the tenant UUID.
-
-TODO
+Read more about this on the [Filesystem Tenancy](filesystem-tenancy) page.

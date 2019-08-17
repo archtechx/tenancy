@@ -26,6 +26,7 @@ return [
             'Middleware Configuration' => 'docs/middleware-configuration',
             'Custom Database Names'    => 'docs/custom-database-names',
             'Tenancy Initialization'   => 'docs/tenancy-initialization',
+            'Filesystem Tenancy'       => 'docs/filesystem-tenancy',
             'Development'              => 'docs/development',
         ],
     ],

@@ -128,4 +128,25 @@ class CacheManager extends BaseCacheManager
 
 ## Filesystem tenancy {#filesystem-tenancy}
 
-todo
+`bootstrap()` calls `suffiexFilesystemRootPaths()`. This method changes `storage_path()` and the roots of disks listed in `config('tenancy.filesystem.disks)`. You can read more about this on the [Filesystem Tenancy](filesystem-tenancy) page.
+
+```php
+public function suffixFilesystemRootPaths()
+{
+    // [...]
+    $suffix = $this->app['config']['tenancy.filesystem.suffix_base'] . tenant('uuid');
+    // storage_path()
+    $this->app->useStoragePath($old['path'] . "/{$suffix}");
+    // Storage facade
+    foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
+        // [...]
+        if ($root = \str_replace('%storage_path%', storage_path(), $this->app['config']["tenancy.filesystem.root_override.{$disk}"])) {
+            Storage::disk($disk)->getAdapter()->setPathPrefix($root);
+        } else {
+            $root = $this->app['config']["filesystems.disks.{$disk}.root"];
+            Storage::disk($disk)->getAdapter()->setPathPrefix($root . "/{$suffix}");
+        }
+    }
+    // [...]
+}
+    ```
