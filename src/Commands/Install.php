@@ -41,8 +41,9 @@ class Install extends Command
         ));
         $this->info('✔️  Set middleware priority');
 
-        \file_put_contents(base_path('routes/tenant.php'),
-"<?php
+        \file_put_contents(
+            base_path('routes/tenant.php'),
+            "<?php
 
 /*
 |--------------------------------------------------------------------------
@@ -58,7 +59,8 @@ class Install extends Command
 Route::get('/your/application/homepage', function () {
     return 'This is your multi-tenant application. The uuid of the current tenant is ' . tenant('uuid');
 });
-");
+"
+        );
         $this->info('✔️  Created routes/tenant.php');
 
         $this->line('');
@@ -69,6 +71,11 @@ Route::get('/your/application/homepage', function () {
             '--tag' => 'migrations',
             ]);
             $this->info('✔️  Created migration.');
+        }
+
+        if (! \is_dir(database_path('migrations/tenant'))) {
+            mkdir(database_path('migrations/tenant'));
+            $this->info('✔️  Created database/migrations/tenant folder.');
         }
 
         $this->comment('✨️ stancl/tenancy installed successfully.');

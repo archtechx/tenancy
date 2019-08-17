@@ -19,7 +19,7 @@ return [
         // 'localhost',
     ],
     'database' => [
-        'based_on' => 'sqlite',
+        'based_on' => 'mysql',
         'prefix' => 'tenant',
         'suffix' => '',
     ],

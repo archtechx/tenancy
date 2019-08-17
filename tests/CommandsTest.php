@@ -213,6 +213,7 @@ class Kernel extends HttpKernel
         $this->assertFileExists(base_path('routes/tenant.php'));
         $this->assertFileExists(base_path('config/tenancy.php'));
         $this->assertFileExists(database_path('migrations/2019_08_08_000000_create_tenants_table.php'));
+        $this->assertDirectoryExists(database_path('migrations/tenant'));
         $this->assertSame("<?php
 
 namespace App\Http;
