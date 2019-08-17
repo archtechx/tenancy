@@ -49,7 +49,7 @@ class TenancyServiceProvider extends ServiceProvider
 
         $this->app->register(TenantRouteServiceProvider::class);
 
-        if (class_exists(Telescope::class)) {
+        if (\class_exists(Telescope::class)) {
             $this->setTelescopeTags();
         }
     }
@@ -60,12 +60,12 @@ class TenancyServiceProvider extends ServiceProvider
 
         Telescope::tag(function (\Laravel\Telescope\IncomingEntry $entry) use ($original_callback) {
             $tags = [];
-            if (! is_null($original_callback)) {
+            if (! \is_null($original_callback)) {
                 $tags = $original_callback($entry);
             }
 
-            if (in_array('tenancy', request()->route()->middleware())) {
-                $tags = array_merge($tags, ['tenant:' . tenant('uuid')]);
+            if (\in_array('tenancy', request()->route()->middleware())) {
+                $tags = \array_merge($tags, ['tenant:' . tenant('uuid')]);
             }
 
             return $tags;
