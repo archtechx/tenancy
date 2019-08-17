@@ -15,7 +15,7 @@ Currently, database and Redis storage drivers are available as part of the packa
 
 The database storage driver lets you store tenant information in a relational database like MySQL, PostgreSQL and SQLite.
 
-The benefit of this storage driver is that you don't have ot use both Redis and a database for your data. Also you don't have to do as much configuration.
+The benefit of this storage driver is that you don't have to use both Redis and a database for your data. Also you don't have to do as much configuration.
 
 To use this driver, you need to have a `tenants` table in the database associated with the `central` connection. So copy your currenty used connection (`mysql`, `sqlite`, ...) and add it to `database.connections` under the name `central`.
 
