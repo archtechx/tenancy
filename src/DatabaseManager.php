@@ -94,7 +94,7 @@ final class DatabaseManager
 
     public function createTenantConnection(string $database_name)
     {
-        // Create the `tenancy` database connection.
+        // Create the `tenant` database connection.
         $based_on = config('tenancy.database.based_on') ?: config('database.default');
         config()->set([
             'database.connections.tenant' => config('database.connections.' . $based_on),
