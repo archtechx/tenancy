@@ -4,6 +4,7 @@ namespace Stancl\Tenancy\Tests;
 
 use Stancl\Tenancy\StorageDrivers\RedisStorageDriver;
 use Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver;
+use Stancl\Tenancy\Tenant;
 
 class TenantStorageTest extends TestCase
 {
@@ -139,5 +140,16 @@ class TenantStorageTest extends TestCase
 
         tenancy()->put('string', 'foo');
         $this->assertSame('string', \gettype(tenancy()->get('string')));
+    }
+
+    /** @test */
+    public function tenant_model_uses_correct_connection()
+    {
+        config(['tenancy.storage.db.connection' => 'foo']);
+        $this->assertSame('foo', (new Tenant)->getConnectionName());
+
+        config(['tenancy.storage.db.connection' => null]);
+        config(['database.default' => 'foobar']);
+        $this->assertSame('foobar', (new Tenant)->getConnectionName());
     }
 }
