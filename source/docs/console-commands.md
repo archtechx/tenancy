@@ -22,6 +22,8 @@ php artisan tenants:migrate --tenants=8075a580-1cb8-11e9-8822-49c5d8f8ff23
 
 You can use these commands outside the command line as well. If you want to migrate a tenant's database in a controller, you can use the `Artisan` facade.
 ```php
+$tenant = tenant()->create('tenant1.localhost');
+
 \Artisan::call('tenants:migrate', [
     '--tenants' => [$tenant['uuid']]
 ]);
