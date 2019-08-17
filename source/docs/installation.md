@@ -29,6 +29,8 @@ You will be asked if you want to store your data in Redis or a relational databa
 
 This will do all the steps listed in the [Manual installation](#manual-installation) section for you.
 
+The only thing you have to do now is create a database/Redis connection. Read the [Storage Drivers](/docs/storage-drivers) page for information about that.
+
 ### Manual installation {#manual-installation}
 
 If you prefer installing the package manually, you can do that too. It shouldn't take more than a minute either way.
