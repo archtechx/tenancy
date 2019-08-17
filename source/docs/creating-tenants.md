@@ -22,3 +22,5 @@ tenant()->create('tenant2.yourapp.com', [
     'plan' => 'free'
 ]);
 ```
+
+> Note: Creating a tenant doesn't run [migrations](https://stancl-tenancy.netlify.com/docs/console-commands/#migrate) automatically. You have to do that yourself.
