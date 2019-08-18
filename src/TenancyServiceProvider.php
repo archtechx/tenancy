@@ -69,7 +69,15 @@ class TenancyServiceProvider extends ServiceProvider
     public function makeQueuesTenantAware()
     {
         $this->app['queue']->createPayloadUsing(function () {
-            return tenancy()->initialized ? ['tenant_uuid' => tenant('uuid')] : [];
+            if (tenancy()->initialized) {
+                $uuid = tenant('uuid');
+                return [
+                    'tenant_uuid' => $uuid,
+                    'tags' => ["tenant:$uuid"],
+                ];
+            }
+
+            return [];
         });
 
         $this->app['events']->listen(\Illuminate\Queue\Events\JobProcessing::class, function ($event) {
