@@ -73,7 +73,7 @@ class TenancyServiceProvider extends ServiceProvider
         });
 
         $this->app['events']->listen(\Illuminate\Queue\Events\JobProcessing::class, function ($event) {
-            if (array_key_exists('tenant_uuid', $event->job->payload())) {
+            if (\array_key_exists('tenant_uuid', $event->job->payload())) {
                 tenancy()->initById($event->job->payload()['tenant_uuid']);
             }
         });
