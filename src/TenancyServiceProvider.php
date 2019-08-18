@@ -50,6 +50,7 @@ class TenancyServiceProvider extends ServiceProvider
         $this->app->register(TenantRouteServiceProvider::class);
 
         $this->registerTenantRedirectMacro();
+        $this->makeQueuesTenantAware();
     }
 
     public function registerTenantRedirectMacro()
@@ -62,6 +63,19 @@ class TenancyServiceProvider extends ServiceProvider
             $this->setTargetUrl(\substr_replace($url, $domain, $position, \strlen($hostname)));
 
             return $this;
+        });
+    }
+
+    public function makeQueuesTenantAware()
+    {
+        $this->app['queue']->createPayloadUsing(function () {
+            return tenancy()->initialized ? ['tenant_uuid' => tenant('uuid')] : [];
+        });
+
+        $this->app['events']->listen(\Illuminate\Queue\Events\JobProcessing::class, function ($event) {
+            if (array_key_exists('tenant_uuid', $event->job->payload())) {
+                tenancy()->initById($event->job->payload()['tenant_uuid']);
+            }
         });
     }
 
