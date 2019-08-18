@@ -30,7 +30,7 @@ class Tenant extends Model
 
     public function getConnectionName()
     {
-        return config('tenancy.storage.db.connection') ?: config('database.default');
+        return config('tenancy.storage.db.connection');
     }
 
     public static function getAllTenants(array $uuids)
