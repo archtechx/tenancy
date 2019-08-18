@@ -33,7 +33,9 @@ Finally, run the migration:
 php artisan migrate
 ```
 
-> Note: If you have existing migrations related to your app in `database/migrations`, move them to `database/migrations/tenant`. You can read more about tenant migrations [here](/docs/console-commands/#migrate).
+> If you use a non-default connection, such as `central`, you have to specify which DB to migrate using the `--database` option.
+> 
+> If you have existing migrations related to your app in `database/migrations`, move them to `database/migrations/tenant`. You can read more about tenant migrations [here](/docs/console-commands/#migrate).
 
 ## Redis {#redis}
 
