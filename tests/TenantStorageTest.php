@@ -147,9 +147,5 @@ class TenantStorageTest extends TestCase
     {
         config(['tenancy.storage.db.connection' => 'foo']);
         $this->assertSame('foo', (new Tenant)->getConnectionName());
-
-        config(['tenancy.storage.db.connection' => null]);
-        config(['database.default' => 'foobar']);
-        $this->assertSame('foobar', (new Tenant)->getConnectionName());
     }
 }
