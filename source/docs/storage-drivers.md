@@ -21,7 +21,7 @@ To use this driver, you need to have a `tenants` table. You may also use a custo
 
 If you'd like to use an existing connection, you can set this config to the name of the connection, e.g. `mysql`. You can also set this value to `null` and the package will use the `database.default` connection. 
 
-To create the `tenants` table, you can use the migration that comes with this package. If you haven't published it during the installation, publish it now:
+To create the `tenants` table, you can use the migration that comes with this package. If you haven't published it during installation, publish it now:
 ```
 php artisan vendor:publish --provider='Stancl\Tenancy\TenancyServiceProvider' --tag=migrations
 ```
