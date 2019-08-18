@@ -5,6 +5,7 @@ namespace Stancl\Tenancy;
 use Stancl\Tenancy\Commands\Run;
 use Stancl\Tenancy\Commands\Seed;
 use Illuminate\Cache\CacheManager;
+use Illuminate\Http\RedirectResponse;
 use Stancl\Tenancy\Commands\Install;
 use Stancl\Tenancy\Commands\Migrate;
 use Illuminate\Support\Facades\Route;
@@ -47,6 +48,21 @@ class TenancyServiceProvider extends ServiceProvider
         ]);
 
         $this->app->register(TenantRouteServiceProvider::class);
+
+        $this->registerTenantRedirectMacro();
+    }
+
+    public function registerTenantRedirectMacro()
+    {
+        RedirectResponse::macro('tenant', function (string $domain) {
+            // replace first occurance of hostname fragment with $domain
+            $url = $this->getTargetUrl();
+            $hostname = parse_url($url, PHP_URL_HOST);
+            $position = strpos($url, $hostname);
+            $this->setTargetUrl(substr_replace($url, $domain, $position, strlen($hostname)));
+
+            return $this;
+        });
     }
 
     /**
