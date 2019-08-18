@@ -19,7 +19,7 @@ The benefit of this storage driver is that you don't have to use both Redis and 
 
 To use this driver, you need to have a `tenants` table. You may also use a custom database connection. By default, `tenancy.storage.db.connection` is set to `central`, which means that the `central` database connection will be used to store tenants. This connection is not automatically created, so you'd have to create it manually. You can create database connections in the `config/database.php` file.
 
-If you'd like to use an existing connection, you can set this config to the name of the connection, e.g. `mysql`. You can also set this value to `null` and the package will use the `database.default` connection. 
+If you'd like to use an existing connection, you can set this config to the name of the connection, e.g. `mysql`.
 
 To create the `tenants` table, you can use the migration that comes with this package. If you haven't published it during installation, publish it now:
 ```
