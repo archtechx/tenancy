@@ -5,9 +5,9 @@ namespace Stancl\Tenancy;
 use Stancl\Tenancy\Commands\Run;
 use Stancl\Tenancy\Commands\Seed;
 use Illuminate\Cache\CacheManager;
-use Illuminate\Http\RedirectResponse;
 use Stancl\Tenancy\Commands\Install;
 use Stancl\Tenancy\Commands\Migrate;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Commands\Rollback;
 use Illuminate\Support\ServiceProvider;
@@ -57,9 +57,9 @@ class TenancyServiceProvider extends ServiceProvider
         RedirectResponse::macro('tenant', function (string $domain) {
             // replace first occurance of hostname fragment with $domain
             $url = $this->getTargetUrl();
-            $hostname = parse_url($url, PHP_URL_HOST);
-            $position = strpos($url, $hostname);
-            $this->setTargetUrl(substr_replace($url, $domain, $position, strlen($hostname)));
+            $hostname = \parse_url($url, PHP_URL_HOST);
+            $position = \strpos($url, $hostname);
+            $this->setTargetUrl(\substr_replace($url, $domain, $position, \strlen($hostname)));
 
             return $this;
         });
