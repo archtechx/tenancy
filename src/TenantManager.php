@@ -282,11 +282,13 @@ final class TenantManager
         if (\is_array($key)) {
             $data = $this->storage->getMany($uuid, $key);
             $data = $this->useJson() ? $this->jsonDecodeArrayValues($data) : $data;
+
             return $data;
         }
 
         $data = $this->storage->get($uuid, $key);
         $data = $this->useJson() ? \json_decode($data, true) : $data;
+
         return $data;
     }
 
