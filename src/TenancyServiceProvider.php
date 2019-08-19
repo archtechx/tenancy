@@ -60,7 +60,7 @@ class TenancyServiceProvider extends ServiceProvider
     public function setTelescopeTags()
     {
         Telescope::tag(function (\Laravel\Telescope\IncomingEntry $entry) {
-            $tags = $this->integration('telescope', $entry);
+            $tags = $this->app->make(TenantManager::class)->integration('telescope', $entry);
 
             if (\in_array('tenancy', request()->route()->middleware())) {
                 $tags = \array_merge($tags, [
