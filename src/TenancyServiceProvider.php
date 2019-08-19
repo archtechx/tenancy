@@ -8,6 +8,7 @@ use Stancl\Tenancy\Commands\Seed;
 use Illuminate\Cache\CacheManager;
 use Stancl\Tenancy\Commands\Install;
 use Stancl\Tenancy\Commands\Migrate;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Commands\Rollback;
 use Illuminate\Support\ServiceProvider;
@@ -52,6 +53,8 @@ class TenancyServiceProvider extends ServiceProvider
         if (\class_exists(Telescope::class)) {
             $this->setTelescopeTags();
         }
+
+        $this->registerTenantRedirectMacro();
     }
 
     public function setTelescopeTags()
@@ -72,6 +75,19 @@ class TenancyServiceProvider extends ServiceProvider
             }
 
             return $tags;
+        });
+    }
+
+    public function registerTenantRedirectMacro()
+    {
+        RedirectResponse::macro('tenant', function (string $domain) {
+            // replace first occurance of hostname fragment with $domain
+            $url = $this->getTargetUrl();
+            $hostname = \parse_url($url, PHP_URL_HOST);
+            $position = \strpos($url, $hostname);
+            $this->setTargetUrl(\substr_replace($url, $domain, $position, \strlen($hostname)));
+
+            return $this;
         });
     }
 
