@@ -17,18 +17,18 @@ class QueueTest extends TestCase
     /** @test */
     public function queues_use_non_tenant_db_connection()
     {
+        // todo finish this test. requires using the db driver
         $this->markTestIncomplete();
     }
 
     /** @test */
     public function tenancy_is_initialized_inside_queues()
     {
-        // Queue::fake();
         $this->loadLaravelMigrations(['--database' => 'tenant']);
         Event::fake();
 
         dispatch(new TestJob());
-        // Queue::assertPushed(TestJob::class);
+
         Event::assertDispatched(JobProcessing::class, function ($event) {
             return $event->job->payload()['tenant_uuid'] === tenant('uuid');
         });
