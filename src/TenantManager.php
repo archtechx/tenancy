@@ -342,7 +342,7 @@ final class TenantManager
         foreach ($key as $k => $v) {
             $target[$k] = $v;
 
-            $v = $this->useJson() ? \json_decode($v) : $v;
+            $v = $this->useJson() ? \json_encode($v) : $v;
             $key[$k] = $v;
         }
 
