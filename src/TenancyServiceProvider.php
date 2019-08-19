@@ -2,6 +2,7 @@
 
 namespace Stancl\Tenancy;
 
+use Laravel\Telescope\Telescope;
 use Stancl\Tenancy\Commands\Run;
 use Stancl\Tenancy\Commands\Seed;
 use Illuminate\Cache\CacheManager;
@@ -49,8 +50,28 @@ class TenancyServiceProvider extends ServiceProvider
 
         $this->app->register(TenantRouteServiceProvider::class);
 
+        if (\class_exists(Telescope::class)) {
+            $this->setTelescopeTags();
+        }
+
         $this->registerTenantRedirectMacro();
         $this->makeQueuesTenantAware();
+    }
+
+    public function setTelescopeTags()
+    {
+        Telescope::tag(function (\Laravel\Telescope\IncomingEntry $entry) {
+            $tags = $this->app->make(TenantManager::class)->integration('telescope', $entry);
+
+            if (\in_array('tenancy', request()->route()->middleware())) {
+                $tags = \array_merge($tags, [
+                    'tenant:' . tenant('uuid'),
+                    'domain:' . tenant('domain'),
+                ]);
+            }
+
+            return $tags;
+        });
     }
 
     public function registerTenantRedirectMacro()

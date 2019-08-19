@@ -16,6 +16,7 @@
     },
     "require-dev": {
         "vlucas/phpdotenv": "^3.3",
+        "laravel/telescope": "^2.0",
         "laravel/framework": "5.8.*",
         "orchestra/testbench-browser-kit": "~3.8",
         "league/flysystem-aws-s3-v3": "~1.0",
