@@ -131,15 +131,19 @@ class TenantStorageTest extends TestCase
     {
         tenancy()->put('someBool', false);
         $this->assertSame('boolean', \gettype(tenancy()->get('someBool')));
+        $this->assertSame('boolean', \gettype(tenancy()->get(['someBool'])[0]));
 
         tenancy()->put('someInt', 5);
         $this->assertSame('integer', \gettype(tenancy()->get('someInt')));
+        $this->assertSame('integer', \gettype(tenancy()->get(['someInt'])[0]));
 
         tenancy()->put('someDouble', 11.40);
         $this->assertSame('double', \gettype(tenancy()->get('someDouble')));
+        $this->assertSame('double', \gettype(tenancy()->get(['someDouble'])[0]));
 
         tenancy()->put('string', 'foo');
         $this->assertSame('string', \gettype(tenancy()->get('string')));
+        $this->assertSame('string', \gettype(tenancy()->get(['string'])[0]));
     }
 
     /** @test */
