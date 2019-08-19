@@ -19,6 +19,13 @@ trait TenantManagerEvents
     ];
 
     /**
+     * Integration listeners.
+     *
+     * @var callable[][]
+     */
+    protected $integrationListeners = [];
+
+    /**
      * Register a listener that will be executed before tenancy is bootstrapped.
      *
      * @param callable $callback
@@ -81,5 +88,40 @@ trait TenantManagerEvents
         return \array_reduce($this->listeners[$name], function ($prevents, $listener) {
             return $prevents->merge($listener($this) ?? []);
         }, collect([]));
+    }
+
+    /**
+     * Register a callback for an integration event.
+     *
+     * @param string $name
+     * @param callable $callback
+     * @return void
+     */
+    public function integrationEvent(string $name, callable $callback)
+    {
+        if (array_key_exists($name, $this->integrationListeners)) {
+            $this->integrationListeners[$name][] = $callback;
+        } else {
+            $this->integrationListeners[$name] = [$callback];
+        }
+    }
+
+    /**
+     * Return callbacks for an integration event.
+     *
+     * @param string $name
+     * @param mixed $arguments,...
+     * @return callable[]
+     */
+    public function integration(string $name, ...$arguments)
+    {
+        if ($arguments) {
+            // If $arguments are supplied, execute all listeners with arguments.
+            return array_reduce($this->integrationListeners[$name] ?? [], function ($tags, $listener) use ($arguments) {
+                return array_merge($tags, $listener(...$arguments));
+            }, []);
+        };
+
+        return $this->integrationListeners[$name];
     }
 }
