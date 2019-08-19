@@ -3,14 +3,13 @@
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\Events\JobProcessed;
-use Illuminate\Queue\Events\JobProcessing;
-use Illuminate\Support\Facades\Event;
 
 class QueueTest extends TestCase
 {
@@ -56,6 +55,6 @@ class TestJob implements ShouldQueue
      */
     public function handle()
     {
-        logger(json_encode(\DB::table('users')->get()));
+        logger(\json_encode(\DB::table('users')->get()));
     }
 }
