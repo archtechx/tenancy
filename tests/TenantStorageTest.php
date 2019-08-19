@@ -131,15 +131,19 @@ class TenantStorageTest extends TestCase
     {
         tenancy()->put('someBool', false);
         $this->assertSame('boolean', \gettype(tenancy()->get('someBool')));
+        $this->assertSame('boolean', \gettype(tenancy()->get(['someBool'])[0]));
 
         tenancy()->put('someInt', 5);
         $this->assertSame('integer', \gettype(tenancy()->get('someInt')));
+        $this->assertSame('integer', \gettype(tenancy()->get(['someInt'])[0]));
 
         tenancy()->put('someDouble', 11.40);
         $this->assertSame('double', \gettype(tenancy()->get('someDouble')));
+        $this->assertSame('double', \gettype(tenancy()->get(['someDouble'])[0]));
 
         tenancy()->put('string', 'foo');
         $this->assertSame('string', \gettype(tenancy()->get('string')));
+        $this->assertSame('string', \gettype(tenancy()->get(['string'])[0]));
     }
 
     /** @test */
@@ -147,9 +151,21 @@ class TenantStorageTest extends TestCase
     {
         config(['tenancy.storage.db.connection' => 'foo']);
         $this->assertSame('foo', (new Tenant)->getConnectionName());
+    }
 
-        config(['tenancy.storage.db.connection' => null]);
-        config(['database.default' => 'foobar']);
-        $this->assertSame('foobar', (new Tenant)->getConnectionName());
+    /** @test */
+    public function retrieving_data_without_cache_works()
+    {
+        tenant()->create('foo.localhost');
+        tenancy()->init('foo.localhost');
+
+        tenancy()->put('foo', 'bar');
+        $this->assertSame('bar', tenancy()->get('foo'));
+        $this->assertSame(['bar'], tenancy()->get(['foo']));
+
+        tenancy()->end();
+        tenancy()->init('foo.localhost');
+        $this->assertSame('bar', tenancy()->get('foo'));
+        $this->assertSame(['bar'], tenancy()->get(['foo']));
     }
 }

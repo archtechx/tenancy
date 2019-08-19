@@ -273,16 +273,23 @@ final class TenantManager
     {
         $uuid = $uuid ?: $this->tenant['uuid'];
 
+        // todo make this cache work with arrays
         if (\array_key_exists('uuid', $this->tenant) && $uuid === $this->tenant['uuid'] &&
             ! \is_array($key) && \array_key_exists($key, $this->tenant)) {
             return $this->tenant[$key];
         }
 
         if (\is_array($key)) {
-            return $this->jsonDecodeArrayValues($this->storage->getMany($uuid, $key));
+            $data = $this->storage->getMany($uuid, $key);
+            $data = $this->useJson() ? $this->jsonDecodeArrayValues($data) : $data;
+
+            return $data;
         }
 
-        return \json_decode($this->storage->get($uuid, $key), true);
+        $data = $this->storage->get($uuid, $key);
+        $data = $this->useJson() ? \json_decode($data, true) : $data;
+
+        return $data;
     }
 
     /**
@@ -319,7 +326,13 @@ final class TenantManager
         }
 
         if (! \is_null($value)) {
-            return $target[$key] = \json_decode($this->storage->put($uuid, $key, \json_encode($value)), true);
+            if ($this->useJson()) {
+                $data = \json_decode($this->storage->put($uuid, $key, \json_encode($value)), true);
+            } else {
+                $data = $this->storage->put($uuid, $key, $value);
+            }
+
+            return $target[$key] = $data;
         }
 
         if (! \is_array($key)) {
@@ -328,10 +341,15 @@ final class TenantManager
 
         foreach ($key as $k => $v) {
             $target[$k] = $v;
-            $key[$k] = \json_encode($v);
+
+            $v = $this->useJson() ? \json_encode($v) : $v;
+            $key[$k] = $v;
         }
 
-        return $this->jsonDecodeArrayValues($this->storage->putMany($uuid, $key));
+        $data = $this->storage->putMany($uuid, $key);
+        $data = $this->useJson() ? $this->jsonDecodeArrayValues($data) : $data;
+
+        return $data;
     }
 
     /**
