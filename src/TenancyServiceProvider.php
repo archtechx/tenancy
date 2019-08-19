@@ -70,7 +70,7 @@ class TenancyServiceProvider extends ServiceProvider
     {
         $this->app['queue']->createPayloadUsing(function () {
             if (tenancy()->initialized) {
-                [$uuid, $domain] = tenant()->get('uuid', 'domain');
+                [$uuid, $domain] = tenant()->get(['uuid', 'domain']);
 
                 return [
                     'tenant_uuid' => $uuid,
