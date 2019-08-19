@@ -4,7 +4,6 @@ namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Queue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\Events\JobProcessing;
