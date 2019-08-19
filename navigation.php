@@ -26,10 +26,16 @@ return [
             'Middleware Configuration' => 'docs/middleware-configuration',
             'Custom Database Names'    => 'docs/custom-database-names',
             'Filesystem Tenancy'       => 'docs/filesystem-tenancy',
+            'Jobs & Queues'              => 'docs/jobs-queues',
             'Event System'             => 'docs/event-system',
             'Tenancy Initialization'   => 'docs/tenancy-initialization',
             'Writing Storage Drivers'  => 'docs/writing-storage-drivers',
             'Development'              => 'docs/development',
+        ],
+    ],
+    'Integrations' => [
+        'children' => [
+            'Horizon' => 'docs/horizon',
         ],
     ],
     'Tips' => [
