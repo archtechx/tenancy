@@ -1,6 +1,7 @@
 preset: laravel
 enabled:
 - native_function_invocation
+- no_unused_imports
 disabled:
 - concat_without_spaces
 - ternary_operator_spaces
