@@ -36,6 +36,7 @@ return [
     'Integrations' => [
         'children' => [
             'Horizon' => 'docs/horizon',
+            'Telescope' => 'docs/telescope',
         ],
     ],
     'Tips' => [
