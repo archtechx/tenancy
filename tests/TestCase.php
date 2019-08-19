@@ -123,7 +123,6 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     protected function getPackageProviders($app)
     {
         return [
-            \Stancl\Tenancy\Tests\Etc\AppServiceProvider::class,
             \Stancl\Tenancy\TenancyServiceProvider::class,
         ];
     }
