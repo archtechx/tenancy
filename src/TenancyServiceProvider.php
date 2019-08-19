@@ -65,7 +65,10 @@ class TenancyServiceProvider extends ServiceProvider
             }
 
             if (\in_array('tenancy', request()->route()->middleware())) {
-                $tags = \array_merge($tags, ['tenant:' . tenant('uuid')]);
+                $tags = \array_merge($tags, [
+                    'tenant:' . tenant('uuid'),
+                    'domain:' . tenant('domain'),
+                ]);
             }
 
             return $tags;
