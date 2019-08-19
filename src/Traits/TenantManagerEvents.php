@@ -99,7 +99,7 @@ trait TenantManagerEvents
      */
     public function integrationEvent(string $name, callable $callback)
     {
-        if (array_key_exists($name, $this->integrationListeners)) {
+        if (\array_key_exists($name, $this->integrationListeners)) {
             $this->integrationListeners[$name][] = $callback;
         } else {
             $this->integrationListeners[$name] = [$callback];
@@ -117,10 +117,10 @@ trait TenantManagerEvents
     {
         if ($arguments) {
             // If $arguments are supplied, execute all listeners with arguments.
-            return array_reduce($this->integrationListeners[$name] ?? [], function ($tags, $listener) use ($arguments) {
-                return array_merge($tags, $listener(...$arguments));
+            return \array_reduce($this->integrationListeners[$name] ?? [], function ($tags, $listener) use ($arguments) {
+                return \array_merge($tags, $listener(...$arguments));
             }, []);
-        };
+        }
 
         return $this->integrationListeners[$name];
     }
