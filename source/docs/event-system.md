@@ -15,6 +15,8 @@ The following events are available:
 - `ending`
 - `ended`
 
+### Tenant-specific database connection example {#tenant-specific-database-connection-example}
+
 You can hook into these events using `Tenancy::<eventName>`:
 ```php
 \Tenancy::boostrapping(function ($tenantManager) {
@@ -34,6 +36,8 @@ The following actions can be prevented:
 - Redis prefix: `redis`
 - CacheManager switch: `cache`
 - Filesystem changes: `filesystem`
+
+### Tenant-specific configuration example {#tenant-specific-configuration-example}
 
 Another common use case for events is tenant-specific config:
 ```php
