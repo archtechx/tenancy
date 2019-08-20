@@ -2,9 +2,9 @@
 
 namespace Stancl\Tenancy\StorageDrivers;
 
-use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\Interfaces\StorageDriver;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 
 class DatabaseStorageDriver implements StorageDriver
 {

@@ -3,8 +3,8 @@
 namespace Stancl\Tenancy\StorageDrivers;
 
 use Illuminate\Support\Facades\Redis;
-use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Interfaces\StorageDriver;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 
 class RedisStorageDriver implements StorageDriver
 {
