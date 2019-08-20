@@ -6,6 +6,7 @@ use Stancl\Tenancy\Interfaces\StorageDriver;
 use Stancl\Tenancy\Traits\BootstrapsTenancy;
 use Illuminate\Contracts\Foundation\Application;
 use Stancl\Tenancy\Exceptions\CannotChangeUuidOrDomainException;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 
 final class TenantManager
 {
@@ -65,7 +66,7 @@ final class TenantManager
         $tenant = $this->storage->identifyTenant($domain);
 
         if (! $tenant || ! \array_key_exists('uuid', $tenant) || ! $tenant['uuid']) {
-            throw new \Exception("Tenant could not be identified on domain {$domain}.");
+            throw new TenantCouldNotBeIdentifiedException($domain);
         }
 
         return $tenant;
@@ -176,7 +177,7 @@ final class TenantManager
         $uuid = $this->getIdByDomain($domain);
 
         if (\is_null($uuid)) {
-            throw new \Exception("Tenant with domain $domain could not be identified.");
+            throw new TenantCouldNotBeIdentifiedException($domain);
         }
 
         return $this->find($uuid, $fields);

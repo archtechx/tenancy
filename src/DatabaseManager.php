@@ -5,6 +5,7 @@ namespace Stancl\Tenancy;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseDeleter;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
+use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 
 final class DatabaseManager
 {
@@ -53,7 +54,7 @@ final class DatabaseManager
         $databaseManagers = config('tenancy.database_managers');
 
         if (! \array_key_exists($driver, $databaseManagers)) {
-            throw new \Exception("Database could not be created: no database manager for driver $driver is registered.");
+            throw new DatabaseManagerNotRegisteredException("Database could not be created", $driver);
         }
 
         if (config('tenancy.queue_database_creation', false)) {
@@ -79,7 +80,7 @@ final class DatabaseManager
         $databaseManagers = config('tenancy.database_managers');
 
         if (! \array_key_exists($driver, $databaseManagers)) {
-            throw new \Exception("Database could not be deleted: no database manager for driver $driver is registered.");
+            throw new DatabaseManagerNotRegisteredException("Database could not be deleted", $driver);
         }
 
         if (config('tenancy.queue_database_deletion', false)) {

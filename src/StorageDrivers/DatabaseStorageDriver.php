@@ -2,6 +2,7 @@
 
 namespace Stancl\Tenancy\StorageDrivers;
 
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\Interfaces\StorageDriver;
 
@@ -16,7 +17,7 @@ class DatabaseStorageDriver implements StorageDriver
     {
         $id = $this->getTenantIdByDomain($domain);
         if (! $id) {
-            throw new \Exception("Tenant could not be identified on domain {$domain}");
+            throw new TenantCouldNotBeIdentifiedException($domain);
         }
 
         return $this->getTenantById($id);

@@ -3,6 +3,7 @@
 namespace Stancl\Tenancy\StorageDrivers;
 
 use Illuminate\Support\Facades\Redis;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Interfaces\StorageDriver;
 
 class RedisStorageDriver implements StorageDriver
@@ -18,7 +19,7 @@ class RedisStorageDriver implements StorageDriver
     {
         $id = $this->getTenantIdByDomain($domain);
         if (! $id) {
-            throw new \Exception("Tenant could not be identified on domain {$domain}");
+            throw new TenantCouldNotBeIdentifiedException($domain);
         }
 
         return $this->getTenantById($id);
