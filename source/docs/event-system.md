@@ -17,7 +17,7 @@ The following events are available:
 
 You can hook into these events using `Tenancy::<eventName>`:
 ```php
-Tenancy::boostrapping(function ($tenantManager) {
+\Tenancy::boostrapping(function ($tenantManager) {
     if ($tenantManager->tenant['uuid'] === 'someUUID') {
         config(['database.connections.someDatabaseConnection' => $tenantManager->tenant['databaseConnection']]);
         $tenantManager->database->useConnection('someDatabaseConnection');
@@ -34,3 +34,10 @@ The following actions can be prevented:
 - Redis prefix: `redis`
 - CacheManager switch: `cache`
 - Filesystem changes: `filesystem`
+
+Another common use case for events is tenant-specific config:
+```php
+\Tenancy::bootstrapped(function ($tenantManager) {
+    config(['some.api.key' => $tenantManager->tenant['api_key']);
+});
+```
