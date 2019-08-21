@@ -5,6 +5,7 @@ namespace Stancl\Tenancy;
 use Stancl\Tenancy\Interfaces\StorageDriver;
 use Stancl\Tenancy\Traits\BootstrapsTenancy;
 use Illuminate\Contracts\Foundation\Application;
+use Stancl\Tenancy\Interfaces\UniqueIdentifierGenerator;
 use Stancl\Tenancy\Exceptions\CannotChangeUuidOrDomainException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 
@@ -34,17 +35,25 @@ final class TenantManager
     public $database;
 
     /**
+     * Unique identifier generator.
+     *
+     * @var UniqueIdentifierGenerator
+     */
+    protected $generator;
+
+    /**
      * Current tenant.
      *
      * @var array
      */
     public $tenant = [];
 
-    public function __construct(Application $app, StorageDriver $storage, DatabaseManager $database)
+    public function __construct(Application $app, StorageDriver $storage, DatabaseManager $database, UniqueIdentifierGenerator $generator)
     {
         $this->app = $app;
         $this->storage = $storage;
         $this->database = $database;
+        $this->generator = $generator;
     }
 
     public function init(string $domain = null): array
@@ -87,7 +96,7 @@ final class TenantManager
             throw new \Exception("Domain $domain is already occupied by tenant $id.");
         }
 
-        $tenant = $this->storage->createTenant($domain, (string) \Webpatser\Uuid\Uuid::generate(1, $domain));
+        $tenant = $this->storage->createTenant($domain, $this->generateUniqueIdentifier($domain, $data));
         if ($this->useJson()) {
             $tenant = $this->jsonDecodeArrayValues($tenant);
         }
@@ -101,6 +110,11 @@ final class TenantManager
         $this->database->create($this->getDatabaseName($tenant));
 
         return $tenant;
+    }
+
+    public function generateUniqueIdentifier(string $domain, array $data)
+    {
+        return $this->generator->handle($domain, $data);
     }
 
     public function delete(string $uuid): bool
