@@ -125,7 +125,9 @@ class TenancyServiceProvider extends ServiceProvider
         $this->app->bind(ServerConfigManager::class, $this->app['config']['tenancy.server.manager']);
         $this->app->singleton(DatabaseManager::class);
         $this->app->singleton(TenantManager::class, function ($app) {
-            return new TenantManager($app, $app[StorageDriver::class], $app[DatabaseManager::class]);
+            return new TenantManager(
+                $app, $app[StorageDriver::class], $app[DatabaseManager::class], $app[$app['config']['tenancy.unique_id_generator']]
+            );
         });
 
         $this->app->singleton(Migrate::class, function ($app) {
