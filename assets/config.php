@@ -15,16 +15,16 @@ return [
         ],
     ],
     'tenant_route_namespace' => 'App\Http\Controllers',
-    'exempt_domains' => [
+    'exempt_domains' => [ // e.g. domains which host landing pages, sign up pages, etc
         // 'localhost',
     ],
     'database' => [
-        'based_on' => 'mysql',
+        'based_on' => 'mysql', // The connection that will be used as a base for the dynamically created tenant connection.
         'prefix' => 'tenant',
         'suffix' => '',
     ],
     'redis' => [
-        'tenancy' => false,
+        'tenancy' => false, // to enable Redis tenancy, you must use phpredis
         'prefix_base' => 'tenant',
         'prefixed_connections' => [
             'default',
@@ -34,7 +34,7 @@ return [
     'cache' => [
         'tag_base' => 'tenant',
     ],
-    'filesystem' => [
+    'filesystem' => [ // https://stancl-tenancy.netlify.com/docs/filesystem-tenancy/
         'suffix_base' => 'tenant',
         // Disks which should be suffixed with the suffix_base + tenant UUID.
         'disks' => [
