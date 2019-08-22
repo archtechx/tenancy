@@ -34,6 +34,7 @@ return [
         ],
     ],
     'Integrations' => [
+        'url' => 'docs/integrations',
         'children' => [
             'Horizon' => 'docs/horizon',
             'Telescope' => 'docs/telescope',
