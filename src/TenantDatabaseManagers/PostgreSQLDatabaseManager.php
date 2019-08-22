@@ -14,6 +14,6 @@ class PostgreSQLDatabaseManager implements TenantDatabaseManager
 
     public function deleteDatabase(string $name): bool
     {
-        return DB::statement("DROP DATABASE $name");
+        return DB::statement("DROP DATABASE \"$name\"");
     }
 }
