@@ -9,7 +9,7 @@ class PostgreSQLDatabaseManager implements TenantDatabaseManager
 {
     public function createDatabase(string $name): bool
     {
-        return DB::statement("CREATE DATABASE $name WITH TEMPLATE=template0");
+        return DB::statement("CREATE DATABASE \"$name\" WITH TEMPLATE=template0");
     }
 
     public function deleteDatabase(string $name): bool
