@@ -43,7 +43,7 @@ class Install extends Command
         );
 
         $newKernel = \str_replace("protected \$middleware = [", "protected \$middleware = [
-            \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,", $newKernel);
+        \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,", $newKernel);
 
         \file_put_contents(app_path('Http/Kernel.php'), $newKernel);
         $this->info('✔️  Set middleware priority');
