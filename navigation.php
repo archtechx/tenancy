@@ -44,7 +44,7 @@ return [
     'Tips' => [
         'children' => [
             'HTTPS Certificates' => 'docs/https-certificates',
-            'Misc' => 'docs/misc-tips',
+            'Misc'               => 'docs/misc-tips',
         ],
     ],
     'Stay Updated' => 'docs/stay-updated',
