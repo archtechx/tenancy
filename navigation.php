@@ -29,6 +29,7 @@ return [
             'Jobs & Queues'              => 'docs/jobs-queues',
             'Event System'               => 'docs/event-system',
             'Tenancy Initialization'     => 'docs/tenancy-initialization',
+            'Application Testing'        => 'docs/application-testing',
             'Writing Storage Drivers'    => 'docs/writing-storage-drivers',
             'Development'                => 'docs/development',
         ],
