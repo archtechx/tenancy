@@ -42,8 +42,8 @@ class Install extends Command
             \file_get_contents(app_path('Http/Kernel.php'))
         );
 
-        $newKernel = \str_replace('protected $middleware = [', "protected \$middleware = [
-        \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,", $newKernel);
+        $newKernel = \str_replace("'web' => [", "'web' => [
+            \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,", $newKernel);
 
         \file_put_contents(app_path('Http/Kernel.php'), $newKernel);
         $this->info('✔️  Set middleware priority');
@@ -63,7 +63,7 @@ class Install extends Command
 |
 */
 
-Route::get('/your/application/homepage', function () {
+Route::get('/', function () {
     return 'This is your multi-tenant application. The uuid of the current tenant is ' . tenant('uuid');
 });
 "
