@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Stancl\Tenancy\TenantManager;
 
 if (! \function_exists('tenancy')) {
