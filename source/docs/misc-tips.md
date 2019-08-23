@@ -21,6 +21,8 @@ return redirect()->route('dashboard')->tenant($tenant['domain']);
 If you don't want to use UUIDs and want to use something more human-readable (even domain concatenated with uuid, for example), you can create a custom class for this:
 
 ```php
+use Stancl\Tenancy\Interfaces\UniqueIdentifierGenerator;
+
 class MyUniqueIDGenerator implements UniqueIdentifierGenerator
 {
     public static function handle(string $domain, array $data): string
