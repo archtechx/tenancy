@@ -26,3 +26,9 @@ Route::middleware(InitializeTenancy::class)->group(function () {
     // Route::get('/', 'HelloWorld');
 });
 ```
+
+## Using the same routes for tenant and non-tenant parts of the application {#using-the-same-routes-for-tenant-and-non-tenant-parts-of-the-application}
+
+The `Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains` middleware makes sure 404 is returned when a user attempts to visit a web route on a tenant (non-exempt) domain.
+
+The install command applies this middleware to the `web` group. If you want to do this for another route group, add this middleware manually to that group. You can do this in `app/Http/Kernel.php`.
