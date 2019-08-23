@@ -23,18 +23,28 @@ return [
     'Digging Deeper' => [
         'url'      => 'docs/digging-deeper',
         'children' => [
-            'Middleware Configuration' => 'docs/middleware-configuration',
-            'Custom Database Names'    => 'docs/custom-database-names',
-            'Filesystem Tenancy'       => 'docs/filesystem-tenancy',
-            'Event System'             => 'docs/event-system',
-            'Tenancy Initialization'   => 'docs/tenancy-initialization',
-            'Writing Storage Drivers'  => 'docs/writing-storage-drivers',
-            'Development'              => 'docs/development',
+            'Middleware Configuration'   => 'docs/middleware-configuration',
+            'Custom Database Names'      => 'docs/custom-database-names',
+            'Filesystem Tenancy'         => 'docs/filesystem-tenancy',
+            'Jobs & Queues'              => 'docs/jobs-queues',
+            'Event System'               => 'docs/event-system',
+            'Tenancy Initialization'     => 'docs/tenancy-initialization',
+            'Application Testing'        => 'docs/application-testing',
+            'Writing Storage Drivers'    => 'docs/writing-storage-drivers',
+            'Development'                => 'docs/development',
+        ],
+    ],
+    'Integrations' => [
+        'url'      => 'docs/integrations',
+        'children' => [
+            'Horizon'   => 'docs/horizon',
+            'Telescope' => 'docs/telescope',
         ],
     ],
     'Tips' => [
         'children' => [
             'HTTPS Certificates' => 'docs/https-certificates',
+            'Misc'               => 'docs/misc-tips',
         ],
     ],
     'Stay Updated' => 'docs/stay-updated',
