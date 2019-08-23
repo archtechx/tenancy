@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Redis;
@@ -160,7 +162,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
     public function randomString(int $length = 10)
     {
-        return \substr(\str_shuffle(\str_repeat($x = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', \ceil($length / \strlen($x)))), 1, $length);
+        return \substr(\str_shuffle(\str_repeat($x = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', (int) (\ceil($length / \strlen($x))))), 1, $length);
     }
 
     public function isContainerized()

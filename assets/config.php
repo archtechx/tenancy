@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'storage_driver' => 'Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver',
     'storage' => [

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Commands;
 
 use Stancl\Tenancy\DatabaseManager;

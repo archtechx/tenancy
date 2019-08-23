@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Traits;
 
 use Stancl\Tenancy\CacheManager;

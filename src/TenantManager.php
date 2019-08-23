@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy;
 
 use Stancl\Tenancy\Interfaces\StorageDriver;
@@ -383,7 +385,9 @@ final class TenantManager
     protected function jsonDecodeArrayValues(array $array)
     {
         \array_walk($array, function (&$value, $key) {
-            $value = \json_decode($value, true);
+            if ($value) {
+                $value = \json_decode($value, true);
+            }
         });
 
         return $array;
