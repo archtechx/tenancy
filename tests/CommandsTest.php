@@ -246,6 +246,7 @@ class Kernel extends HttpKernel
      */
     protected \$middlewareGroups = [
         'web' => [
+            \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,
             \App\Http\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
@@ -288,6 +289,7 @@ class Kernel extends HttpKernel
      * @var array
      */
     protected \$middlewarePriority = [
+        \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,
         \Stancl\Tenancy\Middleware\InitializeTenancy::class,
         \Illuminate\Session\Middleware\StartSession::class,
         \Illuminate\View\Middleware\ShareErrorsFromSession::class,
