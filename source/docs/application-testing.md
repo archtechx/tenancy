@@ -5,7 +5,7 @@ extends: _layouts.documentation
 section: content
 ---
 
-# Testing {#testing}
+# Application Testing {#application-testing}
 
 To test your application with this package installed, you can create tenants in the `setUp()` method of your test case:
 
