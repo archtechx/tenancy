@@ -42,7 +42,7 @@ class Install extends Command
             \file_get_contents(app_path('Http/Kernel.php'))
         );
 
-        $newKernel = \str_replace("protected \$middleware = [", "protected \$middleware = [
+        $newKernel = \str_replace('protected $middleware = [', "protected \$middleware = [
         \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,", $newKernel);
 
         \file_put_contents(app_path('Http/Kernel.php'), $newKernel);
