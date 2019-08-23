@@ -37,8 +37,8 @@ class Install extends Command
         $newKernel = \str_replace(
             'protected $middlewarePriority = [',
             "protected \$middlewarePriority = [
-        \Stancl\Tenancy\Middleware\InitializeTenancy::class,
-        \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class",
+        \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,
+        \Stancl\Tenancy\Middleware\InitializeTenancy::class,",
             \file_get_contents(app_path('Http/Kernel.php'))
         );
 
