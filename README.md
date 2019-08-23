@@ -17,4 +17,4 @@ You won't have to change a thing in your application's code.\*
 
 ### [Documentation](https://stancl-tenancy.netlify.com/docs/)
 
-Documentation has been moved to a custom website: https://stancl-tenancy.netlify.com/docs/
+Documentation has been moved here: https://stancl-tenancy.netlify.com/docs/
