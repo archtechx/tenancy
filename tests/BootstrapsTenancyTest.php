@@ -39,11 +39,6 @@ class BootstrapsTenancyTest extends TestCase
     /** @test */
     public function predis_is_supported()
     {
-        // No setDriver() before that version.
-        if (app()->version() < 'v5.8.27') {
-            $this->markTestSkipped();
-        }
-
         Config::set('database.redis.client', 'predis');
         Redis::setDriver('predis');
         Config::set('tenancy.redis.tenancy', false);
@@ -55,10 +50,6 @@ class BootstrapsTenancyTest extends TestCase
     /** @test */
     public function predis_is_not_supported_without_disabling_redis_multitenancy()
     {
-        if (app()->version() < 'v5.8.27') {
-            $this->markTestSkipped();
-        }
-
         Config::set('database.redis.client', 'predis');
         Redis::setDriver('predis');
         Config::set('tenancy.redis.tenancy', true);
