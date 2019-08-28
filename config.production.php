@@ -1,10 +1,6 @@
 <?php
 
 return [
-    'baseUrl'    => 'https://my-jigsaw-docs.com',
+    'baseUrl'    => 'https://stancl-tenancy.netlify.com',
     'production' => true,
-
-    // DocSearch credentials
-    'docsearchApiKey'    => '',
-    'docsearchIndexName' => '',
 ];
