@@ -7,8 +7,8 @@ return [
     'siteDescription' => 'A Laravel multi-database tenanyc package that respects your code.',
 
     // Algolia DocSearch credentials
-    'docsearchApiKey'    => '',
-    'docsearchIndexName' => '',
+    'docsearchApiKey'    => '53c5eaf88e819535d98f4a179c1802e1',
+    'docsearchIndexName' => 'stancl-tenancy',
 
     // navigation menu
     'navigation' => require_once('navigation.php'),
