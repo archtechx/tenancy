@@ -187,15 +187,15 @@ class TenantStorageTest extends TestCase
         config(['database.default' => 'sqlite']); // fix issue caused by loadMigrationsFrom
 
         config(['tenancy.storage.db.custom_columns' => [
-            'foo'
+            'foo',
         ]]);
 
         tenancy()->create('foo.localhost');
         tenancy()->init('foo.localhost');
-        
+
         tenancy()->put(['foo' => 'bar', 'abc' => 'xyz']);
         $this->assertSame(['bar', 'xyz'], tenancy()->get(['foo', 'abc']));
-        
+
         $this->assertSame('bar', \DB::connection('central')->table('tenants')->where('uuid', tenant('uuid'))->first()->foo);
     }
 }
