@@ -170,4 +170,32 @@ class TenantStorageTest extends TestCase
         $this->assertSame('bar', tenancy()->get('foo'));
         $this->assertSame(['bar'], tenancy()->get(['foo']));
     }
+
+    /** @test */
+    public function custom_columns_work_with_db_storage_driver()
+    {
+        if (config('tenancy.storage_driver') != 'Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver') {
+            $this->markTestSkipped();
+        }
+
+        tenancy()->end();
+
+        $this->loadMigrationsFrom([
+            '--path' => __DIR__ . '/Etc',
+            '--database' => 'central',
+        ]);
+        config(['database.default' => 'sqlite']); // fix issue caused by loadMigrationsFrom
+
+        config(['tenancy.storage.db.custom_columns' => [
+            'foo'
+        ]]);
+
+        tenancy()->create('foo.localhost');
+        tenancy()->init('foo.localhost');
+        
+        tenancy()->put(['foo' => 'bar', 'abc' => 'xyz']);
+        $this->assertSame(['bar', 'xyz'], tenancy()->get(['foo', 'abc']));
+        
+        $this->assertSame('bar', \DB::connection('central')->table('tenants')->where('uuid', tenant('uuid'))->first()->foo);
+    }
 }

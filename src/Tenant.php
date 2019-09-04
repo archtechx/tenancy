@@ -90,7 +90,7 @@ class Tenant extends Model
 
     public function put(string $key, $value)
     {
-        if (\array_key_exists($key, $this->customColumns())) {
+        if (\in_array($key, $this->customColumns())) {
             $this->update([$key => $value]);
         } else {
             $obj = \json_decode($this->{$this->dataColumn()});
