@@ -9,6 +9,9 @@ use Stancl\Tenancy\Jobs\QueuedTenantDatabaseDeleter;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 
+/**
+ * @final Class is subject to breaking changes in minor and patch versions.
+ */
 final class DatabaseManager
 {
     public $originalDefaultConnection;

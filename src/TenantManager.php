@@ -11,6 +11,9 @@ use Stancl\Tenancy\Interfaces\UniqueIdentifierGenerator;
 use Stancl\Tenancy\Exceptions\CannotChangeUuidOrDomainException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 
+/**
+ * @final Class is subject to breaking changes in minor and patch versions.
+ */
 final class TenantManager
 {
     use BootstrapsTenancy;

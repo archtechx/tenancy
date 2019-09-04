@@ -6,7 +6,10 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Tenant extends Model
+/**
+ * @final Class is subject to breaking changes in minor and patch versions.
+ */
+final class TenantModel extends Model
 {
     protected $guarded = [];
     protected $primaryKey = 'uuid';

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\StorageDrivers;
 
-use Stancl\Tenancy\Tenant;
+use Stancl\Tenancy\TenantModel as Tenant;
 use Stancl\Tenancy\Interfaces\StorageDriver;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 
