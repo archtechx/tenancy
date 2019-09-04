@@ -35,7 +35,7 @@ final class Tenant // todo implement an interface to allow for current tenant de
     /**
      * Does this tenant exist in the storage.
      *
-     * @var boolean
+     * @var bool
      */
     private $persisted = false;
 
@@ -57,7 +57,7 @@ final class Tenant // todo implement an interface to allow for current tenant de
     public function persisted()
     {
         $this->persisted = true;
-        
+
         return $this;
     }
 

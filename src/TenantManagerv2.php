@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
-final class TenantManager
+final class TenantManagerv2
 {
     public function addTenant(Tenant $tenant): self
     {
