@@ -1,5 +1,22 @@
 # Release Notes for 1.x
 
+## [v1.8.0 (2019-08-17)](https://github.com/stancl/tenancy/compare/v1.7.0...v1.8.0)
+
+### Added
+
+- **Multi-tenant Jobs:** Jobs are now automatically multi-tenant. The [documentation page](https://stancl-tenancy.netlify.com/docs/jobs-queues/) covers the small tweaks you will have to make to your config to get multi-tenant jobs to work.
+- **Telescope Integration**: You can read more about this on the [documentation page](https://stancl-tenancy.netlify.com/docs/telescope/).
+- **Horizon Integration**: You can read more about this on the [documentation page](https://stancl-tenancy.netlify.com/docs/horizon/).
+- **Tenant Redirect** and **Custom ID schemes**: You can now easily redirect to tenant domains. You can also use a custom tenant ID scheme if you don't like UUIDs. You can read about these features [here](https://stancl-tenancy.netlify.com/docs/misc-tips/).
+
+### Fixed
+
+- #112 *PostgreSQL Database creation error.*
+
+### Code
+
+- Strict types declaration is now used in every file.
+
 ## [v1.7.0 (2019-08-17)](https://github.com/stancl/tenancy/compare/v1.6.1...v1.7.0)
 
 ### Added:
