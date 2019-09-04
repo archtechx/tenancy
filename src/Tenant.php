@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
+// todo laravel events instead of custom events?
+
 /**
  * @final Class is subject to breaking changes in minor and patch versions.
  */
-final class Tenant
+final class Tenant // todo implement an interface to allow for current tenant dependency injection
 {
     // todo specify id in data
 
