@@ -1,6 +1,5 @@
 preset: laravel
 enabled:
-- native_function_invocation
 - declare_strict_types
 disabled:
 - concat_without_spaces
