@@ -37,7 +37,7 @@ class Tenant implements ArrayAccess
     /**
      * Does this tenant exist in the storage.
      *
-     * @var boolean
+     * @var bool
      */
     private $persisted = false;
 
@@ -59,7 +59,7 @@ class Tenant implements ArrayAccess
     public function persisted()
     {
         $this->persisted = true;
-        
+
         return $this;
     }
 
