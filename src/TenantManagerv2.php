@@ -48,13 +48,13 @@ class TenantManagerv2
     {
         $this->bootstrapTenancy($tenant);
         $this->setTenant($tenant);
-        
+
         return $this;
     }
 
     public function bootstrapTenancy(Tenant $tenant): self
     {
-        foreach($this->tenancyBootstrappers() as $bootstrapper) {
+        foreach ($this->tenancyBootstrappers() as $bootstrapper) {
             $bootstrapper::start($tenant);
         }
 
