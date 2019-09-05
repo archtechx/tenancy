@@ -54,7 +54,7 @@ class Migrate extends MigrateCommand
 
             // See Illuminate\Database\Migrations\DatabaseMigrationRepository::getConnection.
             // Database connections are cached by Illuminate\Database\ConnectionResolver.
-            $connectionName = "tenant{$tenant['uuid']}";
+            $connectionName = "tenant{$tenant['uuid']}"; // todo use Illuminate DatabaseManager reconnect()?
             $this->input->setOption('database', $connectionName);
             $this->database->connectToTenant($tenant, $connectionName);
 

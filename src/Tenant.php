@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
+use ArrayAccess;
+
 // todo laravel events instead of custom events?
 
 /**
- * @final Class is subject to breaking changes in minor and patch versions.
+ * @internal Class is subject to breaking changes in minor and patch versions.
  */
-final class Tenant // todo implement an interface to allow for current tenant dependency injection
+class Tenant implements ArrayAccess
 {
-    // todo specify id in data
+    use Traits\HasArrayAccess;
 
     /**
      * Tenant data.
@@ -77,17 +79,24 @@ final class Tenant // todo implement an interface to allow for current tenant de
         return $this;
     }
 
-    public function save()
+    public function save(): self
     {
         if ($this->persisted) {
             $this->manager->addTenant($this);
         } else {
             $this->manager->updateTenant($this);
         }
+
+        return $this;
+    }
+
+    public function getDatabaseName()
+    {
+        return $this['_tenancy_database'] ?? $this->app['config']['tenancy.database.prefix'] . $this->uuid . $this->app['config']['tenancy.database.suffix'];
     }
 
     public function __get($name)
     {
-        return $this->data[$name];
+        return $this->data[$name] ?? null;
     }
 }
