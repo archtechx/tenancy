@@ -54,7 +54,7 @@ class TenantManagerv2
 
     public function bootstrapTenancy(Tenant $tenant): self
     {
-        foreach($this->tenancyBootstrappers() as $bootstrapper) {
+        foreach ($this->tenancyBootstrappers() as $bootstrapper) {
             $this->app[$bootstrapper]->start($tenant);
         }
 
@@ -63,7 +63,7 @@ class TenantManagerv2
 
     public function endTenancy(): self
     {
-        foreach($this->tenancyBootstrappers() as $bootstrapper) {
+        foreach ($this->tenancyBootstrappers() as $bootstrapper) {
             $this->app[$bootstrapper]->end();
         }
 

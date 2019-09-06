@@ -56,7 +56,7 @@ return [
         'pgsql' => 'Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager',
     ],
     'tenancy_bootstrappers' => [
-        ''
+        '',
     ],
     'queue_database_creation' => false,
     'queue_database_deletion' => false,

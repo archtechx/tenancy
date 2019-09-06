@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\TenancyBoostrappers;
 
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 
-class CacheTenancyBootstrapped implements TenancyBootstrapper
+class CacheTenancyBoostrapper implements TenancyBootstrapper
 {
     /** @var \Illuminate\Cache\CacheManager */
     protected $originalCache;
