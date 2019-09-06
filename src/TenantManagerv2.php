@@ -48,7 +48,7 @@ class TenantManagerv2
     {
         $this->bootstrapTenancy($tenant);
         $this->setTenant($tenant);
-        
+
         return $this;
     }
 

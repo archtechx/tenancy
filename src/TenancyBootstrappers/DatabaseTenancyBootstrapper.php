@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\TenancyBoostrappers;
 
+use Stancl\Tenancy\DatabaseManager;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
-use Stancl\Tenancy\DatabaseManager;
 
 class DatabaseTenancyBootstrapper implements TenancyBootstrapper
 {
