@@ -132,6 +132,8 @@ class TenancyServiceProvider extends ServiceProvider
             );
         });
 
+        // todo foreach bootstrappers, singleton
+
         $this->app->singleton(Migrate::class, function ($app) {
             return new Migrate($app['migrator'], $app[DatabaseManager::class]);
         });

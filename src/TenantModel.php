@@ -6,6 +6,8 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Database\Eloquent\Model;
 
+// todo move this to a database driver domain?
+
 /**
  * @final Class is subject to breaking changes in minor and patch versions.
  */

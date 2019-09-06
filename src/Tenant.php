@@ -6,12 +6,10 @@ namespace Stancl\Tenancy;
 
 use ArrayAccess;
 
-// todo laravel events instead of custom events?
-
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
  */
-class Tenant implements ArrayAccess
+class Tenant implements ArrayAccess, Contracts\Tenant
 {
     use Traits\HasArrayAccess;
 
@@ -56,7 +54,7 @@ class Tenant implements ArrayAccess
         return app(static::class)->withData($data)->persisted();
     }
 
-    public function persisted()
+    protected function persisted()
     {
         $this->persisted = true;
 

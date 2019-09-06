@@ -26,11 +26,10 @@ return [
         'suffix' => '',
     ],
     'redis' => [
-        'tenancy' => false, // to enable Redis tenancy, you must use phpredis
         'prefix_base' => 'tenant',
         'prefixed_connections' => [
-            'default',
-            'cache',
+            // 'default',
+            // 'cache',
         ],
     ],
     'cache' => [
@@ -51,9 +50,13 @@ return [
         ],
     ],
     'database_managers' => [
+        // Tenant database managers handle the creation & deletion of tenant databases.
         'sqlite' => 'Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager',
         'mysql' => 'Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager',
         'pgsql' => 'Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager',
+    ],
+    'tenancy_bootstrappers' => [
+        ''
     ],
     'queue_database_creation' => false,
     'queue_database_deletion' => false,
