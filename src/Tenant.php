@@ -6,6 +6,8 @@ namespace Stancl\Tenancy;
 
 use ArrayAccess;
 
+// todo tenant storage
+
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
  */
@@ -84,6 +86,8 @@ class Tenant implements ArrayAccess, Contracts\Tenant
         } else {
             $this->manager->updateTenant($this);
         }
+
+        $this->persisted = true;
 
         return $this;
     }

@@ -89,6 +89,7 @@ class TenancyServiceProvider extends ServiceProvider
         });
     }
 
+    // todo should this be a tenancybootstrapper?
     public function makeQueuesTenantAware()
     {
         $this->app['queue']->createPayloadUsing(function () {
