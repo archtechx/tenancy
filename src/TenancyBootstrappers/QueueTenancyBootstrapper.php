@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\TenancyBoostrappers;
 
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 
 class QueueTenancyBootstrapper implements TenancyBootstrapper
 {
-    /** @var boolean Has tenancy been started. */
+    /** @var bool Has tenancy been started. */
     protected $started = false; // todo var name?
 
     /** @var Application */
