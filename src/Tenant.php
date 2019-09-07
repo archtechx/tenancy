@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use ArrayAccess;
-use Stancl\Tenancy\Contracts\Tenant as CurrentTenant;
 
 // todo tenant storage
+// todo create tenant - create db?
 
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
  */
-class Tenant implements ArrayAccess, CurrentTenant
+class Tenant implements ArrayAccess
 {
     use Traits\HasArrayAccess;
 
@@ -85,7 +85,7 @@ class Tenant implements ArrayAccess, CurrentTenant
     public function save(): self
     {
         if ($this->persisted) {
-            $this->manager->addTenant($this);
+            $this->manager->createTenant($this);
         } else {
             $this->manager->updateTenant($this);
         }

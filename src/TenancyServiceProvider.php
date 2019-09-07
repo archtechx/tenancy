@@ -103,6 +103,9 @@ class TenancyServiceProvider extends ServiceProvider
                 $app, $app[StorageDriver::class], $app[DatabaseManager::class], $app[$app['config']['tenancy.unique_id_generator']] // todo
             );
         });
+        $this->app->bind(Tenant::class, function ($app) {
+            return $app[TenantManager::class]->currentTenant();
+        });
 
         // todo foreach bootstrappers, singleton
         foreach ($this->app['config']['tenancy.bootstrappers'] as $bootstrapper) {

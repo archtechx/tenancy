@@ -18,7 +18,7 @@ class TenantManagerv2
      *
      * @var Tenant
      */
-    public $tenant;
+    protected $tenant;
 
     /** @var Application */
     private $app;
@@ -36,9 +36,9 @@ class TenantManagerv2
         $this->storage = $storage;
     }
 
-    public function addTenant(Tenant $tenant): self
+    public function createTenant(Tenant $tenant): self
     {
-        $this->storage->addTenant($tenant);
+        $this->storage->createTenant($tenant);
 
         return $this;
     }
@@ -48,6 +48,34 @@ class TenantManagerv2
         $this->storage->updateTenant($tenant);
 
         return $this;
+    }
+
+    // todo @throws
+    public function init(string $domain): self
+    {
+        $this->initializeTenancy($this->findByDomain($domain));
+
+        return $this;
+    }
+
+    // todo @throws
+    public function initById(string $id): self
+    {
+        $this->initializeTenancy($this->find($id));
+
+        return $this;
+    }
+
+    // todo @throws
+    public function find(string $id): Tenant
+    {
+        return $this->storage->findById($id);
+    }
+
+    // todo @throws
+    public function findByDomain(string $domain): Tenant
+    {
+        return $this->storage->findByDomain($domain);
     }
 
     public function initializeTenancy(Tenant $tenant): self
@@ -84,9 +112,18 @@ class TenantManagerv2
         return $this;
     }
 
-    public function setTenant(Tenant $tenant): self
+    public function getTenant(): Tenant
     {
-        $this->app->instance(Contracts\Tenant::class, $tenant);
+        if (! $this->tenant) {
+            throw new NoTenantIdentifiedException;
+        }
+
+        return $this->tenant;
+    }
+
+    protected function setTenant(Tenant $tenant): self
+    {
+        $this->tenant = $tenant;
 
         return $this;
     }
