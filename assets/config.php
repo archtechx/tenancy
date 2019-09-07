@@ -56,7 +56,10 @@ return [
         'pgsql' => 'Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager',
     ],
     'tenancy_bootstrappers' => [
-        '',
+        'database' => 'Stancl\Tenancy\TenancyBootstrappers\DatabaseTenancyBootstrapper',
+        'cache' => 'Stancl\Tenancy\TenancyBootstrappers\CacheTenancyBootstrapper',
+        'filesystem' => 'Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper',
+        'redis' => 'Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper',
     ],
     'queue_database_creation' => false,
     'queue_database_deletion' => false,

@@ -6,6 +6,9 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Foundation\Application;
 
+// todo rethink integration events
+// todo events
+
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
  */
@@ -54,7 +57,9 @@ class TenantManagerv2
 
     public function bootstrapTenancy(Tenant $tenant): self
     {
-        foreach ($this->tenancyBootstrappers() as $bootstrapper) {
+        $prevented = $this->event('bootstrapping');
+
+        foreach ($this->tenancyBootstrappers($prevented) as $bootstrapper) {
             $this->app[$bootstrapper]->start($tenant);
         }
 
@@ -63,7 +68,9 @@ class TenantManagerv2
 
     public function endTenancy(): self
     {
-        foreach ($this->tenancyBootstrappers() as $bootstrapper) {
+        $prevented = $this->event('ending');
+
+        foreach ($this->tenancyBootstrappers($prevented) as $bootstrapper) {
             $this->app[$bootstrapper]->end();
         }
 
@@ -72,7 +79,7 @@ class TenantManagerv2
 
     public function setTenant(Tenant $tenant): self
     {
-        $this->app->instance(Tenant::class, $tenant);
+        $this->app->instance(Contracts\Tenant::class, $tenant);
 
         return $this;
     }
@@ -80,10 +87,52 @@ class TenantManagerv2
     /**
      * Return a list of TenancyBoostrappers.
      *
+     * @param string[] $except
      * @return Contracts\TenancyBootstrapper[]
      */
-    public function tenancyBootstrappers(): array
+    public function tenancyBootstrappers($except = []): array
     {
-        return config('tenancy.bootstrappers');
+        return array_key_diff(config('tenancy.tenancy_bootstrappers'), $except);
+    }
+
+    // todo event "listeners" instead of "callbacks"
+
+    /**
+     * TODO
+     *
+     * @param string $name
+     * @param callable $callback
+     * @return self|string[]
+     */
+    public function event(string $name, callable $callback = null)
+    {
+        if ($callback) {
+            return $this->addEventCallback($name, $callback);
+        }
+
+        return $this->executeEventCallbacks($name);
+    }
+
+    public function addEventCallback(string $name, callable $callback): self
+    {
+        isset($this->eventCallbacks[$name]) || $this->eventCallbacks[$name] = [];
+        $this->eventCallbacks[$name][] = $callback;
+
+        return $this;
+    }
+
+    /**
+     * TODO
+     *
+     * @param string $name
+     * @return string[]
+     */
+    public function executeEventCallbacks(string $name): array
+    {
+        return array_reduce($this->eventCalbacks[$name] ?? [], function ($prevented, $callback) {
+            $prevented = array_merge($prevented, $callback($this) ?? []);
+            
+            return $prevented;
+        }, []);
     }
 }

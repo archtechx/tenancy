@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use ArrayAccess;
+use Stancl\Tenancy\Contracts\Tenant as CurrentTenant;
 
 // todo tenant storage
 
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
  */
-class Tenant implements ArrayAccess, Contracts\Tenant
+class Tenant implements ArrayAccess, CurrentTenant
 {
     use Traits\HasArrayAccess;
 
@@ -48,7 +49,9 @@ class Tenant implements ArrayAccess, Contracts\Tenant
 
     public static function new(): self
     {
-        return app(static::class);
+        return app(static::class)->withData([
+            'id' => static::generateId(),
+        ]);
     }
 
     public static function fromStorage(array $data): self
