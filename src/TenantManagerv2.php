@@ -103,7 +103,7 @@ class TenantManagerv2
     }
 
     /**
-     * Add event callback.
+     * Add an event callback.
      *
      * @param string $name
      * @param callable $callback
@@ -111,7 +111,7 @@ class TenantManagerv2
      */
     public function eventCallback(string $name, callable $callback): self
     {
-        isset($this->eventCallbacks[$name]) || $this->eventCallbacks[$name] = [];
+        $this->eventCallbacks[$name] = $this->eventCallbacks[$name] ?? [];
         $this->eventCallbacks[$name][] = $callback;
 
         return $this;
