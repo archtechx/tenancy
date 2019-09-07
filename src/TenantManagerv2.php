@@ -127,7 +127,7 @@ class TenantManagerv2
     {
         return array_reduce($this->eventCalbacks[$name] ?? [], function ($prevented, $callback) {
             $prevented = array_merge($prevented, $callback($this) ?? []);
-            
+
             return $prevented;
         }, []);
     }
