@@ -16,7 +16,6 @@ use Stancl\Tenancy\Commands\Rollback;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Commands\TenantList;
 use Stancl\Tenancy\Interfaces\StorageDriver;
-use Stancl\Tenancy\Interfaces\ServerConfigManager;
 
 class TenancyServiceProvider extends ServiceProvider
 {
