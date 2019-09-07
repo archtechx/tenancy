@@ -107,9 +107,8 @@ class TenancyServiceProvider extends ServiceProvider
             return $app[TenantManager::class]->currentTenant();
         });
 
-        // todo foreach bootstrappers, singleton
         foreach ($this->app['config']['tenancy.bootstrappers'] as $bootstrapper) {
-            $this->app->singleton($bootstrapper); // todo key?
+            $this->app->singleton($bootstrapper);
         }
 
         $this->app->singleton(Migrate::class, function ($app) {
