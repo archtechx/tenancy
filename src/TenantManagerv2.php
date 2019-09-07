@@ -7,7 +7,6 @@ namespace Stancl\Tenancy;
 use Illuminate\Foundation\Application;
 
 // todo rethink integration events
-// todo events
 
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
@@ -26,6 +25,10 @@ class TenantManagerv2
 
     /** @var Contracts\StorageDriver */
     private $storage;
+
+    // todo event "listeners" instead of "callbacks"
+    /** @var callable[][] */
+    public $callbacks = [];
 
     public function __construct(Application $app, Contracts\StorageDriver $storage)
     {
@@ -63,6 +66,8 @@ class TenantManagerv2
             $this->app[$bootstrapper]->start($tenant);
         }
 
+        $this->event('bootstrapped');
+
         return $this;
     }
 
@@ -73,6 +78,8 @@ class TenantManagerv2
         foreach ($this->tenancyBootstrappers($prevented) as $bootstrapper) {
             $this->app[$bootstrapper]->end();
         }
+
+        $this->event('ended');
 
         return $this;
     }
@@ -92,28 +99,17 @@ class TenantManagerv2
      */
     public function tenancyBootstrappers($except = []): array
     {
-        return array_key_diff(config('tenancy.tenancy_bootstrappers'), $except);
+        return array_key_diff(config('tenancy.bootstrappers'), $except);
     }
 
-    // todo event "listeners" instead of "callbacks"
-
     /**
-     * TODO
+     * Add event callback.
      *
      * @param string $name
      * @param callable $callback
-     * @return self|string[]
+     * @return self
      */
-    public function event(string $name, callable $callback = null)
-    {
-        if ($callback) {
-            return $this->addEventCallback($name, $callback);
-        }
-
-        return $this->executeEventCallbacks($name);
-    }
-
-    public function addEventCallback(string $name, callable $callback): self
+    public function eventCallback(string $name, callable $callback): self
     {
         isset($this->eventCallbacks[$name]) || $this->eventCallbacks[$name] = [];
         $this->eventCallbacks[$name][] = $callback;
@@ -122,12 +118,12 @@ class TenantManagerv2
     }
 
     /**
-     * TODO
+     * Execute event callbacks.
      *
      * @param string $name
      * @return string[]
      */
-    public function executeEventCallbacks(string $name): array
+    protected function event(string $name): array
     {
         return array_reduce($this->eventCalbacks[$name] ?? [], function ($prevented, $callback) {
             $prevented = array_merge($prevented, $callback($this) ?? []);

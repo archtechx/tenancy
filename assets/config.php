@@ -55,7 +55,7 @@ return [
         'mysql' => 'Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager',
         'pgsql' => 'Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager',
     ],
-    'tenancy_bootstrappers' => [
+    'bootstrappers' => [
         'database' => 'Stancl\Tenancy\TenancyBootstrappers\DatabaseTenancyBootstrapper',
         'cache' => 'Stancl\Tenancy\TenancyBootstrappers\CacheTenancyBootstrapper',
         'filesystem' => 'Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper',

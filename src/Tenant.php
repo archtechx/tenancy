@@ -50,7 +50,7 @@ class Tenant implements ArrayAccess, CurrentTenant
     public static function new(): self
     {
         return app(static::class)->withData([
-            'id' => static::generateId(),
+            'id' => static::generateId(), // todo
         ]);
     }
 
