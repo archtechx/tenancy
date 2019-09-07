@@ -98,7 +98,7 @@ class TenantManagerv2
     // todo event "listeners" instead of "callbacks"
 
     /**
-     * TODO
+     * TODO.
      *
      * @param string $name
      * @param callable $callback
@@ -122,7 +122,7 @@ class TenantManagerv2
     }
 
     /**
-     * TODO
+     * TODO.
      *
      * @param string $name
      * @return string[]
@@ -131,7 +131,7 @@ class TenantManagerv2
     {
         return array_reduce($this->eventCalbacks[$name] ?? [], function ($prevented, $callback) {
             $prevented = array_merge($prevented, $callback($this) ?? []);
-            
+
             return $prevented;
         }, []);
     }
