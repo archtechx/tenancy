@@ -61,6 +61,13 @@ return [
         'filesystem' => 'Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper',
         'redis' => 'Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper',
     ],
+    'features' => [
+        // Features are classes that provide additional functionality
+        // not needed for tenancy to be bootstrapped. They are run
+        // regardless of whether tenancy has been initialized.
+        'Stancl\Tenancy\Features\TelescopeTags',
+        'Stancl\Tenancy\Features\TenantRedirect',
+    ],
     'queue_database_creation' => false,
     'queue_database_deletion' => false,
     'unique_id_generator' => 'Stancl\Tenancy\UUIDGenerator',
