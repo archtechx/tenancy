@@ -7,7 +7,6 @@ namespace Stancl\Tenancy;
 use ArrayAccess;
 
 // todo tenant storage
-// todo create tenant - create db?
 
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.

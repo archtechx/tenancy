@@ -10,6 +10,5 @@ use Stancl\Tenancy\TenantManager;
 // todo should this be FeatureProvider?
 interface Feature
 {
-    // todo is the tenantManager argument necessary?
     public function bootstrap(TenantManager $tenantManager): void;
 }

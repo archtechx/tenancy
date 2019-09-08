@@ -6,24 +6,15 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Database\Eloquent\Model;
 
-// todo move this to a database driver domain?
-
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
  */
 class TenantModel extends Model
 {
     protected $guarded = [];
-    protected $primaryKey = 'uuid';
+    protected $primaryKey = 'id';
     public $incrementing = false;
     public $timestamps = false;
-
-    /**
-     * Decoded data from the data column.
-     *
-     * @var object
-     */
-    private $dataObject;
 
     public static function dataColumn()
     {
@@ -87,10 +78,13 @@ class TenantModel extends Model
         return $this->attributes[$key] ?? $this->getFromData($key) ?? null;
     }
 
-    /** @todo In v2, this should return an associative array. */
     public function getMany(array $keys): array
     {
-        return \array_map([$this, 'get'], $keys);
+        return array_reduce($keys, function ($result, $key) {
+            $result[$key] = $this->get[$key];
+
+            return $result;
+        }, []);
     }
 
     public function put(string $key, $value)

@@ -8,7 +8,6 @@ use Stancl\Tenancy\Tenant;
 
 interface TenancyBootstrapper
 {
-    public function start(Tenant $tenant); // todo better name?
-
-    public function end(Tenant $tenant); // todo arg?
+    public function start(Tenant $tenant);
+    public function end();
 }
