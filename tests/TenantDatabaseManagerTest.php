@@ -12,6 +12,8 @@ use Stancl\Tenancy\Jobs\QueuedTenantDatabaseDeleter;
 
 class TenantDatabaseManagerTest extends TestCase
 {
+    // todo use data providers and TenantDatabaseManager::databaseExists()
+
     /** @test */
     public function sqlite_database_can_be_created_and_deleted()
     {

@@ -21,4 +21,12 @@ interface TenantDatabaseManager
      * @return bool
      */
     public function deleteDatabase(string $name): bool;
+
+    /**
+     * Does a database exist.
+     *
+     * @param string $name
+     * @return boolean
+     */
+    public function databaseExists(string $name): bool;
 }

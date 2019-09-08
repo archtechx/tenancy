@@ -8,6 +8,7 @@ use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
+use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
 
 class DatabaseManagerv2
 {
@@ -95,7 +96,11 @@ class DatabaseManagerv2
      */
     public function canCreate(Tenant $tenant)
     {
-        // todo
+        if ($this->getTenantDatabaseManager($tenant)->databaseExists($database = $tenant->getDatabaseName())) {
+            return new TenantDatabaseAlreadyExistsException($database);
+        }
+
+        return true;
     }
 
     public function createDatabase(Tenant $tenant)
@@ -129,7 +134,7 @@ class DatabaseManagerv2
 
         $databaseManagers = $this->app['config']['tenancy.database_managers'];
 
-        if (! \array_key_exists($driver, $databaseManagers)) {
+        if (! array_key_exists($driver, $databaseManagers)) {
             throw new DatabaseManagerNotRegisteredException($driver);
         }
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\TenantDatabaseManagers;
 
 use Illuminate\Support\Facades\DB;
-use Stancl\Tenancy\Interfaces\TenantDatabaseManager;
+use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 
 class MySQLDatabaseManager implements TenantDatabaseManager
 {
@@ -17,5 +17,10 @@ class MySQLDatabaseManager implements TenantDatabaseManager
     public function deleteDatabase(string $name): bool
     {
         return DB::statement("DROP DATABASE `$name`");
+    }
+
+    public function databaseExists(string $name): bool
+    {
+        return (bool) DB::select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$name'");
     }
 }
