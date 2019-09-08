@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 use Stancl\Tenancy\TenantManager;
-use Stancl\Tenancy\Contracts\Feature;
+use Stancl\Tenancy\Contracts\FeatureProvider;
 
-class TenantRedirect implements Feature
+class TenantRedirect implements FeatureProvider
 {
     public function bootstrap(TenantManager $tenantManager): void
     {
