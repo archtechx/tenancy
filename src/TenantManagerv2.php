@@ -66,7 +66,7 @@ class TenantManagerv2
     }
 
     /**
-     * Identify a tenant using id.
+     * Find a tenant using an id.
      *
      * @param string $id
      * @return Tenant
@@ -78,7 +78,7 @@ class TenantManagerv2
     }
 
     /**
-     * Identify a tenant using id.
+     * Find a tenant using a domain name.
      *
      * @param string $id
      * @return Tenant
