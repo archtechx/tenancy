@@ -131,7 +131,7 @@ class TenantManagerv2
     protected function bootstrapFeatures(): self
     {
         foreach ($this->app['config']['tenancy.features'] as $feature) {
-            $this->app[$feature]->bootstrap();
+            $this->app[$feature]->bootstrap($this);
         }
 
         return $this;
