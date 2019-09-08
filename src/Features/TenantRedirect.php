@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Stancl\Tenancy\TenantManager;
 use Stancl\Tenancy\Contracts\Feature;
 

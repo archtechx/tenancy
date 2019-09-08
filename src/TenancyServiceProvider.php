@@ -9,7 +9,6 @@ use Stancl\Tenancy\Commands\Seed;
 use Illuminate\Cache\CacheManager;
 use Stancl\Tenancy\Commands\Install;
 use Stancl\Tenancy\Commands\Migrate;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Commands\Rollback;
 use Illuminate\Support\ServiceProvider;
@@ -50,6 +49,7 @@ class TenancyServiceProvider extends ServiceProvider
 
         $this->app->register(TenantRouteServiceProvider::class);
     }
+
     /**
      * Register services.
      *

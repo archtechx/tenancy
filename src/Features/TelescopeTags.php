@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Features;
 
 use Laravel\Telescope\Telescope;
@@ -31,7 +33,7 @@ class TelescopeTags implements Feature
 
     public function getTags(IncomingEntry $entry): array
     {
-        return array_reduce($this->callbacks, function ($tags, $listener) use($entry) {
+        return array_reduce($this->callbacks, function ($tags, $listener) use ($entry) {
             return array_merge($tags, $listener($entry));
         }, []);
     }
