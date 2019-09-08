@@ -26,7 +26,7 @@ interface TenantDatabaseManager
      * Does a database exist.
      *
      * @param string $name
-     * @return boolean
+     * @return bool
      */
     public function databaseExists(string $name): bool;
 }

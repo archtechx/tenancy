@@ -7,8 +7,8 @@ namespace Stancl\Tenancy;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
-use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
+use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 
 class DatabaseManagerv2
 {
