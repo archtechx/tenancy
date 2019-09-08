@@ -2,14 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy;
+namespace Stancl\Tenancy\Facades;
 
+use Stancl\Tenancy\TenantManager;
 use Illuminate\Support\Facades\Facade;
 
-class GlobalCacheFacade extends Facade
+class TenancyFacade extends Facade
 {
     protected static function getFacadeAccessor()
     {
-        return 'globalCache';
+        return TenantManager::class;
     }
 }
