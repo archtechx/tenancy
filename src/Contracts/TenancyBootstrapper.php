@@ -9,5 +9,6 @@ use Stancl\Tenancy\Tenant;
 interface TenancyBootstrapper
 {
     public function start(Tenant $tenant);
+
     public function end();
 }
