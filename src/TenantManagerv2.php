@@ -28,6 +28,9 @@ class TenantManagerv2
     /** @var Contracts\StorageDriver */
     protected $storage;
 
+    /** @var Artisan */
+    protected $artisan;
+
     // todo event "listeners" instead of "callbacks"
     /** @var callable[][] */
     protected $callbacks = [];
@@ -36,6 +39,7 @@ class TenantManagerv2
     {
         $this->app = $app;
         $this->storage = $storage;
+        $this->artisan = $artisan;
 
         $this->bootstrapFeatures();
     }
