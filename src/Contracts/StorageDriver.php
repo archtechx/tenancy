@@ -29,4 +29,12 @@ interface StorageDriver
      * @return Tenant
      */
     public function findByDomain(string $domain): Tenant;
+
+    /**
+     * Check if a tenant can be created.
+     *
+     * @param Tenant $tenant
+     * @return true|TenantCannotBeCreatedException
+     */
+    public function canCreate(Tenant $tenant);
 }

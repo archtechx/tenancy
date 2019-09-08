@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Illuminate\Foundation\Application;
+use Illuminate\Contracts\Console\Kernel as Artisan;
+use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 use Stancl\Tenancy\Exceptions\NoTenantIdentifiedException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 
@@ -30,7 +32,7 @@ class TenantManagerv2
     /** @var callable[][] */
     protected $callbacks = [];
 
-    public function __construct(Application $app, Contracts\StorageDriver $storage)
+    public function __construct(Application $app, Contracts\StorageDriver $storage, Artisan $artisan)
     {
         $this->app = $app;
         $this->storage = $storage;
@@ -40,12 +42,36 @@ class TenantManagerv2
 
     public function createTenant(Tenant $tenant): self
     {
-        // todo make this atomic
+        $this->ensureTenantCanBeCreated($tenant);
+
         $this->storage->createTenant($tenant);
         $this->database->create($tenant);
-        // todo create database, optionally migrate
+        
+        if ($this->migrateAfterCreation()) {
+            $this->artisan->call('tenants:migrate', [
+                '--tenants' => [$tenant['id']],
+            ]);
+        }
 
         return $this;
+    }
+
+    /**
+     * Ensure that a tenant can be created.
+     *
+     * @param Tenant $tenant
+     * @return void
+     * @throws TenantCannotBeCreatedException
+     */
+    public function ensureTenantCanBeCreated(Tenant $tenant): void
+    {
+        if (($e = $this->storage->canCreateTenant($tenant)) instanceof TenantCannotBeCreatedException) {
+            throw new $e;
+        }
+
+        if (($e = $this->database->canCreateTenant($tenant)) instanceof TenantCannotBeCreatedException) {
+            throw new $e;
+        }
     }
 
     public function updateTenant(Tenant $tenant): self
@@ -167,6 +193,11 @@ class TenantManagerv2
     public function tenancyBootstrappers($except = []): array
     {
         return array_key_diff($this->app['config']['tenancy.bootstrappers'], $except);
+    }
+
+    public function migrateAfterCreation(): bool
+    {
+        return $this->app['config']['tenancy.migrate_after_creation'] ?? false;
     }
 
     /**

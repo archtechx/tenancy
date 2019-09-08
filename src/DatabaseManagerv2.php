@@ -57,4 +57,15 @@ class DatabaseManagerv2
         $this->database->reconnect($connection);
         $this->database->setDefaultConnection($connection);
     }
+
+    /**
+     * Check if a tenant can be created.
+     *
+     * @param Tenant $tenant
+     * @return true|TenantCannotBeCreatedException
+     */
+    public function canCreate(Tenant $tenant)
+    {
+        // todo
+    }
 }
