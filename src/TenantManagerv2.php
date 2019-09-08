@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Illuminate\Foundation\Application;
-use Illuminate\Contracts\Console\Kernel as Artisan;
+use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Stancl\Tenancy\Exceptions\NoTenantIdentifiedException;
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
@@ -25,21 +25,25 @@ class TenantManagerv2
     /** @var Application */
     protected $app;
 
+    /** @var ConsoleKernel */
+    protected $artisan;
+
     /** @var Contracts\StorageDriver */
     protected $storage;
 
-    /** @var Artisan */
-    protected $artisan;
+    /** @var DatabaseManager */
+    protected $database;
 
     // todo event "listeners" instead of "callbacks"
     /** @var callable[][] */
     protected $callbacks = [];
 
-    public function __construct(Application $app, Contracts\StorageDriver $storage, Artisan $artisan)
+    public function __construct(Application $app, ConsoleKernel $artisan, Contracts\StorageDriver $storage, DatabaseManager $database)
     {
         $this->app = $app;
         $this->storage = $storage;
         $this->artisan = $artisan;
+        $this->database = $database;
 
         $this->bootstrapFeatures();
     }
@@ -49,12 +53,23 @@ class TenantManagerv2
         $this->ensureTenantCanBeCreated($tenant);
 
         $this->storage->createTenant($tenant);
-        $this->database->create($tenant);
+        $this->database->createDatabase($tenant);
 
-        if ($this->migrateAfterCreation()) {
+        if ($this->shouldMigrateAfterCreation()) {
             $this->artisan->call('tenants:migrate', [
                 '--tenants' => [$tenant['id']],
             ]);
+        }
+
+        return $this;
+    }
+
+    public function deleteTenant(Tenant $tenant): self
+    {
+        $this->storage->deleteTenant($tenant);
+
+        if ($this->shouldDeleteDatabase()) {
+            $this->database->deleteDatabase($tenant);
         }
 
         return $this;
@@ -199,7 +214,7 @@ class TenantManagerv2
         return array_key_diff($this->app['config']['tenancy.bootstrappers'], $except);
     }
 
-    public function migrateAfterCreation(): bool
+    public function shouldMigrateAfterCreation(): bool
     {
         return $this->app['config']['tenancy.migrate_after_creation'] ?? false;
     }

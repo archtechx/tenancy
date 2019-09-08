@@ -8,7 +8,7 @@ abstract class TenantCannotBeCreatedException extends \Exception
 {
     abstract public function reason(): string;
 
-    private $message;
+    protected $message;
 
     public function __construct()
     {

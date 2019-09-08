@@ -24,6 +24,12 @@ class DatabaseManagerv2
         $this->originalDefaultConnectionName = $app['config']['database.default'];
     }
 
+    /**
+     * Connect to a tenant's database.
+     *
+     * @param Tenant $tenant
+     * @return void
+     */
     public function connect(Tenant $tenant)
     {
         $connection = 'tenant'; // todo tenant-specific connections
@@ -31,24 +37,45 @@ class DatabaseManagerv2
         $this->switchConnection($connection);
     }
 
+    /**
+     * Reconnect to the default non-tenant connection.
+     *
+     * @return void
+     */
     public function reconnect()
     {
         $this->switchConnection($this->originalDefaultConnectionName);
     }
 
+    /**
+     * Create the tenant database connection.
+     *
+     * @param string $databaseName
+     * @param string $connectionName
+     * @return void
+     */
     public function createTenantConnection(string $databaseName, string $connectionName = null)
     {
         $connectionName = $connectionName ?? 'tenant'; // todo
 
         // Create the database connection.
-        $based_on = config('tenancy.database.based_on') ?? $this->originalDefaultConnectionName;
-        config()->set([
-            "database.connections.$connectionName" => config('database.connections.' . $based_on),
-        ]);
+        $based_on = $this->app['config']['tenancy.database.based_on'] ?? $this->originalDefaultConnectionName;
+        $this->app['config']["database.connections.$connectionName"] = $this->app['config']['database.connections.' . $based_on];
 
-        // Change DB name
+        // Change database name.
         $databaseName = $this->getDriver($connectionName) === 'sqlite' ? database_path($databaseName) : $databaseName;
-        config()->set(["database.connections.$connectionName.database" => $databaseName]);
+        $this->app['config']["database.connections.$connectionName.database"] = $databaseName;
+    }
+
+    /**
+     * Get the driver of a database connection.
+     *
+     * @param string $connectionName
+     * @return string
+     */
+    protected function getDriver(string $connectionName): string
+    {
+        return $this->app['config']["database.connections.$connectionName.driver"];
     }
 
     public function switchConnection($connection)

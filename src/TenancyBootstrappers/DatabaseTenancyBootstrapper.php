@@ -24,7 +24,7 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
 
     public function start(Tenant $tenant)
     {
-        $this->database->connect($tenant->getDatabaseName());
+        $this->database->connect($tenant);
     }
 
     public function end()

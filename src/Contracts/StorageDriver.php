@@ -9,9 +9,11 @@ use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 
 interface StorageDriver
 {
-    public function createTenant(Tenant $tenant): bool;
+    public function createTenant(Tenant $tenant): void;
 
-    public function updateTenant(Tenant $tenant): bool;
+    public function updateTenant(Tenant $tenant): void;
+
+    public function deleteTenant(Tenant $tenant): void;
 
     /**
      * Find a tenant using an id.
