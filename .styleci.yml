@@ -4,4 +4,3 @@ enabled:
 disabled:
 - concat_without_spaces
 - ternary_operator_spaces
-- native_function_invocation
