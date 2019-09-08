@@ -6,8 +6,6 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Foundation\Application;
 
-// todo rethink integration events
-
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
  */
@@ -34,6 +32,8 @@ class TenantManagerv2
     {
         $this->app = $app;
         $this->storage = $storage;
+
+        $this->bootstrapFeatures();
     }
 
     public function createTenant(Tenant $tenant): self
@@ -128,6 +128,15 @@ class TenantManagerv2
         return $this;
     }
 
+    protected function bootstrapFeatures(): self
+    {
+        foreach ($this->app['config']['tenancy.features'] as $feature) {
+            $this->app[$feature]->bootstrap();
+        }
+
+        return $this;
+    }
+
     /**
      * Return a list of TenancyBoostrappers.
      *
@@ -136,7 +145,7 @@ class TenantManagerv2
      */
     public function tenancyBootstrappers($except = []): array
     {
-        return array_key_diff(config('tenancy.bootstrappers'), $except);
+        return array_key_diff($this->app['config']['tenancy.bootstrappers'], $except);
     }
 
     /**

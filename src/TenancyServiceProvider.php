@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
-use Laravel\Telescope\Telescope;
 use Stancl\Tenancy\Commands\Run;
 use Stancl\Tenancy\Commands\Seed;
 use Illuminate\Cache\CacheManager;
@@ -50,43 +49,7 @@ class TenancyServiceProvider extends ServiceProvider
         ]);
 
         $this->app->register(TenantRouteServiceProvider::class);
-
-        if (\class_exists(Telescope::class)) {
-            $this->setTelescopeTags();
-        }
-
-        $this->registerTenantRedirectMacro();
     }
-
-    public function setTelescopeTags()
-    {
-        Telescope::tag(function (\Laravel\Telescope\IncomingEntry $entry) {
-            $tags = $this->app->make(TenantManager::class)->integration('telescope', $entry);
-
-            if (\in_array('tenancy', optional(request()->route())->middleware() ?? [])) {
-                $tags = \array_merge($tags, [
-                    'tenant:' . tenant('uuid'),
-                    'domain:' . tenant('domain'),
-                ]);
-            }
-
-            return $tags;
-        });
-    }
-
-    public function registerTenantRedirectMacro()
-    {
-        RedirectResponse::macro('tenant', function (string $domain) {
-            // replace first occurance of hostname fragment with $domain
-            $url = $this->getTargetUrl();
-            $hostname = \parse_url($url, PHP_URL_HOST);
-            $position = \strpos($url, $hostname);
-            $this->setTargetUrl(\substr_replace($url, $domain, $position, \strlen($hostname)));
-
-            return $this;
-        });
-    }
-
     /**
      * Register services.
      *
