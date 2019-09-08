@@ -39,7 +39,9 @@ class TenantManagerv2
 
     public function createTenant(Tenant $tenant): self
     {
+        // todo make this atomic
         $this->storage->createTenant($tenant);
+        // todo create database, optionally migrate
 
         return $this;
     }

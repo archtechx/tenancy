@@ -9,9 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 // todo move this to a database driver domain?
 
 /**
- * @final Class is subject to breaking changes in minor and patch versions.
+ * @internal Class is subject to breaking changes in minor and patch versions.
  */
-final class TenantModel extends Model
+class TenantModel extends Model
 {
     protected $guarded = [];
     protected $primaryKey = 'uuid';
