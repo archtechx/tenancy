@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Illuminate\Foundation\Application;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
@@ -19,14 +20,14 @@ class TenantManagerv2
     protected $tenant;
 
     /** @var Application */
-    private $app;
+    protected $app;
 
     /** @var Contracts\StorageDriver */
-    private $storage;
+    protected $storage;
 
     // todo event "listeners" instead of "callbacks"
     /** @var callable[][] */
-    public $callbacks = [];
+    protected $callbacks = [];
 
     public function __construct(Application $app, Contracts\StorageDriver $storage)
     {
@@ -50,7 +51,6 @@ class TenantManagerv2
         return $this;
     }
 
-    // todo @throws
     public function init(string $domain): self
     {
         $this->initializeTenancy($this->findByDomain($domain));
@@ -58,7 +58,6 @@ class TenantManagerv2
         return $this;
     }
 
-    // todo @throws
     public function initById(string $id): self
     {
         $this->initializeTenancy($this->find($id));
@@ -66,13 +65,25 @@ class TenantManagerv2
         return $this;
     }
 
-    // todo @throws
+    /**
+     * Identify a tenant using id.
+     *
+     * @param string $id
+     * @return Tenant
+     * @throws TenantCouldNotBeIdentifiedException
+     */
     public function find(string $id): Tenant
     {
         return $this->storage->findById($id);
     }
 
-    // todo @throws
+    /**
+     * Identify a tenant using id.
+     *
+     * @param string $id
+     * @return Tenant
+     * @throws TenantCouldNotBeIdentifiedException
+     */
     public function findByDomain(string $domain): Tenant
     {
         return $this->storage->findByDomain($domain);
