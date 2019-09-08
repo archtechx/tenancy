@@ -113,7 +113,7 @@ class DatabaseManagerv2
         if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
             QueuedTenantDatabaseCreator::dispatch($this->app[$manager], $database, 'create');
         } else {
-            return app($manager)->createDatabase($database);
+            return $this->app[$manager]->createDatabase($database);
         }
     }
 
@@ -134,7 +134,7 @@ class DatabaseManagerv2
         if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
             QueuedTenantDatabaseCreator::dispatch($this->app[$manager], $database, 'delete');
         } else {
-            return app($manager)->deleteDatabase($database);
+            return $this->app[$manager]->deleteDatabase($database);
         }
     }
 }
