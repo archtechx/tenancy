@@ -37,7 +37,7 @@ class TenantModel extends Model
 
     public function getConnectionName()
     {
-        return config('tenancy.storage.db.connection');
+        return config('tenancy.storage.db.connection') ?? app(DatabaseManager::class)->originalDefaultConnectionName;
     }
 
     public static function getAllTenants(array $uuids)

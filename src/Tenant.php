@@ -97,7 +97,7 @@ class Tenant implements ArrayAccess
 
     public function getDatabaseName()
     {
-        return $this['_tenancy_database'] ?? $this->app['config']['tenancy.database.prefix'] . $this->uuid . $this->app['config']['tenancy.database.suffix'];
+        return $this['_tenancy_db_name'] ?? $this->app['config']['tenancy.database.prefix'] . $this->uuid . $this->app['config']['tenancy.database.suffix'];
     }
 
     public function __get($name)

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Illuminate\Foundation\Application;
+use Stancl\Tenancy\Exceptions\NoTenantIdentifiedException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 
 /**
@@ -41,6 +42,7 @@ class TenantManagerv2
     {
         // todo make this atomic
         $this->storage->createTenant($tenant);
+        $this->database->create($tenant);
         // todo create database, optionally migrate
 
         return $this;
@@ -125,6 +127,12 @@ class TenantManagerv2
         return $this;
     }
 
+    /**
+     * Get the current tenant
+     *
+     * @return Tenant
+     * @throws NoTenantIdentifiedException
+     */
     public function getTenant(): Tenant
     {
         if (! $this->tenant) {
