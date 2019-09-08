@@ -7,6 +7,7 @@ namespace Stancl\Tenancy;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
+use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 
 class DatabaseManagerv2
 {
@@ -100,16 +101,8 @@ class DatabaseManagerv2
     public function createDatabase(Tenant $tenant)
     {
         $database = $tenant->getDatabaseName();
-        $connection = $tenant->getConnectionName(); // todo
-        $driver = $this->getDriver($connection);
+        $manager = $this->getTenantDatabaseManager($tenant);
 
-        $databaseManagers = $this->app['config']['tenancy.database_managers'];
-
-        if (! \array_key_exists($driver, $databaseManagers)) {
-            throw new DatabaseManagerNotRegisteredException('Database could not be created', $driver);
-        }
-
-        $manager = $databaseManagers[$driver];
         if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
             QueuedTenantDatabaseCreator::dispatch($this->app[$manager], $database, 'create');
         } else {
@@ -117,24 +110,29 @@ class DatabaseManagerv2
         }
     }
 
-    // todo this is the same as createDatabase. find a way to remove duplicite code
     public function deleteDatabase(Tenant $tenant)
     {
         $database = $tenant->getDatabaseName();
+        $manager = $this->getTenantDatabaseManager($tenant);
+
+        if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
+            QueuedTenantDatabaseCreator::dispatch($this->app[$manager], $database, 'delete');
+        } else {
+            return $this->app[$manager]->deleteDatabase($database);
+        }
+    }
+
+    protected function getTenantDatabaseManager(Tenant $tenant)
+    {
         $connection = $tenant->getConnectionName(); // todo
         $driver = $this->getDriver($connection);
 
         $databaseManagers = $this->app['config']['tenancy.database_managers'];
 
         if (! \array_key_exists($driver, $databaseManagers)) {
-            throw new DatabaseManagerNotRegisteredException('Database could not be deleted', $driver);
+            throw new DatabaseManagerNotRegisteredException($driver);
         }
 
-        $manager = $databaseManagers[$driver];
-        if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
-            QueuedTenantDatabaseCreator::dispatch($this->app[$manager], $database, 'delete');
-        } else {
-            return $this->app[$manager]->deleteDatabase($database);
-        }
+        return $databaseManagers[$driver];
     }
 }

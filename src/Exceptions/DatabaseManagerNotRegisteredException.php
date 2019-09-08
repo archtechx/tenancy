@@ -6,8 +6,8 @@ namespace Stancl\Tenancy\Exceptions;
 
 class DatabaseManagerNotRegisteredException extends \Exception
 {
-    public function __construct($error, $driver)
+    public function __construct($driver)
     {
-        $this->message = "$error: no database manager for driver $driver is registered.";
+        $this->message = "Database manager for driver $driver is not registered.";
     }
 }
