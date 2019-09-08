@@ -16,7 +16,7 @@ class Tenant implements ArrayAccess
     use Traits\HasArrayAccess;
 
     /**
-     * Tenant data.
+     * Tenant data. A "cache" of tenant storage.
      *
      * @var array
      */
@@ -99,8 +99,48 @@ class Tenant implements ArrayAccess
         return $this['_tenancy_db_name'] ?? $this->app['config']['tenancy.database.prefix'] . $this->uuid . $this->app['config']['tenancy.database.suffix'];
     }
 
+    /**
+     * Get a value from tenant storage.
+     *
+     * @param string|string[] $keys
+     * @return void
+     */
+    public function get($keys)
+    {
+        if (is_array($keys)) {
+            if (array_intersect(array_keys($this->data), $keys)) { // if all keys are present in cache
+                return array_reduce($keys, function ($pairs, $key) {
+                    $pairs[$key] = $this->data[$key];
+                    return $pairs;
+                }, []);
+            }
+            return $this->storage->getMany($keys);
+        }
+
+        if (! isset($this->data[$keys])) {
+            $this->data[$keys] = $this->storage->get($keys);
+        }
+
+        return $this->data[$keys];
+    }
+
+    public function put($key, $value = null): self
+    {
+        if (is_array($key)) {
+            $this->storage->putMany($key);
+            foreach ($key as $k => $v) { // Add to cache
+                $this->data[$k] = $v;
+            }
+        } else {
+            $this->storage->put($key, $value);
+            $this->data[$key] = $value;
+        }
+
+        return $this;
+    }
+
     public function __get($name)
     {
-        return $this->data[$name] ?? null;
+        return $this->get($name);
     }
 }

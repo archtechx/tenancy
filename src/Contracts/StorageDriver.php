@@ -7,6 +7,9 @@ namespace Stancl\Tenancy\Contracts;
 use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 
+// todo this class now manages types (json encoding)
+// make sure ids are not json encoded
+
 interface StorageDriver
 {
     public function createTenant(Tenant $tenant): void;

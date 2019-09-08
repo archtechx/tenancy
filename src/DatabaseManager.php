@@ -45,7 +45,6 @@ final class DatabaseManager
 
     /**
      * Create a database.
-     * @todo Should this handle prefixes?
      *
      * @param string $name
      * @param string $driver
@@ -71,7 +70,6 @@ final class DatabaseManager
 
     /**
      * Delete a database.
-     * @todo Should this handle prefixes?
      *
      * @param string $name
      * @param string $driver
