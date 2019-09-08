@@ -6,8 +6,8 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Foundation\Application;
 use Illuminate\Contracts\Console\Kernel as Artisan;
-use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 use Stancl\Tenancy\Exceptions\NoTenantIdentifiedException;
+use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 
 /**
@@ -46,7 +46,7 @@ class TenantManagerv2
 
         $this->storage->createTenant($tenant);
         $this->database->create($tenant);
-        
+
         if ($this->migrateAfterCreation()) {
             $this->artisan->call('tenants:migrate', [
                 '--tenants' => [$tenant['id']],

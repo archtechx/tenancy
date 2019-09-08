@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Contracts;
 
 abstract class TenantCannotBeCreatedException extends \Exception
 {
-    abstract function reason(): string;
+    abstract public function reason(): string;
 
     private $message;
 
