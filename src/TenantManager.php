@@ -239,7 +239,6 @@ final class TenantManager
 
     /**
      * Reconnects to the default database.
-     * @todo More descriptive name?
      *
      * @return void
      */
@@ -410,7 +409,6 @@ final class TenantManager
      *
      * @param string $attribute
      * @return mixed
-     * @todo Deprecate this in v2.
      */
     public function __invoke($attribute)
     {
