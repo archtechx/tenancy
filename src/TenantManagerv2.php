@@ -128,7 +128,7 @@ class TenantManagerv2
     }
 
     /**
-     * Get the current tenant
+     * Get the current tenant.
      *
      * @return Tenant
      * @throws NoTenantIdentifiedException
