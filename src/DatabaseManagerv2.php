@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Illuminate\Foundation\Application;
-use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
+use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 
 class DatabaseManagerv2
 {
