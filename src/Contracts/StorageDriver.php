@@ -21,6 +21,7 @@ interface StorageDriver
      * @throws TenantCouldNotBeIdentifiedException
      */
     public function findById(string $id): Tenant;
+
     /**
      * Find a tenant using a domain name.
      *
