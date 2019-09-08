@@ -82,7 +82,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 // Use the #14 Redis database unless specified otherwise.
                 // Make sure you don't store anything in this db!
                 'database' => env('TENANCY_TEST_REDIS_DB', 14),
-                'prefix' => 'abc', // todo unrelated to tenancy, but this doesn't seem to have an effect? try to replicate in a fresh laravel installation
+                'prefix' => 'abc', // unrelated to tenancy, but this doesn't seem to have an effect? try to replicate in a fresh laravel installation
             ],
             'database.connections.central' => [
                 'driver' => 'sqlite',

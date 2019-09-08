@@ -6,6 +6,7 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Foundation\Application;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
+use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
 
 class DatabaseManagerv2
 {
@@ -94,5 +95,46 @@ class DatabaseManagerv2
     public function canCreate(Tenant $tenant)
     {
         // todo
+    }
+
+    public function createDatabase(Tenant $tenant)
+    {
+        $database = $tenant->getDatabaseName();
+        $connection = $tenant->getConnectionName(); // todo
+        $driver = $this->getDriver($connection);
+
+        $databaseManagers = $this->app['config']['tenancy.database_managers'];
+
+        if (! \array_key_exists($driver, $databaseManagers)) {
+            throw new DatabaseManagerNotRegisteredException('Database could not be created', $driver);
+        }
+
+        $manager = $databaseManagers[$driver];
+        if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
+            QueuedTenantDatabaseCreator::dispatch($this->app[$manager], $database, 'create');
+        } else {
+            return app($manager)->createDatabase($database);
+        }
+    }
+
+    // todo this is the same as createDatabase. find a way to remove duplicite code
+    public function deleteDatabase(Tenant $tenant)
+    {
+        $database = $tenant->getDatabaseName();
+        $connection = $tenant->getConnectionName(); // todo
+        $driver = $this->getDriver($connection);
+
+        $databaseManagers = $this->app['config']['tenancy.database_managers'];
+
+        if (! \array_key_exists($driver, $databaseManagers)) {
+            throw new DatabaseManagerNotRegisteredException('Database could not be deleted', $driver);
+        }
+
+        $manager = $databaseManagers[$driver];
+        if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
+            QueuedTenantDatabaseCreator::dispatch($this->app[$manager], $database, 'delete');
+        } else {
+            return app($manager)->deleteDatabase($database);
+        }
     }
 }
