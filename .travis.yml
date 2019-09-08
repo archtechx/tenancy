@@ -1,5 +1,5 @@
-env:
-  - LARAVEL_VERSION="5.8.*" TESTBENCH_VERSION="~3.8" REDIS_DRIVER=phpredis
+# env:
+#   - LARAVEL_VERSION="^6.0" TESTBENCH_VERSION="~4.0" REDIS_DRIVER=phpredis
 
 language: php
 php:
@@ -11,8 +11,10 @@ services:
 before_install:
   - docker-compose up -d
 
+# install:
+#   - travis_retry docker-compose exec test composer require --no-interaction "laravel/framework:$LARAVEL_VERSION" "orchestra/testbench:$TESTBENCH_VERSION"
 install:
-  - travis_retry docker-compose exec test composer require --no-interaction "laravel/framework:$LARAVEL_VERSION" "orchestra/testbench:$TESTBENCH_VERSION"
+- travis_retry docker-compose exec test composer install --no-interaction
 
 before_script:
   - export DB_USERNAME=root DB_PASSWORD="" DB_DATABASE=tenancy CODECOV_TOKEN="24382d15-84e7-4a55-bea4-c4df96a24a9b"
