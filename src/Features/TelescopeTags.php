@@ -11,6 +11,9 @@ use Stancl\Tenancy\Contracts\Feature;
 
 class TelescopeTags implements Feature
 {
+    /** @var callable User-specific callback that returns tags. */
+    protected $callback;
+
     public function bootstrap(TenantManager $tenantManager): void
     {
         if (! class_exists(Telescope::class)) {
@@ -33,8 +36,12 @@ class TelescopeTags implements Feature
 
     public function getTags(IncomingEntry $entry): array
     {
-        return array_reduce($this->callbacks, function ($tags, $listener) use ($entry) {
-            return array_merge($tags, $listener($entry));
-        }, []);
+        return ($this->callback)($entry);
+    }
+
+    // todo name?
+    public function tagUsing(callable $callback)
+    {
+        $this->callback = $callback;
     }
 }
