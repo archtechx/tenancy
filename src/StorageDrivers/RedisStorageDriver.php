@@ -64,7 +64,7 @@ class RedisStorageDriver implements StorageDriver
     {
         $this->redis->pipeline(function ($pipe) use ($tenant) {
             $id = $tenant->id;
-    
+
             foreach ($tenant->domains as $domain) {
                 $pipe->hmset("domains:$domain", 'tenant_id', $id);
             }
