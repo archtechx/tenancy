@@ -44,20 +44,13 @@ class RedisStorageDriver implements StorageDriver
         return $this->find($id);
     }
 
-    /**
-     * Get information about the tenant based on his id.
-     *
-     * @param string $id
-     * @param string[] $fields
-     * @return array
-     */
-    public function find(string $id, array $fields = []): array
+    public function find(string $id): Tenant
     {
         if (! $fields) {
             return $this->redis->hgetall("tenants:$id");
         }
 
-        return array_combine($fields, $this->redis->hmget("tenants:$id", $fields));
+        return array_combine($fields, $this->redis->hmget("tenants:$id", $fields)); // todo factory
     }
 
     public function getTenantIdByDomain(string $domain): ?string
@@ -78,8 +71,15 @@ class RedisStorageDriver implements StorageDriver
 
     public function updateTenant(Tenant $tenant): void
     {
-        $this->redis->hmset("tenants:{$tenant->id}", $tenant->data);
-        // todo update domains
+        $this->redis->pipeline(function ($pipe) use ($tenant) {
+            $this->redis->hmset("tenants:{$tenant->id}", $tenant->data);
+            
+            foreach ($tenant->domains as $domain) {
+                $this->redis->hmset("domains:$domain", 'tenant_id', $tenant->id);
+            }
+
+            // todo deleted domains
+        });
     }
 
     public function deleteTenant(Tenant $tenant): void
@@ -95,7 +95,7 @@ class RedisStorageDriver implements StorageDriver
 
     public function all(array $ids = []): array
     {
-        // todo $this->redis->pipeline()
+        // todo $this->redis->pipeline() - return?
         $hashes = array_map(function ($hash) {
             return "tenants:{$hash}";
         }, $ids);
@@ -127,13 +127,20 @@ class RedisStorageDriver implements StorageDriver
     public function getMany(array $keys, Tenant $tenant = null): array
     {
         $tenant = $tenant ?? $this->tenant();
-        return $this->redis->hmget("tenants:{$tenant->id}", $keys);
+
+        $result = [];
+        $values = $this->redis->hmget("tenants:{$tenant->id}", $keys);
+        foreach ($keys as $i => $key) {
+            $result[$key] = $values[$i];
+        }
+
+        return $result;
     }
 
     public function put(string $key, $value, Tenant $tenant = null)
     {
         $tenant = $tenant ?? $this->tenant();
-        $this->redis->hset("tenants:{$tenant->id}", $key, $value);
+        $this->redis->hset("tenants:{$tenant->id}", $key, json_encode($value));
 
         return $value;
     }
@@ -141,6 +148,11 @@ class RedisStorageDriver implements StorageDriver
     public function putMany(array $kvPairs, Tenant $tenant = null): array
     {
         $tenant = $tenant ?? $this->tenant();
+
+        foreach ($kvPairs as $key => $value) {
+            $kvPairs[$key] = json_encode($value);
+        }
+
         $this->redis->hmset("tenants:{$tenant->id}", $kvPairs);
 
         return $kvPairs;
