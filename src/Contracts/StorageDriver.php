@@ -69,7 +69,7 @@ interface StorageDriver
      * @return void
      */
     public function put(string $key, $value, Tenant $tenant = null): void;
-    
+
     /**
      * Put multiple values into storage.
      *
