@@ -6,8 +6,8 @@ namespace Stancl\Tenancy\StorageDrivers;
 
 use Illuminate\Contracts\Redis\Factory as Redis;
 use Illuminate\Foundation\Application;
-use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Contracts\StorageDriver;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Tenant;
 
 class RedisStorageDriver implements StorageDriver
@@ -59,7 +59,7 @@ class RedisStorageDriver implements StorageDriver
 
         $data = array_combine($keys, $values);
         $domains = []; // todo
-        
+
         return Tenant::fromStorage($data)->withDomains($domains);
     }
 
