@@ -46,6 +46,7 @@ class RedisStorageDriver implements StorageDriver
 
     public function find(string $id): Tenant
     {
+        // todo https://redis.io/commands/hgetall
         if (! $fields) {
             return $this->redis->hgetall("tenants:$id");
         }
@@ -61,21 +62,23 @@ class RedisStorageDriver implements StorageDriver
     /** @todo make this atomic */
     public function createTenant(Tenant $tenant): void
     {
-        $id = $tenant->id;
-
-        foreach ($tenant->domains as $domain) {
-            $this->redis->hmset("domains:$domain", 'tenant_id', $id);
-        }
-        $this->redis->hmset("tenants:$id", 'id', json_encode($id), 'domain', json_encode($domain));
+        $this->redis->pipeline(function ($pipe) use ($tenant) {
+            $id = $tenant->id;
+    
+            foreach ($tenant->domains as $domain) {
+                $pipe->hmset("domains:$domain", 'tenant_id', $id);
+            }
+            $pipe->hmset("tenants:$id", 'id', json_encode($id), 'domain', json_encode($domain));
+        });
     }
 
     public function updateTenant(Tenant $tenant): void
     {
         $this->redis->pipeline(function ($pipe) use ($tenant) {
-            $this->redis->hmset("tenants:{$tenant->id}", $tenant->data);
+            $pipe->hmset("tenants:{$tenant->id}", $tenant->data);
 
             foreach ($tenant->domains as $domain) {
-                $this->redis->hmset("domains:$domain", 'tenant_id', $tenant->id);
+                $pipe->hmset("domains:$domain", 'tenant_id', $tenant->id);
             }
 
             // todo deleted domains
