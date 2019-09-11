@@ -65,6 +65,7 @@ class RedisStorageDriver implements StorageDriver
         return $this->redis->hget("domains:$domain", 'tenant_id') ?: null;
     }
 
+    /** @todo make this atomic */
     public function createTenant(Tenant $tenant): void
     {
         $id = $tenant->id;
@@ -73,34 +74,36 @@ class RedisStorageDriver implements StorageDriver
             $this->redis->hmset("domains:$domain", 'tenant_id', $id);
         }
         $this->redis->hmset("tenants:$id", 'id', json_encode($id), 'domain', json_encode($domain));
-
-        return $this->redis->hgetall("tenants:$id"); // todo
     }
 
-    /** @todo Make tenant & domain deletion atomic. */
+    public function updateTenant(Tenant $tenant): void
+    {
+        $this->redis->hmset("tenants:{$tenant->id}", $tenant->data);
+        // todo update domains
+    }
+
     public function deleteTenant(Tenant $tenant): void
     {
-        foreach ($tenant->domains as $domain) {
-            $this->redis->del("domains:$domain");
-        }
-
-        $this->redis->del("tenants:{$tenant->id}");
+        $this->redis->pipeline(function ($pipe) use ($tenant) {
+            foreach ($tenant->domains as $domain) {
+                $pipe->del("domains:$domain");
+            }
+    
+            $pipe->del("tenants:{$tenant->id}");
+        });
     }
 
-    public function getAllTenants(array $uuids = []): array
+    public function all(array $ids = []): array
     {
+        // todo $this->redis->pipeline()
         $hashes = array_map(function ($hash) {
             return "tenants:{$hash}";
-        }, $uuids);
+        }, $ids);
 
         if (! $hashes) {
             // Prefix is applied to all functions except scan().
             // This code applies the correct prefix manually.
-            $redis_prefix = config('database.redis.options.prefix');
-
-            if (config('database.redis.client') === 'phpredis') {
-                $redis_prefix = $this->redis->getOption($this->redis->client()::OPT_PREFIX) ?? $redis_prefix;
-            }
+            $redis_prefix = $this->redis->getOption($this->redis->client()::OPT_PREFIX);
 
             $all_keys = $this->redis->keys('tenants:*');
 
@@ -115,27 +118,31 @@ class RedisStorageDriver implements StorageDriver
         }, $hashes);
     }
 
-    public function get(string $uuid, string $key)
+    public function get(string $key, Tenant $tenant = null)
     {
-        return json_decode($this->redis->hget("tenants:$uuid", $key), true);
+        $tenant = $tenant ?? $this->tenant();
+        return json_decode($this->redis->hget("tenants:{$tenant->id}", $key), true);
     }
 
-    public function getMany(string $uuid, array $keys): array
+    public function getMany(array $keys, Tenant $tenant = null): array
     {
-        return $this->redis->hmget("tenants:$uuid", $keys);
+        $tenant = $tenant ?? $this->tenant();
+        return $this->redis->hmget("tenants:{$tenant->id}", $keys);
     }
 
-    public function put(string $uuid, string $key, $value)
+    public function put(string $key, $value, Tenant $tenant = null)
     {
-        $this->redis->hset("tenants:$uuid", $key, $value);
+        $tenant = $tenant ?? $this->tenant();
+        $this->redis->hset("tenants:{$tenant->id}", $key, $value);
 
         return $value;
     }
 
-    public function putMany(string $uuid, array $values): array
+    public function putMany(array $kvPairs, Tenant $tenant = null): array
     {
-        $this->redis->hmset("tenants:$uuid", $values);
+        $tenant = $tenant ?? $this->tenant();
+        $this->redis->hmset("tenants:{$tenant->id}", $kvPairs);
 
-        return $values;
+        return $kvPairs;
     }
 }

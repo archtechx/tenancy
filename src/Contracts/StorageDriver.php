@@ -35,6 +35,14 @@ interface StorageDriver
     public function findByDomain(string $domain): Tenant;
 
     /**
+     * Get all tenants.
+     *
+     * @param string[] $ids
+     * @return Tenant[]
+     */
+    public function all(array $ids = []): array;
+
+    /**
      * Check if a tenant can be created.
      *
      * @param Tenant $tenant
