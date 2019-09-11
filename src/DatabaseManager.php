@@ -10,7 +10,7 @@ use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
 
-class DatabaseManagerv2
+class DatabaseManager
 {
     /** @var string */
     public $originalDefaultConnectionName;

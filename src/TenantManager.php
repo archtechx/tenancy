@@ -13,7 +13,7 @@ use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
  */
-class TenantManagerv2
+class TenantManager
 {
     /**
      * The current tenant.
