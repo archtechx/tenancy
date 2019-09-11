@@ -7,7 +7,7 @@ namespace Stancl\Tenancy\StorageDrivers;
 use Illuminate\Contracts\Redis\Factory as Redis;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
-use Stancl\Tenancy\Interfaces\StorageDriver;
+use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\Tenant;
 
 class RedisStorageDriver implements StorageDriver

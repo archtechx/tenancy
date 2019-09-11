@@ -13,7 +13,7 @@ use Stancl\Tenancy\Commands\Rollback;
 use Stancl\Tenancy\Commands\Run;
 use Stancl\Tenancy\Commands\Seed;
 use Stancl\Tenancy\Commands\TenantList;
-use Stancl\Tenancy\Interfaces\StorageDriver;
+use Stancl\Tenancy\Contracts\StorageDriver;
 
 class TenancyServiceProvider extends ServiceProvider
 {
