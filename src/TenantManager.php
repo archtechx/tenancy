@@ -4,418 +4,268 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
-use Illuminate\Contracts\Foundation\Application;
-use Stancl\Tenancy\Exceptions\CannotChangeUuidOrDomainException;
+use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
+use Illuminate\Foundation\Application;
+use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
+use Stancl\Tenancy\Exceptions\NoTenantIdentifiedException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
-use Stancl\Tenancy\Interfaces\StorageDriver;
-use Stancl\Tenancy\Interfaces\UniqueIdentifierGenerator;
-use Stancl\Tenancy\Traits\BootstrapsTenancy;
 
 /**
- * @final Class is subject to breaking changes in minor and patch versions.
+ * @internal Class is subject to breaking changes in minor and patch versions.
  */
-final class TenantManager
+class TenantManagerv2
 {
-    use BootstrapsTenancy;
-
     /**
-     * The application instance.
+     * The current tenant.
      *
-     * @var Application
+     * @var Tenant
      */
+    protected $tenant;
+
+    /** @var Application */
     protected $app;
 
-    /**
-     * Storage driver for tenant metadata.
-     *
-     * @var StorageDriver
-     */
-    public $storage;
+    /** @var ConsoleKernel */
+    protected $artisan;
 
-    /**
-     * Database manager.
-     *
-     * @var DatabaseManager
-     */
-    public $database;
+    /** @var Contracts\StorageDriver */
+    protected $storage;
 
-    /**
-     * Unique identifier generator.
-     *
-     * @var UniqueIdentifierGenerator
-     */
-    protected $generator;
+    /** @var DatabaseManager */
+    protected $database;
 
-    /**
-     * Current tenant.
-     *
-     * @var array
-     */
-    public $tenant = [];
+    /** @var callable[][] */
+    protected $listeners = [];
 
-    public function __construct(Application $app, StorageDriver $storage, DatabaseManager $database, UniqueIdentifierGenerator $generator)
+    public function __construct(Application $app, ConsoleKernel $artisan, Contracts\StorageDriver $storage, DatabaseManager $database)
     {
         $this->app = $app;
         $this->storage = $storage;
+        $this->artisan = $artisan;
         $this->database = $database;
-        $this->generator = $generator;
+
+        $this->bootstrapFeatures();
     }
 
-    public function init(string $domain = null): array
+    public function createTenant(Tenant $tenant): self
     {
-        $this->setTenant($this->identify($domain));
-        $this->bootstrap();
+        $this->ensureTenantCanBeCreated($tenant);
 
-        return $this->tenant;
+        $this->storage->createTenant($tenant);
+        $this->database->createDatabase($tenant);
+
+        if ($this->shouldMigrateAfterCreation()) {
+            $this->artisan->call('tenants:migrate', [
+                '--tenants' => [$tenant['id']],
+            ]);
+        }
+
+        return $this;
     }
 
-    public function identify(string $domain = null): array
+    public function deleteTenant(Tenant $tenant): self
     {
-        $domain = $domain ?: $this->currentDomain();
+        $this->storage->deleteTenant($tenant);
 
-        if (! $domain) {
-            throw new \Exception('No domain supplied nor detected.');
+        if ($this->shouldDeleteDatabase()) {
+            $this->database->deleteDatabase($tenant);
         }
 
-        $tenant = $this->storage->identifyTenant($domain);
-
-        if (! $tenant || ! \array_key_exists('uuid', $tenant) || ! $tenant['uuid']) {
-            throw new TenantCouldNotBeIdentifiedException($domain);
-        }
-
-        return $tenant;
+        return $this;
     }
 
     /**
-     * Create a tenant.
+     * Ensure that a tenant can be created.
      *
-     * @param string $domain
-     * @param array $data
-     * @return array
-     */
-    public function create(string $domain = null, array $data = []): array
-    {
-        $domain = $domain ?: $this->currentDomain();
-
-        if ($id = $this->storage->getTenantIdByDomain($domain)) {
-            throw new \Exception("Domain $domain is already occupied by tenant $id.");
-        }
-
-        $tenant = $this->storage->createTenant($domain, $this->generateUniqueIdentifier($domain, $data));
-        if ($this->useJson()) {
-            $tenant = $this->jsonDecodeArrayValues($tenant);
-        }
-
-        if ($data) {
-            $this->put($data, null, $tenant['uuid']);
-
-            $tenant = \array_merge($tenant, $data);
-        }
-
-        $this->database->create($this->getDatabaseName($tenant));
-
-        return $tenant;
-    }
-
-    public function generateUniqueIdentifier(string $domain, array $data)
-    {
-        return $this->generator->handle($domain, $data);
-    }
-
-    public function delete(string $uuid): bool
-    {
-        return $this->storage->deleteTenant($uuid);
-    }
-
-    /**
-     * Return an array with information about a tenant based on his uuid.
-     *
-     * @param string $uuid
-     * @param array|string $fields
-     * @return array
-     */
-    public function getTenantById(string $uuid, $fields = [])
-    {
-        $fields = (array) $fields;
-
-        $tenant = $this->storage->getTenantById($uuid, $fields);
-        if ($this->useJson()) {
-            $tenant = $this->jsonDecodeArrayValues($tenant);
-        }
-
-        return $tenant;
-    }
-
-    /**
-     * Alias for getTenantById().
-     *
-     * @param string $uuid
-     * @param array|string $fields
-     * @return array
-     */
-    public function find(string $uuid, $fields = [])
-    {
-        return $this->getTenantById($uuid, $fields);
-    }
-
-    /**
-     * Get tenant uuid based on the domain that belongs to him.
-     *
-     * @param string $domain
-     * @return string|null
-     */
-    public function getTenantIdByDomain(string $domain = null): ?string
-    {
-        $domain = $domain ?: $this->currentDomain();
-
-        return $this->storage->getTenantIdByDomain($domain);
-    }
-
-    /**
-     * Alias for getTenantIdByDomain().
-     *
-     * @param string $domain
-     * @return string|null
-     */
-    public function getIdByDomain(string $domain = null)
-    {
-        return $this->getTenantIdByDomain($domain);
-    }
-
-    /**
-     * Get tenant information based on his domain.
-     *
-     * @param string $domain
-     * @param mixed $fields
-     * @return array
-     */
-    public function findByDomain(string $domain = null, $fields = [])
-    {
-        $domain = $domain ? : $this->currentDomain();
-
-        $uuid = $this->getIdByDomain($domain);
-
-        if (\is_null($uuid)) {
-            throw new TenantCouldNotBeIdentifiedException($domain);
-        }
-
-        return $this->find($uuid, $fields);
-    }
-
-    public static function currentDomain(): ?string
-    {
-        return request()->getHost() ?? null;
-    }
-
-    public function getDatabaseName($tenant = []): string
-    {
-        $tenant = $tenant ?: $this->tenant;
-
-        if ($key = $this->app['config']['tenancy.database_name_key']) {
-            if (isset($tenant[$key])) {
-                return $tenant[$key];
-            }
-        }
-
-        return $this->app['config']['tenancy.database.prefix'] . $tenant['uuid'] . $this->app['config']['tenancy.database.suffix'];
-    }
-
-    /**
-     * Set the tenant property to a JSON decoded version of the tenant's data obtained from storage.
-     *
-     * @param array $tenant
-     * @return array
-     */
-    public function setTenant(array $tenant): array
-    {
-        if ($this->useJson()) {
-            $tenant = $this->jsonDecodeArrayValues($tenant);
-        }
-
-        $this->tenant = $tenant;
-
-        return $tenant;
-    }
-
-    /**
-     * Reconnects to the default database.
-     *
+     * @param Tenant $tenant
      * @return void
+     * @throws TenantCannotBeCreatedException
      */
-    public function disconnectDatabase()
+    public function ensureTenantCanBeCreated(Tenant $tenant): void
     {
-        $this->database->disconnect();
+        // todo move the "throw" responsibility to the canCreateTenant methods?
+        if (($e = $this->storage->canCreateTenant($tenant)) instanceof TenantCannotBeCreatedException) {
+            throw new $e;
+        }
+
+        if (($e = $this->database->canCreateTenant($tenant)) instanceof TenantCannotBeCreatedException) {
+            throw new $e;
+        }
+    }
+
+    public function updateTenant(Tenant $tenant): self
+    {
+        $this->storage->updateTenant($tenant);
+
+        return $this;
+    }
+
+    public function init(string $domain): self
+    {
+        $this->initializeTenancy($this->findByDomain($domain));
+
+        return $this;
+    }
+
+    public function initById(string $id): self
+    {
+        $this->initializeTenancy($this->find($id));
+
+        return $this;
+    }
+
+    /**
+     * Find a tenant using an id.
+     *
+     * @param string $id
+     * @return Tenant
+     * @throws TenantCouldNotBeIdentifiedException
+     */
+    public function find(string $id): Tenant
+    {
+        return $this->storage->findById($id);
+    }
+
+    /**
+     * Find a tenant using a domain name.
+     *
+     * @param string $id
+     * @return Tenant
+     * @throws TenantCouldNotBeIdentifiedException
+     */
+    public function findByDomain(string $domain): Tenant
+    {
+        return $this->storage->findByDomain($domain);
     }
 
     /**
      * Get all tenants.
      *
-     * @param array|string $uuids
-     * @return \Illuminate\Support\Collection
+     * @param Tenant[]|string[] $only
+     * @return Tenant[]
      */
-    public function all($uuids = [])
+    public function all($only = []): array
     {
-        $uuids = (array) $uuids;
-        $tenants = $this->storage->getAllTenants($uuids);
+        $only = array_map(function ($item) {
+            return $item instanceof Tenant ? $item->id : $item;
+        }, $only);
 
-        if ($this->useJson()) {
-            $tenants = \array_map(function ($tenant_array) {
-                return $this->jsonDecodeArrayValues($tenant_array);
-            }, $tenants);
+        return $this->storage->all($only);
+    }
+
+    public function initializeTenancy(Tenant $tenant): self
+    {
+        $this->bootstrapTenancy($tenant);
+        $this->setTenant($tenant);
+
+        return $this;
+    }
+
+    public function bootstrapTenancy(Tenant $tenant): self
+    {
+        $prevented = $this->event('bootstrapping');
+
+        foreach ($this->tenancyBootstrappers($prevented) as $bootstrapper) {
+            $this->app[$bootstrapper]->start($tenant);
         }
 
-        return collect($tenants);
+        $this->event('bootstrapped');
+
+        return $this;
+    }
+
+    public function endTenancy(): self
+    {
+        $prevented = $this->event('ending');
+
+        foreach ($this->tenancyBootstrappers($prevented) as $bootstrapper) {
+            $this->app[$bootstrapper]->end();
+        }
+
+        $this->event('ended');
+
+        return $this;
     }
 
     /**
-     * Initialize tenancy based on tenant uuid.
+     * Get the current tenant.
      *
-     * @param string $uuid
-     * @return array
+     * @param string $key
+     * @return Tenant
+     * @throws NoTenantIdentifiedException
      */
-    public function initById(string $uuid): array
+    public function getTenant(string $key = null): Tenant
     {
-        $this->setTenant($this->storage->getTenantById($uuid));
-        $this->bootstrap();
+        if (! $this->tenant) {
+            throw new NoTenantIdentifiedException;
+        }
+
+        if (! is_null($key)) {
+            return $this->tenant[$key];
+        }
 
         return $this->tenant;
     }
 
-    /**
-     * Get a value from the storage for a tenant.
-     *
-     * @param string|array $key
-     * @param string $uuid
-     * @return mixed
-     */
-    public function get($key, string $uuid = null)
+    protected function setTenant(Tenant $tenant): self
     {
-        $uuid = $uuid ?: $this->tenant['uuid'];
+        $this->tenant = $tenant;
 
-        // todo make this cache work with arrays
-        if (\array_key_exists('uuid', $this->tenant) && $uuid === $this->tenant['uuid'] &&
-            ! \is_array($key) && \array_key_exists($key, $this->tenant)) {
-            return $this->tenant[$key];
+        return $this;
+    }
+
+    protected function bootstrapFeatures(): self
+    {
+        foreach ($this->app['config']['tenancy.features'] as $feature) {
+            $this->app[$feature]->bootstrap($this);
         }
 
-        if (\is_array($key)) {
-            $data = $this->storage->getMany($uuid, $key);
-            $data = $this->useJson() ? $this->jsonDecodeArrayValues($data) : $data;
-
-            return $data;
-        }
-
-        $data = $this->storage->get($uuid, $key);
-        $data = $this->useJson() ? \json_decode($data, true) : $data;
-
-        return $data;
+        return $this;
     }
 
     /**
-     * Puts a value into the storage for a tenant.
+     * Return a list of TenancyBoostrappers.
      *
-     * @param string|array $key
-     * @param mixed $value
-     * @param string uuid
-     * @return mixed
+     * @param string[] $except
+     * @return Contracts\TenancyBootstrapper[]
      */
-    public function put($key, $value = null, string $uuid = null)
+    public function tenancyBootstrappers($except = []): array
     {
-        if (\in_array($key, ['uuid', 'domain'], true) || (
-            \is_array($key) && (
-                \in_array('uuid', \array_keys($key), true) ||
-                \in_array('domain', \array_keys($key), true)
-            )
-        )) {
-            throw new CannotChangeUuidOrDomainException;
-        }
+        return array_key_diff($this->app['config']['tenancy.bootstrappers'], $except);
+    }
 
-        if (\is_null($uuid)) {
-            if (! isset($this->tenant['uuid'])) {
-                throw new \Exception('No UUID supplied (and no tenant is currently identified).');
-            }
-
-            $uuid = $this->tenant['uuid'];
-
-            // If $uuid is the uuid of the current tenant, put
-            // the value into the $this->tenant array as well.
-            $target = &$this->tenant;
-        } else {
-            $target = []; // black hole
-        }
-
-        if (! \is_null($value)) {
-            if ($this->useJson()) {
-                $data = \json_decode($this->storage->put($uuid, $key, \json_encode($value)), true);
-            } else {
-                $data = $this->storage->put($uuid, $key, $value);
-            }
-
-            return $target[$key] = $data;
-        }
-
-        if (! \is_array($key)) {
-            throw new \Exception("No value supplied for key $key.");
-        }
-
-        foreach ($key as $k => $v) {
-            $target[$k] = $v;
-
-            $v = $this->useJson() ? \json_encode($v) : $v;
-            $key[$k] = $v;
-        }
-
-        $data = $this->storage->putMany($uuid, $key);
-        $data = $this->useJson() ? $this->jsonDecodeArrayValues($data) : $data;
-
-        return $data;
+    public function shouldMigrateAfterCreation(): bool
+    {
+        return $this->app['config']['tenancy.migrate_after_creation'] ?? false;
     }
 
     /**
-     * Alias for put().
+     * Add an event listener.
      *
-     * @param string|array $key
-     * @param mixed $value
-     * @param string $uuid
-     * @return mixed
+     * @param string $name
+     * @param callable $listener
+     * @return self
      */
-    public function set($key, $value = null, string $uuid = null)
+    public function eventListener(string $name, callable $listener): self
     {
-        return $this->put($key, $value, $uuid);
-    }
+        $this->eventListeners[$name] = $this->eventListeners[$name] ?? [];
+        $this->eventListeners[$name][] = $listener;
 
-    protected function jsonDecodeArrayValues(array $array)
-    {
-        \array_walk($array, function (&$value, $key) {
-            if ($value) {
-                $value = \json_decode($value, true);
-            }
-        });
-
-        return $array;
-    }
-
-    public function useJson()
-    {
-        if (\property_exists($this->storage, 'useJson') && $this->storage->useJson === false) {
-            return false;
-        }
-
-        return true;
+        return $this;
     }
 
     /**
-     * Return the identified tenant's attribute(s).
+     * Execute event listeners.
      *
-     * @param string $attribute
-     * @return mixed
+     * @param string $name
+     * @return string[]
      */
-    public function __invoke($attribute)
+    protected function event(string $name): array
     {
-        if (\is_null($attribute)) {
-            return $this->tenant;
-        }
+        return array_reduce($this->eventCalbacks[$name] ?? [], function ($prevented, $listener) {
+            $prevented = array_merge($prevented, $listener($this) ?? []);
 
-        return $this->get((string) $attribute);
+            return $prevented;
+        }, []);
     }
 }

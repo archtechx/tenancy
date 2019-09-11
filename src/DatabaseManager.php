@@ -5,121 +5,139 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
+use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
+use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
-use Stancl\Tenancy\Jobs\QueuedTenantDatabaseDeleter;
 
-/**
- * @final Class is subject to breaking changes in minor and patch versions.
- */
-final class DatabaseManager
+class DatabaseManagerv2
 {
-    public $originalDefaultConnection;
+    /** @var string */
+    public $originalDefaultConnectionName;
 
-    protected $defaultTenantConnectionName = 'tenant';
+    /** @var Application */
+    protected $app;
 
-    public function __construct(BaseDatabaseManager $database)
+    /** @var BaseDatabaseManager */
+    protected $database;
+
+    public function __construct(Application $app, BaseDatabaseManager $database)
     {
-        $this->originalDefaultConnection = config('database.default');
         $this->database = $database;
-    }
-
-    public function connect(string $database, string $connectionName = null)
-    {
-        $this->createTenantConnection($database, $connectionName);
-        $this->useConnection($connectionName);
-    }
-
-    public function connectToTenant($tenant, string $connectionName = null)
-    {
-        $this->connect(tenant()->getDatabaseName($tenant), $connectionName);
-    }
-
-    public function disconnect()
-    {
-        $default_connection = $this->originalDefaultConnection;
-        $this->database->purge();
-        $this->database->reconnect($default_connection);
-        $this->database->setDefaultConnection($default_connection);
+        $this->originalDefaultConnectionName = $app['config']['database.default'];
     }
 
     /**
-     * Create a database.
+     * Connect to a tenant's database.
      *
-     * @param string $name
-     * @param string $driver
-     * @return bool
+     * @param Tenant $tenant
+     * @return void
      */
-    public function create(string $name, string $driver = null)
+    public function connect(Tenant $tenant)
     {
-        $this->createTenantConnection($name);
-        $driver = $driver ?: $this->getDriver();
-
-        $databaseManagers = config('tenancy.database_managers');
-
-        if (! \array_key_exists($driver, $databaseManagers)) {
-            throw new DatabaseManagerNotRegisteredException('Database could not be created', $driver);
-        }
-
-        if (config('tenancy.queue_database_creation', false)) {
-            QueuedTenantDatabaseCreator::dispatch(app($databaseManagers[$driver]), $name, 'create');
-        } else {
-            return app($databaseManagers[$driver])->createDatabase($name);
-        }
+        $connection = 'tenant'; // todo tenant-specific connections
+        $this->createTenantConnection($tenant->getDatabaseName(), $connection);
+        $this->switchConnection($connection);
     }
 
     /**
-     * Delete a database.
+     * Reconnect to the default non-tenant connection.
      *
-     * @param string $name
-     * @param string $driver
-     * @return bool
+     * @return void
      */
-    public function delete(string $name, string $driver = null)
+    public function reconnect()
     {
-        $this->createTenantConnection($name);
-        $driver = $driver ?: $this->getDriver();
-
-        $databaseManagers = config('tenancy.database_managers');
-
-        if (! \array_key_exists($driver, $databaseManagers)) {
-            throw new DatabaseManagerNotRegisteredException('Database could not be deleted', $driver);
-        }
-
-        if (config('tenancy.queue_database_deletion', false)) {
-            QueuedTenantDatabaseDeleter::dispatch(app($databaseManagers[$driver]), $name, 'delete');
-        } else {
-            return app($databaseManagers[$driver])->deleteDatabase($name);
-        }
+        $this->switchConnection($this->originalDefaultConnectionName);
     }
 
-    public function getDriver($connectionName = null): ?string
-    {
-        $connectionName = $connectionName ?: $this->defaultTenantConnectionName;
-
-        return config("database.connections.$connectionName.driver");
-    }
-
+    /**
+     * Create the tenant database connection.
+     *
+     * @param string $databaseName
+     * @param string $connectionName
+     * @return void
+     */
     public function createTenantConnection(string $databaseName, string $connectionName = null)
     {
-        $connectionName = $connectionName ?: $this->defaultTenantConnectionName;
+        $connectionName = $connectionName ?? 'tenant'; // todo
 
         // Create the database connection.
-        $based_on = config('tenancy.database.based_on') ?: config('database.default');
-        config()->set([
-            "database.connections.$connectionName" => config('database.connections.' . $based_on),
-        ]);
+        $based_on = $this->app['config']['tenancy.database.based_on'] ?? $this->originalDefaultConnectionName;
+        $this->app['config']["database.connections.$connectionName"] = $this->app['config']['database.connections.' . $based_on];
 
-        // Change DB name
+        // Change database name.
         $databaseName = $this->getDriver($connectionName) === 'sqlite' ? database_path($databaseName) : $databaseName;
-        config()->set(["database.connections.$connectionName.database" => $databaseName]);
+        $this->app['config']["database.connections.$connectionName.database"] = $databaseName;
     }
 
-    public function useConnection(string $connection = null)
+    /**
+     * Get the driver of a database connection.
+     *
+     * @param string $connectionName
+     * @return string
+     */
+    protected function getDriver(string $connectionName): string
     {
-        $connection = $connection ?: $this->defaultTenantConnectionName;
+        return $this->app['config']["database.connections.$connectionName.driver"];
+    }
 
-        $this->database->setDefaultConnection($connection);
+    public function switchConnection($connection)
+    {
+        $this->database->purge();
         $this->database->reconnect($connection);
+        $this->database->setDefaultConnection($connection);
+    }
+
+    /**
+     * Check if a tenant can be created.
+     *
+     * @param Tenant $tenant
+     * @return true|TenantCannotBeCreatedException
+     */
+    public function canCreate(Tenant $tenant)
+    {
+        if ($this->getTenantDatabaseManager($tenant)->databaseExists($database = $tenant->getDatabaseName())) {
+            return new TenantDatabaseAlreadyExistsException($database);
+        }
+
+        return true;
+    }
+
+    public function createDatabase(Tenant $tenant)
+    {
+        $database = $tenant->getDatabaseName();
+        $manager = $this->getTenantDatabaseManager($tenant);
+
+        if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
+            QueuedTenantDatabaseCreator::dispatch($this->app[$manager], $database, 'create');
+        } else {
+            return $this->app[$manager]->createDatabase($database);
+        }
+    }
+
+    public function deleteDatabase(Tenant $tenant)
+    {
+        $database = $tenant->getDatabaseName();
+        $manager = $this->getTenantDatabaseManager($tenant);
+
+        if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
+            QueuedTenantDatabaseCreator::dispatch($this->app[$manager], $database, 'delete');
+        } else {
+            return $this->app[$manager]->deleteDatabase($database);
+        }
+    }
+
+    protected function getTenantDatabaseManager(Tenant $tenant)
+    {
+        $connection = $tenant->getConnectionName(); // todo
+        $driver = $this->getDriver($connection);
+
+        $databaseManagers = $this->app['config']['tenancy.database_managers'];
+
+        if (! array_key_exists($driver, $databaseManagers)) {
+            throw new DatabaseManagerNotRegisteredException($driver);
+        }
+
+        return $databaseManagers[$driver];
     }
 }
