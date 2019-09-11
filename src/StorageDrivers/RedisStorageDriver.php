@@ -114,6 +114,7 @@ class RedisStorageDriver implements StorageDriver
     public function all(array $ids = []): array
     {
         // todo $this->redis->pipeline() - return?
+        // todo transaction instead of pipeline?
         $hashes = array_map(function ($hash) {
             return "tenants:{$hash}";
         }, $ids);
