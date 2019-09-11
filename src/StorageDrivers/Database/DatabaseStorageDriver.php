@@ -46,7 +46,7 @@ class DatabaseStorageDriver implements StorageDriver
             Tenants::create(['id' => $tenant->id, 'data' => '{}'])->toArray();
 
             $domainData = [];
-            foreach($tenant->domains as $domain) {
+            foreach ($tenant->domains as $domain) {
                 $domainData[] = ['domain' => $domain, 'tenant_id' => $tenant->id];
             }
             Domains::create($domainData);
