@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
-use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider;
+use Illuminate\Support\Facades\Route;
 
 class TenantRouteServiceProvider extends RouteServiceProvider
 {

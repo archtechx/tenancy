@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
-use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
-use Stancl\Tenancy\Jobs\QueuedTenantDatabaseDeleter;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
+use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
+use Stancl\Tenancy\Jobs\QueuedTenantDatabaseDeleter;
 
 /**
  * @final Class is subject to breaking changes in minor and patch versions.

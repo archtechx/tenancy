@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests\Etc;
 
-use Illuminate\Support\Str;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ExampleSeeder extends Seeder
 {

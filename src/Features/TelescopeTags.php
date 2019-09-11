@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Features;
 
-use Laravel\Telescope\Telescope;
-use Stancl\Tenancy\TenantManager;
 use Laravel\Telescope\IncomingEntry;
+use Laravel\Telescope\Telescope;
 use Stancl\Tenancy\Contracts\FeatureProvider;
+use Stancl\Tenancy\TenantManager;
 
 class TelescopeTags implements FeatureProvider
 {

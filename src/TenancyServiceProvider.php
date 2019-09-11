@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
-use Stancl\Tenancy\Commands\Run;
-use Stancl\Tenancy\Commands\Seed;
 use Illuminate\Cache\CacheManager;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Commands\Install;
 use Stancl\Tenancy\Commands\Migrate;
-use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Commands\Rollback;
-use Illuminate\Support\ServiceProvider;
+use Stancl\Tenancy\Commands\Run;
+use Stancl\Tenancy\Commands\Seed;
 use Stancl\Tenancy\Commands\TenantList;
 use Stancl\Tenancy\Interfaces\StorageDriver;
 

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\DB;
-use Stancl\Tenancy\DatabaseManager;
 use Illuminate\Support\Facades\Queue;
+use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseDeleter;
 

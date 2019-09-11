@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
-use Illuminate\Foundation\Application;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
-use Stancl\Tenancy\Exceptions\NoTenantIdentifiedException;
+use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
+use Stancl\Tenancy\Exceptions\NoTenantIdentifiedException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 
 /**

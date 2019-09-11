@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
-use Stancl\Tenancy\DatabaseManager;
-use Illuminate\Database\Migrations\Migrator;
-use Stancl\Tenancy\Traits\HasATenantsOption;
-use Stancl\Tenancy\Traits\DealsWithMigrations;
 use Illuminate\Database\Console\Migrations\RollbackCommand;
+use Illuminate\Database\Migrations\Migrator;
+use Stancl\Tenancy\DatabaseManager;
+use Stancl\Tenancy\Traits\DealsWithMigrations;
+use Stancl\Tenancy\Traits\HasATenantsOption;
 
 class Rollback extends RollbackCommand
 {

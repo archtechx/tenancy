@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
-use Stancl\Tenancy\Interfaces\StorageDriver;
-use Stancl\Tenancy\Traits\BootstrapsTenancy;
 use Illuminate\Contracts\Foundation\Application;
-use Stancl\Tenancy\Interfaces\UniqueIdentifierGenerator;
 use Stancl\Tenancy\Exceptions\CannotChangeUuidOrDomainException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
+use Stancl\Tenancy\Interfaces\StorageDriver;
+use Stancl\Tenancy\Interfaces\UniqueIdentifierGenerator;
+use Stancl\Tenancy\Traits\BootstrapsTenancy;
 
 /**
  * @final Class is subject to breaking changes in minor and patch versions.

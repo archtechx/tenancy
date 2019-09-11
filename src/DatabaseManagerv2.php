@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
-use Illuminate\Foundation\Application;
-use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
-use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
+use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
+use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
+use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
 
 class DatabaseManagerv2
 {
