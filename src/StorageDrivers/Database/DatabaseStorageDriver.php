@@ -24,10 +24,15 @@ class DatabaseStorageDriver implements StorageDriver
         return $this->find($id);
     }
 
-    public function find(string $id): Tenant
+    public function findById(string $id): Tenant
     {
         return Tenant::fromStorage(Tenants::find($id)->decoded())
             ->withDomains(Domains::where('tenant_id', $id)->all()->only('domain')->toArray());
+    }
+
+    public function canCreateTenant(Tenant $tenant)
+    {
+        // todo
     }
 
     public function getTenantIdByDomain(string $domain): ?string
@@ -35,11 +40,16 @@ class DatabaseStorageDriver implements StorageDriver
         return Domains::where('domain', $domain)->first()->tenant_id ?? null;
     }
 
-    public function createTenant(string $domain, string $id): void
+    public function createTenant(Tenant $tenant): void
     {
-        DB::transaction(function () use ($domain, $id) {
-            Tenants::create(['id' => $id, 'data' => '{}'])->toArray();
-            Domains::create(['domain' => $domain, 'tenant_id' => $id]);
+        DB::transaction(function () use ($tenant) {
+            Tenants::create(['id' => $tenant->id, 'data' => '{}'])->toArray();
+
+            $domainData = [];
+            foreach($tenant->domains as $domain) {
+                $domainData[] = ['domain' => $domain, 'tenant_id' => $tenant->id];
+            }
+            Domains::create($domainData);
         });
     }
     
@@ -48,9 +58,10 @@ class DatabaseStorageDriver implements StorageDriver
         // todo
     }
 
-    public function deleteTenant(string $id): bool
+    public function deleteTenant(Tenant $tenant): void
     {
-        return Tenants::find($id)->delete();
+        Tenants::find($tenant->id)->delete();
+        // todo domains
     }
 
     public function all(array $ids = []): array
@@ -58,27 +69,26 @@ class DatabaseStorageDriver implements StorageDriver
         return Tenants::getAllTenants($ids)->toArray();
     }
 
-    public function get(string $id, string $key)
+    public function get(string $key, Tenant $tenant = null)
     {
-        return Tenants::find($id)->get($key);
+        return Tenants::find($tenant->id)->get($key);
     }
 
-    public function getMany(string $id, array $keys): array
+    // todo storage methods default to current tenant
+    public function getMany(array $keys, Tenant $tenant = null): array
     {
-        return Tenants::find($id)->getMany($keys);
+        return Tenants::find($tenant->id)->getMany($keys);
     }
 
-    public function put(string $id, string $key, $value)
+    public function put(string $key, $value, Tenant $tenant = null): void
     {
-        return Tenants::find($id)->put($key, $value);
+        Tenants::find($tenant->id)->put($key, $value);
     }
 
-    public function putMany(string $id, array $values): array
+    public function putMany(array $kvPairs, Tenant $tenant = null): void
     {
-        foreach ($values as $key => $value) { // todo performance
-            Tenants::find($id)->put($key, $value);
+        foreach ($kvPairs as $key => $value) { // todo performance
+            Tenants::find($tenant->id)->put($key, $value);
         }
-
-        return $values;
     }
 }

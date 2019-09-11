@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\TenancyBoostrappers;
 
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
+use Stancl\Tenancy\Tenant;
 
 // todo better solution than tenant_asset?
 
@@ -24,7 +25,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         ];
     }
 
-    public function start()
+    public function start(Tenant $tenant)
     {
         // todo revisit this
         $suffix = $this->app['config']['tenancy.filesystem.suffix_base'] . tenant('uuid');

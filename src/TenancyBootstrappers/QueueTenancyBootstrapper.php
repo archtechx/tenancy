@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\TenancyBoostrappers;
 
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
+use Stancl\Tenancy\Tenant;
 
 class QueueTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -26,7 +27,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         });
     }
 
-    public function start()
+    public function start(Tenant $tenant)
     {
         $this->started = true;
     }

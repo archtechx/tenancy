@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\TenancyBoostrappers;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\DatabaseManager;
+use Stancl\Tenancy\Tenant;
 
 class DatabaseTenancyBootstrapper implements TenancyBootstrapper
 {

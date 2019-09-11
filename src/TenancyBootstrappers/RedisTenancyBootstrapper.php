@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\TenantDatabaseManagers;
 
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
+use Stancl\Tenancy\Tenant;
 
 class RedisTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -19,7 +20,7 @@ class RedisTenancyBootstrapper implements TenancyBootstrapper
         $this->app = $app;
     }
 
-    public function start()
+    public function start(Tenant $tenant)
     {
         foreach ($this->prefixedConnections() as $connection) {
             $prefix = $this->app['config']['tenancy.redis.prefix_base'] . $this->tenant['uuid'];

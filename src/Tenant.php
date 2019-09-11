@@ -69,6 +69,7 @@ class Tenant implements ArrayAccess
         return $this;
     }
 
+    // todo addDomain, removeDomain
     public function withDomains($domains): self
     {
         $domains = (array) $domains;

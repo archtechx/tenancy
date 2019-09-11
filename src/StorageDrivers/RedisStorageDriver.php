@@ -36,6 +36,11 @@ class RedisStorageDriver implements StorageDriver
         return $this->app[Tenant::class];
     }
 
+    public function canCreateTenant(Tenant $tenant)
+    {
+        // todo
+    }
+
     public function findByDomain(string $domain): Tenant
     {
         $id = $this->getTenantIdByDomain($domain);
@@ -46,7 +51,7 @@ class RedisStorageDriver implements StorageDriver
         return $this->find($id);
     }
 
-    public function find(string $id): Tenant
+    public function findById(string $id): Tenant
     {
         $data = $this->redis->hgetall("tenants:$id");
         $keys = [];
@@ -151,15 +156,13 @@ class RedisStorageDriver implements StorageDriver
         return $result;
     }
 
-    public function put(string $key, $value, Tenant $tenant = null)
+    public function put(string $key, $value, Tenant $tenant = null): void
     {
         $tenant = $tenant ?? $this->tenant();
         $this->redis->hset("tenants:{$tenant->id}", $key, json_encode($value));
-
-        return $value;
     }
 
-    public function putMany(array $kvPairs, Tenant $tenant = null): array
+    public function putMany(array $kvPairs, Tenant $tenant = null): void
     {
         $tenant = $tenant ?? $this->tenant();
 
@@ -168,7 +171,5 @@ class RedisStorageDriver implements StorageDriver
         }
 
         $this->redis->hmset("tenants:{$tenant->id}", $kvPairs);
-
-        return $kvPairs;
     }
 }
