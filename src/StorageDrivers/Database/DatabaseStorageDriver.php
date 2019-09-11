@@ -6,9 +6,9 @@ namespace Stancl\Tenancy\StorageDrivers\Database;
 
 use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
-use Stancl\Tenancy\Tenant;
-use Stancl\Tenancy\StorageDrivers\Database\Tenants as Tenants;
 use Stancl\Tenancy\StorageDrivers\Database\DomainModel as Domains;
+use Stancl\Tenancy\StorageDrivers\Database\Tenants as Tenants;
+use Stancl\Tenancy\Tenant;
 
 class DatabaseStorageDriver implements StorageDriver
 {
@@ -42,7 +42,7 @@ class DatabaseStorageDriver implements StorageDriver
             Domains::create(['domain' => $domain, 'tenant_id' => $id]);
         });
     }
-    
+
     public function updateTenant(Tenant $tenant): void
     {
         // todo
