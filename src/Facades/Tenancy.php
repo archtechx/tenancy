@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Facades;
 
-use Stancl\Tenancy\TenantManager;
 use Illuminate\Support\Facades\Facade;
+use Stancl\Tenancy\TenantManager;
 
 class Tenancy extends Facade
 {

@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Stancl\Tenancy\TenantManager;
 use Stancl\Tenancy\Contracts\FeatureProvider;
+use Stancl\Tenancy\TenantManager;
 
 class TenantRedirect implements FeatureProvider
 {

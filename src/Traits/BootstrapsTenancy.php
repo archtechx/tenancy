@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Traits;
 
-use Stancl\Tenancy\CacheManager;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
+use Stancl\Tenancy\CacheManager;
 use Stancl\Tenancy\Exceptions\PhpRedisNotInstalledException;
 
 trait BootstrapsTenancy

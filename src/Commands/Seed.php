@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Commands;
 
+use Illuminate\Database\ConnectionResolverInterface;
+use Illuminate\Database\Console\Seeds\SeedCommand;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Traits\HasATenantsOption;
-use Illuminate\Database\Console\Seeds\SeedCommand;
-use Illuminate\Database\ConnectionResolverInterface;
 
 class Seed extends SeedCommand
 {

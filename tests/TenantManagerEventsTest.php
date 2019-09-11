@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
-use Tenant;
 use Tenancy;
+use Tenant;
 
 class TenantManagerEventsTest extends TestCase
 {
