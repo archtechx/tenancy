@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
-use Stancl\Tenancy\Interfaces\UniqueIdentifierGenerator;
+use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 
 class UUIDGenerator implements UniqueIdentifierGenerator
 {
-    public static function handle(string $domain, array $data = []): string
+    public static function handle(array $domains, array $data = []): string
     {
-        return (string) \Webpatser\Uuid\Uuid::generate(1, $domain);
+        return (string) \Webpatser\Uuid\Uuid::generate(1, $domains[0] ?? '');
     }
 }

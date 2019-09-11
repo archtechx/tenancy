@@ -9,9 +9,9 @@ interface UniqueIdentifierGenerator
     /**
      * Generate a unique identifier.
      *
-     * @param string $domain
+     * @param string[] $domains
      * @param array $data
      * @return string
      */
-    public static function handle(string $domain, array $data = []): string;
+    public static function handle(array $domains, array $data = []): string;
 }

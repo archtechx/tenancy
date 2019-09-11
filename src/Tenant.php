@@ -6,6 +6,7 @@ namespace Stancl\Tenancy;
 
 use ArrayAccess;
 use Stancl\Tenancy\Contracts\StorageDriver;
+use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
@@ -28,11 +29,14 @@ class Tenant implements ArrayAccess
      */
     public $domains = [];
 
+    /** @var StorageDriver */
+    protected $storage;
+
     /** @var TenantManager */
     protected $manager;
 
-    /** @var StorageDriver */
-    protected $storage;
+    /** @var UniqueIdentifierGenerator */
+    protected $idGenerator;
 
     /**
      * Does this tenant exist in the storage.
@@ -41,17 +45,16 @@ class Tenant implements ArrayAccess
      */
     protected $persisted = false;
 
-    public function __construct(TenantManager $tenantManager, StorageDriver $storage)
+    public function __construct(StorageDriver $storage, TenantManager $tenantManager, UniqueIdentifierGenerator $idGenerator)
     {
-        $this->manager = $tenantManager;
         $this->storage = $storage;
+        $this->manager = $tenantManager;
+        $this->idGenerator = $idGenerator;
     }
 
     public static function new(): self
     {
-        return app(static::class)->withData([
-            'id' => static::generateId(), // todo
-        ]);
+        return app(static::class);
     }
 
     public static function fromStorage(array $data): self
@@ -66,7 +69,6 @@ class Tenant implements ArrayAccess
         return $this;
     }
 
-    // todo move this to TenantFactory?
     public function withDomains($domains): self
     {
         $domains = (array) $domains;
@@ -83,8 +85,17 @@ class Tenant implements ArrayAccess
         return $this;
     }
 
+    public function generateId()
+    {
+        $this->id = $this->idGenerator->handle($this->domains, $this->data);
+    }
+
     public function save(): self
     {
+        if (! $this->id) {
+            $this->generateId();
+        }
+
         if ($this->persisted) {
             $this->manager->createTenant($this);
         } else {
