@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy;
+namespace Stancl\Tenancy\StorageDrivers\Database;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -31,9 +31,9 @@ class TenantModel extends Model
         return config('tenancy.storage.db.connection') ?? app(DatabaseManager::class)->originalDefaultConnectionName;
     }
 
-    public static function getAllTenants(array $uuids)
+    public static function getAllTenants(array $ids)
     {
-        $tenants = $uuids ? static::findMany($uuids) : static::all();
+        $tenants = $ids ? static::findMany($ids) : static::all();
 
         return $tenants->map([__CLASS__, 'decodeData'])->toBase();
     }
@@ -46,7 +46,7 @@ class TenantModel extends Model
     /**
      * Return a tenant array with data decoded into separate keys.
      *
-     * @param Tenant|array $tenant
+     * @param self|array $tenant
      * @return array
      */
     public static function decodeData($tenant)

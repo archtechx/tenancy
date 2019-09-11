@@ -12,6 +12,8 @@ use Stancl\Tenancy\Tenant;
 
 class RedisStorageDriver implements StorageDriver
 {
+    // todo json encoding?
+
     /** @var Application */
     protected $app;
 
