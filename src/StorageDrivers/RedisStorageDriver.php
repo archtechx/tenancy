@@ -46,12 +46,21 @@ class RedisStorageDriver implements StorageDriver
 
     public function find(string $id): Tenant
     {
-        // todo https://redis.io/commands/hgetall
-        if (! $fields) {
-            return $this->redis->hgetall("tenants:$id");
+        $data = $this->redis->hgetall("tenants:$id");
+        $keys = [];
+        $values = [];
+        foreach ($data as $i => $value) {
+            if ($i & 1) { // is odd
+                $values[] = $value;
+            } else {
+                $keys[] = $value;
+            }
         }
 
-        return array_combine($fields, $this->redis->hmget("tenants:$id", $fields)); // todo factory
+        $data = array_combine($keys, $values);
+        $domains = []; // todo
+        
+        return Tenant::fromStorage($data)->withDomains($domains);
     }
 
     public function getTenantIdByDomain(string $domain): ?string
@@ -59,7 +68,6 @@ class RedisStorageDriver implements StorageDriver
         return $this->redis->hget("domains:$domain", 'tenant_id') ?: null;
     }
 
-    /** @todo make this atomic */
     public function createTenant(Tenant $tenant): void
     {
         $this->redis->pipeline(function ($pipe) use ($tenant) {
