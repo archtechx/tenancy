@@ -7,8 +7,6 @@ namespace Stancl\Tenancy;
 use ArrayAccess;
 use Stancl\Tenancy\Contracts\StorageDriver;
 
-// todo tenant storage
-
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
  */

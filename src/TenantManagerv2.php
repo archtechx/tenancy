@@ -34,9 +34,8 @@ class TenantManagerv2
     /** @var DatabaseManager */
     protected $database;
 
-    // todo event "listeners" instead of "callbacks"
     /** @var callable[][] */
-    protected $callbacks = [];
+    protected $listeners = [];
 
     public function __construct(Application $app, ConsoleKernel $artisan, Contracts\StorageDriver $storage, DatabaseManager $database)
     {
@@ -241,30 +240,30 @@ class TenantManagerv2
     }
 
     /**
-     * Add an event callback.
+     * Add an event listener.
      *
      * @param string $name
-     * @param callable $callback
+     * @param callable $listener
      * @return self
      */
-    public function eventCallback(string $name, callable $callback): self
+    public function eventListener(string $name, callable $listener): self
     {
-        $this->eventCallbacks[$name] = $this->eventCallbacks[$name] ?? [];
-        $this->eventCallbacks[$name][] = $callback;
+        $this->eventListeners[$name] = $this->eventListeners[$name] ?? [];
+        $this->eventListeners[$name][] = $listener;
 
         return $this;
     }
 
     /**
-     * Execute event callbacks.
+     * Execute event listeners.
      *
      * @param string $name
      * @return string[]
      */
     protected function event(string $name): array
     {
-        return array_reduce($this->eventCalbacks[$name] ?? [], function ($prevented, $callback) {
-            $prevented = array_merge($prevented, $callback($this) ?? []);
+        return array_reduce($this->eventCalbacks[$name] ?? [], function ($prevented, $listener) {
+            $prevented = array_merge($prevented, $listener($this) ?? []);
 
             return $prevented;
         }, []);

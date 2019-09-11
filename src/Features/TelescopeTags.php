@@ -39,8 +39,7 @@ class TelescopeTags implements FeatureProvider
         return ($this->callback)($entry);
     }
 
-    // todo name?
-    public function tagUsing(callable $callback)
+    public function setCallback(callable $callback)
     {
         $this->callback = $callback;
     }
