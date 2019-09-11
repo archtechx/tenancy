@@ -88,7 +88,7 @@ class RedisStorageDriver implements StorageDriver
             foreach ($tenant->domains as $domain) {
                 $pipe->del("domains:$domain");
             }
-    
+
             $pipe->del("tenants:{$tenant->id}");
         });
     }
@@ -121,12 +121,14 @@ class RedisStorageDriver implements StorageDriver
     public function get(string $key, Tenant $tenant = null)
     {
         $tenant = $tenant ?? $this->tenant();
+
         return json_decode($this->redis->hget("tenants:{$tenant->id}", $key), true);
     }
 
     public function getMany(array $keys, Tenant $tenant = null): array
     {
         $tenant = $tenant ?? $this->tenant();
+
         return $this->redis->hmget("tenants:{$tenant->id}", $keys);
     }
 
