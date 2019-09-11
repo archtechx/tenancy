@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use ArrayAccess;
+use Stancl\Tenancy\Contracts\StorageDriver;
 
 // todo tenant storage
 
@@ -27,23 +28,25 @@ class Tenant implements ArrayAccess
      *
      * @var string[]
      */
-    public $domains;
+    public $domains = [];
 
-    /**
-     * @var TenantManager
-     */
-    private $manager;
+    /** @var TenantManager */
+    protected $manager;
+
+    /** @var StorageDriver */
+    protected $storage;
 
     /**
      * Does this tenant exist in the storage.
      *
      * @var bool
      */
-    private $persisted = false;
+    protected $persisted = false;
 
-    public function __construct(TenantManager $tenantManager)
+    public function __construct(TenantManager $tenantManager, StorageDriver $storage)
     {
         $this->manager = $tenantManager;
+        $this->storage = $storage;
     }
 
     public static function new(): self
@@ -65,6 +68,7 @@ class Tenant implements ArrayAccess
         return $this;
     }
 
+    // todo move this to TenantFactory?
     public function withDomains($domains): self
     {
         $domains = (array) $domains;
@@ -128,6 +132,9 @@ class Tenant implements ArrayAccess
 
     public function put($key, $value = null): self
     {
+        // todo something like if ($this->storage->getIdKey() === $key) throw new Exception("Can't override ID")? or should it be overridable?
+        // and the responsibility of not overriding domains is up to the storage driver
+
         if (is_array($key)) {
             $this->storage->putMany($key);
             foreach ($key as $k => $v) { // Add to cache

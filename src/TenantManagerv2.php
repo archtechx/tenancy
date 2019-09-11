@@ -84,6 +84,7 @@ class TenantManagerv2
      */
     public function ensureTenantCanBeCreated(Tenant $tenant): void
     {
+        // todo move the "throw" responsibility to the canCreateTenant methods?
         if (($e = $this->storage->canCreateTenant($tenant)) instanceof TenantCannotBeCreatedException) {
             throw new $e;
         }
@@ -138,6 +139,21 @@ class TenantManagerv2
         return $this->storage->findByDomain($domain);
     }
 
+    /**
+     * Get all tenants.
+     *
+     * @param Tenant[]|string[] $only
+     * @return Tenant[]
+     */
+    public function all($only = []): array
+    {
+        $only = array_map(function ($item) {
+            return $item instanceof Tenant ? $item->id : $item;
+        }, $only);
+
+        return $this->storage->all($only);
+    }
+
     public function initializeTenancy(Tenant $tenant): self
     {
         $this->bootstrapTenancy($tenant);
@@ -175,13 +191,18 @@ class TenantManagerv2
     /**
      * Get the current tenant.
      *
+     * @param string $key
      * @return Tenant
      * @throws NoTenantIdentifiedException
      */
-    public function getTenant(): Tenant
+    public function getTenant(string $key = null): Tenant
     {
         if (! $this->tenant) {
             throw new NoTenantIdentifiedException;
+        }
+
+        if (! is_null($key)) {
+            return $this->tenant[$key];
         }
 
         return $this->tenant;

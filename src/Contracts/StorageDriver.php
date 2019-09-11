@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Contracts;
 
 use Stancl\Tenancy\Tenant;
-use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 
 // todo this class now manages types (json encoding)
 // make sure ids are not json encoded
@@ -23,7 +22,7 @@ interface StorageDriver
      *
      * @param string $id
      * @return Tenant
-     * @throws TenantCouldNotBeIdentifiedException
+     * @throws \Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException
      */
     public function findById(string $id): Tenant;
 
@@ -41,5 +40,42 @@ interface StorageDriver
      * @param Tenant $tenant
      * @return true|TenantCannotBeCreatedException
      */
-    public function canCreate(Tenant $tenant);
+    public function canCreateTenant(Tenant $tenant);
+
+    /**
+     * Get a value from storage.
+     *
+     * @param string $key
+     * @param ?Tenant $tenant
+     * @return mixed
+     */
+    public function get(string $key, Tenant $tenant = null);
+
+    /**
+     * Get multiple values from storage.
+     *
+     * @param array $keys
+     * @param ?Tenant $tenant
+     * @return void
+     */
+    public function getMany(array $keys, Tenant $tenant = null);
+
+    /**
+     * Put a value into storage.
+     *
+     * @param string $key
+     * @param mixed $value
+     * @param ?Tenant $tenant
+     * @return void
+     */
+    public function put(string $key, $value, Tenant $tenant = null): void;
+    
+    /**
+     * Put multiple values into storage.
+     *
+     * @param mixed[string] $kvPairs
+     * @param ?Tenant $tenant
+     * @return void
+     */
+    public function putMany(array $kvPairs, Tenant $tenant = null): void;
 }

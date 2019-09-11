@@ -4,43 +4,60 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\StorageDrivers;
 
-use Illuminate\Support\Facades\Redis;
+use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Interfaces\StorageDriver;
+use Illuminate\Contracts\Redis\Factory as Redis;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
+use Stancl\Tenancy\Tenant;
 
 class RedisStorageDriver implements StorageDriver
 {
-    private $redis;
+    /** @var Application */
+    protected $app;
 
-    public function __construct()
+    /** @var Redis */
+    protected $redis;
+
+    public function __construct(Application $app, Redis $redis)
     {
-        $this->redis = Redis::connection(config('tenancy.redis.connection', 'tenancy'));
+        $this->app = $app;
+        $this->redis = $redis->connection($app['config']['tenancy.redis.connection'] ?? 'tenancy');
     }
 
-    public function identifyTenant(string $domain): array
+    /**
+     * Get the current tenant.
+     *
+     * @return Tenant
+     */
+    protected function tenant()
+    {
+        return $this->app[Tenant::class];
+    }
+
+    public function findByDomain(string $domain): Tenant
     {
         $id = $this->getTenantIdByDomain($domain);
         if (! $id) {
             throw new TenantCouldNotBeIdentifiedException($domain);
         }
 
-        return $this->getTenantById($id);
+        return $this->find($id);
     }
 
     /**
-     * Get information about the tenant based on his uuid.
+     * Get information about the tenant based on his id.
      *
-     * @param string $uuid
-     * @param array $fields
+     * @param string $id
+     * @param string[] $fields
      * @return array
      */
-    public function getTenantById(string $uuid, array $fields = []): array
+    public function find(string $id, array $fields = []): array
     {
         if (! $fields) {
-            return $this->redis->hgetall("tenants:$uuid");
+            return $this->redis->hgetall("tenants:$id");
         }
 
-        return \array_combine($fields, $this->redis->hmget("tenants:$uuid", $fields));
+        return array_combine($fields, $this->redis->hmget("tenants:$id", $fields));
     }
 
     public function getTenantIdByDomain(string $domain): ?string
@@ -48,37 +65,31 @@ class RedisStorageDriver implements StorageDriver
         return $this->redis->hget("domains:$domain", 'tenant_id') ?: null;
     }
 
-    public function createTenant(string $domain, string $uuid): array
+    public function createTenant(Tenant $tenant): void
     {
-        $this->redis->hmset("domains:$domain", 'tenant_id', $uuid);
-        $this->redis->hmset("tenants:$uuid", 'uuid', \json_encode($uuid), 'domain', \json_encode($domain));
+        $id = $tenant->id;
 
-        return $this->redis->hgetall("tenants:$uuid");
+        foreach ($tenant->domains as $domain) {
+            $this->redis->hmset("domains:$domain", 'tenant_id', $id);
+        }
+        $this->redis->hmset("tenants:$id", 'id', json_encode($id), 'domain', json_encode($domain));
+
+        return $this->redis->hgetall("tenants:$id"); // todo
     }
 
-    /**
-     * {@inheritdoc}
-     *
-     * @param string $id
-     * @return bool
-     * @todo Make tenant & domain deletion atomic.
-     */
-    public function deleteTenant(string $id): bool
+    /** @todo Make tenant & domain deletion atomic. */
+    public function deleteTenant(Tenant $tenant): void
     {
-        try {
-            $domain = \json_decode($this->getTenantById($id)['domain']);
-        } catch (\Throwable $th) {
-            throw new \Exception("No tenant with UUID $id exists.");
+        foreach ($tenant->domains as $domain) {
+            $this->redis->del("domains:$domain");
         }
 
-        $this->redis->del("domains:$domain");
-
-        return (bool) $this->redis->del("tenants:$id");
+        $this->redis->del("tenants:{$tenant->id}");
     }
 
     public function getAllTenants(array $uuids = []): array
     {
-        $hashes = \array_map(function ($hash) {
+        $hashes = array_map(function ($hash) {
             return "tenants:{$hash}";
         }, $uuids);
 
@@ -93,20 +104,20 @@ class RedisStorageDriver implements StorageDriver
 
             $all_keys = $this->redis->keys('tenants:*');
 
-            $hashes = \array_map(function ($key) use ($redis_prefix) {
+            $hashes = array_map(function ($key) use ($redis_prefix) {
                 // Left strip $redis_prefix from $key
-                return \substr($key, \strlen($redis_prefix));
+                return substr($key, strlen($redis_prefix));
             }, $all_keys);
         }
 
-        return \array_map(function ($tenant) {
+        return array_map(function ($tenant) {
             return $this->redis->hgetall($tenant);
         }, $hashes);
     }
 
     public function get(string $uuid, string $key)
     {
-        return $this->redis->hget("tenants:$uuid", $key);
+        return json_decode($this->redis->hget("tenants:$uuid", $key), true);
     }
 
     public function getMany(string $uuid, array $keys): array
