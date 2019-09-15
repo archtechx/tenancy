@@ -106,8 +106,7 @@ class TenantModel extends Model
         $customColumns = [];
         $jsonObj = json_decode($this->{$this->customColumns()});
 
-        foreach($kvPairs as $key => $value)
-        {
+        foreach ($kvPairs as $key => $value) {
             if (in_array($key, $this->customColumns())) {
                 $customColumns[$key] = $value;
                 continue;
