@@ -185,10 +185,10 @@ class TenantManager
      * Get the current tenant.
      *
      * @param string $key
-     * @return Tenant
+     * @return Tenant|mixed
      * @throws NoTenantIdentifiedException
      */
-    public function getTenant(string $key = null): Tenant
+    public function getTenant(string $key = null)
     {
         if (! $this->tenant) {
             throw new NoTenantIdentifiedException;

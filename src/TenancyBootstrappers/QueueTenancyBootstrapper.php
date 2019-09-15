@@ -10,7 +10,7 @@ use Stancl\Tenancy\Tenant;
 class QueueTenancyBootstrapper implements TenancyBootstrapper
 {
     /** @var bool Has tenancy been started. */
-    protected $started = false; // todo var name?
+    protected $started = false;
 
     /** @var Application */
     protected $app;

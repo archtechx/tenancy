@@ -7,13 +7,6 @@ namespace Stancl\Tenancy;
 use Illuminate\Cache\CacheManager;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
-use Stancl\Tenancy\Commands\Install;
-use Stancl\Tenancy\Commands\Migrate;
-use Stancl\Tenancy\Commands\Rollback;
-use Stancl\Tenancy\Commands\Run;
-use Stancl\Tenancy\Commands\Seed;
-use Stancl\Tenancy\Commands\TenantList;
-use Stancl\Tenancy\Contracts\StorageDriver;
 
 class TenancyServiceProvider extends ServiceProvider
 {
@@ -25,12 +18,12 @@ class TenancyServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->commands([
-            Run::class,
-            Seed::class,
-            Install::class,
-            Migrate::class,
-            Rollback::class,
-            TenantList::class,
+            Commands\Run::class,
+            Commands\Seed::class,
+            Commands\Install::class,
+            Commands\Migrate::class,
+            Commands\Rollback::class,
+            Commands\TenantList::class,
         ]);
 
         $this->publishes([
@@ -59,29 +52,27 @@ class TenancyServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__ . '/../assets/config.php', 'tenancy');
 
-        $this->app->bind(StorageDriver::class, $this->app['config']['tenancy.storage_driver']);
+        $this->app->bind(Contracts\StorageDriver::class, $this->app['config']['tenancy.storage_driver']);
+        $this->app->bind(Contracts\UniqueIdentifierGenerator::class, $this->app['config']['tenancy.unique_id_generator']);
         $this->app->singleton(DatabaseManager::class);
-        $this->app->singleton(TenantManager::class, function ($app) {
-            return new TenantManager(
-                $app, $app[StorageDriver::class], $app[DatabaseManager::class], $app[$app['config']['tenancy.unique_id_generator']] // todo
-            );
-        });
+        $this->app->singleton(TenantManager::class);
         $this->app->bind(Tenant::class, function ($app) {
-            return $app[TenantManager::class]->currentTenant();
+            return $app[TenantManager::class]->getTenant();
         });
 
         foreach ($this->app['config']['tenancy.bootstrappers'] as $bootstrapper) {
             $this->app->singleton($bootstrapper);
         }
 
+        // todo are these necessary?
         $this->app->singleton(Migrate::class, function ($app) {
-            return new Migrate($app['migrator'], $app[DatabaseManager::class]);
+            return new Commands\Migrate($app['migrator'], $app[DatabaseManager::class]);
         });
         $this->app->singleton(Rollback::class, function ($app) {
-            return new Rollback($app['migrator'], $app[DatabaseManager::class]);
+            return new Commands\Rollback($app['migrator'], $app[DatabaseManager::class]);
         });
         $this->app->singleton(Seed::class, function ($app) {
-            return new Seed($app['db'], $app[DatabaseManager::class]);
+            return new Commands\Seed($app['db'], $app[DatabaseManager::class]);
         });
 
         $this->app->bind('globalCache', function ($app) {

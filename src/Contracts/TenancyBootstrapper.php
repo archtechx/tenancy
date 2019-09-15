@@ -8,7 +8,7 @@ use Stancl\Tenancy\Tenant;
 
 interface TenancyBootstrapper
 {
-    public function start(Tenant $tenant);
+    public function start(Tenant $tenant); // todo TenantManager instead of Tenant
 
     public function end();
 }

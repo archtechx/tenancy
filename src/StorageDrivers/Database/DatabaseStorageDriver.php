@@ -30,7 +30,7 @@ class DatabaseStorageDriver implements StorageDriver
             ->withDomains(Domains::where('tenant_id', $id)->all()->only('domain')->toArray());
     }
 
-    public function ensureTEnantCanBeCreated(Tenant $tenant)
+    public function ensureTenantCanBeCreated(Tenant $tenant)
     {
         // todo
     }
@@ -61,7 +61,7 @@ class DatabaseStorageDriver implements StorageDriver
     public function deleteTenant(Tenant $tenant): void
     {
         Tenants::find($tenant->id)->delete();
-        // todo domains
+        Domains::where('tenant_id', $tenant->id)->delete();
     }
 
     public function all(array $ids = []): array
@@ -87,8 +87,6 @@ class DatabaseStorageDriver implements StorageDriver
 
     public function putMany(array $kvPairs, Tenant $tenant = null): void
     {
-        foreach ($kvPairs as $key => $value) { // todo performance
-            Tenants::find($tenant->id)->put($key, $value);
-        }
+        Tenants::find($tenant->id)->putMany($kvPairs);
     }
 }

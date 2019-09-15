@@ -6,10 +6,10 @@ namespace Stancl\Tenancy\Features;
 
 use Laravel\Telescope\IncomingEntry;
 use Laravel\Telescope\Telescope;
-use Stancl\Tenancy\Contracts\FeatureProvider;
+use Stancl\Tenancy\Contracts\Feature;
 use Stancl\Tenancy\TenantManager;
 
-class TelescopeTags implements FeatureProvider
+class TelescopeTags implements Feature
 {
     /** @var callable User-specific callback that returns tags. */
     protected $callback;

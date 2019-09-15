@@ -73,7 +73,41 @@ class Tenant implements ArrayAccess
         return $this;
     }
 
-    // todo addDomain, removeDomain
+    /**
+     * Assign domains to the tenant.
+     *
+     * @param string|string[] $domains
+     * @return self
+     */
+    public function addDomains($domains): self
+    {
+        $domains = (array) $domains;
+        $this->domains = array_merge($this->domains, $domains);
+
+        return $this;
+    }
+
+    /**
+     * Unassign domains from the tenant.
+     *
+     * @param string|string[] $domains
+     * @return self
+     */
+    public function removeDomains($domains): self
+    {
+        $domains = (array) $domains;
+        $this->domains = array_diff($this->domains, $domains);
+
+        return $this;
+    }
+
+    public function clearDomains(): self
+    {
+        $this->domains = [];
+
+        return $this;
+    }
+
     public function withDomains($domains): self
     {
         $domains = (array) $domains;
@@ -135,7 +169,7 @@ class Tenant implements ArrayAccess
     public function softDelete(): self
     {
         $this->put('_tenancy_original_domains', $this->domains);
-        $this->domains = [];
+        $this->clearDomains();
         $this->save();
 
         return $this;

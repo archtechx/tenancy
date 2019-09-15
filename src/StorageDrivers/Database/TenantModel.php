@@ -52,14 +52,14 @@ class TenantModel extends Model
     public static function decodeData($tenant)
     {
         $tenant = $tenant instanceof self ? (array) $tenant->attributes : $tenant;
-        $decoded = \json_decode($tenant[$dataColumn = static::dataColumn()], true);
+        $decoded = json_decode($tenant[$dataColumn = static::dataColumn()], true);
 
         foreach ($decoded as $key => $value) {
             $tenant[$key] = $value;
         }
 
         // If $tenant[$dataColumn] has been overriden by a value, don't delete the key.
-        if (! \array_key_exists($dataColumn, $decoded)) {
+        if (! array_key_exists($dataColumn, $decoded)) {
             unset($tenant[$dataColumn]);
         }
 
@@ -68,7 +68,7 @@ class TenantModel extends Model
 
     public function getFromData(string $key)
     {
-        $this->dataArray = $this->dataArray ?? \json_decode($this->{$this->dataColumn()}, true);
+        $this->dataArray = $this->dataArray ?? json_decode($this->{$this->dataColumn()}, true);
 
         return $this->dataArray[$key] ?? null;
     }
@@ -89,15 +89,35 @@ class TenantModel extends Model
 
     public function put(string $key, $value)
     {
-        if (\in_array($key, $this->customColumns())) {
+        if (in_array($key, $this->customColumns())) {
             $this->update([$key => $value]);
         } else {
-            $obj = \json_decode($this->{$this->dataColumn()});
+            $obj = json_decode($this->{$this->dataColumn()});
             $obj->$key = $value;
 
-            $this->update([$this->dataColumn() => \json_encode($obj)]);
+            $this->update([$this->dataColumn() => json_encode($obj)]);
         }
 
         return $value;
+    }
+
+    public function putMany(array $kvPairs)
+    {
+        $customColumns = [];
+        $jsonObj = json_decode($this->{$this->customColumns()});
+
+        foreach($kvPairs as $key => $value)
+        {
+            if (in_array($key, $this->customColumns())) {
+                $customColumns[$key] = $value;
+                continue;
+            }
+
+            $jsonObj->$key = $value;
+        }
+
+        $this->update(array_merge($customColumns, [
+            $this->dataColumn() => json_encode($jsonObj),
+        ]))
     }
 }
