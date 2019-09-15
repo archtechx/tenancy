@@ -66,6 +66,7 @@ class Tenant implements ArrayAccess
     {
         if (gettype($persisted) === 'bool') {
             $this->persisted = $persisted;
+
             return $this;
         }
 
