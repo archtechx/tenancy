@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use ArrayAccess;
+use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 
@@ -45,21 +46,21 @@ class Tenant implements ArrayAccess
      */
     protected $persisted = false;
 
-    public function __construct(StorageDriver $storage, TenantManager $tenantManager, UniqueIdentifierGenerator $idGenerator)
+    protected function __construct(Application $app)
     {
-        $this->storage = $storage;
-        $this->manager = $tenantManager;
-        $this->idGenerator = $idGenerator;
+        $this->storage = $app[StorageDriver::class];
+        $this->manager = $app[TenantManager::class];
+        $this->idGenerator = $app[UniqueIdentifierGenerator::class];
     }
 
-    public static function new(): self
+    public static function new(Application $app = null): self
     {
-        return app(static::class);
+        return new static($app ?? app());
     }
 
     public static function fromStorage(array $data): self
     {
-        return app(static::class)->withData($data)->persisted();
+        return static::new()->withData($data)->persisted();
     }
 
     protected function persisted()
@@ -142,7 +143,7 @@ class Tenant implements ArrayAccess
 
     public function put($key, $value = null): self
     {
-        // todo something like if ($this->storage->getIdKey() === $key) throw new Exception("Can't override ID")? or should it be overridable?
+        // todo something like if ($this->storage->getIdKey() === $key) throw new Exception("Can't override ID")?
         // and the responsibility of not overriding domains is up to the storage driver
 
         if (is_array($key)) {
