@@ -99,12 +99,14 @@ class DatabaseStorageDriver implements StorageDriver
     public function get(string $key, Tenant $tenant = null)
     {
         $tenant = $tenant ?? $this->tenant();
+
         return Tenants::find($tenant->id)->get($key);
     }
 
     public function getMany(array $keys, Tenant $tenant = null): array
     {
         $tenant = $tenant ?? $this->tenant();
+
         return Tenants::find($tenant->id)->getMany($keys);
     }
 
