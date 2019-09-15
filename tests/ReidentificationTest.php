@@ -25,7 +25,7 @@ class ReidentificationTest extends TestCase
         tenancy()->init('second.localhost');
 
         foreach (config('tenancy.filesystem.disks') as $disk) {
-            $suffix = config('tenancy.filesystem.suffix_base') . tenant('uuid');
+            $suffix = config('tenancy.filesystem.suffix_base') . tenant('id');
             $current_path_prefix = \Storage::disk($disk)->getAdapter()->getPathPrefix();
 
             if ($override = config("tenancy.filesystem.root_override.{$disk}")) {
@@ -51,7 +51,7 @@ class ReidentificationTest extends TestCase
         tenant()->create('second.localhost');
         tenancy()->init('second.localhost');
 
-        $suffix = config('tenancy.filesystem.suffix_base') . tenant('uuid');
+        $suffix = config('tenancy.filesystem.suffix_base') . tenant('id');
         $this->assertSame($original . "/$suffix", storage_path());
     }
 }

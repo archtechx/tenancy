@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Redis;
 
+// todo rename
 class BootstrapsTenancyTest extends TestCase
 {
     public $autoInitTenancy = false;
@@ -31,7 +31,7 @@ class BootstrapsTenancyTest extends TestCase
 
         $this->initTenancy();
         foreach (config('tenancy.redis.prefixed_connections', ['default']) as $connection) {
-            $prefix = config('tenancy.redis.prefix_base') . tenant('uuid');
+            $prefix = config('tenancy.redis.prefix_base') . tenant('id');
             $client = Redis::connection($connection)->client();
             $this->assertEquals($prefix, $client->getOption($client::OPT_PREFIX));
         }
@@ -49,10 +49,10 @@ class BootstrapsTenancyTest extends TestCase
         $this->initTenancy();
 
         $new_storage_path = storage_path();
-        $this->assertEquals($old_storage_path . '/' . config('tenancy.filesystem.suffix_base') . tenant('uuid'), $new_storage_path);
+        $this->assertEquals($old_storage_path . '/' . config('tenancy.filesystem.suffix_base') . tenant('id'), $new_storage_path);
 
         foreach (config('tenancy.filesystem.disks') as $disk) {
-            $suffix = config('tenancy.filesystem.suffix_base') . tenant('uuid');
+            $suffix = config('tenancy.filesystem.suffix_base') . tenant('id');
             $current_path_prefix = \Storage::disk($disk)->getAdapter()->getPathPrefix();
 
             if ($override = config("tenancy.filesystem.root_override.{$disk}")) {
@@ -75,7 +75,7 @@ class BootstrapsTenancyTest extends TestCase
         $this->assertSame(['foo'], cache()->tags('foo')->getTags()->getNames());
         $this->initTenancy();
 
-        $expected = [config('tenancy.cache.tag_base') . tenant('uuid'), 'foo', 'bar'];
+        $expected = [config('tenancy.cache.tag_base') . tenant('id'), 'foo', 'bar'];
         $this->assertEquals($expected, cache()->tags(['foo', 'bar'])->getTags()->getNames());
     }
 }

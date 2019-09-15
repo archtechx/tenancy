@@ -50,7 +50,7 @@ class Seed extends SeedCommand
         $this->input->setOption('database', 'tenant');
 
         tenant()->all($this->option('tenants'))->each(function ($tenant) {
-            $this->line("Tenant: {$tenant['uuid']} ({$tenant['domain']})");
+            $this->line("Tenant: {$tenant['id']} ({$tenant['domain']})");
             $this->database->connectToTenant($tenant);
 
             // Seed

@@ -28,7 +28,7 @@ class TenantManagerTest extends TestCase
         tenant()->create('foo.localhost');
         tenancy()->init('foo.localhost');
 
-        $this->assertSame(tenant('uuid'), tenant()('uuid'));
+        $this->assertSame(tenant('id'), tenant()('id'));
     }
 
     /** @test */
@@ -38,7 +38,7 @@ class TenantManagerTest extends TestCase
 
         $this->assertNotSame($tenant, tenancy()->tenant);
 
-        tenancy()->initById($tenant['uuid']);
+        tenancy()->initById($tenant['id']);
 
         $this->assertSame($tenant, tenancy()->tenant);
     }
@@ -64,7 +64,7 @@ class TenantManagerTest extends TestCase
         tenant()->create('dev.localhost');
         tenancy()->init('dev.localhost');
 
-        $this->assertSame(tenant()->tenant, tenant()->find(tenant('uuid')));
+        $this->assertSame(tenant()->tenant, tenant()->find(tenant('id')));
     }
 
     /** @test */
@@ -72,7 +72,7 @@ class TenantManagerTest extends TestCase
     {
         $tenant = tenant()->create('foo.localhost');
 
-        $this->assertSame($tenant, tenancy()->getTenantById($tenant['uuid']));
+        $this->assertSame($tenant, tenancy()->getTenantById($tenant['id']));
     }
 
     /** @test */
@@ -87,9 +87,9 @@ class TenantManagerTest extends TestCase
     public function initById_returns_the_tenant()
     {
         $tenant = tenant()->create('foo.localhost');
-        $uuid = $tenant['uuid'];
+        $id = $tenant['id'];
 
-        $this->assertSame($tenant, tenancy()->initById($uuid));
+        $this->assertSame($tenant, tenancy()->initById($id));
     }
 
     /** @test */
@@ -185,7 +185,7 @@ class TenantManagerTest extends TestCase
     public function tenant_can_be_deleted()
     {
         $tenant = tenant()->create('foo.localhost');
-        tenant()->delete($tenant['uuid']);
+        tenant()->delete($tenant['id']);
         $this->assertSame([], tenancy()->all()->toArray());
 
         $tenant = tenant()->create('foo.localhost');
@@ -207,7 +207,7 @@ class TenantManagerTest extends TestCase
         $tenant = tenant()->create('foo.localhost', $data);
 
         $tenant_data = $tenant;
-        unset($tenant_data['uuid']);
+        unset($tenant_data['id']);
         unset($tenant_data['domain']);
 
         $this->assertSame($data, $tenant_data);

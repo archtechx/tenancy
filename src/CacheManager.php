@@ -10,7 +10,7 @@ class CacheManager extends BaseCacheManager
 {
     public function __call($method, $parameters)
     {
-        $tags = [config('tenancy.cache.tag_base') . tenant('uuid')];
+        $tags = [config('tenancy.cache.tag_base') . tenant('id')];
 
         if ($method === 'tags') {
             if (\count($parameters) !== 1) {

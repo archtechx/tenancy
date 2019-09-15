@@ -9,20 +9,20 @@ class CacheManagerTest extends TestCase
     /** @test */
     public function default_tag_is_automatically_applied()
     {
-        $this->assertArrayIsSubset([config('tenancy.cache.tag_base') . tenant('uuid')], cache()->tags('foo')->getTags()->getNames());
+        $this->assertArrayIsSubset([config('tenancy.cache.tag_base') . tenant('id')], cache()->tags('foo')->getTags()->getNames());
     }
 
     /** @test */
     public function tags_are_merged_when_array_is_passed()
     {
-        $expected = [config('tenancy.cache.tag_base') . tenant('uuid'), 'foo', 'bar'];
+        $expected = [config('tenancy.cache.tag_base') . tenant('id'), 'foo', 'bar'];
         $this->assertEquals($expected, cache()->tags(['foo', 'bar'])->getTags()->getNames());
     }
 
     /** @test */
     public function tags_are_merged_when_string_is_passed()
     {
-        $expected = [config('tenancy.cache.tag_base') . tenant('uuid'), 'foo'];
+        $expected = [config('tenancy.cache.tag_base') . tenant('id'), 'foo'];
         $this->assertEquals($expected, cache()->tags('foo')->getTags()->getNames());
     }
 

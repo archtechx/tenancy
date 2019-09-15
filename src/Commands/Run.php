@@ -37,7 +37,7 @@ class Run extends Command
         }
 
         tenant()->all($this->option('tenants'))->each(function ($tenant) {
-            $this->line("Tenant: {$tenant['uuid']} ({$tenant['domain']})");
+            $this->line("Tenant: {$tenant['id']} ({$tenant['domain']})");
             tenancy()->init($tenant['domain']);
 
             $callback = function ($prefix = '') {

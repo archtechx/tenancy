@@ -37,7 +37,7 @@ return [
     ],
     'filesystem' => [ // https://stancl-tenancy.netlify.com/docs/filesystem-tenancy/
         'suffix_base' => 'tenant',
-        // Disks which should be suffixed with the suffix_base + tenant UUID.
+        // Disks which should be suffixed with the suffix_base + tenant id.
         'disks' => [
             'local',
             'public',

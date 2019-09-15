@@ -66,7 +66,7 @@ class Install extends Command
 */
 
 Route::get('/', function () {
-    return 'This is your multi-tenant application. The uuid of the current tenant is ' . tenant('uuid');
+    return 'This is your multi-tenant application. The id of the current tenant is ' . tenant('id');
 });
 "
         );

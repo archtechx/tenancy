@@ -49,7 +49,7 @@ class CommandsTest extends TestCase
     {
         $tenant = tenant()->create('test.localhost');
         Artisan::call('tenants:migrate', [
-            '--tenants' => [$tenant['uuid']],
+            '--tenants' => [$tenant['id']],
         ]);
 
         $this->assertFalse(Schema::hasTable('users'));
@@ -106,11 +106,11 @@ class CommandsTest extends TestCase
     /** @test */
     public function run_commands_works()
     {
-        $uuid = tenant()->create('run.localhost')['uuid'];
+        $id = tenant()->create('run.localhost')['id'];
 
-        Artisan::call('tenants:migrate', ['--tenants' => $uuid]);
+        Artisan::call('tenants:migrate', ['--tenants' => $id]);
 
-        $this->artisan("tenants:run foo --tenants=$uuid --argument='a=foo' --option='b=bar' --option='c=xyz'")
+        $this->artisan("tenants:run foo --tenants=$id --argument='a=foo' --option='b=bar' --option='c=xyz'")
             ->expectsOutput("User's name is Test command")
             ->expectsOutput('foo')
             ->expectsOutput('xyz');

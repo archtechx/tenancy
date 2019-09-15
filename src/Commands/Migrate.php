@@ -50,7 +50,7 @@ class Migrate extends MigrateCommand
         }
 
         tenant()->all($this->option('tenants'))->each(function ($tenant) {
-            $this->line("Tenant: {$tenant['uuid']} ({$tenant['domain']})");
+            $this->line("Tenant: {$tenant['id']} ({$tenant['domain']})");
 
             // See Illuminate\Database\Migrations\DatabaseMigrationRepository::getConnection.
             // Database connections are cached by Illuminate\Database\ConnectionResolver.

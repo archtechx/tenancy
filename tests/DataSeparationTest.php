@@ -21,7 +21,7 @@ class DataSeparationTest extends TestCase
         $tenant1 = tenancy()->create('tenant1.localhost');
         $tenant2 = tenancy()->create('tenant2.localhost');
         \Artisan::call('tenants:migrate', [
-            '--tenants' => [$tenant1['uuid'], $tenant2['uuid']],
+            '--tenants' => [$tenant1['id'], $tenant2['id']],
         ]);
 
         tenancy()->init('tenant1.localhost');
@@ -54,7 +54,7 @@ class DataSeparationTest extends TestCase
 
         $tenant3 = tenancy()->create('tenant3.localhost');
         \Artisan::call('tenants:migrate', [
-            '--tenants' => [$tenant1['uuid'], $tenant3['uuid']],
+            '--tenants' => [$tenant1['id'], $tenant3['id']],
         ]);
 
         tenancy()->init('tenant3.localhost');

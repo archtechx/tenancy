@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
+use Stancl\Tenancy\StorageDrivers\Database\TenantModel;
 use Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver;
 use Stancl\Tenancy\StorageDrivers\RedisStorageDriver;
 use Stancl\Tenancy\Tenant;
@@ -17,7 +18,7 @@ class TenantStorageTest extends TestCase
 
         $this->assertTrue(tenant()->all()->contains($abc));
 
-        tenant()->delete($abc['uuid']);
+        tenant()->delete($abc['id']);
 
         $this->assertFalse(tenant()->all()->contains($abc));
     }
@@ -62,11 +63,11 @@ class TenantStorageTest extends TestCase
     public function put_works_on_a_tenant_different_than_the_current_one_when_two_args_are_used()
     {
         $tenant = tenant()->create('second.localhost');
-        $uuid = $tenant['uuid'];
+        $id = $tenant['id'];
 
-        tenancy()->put('foo', 'bar', $uuid);
+        tenancy()->put('foo', 'bar', $id);
 
-        $this->assertSame('bar', tenancy()->get('foo', $uuid));
+        $this->assertSame('bar', tenancy()->get('foo', $id));
         $this->assertNotSame('bar', tenant('foo'));
     }
 
@@ -74,15 +75,15 @@ class TenantStorageTest extends TestCase
     public function put_works_on_a_tenant_different_than_the_current_one_when_a_single_arg_is_used()
     {
         $tenant = tenant()->create('second.localhost');
-        $uuid = $tenant['uuid'];
+        $id = $tenant['id'];
 
         $keys = ['foo', 'abc'];
         $vals = ['bar', 'xyz'];
         $data = \array_combine($keys, $vals);
 
-        tenancy()->put($data, null, $uuid);
+        tenancy()->put($data, null, $id);
 
-        $this->assertSame($vals, tenancy()->get($keys, $uuid));
+        $this->assertSame($vals, tenancy()->get($keys, $id));
         $this->assertNotSame($vals, tenancy()->get($keys));
         $this->assertFalse(\array_intersect($data, tenant()->tenant) == $data); // assert array not subset
     }
@@ -152,7 +153,7 @@ class TenantStorageTest extends TestCase
     public function tenant_model_uses_correct_connection()
     {
         config(['tenancy.storage.db.connection' => 'foo']);
-        $this->assertSame('foo', (new Tenant)->getConnectionName());
+        $this->assertSame('foo', (new TenantModel)->getConnectionName());
     }
 
     /** @test */
@@ -196,6 +197,6 @@ class TenantStorageTest extends TestCase
         tenancy()->put(['foo' => 'bar', 'abc' => 'xyz']);
         $this->assertSame(['bar', 'xyz'], tenancy()->get(['foo', 'abc']));
 
-        $this->assertSame('bar', \DB::connection('central')->table('tenants')->where('uuid', tenant('uuid'))->first()->foo);
+        $this->assertSame('bar', \DB::connection('central')->table('tenants')->where('id', tenant('id'))->first()->foo);
     }
 }

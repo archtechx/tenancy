@@ -30,7 +30,7 @@ class QueueTest extends TestCase
         dispatch(new TestJob());
 
         Event::assertDispatched(JobProcessing::class, function ($event) {
-            return $event->job->payload()['tenant_uuid'] === tenant('uuid');
+            return $event->job->payload()['tenant_id'] === tenant('id');
         });
     }
 }
