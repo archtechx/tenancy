@@ -30,7 +30,7 @@ class DatabaseStorageDriver implements StorageDriver
             ->withDomains(Domains::where('tenant_id', $id)->all()->only('domain')->toArray());
     }
 
-    public function canCreateTenant(Tenant $tenant)
+    public function ensureTEnantCanBeCreated(Tenant $tenant)
     {
         // todo
     }

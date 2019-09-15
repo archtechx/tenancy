@@ -43,12 +43,13 @@ interface StorageDriver
     public function all(array $ids = []): array;
 
     /**
-     * Check if a tenant can be created.
+     * Ensure a tenant can be created.
      *
      * @param Tenant $tenant
-     * @return true|TenantCannotBeCreatedException
+     * @return void
+     * @throws TenantCannotBeCreatedException
      */
-    public function canCreateTenant(Tenant $tenant);
+    public function ensureTenantCanBeCreated(Tenant $tenant): void;
 
     /**
      * Get a value from storage.

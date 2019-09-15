@@ -36,7 +36,7 @@ class RedisStorageDriver implements StorageDriver
         return $this->app[Tenant::class];
     }
 
-    public function canCreateTenant(Tenant $tenant)
+    public function ensureTenantCanBeCreated(Tenant $tenant)
     {
         // todo
     }

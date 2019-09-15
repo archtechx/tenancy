@@ -83,14 +83,8 @@ class TenantManager
      */
     public function ensureTenantCanBeCreated(Tenant $tenant): void
     {
-        // todo move the "throw" responsibility to the canCreateTenant methods?
-        if (($e = $this->storage->canCreateTenant($tenant)) instanceof TenantCannotBeCreatedException) {
-            throw new $e;
-        }
-
-        if (($e = $this->database->canCreateTenant($tenant)) instanceof TenantCannotBeCreatedException) {
-            throw new $e;
-        }
+        $this->storage->ensureTenantCanBeCreated($tenant);
+        $this->database->ensureTenantCanBeCreated($tenant);
     }
 
     public function updateTenant(Tenant $tenant): self

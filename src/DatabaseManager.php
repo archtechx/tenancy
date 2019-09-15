@@ -92,15 +92,14 @@ class DatabaseManager
      * Check if a tenant can be created.
      *
      * @param Tenant $tenant
-     * @return true|TenantCannotBeCreatedException
+     * @return void
+     * @throws TenantCannotBeCreatedException
      */
-    public function canCreate(Tenant $tenant)
+    public function ensureTenantCanBeCreated(Tenant $tenant): void
     {
         if ($this->getTenantDatabaseManager($tenant)->databaseExists($database = $tenant->getDatabaseName())) {
-            return new TenantDatabaseAlreadyExistsException($database);
+            throw new TenantDatabaseAlreadyExistsException($database);
         }
-
-        return true;
     }
 
     public function createDatabase(Tenant $tenant)
