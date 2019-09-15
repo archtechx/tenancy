@@ -59,12 +59,15 @@ class Tenant implements ArrayAccess
 
     public static function fromStorage(array $data): self
     {
-        return static::new()->withData($data)->persisted();
+        return static::new()->withData($data)->persisted(true);
     }
 
-    protected function persisted()
+    protected function persisted($persisted = null)
     {
-        $this->persisted = true;
+        if (gettype($persisted) === 'bool') {
+            $this->persisted = $persisted;
+            return $this;
+        }
 
         return $this;
     }
@@ -104,6 +107,35 @@ class Tenant implements ArrayAccess
         }
 
         $this->persisted = true;
+
+        return $this;
+    }
+
+    /**
+     * Delete a tenant from storage.
+     *
+     * @return self
+     */
+    public function delete(): self
+    {
+        if ($this->persisted) {
+            $this->tenantManager->deleteTenant($this);
+            $this->persisted = false;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Unassign all domains from the tenant.
+     *
+     * @return self
+     */
+    public function softDelete(): self
+    {
+        $this->put('_tenancy_original_domains', $this->domains);
+        $this->domains = [];
+        $this->save();
 
         return $this;
     }
