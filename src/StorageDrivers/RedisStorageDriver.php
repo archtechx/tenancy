@@ -10,6 +10,7 @@ use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Tenant;
 
+// todo transactions instead of pipelines?
 class RedisStorageDriver implements StorageDriver
 {
     // todo json encoding?
@@ -114,7 +115,6 @@ class RedisStorageDriver implements StorageDriver
     public function all(array $ids = []): array
     {
         // todo $this->redis->pipeline() - return?
-        // todo transaction instead of pipeline?
         $hashes = array_map(function ($hash) {
             return "tenants:{$hash}";
         }, $ids);
