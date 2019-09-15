@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use ArrayAccess;
-use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 
@@ -46,16 +45,16 @@ class Tenant implements ArrayAccess
      */
     protected $persisted = false;
 
-    protected function __construct(Application $app)
+    public function __construct(StorageDriver $storage, TenantManager $tenantManager, UniqueIdentifierGenerator $idGenerator)
     {
-        $this->storage = $app[StorageDriver::class];
-        $this->manager = $app[TenantManager::class];
-        $this->idGenerator = $app[UniqueIdentifierGenerator::class];
+        $this->storage = $storage;
+        $this->manager = $tenantManager;
+        $this->idGenerator = $idGenerator;
     }
 
-    public static function new(Application $app = null): self
+    public static function new(): self
     {
-        return new static($app ?? app());
+        return app(static::class);
     }
 
     public static function fromStorage(array $data): self
