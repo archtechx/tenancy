@@ -118,6 +118,6 @@ class TenantModel extends Model
 
         $this->update(array_merge($customColumns, [
             $this->dataColumn() => json_encode($jsonObj),
-        ]))
+        ]));
     }
 }
