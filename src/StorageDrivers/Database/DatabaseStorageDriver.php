@@ -4,17 +4,30 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\StorageDrivers\Database;
 
+use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\Exceptions\DomainOccupiedByOtherTenantException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Exceptions\TenantWithThisIdAlreadyExistsException;
 use Stancl\Tenancy\StorageDrivers\Database\DomainModel as Domains;
-use Stancl\Tenancy\StorageDrivers\Database\Tenants as Tenants;
+use Stancl\Tenancy\StorageDrivers\Database\TenantModel as Tenants;
 use Stancl\Tenancy\Tenant;
 
 class DatabaseStorageDriver implements StorageDriver
 {
     // todo write tests verifying that data is decoded and added to the array
+
+    /** @var Application */
+    protected $app;
+
+    /** @var Tenant The default tenant. */
+    protected $tenant;
+
+    public function __construct(Application $app)
+    {
+        $this->app = $app;
+    }
 
     public function findByDomain(string $domain): Tenant
     {
@@ -23,16 +36,16 @@ class DatabaseStorageDriver implements StorageDriver
             throw new TenantCouldNotBeIdentifiedException($domain);
         }
 
-        return $this->find($id);
+        return $this->findById($id);
     }
 
     public function findById(string $id): Tenant
     {
         return Tenant::fromStorage(Tenants::find($id)->decoded())
-            ->withDomains(Domains::where('tenant_id', $id)->all()->only('domain')->toArray());
+            ->withDomains(Domains::where('tenant_id', $id)->get()->only('domain')->toArray());
     }
 
-    public function ensureTenantCanBeCreated(Tenant $tenant)
+    public function ensureTenantCanBeCreated(Tenant $tenant): void
     {
         // todo test this
         if (Tenants::find($tenant->id)) {
@@ -42,6 +55,13 @@ class DatabaseStorageDriver implements StorageDriver
         if (Domains::whereIn('domain', [$tenant->domains])->exists()) {
             throw new DomainOccupiedByOtherTenantException();
         }
+    }
+
+    public function withDefaultTenant(Tenant $tenant): self
+    {
+        $this->tenant = $tenant;
+
+        return $this;
     }
 
     public function getTenantIdByDomain(string $domain): ?string
@@ -64,9 +84,8 @@ class DatabaseStorageDriver implements StorageDriver
 
     public function updateTenant(Tenant $tenant): void
     {
-        // todo
-        // 1. update storage
-        // 2. update domains
+        Tenant::find($tenant->id)->putMany($tenant->data);
+        // todo update domains
     }
 
     public function deleteTenant(Tenant $tenant): void
@@ -93,7 +112,7 @@ class DatabaseStorageDriver implements StorageDriver
      */
     protected function tenant()
     {
-        return $this->app[Tenant::class];
+        return $this->tenant ?? $this->app[Tenant::class];
     }
 
     public function get(string $key, Tenant $tenant = null)

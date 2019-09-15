@@ -6,7 +6,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateTenantsTable extends Migration
+class CreateDomainsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -15,11 +15,9 @@ class CreateTenantsTable extends Migration
      */
     public function up()
     {
-        Schema::create('tenants', function (Blueprint $table) {
-            $table->string('id', 36)->primary(); // 36 characters is the default uuid length
-            // your custom, indexed columns go here
-
-            $table->json('data');
+        Schema::create('domains', function (Blueprint $table) {
+            $table->string('tenant_id', 36)->primary(); // 36 characters is the default uuid length
+            $table->string('domain', 255)->index(); // don't change this
         });
     }
 
@@ -30,6 +28,6 @@ class CreateTenantsTable extends Migration
      */
     public function down()
     {
-        Schema::drop('tenants');
+        Schema::drop('domains');
     }
 }

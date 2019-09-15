@@ -210,9 +210,10 @@ class TenantManager
 
     protected function bootstrapFeatures(): self
     {
-        foreach ($this->app['config']['tenancy.features'] as $feature) {
-            $this->app[$feature]->bootstrap($this);
-        }
+        // todo this doesn't work
+        // foreach ($this->app['config']['tenancy.features'] as $feature) {
+        //     $this->app[$feature]->bootstrap($this);
+        // }
 
         return $this;
     }
@@ -225,7 +226,7 @@ class TenantManager
      */
     public function tenancyBootstrappers($except = []): array
     {
-        return array_key_diff($this->app['config']['tenancy.bootstrappers'], $except);
+        return array_diff_key($this->app['config']['tenancy.bootstrappers'], $except);
     }
 
     public function shouldMigrateAfterCreation(): bool

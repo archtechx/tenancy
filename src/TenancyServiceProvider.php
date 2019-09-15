@@ -64,14 +64,13 @@ class TenancyServiceProvider extends ServiceProvider
             $this->app->singleton($bootstrapper);
         }
 
-        // todo are these necessary?
-        $this->app->singleton(Migrate::class, function ($app) {
+        $this->app->singleton(Commands\Migrate::class, function ($app) {
             return new Commands\Migrate($app['migrator'], $app[DatabaseManager::class]);
         });
-        $this->app->singleton(Rollback::class, function ($app) {
+        $this->app->singleton(Commands\Rollback::class, function ($app) {
             return new Commands\Rollback($app['migrator'], $app[DatabaseManager::class]);
         });
-        $this->app->singleton(Seed::class, function ($app) {
+        $this->app->singleton(Commands\Seed::class, function ($app) {
             return new Commands\Seed($app['db'], $app[DatabaseManager::class]);
         });
 

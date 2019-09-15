@@ -15,6 +15,7 @@ class TenantModel extends Model
     protected $primaryKey = 'id';
     public $incrementing = false;
     public $timestamps = false;
+    public $table = 'tenants';
 
     public static function dataColumn()
     {

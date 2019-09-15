@@ -21,6 +21,9 @@ class RedisStorageDriver implements StorageDriver
     /** @var Redis */
     protected $redis;
 
+    /** @var Tenant The default tenant. */
+    protected $tenant;
+
     public function __construct(Application $app, Redis $redis)
     {
         $this->app = $app;
@@ -34,10 +37,17 @@ class RedisStorageDriver implements StorageDriver
      */
     protected function tenant()
     {
-        return $this->app[Tenant::class];
+        return $this->tenant ?? $this->app[Tenant::class];
     }
 
-    public function ensureTenantCanBeCreated(Tenant $tenant)
+    public function withDefaultTenant(Tenant $tenant): self
+    {
+        $this->tenant = $tenant;
+
+        return $this;
+    }
+
+    public function ensureTenantCanBeCreated(Tenant $tenant): void
     {
         // todo
     }

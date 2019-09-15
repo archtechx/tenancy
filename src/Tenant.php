@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use ArrayAccess;
+use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 use Stancl\Tenancy\Exceptions\TenantStorageException;
+
+// todo write tests for updating the tenant
 
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
@@ -30,6 +33,9 @@ class Tenant implements ArrayAccess
      */
     public $domains = [];
 
+    /** @var Application */
+    protected $app;
+
     /** @var StorageDriver */
     protected $storage;
 
@@ -46,16 +52,24 @@ class Tenant implements ArrayAccess
      */
     protected $persisted = false;
 
-    public function __construct(StorageDriver $storage, TenantManager $tenantManager, UniqueIdentifierGenerator $idGenerator)
+    public function __construct(Application $app, StorageDriver $storage, TenantManager $tenantManager, UniqueIdentifierGenerator $idGenerator)
     {
-        $this->storage = $storage;
+        $this->app = $app;
+        $this->storage = $storage->withDefaultTenant($this);
         $this->manager = $tenantManager;
         $this->idGenerator = $idGenerator;
     }
 
-    public static function new(): self
+    public static function new(Application $app = null): self
     {
-        return app(static::class);
+        $app = $app ?? app();
+
+        return new static(
+            $app,
+            $app[StorageDriver::class],
+            $app[TenantManager::class],
+            $app[UniqueIdentifierGenerator::class]
+        );
     }
 
     public static function fromStorage(array $data): self
@@ -132,14 +146,14 @@ class Tenant implements ArrayAccess
 
     public function save(): self
     {
-        if (! $this->id) {
+        if (! isset($this->data['id'])) {
             $this->generateId();
         }
 
         if ($this->persisted) {
-            $this->manager->createTenant($this);
-        } else {
             $this->manager->updateTenant($this);
+        } else {
+            $this->manager->createTenant($this);
         }
 
         $this->persisted = true;
@@ -178,7 +192,12 @@ class Tenant implements ArrayAccess
 
     public function getDatabaseName()
     {
-        return $this['_tenancy_db_name'] ?? $this->app['config']['tenancy.database.prefix'] . $this->uuid . $this->app['config']['tenancy.database.suffix'];
+        return $this['_tenancy_db_name'] ?? ($this->app['config']['tenancy.database.prefix'] . $this->id . $this->app['config']['tenancy.database.suffix']);
+    }
+
+    public function getConnectionName()
+    {
+        return $this['_tenancy_db_connection'] ?? 'tenant';
     }
 
     /**
@@ -190,9 +209,11 @@ class Tenant implements ArrayAccess
     public function get($keys)
     {
         if (is_array($keys)) {
-            if (array_intersect(array_keys($this->data), $keys)) { // if all keys are present in cache
+            if ((array_intersect(array_keys($this->data), $keys) === $keys) ||
+                ! $this->persisted) { // if all keys are present in cache
+                
                 return array_reduce($keys, function ($pairs, $key) {
-                    $pairs[$key] = $this->data[$key];
+                    $pairs[$key] = $this->data[$key] ?? null;
 
                     return $pairs;
                 }, []);
@@ -201,11 +222,14 @@ class Tenant implements ArrayAccess
             return $this->storage->getMany($keys);
         }
 
-        if (! isset($this->data[$keys])) {
-            $this->data[$keys] = $this->storage->get($keys);
+        // single key
+        $key = $keys;
+
+        if (! isset($this->data[$key]) && $this->persisted) {
+            $this->data[$key] = $this->storage->get($key);
         }
 
-        return $this->data[$keys];
+        return $this->data[$key];
     }
 
     public function put($key, $value = null): self
@@ -227,8 +251,13 @@ class Tenant implements ArrayAccess
         return $this;
     }
 
-    public function __get($name)
+    public function __get($key)
     {
-        return $this->get($name);
+        return $this->get($key);
+    }
+
+    public function __set($key, $value)
+    {
+        $this->data[$key] = $value;
     }
 }

@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 return [
-    'storage_driver' => 'Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver',
+    'storage_driver' => 'Stancl\Tenancy\StorageDrivers\Database\DatabaseStorageDriver',
     'storage' => [
-        'db' => [ // Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver
+        'db' => [ // Stancl\Tenancy\StorageDrivers\Database\DatabaseStorageDriver
             'data_column' => 'data',
             'custom_columns' => [
                 // 'plan',
@@ -60,6 +60,7 @@ return [
         'cache' => 'Stancl\Tenancy\TenancyBootstrappers\CacheTenancyBootstrapper',
         'filesystem' => 'Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper',
         'redis' => 'Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper',
+        'queue' => 'Stancl\Tenancy\TenancyBoostrappers\QueueTenancyBootstrapper',
     ],
     'features' => [
         // Features are classes that provide additional functionality

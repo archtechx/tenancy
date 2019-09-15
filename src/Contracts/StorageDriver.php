@@ -49,6 +49,14 @@ interface StorageDriver
     public function ensureTenantCanBeCreated(Tenant $tenant): void;
 
     /**
+     * Set default tenant (will be used for get/put when no tenant is supplied).
+     *
+     * @param Tenant $tenant
+     * @return self
+     */
+    public function withDefaultTenant(Tenant $tenant);
+
+    /**
      * Get a value from storage.
      *
      * @param string $key

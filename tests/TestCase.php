@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Redis;
-use Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver;
+use Stancl\Tenancy\StorageDrivers\Database\DatabaseStorageDriver;
 use Stancl\Tenancy\StorageDrivers\RedisStorageDriver;
+use Stancl\Tenancy\Tenant;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
@@ -40,19 +41,12 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         }
     }
 
-    protected function tearDown(): void
+    public function createTenant($domains = ['test.localhost'])
     {
-        // config(['database.default' => 'central']);
-
-        parent::tearDown();
+        Tenant::new()->withDomains($domains)->save();
     }
 
-    public function createTenant($domain = 'localhost')
-    {
-        tenant()->create($domain);
-    }
-
-    public function initTenancy($domain = 'localhost')
+    public function initTenancy($domain = 'test.localhost')
     {
         return tenancy()->init($domain);
     }
@@ -112,13 +106,13 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'tenancy.storage_driver' => RedisStorageDriver::class,
             ]);
 
-            tenancy()->storage = $app->make(RedisStorageDriver::class);
+            // tenancy()->storage = $app->make(RedisStorageDriver::class); // todo this shouldn't be necessary
         } elseif (env('TENANCY_TEST_STORAGE_DRIVER', 'redis') === 'db') {
             $app['config']->set([
                 'tenancy.storage_driver' => DatabaseStorageDriver::class,
             ]);
 
-            tenancy()->storage = $app->make(DatabaseStorageDriver::class);
+            // tenancy()->storage = $app->make(DatabaseStorageDriver::class); // todo this shouldn't be necessary
         }
     }
 

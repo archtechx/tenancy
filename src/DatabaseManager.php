@@ -6,6 +6,7 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Illuminate\Foundation\Application;
+use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
@@ -23,6 +24,7 @@ class DatabaseManager
 
     public function __construct(Application $app, BaseDatabaseManager $database)
     {
+        $this->app = $app;
         $this->database = $database;
         $this->originalDefaultConnectionName = $app['config']['database.default'];
     }
@@ -35,9 +37,8 @@ class DatabaseManager
      */
     public function connect(Tenant $tenant)
     {
-        $connection = 'tenant'; // todo tenant-specific connections
-        $this->createTenantConnection($tenant->getDatabaseName(), $connection);
-        $this->switchConnection($connection);
+        $this->createTenantConnection($tenant);
+        $this->switchConnection($tenant->getConnectionName());
     }
 
     /**
@@ -53,13 +54,13 @@ class DatabaseManager
     /**
      * Create the tenant database connection.
      *
-     * @param string $databaseName
-     * @param string $connectionName
+     * @param Tenant $tenant
      * @return void
      */
-    public function createTenantConnection(string $databaseName, string $connectionName = null)
+    public function createTenantConnection(Tenant $tenant)
     {
-        $connectionName = $connectionName ?? 'tenant'; // todo
+        $databaseName = $tenant->getDatabaseName();
+        $connectionName = $tenant->getConnectionName();
 
         // Create the database connection.
         $based_on = $this->app['config']['tenancy.database.based_on'] ?? $this->originalDefaultConnectionName;
@@ -108,9 +109,9 @@ class DatabaseManager
         $manager = $this->getTenantDatabaseManager($tenant);
 
         if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
-            QueuedTenantDatabaseCreator::dispatch($this->app[$manager], $database, 'create');
+            QueuedTenantDatabaseCreator::dispatch($manager, $database, 'create');
         } else {
-            return $this->app[$manager]->createDatabase($database);
+            return $manager->createDatabase($database);
         }
     }
 
@@ -120,16 +121,16 @@ class DatabaseManager
         $manager = $this->getTenantDatabaseManager($tenant);
 
         if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
-            QueuedTenantDatabaseCreator::dispatch($this->app[$manager], $database, 'delete');
+            QueuedTenantDatabaseCreator::dispatch($manager, $database, 'delete');
         } else {
-            return $this->app[$manager]->deleteDatabase($database);
+            return $manager->deleteDatabase($database);
         }
     }
 
-    protected function getTenantDatabaseManager(Tenant $tenant)
+    protected function getTenantDatabaseManager(Tenant $tenant): TenantDatabaseManager
     {
-        $connection = $tenant->getConnectionName(); // todo
-        $driver = $this->getDriver($connection);
+        $this->createTenantConnection($tenant);
+        $driver = $this->getDriver($tenant->getConnectionName());
 
         $databaseManagers = $this->app['config']['tenancy.database_managers'];
 
@@ -137,6 +138,6 @@ class DatabaseManager
             throw new DatabaseManagerNotRegisteredException($driver);
         }
 
-        return $databaseManagers[$driver];
+        return $this->app[$databaseManagers[$driver]];
     }
 }
