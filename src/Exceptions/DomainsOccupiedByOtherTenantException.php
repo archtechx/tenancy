@@ -6,7 +6,7 @@ namespace Stancl\Tenancy\Exceptions;
 
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 
-class DomainOccupiedByOtherTenantException extends TenantCannotBeCreatedException
+class DomainsOccupiedByOtherTenantException extends TenantCannotBeCreatedException
 {
     public function reason(): string
     {
