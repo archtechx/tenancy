@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\TenancyBoostrappers;
+namespace Stancl\Tenancy\TenancyBootstrappers;
 
+use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Tenant;
 
@@ -28,7 +30,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
     public function start(Tenant $tenant)
     {
         // todo revisit this
-        $suffix = $this->app['config']['tenancy.filesystem.suffix_base'] . tenant('uuid');
+        $suffix = $this->app['config']['tenancy.filesystem.suffix_base'] . $tenant->id;
 
         // storage_path()
         $this->app->useStoragePath($this->originalPaths['path'] . "/{$suffix}");

@@ -60,7 +60,7 @@ return [
         'cache' => 'Stancl\Tenancy\TenancyBootstrappers\CacheTenancyBootstrapper',
         'filesystem' => 'Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper',
         'redis' => 'Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper',
-        'queue' => 'Stancl\Tenancy\TenancyBoostrappers\QueueTenancyBootstrapper',
+        'queue' => 'Stancl\Tenancy\TenancyBootstrappers\QueueTenancyBootstrapper',
     ],
     'features' => [
         // Features are classes that provide additional functionality

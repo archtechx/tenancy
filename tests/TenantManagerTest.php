@@ -6,7 +6,6 @@ namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Stancl\Tenancy\Exceptions\CannotChangeUuidOrDomainException;
 
 class TenantManagerTest extends TestCase
 {
@@ -228,22 +227,8 @@ class TenantManagerTest extends TestCase
     }
 
     /** @test */
-    public function uuid_and_domain_cannot_be_changed()
+    public function id_cannot_be_changed()
     {
-        $tenant = tenant()->create('foo.localhost');
-
-        $this->expectException(CannotChangeUuidOrDomainException::class);
-        tenant()->put('uuid', 'foo', $tenant['uuid']);
-
-        $this->expectException(CannotChangeUuidOrDomainException::class);
-        tenant()->put(['uuid' => 'foo'], null, $tenant['uuid']);
-
-        tenancy()->init('foo.localhost');
-
-        $this->expectException(CannotChangeUuidOrDomainException::class);
-        tenant()->put('uuid', 'foo');
-
-        $this->expectException(CannotChangeUuidOrDomainException::class);
-        tenant()->put(['uuid' => 'foo']);
+        // todo
     }
 }

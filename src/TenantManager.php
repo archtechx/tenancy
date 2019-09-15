@@ -219,7 +219,7 @@ class TenantManager
     }
 
     /**
-     * Return a list of TenancyBoostrappers.
+     * Return a list of TenancyBootstrappers.
      *
      * @param string[] $except
      * @return Contracts\TenancyBootstrapper[]

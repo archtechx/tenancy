@@ -2,15 +2,25 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\TenancyBoostrappers;
+namespace Stancl\Tenancy\TenancyBootstrappers;
 
+use Illuminate\Cache\CacheManager;
+use Illuminate\Contracts\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Tenant;
 
-class CacheTenancyBoostrapper implements TenancyBootstrapper
+class CacheTenancyBootstrapper implements TenancyBootstrapper
 {
-    /** @var \Illuminate\Cache\CacheManager */
+    /** @var CacheManager */
     protected $originalCache;
+
+    /** @var Application */
+    protected $app;
+
+    public function __construct(Application $app)
+    {
+        $this->app = $app;
+    }
 
     public function start(Tenant $tenant)
     {

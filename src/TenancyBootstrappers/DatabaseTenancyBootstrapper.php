@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\TenancyBoostrappers;
+namespace Stancl\Tenancy\TenancyBootstrappers;
 
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
