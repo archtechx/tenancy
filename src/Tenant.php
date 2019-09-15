@@ -211,7 +211,7 @@ class Tenant implements ArrayAccess
         if (is_array($keys)) {
             if ((array_intersect(array_keys($this->data), $keys) === $keys) ||
                 ! $this->persisted) { // if all keys are present in cache
-                
+
                 return array_reduce($keys, function ($pairs, $key) {
                     $pairs[$key] = $this->data[$key] ?? null;
 
