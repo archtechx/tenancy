@@ -7,6 +7,7 @@ namespace Stancl\Tenancy;
 use ArrayAccess;
 use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
+use Stancl\Tenancy\Exceptions\TenantStorageException;
 
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
@@ -209,8 +210,9 @@ class Tenant implements ArrayAccess
 
     public function put($key, $value = null): self
     {
-        // todo something like if ($this->storage->getIdKey() === $key) throw new Exception("Can't override ID")?
-        // and the responsibility of not overriding domains is up to the storage driver
+        if ($this->storage->getIdKey() === $key) {
+            throw new TenantStorageException("The tenant's id can't be changed.");
+        }
 
         if (is_array($key)) {
             $this->storage->putMany($key);

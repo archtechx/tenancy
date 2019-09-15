@@ -6,9 +6,6 @@ namespace Stancl\Tenancy\Contracts;
 
 use Stancl\Tenancy\Tenant;
 
-// todo this class now manages types (json encoding)
-// make sure ids are not json encoded
-
 interface StorageDriver
 {
     public function createTenant(Tenant $tenant): void;
