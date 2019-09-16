@@ -32,13 +32,13 @@ class TenantManager
     protected $storage;
 
     /** @var DatabaseManager */
-    protected $database;
+    public $database;
 
-    /** @var callable[][] Event listeners */
-    protected $listeners = [];
+    /** @var callable[][] */
+    protected $eventListeners = [];
 
     /** @var bool Has tenancy been initialized. */
-    public $initialized;
+    public $initialized = false;
 
     public function __construct(Application $app, ConsoleKernel $artisan, Contracts\StorageDriver $storage, DatabaseManager $database)
     {
@@ -153,8 +153,8 @@ class TenantManager
 
     public function initializeTenancy(Tenant $tenant): self
     {
-        $this->bootstrapTenancy($tenant);
         $this->setTenant($tenant);
+        $this->bootstrapTenancy($tenant);
         $this->initialized = true;
 
         return $this;
@@ -245,7 +245,7 @@ class TenantManager
      */
     public function tenancyBootstrappers($except = []): array
     {
-        return array_diff_key($this->app['config']['tenancy.bootstrappers'], $except);
+        return array_diff_key($this->app['config']['tenancy.bootstrappers'], array_flip($except));
     }
 
     public function shouldMigrateAfterCreation(): bool
@@ -276,7 +276,7 @@ class TenantManager
      */
     protected function event(string $name): array
     {
-        return array_reduce($this->eventCalbacks[$name] ?? [], function ($prevented, $listener) {
+        return array_reduce($this->eventListeners[$name] ?? [], function ($prevented, $listener) {
             $prevented = array_merge($prevented, $listener($this) ?? []);
 
             return $prevented;

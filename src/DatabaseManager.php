@@ -82,6 +82,7 @@ class DatabaseManager
 
     public function switchConnection($connection)
     {
+        $this->app['config']['database.default'] = $connection;
         $this->database->purge();
         $this->database->reconnect($connection);
         $this->database->setDefaultConnection($connection);

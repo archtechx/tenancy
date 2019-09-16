@@ -9,13 +9,15 @@ use Tenancy;
 
 class TenantManagerEventsTest extends TestCase
 {
+    public $autoInitTenancy = false;
+
     /** @test */
     public function bootstrapping_event_works()
     {
         $id = Tenant::new()->withDomains(['foo.localhost'])->save()['id'];
 
         Tenancy::eventListener('bootstrapping', function ($tenantManager) use ($id) {
-            if ($tenantManager->tenant['id'] === $id) {
+            if ($tenantManager->getTenant('id') === $id) {
                 config(['tenancy.foo' => 'bar']);
             }
         });
@@ -31,7 +33,7 @@ class TenantManagerEventsTest extends TestCase
         $id = Tenant::new()->withDomains(['foo.localhost'])->save()['id'];
 
         Tenancy::eventListener('bootstrapped', function ($tenantManager) use ($id) {
-            if ($tenantManager->tenant['id'] === $id) {
+            if ($tenantManager->getTenant('id') === $id) {
                 config(['tenancy.foo' => 'bar']);
             }
         });
@@ -47,7 +49,7 @@ class TenantManagerEventsTest extends TestCase
         $id = Tenant::new()->withDomains(['foo.localhost'])->save()['id'];
 
         Tenancy::eventListener('ending', function ($tenantManager) use ($id) {
-            if ($tenantManager->tenant['id'] === $id) {
+            if ($tenantManager->getTenant('id') === $id) {
                 config(['tenancy.foo' => 'bar']);
             }
         });
@@ -62,12 +64,10 @@ class TenantManagerEventsTest extends TestCase
     /** @test */
     public function ended_event_works()
     {
-        $id = Tenant::new()->withDomains(['foo.localhost'])->save()['id'];
+        Tenant::new()->withDomains(['foo.localhost'])->save()['id'];
 
-        Tenancy::eventListener('ended', function ($tenantManager) use ($id) {
-            if ($tenantManager->tenant['id'] === $id) {
-                config(['tenancy.foo' => 'bar']);
-            }
+        Tenancy::eventListener('ended', function ($tenantManager) {
+            config(['tenancy.foo' => 'bar']);
         });
 
         $this->assertSame(null, config('tenancy.foo'));
@@ -75,21 +75,6 @@ class TenantManagerEventsTest extends TestCase
         $this->assertSame(null, config('tenancy.foo'));
         tenancy()->endTenancy();
         $this->assertSame('bar', config('tenancy.foo'));
-    }
-
-    /** @test */
-    public function event_returns_a_collection()
-    {
-        // Note: The event() method should not be called by your code.
-        tenancy()->bootstrapping(function ($tenancy) {
-            return ['database'];
-        });
-        tenancy()->bootstrapping(function ($tenancy) {
-            return ['redis', 'cache'];
-        });
-
-        $prevents = tenancy()->event('bootstrapping');
-        $this->assertEquals(collect(['database', 'redis', 'cache']), $prevents);
     }
 
     /** @test */
@@ -103,8 +88,8 @@ class TenantManagerEventsTest extends TestCase
         $id = Tenant::create('abc.localhost')['id'];
 
         Tenancy::eventListener('bootstrapping', function ($tenancy) use ($id) {
-            if ($tenancy->tenant['id'] === $id) {
-                $tenancy->database->useConnection('tenantabc');
+            if ($tenancy->getTenant()['id'] === $id) {
+                $tenancy->database->switchConnection('tenantabc');
 
                 return ['database'];
             }
@@ -126,8 +111,8 @@ class TenantManagerEventsTest extends TestCase
         $id = Tenant::create('abc.localhost')['id'];
 
         Tenancy::eventListener('bootstrapping', function ($tenancy) use ($id) {
-            if ($tenancy->tenant['id'] === $id) {
-                $tenancy->database->useConnection('tenantabc');
+            if ($tenancy->getTenant()['id'] === $id) {
+                $tenancy->database->switchConnection('tenantabc');
                 // return ['database'];
             }
         });
