@@ -11,11 +11,11 @@ class DatabaseManagerTest extends TestCase
     public $autoInitTenancy = false;
 
     /** @test */
-    public function disconnect_method_works()
+    public function reconnect_method_works()
     {
         $old_connection_name = app(\Illuminate\Database\DatabaseManager::class)->connection()->getName();
-        tenancy()->init();
-        tenancy()->disconnectDatabase();
+        tenancy()->init('test.localhost');
+        app(\Stancl\Tenancy\DatabaseManager::class)->reconnect();
         $new_connection_name = app(\Illuminate\Database\DatabaseManager::class)->connection()->getName();
 
         $this->assertSame($old_connection_name, $new_connection_name);

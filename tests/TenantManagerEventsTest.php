@@ -14,7 +14,7 @@ class TenantManagerEventsTest extends TestCase
     {
         $id = Tenant::new()->withDomains(['foo.localhost'])->save()['id'];
 
-        Tenancy::bootstrapping(function ($tenantManager) use ($id) {
+        Tenancy::eventListener('bootstrapping', function ($tenantManager) use ($id) {
             if ($tenantManager->tenant['id'] === $id) {
                 config(['tenancy.foo' => 'bar']);
             }
@@ -30,7 +30,7 @@ class TenantManagerEventsTest extends TestCase
     {
         $id = Tenant::new()->withDomains(['foo.localhost'])->save()['id'];
 
-        Tenancy::bootstrapped(function ($tenantManager) use ($id) {
+        Tenancy::eventListener('bootstrapped', function ($tenantManager) use ($id) {
             if ($tenantManager->tenant['id'] === $id) {
                 config(['tenancy.foo' => 'bar']);
             }
@@ -46,7 +46,7 @@ class TenantManagerEventsTest extends TestCase
     {
         $id = Tenant::new()->withDomains(['foo.localhost'])->save()['id'];
 
-        Tenancy::ending(function ($tenantManager) use ($id) {
+        Tenancy::eventListener('ending', function ($tenantManager) use ($id) {
             if ($tenantManager->tenant['id'] === $id) {
                 config(['tenancy.foo' => 'bar']);
             }
@@ -64,7 +64,7 @@ class TenantManagerEventsTest extends TestCase
     {
         $id = Tenant::new()->withDomains(['foo.localhost'])->save()['id'];
 
-        Tenancy::ended(function ($tenantManager) use ($id) {
+        Tenancy::eventListener('ended', function ($tenantManager) use ($id) {
             if ($tenantManager->tenant['id'] === $id) {
                 config(['tenancy.foo' => 'bar']);
             }
@@ -102,7 +102,7 @@ class TenantManagerEventsTest extends TestCase
 
         $id = Tenant::create('abc.localhost')['id'];
 
-        Tenancy::bootstrapping(function ($tenancy) use ($id) {
+        Tenancy::eventListener('bootstrapping', function ($tenancy) use ($id) {
             if ($tenancy->tenant['id'] === $id) {
                 $tenancy->database->useConnection('tenantabc');
 
@@ -125,7 +125,7 @@ class TenantManagerEventsTest extends TestCase
 
         $id = Tenant::create('abc.localhost')['id'];
 
-        Tenancy::bootstrapping(function ($tenancy) use ($id) {
+        Tenancy::eventListener('bootstrapping', function ($tenancy) use ($id) {
             if ($tenancy->tenant['id'] === $id) {
                 $tenancy->database->useConnection('tenantabc');
                 // return ['database'];

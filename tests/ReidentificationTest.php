@@ -22,7 +22,7 @@ class ReidentificationTest extends TestCase
             $originals[$disk] = config("filesystems.disks.{$disk}.root");
         }
 
-        tenancy()->init('localhost');
+        tenancy()->init('test.localhost');
         Tenant::new()->withDomains(['second.localhost'])->save();
         tenancy()->init('second.localhost');
 
@@ -49,7 +49,7 @@ class ReidentificationTest extends TestCase
     {
         $original = storage_path();
 
-        tenancy()->init('localhost');
+        tenancy()->init('test.localhost');
         Tenant::new()->withDomains(['second.localhost'])->save();
         tenancy()->init('second.localhost');
 

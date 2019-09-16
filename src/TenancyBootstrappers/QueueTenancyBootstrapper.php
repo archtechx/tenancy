@@ -44,13 +44,13 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             return [];
         }
 
-        [$id, $domain] = tenant()->get(['id', 'domain']);
+        $id = tenant()->get('id');
 
         return [
             'tenant_id' => $id,
             'tags' => [
                 "tenant:$id",
-                "domain:$domain",
+                // todo domain?
             ],
         ];
     }

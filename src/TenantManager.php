@@ -97,8 +97,9 @@ class TenantManager
         return $this;
     }
 
-    public function init(string $domain): self
+    public function init(string $domain = null): self
     {
+        $domain = $domain ?? request()->getHost();
         $this->initializeTenancy($this->findByDomain($domain));
 
         return $this;

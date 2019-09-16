@@ -37,7 +37,7 @@ class DatabaseManager
      */
     public function connect(Tenant $tenant)
     {
-        $this->createTenantConnection($tenant);
+        $this->createTenantConnection($tenant->getDatabaseName(), $tenant->getConnectionName());
         $this->switchConnection($tenant->getConnectionName());
     }
 
@@ -54,14 +54,12 @@ class DatabaseManager
     /**
      * Create the tenant database connection.
      *
-     * @param Tenant $tenant
+     * @param string $databaseName
+     * @param string $connectionName
      * @return void
      */
-    public function createTenantConnection(Tenant $tenant)
+    public function createTenantConnection($databaseName, $connectionName)
     {
-        $databaseName = $tenant->getDatabaseName();
-        $connectionName = $tenant->getConnectionName();
-
         // Create the database connection.
         $based_on = $this->app['config']['tenancy.database.based_on'] ?? $this->originalDefaultConnectionName;
         $this->app['config']["database.connections.$connectionName"] = $this->app['config']['database.connections.' . $based_on];
@@ -129,7 +127,7 @@ class DatabaseManager
 
     protected function getTenantDatabaseManager(Tenant $tenant): TenantDatabaseManager
     {
-        $this->createTenantConnection($tenant);
+        $this->createTenantConnection($tenant->getDatabaseName(), $tenant->getConnectionName());
         $driver = $this->getDriver($tenant->getConnectionName());
 
         $databaseManagers = $this->app['config']['tenancy.database_managers'];

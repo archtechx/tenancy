@@ -26,7 +26,7 @@ class TelescopeTags implements Feature
             if (in_array('tenancy', optional(request()->route())->middleware() ?? [])) {
                 $tags = array_merge($tags, [
                     'tenant:' . tenant('id'),
-                    'domain:' . tenant('domain'),
+                    // 'domain:' . tenant('domain'), todo?
                 ]);
             }
 

@@ -14,13 +14,13 @@ class TenantManagerTest extends TestCase
     public $autoInitTenancy = false;
 
     /** @test */
-    public function current_tenant_is_stored_in_the_tenant_property()
+    public function current_tenant_can_be_retrieved_using_getTenant()
     {
         $tenant = Tenant::new()->withDomains(['localhost'])->save();
 
-        tenancy()->init('localhost');
+        tenancy()->init('test.localhost');
 
-        $this->assertSame($tenant, tenancy()->tenant);
+        $this->assertSame($tenant, tenancy()->getTenant());
     }
 
     /** @test */
