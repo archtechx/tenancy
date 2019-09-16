@@ -8,7 +8,7 @@ use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 
 class UUIDGenerator implements UniqueIdentifierGenerator
 {
-    public static function handle(array $domains, array $data = []): string
+    public static function generate(array $domains, array $data = []): string
     {
         return (string) \Webpatser\Uuid\Uuid::generate(1, $domains[0] ?? '');
     }

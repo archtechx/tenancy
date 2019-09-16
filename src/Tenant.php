@@ -141,7 +141,7 @@ class Tenant implements ArrayAccess
 
     public function generateId()
     {
-        $this->id = $this->idGenerator->handle($this->domains, $this->data);
+        $this->id = $this->idGenerator->generate($this->domains, $this->data);
     }
 
     public function save(): self

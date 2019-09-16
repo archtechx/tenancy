@@ -13,5 +13,5 @@ interface UniqueIdentifierGenerator
      * @param array $data
      * @return string
      */
-    public static function handle(array $domains, array $data = []): string;
+    public static function generate(array $domains, array $data = []): string;
 }
