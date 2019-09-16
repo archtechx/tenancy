@@ -193,7 +193,7 @@ class TenantManager
 
         return $this;
     }
-    
+
     /** @alias endTenancy */
     public function end(): self
     {
@@ -209,7 +209,7 @@ class TenantManager
     public function getTenant(string $key = null)
     {
         if (! $this->tenant) {
-            return null;
+            return;
         }
 
         if (! is_null($key)) {

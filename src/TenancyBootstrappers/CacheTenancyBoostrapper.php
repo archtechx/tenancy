@@ -6,11 +6,11 @@ namespace Stancl\Tenancy\TenancyBootstrappers;
 
 use Illuminate\Cache\CacheManager;
 use Illuminate\Contracts\Foundation\Application;
-use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\CacheManager as TenantCacheManager;
+use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Tenant;
 
-class CacheTenancyBootstrapper implements TenancyBootstrapper
+class CacheTenancyBoostrapper implements TenancyBootstrapper
 {
     /** @var CacheManager */
     protected $originalCache;
