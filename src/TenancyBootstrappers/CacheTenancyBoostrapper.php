@@ -9,7 +9,7 @@ use Illuminate\Contracts\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Tenant;
 
-class CacheTenancyBoostrapper implements TenancyBootstrapper
+class CacheTenancyBootstrapper implements TenancyBootstrapper
 {
     /** @var CacheManager */
     protected $originalCache;
