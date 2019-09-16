@@ -126,8 +126,9 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     protected function getPackageAliases($app)
     {
         return [
-            'Tenancy' => \Stancl\Tenancy\Facades\Tenancy::class,
-            'GlobalCache' => \Stancl\Tenancy\Facades\GlobalCache::class,
+            'Tenant' => \Stancl\Tenancy\Facades\TenantFacade::class,
+            'Tenancy' => \Stancl\Tenancy\Facades\TenancyFacade::class,
+            'GlobalCache' => \Stancl\Tenancy\Facades\GlobalCacheFacade::class,
         ];
     }
 

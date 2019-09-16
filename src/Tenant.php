@@ -77,6 +77,11 @@ class Tenant implements ArrayAccess
         return static::new()->withData($data)->persisted(true);
     }
 
+    public static function create($domains, array $data = []): self
+    {
+        return static::new()->withDomains((array) $domains)->withData($data)->save();
+    }
+
     protected function persisted($persisted = null)
     {
         if (gettype($persisted) === 'bool') {
@@ -132,7 +137,7 @@ class Tenant implements ArrayAccess
         return $this;
     }
 
-    public function withData($data): self
+    public function withData(array $data): self
     {
         $this->data = $data;
 
@@ -234,7 +239,7 @@ class Tenant implements ArrayAccess
 
     public function put($key, $value = null): self
     {
-        if ($this->storage->getIdKey() === $key) {
+        if ($key === 'id') {
             throw new TenantStorageException("The tenant's id can't be changed.");
         }
 

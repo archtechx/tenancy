@@ -34,7 +34,7 @@ class TenantStorageTest extends TestCase
     /** @test */
     public function put_works_with_key_and_value_as_separate_args()
     {
-        tenancy()->put('foo', 'bar');
+        tenant()->put('foo', 'bar');
 
         $this->assertSame('bar', tenant()->get('foo'));
     }
@@ -46,7 +46,7 @@ class TenantStorageTest extends TestCase
         $vals = ['bar', 'xyz'];
         $data = \array_combine($keys, $vals);
 
-        tenancy()->put($data);
+        tenant()->put($data);
 
         $this->assertSame($vals, tenant()->get($keys));
     }
@@ -54,7 +54,7 @@ class TenantStorageTest extends TestCase
     /** @test */
     public function put_on_the_current_tenant_pushes_the_value_into_the_tenant_property_array()
     {
-        tenancy()->put('foo', 'bar');
+        tenant()->put('foo', 'bar');
 
         $this->assertSame('bar', tenancy()->tenant['foo']);
     }
@@ -65,9 +65,9 @@ class TenantStorageTest extends TestCase
         $tenant = Tenant::new()->withDomains(['second.localhost'])->save();
         $id = $tenant['id'];
 
-        tenancy()->put('foo', 'bar', $id);
+        tenant()->put('foo', 'bar', $id);
 
-        $this->assertSame('bar', tenancy()->get('foo', $id));
+        $this->assertSame('bar', tenant()->get('foo', $id));
         $this->assertNotSame('bar', tenant('foo'));
     }
 
@@ -81,10 +81,10 @@ class TenantStorageTest extends TestCase
         $vals = ['bar', 'xyz'];
         $data = \array_combine($keys, $vals);
 
-        tenancy()->put($data, null, $id);
+        tenant()->put($data, null, $id);
 
-        $this->assertSame($vals, tenancy()->get($keys, $id));
-        $this->assertNotSame($vals, tenancy()->get($keys));
+        $this->assertSame($vals, tenant()->get($keys, $id));
+        $this->assertNotSame($vals, tenant()->get($keys));
         $this->assertFalse(\array_intersect($data, tenant()->tenant) == $data); // assert array not subset
     }
 
@@ -116,7 +116,7 @@ class TenantStorageTest extends TestCase
     {
         $value = ['foo' => 'bar', 'abc' => 'xyz'];
 
-        $this->assertSame($value, tenancy()->put($value));
+        $this->assertSame($value, tenant()->put($value));
     }
 
     /** @test */
@@ -132,21 +132,21 @@ class TenantStorageTest extends TestCase
     /** @test */
     public function data_is_stored_with_correct_data_types()
     {
-        tenancy()->put('someBool', false);
-        $this->assertSame('boolean', \gettype(tenancy()->get('someBool')));
-        $this->assertSame('boolean', \gettype(tenancy()->get(['someBool'])[0]));
+        tenant()->put('someBool', false);
+        $this->assertSame('boolean', \gettype(tenant()->get('someBool')));
+        $this->assertSame('boolean', \gettype(tenant()->get(['someBool'])[0]));
 
-        tenancy()->put('someInt', 5);
-        $this->assertSame('integer', \gettype(tenancy()->get('someInt')));
-        $this->assertSame('integer', \gettype(tenancy()->get(['someInt'])[0]));
+        tenant()->put('someInt', 5);
+        $this->assertSame('integer', \gettype(tenant()->get('someInt')));
+        $this->assertSame('integer', \gettype(tenant()->get(['someInt'])[0]));
 
-        tenancy()->put('someDouble', 11.40);
-        $this->assertSame('double', \gettype(tenancy()->get('someDouble')));
-        $this->assertSame('double', \gettype(tenancy()->get(['someDouble'])[0]));
+        tenant()->put('someDouble', 11.40);
+        $this->assertSame('double', \gettype(tenant()->get('someDouble')));
+        $this->assertSame('double', \gettype(tenant()->get(['someDouble'])[0]));
 
-        tenancy()->put('string', 'foo');
-        $this->assertSame('string', \gettype(tenancy()->get('string')));
-        $this->assertSame('string', \gettype(tenancy()->get(['string'])[0]));
+        tenant()->put('string', 'foo');
+        $this->assertSame('string', \gettype(tenant()->get('string')));
+        $this->assertSame('string', \gettype(tenant()->get(['string'])[0]));
     }
 
     /** @test */
@@ -162,14 +162,14 @@ class TenantStorageTest extends TestCase
         Tenant::new()->withDomains(['foo.localhost'])->save();
         tenancy()->init('foo.localhost');
 
-        tenancy()->put('foo', 'bar');
-        $this->assertSame('bar', tenancy()->get('foo'));
-        $this->assertSame(['bar'], tenancy()->get(['foo']));
+        tenant()->put('foo', 'bar');
+        $this->assertSame('bar', tenant()->get('foo'));
+        $this->assertSame(['bar'], tenant()->get(['foo']));
 
         tenancy()->endTenancy();
         tenancy()->init('foo.localhost');
-        $this->assertSame('bar', tenancy()->get('foo'));
-        $this->assertSame(['bar'], tenancy()->get(['foo']));
+        $this->assertSame('bar', tenant()->get('foo'));
+        $this->assertSame(['bar'], tenant()->get(['foo']));
     }
 
     /** @test */
@@ -191,11 +191,11 @@ class TenantStorageTest extends TestCase
             'foo',
         ]]);
 
-        tenancy()->create('foo.localhost');
+        tenant()->create(['foo.localhost']);
         tenancy()->init('foo.localhost');
 
-        tenancy()->put(['foo' => 'bar', 'abc' => 'xyz']);
-        $this->assertSame(['bar', 'xyz'], tenancy()->get(['foo', 'abc']));
+        tenant()->put(['foo' => 'bar', 'abc' => 'xyz']);
+        $this->assertSame(['bar', 'xyz'], tenant()->get(['foo', 'abc']));
 
         $this->assertSame('bar', \DB::connection('central')->table('tenants')->where('id', tenant('id'))->first()->foo);
     }

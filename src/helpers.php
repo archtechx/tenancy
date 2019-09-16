@@ -22,6 +22,8 @@ if (! \function_exists('tenant')) {
         if (! is_null($key)) {
             return app(Tenant::class)->get($key);
         }
+
+        return app(Tenant::class);
     }
 }
 

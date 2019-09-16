@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Facades;
 
 use Illuminate\Support\Facades\Facade;
-use Stancl\Tenancy\TenantManager;
+use Stancl\Tenancy\Tenant as Tenant;
 
-class Tenancy extends Facade
+class TenantFacade extends Facade
 {
     protected static function getFacadeAccessor()
     {
-        return TenantManager::class;
+        return Tenant::class;
     }
 }
