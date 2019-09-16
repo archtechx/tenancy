@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\TenancyBootstrappers;
 use Illuminate\Cache\CacheManager;
 use Illuminate\Contracts\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
+use Stancl\Tenancy\CacheManager as TenantCacheManager;
 use Stancl\Tenancy\Tenant;
 
 class CacheTenancyBootstrapper implements TenancyBootstrapper
@@ -26,7 +27,7 @@ class CacheTenancyBootstrapper implements TenancyBootstrapper
     {
         $this->originalCache = $this->originalCache ?? $this->app['cache'];
         $this->app->extend('cache', function () {
-            return new CacheManager($this->app);
+            return new TenantCacheManager($this->app);
         });
     }
 
