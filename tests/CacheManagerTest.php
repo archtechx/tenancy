@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
+use Stancl\Tenancy\Tenant;
+
 class CacheManagerTest extends TestCase
 {
     /** @test */
@@ -43,13 +45,13 @@ class CacheManagerTest extends TestCase
     /** @test */
     public function tags_separate_cache_well_enough()
     {
-        tenant()->create('foo.localhost');
+        Tenant::new()->withDomains(['foo.localhost'])->save();
         tenancy()->init('foo.localhost');
 
         cache()->put('foo', 'bar', 1);
         $this->assertSame('bar', cache()->get('foo'));
 
-        tenant()->create('bar.localhost');
+        Tenant::new()->withDomains(['bar.localhost'])->save();
         tenancy()->init('bar.localhost');
 
         $this->assertNotSame('bar', cache()->get('foo'));
@@ -61,13 +63,13 @@ class CacheManagerTest extends TestCase
     /** @test */
     public function invoking_the_cache_helper_works()
     {
-        tenant()->create('foo.localhost');
+        Tenant::new()->withDomains(['foo.localhost'])->save();
         tenancy()->init('foo.localhost');
 
         cache(['foo' => 'bar'], 1);
         $this->assertSame('bar', cache('foo'));
 
-        tenant()->create('bar.localhost');
+        Tenant::new()->withDomains(['bar.localhost'])->save();
         tenancy()->init('bar.localhost');
 
         $this->assertNotSame('bar', cache('foo'));
@@ -79,13 +81,13 @@ class CacheManagerTest extends TestCase
     /** @test */
     public function cache_is_persisted()
     {
-        tenant()->create('foo.localhost');
+        Tenant::new()->withDomains(['foo.localhost'])->save();
         tenancy()->init('foo.localhost');
 
         cache(['foo' => 'bar'], 10);
         $this->assertSame('bar', cache('foo'));
 
-        tenancy()->end();
+        tenancy()->endTenancy();
 
         tenancy()->init('foo.localhost');
         $this->assertSame('bar', cache('foo'));
@@ -94,15 +96,15 @@ class CacheManagerTest extends TestCase
     /** @test */
     public function cache_is_persisted_when_reidentification_is_used()
     {
-        tenant()->create('foo.localhost');
-        tenant()->create('bar.localhost');
+        Tenant::new()->withDomains(['foo.localhost'])->save();
+        Tenant::new()->withDomains(['bar.localhost'])->save();
         tenancy()->init('foo.localhost');
 
         cache(['foo' => 'bar'], 10);
         $this->assertSame('bar', cache('foo'));
 
         tenancy()->init('bar.localhost');
-        tenancy()->end();
+        tenancy()->endTenancy();
 
         tenancy()->init('foo.localhost');
         $this->assertSame('bar', cache('foo'));

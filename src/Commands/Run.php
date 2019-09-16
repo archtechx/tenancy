@@ -32,13 +32,10 @@ class Run extends Command
      */
     public function handle()
     {
-        if ($tenancy_was_initialized = tenancy()->initialized) {
-            $previous_tenants_domain = tenant('domain');
-        }
-
-        tenant()->all($this->option('tenants'))->each(function ($tenant) {
-            $this->line("Tenant: {$tenant['id']} ({$tenant['domain']})");
-            tenancy()->init($tenant['domain']);
+        $originalTenant = tenancy()->getTenant();
+        tenancy()->all($this->option('tenants'))->each(function ($tenant) {
+            $this->line("Tenant: {$tenant['id']}");
+            tenancy()->initialize($tenant);
 
             $callback = function ($prefix = '') {
                 return function ($arguments, $argument) use ($prefix) {
@@ -58,11 +55,13 @@ class Run extends Command
             // Run command
             $this->call($this->argument('commandname'), \array_merge($arguments, $options));
 
-            tenancy()->end();
+            tenancy()->endTenancy();
         });
 
-        if ($tenancy_was_initialized) {
-            tenancy()->init($previous_tenants_domain);
+        if ($originalTenant) {
+            tenancy()->initialize($originalTenant);
+        } else {
+            tenancy()->endTenancy();
         }
     }
 }

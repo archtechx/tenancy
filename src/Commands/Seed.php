@@ -49,18 +49,19 @@ class Seed extends SeedCommand
 
         $this->input->setOption('database', 'tenant');
 
-        tenant()->all($this->option('tenants'))->each(function ($tenant) {
-            $this->line("Tenant: {$tenant['id']} ({$tenant['domain']})");
-            $this->database->connectToTenant($tenant);
+        $originalTenant = tenancy()->getTenant();
+        tenancy()->all($this->option('tenants'))->each(function ($tenant) {
+            $this->line("Tenant: {$tenant['id']}");
+            tenancy()->initialize($tenant);
 
             // Seed
             parent::handle();
         });
 
-        if (tenancy()->initialized) {
-            tenancy()->switchDatabaseConnection();
+        if ($originalTenant) {
+            tenancy()->initialize($originalTenant);
         } else {
-            $this->database->disconnect();
+            tenancy()->endTenancy();
         }
     }
 }

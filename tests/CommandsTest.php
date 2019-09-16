@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Tests;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
 
 class CommandsTest extends TestCase
@@ -40,23 +41,23 @@ class CommandsTest extends TestCase
         $this->assertFalse(Schema::hasTable('users'));
         Artisan::call('tenants:migrate');
         $this->assertFalse(Schema::hasTable('users'));
-        tenancy()->init('localhost');
+        tenancy()->init('test.localhost');
         $this->assertTrue(Schema::hasTable('users'));
     }
 
     /** @test */
     public function migrate_command_works_with_tenants_option()
     {
-        $tenant = tenant()->create('test.localhost');
+        $tenant = Tenant::new()->withDomains(['test2.localhost'])->save();
         Artisan::call('tenants:migrate', [
             '--tenants' => [$tenant['id']],
         ]);
 
         $this->assertFalse(Schema::hasTable('users'));
-        tenancy()->init('localhost');
+        tenancy()->init('test.localhost');
         $this->assertFalse(Schema::hasTable('users'));
 
-        tenancy()->init('test.localhost');
+        tenancy()->init('test2.localhost');
         $this->assertTrue(Schema::hasTable('users'));
     }
 
@@ -65,7 +66,7 @@ class CommandsTest extends TestCase
     {
         Artisan::call('tenants:migrate');
         $this->assertFalse(Schema::hasTable('users'));
-        tenancy()->init('localhost');
+        tenancy()->init('test.localhost');
         $this->assertTrue(Schema::hasTable('users'));
         Artisan::call('tenants:rollback');
         $this->assertFalse(Schema::hasTable('users'));
@@ -98,7 +99,7 @@ class CommandsTest extends TestCase
     /** @test */
     public function database_connection_is_switched_to_default_when_tenancy_has_been_initialized()
     {
-        tenancy()->init('localhost');
+        tenancy()->init('test.localhost');
 
         $this->database_connection_is_switched_to_default();
     }
@@ -106,9 +107,9 @@ class CommandsTest extends TestCase
     /** @test */
     public function run_commands_works()
     {
-        $id = tenant()->create('run.localhost')['id'];
+        $id = Tenant::new()->withDomains(['run.localhost'])->save()['id'];
 
-        Artisan::call('tenants:migrate', ['--tenants' => $id]);
+        Artisan::call('tenants:migrate', ['--tenants' => [$id]]);
 
         $this->artisan("tenants:run foo --tenants=$id --argument='a=foo' --option='b=bar' --option='c=xyz'")
             ->expectsOutput("User's name is Test command")
@@ -128,6 +129,7 @@ class CommandsTest extends TestCase
             \mkdir($dir, 0777, true);
         }
 
+        // todo move this to a file
         \file_put_contents(app_path('Http/Kernel.php'), "<?php
 
 namespace App\Http;

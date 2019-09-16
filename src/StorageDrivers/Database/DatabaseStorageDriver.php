@@ -102,7 +102,9 @@ class DatabaseStorageDriver implements StorageDriver
      */
     public function all(array $ids = []): array
     {
-        return Tenants::getAllTenants($ids)->toArray();
+        return Tenants::getAllTenants($ids)->map(function ($array) {
+            return Tenant::fromStorage($array)->withDomains([]); // todo domains
+        })->toArray();
     }
 
     /**

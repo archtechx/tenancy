@@ -106,13 +106,13 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'tenancy.storage_driver' => RedisStorageDriver::class,
             ]);
 
-        // tenancy()->storage = $app->make(RedisStorageDriver::class); // todo this shouldn't be necessary
+        // tenancy()->storage = $app->make(RedisStorageDriver::class); // TODO this shouldn't be necessary but is necessary
         } elseif (env('TENANCY_TEST_STORAGE_DRIVER', 'redis') === 'db') {
             $app['config']->set([
                 'tenancy.storage_driver' => DatabaseStorageDriver::class,
             ]);
 
-            // tenancy()->storage = $app->make(DatabaseStorageDriver::class); // todo this shouldn't be necessary
+            // tenancy()->storage = $app->make(DatabaseStorageDriver::class); // TODO this shouldn't be necessary but is necessary
         }
     }
 

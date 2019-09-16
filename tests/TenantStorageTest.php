@@ -14,13 +14,13 @@ class TenantStorageTest extends TestCase
     /** @test */
     public function deleting_a_tenant_works()
     {
-        $abc = tenant()->create('abc.localhost');
+        $abc = Tenant::new()->withDomains(['abc.localhost'])->save();
 
-        $this->assertTrue(tenant()->all()->contains($abc));
+        $this->assertTrue(tenancy()->all()->contains($abc));
 
         tenant()->delete($abc['id']);
 
-        $this->assertFalse(tenant()->all()->contains($abc));
+        $this->assertFalse(tenancy()->all()->contains($abc));
     }
 
     /** @test */
@@ -62,7 +62,7 @@ class TenantStorageTest extends TestCase
     /** @test */
     public function put_works_on_a_tenant_different_than_the_current_one_when_two_args_are_used()
     {
-        $tenant = tenant()->create('second.localhost');
+        $tenant = Tenant::new()->withDomains(['second.localhost'])->save();
         $id = $tenant['id'];
 
         tenancy()->put('foo', 'bar', $id);
@@ -74,7 +74,7 @@ class TenantStorageTest extends TestCase
     /** @test */
     public function put_works_on_a_tenant_different_than_the_current_one_when_a_single_arg_is_used()
     {
-        $tenant = tenant()->create('second.localhost');
+        $tenant = Tenant::new()->withDomains(['second.localhost'])->save();
         $id = $tenant['id'];
 
         $keys = ['foo', 'abc'];
@@ -159,14 +159,14 @@ class TenantStorageTest extends TestCase
     /** @test */
     public function retrieving_data_without_cache_works()
     {
-        tenant()->create('foo.localhost');
+        Tenant::new()->withDomains(['foo.localhost'])->save();
         tenancy()->init('foo.localhost');
 
         tenancy()->put('foo', 'bar');
         $this->assertSame('bar', tenancy()->get('foo'));
         $this->assertSame(['bar'], tenancy()->get(['foo']));
 
-        tenancy()->end();
+        tenancy()->endTenancy();
         tenancy()->init('foo.localhost');
         $this->assertSame('bar', tenancy()->get('foo'));
         $this->assertSame(['bar'], tenancy()->get(['foo']));
@@ -179,7 +179,7 @@ class TenantStorageTest extends TestCase
             $this->markTestSkipped();
         }
 
-        tenancy()->end();
+        tenancy()->endTenancy();
 
         $this->loadMigrationsFrom([
             '--path' => __DIR__ . '/Etc',

@@ -6,6 +6,7 @@ namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Stancl\Tenancy\Tenant;
 
 class TenantManagerTest extends TestCase
 {
@@ -15,7 +16,7 @@ class TenantManagerTest extends TestCase
     /** @test */
     public function current_tenant_is_stored_in_the_tenant_property()
     {
-        $tenant = tenant()->create('localhost');
+        $tenant = Tenant::new()->withDomains(['localhost'])->save();
 
         tenancy()->init('localhost');
 
@@ -25,7 +26,7 @@ class TenantManagerTest extends TestCase
     /** @test */
     public function invoke_works()
     {
-        tenant()->create('foo.localhost');
+        Tenant::new()->withDomains(['foo.localhost'])->save();
         tenancy()->init('foo.localhost');
 
         $this->assertSame(tenant('id'), tenant()('id'));
@@ -34,7 +35,7 @@ class TenantManagerTest extends TestCase
     /** @test */
     public function initById_works()
     {
-        $tenant = tenant()->create('foo.localhost');
+        $tenant = Tenant::new()->withDomains(['foo.localhost'])->save();
 
         $this->assertNotSame($tenant, tenancy()->tenant);
 
@@ -46,7 +47,7 @@ class TenantManagerTest extends TestCase
     /** @test */
     public function findByDomain_works()
     {
-        $tenant = tenant()->create('foo.localhost');
+        $tenant = Tenant::new()->withDomains(['foo.localhost'])->save();
 
         $this->assertSame($tenant, tenant()->findByDomain('foo.localhost'));
     }
@@ -54,14 +55,14 @@ class TenantManagerTest extends TestCase
     /** @test */
     public function getIdByDomain_works()
     {
-        $tenant = tenant()->create('foo.localhost');
+        $tenant = Tenant::new()->withDomains(['foo.localhost'])->save();
         $this->assertSame(tenant()->getTenantIdByDomain('foo.localhost'), tenant()->getIdByDomain('foo.localhost'));
     }
 
     /** @test */
     public function find_works()
     {
-        tenant()->create('dev.localhost');
+        Tenant::new()->withDomains(['dev.localhost'])->save();
         tenancy()->init('dev.localhost');
 
         $this->assertSame(tenant()->tenant, tenant()->find(tenant('id')));
@@ -70,26 +71,9 @@ class TenantManagerTest extends TestCase
     /** @test */
     public function getTenantById_works()
     {
-        $tenant = tenant()->create('foo.localhost');
+        $tenant = Tenant::new()->withDomains(['foo.localhost'])->save();
 
         $this->assertSame($tenant, tenancy()->getTenantById($tenant['id']));
-    }
-
-    /** @test */
-    public function init_returns_the_tenant()
-    {
-        $tenant = tenant()->create('foo.localhost');
-
-        $this->assertSame($tenant, tenancy()->init('foo.localhost'));
-    }
-
-    /** @test */
-    public function initById_returns_the_tenant()
-    {
-        $tenant = tenant()->create('foo.localhost');
-        $id = $tenant['id'];
-
-        $this->assertSame($tenant, tenancy()->initById($id));
     }
 
     /** @test */
@@ -97,7 +81,7 @@ class TenantManagerTest extends TestCase
     {
         $domain = 'foo.localhost';
 
-        $this->assertSame($domain, tenant()->create($domain)['domain']);
+        $this->assertSame($domain, Tenant::new()->withDomains([$domain])->save()['domain']);
     }
 
     /** @test */
@@ -123,7 +107,7 @@ class TenantManagerTest extends TestCase
         $this->assertSame($originals['storage_root'], Storage::disk('local')->getAdapter()->getPathPrefix());
         $this->assertSame($originals['cache'], app('cache'));
 
-        tenant()->create('foo.localhost');
+        Tenant::new()->withDomains(['foo.localhost'])->save();
         tenancy()->init('foo.localhost');
 
         $this->assertNotSame($originals['databaseName'], DB::connection()->getDatabaseName());
@@ -131,7 +115,7 @@ class TenantManagerTest extends TestCase
         $this->assertNotSame($originals['storage_root'], Storage::disk('local')->getAdapter()->getPathPrefix());
         $this->assertNotSame($originals['cache'], app('cache'));
 
-        tenancy()->end();
+        tenancy()->endTenancy();
 
         $this->assertSame($originals['databaseName'], DB::connection()->getDatabaseName());
         $this->assertSame($originals['storage_path'], storage_path());
@@ -149,7 +133,7 @@ class TenantManagerTest extends TestCase
             'cache' => app('cache'),
         ];
 
-        tenant()->create('foo.localhost');
+        Tenant::new()->withDomains(['foo.localhost'])->save();
         tenancy()->init('foo.localhost');
 
         $this->assertNotSame($originals['databaseName'], DB::connection()->getDatabaseName());
@@ -157,7 +141,7 @@ class TenantManagerTest extends TestCase
         $this->assertNotSame($originals['storage_root'], Storage::disk('local')->getAdapter()->getPathPrefix());
         $this->assertNotSame($originals['cache'], app('cache'));
 
-        tenancy()->end();
+        tenancy()->endTenancy();
 
         $this->assertSame($originals['databaseName'], DB::connection()->getDatabaseName());
         $this->assertSame($originals['storage_path'], storage_path());
@@ -165,7 +149,7 @@ class TenantManagerTest extends TestCase
         $this->assertSame($originals['cache'], app('cache'));
 
         // Reidentify tenant
-        tenant()->create('bar.localhost');
+        Tenant::new()->withDomains(['bar.localhost'])->save();
         tenancy()->init('bar.localhost');
 
         $this->assertNotSame($originals['databaseName'], DB::connection()->getDatabaseName());
@@ -173,7 +157,7 @@ class TenantManagerTest extends TestCase
         $this->assertNotSame($originals['storage_root'], Storage::disk('local')->getAdapter()->getPathPrefix());
         $this->assertNotSame($originals['cache'], app('cache'));
 
-        tenancy()->end();
+        tenancy()->endTenancy();
 
         $this->assertSame($originals['databaseName'], DB::connection()->getDatabaseName());
         $this->assertSame($originals['storage_path'], storage_path());
@@ -184,27 +168,27 @@ class TenantManagerTest extends TestCase
     /** @test */
     public function tenant_can_be_deleted()
     {
-        $tenant = tenant()->create('foo.localhost');
+        $tenant = Tenant::new()->withDomains(['foo.localhost'])->save();
         tenant()->delete($tenant['id']);
         $this->assertSame([], tenancy()->all()->toArray());
 
-        $tenant = tenant()->create('foo.localhost');
+        $tenant = Tenant::new()->withDomains(['foo.localhost'])->save();
         $this->assertSame([$tenant], tenancy()->all()->toArray());
     }
 
     /** @test */
     public function all_returns_a_list_of_all_tenants()
     {
-        $tenant1 = tenant()->create('foo.localhost');
-        $tenant2 = tenant()->create('bar.localhost');
-        $this->assertEqualsCanonicalizing([$tenant1, $tenant2], tenant()->all()->toArray());
+        $tenant1 = Tenant::new()->withDomains(['foo.localhost'])->save();
+        $tenant2 = Tenant::new()->withDomains(['bar.localhost'])->save();
+        $this->assertEqualsCanonicalizing([$tenant1, $tenant2], tenancy()->all()->toArray());
     }
 
     /** @test */
     public function properites_can_be_passed_in_the_create_method()
     {
         $data = ['plan' => 'free', 'subscribed_until' => '2020-01-01'];
-        $tenant = tenant()->create('foo.localhost', $data);
+        $tenant = Tenant::new()->withDomains(['foo.localhost', $data])->save();
 
         $tenant_data = $tenant;
         unset($tenant_data['id']);

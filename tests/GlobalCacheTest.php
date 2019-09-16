@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use GlobalCache;
+use Stancl\Tenancy\Tenant;
 
 class GlobalCacheTest extends TestCase
 {
@@ -18,7 +19,7 @@ class GlobalCacheTest extends TestCase
         GlobalCache::put(['foo' => 'bar'], 1);
         $this->assertSame('bar', GlobalCache::get('foo'));
 
-        tenant()->create('foo.localhost');
+        Tenant::new()->withDomains(['foo.localhost'])->save();
         tenancy()->init('foo.localhost');
         $this->assertSame('bar', GlobalCache::get('foo'));
 
@@ -26,12 +27,12 @@ class GlobalCacheTest extends TestCase
         cache(['def' => 'ghi'], 10);
         $this->assertSame('ghi', cache('def'));
 
-        tenancy()->end();
+        tenancy()->endTenancy();
         $this->assertSame('xyz', GlobalCache::get('abc'));
         $this->assertSame('bar', GlobalCache::get('foo'));
         $this->assertSame(null, cache('def'));
 
-        tenant()->create('bar.localhost');
+        Tenant::new()->withDomains(['bar.localhost'])->save();
         tenancy()->init('bar.localhost');
         $this->assertSame('xyz', GlobalCache::get('abc'));
         $this->assertSame('bar', GlobalCache::get('foo'));

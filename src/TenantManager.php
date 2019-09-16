@@ -6,8 +6,8 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Collection;
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
-use Stancl\Tenancy\Exceptions\NoTenantIdentifiedException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 
 /**
@@ -34,8 +34,11 @@ class TenantManager
     /** @var DatabaseManager */
     protected $database;
 
-    /** @var callable[][] */
+    /** @var callable[][] Event listeners */
     protected $listeners = [];
+
+    /** @var bool Has tenancy been initialized. */
+    public $initialized;
 
     public function __construct(Application $app, ConsoleKernel $artisan, Contracts\StorageDriver $storage, DatabaseManager $database)
     {
@@ -136,23 +139,30 @@ class TenantManager
      * Get all tenants.
      *
      * @param Tenant[]|string[] $only
-     * @return Tenant[]
+     * @return Collection<Tenant>
      */
-    public function all($only = []): array
+    public function all($only = []): Collection
     {
         $only = array_map(function ($item) {
             return $item instanceof Tenant ? $item->id : $item;
-        }, $only);
+        }, (array) $only);
 
-        return $this->storage->all($only);
+        return collect($this->storage->all($only));
     }
 
     public function initializeTenancy(Tenant $tenant): self
     {
         $this->bootstrapTenancy($tenant);
         $this->setTenant($tenant);
+        $this->initialized = true;
 
         return $this;
+    }
+
+    /** @alias initializeTenancy */
+    public function initialize(Tenant $tenant): self
+    {
+        return $this->initializeTenancy($tenant);
     }
 
     public function bootstrapTenancy(Tenant $tenant): self
@@ -176,22 +186,30 @@ class TenantManager
             $this->app[$bootstrapper]->end();
         }
 
+        $this->initialized = false;
+        $this->tenant = null;
+
         $this->event('ended');
 
         return $this;
+    }
+    
+    /** @alias endTenancy */
+    public function end(): self
+    {
+        return $this->endTenancy();
     }
 
     /**
      * Get the current tenant.
      *
      * @param string $key
-     * @return Tenant|mixed
-     * @throws NoTenantIdentifiedException
+     * @return Tenant|null|mixed
      */
     public function getTenant(string $key = null)
     {
         if (! $this->tenant) {
-            throw new NoTenantIdentifiedException;
+            return null;
         }
 
         if (! is_null($key)) {

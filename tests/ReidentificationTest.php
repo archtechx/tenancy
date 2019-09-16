@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
+use Stancl\Tenancy\Tenant;
+
 class ReidentificationTest extends TestCase
 {
     public $autoInitTenancy = false;
@@ -21,7 +23,7 @@ class ReidentificationTest extends TestCase
         }
 
         tenancy()->init('localhost');
-        tenant()->create('second.localhost');
+        Tenant::new()->withDomains(['second.localhost'])->save();
         tenancy()->init('second.localhost');
 
         foreach (config('tenancy.filesystem.disks') as $disk) {
@@ -48,7 +50,7 @@ class ReidentificationTest extends TestCase
         $original = storage_path();
 
         tenancy()->init('localhost');
-        tenant()->create('second.localhost');
+        Tenant::new()->withDomains(['second.localhost'])->save();
         tenancy()->init('second.localhost');
 
         $suffix = config('tenancy.filesystem.suffix_base') . tenant('id');

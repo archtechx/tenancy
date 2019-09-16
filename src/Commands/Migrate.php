@@ -49,22 +49,23 @@ class Migrate extends MigrateCommand
             return;
         }
 
-        tenant()->all($this->option('tenants'))->each(function ($tenant) {
-            $this->line("Tenant: {$tenant['id']} ({$tenant['domain']})");
+        $originalTenant = tenancy()->getTenant();
+        tenancy()->all($this->option('tenants'))->each(function ($tenant) {
+            $this->line("Tenant: {$tenant['id']}");
 
             // See Illuminate\Database\Migrations\DatabaseMigrationRepository::getConnection.
             // Database connections are cached by Illuminate\Database\ConnectionResolver.
             $this->input->setOption('database', 'tenant');
-            $this->database->connectToTenant($tenant); // todo test that this works with multiple tenants with MySQL
+            tenancy()->initialize($tenant); // todo test that this works with multiple tenants with MySQL
 
             // Migrate
             parent::handle();
         });
 
-        if (tenancy()->initialized) {
-            tenancy()->switchDatabaseConnection();
+        if ($originalTenant) {
+            tenancy()->initialize($originalTenant);
         } else {
-            $this->database->disconnect();
+            tenancy()->endTenancy();
         }
     }
 }
