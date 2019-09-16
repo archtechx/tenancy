@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
+use Stancl\Tenancy\Tenant;
 use Tenancy;
-use Tenant;
 
 class TenantManagerEventsTest extends TestCase
 {
     /** @test */
     public function bootstrapping_event_works()
     {
-        $uuid = tenant()->create('foo.localhost')['uuid'];
+        $id = Tenant::new()->withDomains(['foo.localhost'])->save()['id'];
 
-        Tenancy::bootstrapping(function ($tenantManager) use ($uuid) {
-            if ($tenantManager->tenant['uuid'] === $uuid) {
+        Tenancy::bootstrapping(function ($tenantManager) use ($id) {
+            if ($tenantManager->tenant['id'] === $id) {
                 config(['tenancy.foo' => 'bar']);
             }
         });
@@ -28,10 +28,10 @@ class TenantManagerEventsTest extends TestCase
     /** @test */
     public function bootstrapped_event_works()
     {
-        $uuid = tenant()->create('foo.localhost')['uuid'];
+        $id = Tenant::new()->withDomains(['foo.localhost'])->save()['id'];
 
-        Tenancy::bootstrapped(function ($tenantManager) use ($uuid) {
-            if ($tenantManager->tenant['uuid'] === $uuid) {
+        Tenancy::bootstrapped(function ($tenantManager) use ($id) {
+            if ($tenantManager->tenant['id'] === $id) {
                 config(['tenancy.foo' => 'bar']);
             }
         });
@@ -44,10 +44,10 @@ class TenantManagerEventsTest extends TestCase
     /** @test */
     public function ending_event_works()
     {
-        $uuid = tenant()->create('foo.localhost')['uuid'];
+        $id = Tenant::new()->withDomains(['foo.localhost'])->save()['id'];
 
-        Tenancy::ending(function ($tenantManager) use ($uuid) {
-            if ($tenantManager->tenant['uuid'] === $uuid) {
+        Tenancy::ending(function ($tenantManager) use ($id) {
+            if ($tenantManager->tenant['id'] === $id) {
                 config(['tenancy.foo' => 'bar']);
             }
         });
@@ -55,17 +55,17 @@ class TenantManagerEventsTest extends TestCase
         $this->assertSame(null, config('tenancy.foo'));
         tenancy()->init('foo.localhost');
         $this->assertSame(null, config('tenancy.foo'));
-        tenancy()->end();
+        tenancy()->endTenancy();
         $this->assertSame('bar', config('tenancy.foo'));
     }
 
     /** @test */
     public function ended_event_works()
     {
-        $uuid = tenant()->create('foo.localhost')['uuid'];
+        $id = Tenant::new()->withDomains(['foo.localhost'])->save()['id'];
 
-        Tenancy::ended(function ($tenantManager) use ($uuid) {
-            if ($tenantManager->tenant['uuid'] === $uuid) {
+        Tenancy::ended(function ($tenantManager) use ($id) {
+            if ($tenantManager->tenant['id'] === $id) {
                 config(['tenancy.foo' => 'bar']);
             }
         });
@@ -73,7 +73,7 @@ class TenantManagerEventsTest extends TestCase
         $this->assertSame(null, config('tenancy.foo'));
         tenancy()->init('foo.localhost');
         $this->assertSame(null, config('tenancy.foo'));
-        tenancy()->end();
+        tenancy()->endTenancy();
         $this->assertSame('bar', config('tenancy.foo'));
     }
 
@@ -100,10 +100,10 @@ class TenantManagerEventsTest extends TestCase
             'database' => database_path('some_special_database.sqlite'),
         ]]);
 
-        $uuid = Tenant::create('abc.localhost')['uuid'];
+        $id = Tenant::create('abc.localhost')['id'];
 
-        Tenancy::bootstrapping(function ($tenancy) use ($uuid) {
-            if ($tenancy->tenant['uuid'] === $uuid) {
+        Tenancy::bootstrapping(function ($tenancy) use ($id) {
+            if ($tenancy->tenant['id'] === $id) {
                 $tenancy->database->useConnection('tenantabc');
 
                 return ['database'];
@@ -123,10 +123,10 @@ class TenantManagerEventsTest extends TestCase
             'database' => database_path('some_special_database.sqlite'),
         ]]);
 
-        $uuid = Tenant::create('abc.localhost')['uuid'];
+        $id = Tenant::create('abc.localhost')['id'];
 
-        Tenancy::bootstrapping(function ($tenancy) use ($uuid) {
-            if ($tenancy->tenant['uuid'] === $uuid) {
+        Tenancy::bootstrapping(function ($tenancy) use ($id) {
+            if ($tenancy->tenant['id'] === $id) {
                 $tenancy->database->useConnection('tenantabc');
                 // return ['database'];
             }
