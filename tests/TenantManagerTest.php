@@ -37,11 +37,11 @@ class TenantManagerTest extends TestCase
     {
         $tenant = Tenant::new()->withDomains(['foo.localhost'])->save();
 
-        $this->assertNotSame($tenant, tenancy()->tenant);
+        $this->assertNotSame($tenant, tenancy()->getTenant());
 
         tenancy()->initById($tenant['id']);
 
-        $this->assertSame($tenant, tenancy()->tenant);
+        $this->assertSame($tenant, tenancy()->getTenant());
     }
 
     /** @test */

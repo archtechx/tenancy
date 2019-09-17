@@ -256,6 +256,12 @@ class Tenant implements ArrayAccess
         return $this;
     }
 
+    /** @alias put */
+    public function set($key, $value = null): self
+    {
+        return $this->put($key, $value);
+    }
+
     public function __get($key)
     {
         return $this->get($key);

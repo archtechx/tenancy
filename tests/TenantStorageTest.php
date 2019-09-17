@@ -18,7 +18,7 @@ class TenantStorageTest extends TestCase
 
         $this->assertTrue(tenancy()->all()->contains($abc));
 
-        tenant()->delete($abc['id']);
+        $abc->delete();
 
         $this->assertFalse(tenancy()->all()->contains($abc));
     }
@@ -56,7 +56,7 @@ class TenantStorageTest extends TestCase
     {
         tenant()->put('foo', 'bar');
 
-        $this->assertSame('bar', tenancy()->tenant['foo']);
+        $this->assertSame('bar', tenancy()->getTenant('foo'));
     }
 
     /** @test */
