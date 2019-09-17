@@ -10,6 +10,7 @@ use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
+use Stancl\Tenancy\Jobs\QueuedTenantDatabaseDeleter;
 
 class DatabaseManager
 {
@@ -108,7 +109,7 @@ class DatabaseManager
         $manager = $this->getTenantDatabaseManager($tenant);
 
         if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
-            QueuedTenantDatabaseCreator::dispatch($manager, $database, 'create');
+            QueuedTenantDatabaseCreator::dispatch($manager, $database);
         } else {
             return $manager->createDatabase($database);
         }
@@ -119,8 +120,8 @@ class DatabaseManager
         $database = $tenant->getDatabaseName();
         $manager = $this->getTenantDatabaseManager($tenant);
 
-        if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
-            QueuedTenantDatabaseCreator::dispatch($manager, $database, 'delete');
+        if ($this->app['config']['tenancy.queue_database_deletion'] ?? false) {
+            QueuedTenantDatabaseDeleter::dispatch($manager, $database);
         } else {
             return $manager->deleteDatabase($database);
         }
@@ -128,6 +129,7 @@ class DatabaseManager
 
     protected function getTenantDatabaseManager(Tenant $tenant): TenantDatabaseManager
     {
+        // todo this shouldn't have to create a connection
         $this->createTenantConnection($tenant->getDatabaseName(), $tenant->getConnectionName());
         $driver = $this->getDriver($tenant->getConnectionName());
 

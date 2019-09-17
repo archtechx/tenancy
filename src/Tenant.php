@@ -174,7 +174,7 @@ class Tenant implements ArrayAccess
     public function delete(): self
     {
         if ($this->persisted) {
-            $this->tenantManager->deleteTenant($this);
+            $this->manager->deleteTenant($this);
             $this->persisted = false;
         }
 

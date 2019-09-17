@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
-use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseDeleter;
+use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager;
@@ -74,9 +73,10 @@ class TenantDatabaseManagerTest extends TestCase
     {
         Queue::fake();
 
-        config()->set('tenancy.queue_database_creation', true);
-        $db_name = 'testdatabase' . $this->randomString(10) . '.sqlite';
-        app(DatabaseManager::class)->create($db_name, 'sqlite');
+        config()->set([
+            'tenancy.queue_database_creation' => true,
+        ]);
+        Tenant::create(['test2.localhost']);
 
         Queue::assertPushed(QueuedTenantDatabaseCreator::class);
     }
@@ -86,9 +86,12 @@ class TenantDatabaseManagerTest extends TestCase
     {
         Queue::fake();
 
-        config()->set('tenancy.queue_database_deletion', true);
-        $db_name = 'testdatabase' . $this->randomString(10) . '.sqlite';
-        app(DatabaseManager::class)->delete($db_name, 'sqlite');
+        $tenant = Tenant::create(['test2.localhost']);
+        config()->set([
+            'tenancy.queue_database_deletion' => true,
+            'tenancy.delete_database_after_tenant_deletion' => true,
+        ]);
+        $tenant->delete();
 
         Queue::assertPushed(QueuedTenantDatabaseDeleter::class);
     }

@@ -70,6 +70,7 @@ return [
         'Stancl\Tenancy\Features\TenantRedirect',
     ],
     'migrate_after_creation' => false, // run migrations after creating a tenant
+    'delete_database_after_tenant_deletion' => false, // delete tenant's database after deleting him
     'queue_database_creation' => false,
     'queue_database_deletion' => false,
     'unique_id_generator' => 'Stancl\Tenancy\UUIDGenerator',

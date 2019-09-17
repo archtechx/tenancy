@@ -6,5 +6,5 @@ docker-compose up -d
 printf "Variant 1\n\n"
 docker-compose exec test env TENANCY_TEST_STORAGE_DRIVER=redis vendor/bin/phpunit --coverage-php coverage/1.cov "$@"
 printf "Variant 2\n\n"
-docker-compose exec test env TENANCY_TEST_STORAGE_DRIVER=db vendor/bin/phpunit --coverage-php coverage/3.cov "$@"
+docker-compose exec test env TENANCY_TEST_STORAGE_DRIVER=db vendor/bin/phpunit --coverage-php coverage/2.cov "$@"
 docker-compose exec test vendor/bin/phpcov merge --clover clover.xml coverage/

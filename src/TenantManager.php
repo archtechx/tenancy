@@ -253,6 +253,11 @@ class TenantManager
         return $this->app['config']['tenancy.migrate_after_creation'] ?? false;
     }
 
+    public function shouldDeleteDatabase(): bool
+    {
+        return $this->app['config']['tenancy.delete_database_after_tenant_deletion'] ?? false;
+    }
+
     /**
      * Add an event listener.
      *

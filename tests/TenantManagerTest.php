@@ -49,14 +49,14 @@ class TenantManagerTest extends TestCase
     {
         $tenant = Tenant::new()->withDomains(['foo.localhost'])->save();
 
-        $this->assertSame($tenant, tenant()->findByDomain('foo.localhost'));
+        $this->assertSame($tenant, tenancy()->findByDomain('foo.localhost'));
     }
 
     /** @test */
     public function getIdByDomain_works()
     {
         $tenant = Tenant::new()->withDomains(['foo.localhost'])->save();
-        $this->assertSame(tenant()->getTenantIdByDomain('foo.localhost'), tenant()->getIdByDomain('foo.localhost'));
+        $this->assertSame(tenant()->getTenantIdByDomain('foo.localhost'), tenancy()->getIdByDomain('foo.localhost'));
     }
 
     /** @test */
@@ -65,7 +65,7 @@ class TenantManagerTest extends TestCase
         Tenant::new()->withDomains(['dev.localhost'])->save();
         tenancy()->init('dev.localhost');
 
-        $this->assertSame(tenant()->tenant, tenant()->find(tenant('id')));
+        $this->assertSame(tenant(), tenancy()->find(tenant('id')));
     }
 
     /** @test */
@@ -74,14 +74,6 @@ class TenantManagerTest extends TestCase
         $tenant = Tenant::new()->withDomains(['foo.localhost'])->save();
 
         $this->assertSame($tenant, tenancy()->getTenantById($tenant['id']));
-    }
-
-    /** @test */
-    public function create_returns_the_supplied_domain()
-    {
-        $domain = 'foo.localhost';
-
-        $this->assertSame($domain, Tenant::new()->withDomains([$domain])->save()['domain']);
     }
 
     /** @test */
