@@ -129,7 +129,7 @@ class DatabaseManager
 
     protected function getTenantDatabaseManager(Tenant $tenant): TenantDatabaseManager
     {
-        // todo this shouldn't have to create a connection
+        // todo2 this shouldn't have to create a connection
         $this->createTenantConnection($tenant->getDatabaseName(), $tenant->getConnectionName());
         $driver = $this->getDriver($tenant->getConnectionName());
 

@@ -14,8 +14,6 @@ use Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager;
 
 class TenantDatabaseManagerTest extends TestCase
 {
-    // todo use data providers and TenantDatabaseManager::databaseExists()
-
     /**
      * @test
      * @dataProvider database_manager_provider

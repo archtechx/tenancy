@@ -10,10 +10,10 @@ use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Tenant;
 
-// todo transactions instead of pipelines?
+// todo2 transactions instead of pipelines?
 class RedisStorageDriver implements StorageDriver
 {
-    // todo json encoding?
+    // todo2 json encoding?
 
     /** @var Application */
     protected $app;
@@ -49,7 +49,7 @@ class RedisStorageDriver implements StorageDriver
 
     public function ensureTenantCanBeCreated(Tenant $tenant): void
     {
-        // todo
+        // todo2
     }
 
     public function findByDomain(string $domain): Tenant
@@ -76,7 +76,7 @@ class RedisStorageDriver implements StorageDriver
         }
 
         $data = array_combine($keys, $values);
-        $domains = []; // todo
+        $domains = []; // todo2
 
         return Tenant::fromStorage($data)->withDomains($domains);
     }
@@ -107,7 +107,7 @@ class RedisStorageDriver implements StorageDriver
                 $pipe->hmset("domains:$domain", 'tenant_id', $tenant->id);
             }
 
-            // todo deleted domains
+            // todo2 deleted domains
         });
     }
 
@@ -124,7 +124,7 @@ class RedisStorageDriver implements StorageDriver
 
     public function all(array $ids = []): array
     {
-        // todo $this->redis->pipeline() - return?
+        // todo2 $this->redis->pipeline()
         $hashes = array_map(function ($hash) {
             return "tenants:{$hash}";
         }, $ids);

@@ -50,7 +50,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             'tenant_id' => $id,
             'tags' => [
                 "tenant:$id",
-                // todo domain?
+                // todo2 domain
             ],
         ];
     }

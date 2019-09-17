@@ -117,7 +117,7 @@ class CommandsTest extends TestCase
             ->expectsOutput('xyz');
     }
 
-    // todo check that multiple tenants can be migrated at once using all database engines
+    // todo2 check that multiple tenants can be migrated at once using all database engines
 
     /** @test */
     public function install_command_works()
@@ -129,7 +129,7 @@ class CommandsTest extends TestCase
             \mkdir($dir, 0777, true);
         }
 
-        // todo move this to a file
+        // todo2 move this to a file
         \file_put_contents(app_path('Http/Kernel.php'), "<?php
 
 namespace App\Http;

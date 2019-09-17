@@ -29,7 +29,7 @@ class TenantManager
     protected $artisan;
 
     /** @var Contracts\StorageDriver */
-    protected $storage;
+    public $storage;
 
     /** @var DatabaseManager */
     public $database;
@@ -229,7 +229,7 @@ class TenantManager
 
     protected function bootstrapFeatures(): self
     {
-        // todo this doesn't work
+        // todo1 this doesn't work
         // foreach ($this->app['config']['tenancy.features'] as $feature) {
         //     $this->app[$feature]->bootstrap($this);
         // }

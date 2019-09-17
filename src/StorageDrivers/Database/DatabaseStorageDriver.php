@@ -16,7 +16,7 @@ use Stancl\Tenancy\Tenant;
 
 class DatabaseStorageDriver implements StorageDriver
 {
-    // todo write tests verifying that data is decoded and added to the array
+    // todo2 write tests verifying that data is decoded and added to the array
 
     /** @var Application */
     protected $app;
@@ -47,7 +47,7 @@ class DatabaseStorageDriver implements StorageDriver
 
     public function ensureTenantCanBeCreated(Tenant $tenant): void
     {
-        // todo test this
+        // todo2 test this
         if (Tenants::find($tenant->id)) {
             throw new TenantWithThisIdAlreadyExistsException($tenant->id);
         }
@@ -85,7 +85,7 @@ class DatabaseStorageDriver implements StorageDriver
     public function updateTenant(Tenant $tenant): void
     {
         Tenant::find($tenant->id)->putMany($tenant->data);
-        // todo update domains
+        // todo1 update domains
     }
 
     public function deleteTenant(Tenant $tenant): void

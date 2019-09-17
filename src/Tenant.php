@@ -240,7 +240,7 @@ class Tenant implements ArrayAccess
     public function put($key, $value = null): self
     {
         if ($key === 'id') {
-            throw new TenantStorageException("The tenant's id can't be changed.");
+            throw new TenantStorageException("Tenant ids can't be changed.");
         }
 
         if (is_array($key)) {

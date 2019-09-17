@@ -6,7 +6,7 @@ namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Redis;
 
-// todo rename
+// todo2 rename
 class BootstrapsTenancyTest extends TestCase
 {
     public $autoInitTenancy = false;

@@ -29,7 +29,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
     public function start(Tenant $tenant)
     {
-        // todo revisit this
+        // todo2 revisit this
         $suffix = $this->app['config']['tenancy.filesystem.suffix_base'] . $tenant->id;
 
         // storage_path()
