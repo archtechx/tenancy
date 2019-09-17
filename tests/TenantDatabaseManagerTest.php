@@ -55,7 +55,8 @@ class TenantDatabaseManagerTest extends TestCase
         $job->handle();
         $this->assertTrue(app($databaseManager)->databaseExists($name));
 
-        $job = new QueuedTenantDatabaseDeleter(app($databaseManager), $name);$job->handle();
+        $job = new QueuedTenantDatabaseDeleter(app($databaseManager), $name);
+        $job->handle();
         $this->assertFalse(app($databaseManager)->databaseExists($name));
     }
 
