@@ -18,3 +18,5 @@ You won't have to change a thing in your application's code.\*
 ### [Documentation](https://tenancy.samuelstancl.me/docs)
 
 Documentation can be found here: https://tenancy.samuelstancl.me/docs
+
+The repository with the documentation source code can be found here: [stancl/tenancy-docs](https://github.com/stancl/tenancy-docs).
