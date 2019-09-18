@@ -10,7 +10,8 @@ use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 use Stancl\Tenancy\Exceptions\TenantStorageException;
 
-// todo write tests for updating the tenant
+// todo2 write tests for updating the tenant
+// todo2 addDomain(), removeDomain()
 
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.

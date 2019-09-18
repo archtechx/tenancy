@@ -85,7 +85,12 @@ class DatabaseStorageDriver implements StorageDriver
     public function updateTenant(Tenant $tenant): void
     {
         Tenants::find($tenant->id)->putMany($tenant->data);
-        // todo1 update domains
+        Domains::firstOrCreate(array_map(function ($domain) use ($tenant) {
+            return [
+                'tenant_id' => $tenant->id,
+                'domain' => $domain,
+            ];
+        }, $tenant->domains));
     }
 
     public function deleteTenant(Tenant $tenant): void
