@@ -77,6 +77,11 @@ class TenantManager
         return $this;
     }
 
+    public static function create($domains, array $data = []): Tenant
+    {
+        return Tenant::create($domains, $data);
+    }
+
     /**
      * Ensure that a tenant can be created.
      *

@@ -203,12 +203,12 @@ class Tenant implements ArrayAccess
 
     public function getDatabaseName()
     {
-        return $this['_tenancy_db_name'] ?? ($this->app['config']['tenancy.database.prefix'] . $this->id . $this->app['config']['tenancy.database.suffix']);
+        return $this->data['_tenancy_db_name'] ?? ($this->app['config']['tenancy.database.prefix'] . $this->id . $this->app['config']['tenancy.database.suffix']);
     }
 
     public function getConnectionName()
     {
-        return $this['_tenancy_db_connection'] ?? 'tenant';
+        return $this->data['_tenancy_db_connection'] ?? 'tenant';
     }
 
     /**

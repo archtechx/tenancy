@@ -53,14 +53,6 @@ class TenantManagerTest extends TestCase
     }
 
     /** @test */
-    public function getTenantById_works()
-    {
-        $tenant = Tenant::new()->withDomains(['foo.localhost'])->save();
-
-        $this->assertSame($tenant, tenancy()->getTenantById($tenant['id']));
-    }
-
-    /** @test */
     public function findByDomain_throws_an_exception_when_an_unused_domain_is_supplied()
     {
         $this->expectException(\Exception::class);
@@ -159,14 +151,13 @@ class TenantManagerTest extends TestCase
     }
 
     /** @test */
-    public function properites_can_be_passed_in_the_create_method()
+    public function data_can_be_passed_in_the_create_method()
     {
         $data = ['plan' => 'free', 'subscribed_until' => '2020-01-01'];
-        $tenant = Tenant::new()->withDomains(['foo.localhost', $data])->save();
+        $tenant = Tenant::create(['foo.localhost'], $data);
 
-        $tenant_data = $tenant;
+        $tenant_data = $tenant->data;
         unset($tenant_data['id']);
-        unset($tenant_data['domain']);
 
         $this->assertSame($data, $tenant_data);
     }
@@ -174,14 +165,13 @@ class TenantManagerTest extends TestCase
     /** @test */
     public function database_name_can_be_passed_in_the_create_method()
     {
-        $database = 'abc';
-        config(['tenancy.database_name_key' => '_stancl_tenancy_database_name']);
+        $database = 'abc' . $this->randomString();
 
-        $tenant = tenant()->create('foo.localhost', [
-            '_stancl_tenancy_database_name' => $database,
+        $tenant = tenancy()->create(['foo.localhost'], [
+            '_tenancy_db_name' => $database,
         ]);
 
-        $this->assertSame($database, tenant()->getDatabaseName($tenant));
+        $this->assertSame($database, $tenant->getDatabaseName());
     }
 
     /** @test */

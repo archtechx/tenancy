@@ -59,7 +59,7 @@ class DatabaseStorageDriver implements StorageDriver
             throw new TenantWithThisIdAlreadyExistsException($tenant->id);
         }
 
-        if (Domains::whereIn('domain', [$tenant->domains])->exists()) {
+        if (Domains::whereIn('domain', $tenant->domains)->exists()) {
             throw new DomainOccupiedByOtherTenantException();
         }
     }
