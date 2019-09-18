@@ -269,6 +269,9 @@ class Tenant implements ArrayAccess
 
     public function __set($key, $value)
     {
+        if ($key === 'id' && isset($this->data['id'])) {
+            throw new TenantStorageException("Tenant ids can't be changed.");
+        }
         $this->data[$key] = $value;
     }
 }

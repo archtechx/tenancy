@@ -205,6 +205,14 @@ class TenantManagerTest extends TestCase
     /** @test */
     public function id_cannot_be_changed()
     {
-        // todo1
+        $tenant = Tenant::create(['test2.localhost']);
+
+        $this->expectException(\Stancl\Tenancy\Exceptions\TenantStorageException::class);
+        $tenant->id = 'bar'; 
+
+        $tenant2 = Tenant::create(['test3.localhost']);
+
+        $this->expectException(\Stancl\Tenancy\Exceptions\TenantStorageException::class);
+        $tenant2->put('id', 'foo');
     }
 }

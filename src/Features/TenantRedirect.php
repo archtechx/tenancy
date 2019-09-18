@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+namespace Stancl\Tenancy\Features;
+
+use Illuminate\Http\RedirectResponse;
 use Stancl\Tenancy\Contracts\Feature;
 use Stancl\Tenancy\TenantManager;
 
