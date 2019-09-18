@@ -85,13 +85,18 @@ class Tenant implements ArrayAccess
 
     protected function persisted($persisted = null)
     {
-        if (gettype($persisted) === 'bool') {
+        if (gettype($persisted) === 'boolean') {
             $this->persisted = $persisted;
 
             return $this;
         }
 
         return $this;
+    }
+
+    public function isPersisted(): bool
+    {
+        return $this->persisted;
     }
 
     /**

@@ -42,7 +42,14 @@ class DatabaseStorageDriver implements StorageDriver
     public function findById(string $id): Tenant
     {
         return Tenant::fromStorage(Tenants::find($id)->decoded())
-            ->withDomains(Domains::where('tenant_id', $id)->get()->only('domain')->toArray());
+            ->withDomains($this->getTenantDomains($id));
+    }
+
+    protected function getTenantDomains($id)
+    {
+        return Domains::where('tenant_id', $id)->get()->map(function ($model) {
+            return $model->domain;
+        })->toArray();
     }
 
     public function ensureTenantCanBeCreated(Tenant $tenant): void
@@ -107,8 +114,8 @@ class DatabaseStorageDriver implements StorageDriver
      */
     public function all(array $ids = []): array
     {
-        return Tenants::getAllTenants($ids)->map(function ($array) {
-            return Tenant::fromStorage($array)->withDomains([]); // todo domains
+        return Tenants::getAllTenants($ids)->map(function ($data) {
+            return Tenant::fromStorage($data)->withDomains($this->getTenantDomains($data['id']));
         })->toArray();
     }
 
@@ -117,34 +124,34 @@ class DatabaseStorageDriver implements StorageDriver
      *
      * @return Tenant
      */
-    protected function tenant()
+    protected function currentTenant()
     {
         return $this->tenant ?? $this->app[Tenant::class];
     }
 
     public function get(string $key, Tenant $tenant = null)
     {
-        $tenant = $tenant ?? $this->tenant();
+        $tenant = $tenant ?? $this->currentTenant();
 
         return Tenants::find($tenant->id)->get($key);
     }
 
     public function getMany(array $keys, Tenant $tenant = null): array
     {
-        $tenant = $tenant ?? $this->tenant();
+        $tenant = $tenant ?? $this->currentTenant();
 
         return Tenants::find($tenant->id)->getMany($keys);
     }
 
     public function put(string $key, $value, Tenant $tenant = null): void
     {
-        $tenant = $tenant ?? $this->tenant();
+        $tenant = $tenant ?? $this->currentTenant();
         Tenants::find($tenant->id)->put($key, $value);
     }
 
     public function putMany(array $kvPairs, Tenant $tenant = null): void
     {
-        $tenant = $tenant ?? $this->tenant();
+        $tenant = $tenant ?? $this->currentTenant();
         Tenants::find($tenant->id)->putMany($kvPairs);
     }
 }

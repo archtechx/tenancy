@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Stancl\Tenancy\StorageDrivers\Database\TenantModel;
-use Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver;
+use Stancl\Tenancy\StorageDrivers\Database\DatabaseStorageDriver;
 use Stancl\Tenancy\StorageDrivers\RedisStorageDriver;
 use Stancl\Tenancy\Tenant;
 
@@ -15,12 +15,17 @@ class TenantStorageTest extends TestCase
     public function deleting_a_tenant_works()
     {
         $abc = Tenant::new()->withDomains(['abc.localhost'])->save();
+        $exists = function () use ($abc) {
+            return tenancy()->all()->reduce(function ($result, $tenant) use ($abc) {
+                return $result ?: $tenant->id === $abc->id;
+            }, false);
+        };
 
-        $this->assertTrue(tenancy()->all()->contains($abc));
+        $this->assertTrue($exists());
 
         $abc->delete();
 
-        $this->assertFalse(tenancy()->all()->contains($abc));
+        $this->assertFalse($exists());
     }
 
     /** @test */
@@ -44,11 +49,11 @@ class TenantStorageTest extends TestCase
     {
         $keys = ['foo', 'abc'];
         $vals = ['bar', 'xyz'];
-        $data = \array_combine($keys, $vals);
+        $data = array_combine($keys, $vals);
 
         tenant()->put($data);
 
-        $this->assertSame($vals, tenant()->get($keys));
+        $this->assertSame($data, tenant()->get($keys));
     }
 
     /** @test */
@@ -57,35 +62,6 @@ class TenantStorageTest extends TestCase
         tenant()->put('foo', 'bar');
 
         $this->assertSame('bar', tenancy()->getTenant('foo'));
-    }
-
-    /** @test */
-    public function put_works_on_a_tenant_different_than_the_current_one_when_two_args_are_used()
-    {
-        $tenant = Tenant::new()->withDomains(['second.localhost'])->save();
-        $id = $tenant['id'];
-
-        tenant()->put('foo', 'bar', $id);
-
-        $this->assertSame('bar', tenant()->get('foo', $id));
-        $this->assertNotSame('bar', tenant('foo'));
-    }
-
-    /** @test */
-    public function put_works_on_a_tenant_different_than_the_current_one_when_a_single_arg_is_used()
-    {
-        $tenant = Tenant::new()->withDomains(['second.localhost'])->save();
-        $id = $tenant['id'];
-
-        $keys = ['foo', 'abc'];
-        $vals = ['bar', 'xyz'];
-        $data = \array_combine($keys, $vals);
-
-        tenant()->put($data, null, $id);
-
-        $this->assertSame($vals, tenant()->get($keys, $id));
-        $this->assertNotSame($vals, tenant()->get($keys));
-        $this->assertFalse(\array_intersect($data, tenant()->tenant) == $data); // assert array not subset
     }
 
     /** @test */
@@ -106,20 +82,6 @@ class TenantStorageTest extends TestCase
     }
 
     /** @test */
-    public function put_returns_the_value_when_two_arguments_are_used()
-    {
-        $this->assertSame('bar', tenant()->put('foo', 'bar'));
-    }
-
-    /** @test */
-    public function put_returns_the_key_value_pairs_when_a_single_argument_is_used()
-    {
-        $value = ['foo' => 'bar', 'abc' => 'xyz'];
-
-        $this->assertSame($value, tenant()->put($value));
-    }
-
-    /** @test */
     public function correct_storage_driver_is_used()
     {
         if (config('tenancy.storage_driver') == DatabaseStorageDriver::class) {
@@ -134,19 +96,19 @@ class TenantStorageTest extends TestCase
     {
         tenant()->put('someBool', false);
         $this->assertSame('boolean', \gettype(tenant()->get('someBool')));
-        $this->assertSame('boolean', \gettype(tenant()->get(['someBool'])[0]));
+        $this->assertSame('boolean', \gettype(tenant()->get(['someBool'])['someBool']));
 
         tenant()->put('someInt', 5);
         $this->assertSame('integer', \gettype(tenant()->get('someInt')));
-        $this->assertSame('integer', \gettype(tenant()->get(['someInt'])[0]));
+        $this->assertSame('integer', \gettype(tenant()->get(['someInt'])['someInt']));
 
         tenant()->put('someDouble', 11.40);
         $this->assertSame('double', \gettype(tenant()->get('someDouble')));
-        $this->assertSame('double', \gettype(tenant()->get(['someDouble'])[0]));
+        $this->assertSame('double', \gettype(tenant()->get(['someDouble'])['someDouble']));
 
         tenant()->put('string', 'foo');
         $this->assertSame('string', \gettype(tenant()->get('string')));
-        $this->assertSame('string', \gettype(tenant()->get(['string'])[0]));
+        $this->assertSame('string', \gettype(tenant()->get(['string'])['string']));
     }
 
     /** @test */
@@ -164,12 +126,12 @@ class TenantStorageTest extends TestCase
 
         tenant()->put('foo', 'bar');
         $this->assertSame('bar', tenant()->get('foo'));
-        $this->assertSame(['bar'], tenant()->get(['foo']));
+        $this->assertSame(['foo' => 'bar'], tenant()->get(['foo']));
 
         tenancy()->endTenancy();
         tenancy()->init('foo.localhost');
         $this->assertSame('bar', tenant()->get('foo'));
-        $this->assertSame(['bar'], tenant()->get(['foo']));
+        $this->assertSame(['foo' => 'bar'], tenant()->get(['foo']));
     }
 
     /** @test */

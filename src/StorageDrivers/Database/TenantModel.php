@@ -81,8 +81,8 @@ class TenantModel extends Model
 
     public function getMany(array $keys): array
     {
-        return array_reduce($keys, function ($result, $key) {
-            $result[$key] = $this->get[$key];
+        return array_reduce($keys, function ($result, $key) { // todo2 performance
+            $result[$key] = $this->get($key);
 
             return $result;
         }, []);
@@ -105,7 +105,7 @@ class TenantModel extends Model
     public function putMany(array $kvPairs)
     {
         $customColumns = [];
-        $jsonObj = json_decode($this->{$this->customColumns()});
+        $jsonObj = json_decode($this->{$this->dataColumn()});
 
         foreach ($kvPairs as $key => $value) {
             if (in_array($key, $this->customColumns())) {

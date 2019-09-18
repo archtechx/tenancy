@@ -16,20 +16,11 @@ class TenantManagerTest extends TestCase
     /** @test */
     public function current_tenant_can_be_retrieved_using_getTenant()
     {
-        $tenant = Tenant::new()->withDomains(['localhost'])->save();
+        $tenant = Tenant::new()->withDomains(['test2.localhost'])->save();
 
-        tenancy()->init('test.localhost');
+        tenancy()->init('test2.localhost');
 
-        $this->assertSame($tenant, tenancy()->getTenant());
-    }
-
-    /** @test */
-    public function invoke_works()
-    {
-        Tenant::new()->withDomains(['foo.localhost'])->save();
-        tenancy()->init('foo.localhost');
-
-        $this->assertSame(tenant('id'), tenant()('id'));
+        $this->assertEquals($tenant, tenancy()->getTenant());
     }
 
     /** @test */
@@ -37,11 +28,11 @@ class TenantManagerTest extends TestCase
     {
         $tenant = Tenant::new()->withDomains(['foo.localhost'])->save();
 
-        $this->assertNotSame($tenant, tenancy()->getTenant());
+        $this->assertNotEquals($tenant, tenancy()->getTenant());
 
         tenancy()->initById($tenant['id']);
 
-        $this->assertSame($tenant, tenancy()->getTenant());
+        $this->assertEquals($tenant, tenancy()->getTenant());
     }
 
     /** @test */
@@ -49,14 +40,7 @@ class TenantManagerTest extends TestCase
     {
         $tenant = Tenant::new()->withDomains(['foo.localhost'])->save();
 
-        $this->assertSame($tenant, tenancy()->findByDomain('foo.localhost'));
-    }
-
-    /** @test */
-    public function getIdByDomain_works()
-    {
-        $tenant = Tenant::new()->withDomains(['foo.localhost'])->save();
-        $this->assertSame(tenant()->getTenantIdByDomain('foo.localhost'), tenancy()->getIdByDomain('foo.localhost'));
+        $this->assertEquals($tenant, tenancy()->findByDomain('foo.localhost'));
     }
 
     /** @test */
@@ -65,7 +49,7 @@ class TenantManagerTest extends TestCase
         Tenant::new()->withDomains(['dev.localhost'])->save();
         tenancy()->init('dev.localhost');
 
-        $this->assertSame(tenant(), tenancy()->find(tenant('id')));
+        $this->assertEquals(tenant(), tenancy()->find(tenant('id')));
     }
 
     /** @test */
@@ -161,11 +145,9 @@ class TenantManagerTest extends TestCase
     public function tenant_can_be_deleted()
     {
         $tenant = Tenant::new()->withDomains(['foo.localhost'])->save();
-        tenant()->delete($tenant['id']);
-        $this->assertSame([], tenancy()->all()->toArray());
-
-        $tenant = Tenant::new()->withDomains(['foo.localhost'])->save();
-        $this->assertSame([$tenant], tenancy()->all()->toArray());
+        $this->assertEquals([$tenant], tenancy()->all()->toArray());
+        $tenant->delete();
+        $this->assertEquals([], tenancy()->all()->toArray());
     }
 
     /** @test */
@@ -173,7 +155,7 @@ class TenantManagerTest extends TestCase
     {
         $tenant1 = Tenant::new()->withDomains(['foo.localhost'])->save();
         $tenant2 = Tenant::new()->withDomains(['bar.localhost'])->save();
-        $this->assertEqualsCanonicalizing([$tenant1, $tenant2], tenancy()->all()->toArray());
+        $this->assertEquals([$tenant1, $tenant2], tenancy()->all()->toArray());
     }
 
     /** @test */
