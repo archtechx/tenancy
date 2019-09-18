@@ -208,7 +208,7 @@ class TenantManagerTest extends TestCase
         $tenant = Tenant::create(['test2.localhost']);
 
         $this->expectException(\Stancl\Tenancy\Exceptions\TenantStorageException::class);
-        $tenant->id = 'bar'; 
+        $tenant->id = 'bar';
 
         $tenant2 = Tenant::create(['test3.localhost']);
 
