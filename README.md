@@ -1,4 +1,4 @@
-# [stancl/tenancy](https://stancl.github.io/tenancy/)
+# [stancl/tenancy](https://tenancy.samuelstancl.me)
 
 [![Laravel 5.8](https://img.shields.io/badge/laravel-5.8-red.svg)](https://laravel.com)
 [![Latest Stable Version](https://poser.pugx.org/stancl/tenancy/version)](https://packagist.org/packages/stancl/tenancy)
@@ -15,6 +15,6 @@ You won't have to change a thing in your application's code.\*
 
 \* depending on how you use the filesystem. Everything else will work out of the box.
 
-### [Documentation](https://stancl-tenancy.netlify.com/docs/)
+### [Documentation](https://tenancy.samuelstancl.me/docs)
 
-Documentation has been moved here: https://stancl-tenancy.netlify.com/docs/
+Documentation can be found here: https://tenancy.samuelstancl.me/docs
