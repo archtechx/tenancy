@@ -56,6 +56,6 @@ class TestJob implements ShouldQueue
      */
     public function handle()
     {
-        logger(json_encode(DB::table('users')->get()));
+        logger(json_encode(\DB::table('users')->get()));
     }
 }

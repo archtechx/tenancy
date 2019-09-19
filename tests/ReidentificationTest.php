@@ -28,7 +28,7 @@ class ReidentificationTest extends TestCase
 
         foreach (config('tenancy.filesystem.disks') as $disk) {
             $suffix = config('tenancy.filesystem.suffix_base') . tenant('id');
-            $current_path_prefix = Storage::disk($disk)->getAdapter()->getPathPrefix();
+            $current_path_prefix = \Storage::disk($disk)->getAdapter()->getPathPrefix();
 
             if ($override = config("tenancy.filesystem.root_override.{$disk}")) {
                 $correct_path_prefix = str_replace('%storage_path%', storage_path(), $override);

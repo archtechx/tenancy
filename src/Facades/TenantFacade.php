@@ -14,7 +14,6 @@ class TenantFacade extends Facade
         return Tenant::class;
     }
 
-    // todo2 test this
     public static function create($domains, array $data): Tenant
     {
         return Tenant::create($domains, $data);
