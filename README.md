@@ -1,9 +1,9 @@
 # [stancl/tenancy](https://tenancy.samuelstancl.me)
 
-[![Laravel 5.8](https://img.shields.io/badge/laravel-5.8-red.svg)](https://laravel.com)
+[![Laravel 6.x](https://img.shields.io/badge/laravel-6.x-red.svg)](https://laravel.com)
 [![Latest Stable Version](https://poser.pugx.org/stancl/tenancy/version)](https://packagist.org/packages/stancl/tenancy)
-[![Travis CI build](https://travis-ci.com/stancl/tenancy.svg?branch=1.x)](https://travis-ci.com/stancl/tenancy)
-[![codecov](https://codecov.io/gh/stancl/tenancy/branch/1.x/graph/badge.svg)](https://codecov.io/gh/stancl/tenancy)
+[![Travis CI build](https://travis-ci.com/stancl/tenancy.svg?branch=2.x)](https://travis-ci.com/stancl/tenancy)
+[![codecov](https://codecov.io/gh/stancl/tenancy/branch/2.x/graph/badge.svg)](https://codecov.io/gh/stancl/tenancy)
 
 ### *A Laravel multi-database tenancy package that respects your code.*
 

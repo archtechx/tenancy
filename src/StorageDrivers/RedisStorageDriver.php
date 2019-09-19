@@ -7,14 +7,13 @@ namespace Stancl\Tenancy\StorageDrivers;
 use Illuminate\Contracts\Redis\Factory as Redis;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\StorageDriver;
+use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
+use Stancl\Tenancy\Exceptions\TenantWithThisIdAlreadyExistsException;
 use Stancl\Tenancy\Tenant;
 
-// todo2 transactions instead of pipelines?
 class RedisStorageDriver implements StorageDriver
 {
-    // todo2 json encoding?
-
     /** @var Application */
     protected $app;
 
@@ -49,7 +48,17 @@ class RedisStorageDriver implements StorageDriver
 
     public function ensureTenantCanBeCreated(Tenant $tenant): void
     {
-        // todo2
+        // Tenant ID
+        if ($this->redis->exists("tenants:{$tenant->id}")) {
+            throw new TenantWithThisIdAlreadyExistsException($tenant->id);
+        }
+
+        // Domains
+        if ($this->redis->exists(...array_map(function ($domain) {
+            return "domains:$domain";
+        }, $tenant->domains))) {
+            throw new DomainsOccupiedByOtherTenantException;
+        }
     }
 
     public function findByDomain(string $domain): Tenant
@@ -74,7 +83,7 @@ class RedisStorageDriver implements StorageDriver
 
     public function createTenant(Tenant $tenant): void
     {
-        $this->redis->pipeline(function ($pipe) use ($tenant) {
+        $this->redis->transaction(function ($pipe) use ($tenant) {
             foreach ($tenant->domains as $domain) {
                 $pipe->hmset("domains:$domain", ['tenant_id' => $tenant->id]);
             }
@@ -90,20 +99,34 @@ class RedisStorageDriver implements StorageDriver
 
     public function updateTenant(Tenant $tenant): void
     {
-        $this->redis->pipeline(function ($pipe) use ($tenant) {
-            $pipe->hmset("tenants:{$tenant->id}", $tenant->data); // todo domains
+        $data = [];
+        foreach ($tenant->data as $key => $value) {
+            $data[$key] = json_decode($value, true);
+        }
 
-            foreach ($tenant->domains as $domain) {
-                $pipe->hmset("domains:$domain", 'tenant_id', $tenant->id);
+        $domains = $data['_tenancy_domains'];
+        unset($data['_tenancy_domains']);
+
+        $this->redis->transaction(function ($pipe) use ($data, $domains) {
+            $id = $data['id'];
+            
+            $old_domains = json_decode($pipe->hget("tenants:$id", 'domains'), true);
+            $deleted_domains = array_diff($old_domains, $domains);
+
+            foreach ($deleted_domains as $deleted_domain) {
+                $pipe->del("domains:$deleted_domain");
             }
-
-            // todo2 deleted domains
+            
+            $pipe->hmset("tenants:$id", array_merge($data, ['_tenancy_domains' => json_encode($domains)]));
+            foreach ($domains as $domain) {
+                $pipe->hmset("domains:$domain", 'tenant_id', $id);
+            }
         });
     }
 
     public function deleteTenant(Tenant $tenant): void
     {
-        $this->redis->pipeline(function ($pipe) use ($tenant) {
+        $this->redis->transaction(function ($pipe) use ($tenant) {
             foreach ($tenant->domains as $domain) {
                 $pipe->del("domains:$domain");
             }
@@ -120,7 +143,6 @@ class RedisStorageDriver implements StorageDriver
      */
     public function all(array $ids = []): array
     {
-        // todo2 $this->redis->pipeline()
         $hashes = array_map(function ($hash) {
             return "tenants:{$hash}";
         }, $ids);
