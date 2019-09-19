@@ -147,7 +147,7 @@ class TenantManagerTest extends TestCase
     {
         $tenant1 = Tenant::new()->withDomains(['foo.localhost'])->save();
         $tenant2 = Tenant::new()->withDomains(['bar.localhost'])->save();
-        $this->assertEquals([$tenant1, $tenant2], tenancy()->all()->toArray());
+        $this->assertEqualsCanonicalizing([$tenant1, $tenant2], tenancy()->all()->toArray());
     }
 
     /** @test */

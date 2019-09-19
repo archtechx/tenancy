@@ -16,9 +16,9 @@ class TenantStorageTest extends TestCase
     {
         $abc = Tenant::new()->withDomains(['abc.localhost'])->save();
         $exists = function () use ($abc) {
-            return tenancy()->all()->reduce(function ($result, $tenant) use ($abc) {
-                return $result ?: $tenant->id === $abc->id;
-            }, false);
+            return tenancy()->all()->contains(function ($tenant) use ($abc) {
+                return $tenant->id === $abc->id;
+            });
         };
 
         $this->assertTrue($exists());
