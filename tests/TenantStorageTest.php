@@ -95,20 +95,20 @@ class TenantStorageTest extends TestCase
     public function data_is_stored_with_correct_data_types()
     {
         tenant()->put('someBool', false);
-        $this->assertSame('boolean', \gettype(tenant()->get('someBool')));
-        $this->assertSame('boolean', \gettype(tenant()->get(['someBool'])['someBool']));
+        $this->assertSame('boolean', gettype(tenant()->get('someBool')));
+        $this->assertSame('boolean', gettype(tenant()->get(['someBool'])['someBool']));
 
         tenant()->put('someInt', 5);
-        $this->assertSame('integer', \gettype(tenant()->get('someInt')));
-        $this->assertSame('integer', \gettype(tenant()->get(['someInt'])['someInt']));
+        $this->assertSame('integer', gettype(tenant()->get('someInt')));
+        $this->assertSame('integer', gettype(tenant()->get(['someInt'])['someInt']));
 
         tenant()->put('someDouble', 11.40);
-        $this->assertSame('double', \gettype(tenant()->get('someDouble')));
-        $this->assertSame('double', \gettype(tenant()->get(['someDouble'])['someDouble']));
+        $this->assertSame('double', gettype(tenant()->get('someDouble')));
+        $this->assertSame('double', gettype(tenant()->get(['someDouble'])['someDouble']));
 
         tenant()->put('string', 'foo');
-        $this->assertSame('string', \gettype(tenant()->get('string')));
-        $this->assertSame('string', \gettype(tenant()->get(['string'])['string']));
+        $this->assertSame('string', gettype(tenant()->get('string')));
+        $this->assertSame('string', gettype(tenant()->get(['string'])['string']));
     }
 
     /** @test */
@@ -159,6 +159,6 @@ class TenantStorageTest extends TestCase
         tenant()->put(['foo' => 'bar', 'abc' => 'xyz']);
         $this->assertSame(['bar', 'xyz'], tenant()->get(['foo', 'abc']));
 
-        $this->assertSame('bar', \DB::connection('central')->table('tenants')->where('id', tenant('id'))->first()->foo);
+        $this->assertSame('bar', DB::connection('central')->table('tenants')->where('id', tenant('id'))->first()->foo);
     }
 }

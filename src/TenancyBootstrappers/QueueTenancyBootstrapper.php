@@ -22,7 +22,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
 
         $this->app['queue']->createPayloadUsing([$this, 'createPayload']);
         $this->app['events']->listen(\Illuminate\Queue\Events\JobProcessing::class, function ($event) {
-            if (\array_key_exists('tenant_id', $event->job->payload())) {
+            if (array_key_exists('tenant_id', $event->job->payload())) {
                 tenancy()->initById($event->job->payload()['tenant_id']);
             }
         });
@@ -50,7 +50,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             'tenant_id' => $id,
             'tags' => [
                 "tenant:$id",
-                // todo2 domain
+                // todo3 domain
             ],
         ];
     }

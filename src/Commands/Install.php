@@ -36,21 +36,21 @@ class Install extends Command
             ]);
         $this->info('✔️  Created config/tenancy.php');
 
-        $newKernel = \str_replace(
+        $newKernel = str_replace(
             'protected $middlewarePriority = [',
             "protected \$middlewarePriority = [
         \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,
         \Stancl\Tenancy\Middleware\InitializeTenancy::class,",
-            \file_get_contents(app_path('Http/Kernel.php'))
+            file_get_contents(app_path('Http/Kernel.php'))
         );
 
-        $newKernel = \str_replace("'web' => [", "'web' => [
+        $newKernel = str_replace("'web' => [", "'web' => [
             \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,", $newKernel);
 
-        \file_put_contents(app_path('Http/Kernel.php'), $newKernel);
+        file_put_contents(app_path('Http/Kernel.php'), $newKernel);
         $this->info('✔️  Set middleware priority');
 
-        \file_put_contents(
+        file_put_contents(
             base_path('routes/tenant.php'),
             "<?php
 
@@ -82,8 +82,8 @@ Route::get('/', function () {
             $this->info('✔️  Created migration.');
         }
 
-        if (! \is_dir(database_path('migrations/tenant'))) {
-            \mkdir(database_path('migrations/tenant'));
+        if (! is_dir(database_path('migrations/tenant'))) {
+            mkdir(database_path('migrations/tenant'));
             $this->info('✔️  Created database/migrations/tenant folder.');
         }
 

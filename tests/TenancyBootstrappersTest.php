@@ -6,8 +6,7 @@ namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Redis;
 
-// todo2 rename
-class BootstrapsTenancyTest extends TestCase
+class TenancyBootstrappersTest extends TestCase
 {
     public $autoInitTenancy = false;
 
@@ -53,10 +52,10 @@ class BootstrapsTenancyTest extends TestCase
 
         foreach (config('tenancy.filesystem.disks') as $disk) {
             $suffix = config('tenancy.filesystem.suffix_base') . tenant('id');
-            $current_path_prefix = \Storage::disk($disk)->getAdapter()->getPathPrefix();
+            $current_path_prefix = Storage::disk($disk)->getAdapter()->getPathPrefix();
 
             if ($override = config("tenancy.filesystem.root_override.{$disk}")) {
-                $correct_path_prefix = \str_replace('%storage_path%', storage_path(), $override);
+                $correct_path_prefix = str_replace('%storage_path%', storage_path(), $override);
             } else {
                 if ($base = $old_storage_facade_roots[$disk]) {
                     $correct_path_prefix = $base . "/$suffix/";

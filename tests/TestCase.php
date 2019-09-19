@@ -27,7 +27,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         Redis::connection('cache')->flushdb();
 
         $this->loadMigrationsFrom([
-            '--path' => \realpath(__DIR__ . '/../assets/migrations'),
+            '--path' => realpath(__DIR__ . '/../assets/migrations'),
             '--database' => 'central',
         ]);
         config(['database.default' => 'sqlite']); // fix issue caused by loadMigrationsFrom
@@ -59,11 +59,11 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
      */
     protected function getEnvironmentSetUp($app)
     {
-        if (\file_exists(__DIR__ . '/../.env')) {
+        if (file_exists(__DIR__ . '/../.env')) {
             \Dotenv\Dotenv::create(__DIR__ . '/..')->load();
         }
 
-        \fclose(\fopen(database_path('central.sqlite'), 'w'));
+        fclose(fopen(database_path('central.sqlite'), 'w'));
 
         $app['config']->set([
             'database.redis.cache.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
@@ -152,7 +152,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
     public function randomString(int $length = 10)
     {
-        return \substr(\str_shuffle(\str_repeat($x = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', (int) (\ceil($length / \strlen($x))))), 1, $length);
+        return substr(str_shuffle(str_repeat($x = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', (int) (ceil($length / strlen($x))))), 1, $length);
     }
 
     public function isContainerized()
@@ -162,6 +162,6 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
     public function assertArrayIsSubset($subset, $array, string $message = ''): void
     {
-        parent::assertTrue(\array_intersect($subset, $array) == $subset, $message);
+        parent::assertTrue(array_intersect($subset, $array) == $subset, $message);
     }
 }
