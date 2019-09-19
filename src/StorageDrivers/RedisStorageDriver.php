@@ -109,14 +109,14 @@ class RedisStorageDriver implements StorageDriver
 
         $this->redis->transaction(function ($pipe) use ($data, $domains) {
             $id = $data['id'];
-            
+
             $old_domains = json_decode($pipe->hget("tenants:$id", 'domains'), true);
             $deleted_domains = array_diff($old_domains, $domains);
 
             foreach ($deleted_domains as $deleted_domain) {
                 $pipe->del("domains:$deleted_domain");
             }
-            
+
             $pipe->hmset("tenants:$id", array_merge($data, ['_tenancy_domains' => json_encode($domains)]));
             foreach ($domains as $domain) {
                 $pipe->hmset("domains:$domain", 'tenant_id', $id);
