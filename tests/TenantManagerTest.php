@@ -187,7 +187,7 @@ class TenantManagerTest extends TestCase
         $this->expectException(\Stancl\Tenancy\Exceptions\TenantStorageException::class);
         $tenant2->put('id', 'foo');
     }
-    
+
     /** @test */
     public function all_returns_a_collection_of_tenant_objects()
     {
