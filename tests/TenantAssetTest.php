@@ -15,14 +15,14 @@ class TenantAssetTest extends TestCase
 
         // response()->file() returns BinaryFileResponse whose content is
         // inaccessible via getContent, so ->assertSee() can't be used
-        // $this->get(tenant_asset($filename))->assertSuccessful(); // todo commented assertions
-        // $this->assertFileExists($path); // todo commented assertions
+        // $this->get(tenant_asset($filename))->assertSuccessful(); // todo2 commented assertions
+        // $this->assertFileExists($path); // todo2 commented assertions
 
         $f = fopen($path, 'r');
         $content = fread($f, filesize($path));
         fclose($f);
 
-        // $this->assertSame('bar', $content); // todo commented assertions
+        // $this->assertSame('bar', $content); // todo2 commented assertions
         $this->assertTrue(true);
     }
 }

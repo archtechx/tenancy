@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Tenant;
 
-// todo better solution than tenant_asset?
+// todo2 better solution than tenant_asset?
 
 class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 {

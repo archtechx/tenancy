@@ -24,7 +24,7 @@ class TenantDatabaseManagerTest extends TestCase
             $this->markTestSkipped('As to not bloat your computer with test databases, this test is not run by default.');
         }
 
-        config()->set('database.default', $driver); // todo the DB creator would not work for MySQL when sqlite is used for the central DB
+        config()->set('database.default', $driver); // todo2 the DB creator would not work for MySQL when sqlite is used for the central DB
 
         $name = 'db' . $this->randomString();
         $this->assertFalse(app($databaseManager)->databaseExists($name));
