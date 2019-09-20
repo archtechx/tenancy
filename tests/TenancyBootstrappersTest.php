@@ -84,9 +84,9 @@ class TenancyBootstrappersTest extends TestCase
         $original = config('database.default');
         tenancy()->create(['foo.localhost']);
         tenancy()->init('foo.localhost');
-        
+
         $this->assertSame(null, config("database.connections.$original.foo"));
-        
+
         config(["database.connections.$original.foo" => 'bar']);
         tenancy()->create(['bar.localhost']);
         tenancy()->init('bar.localhost');
