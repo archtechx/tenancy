@@ -99,6 +99,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'database.redis.client' => env('TENANCY_TEST_REDIS_CLIENT', 'phpredis'),
             'tenancy.redis.prefixed_connections' => ['default'],
             'tenancy.migrations_directory' => database_path('../migrations'),
+            'tenancy.storage.db.connection' => 'central',
         ]);
 
         if (env('TENANCY_TEST_STORAGE_DRIVER', 'redis') === 'redis') {
