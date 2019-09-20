@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\StorageDrivers\Database;
 
 use Illuminate\Database\Eloquent\Model;
+use Stancl\Tenancy\DatabaseManager;
 
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
