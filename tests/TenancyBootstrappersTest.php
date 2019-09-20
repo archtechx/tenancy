@@ -77,4 +77,20 @@ class TenancyBootstrappersTest extends TestCase
         $expected = [config('tenancy.cache.tag_base') . tenant('id'), 'foo', 'bar'];
         $this->assertEquals($expected, cache()->tags(['foo', 'bar'])->getTags()->getNames());
     }
+
+    /** @test */
+    public function the_default_db_connection_is_used_when_the_config_value_is_null()
+    {
+        $original = config('database.default');
+        tenancy()->create(['foo.localhost']);
+        tenancy()->init('foo.localhost');
+        
+        $this->assertSame(null, config("database.connections.$original.foo"));
+        
+        config(["database.connections.$original.foo" => 'bar']);
+        tenancy()->create(['bar.localhost']);
+        tenancy()->init('bar.localhost');
+
+        $this->assertSame('bar', config("database.connections.$original.foo"));
+    }
 }

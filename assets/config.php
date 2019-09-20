@@ -10,7 +10,7 @@ return [
             'custom_columns' => [
                 // 'plan',
             ],
-            'connection' => null, // todo verify this works
+            'connection' => null,
             'table_names' => [
                 'TenantModel' => 'tenants',
                 'DomainModel' => 'domains',
