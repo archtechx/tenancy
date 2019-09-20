@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Tests;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Tenant;
+use Stancl\Tenancy\TenantManager;
 
 class TenantManagerTest extends TestCase
 {
@@ -193,5 +194,40 @@ class TenantManagerTest extends TestCase
     {
         Tenant::create('foo.localhost');
         $this->assertSame('Tenant', class_basename(tenancy()->all()[0]));
+    }
+
+    /** @test */
+    public function Tenant_is_bound_correctly_to_the_service_container()
+    {
+        $this->assertSame(null, app(Tenant::class));
+        $tenant = Tenant::create(['foo.localhost']);
+        app(TenantManager::class)->initializeTenancy($tenant);
+        $this->assertSame($tenant->id, app(Tenant::class)->id);
+        $this->assertSame(app(Tenant::class), app(TenantManager::class)->getTenant());
+        app(TenantManager::class)->endTenancy();
+        $this->assertSame(app(Tenant::class), app(TenantManager::class)->getTenant());
+    }
+
+    /** @test */
+    public function id_can_be_supplied_during_creation()
+    {
+        $id = 'abc' . $this->randomString();
+        $this->assertSame($id, Tenant::create(['foo.localhost'], ['id' => $id])->id);
+        $this->assertTrue(tenancy()->all()->contains(function ($tenant) use ($id) {
+            return $tenant->id === $id;
+        }));
+    }
+
+    /** @test */
+    public function automatic_migrations_work()
+    {
+        $tenant = Tenant::create(['foo.localhost']);
+        tenancy()->initialize($tenant);
+        $this->assertFalse(\Schema::hasTable('users'));
+
+        config(['tenancy.migrate_after_creation' => true]);
+        $tenant2 = Tenant::create(['bar.localhost']);
+        tenancy()->initialize($tenant2);
+        $this->assertTrue(\Schema::hasTable('users'));
     }
 }
