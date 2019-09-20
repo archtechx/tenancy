@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Tests;
 use Mockery;
 use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\Tenant;
+use Tenancy;
 
 class TenantClassTest extends TestCase
 {
@@ -35,5 +36,14 @@ class TenantClassTest extends TestCase
         $spy->shouldHaveReceived('get')->once();
 
         Mockery::close();
+    }
+
+    /** @test */
+    public function tenant_can_have_multiple_domains()
+    {
+        $tenant = Tenant::create(['foo.localhost', 'bar.localhost']);
+        $this->assertSame(['foo.localhost', 'bar.localhost'], $tenant->domains);
+        $this->assertSame($tenant->id, Tenancy::findByDomain('foo.localhost')->id);
+        $this->assertSame($tenant->id, Tenancy::findByDomain('bar.localhost')->id);
     }
 }
