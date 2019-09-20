@@ -291,7 +291,7 @@ class Tenant implements ArrayAccess
     public function __call($method, $parameters)
     {
         if (Str::startsWith($method, 'with')) {
-           return $this->with(Str::snake(substr($method, 4)), $parameters[0]);
+            return $this->with(Str::snake(substr($method, 4)), $parameters[0]);
         }
 
         // todo throw some exception?

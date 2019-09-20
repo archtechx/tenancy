@@ -92,7 +92,7 @@ class DatabaseStorageDriver implements StorageDriver
     public function updateTenant(Tenant $tenant): void
     {
         Tenants::find($tenant->id)->putMany($tenant->data);
-      
+
         $original_domains = Domains::where('tenant_id', $tenant->id)->get()->map(function ($model) {
             return $model->domain;
         })->toArray();
