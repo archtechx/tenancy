@@ -81,7 +81,13 @@ class DatabaseManager
         return $this->app['config']["database.connections.$connectionName.driver"];
     }
 
-    public function switchConnection($connection)
+    /**
+     * Switch the application's connection.
+     *
+     * @param string $connection
+     * @return void
+     */
+    public function switchConnection(string $connection)
     {
         $this->app['config']['database.default'] = $connection;
         $this->database->purge();
@@ -103,6 +109,12 @@ class DatabaseManager
         }
     }
 
+    /**
+     * Create a database for a tenant.
+     *
+     * @param Tenant $tenant
+     * @return void
+     */
     public function createDatabase(Tenant $tenant)
     {
         $database = $tenant->getDatabaseName();
@@ -115,6 +127,12 @@ class DatabaseManager
         }
     }
 
+    /**
+     * Delete a tenant's database.
+     *
+     * @param Tenant $tenant
+     * @return void
+     */
     public function deleteDatabase(Tenant $tenant)
     {
         $database = $tenant->getDatabaseName();
@@ -127,6 +145,12 @@ class DatabaseManager
         }
     }
 
+    /**
+     * Get the TenantDatabaseManager for a tenant's database connection.
+     *
+     * @param Tenant $tenant
+     * @return TenantDatabaseManager
+     */
     protected function getTenantDatabaseManager(Tenant $tenant): TenantDatabaseManager
     {
         // todo2 this shouldn't have to create a connection

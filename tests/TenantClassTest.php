@@ -86,4 +86,12 @@ class TenantClassTest extends TestCase
         $this->assertSame('xyz', $tenant2->foo_bar);
         $this->assertArrayHasKey('foo_bar', $tenant2->data);
     }
+
+    /** @test */
+    public function an_exception_is_thrown_when_an_unknown_method_is_called()
+    {
+        $tenant = Tenant::new();
+        $this->expectException(\BadMethodCallException::class);
+        $tenant->sdjigndfgnjdfgj();
+    }
 }

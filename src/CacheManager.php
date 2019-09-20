@@ -8,6 +8,13 @@ use Illuminate\Cache\CacheManager as BaseCacheManager;
 
 class CacheManager extends BaseCacheManager
 {
+    /**
+     * Add tags and forward the call to the inner cache store.
+     *
+     * @param string $method
+     * @param array $parameters
+     * @return mixed
+     */
     public function __call($method, $parameters)
     {
         $tags = [config('tenancy.cache.tag_base') . tenant('id')];

@@ -50,6 +50,12 @@ class TenantManager
         $this->bootstrapFeatures();
     }
 
+    /**
+     * Write a new tenant to storage.
+     *
+     * @param Tenant $tenant
+     * @return self
+     */
     public function createTenant(Tenant $tenant): self
     {
         $this->ensureTenantCanBeCreated($tenant);
@@ -66,6 +72,12 @@ class TenantManager
         return $this;
     }
 
+    /**
+     * Delete a tenant from storage.
+     *
+     * @param Tenant $tenant
+     * @return self
+     */
     public function deleteTenant(Tenant $tenant): self
     {
         $this->storage->deleteTenant($tenant);
@@ -77,6 +89,13 @@ class TenantManager
         return $this;
     }
 
+    /**
+     * Alias for Stancl\Tenancy\Tenant::create.
+     *
+     * @param string|string[] $domains
+     * @param array $data
+     * @return Tenant
+     */
     public static function create($domains, array $data = []): Tenant
     {
         return Tenant::create($domains, $data);
@@ -95,6 +114,12 @@ class TenantManager
         $this->database->ensureTenantCanBeCreated($tenant);
     }
 
+    /**
+     * Update an existing tenant in storage.
+     *
+     * @param Tenant $tenant
+     * @return self
+     */
     public function updateTenant(Tenant $tenant): self
     {
         $this->storage->updateTenant($tenant);
@@ -102,6 +127,12 @@ class TenantManager
         return $this;
     }
 
+    /**
+     * Find tenant by domain & initialize tenancy.
+     *
+     * @param string $domain
+     * @return self
+     */
     public function init(string $domain = null): self
     {
         $domain = $domain ?? request()->getHost();
@@ -110,6 +141,12 @@ class TenantManager
         return $this;
     }
 
+    /**
+     * Find tenant by ID & initialize tenancy.
+     *
+     * @param string $id
+     * @return self
+     */
     public function initById(string $id): self
     {
         $this->initializeTenancy($this->find($id));
@@ -156,6 +193,12 @@ class TenantManager
         return collect($this->storage->all($only));
     }
 
+    /**
+     * Initialize tenancy.
+     *
+     * @param Tenant $tenant
+     * @return self
+     */
     public function initializeTenancy(Tenant $tenant): self
     {
         $this->setTenant($tenant);
@@ -171,6 +214,12 @@ class TenantManager
         return $this->initializeTenancy($tenant);
     }
 
+    /**
+     * Execute TenancyBootstrappers.
+     *
+     * @param Tenant $tenant
+     * @return self
+     */
     public function bootstrapTenancy(Tenant $tenant): self
     {
         $prevented = $this->event('bootstrapping');
