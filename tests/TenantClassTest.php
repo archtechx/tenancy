@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Tests;
 
 use Mockery;
@@ -13,7 +15,7 @@ class TenantClassTest extends TestCase
 
     /** @test */
     public function data_cache_works_properly()
-    { 
+    {
         $spy = Mockery::spy(config('tenancy.storage_driver'))->makePartial();
         $this->instance(StorageDriver::class, $spy);
 
