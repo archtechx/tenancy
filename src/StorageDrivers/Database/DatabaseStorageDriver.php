@@ -7,7 +7,7 @@ namespace Stancl\Tenancy\StorageDrivers\Database;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Contracts\StorageDriver;
-use Stancl\Tenancy\Exceptions\DomainOccupiedByOtherTenantException;
+use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Exceptions\TenantWithThisIdAlreadyExistsException;
 use Stancl\Tenancy\StorageDrivers\Database\DomainModel as Domains;
@@ -60,7 +60,7 @@ class DatabaseStorageDriver implements StorageDriver
         }
 
         if (Domains::whereIn('domain', $tenant->domains)->exists()) {
-            throw new DomainOccupiedByOtherTenantException();
+            throw new DomainsOccupiedByOtherTenantException;
         }
     }
 

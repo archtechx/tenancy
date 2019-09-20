@@ -6,6 +6,8 @@ namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
+use Stancl\Tenancy\Exceptions\TenantWithThisIdAlreadyExistsException;
 use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\TenantManager;
 
@@ -229,5 +231,17 @@ class TenantManagerTest extends TestCase
         $tenant2 = Tenant::create(['bar.localhost']);
         tenancy()->initialize($tenant2);
         $this->assertTrue(\Schema::hasTable('users'));
+    }
+
+    /** @test */
+    public function ensureTenantCanBeCreated_works()
+    {
+        $id = 'foo' . $this->randomString();
+        Tenant::create(['foo.localhost'], ['id' => $id]);
+        $this->expectException(DomainsOccupiedByOtherTenantException::class);
+        Tenant::create(['foo.localhost']);
+
+        $this->expectException(TenantWithThisIdAlreadyExistsException::class);
+        Tenant::create(['bar.localhost'], ['id' => $id]);
     }
 }
