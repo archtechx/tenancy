@@ -6,6 +6,7 @@ namespace Stancl\Tenancy;
 
 use ArrayAccess;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Str;
 use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 use Stancl\Tenancy\Exceptions\TenantStorageException;
@@ -267,6 +268,13 @@ class Tenant implements ArrayAccess
         return $this->put($key, $value);
     }
 
+    public function with(string $key, $value): self
+    {
+        $this->data[$key] = $value;
+
+        return $this;
+    }
+
     public function __get($key)
     {
         return $this->get($key);
@@ -280,8 +288,12 @@ class Tenant implements ArrayAccess
         $this->data[$key] = $value;
     }
 
-    public function __call($name, $arguments)
+    public function __call($method, $parameters)
     {
-        // todo withId()
+        if (Str::startsWith($method, 'with')) {
+           return $this->with(Str::snake(substr($method, 4)), $parameters[0]);
+        }
+
+        // todo throw some exception?
     }
 }

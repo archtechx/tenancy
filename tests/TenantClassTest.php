@@ -72,4 +72,18 @@ class TenantClassTest extends TestCase
         $this->assertEqualsCanonicalizing(['completely.localhost', 'different.localhost', 'domains.localhost'], $tenant->domains);
         $this->assertEqualsCanonicalizing(['completely.localhost', 'different.localhost', 'domains.localhost'], tenancy()->find($id)->domains);
     }
+
+    /** @test */
+    public function with_methods_work()
+    {
+        $id = 'foo' . $this->randomString();
+        $tenant = Tenant::new()->withDomains(['foo.localhost'])->with('id', $id);
+        $this->assertSame($id, $tenant->id);
+
+        $id2 = 'bar' . $this->randomString();
+        $tenant2 = Tenant::new()->withDomains(['bar.localhost'])->withId($id2)->withFooBar('xyz');
+        $this->assertSame($id2, $tenant2->data['id']);
+        $this->assertSame('xyz', $tenant2->foo_bar);
+        $this->assertArrayHasKey('foo_bar', $tenant2->data);
+    }
 }
