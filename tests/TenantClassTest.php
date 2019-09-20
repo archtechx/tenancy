@@ -28,6 +28,10 @@ class TenantClassTest extends TestCase
         $this->assertSame('ddd', $tenant->data['ccc']);
 
         $spy->shouldNotHaveReceived('get');
+
+        $this->assertSame(null, $tenant->dfuighdfuigfhdui);
+        $spy->shouldHaveReceived('get')->once();
+
         Mockery::close();
     }
 }
