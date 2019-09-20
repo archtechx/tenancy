@@ -15,7 +15,11 @@ class TenantModel extends Model
     protected $primaryKey = 'id';
     public $incrementing = false;
     public $timestamps = false;
-    public $table = 'tenants';
+
+    public function getTable()
+    {
+        return config('tenancy.storage.db.table_names.TenantModel', 'tenants');
+    }
 
     public static function dataColumn()
     {

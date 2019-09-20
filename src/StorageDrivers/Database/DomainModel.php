@@ -15,7 +15,11 @@ class DomainModel extends Model
     protected $primaryKey = 'id';
     public $incrementing = false;
     public $timestamps = false;
-    public $table = 'domains';
+
+    public function getTable()
+    {
+        return config('tenancy.storage.db.table_names.DomainModel', 'domains');
+    }
 
     public function getConnectionName()
     {

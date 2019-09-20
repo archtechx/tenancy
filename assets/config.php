@@ -10,7 +10,11 @@ return [
             'custom_columns' => [
                 // 'plan',
             ],
-            'connection' => 'central',
+            'connection' => null, // todo verify this works
+            'table_names' => [
+                'TenantModel' => 'tenants',
+                'DomainModel' => 'domains',
+            ],
         ],
         'redis' => [ // Stancl\Tenancy\StorageDrivers\RedisStorageDriver
             'connection' => 'tenancy',
