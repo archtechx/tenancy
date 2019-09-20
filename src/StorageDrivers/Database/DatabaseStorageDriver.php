@@ -92,12 +92,20 @@ class DatabaseStorageDriver implements StorageDriver
     public function updateTenant(Tenant $tenant): void
     {
         Tenants::find($tenant->id)->putMany($tenant->data);
-        Domains::firstOrCreate(array_map(function ($domain) use ($tenant) {
-            return [
+      
+        $original_domains = Domains::where('tenant_id', $tenant->id)->get()->map(function ($model) {
+            return $model->domain;
+        })->toArray();
+        $deleted_domains = array_diff($original_domains, $tenant->domains);
+
+        Domains::whereIn('domain', $deleted_domains)->delete();
+
+        foreach ($tenant->domains as $domain) {
+            Domains::firstOrCreate([
                 'tenant_id' => $tenant->id,
                 'domain' => $domain,
-            ];
-        }, $tenant->domains));
+            ]);
+        }
     }
 
     public function deleteTenant(Tenant $tenant): void

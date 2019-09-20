@@ -99,28 +99,27 @@ class RedisStorageDriver implements StorageDriver
 
     public function updateTenant(Tenant $tenant): void
     {
+        $id = $tenant->id;
+
+        $old_domains = json_decode($this->redis->hget("tenants:$id", '_tenancy_domains'), true);
+        $deleted_domains = array_diff($old_domains, $tenant->domains);
+        $domains = $tenant->domains;
+
         $data = [];
         foreach ($tenant->data as $key => $value) {
-            $data[$key] = json_decode($value, true);
+            $data[$key] = json_encode($value);
         }
 
-        $domains = $data['_tenancy_domains'];
-        unset($data['_tenancy_domains']);
-
-        $this->redis->transaction(function ($pipe) use ($data, $domains) {
-            $id = $data['id'];
-
-            $old_domains = json_decode($pipe->hget("tenants:$id", 'domains'), true);
-            $deleted_domains = array_diff($old_domains, $domains);
-
+        $this->redis->transaction(function ($pipe) use ($id, $data, $deleted_domains, $domains) {
             foreach ($deleted_domains as $deleted_domain) {
                 $pipe->del("domains:$deleted_domain");
             }
 
-            $pipe->hmset("tenants:$id", array_merge($data, ['_tenancy_domains' => json_encode($domains)]));
             foreach ($domains as $domain) {
-                $pipe->hmset("domains:$domain", 'tenant_id', $id);
+                $pipe->hset("domains:$domain", 'tenant_id', $id);
             }
+
+            $pipe->hmset("tenants:$id", array_merge($data, ['_tenancy_domains' => json_encode($domains)]));
         });
     }
 

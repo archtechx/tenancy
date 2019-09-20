@@ -279,4 +279,9 @@ class Tenant implements ArrayAccess
         }
         $this->data[$key] = $value;
     }
+
+    public function __call($name, $arguments)
+    {
+        // todo withId()
+    }
 }

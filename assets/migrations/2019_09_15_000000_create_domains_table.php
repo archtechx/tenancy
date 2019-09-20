@@ -17,7 +17,7 @@ class CreateDomainsTable extends Migration
     {
         Schema::create('domains', function (Blueprint $table) {
             $table->string('tenant_id', 36); // 36 characters is the default uuid length // todo foreign key?
-            $table->string('domain', 255)->index(); // don't change this
+            $table->string('domain', 255)->unique(); // don't change this
         });
     }
 

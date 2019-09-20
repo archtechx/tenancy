@@ -46,4 +46,30 @@ class TenantClassTest extends TestCase
         $this->assertSame($tenant->id, Tenancy::findByDomain('foo.localhost')->id);
         $this->assertSame($tenant->id, Tenancy::findByDomain('bar.localhost')->id);
     }
+
+    /** @test */
+    public function updating_a_tenant_works()
+    {
+        $id = 'abc' . $this->randomString();
+        $tenant = Tenant::create(['foo.localhost'], ['id' => $id]);
+        $tenant->foo = 'bar';
+        $tenant->save();
+        $this->assertEquals(['id' => $id, 'foo' => 'bar'], $tenant->data);
+        $this->assertEquals(['id' => $id, 'foo' => 'bar'], tenancy()->find($id)->data);
+
+        $tenant->addDomains('abc.localhost');
+        $tenant->save();
+        $this->assertEqualsCanonicalizing(['foo.localhost', 'abc.localhost'], $tenant->domains);
+        $this->assertEqualsCanonicalizing(['foo.localhost', 'abc.localhost'], tenancy()->find($id)->domains);
+
+        $tenant->removeDomains(['foo.localhost']);
+        $tenant->save();
+        $this->assertEqualsCanonicalizing(['abc.localhost'], $tenant->domains);
+        $this->assertEqualsCanonicalizing(['abc.localhost'], tenancy()->find($id)->domains);
+
+        $tenant->withDomains(['completely.localhost', 'different.localhost', 'domains.localhost']);
+        $tenant->save();
+        $this->assertEqualsCanonicalizing(['completely.localhost', 'different.localhost', 'domains.localhost'], $tenant->domains);
+        $this->assertEqualsCanonicalizing(['completely.localhost', 'different.localhost', 'domains.localhost'], tenancy()->find($id)->domains);
+    }
 }
