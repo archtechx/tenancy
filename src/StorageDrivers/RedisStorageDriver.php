@@ -188,7 +188,7 @@ class RedisStorageDriver implements StorageDriver
 
         $json_data = $this->redis->hget("tenants:{$tenant->id}", $key);
         if ($json_data === false) {
-            return null;
+            return;
         }
 
         return json_decode($json_data, true);
