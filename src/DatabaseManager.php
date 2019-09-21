@@ -71,7 +71,7 @@ class DatabaseManager
     }
 
     /**
-     * Get the name of the connection that $connectionName should be based on
+     * Get the name of the connection that $connectionName should be based on.
      *
      * @param string $connectionName
      * @return string
