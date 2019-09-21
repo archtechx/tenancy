@@ -25,8 +25,7 @@ class DatabaseManagerTest extends TestCase
     /** @test */
     public function db_name_is_prefixed_with_db_path_when_sqlite_is_used()
     {
-        // make `tenant` not sqlite so that it has to detect sqlite from fooconn
-        config(['database.connections.tenant.driver' => 'mysql']);
+        config(['database.connections.fooconn.driver' => 'sqlite']);
         app(DatabaseManager::class)->createTenantConnection('foodb', 'fooconn');
 
         $this->assertSame(config('database.connections.fooconn.database'), database_path('foodb'));
