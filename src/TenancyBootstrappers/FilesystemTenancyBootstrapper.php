@@ -24,6 +24,12 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             'path' => $this->app->storagePath(),
             'asset_url' => $this->app['config']['app.asset_url'],
         ];
+
+        $this->app['url']->macro('setAssetRoot', function ($root) {
+            $this->assetRoot = $root;
+
+            return $this;
+        });
     }
 
     public function start(Tenant $tenant)

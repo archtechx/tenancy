@@ -71,7 +71,7 @@ return [
         // Their responsibility is making Laravel features tenant-aware.
         'database' => 'Stancl\Tenancy\TenancyBootstrappers\DatabaseTenancyBootstrapper',
         'cache' => 'Stancl\Tenancy\TenancyBootstrappers\CacheTenancyBootstrapper',
-        'filesystem' => 'Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper',
+        // 'filesystem' => 'Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper',
         'redis' => 'Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper',
         'queue' => 'Stancl\Tenancy\TenancyBootstrappers\QueueTenancyBootstrapper',
     ],

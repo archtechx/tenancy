@@ -7,6 +7,7 @@ namespace Stancl\Tenancy;
 use Illuminate\Cache\CacheManager;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper;
 
 class TenancyServiceProvider extends ServiceProvider
 {
@@ -40,11 +41,9 @@ class TenancyServiceProvider extends ServiceProvider
             \Stancl\Tenancy\Middleware\InitializeTenancy::class,
         ]);
 
-        $this->app->instance('globalUrl', clone $this->app['url']);
-        $this->app['url']->macro('setAssetRoot', function ($root) {
-            $this->assetRoot = $root;
-
-            return $this;
+        $this->app->singleton('globalUrl', function ($app) {
+            $instance = clone $app['url'];
+            $instance->setAssetRoot($app[FilesystemTenancyBootstrapper::class]->originalPaths['asset_url']);
         });
     }
 
