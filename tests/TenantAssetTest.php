@@ -4,11 +4,19 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
+use Stancl\Tenancy\Tenant;
+
 class TenantAssetTest extends TestCase
 {
+    public $autoCreateTenant = false;
+    public $autoInitTenancy = false;
+
     /** @test */
     public function asset_can_be_accessed_using_the_url_returned_by_the_tenant_asset_helper()
     {
+        Tenant::create('foo.localhost');
+        tenancy()->init('foo.localhost');
+
         $filename = 'testfile' . $this->randomString(10);
         \Storage::disk('public')->put($filename, 'bar');
         $path = storage_path("app/public/$filename");
@@ -24,4 +32,28 @@ class TenantAssetTest extends TestCase
 
         $this->assertSame('bar', $content);
     }
+
+    /** @test */
+    public function asset_helper_returns_a_link_to_TenantAssetController_when_asset_url_is_null()
+    {
+        config(['app.asset_url' => null]);
+
+        Tenant::create('foo.localhost');
+        tenancy()->init('foo.localhost');
+
+        $this->assertSame(route('stancl.tenancy.asset', ['path' => 'foo']), asset('foo'));
+    }
+
+    /** @test */
+    public function asset_helper_returns_a_link_to_an_external_url_when_asset_url_is_not_null()
+    {
+        config(['app.asset_url' => 'https://an-s3-bucket']);
+
+        $tenant = Tenant::create(['foo.localhost']);
+        tenancy()->init('foo.localhost');
+
+        $this->assertSame("https://an-s3-bucket/tenant{$tenant->id}/foo", asset('foo'));
+    }
+
+    // todo test global asset
 }

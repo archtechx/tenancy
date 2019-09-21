@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Tenant;
 
-// todo test the helpers
 class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 {
     protected $originalPaths = [];
@@ -24,7 +23,6 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             'disks' => [],
             'path' => $this->app->storagePath(),
             'asset_url' => $this->app['config']['app.asset_url'],
-            'forced_root' => $this->app['url']->getForcedRoot(),
         ];
     }
 
@@ -40,7 +38,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             $this->app['config']['app.asset_url'] = ($this->originalPaths['asset_url'] ?? $this->app['config']['app.url']) . "/$suffix";
             $this->app['url']->setAssetRoot($this->app['config']['app.asset_url']);
         } else {
-            $this->app['url']->forceRootUrl($this->app['url']->route('stancl.tenancy.asset', ['path' => '']));
+            $this->app['url']->setAssetRoot($this->app['url']->route('stancl.tenancy.asset', ['path' => '']));
         }
 
         // Storage facade
@@ -65,7 +63,6 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         // asset()
         $this->app['config']['app.asset_url'] = $this->originalPaths['asset_url'];
         $this->app['url']->setAssetRoot($this->app['config']['app.asset_url']);
-        $this->app['url']->forceRootUrl($this->originalPaths['forced_root']);
 
         // Storage facade
         foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
