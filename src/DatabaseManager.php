@@ -64,10 +64,8 @@ class DatabaseManager
         // Create the database connection.
         $based_on = $this->getBaseConnection($connectionName);
         $this->app['config']["database.connections.$connectionName"] = $this->app['config']['database.connections.' . $based_on];
-        // todo don't overwrite database.connections.$connectionName
 
         // Change database name.
-        // todo tenant-specific connections without any DB name changes?
         $databaseName = $this->getDriver($connectionName) === 'sqlite' ? database_path($databaseName) : $databaseName;
         $this->app['config']["database.connections.$connectionName.database"] = $databaseName;
     }
