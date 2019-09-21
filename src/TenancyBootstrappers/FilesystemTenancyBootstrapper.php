@@ -11,10 +11,10 @@ use Stancl\Tenancy\Tenant;
 
 class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 {
-    protected $originalPaths = [];
-
     /** @var Application */
     protected $app;
+
+    protected $originalPaths = [];
 
     public function __construct(Application $app)
     {

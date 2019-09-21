@@ -30,12 +30,11 @@ if (! \function_exists('tenant')) {
 if (! \function_exists('tenant_asset')) {
     function tenant_asset($asset)
     {
-        return route('stancl.tenancy.asset', ['asset' => $asset]);
+        return route('stancl.tenancy.asset', ['path' => $asset]);
     }
 }
 
 if (! \function_exists('global_asset')) {
-    // todo test this
     function global_asset($asset)
     {
         return app('globalUrl')->asset($asset);

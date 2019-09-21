@@ -11,8 +11,8 @@ use Stancl\Tenancy\Tenant;
 
 class RedisTenancyBootstrapper implements TenancyBootstrapper
 {
-    /** @var string[string] Original prefixes of connections */
-    protected $originalPrefixes = [];
+    /** @var array<string, string> Original prefixes of connections */
+    public $originalPrefixes = [];
 
     /** @var Application */
     protected $app;

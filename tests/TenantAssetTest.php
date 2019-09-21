@@ -14,8 +14,8 @@ class TenantAssetTest extends TestCase
     /** @test */
     public function asset_can_be_accessed_using_the_url_returned_by_the_tenant_asset_helper()
     {
-        Tenant::create('foo.localhost');
-        tenancy()->init('foo.localhost');
+        Tenant::create('localhost');
+        tenancy()->init('localhost');
 
         $filename = 'testfile' . $this->randomString(10);
         \Storage::disk('public')->put($filename, 'bar');
@@ -23,8 +23,10 @@ class TenantAssetTest extends TestCase
 
         // response()->file() returns BinaryFileResponse whose content is
         // inaccessible via getContent, so ->assertSee() can't be used
-        $this->get(tenant_asset($filename))->assertSuccessful();
         $this->assertFileExists($path);
+        $response = $this->get(tenant_asset($filename));
+        
+        $response->assertSuccessful();
 
         $f = fopen($path, 'r');
         $content = fread($f, filesize($path));
