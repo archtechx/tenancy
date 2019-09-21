@@ -14,7 +14,8 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
     /** @var Application */
     protected $app;
 
-    protected $originalPaths = [];
+    /** @var array */
+    public $originalPaths = [];
 
     public function __construct(Application $app)
     {
