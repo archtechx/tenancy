@@ -78,7 +78,7 @@ class DatabaseManager
      */
     public function getBaseConnection(string $connectionName): string
     {
-        return $connectionName
+        return ($connectionName !== 'tenant' ? $connectionName : null) // 'tenant' is not a specific connection, it's the default
             ?? $this->app['config']['tenancy.database.based_on']
             ?? $this->originalDefaultConnectionName; // tenancy.database.based_on === null => use the default connection
     }
@@ -87,9 +87,9 @@ class DatabaseManager
      * Get the driver of a database connection.
      *
      * @param string $connectionName
-     * @return string
+     * @return string|null
      */
-    public function getDriver(string $connectionName): string
+    public function getDriver(string $connectionName): ?string
     {
         return $this->app['config']["database.connections.$connectionName.driver"];
     }

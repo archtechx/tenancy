@@ -16,7 +16,7 @@ use Stancl\Tenancy\Tenant;
 
 class DatabaseStorageDriver implements StorageDriver
 {
-    // todo2 write tests verifying that data is decoded and added to the array
+    // todo4 write tests verifying that data is decoded and added to the array
 
     /** @var Application */
     protected $app;

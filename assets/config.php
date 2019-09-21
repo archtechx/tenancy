@@ -25,7 +25,7 @@ return [
         // 'localhost',
     ],
     'database' => [
-        'based_on' => 'mysql', // The connection that will be used as a base for the dynamically created tenant connection.
+        'based_on' => null, // The connection that will be used as a base for the dynamically created tenant connection. // todo2 test this
         'prefix' => 'tenant',
         'suffix' => '',
     ],
