@@ -44,6 +44,8 @@ class TenancyServiceProvider extends ServiceProvider
         $this->app->singleton('globalUrl', function ($app) {
             $instance = clone $app['url'];
             $instance->setAssetRoot($app[FilesystemTenancyBootstrapper::class]->originalPaths['asset_url']);
+
+            return $instance;
         });
     }
 
