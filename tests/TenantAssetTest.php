@@ -55,5 +55,15 @@ class TenantAssetTest extends TestCase
         $this->assertSame("https://an-s3-bucket/tenant{$tenant->id}/foo", asset('foo'));
     }
 
-    // todo test global asset
+    /** @test */
+    public function global_asset_helper_returns_the_same_url_regardless_of_tenancy_initialization()
+    {
+        $original = global_asset('foobar');
+        $this->assertSame(asset('foobar'), global_asset('foobar'));
+
+        Tenant::create(['foo.localhost']);
+        tenancy()->init('foo.localhost');
+
+        $this->assertSame($original, global_asset('foobar'));
+    }
 }
