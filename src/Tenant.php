@@ -125,7 +125,7 @@ class Tenant implements ArrayAccess
     /**
      * Does this model exist in the tenant storage.
      *
-     * @return boolean
+     * @return bool
      */
     public function isPersisted(): bool
     {
