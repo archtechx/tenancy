@@ -61,14 +61,28 @@ class DatabaseManager
      */
     public function createTenantConnection($databaseName, $connectionName)
     {
-        // todo2 if $connectionName is custom, it should be used instead of based_on
         // Create the database connection.
-        $based_on = $this->app['config']['tenancy.database.based_on'] ?? $this->originalDefaultConnectionName;
+        $based_on = $this->getBaseConnection($connectionName);
         $this->app['config']["database.connections.$connectionName"] = $this->app['config']['database.connections.' . $based_on];
+        // todo don't overwrite database.connections.$connectionName
 
         // Change database name.
+        // todo tenant-specific connections without any DB name changes?
         $databaseName = $this->getDriver($connectionName) === 'sqlite' ? database_path($databaseName) : $databaseName;
         $this->app['config']["database.connections.$connectionName.database"] = $databaseName;
+    }
+
+    /**
+     * Get the name of the connection that $connectionName should be based on
+     *
+     * @param string $connectionName
+     * @return string
+     */
+    public function getBaseConnection(string $connectionName): string
+    {
+        return $connectionName
+            ?? $this->app['config']['tenancy.database.based_on']
+            ?? $this->originalDefaultConnectionName; // tenancy.database.based_on === null => use the default connection
     }
 
     /**
@@ -77,7 +91,7 @@ class DatabaseManager
      * @param string $connectionName
      * @return string
      */
-    protected function getDriver(string $connectionName): string
+    public function getDriver(string $connectionName): string
     {
         return $this->app['config']["database.connections.$connectionName.driver"];
     }
@@ -154,9 +168,7 @@ class DatabaseManager
      */
     protected function getTenantDatabaseManager(Tenant $tenant): TenantDatabaseManager
     {
-        // todo2 this shouldn't have to create a connection
-        $this->createTenantConnection($tenant->getDatabaseName(), $tenant->getConnectionName());
-        $driver = $this->getDriver($tenant->getConnectionName());
+        $driver = $this->getDriver($this->getBaseConnection($tenant->getConnectionName()));
 
         $databaseManagers = $this->app['config']['tenancy.database_managers'];
 
