@@ -15,8 +15,8 @@ You won't have to change a thing in your application's code.\*
 
 \* depending on how you use the filesystem. Everything else will work out of the box.
 
-### [Documentation](https://tenancy.samuelstancl.me/docs)
+### [Documentation](https://tenancy.samuelstancl.me/docs/v2/)
 
-Documentation can be found here: https://tenancy.samuelstancl.me/docs
+Documentation can be found here: https://tenancy.samuelstancl.me/docs/v2/
 
 The repository with the documentation source code can be found here: [stancl/tenancy-docs](https://github.com/stancl/tenancy-docs).

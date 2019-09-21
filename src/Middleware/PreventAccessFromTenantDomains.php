@@ -6,6 +6,11 @@ namespace Stancl\Tenancy\Middleware;
 
 use Closure;
 
+
+/**
+ * Prevent access to non-tenant routes from domains that are not exempt from tenancy.
+ * = allow access to central routes only from routes listed in tenancy.exempt_routes
+ */
 class PreventAccessFromTenantDomains
 {
     /**

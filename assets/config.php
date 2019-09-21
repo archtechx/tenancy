@@ -39,7 +39,7 @@ return [
     'cache' => [
         'tag_base' => 'tenant',
     ],
-    'filesystem' => [ // https://tenancy.samuelstancl.me/docs/filesystem-tenancy/
+    'filesystem' => [ // https://tenancy.samuelstancl.me/docs/v2/filesystem-tenancy/
         'suffix_base' => 'tenant',
         // Disks which should be suffixed with the suffix_base + tenant id.
         'disks' => [
@@ -83,7 +83,7 @@ return [
         'Stancl\Tenancy\Features\TenantRedirect',
     ],
     'migrate_after_creation' => false, // run migrations after creating a tenant
-    'delete_database_after_tenant_deletion' => false, // delete tenant's database after deleting him
+    'delete_database_after_tenant_deletion' => false, // delete tenant's database after deleting the tenant
     'queue_database_creation' => false,
     'queue_database_deletion' => false,
     'unique_id_generator' => 'Stancl\Tenancy\UUIDGenerator',
