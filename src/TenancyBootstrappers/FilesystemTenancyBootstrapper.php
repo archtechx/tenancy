@@ -9,8 +9,6 @@ use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Tenant;
 
-// todo2 better solution than tenant_asset?
-
 class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 {
     protected $originalPaths = [];
@@ -24,16 +22,20 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         $this->originalPaths = [
             'disks' => [],
             'path' => $this->app->storagePath(),
+            'asset' => $this->app['config']['asset_url'],
         ];
     }
 
     public function start(Tenant $tenant)
     {
-        // todo2 revisit this
         $suffix = $this->app['config']['tenancy.filesystem.suffix_base'] . $tenant->id;
 
         // storage_path()
         $this->app->useStoragePath($this->originalPaths['path'] . "/{$suffix}");
+
+        // asset()
+        $this->app['config']['app.asset_url'] = ($this->originalPaths['asset'] ?? $this->app['config']['app.url']) . "/$suffix";
+        $this->app['url']->setAssetRoot($this->app['config']['app.asset_url']);
 
         // Storage facade
         foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
@@ -53,6 +55,10 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
     {
         // storage_path()
         $this->app->useStoragePath($this->originalPaths['path']);
+
+        // asset()
+        $this->app['config']['app.asset_url'] = $this->originalPaths['asset'];
+        $this->app['url']->setAssetRoot($this->app['config']['app.asset_url']);
 
         // Storage facade
         foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {

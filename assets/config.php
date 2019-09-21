@@ -39,7 +39,7 @@ return [
     'cache' => [
         'tag_base' => 'tenant',
     ],
-    'filesystem' => [ // https://stancl-tenancy.netlify.com/docs/filesystem-tenancy/
+    'filesystem' => [ // https://tenancy.samuelstancl.me/docs/filesystem-tenancy/
         'suffix_base' => 'tenant',
         // Disks which should be suffixed with the suffix_base + tenant id.
         'disks' => [

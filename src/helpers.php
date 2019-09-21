@@ -33,3 +33,10 @@ if (! \function_exists('tenant_asset')) {
         return route('stancl.tenancy.asset', ['asset' => $asset]);
     }
 }
+
+if (! \function_exists('global_asset')) {
+    function global_asset($asset)
+    {
+        return app('globalUrl')->asset($asset);
+    }
+}

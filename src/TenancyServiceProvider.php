@@ -40,7 +40,12 @@ class TenancyServiceProvider extends ServiceProvider
             \Stancl\Tenancy\Middleware\InitializeTenancy::class,
         ]);
 
-        $this->app->register(TenantRouteServiceProvider::class);
+        $this->app->instance('globalUrl', clone $this->app['url']);
+        $this->app['url']->macro('setAssetRoot', function ($root) {
+            $this->assetRoot = $root;
+
+            return $this;
+        });
     }
 
     /**
@@ -79,5 +84,7 @@ class TenancyServiceProvider extends ServiceProvider
         $this->app->bind('globalCache', function ($app) {
             return new CacheManager($app);
         });
+
+        $this->app->register(TenantRouteServiceProvider::class);
     }
 }
