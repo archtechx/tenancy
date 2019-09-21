@@ -14,7 +14,7 @@ class TenantFacade extends Facade
         return Tenant::class;
     }
 
-    public static function create($domains, array $data): Tenant
+    public static function create($domains, array $data = []): Tenant
     {
         return Tenant::create($domains, $data);
     }

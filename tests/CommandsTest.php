@@ -117,8 +117,6 @@ class CommandsTest extends TestCase
             ->expectsOutput('xyz');
     }
 
-    // todo2 check that multiple tenants can be migrated at once using all database engines
-
     /** @test */
     public function install_command_works()
     {
