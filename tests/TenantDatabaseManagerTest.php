@@ -14,6 +14,8 @@ use Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager;
 
 class TenantDatabaseManagerTest extends TestCase
 {
+    public $autoInitTenancy = false;
+
     /**
      * @test
      * @dataProvider database_manager_provider
@@ -24,14 +26,26 @@ class TenantDatabaseManagerTest extends TestCase
             $this->markTestSkipped('As to not bloat your computer with test databases, this test is not run by default.');
         }
 
-        config()->set('database.default', $driver); // todo2 the DB creator would not work for MySQL when sqlite is used for the central DB
-
         $name = 'db' . $this->randomString();
         $this->assertFalse(app($databaseManager)->databaseExists($name));
         app($databaseManager)->createDatabase($name);
         $this->assertTrue(app($databaseManager)->databaseExists($name));
         app($databaseManager)->deleteDatabase($name);
         $this->assertFalse(app($databaseManager)->databaseExists($name));
+    }
+
+    /** @test */
+    public function dbs_can_be_created_when_another_driver_is_used_for_the_central_db()
+    {
+        $this->assertSame('sqlite', config('database.default'));
+
+        $database = 'db' . $this->randomString();
+        app(MySQLDatabaseManager::class)->createDatabase($database);
+        $this->assertTrue(app(MySQLDatabaseManager::class)->databaseExists($database));
+
+        $database = 'db2' . $this->randomString();
+        app(PostgreSQLDatabaseManager::class)->createDatabase($database);
+        $this->assertTrue(app(PostgreSQLDatabaseManager::class)->databaseExists($database));
     }
 
     /**

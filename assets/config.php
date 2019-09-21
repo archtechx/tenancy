@@ -59,6 +59,13 @@ return [
         'mysql' => 'Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager',
         'pgsql' => 'Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager',
     ],
+    'database_manager_connections' => [
+        // Connections used by TenantDatabaseManagers. This tells, for example, the
+        // MySQLDatabaseManager to use the mysql connection to create databases.
+        'sqlite' => 'sqlite',
+        'mysql' => 'mysql',
+        'pgsql' => 'pgsql',
+    ],
     'bootstrappers' => [
         // Tenancy bootstrappers are executed when tenancy is initialized.
         // Their responsibility is making Laravel features tenant-aware.

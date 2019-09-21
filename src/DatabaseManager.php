@@ -61,6 +61,7 @@ class DatabaseManager
      */
     public function createTenantConnection($databaseName, $connectionName)
     {
+        // todo2 if $connectionName is custom, it should be used instead of based_on
         // Create the database connection.
         $based_on = $this->app['config']['tenancy.database.based_on'] ?? $this->originalDefaultConnectionName;
         $this->app['config']["database.connections.$connectionName"] = $this->app['config']['database.connections.' . $based_on];
@@ -123,7 +124,7 @@ class DatabaseManager
         if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
             QueuedTenantDatabaseCreator::dispatch($manager, $database);
         } else {
-            return $manager->createDatabase($database);
+            $manager->createDatabase($database);
         }
     }
 
@@ -141,7 +142,7 @@ class DatabaseManager
         if ($this->app['config']['tenancy.queue_database_deletion'] ?? false) {
             QueuedTenantDatabaseDeleter::dispatch($manager, $database);
         } else {
-            return $manager->deleteDatabase($database);
+            $manager->deleteDatabase($database);
         }
     }
 

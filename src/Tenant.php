@@ -12,8 +12,6 @@ use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 use Stancl\Tenancy\Exceptions\TenantStorageException;
 
-// todo2 write tests for updating the tenant
-
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
  */

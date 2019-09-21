@@ -54,7 +54,6 @@ class DatabaseStorageDriver implements StorageDriver
 
     public function ensureTenantCanBeCreated(Tenant $tenant): void
     {
-        // todo2 test this
         if (Tenants::find($tenant->id)) {
             throw new TenantWithThisIdAlreadyExistsException($tenant->id);
         }

@@ -86,7 +86,7 @@ class TenantModel extends Model
 
     public function getMany(array $keys): array
     {
-        return array_reduce($keys, function ($result, $key) { // todo2 performance
+        return array_reduce($keys, function ($result, $key) {
             $result[$key] = $this->get($key);
 
             return $result;

@@ -16,8 +16,10 @@ class CreateDomainsTable extends Migration
     public function up()
     {
         Schema::create('domains', function (Blueprint $table) {
-            $table->string('tenant_id', 36); // 36 characters is the default uuid length // todo foreign key?
+            $table->string('tenant_id', 36); // 36 characters is the default uuid length
             $table->string('domain', 255)->unique(); // don't change this
+
+            $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
         });
     }
 
