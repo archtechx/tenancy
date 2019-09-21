@@ -35,6 +35,7 @@ if (! \function_exists('tenant_asset')) {
 }
 
 if (! \function_exists('global_asset')) {
+    // todo test this
     function global_asset($asset)
     {
         return app('globalUrl')->asset($asset);

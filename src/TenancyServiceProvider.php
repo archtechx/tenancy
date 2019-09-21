@@ -46,6 +46,9 @@ class TenancyServiceProvider extends ServiceProvider
 
             return $this;
         });
+        $this->app['url']->macro('getForcedRoot', function () {
+            return $this->forcedRoot;
+        });
     }
 
     /**
