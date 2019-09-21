@@ -111,13 +111,16 @@ class Tenant implements ArrayAccess
         return static::new()->withDomains((array) $domains)->withData($data)->save();
     }
 
-    protected function persisted($persisted = null)
+    /**
+     * DO NOT CALL THIS METHOD FROM USERLAND UNLESS YOU KNOW WHAT YOU ARE DOING.
+     * Set $persisted.
+     *
+     * @param bool $persisted
+     * @return self
+     */
+    public function persisted(bool $persisted): self
     {
-        if (gettype($persisted) === 'boolean') {
-            $this->persisted = $persisted;
-
-            return $this;
-        }
+        $this->persisted = $persisted;
 
         return $this;
     }
