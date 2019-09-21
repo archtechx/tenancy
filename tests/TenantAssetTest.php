@@ -25,7 +25,7 @@ class TenantAssetTest extends TestCase
         // inaccessible via getContent, so ->assertSee() can't be used
         $this->assertFileExists($path);
         $response = $this->get(tenant_asset($filename));
-        
+
         $response->assertSuccessful();
 
         $f = fopen($path, 'r');
