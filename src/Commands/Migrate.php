@@ -56,7 +56,7 @@ class Migrate extends MigrateCommand
             // See Illuminate\Database\Migrations\DatabaseMigrationRepository::getConnection.
             // Database connections are cached by Illuminate\Database\ConnectionResolver.
             $this->input->setOption('database', 'tenant');
-            tenancy()->initialize($tenant); // todo3 test that this works with multiple tenants with MySQL
+            tenancy()->initialize($tenant); // todo2 test that this works with multiple tenants with MySQL
 
             // Migrate
             parent::handle();

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\StorageDrivers\Database;
 
 use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Contracts\StorageDriver;
+use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Exceptions\TenantWithThisIdAlreadyExistsException;
@@ -16,10 +16,11 @@ use Stancl\Tenancy\Tenant;
 
 class DatabaseStorageDriver implements StorageDriver
 {
-    // todo4 write tests verifying that data is decoded and added to the array
-
     /** @var Application */
     protected $app;
+
+    /** @var \Illuminate\Database\Connection */
+    protected $centralDatabase;
 
     /** @var Tenant The default tenant. */
     protected $tenant;
@@ -27,6 +28,7 @@ class DatabaseStorageDriver implements StorageDriver
     public function __construct(Application $app)
     {
         $this->app = $app;
+        $this->centralDatabase = $app->make(DatabaseManager::class)->getCentralConnection();
     }
 
     public function findByDomain(string $domain): Tenant
@@ -77,7 +79,7 @@ class DatabaseStorageDriver implements StorageDriver
 
     public function createTenant(Tenant $tenant): void
     {
-        DB::transaction(function () use ($tenant) {
+        $this->centralDatabase->transaction(function () use ($tenant) {
             Tenants::create(['id' => $tenant->id, 'data' => '{}'])->toArray();
 
             $domainData = [];
@@ -90,7 +92,7 @@ class DatabaseStorageDriver implements StorageDriver
 
     public function updateTenant(Tenant $tenant): void
     {
-        DB::transaction(function () use ($tenant) {
+        $this->centralDatabase->transaction(function () use ($tenant) {
             Tenants::find($tenant->id)->putMany($tenant->data);
 
             $original_domains = Domains::where('tenant_id', $tenant->id)->get()->map(function ($model) {
@@ -111,7 +113,7 @@ class DatabaseStorageDriver implements StorageDriver
 
     public function deleteTenant(Tenant $tenant): void
     {
-        DB::transacton(function () use ($tenant) {
+        $this->centralDatabase->transaction(function () use ($tenant) {
             Tenants::find($tenant->id)->delete();
             Domains::where('tenant_id', $tenant->id)->delete();
         });

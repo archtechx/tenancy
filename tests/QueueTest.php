@@ -17,7 +17,7 @@ class QueueTest extends TestCase
     /** @test */
     public function queues_use_non_tenant_db_connection()
     {
-        // todo2 finish this test. requires using the db driver
+        // requires using the db driver
         $this->markTestIncomplete();
     }
 

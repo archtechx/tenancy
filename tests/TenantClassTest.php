@@ -17,7 +17,6 @@ class TenantClassTest extends TestCase
     /** @test */
     public function data_cache_works_properly()
     {
-        // todo constructor dependencies
         // $spy = Mockery::spy(config('tenancy.storage_driver'))->makePartial();
         // $this->instance(StorageDriver::class, $spy);
 

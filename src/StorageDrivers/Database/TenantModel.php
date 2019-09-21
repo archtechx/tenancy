@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\StorageDrivers\Database;
 
 use Illuminate\Database\Eloquent\Model;
-use Stancl\Tenancy\DatabaseManager;
 
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
  */
 class TenantModel extends Model
 {
+    use CentralConnection;
+
     protected $guarded = [];
     protected $primaryKey = 'id';
     public $incrementing = false;
@@ -30,11 +31,6 @@ class TenantModel extends Model
     public static function customColumns()
     {
         return config('tenancy.storage.db.custom_columns', []);
-    }
-
-    public function getConnectionName()
-    {
-        return config('tenancy.storage.db.connection') ?? app(DatabaseManager::class)->originalDefaultConnectionName;
     }
 
     public static function getAllTenants(array $ids)
