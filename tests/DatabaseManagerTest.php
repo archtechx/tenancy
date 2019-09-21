@@ -31,4 +31,19 @@ class DatabaseManagerTest extends TestCase
 
         $this->assertSame(config('database.connections.fooconn.database'), database_path('foodb'));
     }
+
+    /** @test */
+    public function the_default_db_is_used_when_based_on_is_null()
+    {
+        $this->assertSame('sqlite', config('database.default'));
+        config([
+            'database.connections.sqlite.foo' => 'bar',
+            'tenancy.database.based_on' => null,
+        ]);
+
+        tenancy()->init('test.localhost');
+
+        $this->assertSame('tenant', config('database.default'));
+        $this->assertSame('bar', config('database.connections.' . config('database.default') . '.foo'));
+    }
 }
