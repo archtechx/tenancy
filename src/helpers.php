@@ -40,3 +40,10 @@ if (! \function_exists('global_asset')) {
         return app('globalUrl')->asset($asset);
     }
 }
+
+if (! \function_exists('global_cache')) {
+    function global_cache()
+    {
+        return app('globalCache');
+    }
+}
