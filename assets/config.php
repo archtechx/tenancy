@@ -82,8 +82,9 @@ return [
         'Stancl\Tenancy\Features\TelescopeTags',
         'Stancl\Tenancy\Features\TenantRedirect',
     ],
+    'home_route' => '/app',
     'migrate_after_creation' => false, // run migrations after creating a tenant
-    'delete_database_after_tenant_deletion' => false, // delete tenant's database after deleting the tenant
+    'delete_database_after_tenant_deletion' => false, // delete the tenant's database after deleting the tenant
     'queue_database_creation' => false,
     'queue_database_deletion' => false,
     'unique_id_generator' => 'Stancl\Tenancy\UUIDGenerator',

@@ -51,7 +51,7 @@ class Tenant implements ArrayAccess
      *
      * @var bool
      */
-    protected $persisted = false;
+    public $persisted = false;
 
     /**
      * Use new() if you don't want to swap dependencies.
