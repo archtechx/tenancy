@@ -29,7 +29,7 @@ class PreventAccessFromTenantDomains
         $is_a_tenant_route = in_array('tenancy', $request->route()->middleware());
 
         if ($is_a_tenant_domain && ! $is_a_tenant_route) { // accessing web routes from tenant domains
-            return redirect(config('tenancy.home_route'));
+            return redirect(config('tenancy.home_url'));
         }
 
         if ($is_an_exempt_domain && $is_a_tenant_route) { // accessing tenant routes on web domains
