@@ -11,7 +11,7 @@ use Stancl\Tenancy\Tenant;
 class QueueTenancyBootstrapper implements TenancyBootstrapper
 {
     /** @var bool Has tenancy been started. */
-    protected $started = false;
+    public $started = false;
 
     /** @var Application */
     protected $app;
@@ -20,11 +20,9 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
     {
         $this->app = $app;
 
-        $this->app['queue']->createPayloadUsing([$this, 'createPayload']);
-        $this->app['events']->listen(\Illuminate\Queue\Events\JobProcessing::class, function ($event) {
-            if (array_key_exists('tenant_id', $event->job->payload())) {
-                tenancy()->initById($event->job->payload()['tenant_id']);
-            }
+        $bootstrapper = &$this;
+        $this->app['queue']->createPayloadUsing(function () use (&$bootstrapper) {
+            return $bootstrapper->getPayload();
         });
     }
 
@@ -38,13 +36,13 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         $this->started = false;
     }
 
-    public function createPayload()
+    public function getPayload()
     {
         if (! $this->started) {
             return [];
         }
 
-        $id = tenant()->get('id');
+        $id = tenant('id');
 
         return [
             'tenant_id' => $id,
