@@ -133,8 +133,8 @@ class CommandsTest extends TestCase
             ->expectsQuestion('Do you want to publish the default database migrations?', 'yes');
         $this->assertFileExists(base_path('routes/tenant.php'));
         $this->assertFileExists(base_path('config/tenancy.php'));
-        $this->assertFileExists(database_path('migrations/2019_08_08_000000_create_tenants_table.php'));
-        $this->assertFileExists(database_path('migrations/2019_09_15_000000_create_domains_table.php'));
+        $this->assertFileExists(database_path('migrations/2019_09_15_000010_create_tenants_table.php'));
+        $this->assertFileExists(database_path('migrations/2019_09_15_000020_create_domains_table.php'));
         $this->assertDirectoryExists(database_path('migrations/tenant'));
         $this->assertSame(file_get_contents(__DIR__ . '/Etc/modifiedHttpKernel.stub'), file_get_contents(app_path('Http/Kernel.php')));
     }
