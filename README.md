@@ -4,6 +4,7 @@
 [![Latest Stable Version](https://poser.pugx.org/stancl/tenancy/version)](https://packagist.org/packages/stancl/tenancy)
 [![Travis CI build](https://travis-ci.com/stancl/tenancy.svg?branch=2.x)](https://travis-ci.com/stancl/tenancy)
 [![codecov](https://codecov.io/gh/stancl/tenancy/branch/2.x/graph/badge.svg)](https://codecov.io/gh/stancl/tenancy)
+[![Donate](https://img.shields.io/badge/Donate-%3C3-red)](https://gumroad.com/l/tenancy)
 
 ### *A Laravel multi-database tenancy package that respects your code.*
 
