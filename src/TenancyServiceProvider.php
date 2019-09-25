@@ -23,6 +23,7 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\Seed::class,
             Commands\Install::class,
             Commands\Migrate::class,
+            Commands\MigrateFresh::class,
             Commands\Rollback::class,
             Commands\TenantList::class,
         ]);
@@ -81,6 +82,9 @@ class TenancyServiceProvider extends ServiceProvider
 
         $this->app->singleton(Commands\Migrate::class, function ($app) {
             return new Commands\Migrate($app['migrator'], $app[DatabaseManager::class]);
+        });
+        $this->app->singleton(Commands\MigrateFresh::class, function ($app) {
+            return new Commands\MigrateFresh($app['migrator'], $app[DatabaseManager::class]);
         });
         $this->app->singleton(Commands\Rollback::class, function ($app) {
             return new Commands\Rollback($app['migrator'], $app[DatabaseManager::class]);
