@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 return [
-    'storage_driver' => 'Stancl\Tenancy\StorageDrivers\Database\DatabaseStorageDriver',
+    'storage_driver' => Stancl\Tenancy\StorageDrivers\Database\DatabaseStorageDriver::class,
     'storage' => [
         'db' => [ // Stancl\Tenancy\StorageDrivers\Database\DatabaseStorageDriver
             'data_column' => 'data',
@@ -55,9 +55,9 @@ return [
     ],
     'database_managers' => [
         // Tenant database managers handle the creation & deletion of tenant databases.
-        'sqlite' => 'Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager',
-        'mysql' => 'Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager',
-        'pgsql' => 'Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager',
+        'sqlite' => Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager::class,
+        'mysql' => Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager::class,
+        'pgsql' => Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager::class,
     ],
     'database_manager_connections' => [
         // Connections used by TenantDatabaseManagers. This tells, for example, the
@@ -69,23 +69,23 @@ return [
     'bootstrappers' => [
         // Tenancy bootstrappers are executed when tenancy is initialized.
         // Their responsibility is making Laravel features tenant-aware.
-        'database' => 'Stancl\Tenancy\TenancyBootstrappers\DatabaseTenancyBootstrapper',
-        'cache' => 'Stancl\Tenancy\TenancyBootstrappers\CacheTenancyBootstrapper',
-        'filesystem' => 'Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper',
-        'redis' => 'Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper',
-        'queue' => 'Stancl\Tenancy\TenancyBootstrappers\QueueTenancyBootstrapper',
+        'database' => Stancl\Tenancy\TenancyBootstrappers\DatabaseTenancyBootstrapper::class,
+        'cache' => Stancl\Tenancy\TenancyBootstrappers\CacheTenancyBootstrapper::class,
+        'filesystem' => Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper::class,
+        'redis' => Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class,
+        'queue' => Stancl\Tenancy\TenancyBootstrappers\QueueTenancyBootstrapper::class,
     ],
     'features' => [
         // Features are classes that provide additional functionality
         // not needed for tenancy to be bootstrapped. They are run
         // regardless of whether tenancy has been initialized.
-        'Stancl\Tenancy\Features\TelescopeTags',
-        'Stancl\Tenancy\Features\TenantRedirect',
+        Stancl\Tenancy\Features\TelescopeTags::class,
+        Stancl\Tenancy\Features\TenantRedirect::class,
     ],
     'home_url' => '/app',
     'migrate_after_creation' => false, // run migrations after creating a tenant
     'delete_database_after_tenant_deletion' => false, // delete the tenant's database after deleting the tenant
     'queue_database_creation' => false,
     'queue_database_deletion' => false,
-    'unique_id_generator' => 'Stancl\Tenancy\UUIDGenerator',
+    'unique_id_generator' => Stancl\Tenancy\UUIDGenerator::class,
 ];
