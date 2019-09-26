@@ -13,7 +13,7 @@ class CreateDomainsTable extends Migration
      *
      * @return void
      */
-    public function up()
+    public function up(): void
     {
         Schema::create('domains', function (Blueprint $table) {
             $table->string('domain', 255)->primary();
@@ -28,8 +28,8 @@ class CreateDomainsTable extends Migration
      *
      * @return void
      */
-    public function down()
+    public function down(): void
     {
-        Schema::drop('domains');
+        Schema::dropIfExists('domains');
     }
 }
