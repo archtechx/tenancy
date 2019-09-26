@@ -130,11 +130,12 @@ class TenantManager
     /**
      * Find tenant by domain & initialize tenancy.
      *
-     * @param string $domain
+     * @param string|null $domain
      * @return self
      */
-    public function init(string $domain): self
+    public function init(string $domain = null): self
     {
+        $domain = $domain ?? request()->getHost();
         $this->initializeTenancy($this->findByDomain($domain));
 
         return $this;
