@@ -12,7 +12,7 @@ class TenantCouldNotBeIdentifiedException extends \Exception implements Provides
 {
     public function __construct($domain)
     {
-        $this->message = "Tenant could not be identified on domain $domain";
+        parent::__construct("Tenant could not be identified on domain $domain");
     }
 
     public function getSolution(): Solution
