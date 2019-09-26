@@ -11,7 +11,7 @@ class InitializeTenancy
     /**
      * @var \Closure
      */
-    private $onFail;
+    protected $onFail;
 
     public function __construct(Closure $onFail = null)
     {
