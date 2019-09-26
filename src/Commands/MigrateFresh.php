@@ -11,7 +11,7 @@ use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Traits\DealsWithMigrations;
 use Stancl\Tenancy\Traits\HasATenantsOption;
 
-class MigrateFresh extends MigrateCommand
+final class MigrateFresh extends MigrateCommand
 {
     use HasATenantsOption, DealsWithMigrations;
 
