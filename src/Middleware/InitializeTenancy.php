@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Middleware;
 
 use Closure;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 
 class InitializeTenancy
 {
@@ -31,7 +32,7 @@ class InitializeTenancy
     {
         try {
             tenancy()->init();
-        } catch (\Exception $e) {
+        } catch (TenantCouldNotBeIdentifiedException $e) {
             ($this->onFail)($e);
         }
 
