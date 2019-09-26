@@ -8,6 +8,11 @@ use Closure;
 
 class InitializeTenancy
 {
+    /**
+     * @var \Closure
+     */
+    private $onFail;
+
     public function __construct(Closure $onFail = null)
     {
         $this->onFail = $onFail ?? function ($e) {
