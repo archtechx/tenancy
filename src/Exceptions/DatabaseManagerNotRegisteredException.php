@@ -8,6 +8,6 @@ class DatabaseManagerNotRegisteredException extends \Exception
 {
     public function __construct($driver)
     {
-        $this->message = "Database manager for driver $driver is not registered.";
+        parent::__construct("Database manager for driver $driver is not registered.");
     }
 }
