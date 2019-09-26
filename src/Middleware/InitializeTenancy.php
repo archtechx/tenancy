@@ -9,12 +9,10 @@ use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 
 class InitializeTenancy
 {
-    /**
-     * @var \Closure
-     */
+    /** @var callable */
     protected $onFail;
 
-    public function __construct(Closure $onFail = null)
+    public function __construct(callable $onFail = null)
     {
         $this->onFail = $onFail ?? function ($e) {
             throw $e;
