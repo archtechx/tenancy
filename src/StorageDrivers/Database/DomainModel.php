@@ -14,7 +14,7 @@ class DomainModel extends Model
     use CentralConnection;
 
     protected $guarded = [];
-    protected $primaryKey = 'id';
+    protected $primaryKey = 'domain';
     public $incrementing = false;
     public $timestamps = false;
 
