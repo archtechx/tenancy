@@ -13,11 +13,11 @@ class CreateDomainsTable extends Migration
      *
      * @return void
      */
-    public function up()
+    public function up(): void
     {
         Schema::create('domains', function (Blueprint $table) {
             $table->string('domain', 255)->primary();
-            $table->string('tenant_id', 36);
+            $table->uuid('tenant_id');
 
             $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
         });
@@ -28,8 +28,8 @@ class CreateDomainsTable extends Migration
      *
      * @return void
      */
-    public function down()
+    public function down(): void
     {
-        Schema::drop('domains');
+        Schema::dropIfExists('domains');
     }
 }
