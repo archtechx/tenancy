@@ -23,16 +23,16 @@ class PreventAccessFromTenantDomains
     {
         // If the domain is not in exempt domains, it's a tenant domain.
         // Tenant domains can't have routes without tenancy middleware.
-        $is_an_exempt_domain = in_array($request->getHost(), config('tenancy.exempt_domains'));
-        $is_a_tenant_domain = ! $is_an_exempt_domain;
+        $isExemptDomain = in_array($request->getHost(), config('tenancy.exempt_domains'));
+        $isTenantDomain = ! $isExemptDomain;
 
-        $is_a_tenant_route = in_array('tenancy', $request->route()->middleware());
+        $isTenantRoute = in_array('tenancy', $request->route()->middleware());
 
-        if ($is_a_tenant_domain && ! $is_a_tenant_route) { // accessing web routes from tenant domains
+        if ($isTenantDomain && ! $isTenantRoute) { // accessing web routes from tenant domains
             return redirect(config('tenancy.home_url'));
         }
 
-        if ($is_an_exempt_domain && $is_a_tenant_route) { // accessing tenant routes on web domains
+        if ($isExemptDomain && $isTenantRoute) { // accessing tenant routes on web domains
             abort(404);
         }
 
