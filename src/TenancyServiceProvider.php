@@ -99,5 +99,4 @@ class TenancyServiceProvider extends ServiceProvider
             }
         });
     }
-
 }
