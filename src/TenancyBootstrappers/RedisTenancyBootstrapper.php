@@ -40,6 +40,8 @@ class RedisTenancyBootstrapper implements TenancyBootstrapper
 
             $client->setOption($client::OPT_PREFIX, $this->originalPrefixes[$connection]);
         }
+
+        $this->originalPrefixes = [];
     }
 
     protected function prefixedConnections()

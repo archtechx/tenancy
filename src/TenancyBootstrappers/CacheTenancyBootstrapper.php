@@ -36,5 +36,7 @@ class CacheTenancyBootstrapper implements TenancyBootstrapper
         $this->app->extend('cache', function () {
             return $this->originalCache;
         });
+
+        $this->originalCache = null;
     }
 }

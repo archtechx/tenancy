@@ -75,5 +75,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
             Storage::disk($disk)->getAdapter()->setPathPrefix($this->originalPaths['disks'][$disk]);
         }
+
+        $this->originalPaths = [];
     }
 }
