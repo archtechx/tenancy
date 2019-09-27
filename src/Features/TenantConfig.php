@@ -32,7 +32,7 @@ class TenantConfig implements Feature
 
     public function setTenantConfig(Tenant $tenant): void
     {
-        foreach($this->getStorageToConfigMap() as $storageKey => $configKey) {
+        foreach ($this->getStorageToConfigMap() as $storageKey => $configKey) {
             $this->app['config'][$configKey] = $tenant->get($storageKey);
         }
     }
