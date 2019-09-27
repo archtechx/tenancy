@@ -44,6 +44,6 @@ class RedisTenancyBootstrapper implements TenancyBootstrapper
 
     protected function prefixedConnections()
     {
-        return config('tenancy.redis.prefixed_connections');
+        return $this->app['config']['tenancy.redis.prefixed_connections'];
     }
 }
