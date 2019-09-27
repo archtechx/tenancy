@@ -130,7 +130,7 @@ class TenantManager
     /**
      * Find tenant by domain & initialize tenancy.
      *
-     * @param string $domain
+     * @param string|null $domain
      * @return self
      */
     public function init(string $domain = null): self

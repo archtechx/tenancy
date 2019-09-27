@@ -29,7 +29,7 @@ class InitializeTenancy
     public function handle($request, Closure $next)
     {
         try {
-            tenancy()->init();
+            tenancy()->init($request->getHost());
         } catch (TenantCouldNotBeIdentifiedException $e) {
             ($this->onFail)($e);
         }
