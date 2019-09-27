@@ -16,7 +16,6 @@ class DomainModel extends Model
     protected $guarded = [];
     protected $primaryKey = 'domain';
     public $incrementing = false;
-    public $timestamps = false;
 
     public function getTable()
     {

@@ -16,7 +16,6 @@ class TenantModel extends Model
     protected $guarded = [];
     protected $primaryKey = 'id';
     public $incrementing = false;
-    public $timestamps = false;
 
     public function getTable()
     {
