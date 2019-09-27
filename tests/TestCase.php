@@ -100,6 +100,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'tenancy.redis.prefixed_connections' => ['default'],
             'tenancy.migrations_directory' => database_path('../migrations'),
             'tenancy.storage.db.connection' => 'central',
+            'tenancy.bootstrappers.redis' => \Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class,
         ]);
 
         if (env('TENANCY_TEST_STORAGE_DRIVER', 'redis') === 'redis') {

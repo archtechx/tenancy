@@ -72,8 +72,8 @@ return [
         'database' => Stancl\Tenancy\TenancyBootstrappers\DatabaseTenancyBootstrapper::class,
         'cache' => Stancl\Tenancy\TenancyBootstrappers\CacheTenancyBootstrapper::class,
         'filesystem' => Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper::class,
-        'redis' => Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class,
         'queue' => Stancl\Tenancy\TenancyBootstrappers\QueueTenancyBootstrapper::class,
+        // 'redis' => Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
     ],
     'features' => [
         // Features are classes that provide additional functionality
