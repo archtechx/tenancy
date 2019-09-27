@@ -22,7 +22,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         $this->app = $app;
         $this->originalPaths = [
             'disks' => [],
-            'path' => $this->app->storagePath(),
+            'storage' => $this->app->storagePath(),
             'asset_url' => $this->app['config']['app.asset_url'],
         ];
 
@@ -38,7 +38,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         $suffix = $this->app['config']['tenancy.filesystem.suffix_base'] . $tenant->id;
 
         // storage_path()
-        $this->app->useStoragePath($this->originalPaths['path'] . "/{$suffix}");
+        $this->app->useStoragePath($this->originalPaths['storage'] . "/{$suffix}");
 
         // asset()
         if ($this->originalPaths['asset_url']) {
@@ -65,7 +65,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
     public function end()
     {
         // storage_path()
-        $this->app->useStoragePath($this->originalPaths['path']);
+        $this->app->useStoragePath($this->originalPaths['storage']);
 
         // asset()
         $this->app['config']['app.asset_url'] = $this->originalPaths['asset_url'];
