@@ -103,6 +103,8 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'tenancy.bootstrappers.redis' => \Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class,
         ]);
 
+        $app->singleton(\Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class);
+
         if (env('TENANCY_TEST_STORAGE_DRIVER', 'redis') === 'redis') {
             $app['config']->set([
                 'tenancy.storage_driver' => RedisStorageDriver::class,
