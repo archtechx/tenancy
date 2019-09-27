@@ -14,9 +14,16 @@ class TenantConfig implements Feature
     /** @var Application */
     protected $app;
 
+    /** @var array */
+    public $originalConfig = [];
+
     public function __construct(Application $app)
     {
         $this->app = $app;
+
+        foreach ($this->getStorageToConfigMap() as $configKey) {
+            $this->originalConfig[$configKey] = $this->app['config'][$configKey];
+        }
     }
 
     public function bootstrap(TenantManager $tenantManager): void
@@ -32,8 +39,15 @@ class TenantConfig implements Feature
 
     public function setTenantConfig(Tenant $tenant): void
     {
-        foreach($this->getStorageToConfigMap() as $storageKey => $configKey) {
+        foreach ($this->getStorageToConfigMap() as $storageKey => $configKey) {
             $this->app['config'][$configKey] = $tenant->get($storageKey);
+        }
+    }
+
+    public function unsetTenantConfig(): void
+    {
+        foreach ($this->getStorageToConfigMap() as $configKey) {
+            $this->app['config'][$configKey] = $this->originalConfig[$configKey];
         }
     }
 
