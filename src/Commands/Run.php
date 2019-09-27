@@ -60,8 +60,6 @@ class Run extends Command
 
         if ($originalTenant) {
             tenancy()->initialize($originalTenant);
-        } else {
-            tenancy()->endTenancy();
         }
     }
 }

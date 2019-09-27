@@ -12,8 +12,7 @@
     "require": {
         "illuminate/support": "^6.0",
         "webpatser/laravel-uuid": "^3.0",
-        "facade/ignition-contracts": "^1.0",
-        "nesbot/carbon": "^2.0"
+        "facade/ignition-contracts": "^1.0"
     },
     "require-dev": {
         "vlucas/phpdotenv": "^3.3",

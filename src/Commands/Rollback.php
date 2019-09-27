@@ -58,12 +58,12 @@ class Rollback extends RollbackCommand
 
             // Migrate
             parent::handle();
+
+            tenancy()->endTenancy();
         });
 
         if ($originalTenant) {
             tenancy()->initialize($originalTenant);
-        } else {
-            tenancy()->endTenancy();
         }
     }
 }

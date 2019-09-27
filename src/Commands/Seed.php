@@ -56,12 +56,12 @@ class Seed extends SeedCommand
 
             // Seed
             parent::handle();
+
+            tenancy()->endTenancy();
         });
 
         if ($originalTenant) {
             tenancy()->initialize($originalTenant);
-        } else {
-            tenancy()->endTenancy();
         }
     }
 }

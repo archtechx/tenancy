@@ -60,12 +60,12 @@ class Migrate extends MigrateCommand
 
             // Migrate
             parent::handle();
+
+            tenancy()->endTenancy();
         });
 
         if ($originalTenant) {
             tenancy()->initialize($originalTenant);
-        } else {
-            tenancy()->endTenancy();
         }
     }
 }
