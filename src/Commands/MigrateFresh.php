@@ -42,7 +42,7 @@ final class MigrateFresh extends Command
             tenancy()->initialize($tenant);
 
             $this->call('db:wipe', [
-                '--database' => $tenant->getDatabaseName(),
+                '--database' => $tenant->getDatabaseConnection(),
                 '--force' => true,
             ]);
 
