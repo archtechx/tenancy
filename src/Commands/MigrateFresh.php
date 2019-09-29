@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 use Stancl\Tenancy\Traits\DealsWithMigrations;
 use Stancl\Tenancy\Traits\HasATenantsOption;
 
-class MigrateFresh extends Command
+final class MigrateFresh extends Command
 {
     use HasATenantsOption, DealsWithMigrations;
 
