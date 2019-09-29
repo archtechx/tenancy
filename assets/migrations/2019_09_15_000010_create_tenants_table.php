@@ -21,7 +21,6 @@ class CreateTenantsTable extends Migration
             // (optional) your custom, indexed columns may go here
 
             $table->json('data');
-            $table->timestamps();
         });
     }
 

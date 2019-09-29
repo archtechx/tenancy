@@ -85,7 +85,7 @@ class DatabaseStorageDriver implements StorageDriver
 
             $domainData = [];
             foreach ($tenant->domains as $domain) {
-                $domainData[] = ['domain' => $domain, 'tenant_id' => $tenant->id, 'created_at' => Carbon::now()];
+                $domainData[] = ['domain' => $domain, 'tenant_id' => $tenant->id];
             }
 
             Domains::insert($domainData);
