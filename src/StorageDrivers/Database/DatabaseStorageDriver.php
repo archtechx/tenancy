@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\StorageDrivers\Database;
 
 use Illuminate\Foundation\Application;
-use Illuminate\Support\Carbon;
 use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
