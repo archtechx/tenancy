@@ -79,8 +79,12 @@ return [
         // Features are classes that provide additional functionality
         // not needed for tenancy to be bootstrapped. They are run
         // regardless of whether tenancy has been initialized.
+        Stancl\Tenancy\Features\TenantConfig::class,
         Stancl\Tenancy\Features\TelescopeTags::class,
         Stancl\Tenancy\Features\TenantRedirect::class,
+    ],
+    'storage_to_config_map' => [
+        // 'paypal_api_key' => 'services.paypal.api_key',
     ],
     'home_url' => '/app',
     'migrate_after_creation' => false, // run migrations after creating a tenant
