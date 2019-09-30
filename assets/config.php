@@ -3,9 +3,10 @@
 declare(strict_types=1);
 
 return [
-    'storage_driver' => Stancl\Tenancy\StorageDrivers\Database\DatabaseStorageDriver::class,
-    'storage' => [
-        'db' => [ // Stancl\Tenancy\StorageDrivers\Database\DatabaseStorageDriver
+    'storage_driver' => 'db',
+    'storage_drivers' => [
+        'db' => [
+            'driver' => Stancl\Tenancy\StorageDrivers\Database\DatabaseStorageDriver::class,
             'data_column' => 'data',
             'custom_columns' => [
                 // 'plan',
@@ -16,7 +17,8 @@ return [
                 'DomainModel' => 'domains',
             ],
         ],
-        'redis' => [ // Stancl\Tenancy\StorageDrivers\RedisStorageDriver
+        'redis' => [
+            'driver' => Stancl\Tenancy\StorageDrivers\RedisStorageDriver::class,
             'connection' => 'tenancy',
         ],
     ],

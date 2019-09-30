@@ -114,7 +114,7 @@ class TenantStorageTest extends TestCase
     /** @test */
     public function tenant_model_uses_correct_connection()
     {
-        config(['tenancy.storage.db.connection' => 'foo']);
+        config(['tenancy.storage_drivers.db.connection' => 'foo']);
         $this->assertSame('foo', (new TenantModel)->getConnectionName());
     }
 
@@ -149,7 +149,7 @@ class TenantStorageTest extends TestCase
         ]);
         config(['database.default' => 'sqlite']); // fix issue caused by loadMigrationsFrom
 
-        config(['tenancy.storage.db.custom_columns' => [
+        config(['tenancy.storage_drivers.db.custom_columns' => [
             'foo',
         ]]);
 
