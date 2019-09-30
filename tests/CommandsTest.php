@@ -151,7 +151,7 @@ class CommandsTest extends TestCase
         $this->assertFalse(DB::table('users')->exists());
         DB::table('users')->insert(['name' => 'xxx', 'password' => bcrypt('password'), 'email' => 'foo@bar.xxx']);
         $this->assertTrue(DB::table('users')->exists());
-       
+
         // test that db is wiped
         Artisan::call('tenants:migrate-fresh');
         $this->assertFalse(DB::table('users')->exists());
