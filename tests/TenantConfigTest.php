@@ -1,8 +1,8 @@
 <?php
 
-namespace Stancl\Tenancy\Tests;
+declare(strict_types=1);
 
-use Stancl\Tenancy\Tenant;
+namespace Stancl\Tenancy\Tests;
 
 class TenantConfigTest extends TestCase
 {
