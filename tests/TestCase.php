@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Redis;
-use Stancl\Tenancy\StorageDrivers\Database\DatabaseStorageDriver;
-use Stancl\Tenancy\StorageDrivers\RedisStorageDriver;
 use Stancl\Tenancy\Tenant;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
