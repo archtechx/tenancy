@@ -327,6 +327,19 @@ class TenantManager
     }
 
     /**
+     * Add an event hook.
+     * @alias eventListener
+     *
+     * @param string $name
+     * @param callable $listener
+     * @return self
+     */
+    public function hook(string $name, callable $listener): self
+    {
+        return $this->eventListener($name, $listener);
+    }
+
+    /**
      * Execute event listeners.
      *
      * @param string $name
