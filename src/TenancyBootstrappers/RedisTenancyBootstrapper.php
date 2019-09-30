@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\TenancyBootstrappers;
 
-use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Config\Repository;
 use Illuminate\Support\Facades\Redis;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Tenant;
@@ -14,18 +14,18 @@ class RedisTenancyBootstrapper implements TenancyBootstrapper
     /** @var array<string, string> Original prefixes of connections */
     public $originalPrefixes = [];
 
-    /** @var Application */
-    protected $app;
+    /** @var Repository */
+    protected $config;
 
-    public function __construct(Application $app)
+    public function __construct(Repository $config)
     {
-        $this->app = $app;
+        $this->config = $config;
     }
 
     public function start(Tenant $tenant)
     {
         foreach ($this->prefixedConnections() as $connection) {
-            $prefix = $this->app['config']['tenancy.redis.prefix_base'] . $tenant['id'];
+            $prefix = $this->config['tenancy.redis.prefix_base'] . $tenant['id'];
             $client = Redis::connection($connection)->client();
 
             $this->originalPrefixes[$connection] = $client->getOption($client::OPT_PREFIX);
@@ -46,6 +46,6 @@ class RedisTenancyBootstrapper implements TenancyBootstrapper
 
     protected function prefixedConnections()
     {
-        return $this->app['config']['tenancy.redis.prefixed_connections'];
+        return $this->config['tenancy.redis.prefixed_connections'];
     }
 }
