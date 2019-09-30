@@ -4,22 +4,17 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\TenancyBootstrappers;
 
-use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Tenant;
 
 class DatabaseTenancyBootstrapper implements TenancyBootstrapper
 {
-    /** @var Application */
-    protected $app;
-
     /** @var DatabaseManager */
     protected $database;
 
-    public function __construct(Application $app, DatabaseManager $database)
+    public function __construct(DatabaseManager $database)
     {
-        $this->app = $app;
         $this->database = $database;
     }
 
