@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy;
+namespace Stancl\Tenancy\UniqueIDGenerators;
 
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 
