@@ -20,7 +20,7 @@ if (! \function_exists('tenant')) {
     function tenant($key = null)
     {
         if (! is_null($key)) {
-            return app(Tenant::class)->get($key);
+            return optional(app(Tenant::class))->get($key) ?? null;
         }
 
         return app(Tenant::class);
