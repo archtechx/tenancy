@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\StorageDrivers\Database;
 
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Contracts\StorageDriver;
-use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Exceptions\TenantWithThisIdAlreadyExistsException;
@@ -28,7 +28,22 @@ class DatabaseStorageDriver implements StorageDriver
     public function __construct(Application $app)
     {
         $this->app = $app;
-        $this->centralDatabase = $app->make(DatabaseManager::class)->getCentralConnection();
+        $this->centralDatabase = $this->getCentralConnection();
+    }
+
+    /**
+     * Get the central database connection.
+     *
+     * @return \Illuminate\Database\Connection
+     */
+    public function getCentralConnection(): \Illuminate\Database\Connection
+    {
+        return DB::connection($this->getCentralConnectionName());
+    }
+
+    public function getCentralConnectionName(): string
+    {
+        return $this->app['config']['tenancy.storage_drivers.db.connection'] ?? $this->originalDefaultConnectionName;
     }
 
     public function findByDomain(string $domain): Tenant

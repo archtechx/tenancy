@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
-use Illuminate\Database\Connection;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
@@ -177,21 +175,5 @@ class DatabaseManager
         }
 
         return $this->app[$databaseManagers[$driver]];
-    }
-
-    /**
-     * Get the central database connection.
-     *
-     * @return \Illuminate\Database\Connection
-     */
-    public function getCentralConnection(): \Illuminate\Database\Connection
-    {
-        return DB::connection($this->getCentralConnectionName());
-    }
-
-    // todo this should not depend on the storage driver
-    public function getCentralConnectionName(): string
-    {
-        return $this->app['config']['tenancy.storage_drivers.db.connection'] ?? $this->originalDefaultConnectionName;
     }
 }

@@ -10,6 +10,6 @@ trait CentralConnection
 {
     public function getConnectionName()
     {
-        return app(DatabaseManager::class)->getCentralConnectionName();
+        return app(DatabaseStorageDriver::class)->getCentralConnectionName();
     }
 }
