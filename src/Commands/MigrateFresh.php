@@ -41,10 +41,10 @@ final class MigrateFresh extends Command
 
             tenancy()->initialize($tenant);
 
-            $this->call('db:wipe', [
+            $this->call('db:wipe', array_filter([
                 '--database' => $tenant->getConnectionName(),
                 '--force' => true,
-            ]);
+            ]));
 
             $this->call('tenants:migrate', [
                 '--tenants' => [$tenant->id],
