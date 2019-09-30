@@ -189,8 +189,9 @@ class DatabaseManager
         return DB::connection($this->getCentralConnectionName());
     }
 
+    // todo this should not depend on the storage driver
     public function getCentralConnectionName(): string
     {
-        return $this->app['config']['tenancy.storage.db.connection'] ?? $this->originalDefaultConnectionName;
+        return $this->app['config']['tenancy.storage_drivers.db.connection'] ?? $this->originalDefaultConnectionName;
     }
 }

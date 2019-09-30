@@ -20,6 +20,6 @@ class DomainModel extends Model
 
     public function getTable()
     {
-        return config('tenancy.storage.db.table_names.DomainModel', 'domains');
+        return config('tenancy.storage_drivers.db.table_names.DomainModel', 'domains');
     }
 }

@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Redis;
-use Stancl\Tenancy\StorageDrivers\Database\DatabaseStorageDriver;
-use Stancl\Tenancy\StorageDrivers\RedisStorageDriver;
 use Stancl\Tenancy\Tenant;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
@@ -99,21 +97,13 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'database.redis.client' => env('TENANCY_TEST_REDIS_CLIENT', 'phpredis'),
             'tenancy.redis.prefixed_connections' => ['default'],
             'tenancy.migrations_directory' => database_path('../migrations'),
-            'tenancy.storage.db.connection' => 'central',
+            'tenancy.storage_drivers.db.connection' => 'central',
             'tenancy.bootstrappers.redis' => \Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class,
         ]);
 
         $app->singleton(\Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class);
 
-        if (env('TENANCY_TEST_STORAGE_DRIVER', 'redis') === 'redis') {
-            $app['config']->set([
-                'tenancy.storage_driver' => RedisStorageDriver::class,
-            ]);
-        } elseif (env('TENANCY_TEST_STORAGE_DRIVER', 'redis') === 'db') {
-            $app['config']->set([
-                'tenancy.storage_driver' => DatabaseStorageDriver::class,
-            ]);
-        }
+        $app['config']->set(['tenancy.storage_driver' => env('TENANCY_TEST_STORAGE_DRIVER', 'redis')]);
     }
 
     protected function getPackageProviders($app)

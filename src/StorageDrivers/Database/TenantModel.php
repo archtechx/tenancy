@@ -20,17 +20,17 @@ class TenantModel extends Model
 
     public function getTable()
     {
-        return config('tenancy.storage.db.table_names.TenantModel', 'tenants');
+        return config('tenancy.storage_drivers.db.table_names.TenantModel', 'tenants');
     }
 
     public static function dataColumn()
     {
-        return config('tenancy.storage.db.data_column', 'data');
+        return config('tenancy.storage_drivers.db.data_column', 'data');
     }
 
     public static function customColumns()
     {
-        return config('tenancy.storage.db.custom_columns', []);
+        return config('tenancy.storage_drivers.db.custom_columns', []);
     }
 
     public static function getAllTenants(array $ids)
