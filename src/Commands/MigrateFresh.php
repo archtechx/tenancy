@@ -13,18 +13,18 @@ final class MigrateFresh extends Command
     use HasATenantsOption, DealsWithMigrations;
 
     /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'tenants:migrate-fresh';
-
-    /**
      * The console command description.
      *
      * @var string
      */
     protected $description = 'Drop all tables and re-run all migrations for tenant(s)';
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->setName('tenants:migrate-fresh');
+    }
 
     /**
      * Execute the console command.
@@ -42,7 +42,7 @@ final class MigrateFresh extends Command
             tenancy()->initialize($tenant);
 
             $this->call('db:wipe', [
-                '--database' => $tenant->getDatabaseConnection(),
+                '--database' => $tenant->getConnectionName(),
                 '--force' => true,
             ]);
 

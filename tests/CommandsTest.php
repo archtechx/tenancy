@@ -138,4 +138,22 @@ class CommandsTest extends TestCase
         $this->assertDirectoryExists(database_path('migrations/tenant'));
         $this->assertSame(file_get_contents(__DIR__ . '/Etc/modifiedHttpKernel.stub'), file_get_contents(app_path('Http/Kernel.php')));
     }
+
+    /** @test */
+    public function migrate_fresh_command_works()
+    {
+        $this->assertFalse(Schema::hasTable('users'));
+        Artisan::call('tenants:migrate-fresh');
+        $this->assertFalse(Schema::hasTable('users'));
+        tenancy()->init('test.localhost');
+        $this->assertTrue(Schema::hasTable('users'));
+
+        $this->assertFalse(DB::table('users')->exists());
+        DB::table('users')->insert(['name' => 'xxx', 'password' => bcrypt('password'), 'email' => 'foo@bar.xxx']);
+        $this->assertTrue(DB::table('users')->exists());
+       
+        // test that db is wiped
+        Artisan::call('tenants:migrate-fresh');
+        $this->assertFalse(DB::table('users')->exists());
+    }
 }
