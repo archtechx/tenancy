@@ -94,4 +94,15 @@ class TenantClassTest extends TestCase
         $this->expectException(\BadMethodCallException::class);
         $tenant->sdjigndfgnjdfgj();
     }
+
+    /** @test */
+    public function tenant_data_can_be_set_during_creation()
+    {
+        Tenant::new()->withData(['foo' => 'bar'])->save();
+
+        $data = tenancy()->all()->first()->data;
+        unset($data['id']);
+
+        $this->assertSame(['foo' => 'bar'], $data);
+    }
 }
