@@ -6,15 +6,13 @@
 [![codecov](https://codecov.io/gh/stancl/tenancy/branch/2.x/graph/badge.svg)](https://codecov.io/gh/stancl/tenancy)
 [![Donate](https://img.shields.io/badge/Donate-%3C3-red)](https://gumroad.com/l/tenancy)
 
-### *A Laravel multi-database tenancy package that respects your code.*
+### *Automatic multi-tenancy for your Laravel app.*
 
-You won't have to change a thing in your application's code.\*
+You won't have to change a thing in your application's code.
 
 - :heavy_check_mark: No model traits to change database connection
 - :heavy_check_mark: No replacing of Laravel classes (`Cache`, `Storage`, ...) with tenancy-aware classes
 - :heavy_check_mark: Built-in tenant identification based on hostname (including second level domains)
-
-\* depending on how you use the filesystem. Everything else will work out of the box.
 
 ### [Documentation](https://tenancy.samuelstancl.me/docs/v2/)
 
