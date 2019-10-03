@@ -9,6 +9,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Collection;
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
+use Stancl\Tenancy\Jobs\QueuedTenantDatabaseMigrator;
 
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
@@ -64,9 +65,13 @@ class TenantManager
         $this->database->createDatabase($tenant);
 
         if ($this->shouldMigrateAfterCreation()) {
-            $this->artisan->call('tenants:migrate', [
-                '--tenants' => [$tenant['id']],
-            ]);
+            if ($this->shouldQueueMigration()) {
+                QueuedTenantDatabaseMigrator::dispatch($tenant);
+            } else {
+                $this->artisan->call('tenants:migrate', [
+                    '--tenants' => [$tenant['id']],
+                ]);
+            }
         }
 
         return $this;
