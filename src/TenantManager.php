@@ -311,6 +311,11 @@ class TenantManager
         return $this->app['config']['tenancy.migrate_after_creation'] ?? false;
     }
 
+    public function shouldQueueMigration(): bool
+    {
+        return $this->app['config']['tenancy.queue_automatic_migration'] ?? false;
+    }
+
     public function shouldDeleteDatabase(): bool
     {
         return $this->app['config']['tenancy.delete_database_after_tenant_deletion'] ?? false;
