@@ -22,7 +22,9 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         $this->app = $app;
 
         $bootstrapper = &$this;
-        if (! $queue = $this->app['queue'] instanceof QueueFake) {
+
+        $queue = $this->app['queue'];
+        if (! $queue instanceof QueueFake) {
             $queue->createPayloadUsing(function () use (&$bootstrapper) {
                 return $bootstrapper->getPayload();
             });
