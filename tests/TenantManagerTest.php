@@ -261,7 +261,7 @@ class TenantManagerTest extends TestCase
         tenancy()->initialize($tenant);
 
         Queue::assertPushed(QueuedTenantDatabaseMigrator::class);
-        
+
         $this->assertFalse(\Schema::hasTable('users'));
         (new QueuedTenantDatabaseMigrator($tenant))->handle();
         $this->assertTrue(\Schema::hasTable('users'));
