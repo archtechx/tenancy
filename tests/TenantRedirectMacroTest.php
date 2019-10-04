@@ -15,6 +15,10 @@ class TenantRedirectMacroTest extends TestCase
     /** @test */
     public function tenant_redirect_macro_replaces_only_the_hostname()
     {
+        config([
+            'tenancy.features' => ['Stancl\Tenancy\Features\TenantRedirect'],
+        ]);
+
         Route::get('/foobar', function () {
             return 'Foo';
         })->name('home');
