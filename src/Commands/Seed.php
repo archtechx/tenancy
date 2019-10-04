@@ -51,7 +51,7 @@ class Seed extends SeedCommand
         tenancy()->all($this->option('tenants'))->each(function ($tenant) {
             $this->line("Tenant: {$tenant['id']}");
 
-            $this->input->setOption('database', $tenant->getDatabaseName());
+            $this->input->setOption('database', $tenant->getConnectionName());
             tenancy()->initialize($tenant);
 
             // Seed
