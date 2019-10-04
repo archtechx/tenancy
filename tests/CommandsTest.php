@@ -156,4 +156,16 @@ class CommandsTest extends TestCase
         Artisan::call('tenants:migrate-fresh');
         $this->assertFalse(DB::table('users')->exists());
     }
+
+    /** @test */
+    public function create_command_works()
+    {
+        Artisan::call('tenants:create -d aaa.localhost -d bbb.localhost plan=free email=foo@test.local');
+        $tenant = tenancy()->all()[1]; // a tenant is autocreated prior to this
+        $data = $tenant->data;
+        unset($data['id']);
+
+        $this->assertSame(['plan' => 'free', 'email' => 'foo@test.local'], $data);
+        $this->assertSame(['aaa.localhost', 'bbb.localhost'], $tenant->domains);
+    }
 }
