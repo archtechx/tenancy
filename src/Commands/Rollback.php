@@ -49,11 +49,11 @@ class Rollback extends RollbackCommand
             return;
         }
 
-        $this->input->setOption('database', 'tenant');
-
         $originalTenant = tenancy()->getTenant();
         tenancy()->all($this->option('tenants'))->each(function ($tenant) {
             $this->line("Tenant: {$tenant['id']}");
+
+            $this->input->setOption('database', $tenant->getDatabaseName());
             tenancy()->initialize($tenant);
 
             // Migrate

@@ -53,7 +53,7 @@ class Migrate extends MigrateCommand
         tenancy()->all($this->option('tenants'))->each(function ($tenant) {
             $this->line("Tenant: {$tenant['id']}");
 
-            $this->input->setOption('database', 'tenant');
+            $this->input->setOption('database', $tenant->getDatabaseName());
             tenancy()->initialize($tenant);
 
             // Migrate
