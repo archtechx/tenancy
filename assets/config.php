@@ -82,9 +82,9 @@ return [
         // not needed for tenancy to be bootstrapped. They are run
         // regardless of whether tenancy has been initialized.
 
+        // Stancl\Tenancy\Features\TenantConfig::class,
         // Stancl\Tenancy\Features\TelescopeTags::class,
         // Stancl\Tenancy\Features\TenantRedirect::class,
-        // Stancl\Tenancy\Features\TenantConfig::class,
     ],
     'storage_to_config_map' => [ // Used by the TenantConfig feature
         // 'paypal_api_key' => 'services.paypal.api_key',

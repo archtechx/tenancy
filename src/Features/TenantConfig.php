@@ -40,7 +40,10 @@ class TenantConfig implements Feature
     public function setTenantConfig(Tenant $tenant): void
     {
         foreach ($this->getStorageToConfigMap() as $storageKey => $configKey) {
-            $this->config[$configKey] = $tenant->get($storageKey);
+            $override = $tenant->data[$storageKey] ?? null;
+            if (! is_null($override)) {
+                $this->config[$configKey] = $override;
+            }
         }
     }
 
