@@ -100,7 +100,7 @@ class Tenant implements ArrayAccess
     }
 
     /**
-     * Create a tenant in a single command.
+     * Create a tenant in a single call.
      *
      * @param string|string[] $domains
      * @param array $data
