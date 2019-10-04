@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
 use Stancl\Tenancy\Exceptions\TenantWithThisIdAlreadyExistsException;
+use Stancl\Tenancy\Jobs\QueuedTenantDatabaseMigrator;
 use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\TenantManager;
 
@@ -243,5 +245,25 @@ class TenantManagerTest extends TestCase
 
         $this->expectException(TenantWithThisIdAlreadyExistsException::class);
         Tenant::create(['bar.localhost'], ['id' => $id]);
+    }
+
+    /** @test */
+    public function automigration_can_be_queued()
+    {
+        Queue::fake();
+
+        config([
+            'tenancy.migrate_after_creation' => true,
+            'tenancy.queue_automatic_migration' => true,
+        ]);
+
+        $tenant = Tenant::new()->save();
+        tenancy()->initialize($tenant);
+
+        Queue::assertPushed(QueuedTenantDatabaseMigrator::class);
+
+        $this->assertFalse(\Schema::hasTable('users'));
+        (new QueuedTenantDatabaseMigrator($tenant))->handle();
+        $this->assertTrue(\Schema::hasTable('users'));
     }
 }

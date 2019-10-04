@@ -15,7 +15,10 @@ class QueuedTenantDatabaseDeleter implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    /** @var TenantDatabaseManager */
     protected $databaseManager;
+
+    /** @var string */
     protected $databaseName;
 
     /**

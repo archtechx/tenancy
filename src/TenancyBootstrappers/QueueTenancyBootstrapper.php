@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\TenancyBootstrappers;
 
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Support\Testing\Fakes\QueueFake;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Tenant;
 
@@ -21,9 +22,13 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         $this->app = $app;
 
         $bootstrapper = &$this;
-        $this->app['queue']->createPayloadUsing(function () use (&$bootstrapper) {
-            return $bootstrapper->getPayload();
-        });
+
+        $queue = $this->app['queue'];
+        if (! $queue instanceof QueueFake) {
+            $queue->createPayloadUsing(function () use (&$bootstrapper) {
+                return $bootstrapper->getPayload();
+            });
+        }
     }
 
     public function start(Tenant $tenant)
