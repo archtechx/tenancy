@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\TenantDatabaseManagers;
 
-use Illuminate\Config\Repository;
+use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\DatabaseManager as IlluminateDatabaseManager;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 
