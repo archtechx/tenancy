@@ -35,7 +35,6 @@ return [
         'prefix_base' => 'tenant',
         'prefixed_connections' => [
             // 'default',
-            // 'cache',
         ],
     ],
     'cache' => [
