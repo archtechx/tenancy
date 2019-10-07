@@ -11,14 +11,15 @@ use Illuminate\Database\Eloquent\Model;
  */
 class DomainModel extends Model
 {
+    use CentralConnection;
+
     protected $guarded = [];
-    protected $primaryKey = 'id';
+    protected $primaryKey = 'domain';
     public $incrementing = false;
     public $timestamps = false;
-    public $table = 'domains';
 
-    public function getConnectionName()
+    public function getTable()
     {
-        return config('tenancy.storage.db.connection') ?? app(DatabaseManager::class)->originalDefaultConnectionName;
+        return config('tenancy.storage_drivers.db.table_names.DomainModel', 'domains');
     }
 }

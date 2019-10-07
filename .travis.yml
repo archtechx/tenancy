@@ -20,7 +20,7 @@ before_script:
   - export DB_USERNAME=root DB_PASSWORD="" DB_DATABASE=tenancy CODECOV_TOKEN="24382d15-84e7-4a55-bea4-c4df96a24a9b"
   - cat vendor/laravel/framework/src/Illuminate/Foundation/Application.php| grep 'const VERSION'
 
-script: ./test
+script: ./fulltest
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

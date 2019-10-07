@@ -9,6 +9,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Collection;
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
+use Stancl\Tenancy\Jobs\QueuedTenantDatabaseMigrator;
 
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
@@ -50,6 +51,12 @@ class TenantManager
         $this->bootstrapFeatures();
     }
 
+    /**
+     * Write a new tenant to storage.
+     *
+     * @param Tenant $tenant
+     * @return self
+     */
     public function createTenant(Tenant $tenant): self
     {
         $this->ensureTenantCanBeCreated($tenant);
@@ -58,14 +65,24 @@ class TenantManager
         $this->database->createDatabase($tenant);
 
         if ($this->shouldMigrateAfterCreation()) {
-            $this->artisan->call('tenants:migrate', [
-                '--tenants' => [$tenant['id']],
-            ]);
+            if ($this->shouldQueueMigration()) {
+                QueuedTenantDatabaseMigrator::dispatch($tenant);
+            } else {
+                $this->artisan->call('tenants:migrate', [
+                    '--tenants' => [$tenant['id']],
+                ]);
+            }
         }
 
         return $this;
     }
 
+    /**
+     * Delete a tenant from storage.
+     *
+     * @param Tenant $tenant
+     * @return self
+     */
     public function deleteTenant(Tenant $tenant): self
     {
         $this->storage->deleteTenant($tenant);
@@ -77,6 +94,13 @@ class TenantManager
         return $this;
     }
 
+    /**
+     * Alias for Stancl\Tenancy\Tenant::create.
+     *
+     * @param string|string[] $domains
+     * @param array $data
+     * @return Tenant
+     */
     public static function create($domains, array $data = []): Tenant
     {
         return Tenant::create($domains, $data);
@@ -95,6 +119,12 @@ class TenantManager
         $this->database->ensureTenantCanBeCreated($tenant);
     }
 
+    /**
+     * Update an existing tenant in storage.
+     *
+     * @param Tenant $tenant
+     * @return self
+     */
     public function updateTenant(Tenant $tenant): self
     {
         $this->storage->updateTenant($tenant);
@@ -102,6 +132,12 @@ class TenantManager
         return $this;
     }
 
+    /**
+     * Find tenant by domain & initialize tenancy.
+     *
+     * @param string|null $domain
+     * @return self
+     */
     public function init(string $domain = null): self
     {
         $domain = $domain ?? request()->getHost();
@@ -110,6 +146,12 @@ class TenantManager
         return $this;
     }
 
+    /**
+     * Find tenant by ID & initialize tenancy.
+     *
+     * @param string $id
+     * @return self
+     */
     public function initById(string $id): self
     {
         $this->initializeTenancy($this->find($id));
@@ -156,6 +198,12 @@ class TenantManager
         return collect($this->storage->all($only));
     }
 
+    /**
+     * Initialize tenancy.
+     *
+     * @param Tenant $tenant
+     * @return self
+     */
     public function initializeTenancy(Tenant $tenant): self
     {
         $this->setTenant($tenant);
@@ -171,6 +219,12 @@ class TenantManager
         return $this->initializeTenancy($tenant);
     }
 
+    /**
+     * Execute TenancyBootstrappers.
+     *
+     * @param Tenant $tenant
+     * @return self
+     */
     public function bootstrapTenancy(Tenant $tenant): self
     {
         $prevented = $this->event('bootstrapping');
@@ -257,6 +311,11 @@ class TenantManager
         return $this->app['config']['tenancy.migrate_after_creation'] ?? false;
     }
 
+    public function shouldQueueMigration(): bool
+    {
+        return $this->app['config']['tenancy.queue_automatic_migration'] ?? false;
+    }
+
     public function shouldDeleteDatabase(): bool
     {
         return $this->app['config']['tenancy.delete_database_after_tenant_deletion'] ?? false;
@@ -275,6 +334,19 @@ class TenantManager
         $this->eventListeners[$name][] = $listener;
 
         return $this;
+    }
+
+    /**
+     * Add an event hook.
+     * @alias eventListener
+     *
+     * @param string $name
+     * @param callable $listener
+     * @return self
+     */
+    public function hook(string $name, callable $listener): self
+    {
+        return $this->eventListener($name, $listener);
     }
 
     /**

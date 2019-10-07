@@ -14,6 +14,13 @@ class TelescopeTags implements Feature
     /** @var callable User-specific callback that returns tags. */
     protected $callback;
 
+    public function __construct()
+    {
+        $this->callback = function ($entry) {
+            return [];
+        };
+    }
+
     public function bootstrap(TenantManager $tenantManager): void
     {
         if (! class_exists(Telescope::class)) {
@@ -26,7 +33,6 @@ class TelescopeTags implements Feature
             if (in_array('tenancy', optional(request()->route())->middleware() ?? [])) {
                 $tags = array_merge($tags, [
                     'tenant:' . tenant('id'),
-                    // todo2 domain?
                 ]);
             }
 

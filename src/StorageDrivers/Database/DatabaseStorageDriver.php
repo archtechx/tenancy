@@ -7,7 +7,8 @@ namespace Stancl\Tenancy\StorageDrivers\Database;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Contracts\StorageDriver;
-use Stancl\Tenancy\Exceptions\DomainOccupiedByOtherTenantException;
+use Stancl\Tenancy\DatabaseManager;
+use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Exceptions\TenantWithThisIdAlreadyExistsException;
 use Stancl\Tenancy\StorageDrivers\Database\DomainModel as Domains;
@@ -16,10 +17,11 @@ use Stancl\Tenancy\Tenant;
 
 class DatabaseStorageDriver implements StorageDriver
 {
-    // todo2 write tests verifying that data is decoded and added to the array
-
     /** @var Application */
     protected $app;
+
+    /** @var \Illuminate\Database\Connection */
+    protected $centralDatabase;
 
     /** @var Tenant The default tenant. */
     protected $tenant;
@@ -27,6 +29,22 @@ class DatabaseStorageDriver implements StorageDriver
     public function __construct(Application $app)
     {
         $this->app = $app;
+        $this->centralDatabase = $this->getCentralConnection();
+    }
+
+    /**
+     * Get the central database connection.
+     *
+     * @return \Illuminate\Database\Connection
+     */
+    public static function getCentralConnection(): \Illuminate\Database\Connection
+    {
+        return DB::connection(static::getCentralConnectionName());
+    }
+
+    public static function getCentralConnectionName(): string
+    {
+        return config('tenancy.storage_drivers.db.connection') ?? app(DatabaseManager::class)->originalDefaultConnectionName;
     }
 
     public function findByDomain(string $domain): Tenant
@@ -54,13 +72,12 @@ class DatabaseStorageDriver implements StorageDriver
 
     public function ensureTenantCanBeCreated(Tenant $tenant): void
     {
-        // todo2 test this
         if (Tenants::find($tenant->id)) {
             throw new TenantWithThisIdAlreadyExistsException($tenant->id);
         }
 
         if (Domains::whereIn('domain', $tenant->domains)->exists()) {
-            throw new DomainOccupiedByOtherTenantException();
+            throw new DomainsOccupiedByOtherTenantException;
         }
     }
 
@@ -78,32 +95,45 @@ class DatabaseStorageDriver implements StorageDriver
 
     public function createTenant(Tenant $tenant): void
     {
-        DB::transaction(function () use ($tenant) {
-            Tenants::create(['id' => $tenant->id, 'data' => '{}'])->toArray();
+        $this->centralDatabase->transaction(function () use ($tenant) {
+            Tenants::create(['id' => $tenant->id, 'data' => json_encode($tenant->data)])->toArray();
 
             $domainData = [];
             foreach ($tenant->domains as $domain) {
                 $domainData[] = ['domain' => $domain, 'tenant_id' => $tenant->id];
             }
-            Domains::create($domainData);
+
+            Domains::insert($domainData);
         });
     }
 
     public function updateTenant(Tenant $tenant): void
     {
-        Tenants::find($tenant->id)->putMany($tenant->data);
-        Domains::firstOrCreate(array_map(function ($domain) use ($tenant) {
-            return [
-                'tenant_id' => $tenant->id,
-                'domain' => $domain,
-            ];
-        }, $tenant->domains));
+        $this->centralDatabase->transaction(function () use ($tenant) {
+            Tenants::find($tenant->id)->putMany($tenant->data);
+
+            $original_domains = Domains::where('tenant_id', $tenant->id)->get()->map(function ($model) {
+                return $model->domain;
+            })->toArray();
+            $deleted_domains = array_diff($original_domains, $tenant->domains);
+
+            Domains::whereIn('domain', $deleted_domains)->delete();
+
+            foreach ($tenant->domains as $domain) {
+                Domains::firstOrCreate([
+                    'tenant_id' => $tenant->id,
+                    'domain' => $domain,
+                ]);
+            }
+        });
     }
 
     public function deleteTenant(Tenant $tenant): void
     {
-        Tenants::find($tenant->id)->delete();
-        Domains::where('tenant_id', $tenant->id)->delete();
+        $this->centralDatabase->transaction(function () use ($tenant) {
+            Tenants::find($tenant->id)->delete();
+            Domains::where('tenant_id', $tenant->id)->delete();
+        });
     }
 
     /**

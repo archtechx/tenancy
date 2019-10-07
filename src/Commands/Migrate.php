@@ -53,19 +53,17 @@ class Migrate extends MigrateCommand
         tenancy()->all($this->option('tenants'))->each(function ($tenant) {
             $this->line("Tenant: {$tenant['id']}");
 
-            // See Illuminate\Database\Migrations\DatabaseMigrationRepository::getConnection.
-            // Database connections are cached by Illuminate\Database\ConnectionResolver.
-            $this->input->setOption('database', 'tenant');
-            tenancy()->initialize($tenant); // todo2 test that this works with multiple tenants with MySQL
+            $this->input->setOption('database', $tenant->getConnectionName());
+            tenancy()->initialize($tenant);
 
             // Migrate
             parent::handle();
+
+            tenancy()->endTenancy();
         });
 
         if ($originalTenant) {
             tenancy()->initialize($originalTenant);
-        } else {
-            tenancy()->endTenancy();
         }
     }
 }

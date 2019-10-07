@@ -6,8 +6,7 @@ namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Redis;
 
-// todo2 rename
-class BootstrapsTenancyTest extends TestCase
+class TenancyBootstrappersTest extends TestCase
 {
     public $autoInitTenancy = false;
 
@@ -56,7 +55,7 @@ class BootstrapsTenancyTest extends TestCase
             $current_path_prefix = \Storage::disk($disk)->getAdapter()->getPathPrefix();
 
             if ($override = config("tenancy.filesystem.root_override.{$disk}")) {
-                $correct_path_prefix = \str_replace('%storage_path%', storage_path(), $override);
+                $correct_path_prefix = str_replace('%storage_path%', storage_path(), $override);
             } else {
                 if ($base = $old_storage_facade_roots[$disk]) {
                     $correct_path_prefix = $base . "/$suffix/";
@@ -77,5 +76,21 @@ class BootstrapsTenancyTest extends TestCase
 
         $expected = [config('tenancy.cache.tag_base') . tenant('id'), 'foo', 'bar'];
         $this->assertEquals($expected, cache()->tags(['foo', 'bar'])->getTags()->getNames());
+    }
+
+    /** @test */
+    public function the_default_db_connection_is_used_when_the_config_value_is_null()
+    {
+        $original = config('database.default');
+        tenancy()->create(['foo.localhost']);
+        tenancy()->init('foo.localhost');
+
+        $this->assertSame(null, config("database.connections.$original.foo"));
+
+        config(["database.connections.$original.foo" => 'bar']);
+        tenancy()->create(['bar.localhost']);
+        tenancy()->init('bar.localhost');
+
+        $this->assertSame('bar', config("database.connections.$original.foo"));
     }
 }

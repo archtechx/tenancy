@@ -5,8 +5,13 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
+use Stancl\Tenancy\Exceptions\TenantWithThisIdAlreadyExistsException;
+use Stancl\Tenancy\Jobs\QueuedTenantDatabaseMigrator;
 use Stancl\Tenancy\Tenant;
+use Stancl\Tenancy\TenantManager;
 
 class TenantManagerTest extends TestCase
 {
@@ -147,7 +152,7 @@ class TenantManagerTest extends TestCase
     {
         $tenant1 = Tenant::new()->withDomains(['foo.localhost'])->save();
         $tenant2 = Tenant::new()->withDomains(['bar.localhost'])->save();
-        $this->assertEquals([$tenant1, $tenant2], tenancy()->all()->toArray());
+        $this->assertEqualsCanonicalizing([$tenant1, $tenant2], tenancy()->all()->toArray());
     }
 
     /** @test */
@@ -186,5 +191,79 @@ class TenantManagerTest extends TestCase
 
         $this->expectException(\Stancl\Tenancy\Exceptions\TenantStorageException::class);
         $tenant2->put('id', 'foo');
+    }
+
+    /** @test */
+    public function all_returns_a_collection_of_tenant_objects()
+    {
+        Tenant::create('foo.localhost');
+        $this->assertSame('Tenant', class_basename(tenancy()->all()[0]));
+    }
+
+    /** @test */
+    public function Tenant_is_bound_correctly_to_the_service_container()
+    {
+        $this->assertSame(null, app(Tenant::class));
+        $tenant = Tenant::create(['foo.localhost']);
+        app(TenantManager::class)->initializeTenancy($tenant);
+        $this->assertSame($tenant->id, app(Tenant::class)->id);
+        $this->assertSame(app(Tenant::class), app(TenantManager::class)->getTenant());
+        app(TenantManager::class)->endTenancy();
+        $this->assertSame(app(Tenant::class), app(TenantManager::class)->getTenant());
+    }
+
+    /** @test */
+    public function id_can_be_supplied_during_creation()
+    {
+        $id = 'abc' . $this->randomString();
+        $this->assertSame($id, Tenant::create(['foo.localhost'], ['id' => $id])->id);
+        $this->assertTrue(tenancy()->all()->contains(function ($tenant) use ($id) {
+            return $tenant->id === $id;
+        }));
+    }
+
+    /** @test */
+    public function automatic_migrations_work()
+    {
+        $tenant = Tenant::create(['foo.localhost']);
+        tenancy()->initialize($tenant);
+        $this->assertFalse(\Schema::hasTable('users'));
+
+        config(['tenancy.migrate_after_creation' => true]);
+        $tenant2 = Tenant::create(['bar.localhost']);
+        tenancy()->initialize($tenant2);
+        $this->assertTrue(\Schema::hasTable('users'));
+    }
+
+    /** @test */
+    public function ensureTenantCanBeCreated_works()
+    {
+        $id = 'foo' . $this->randomString();
+        Tenant::create(['foo.localhost'], ['id' => $id]);
+        $this->expectException(DomainsOccupiedByOtherTenantException::class);
+        Tenant::create(['foo.localhost']);
+
+        $this->expectException(TenantWithThisIdAlreadyExistsException::class);
+        Tenant::create(['bar.localhost'], ['id' => $id]);
+    }
+
+    /** @test */
+    public function automigration_can_be_queued()
+    {
+        Queue::fake();
+
+        config([
+            'tenancy.migrate_after_creation' => true,
+            'tenancy.queue_automatic_migration' => true,
+        ]);
+
+        $tenant = Tenant::new()->save();
+        tenancy()->initialize($tenant);
+
+        Queue::assertPushed(QueuedTenantDatabaseMigrator::class);
+
+        $this->assertFalse(\Schema::hasTable('users'));
+        (new QueuedTenantDatabaseMigrator($tenant))->handle();
+        $this->assertTrue(\Schema::hasTable('users'));
     }
 }

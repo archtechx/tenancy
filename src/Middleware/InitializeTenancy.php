@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Middleware;
 
 use Closure;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 
 class InitializeTenancy
 {
-    public function __construct(Closure $onFail = null)
+    /** @var callable */
+    protected $onFail;
+
+    public function __construct(callable $onFail = null)
     {
         $this->onFail = $onFail ?? function ($e) {
             throw $e;
@@ -25,8 +29,8 @@ class InitializeTenancy
     public function handle($request, Closure $next)
     {
         try {
-            tenancy()->init();
-        } catch (\Exception $e) {
+            tenancy()->init($request->getHost());
+        } catch (TenantCouldNotBeIdentifiedException $e) {
             ($this->onFail)($e);
         }
 

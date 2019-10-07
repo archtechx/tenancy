@@ -6,19 +6,19 @@ namespace Stancl\Tenancy;
 
 use ArrayAccess;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Str;
+use Illuminate\Support\Traits\ForwardsCalls;
 use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 use Stancl\Tenancy\Exceptions\TenantStorageException;
-
-// todo2 write tests for updating the tenant
-// todo2 addDomain(), removeDomain()
 
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
  */
 class Tenant implements ArrayAccess
 {
-    use Traits\HasArrayAccess;
+    use Traits\HasArrayAccess,
+        ForwardsCalls;
 
     /**
      * Tenant data. A "cache" of tenant storage.
@@ -51,8 +51,16 @@ class Tenant implements ArrayAccess
      *
      * @var bool
      */
-    protected $persisted = false;
+    public $persisted = false;
 
+    /**
+     * Use new() if you don't want to swap dependencies.
+     *
+     * @param Application $app
+     * @param StorageDriver $storage
+     * @param TenantManager $tenantManager
+     * @param UniqueIdentifierGenerator $idGenerator
+     */
     public function __construct(Application $app, StorageDriver $storage, TenantManager $tenantManager, UniqueIdentifierGenerator $idGenerator)
     {
         $this->app = $app;
@@ -61,6 +69,12 @@ class Tenant implements ArrayAccess
         $this->idGenerator = $idGenerator;
     }
 
+    /**
+     * Public constructor.
+     *
+     * @param Application $app
+     * @return self
+     */
     public static function new(Application $app = null): self
     {
         $app = $app ?? app();
@@ -73,27 +87,49 @@ class Tenant implements ArrayAccess
         );
     }
 
+    /**
+     * DO NOT CALL THIS METHOD FROM USERLAND. Used by storage
+     * drivers to create persisted instances of Tenant.
+     *
+     * @param array $data
+     * @return self
+     */
     public static function fromStorage(array $data): self
     {
         return static::new()->withData($data)->persisted(true);
     }
 
+    /**
+     * Create a tenant in a single call.
+     *
+     * @param string|string[] $domains
+     * @param array $data
+     * @return self
+     */
     public static function create($domains, array $data = []): self
     {
         return static::new()->withDomains((array) $domains)->withData($data)->save();
     }
 
-    protected function persisted($persisted = null)
+    /**
+     * DO NOT CALL THIS METHOD FROM USERLAND UNLESS YOU KNOW WHAT YOU ARE DOING.
+     * Set $persisted.
+     *
+     * @param bool $persisted
+     * @return self
+     */
+    public function persisted(bool $persisted): self
     {
-        if (gettype($persisted) === 'boolean') {
-            $this->persisted = $persisted;
-
-            return $this;
-        }
+        $this->persisted = $persisted;
 
         return $this;
     }
 
+    /**
+     * Does this model exist in the tenant storage.
+     *
+     * @return bool
+     */
     public function isPersisted(): bool
     {
         return $this->persisted;
@@ -127,6 +163,11 @@ class Tenant implements ArrayAccess
         return $this;
     }
 
+    /**
+     * Unassign all domains from the tenant.
+     *
+     * @return self
+     */
     public function clearDomains(): self
     {
         $this->domains = [];
@@ -134,6 +175,12 @@ class Tenant implements ArrayAccess
         return $this;
     }
 
+    /**
+     * Set (overwrite) the tenant's domains.
+     *
+     * @param string|string[] $domains
+     * @return self
+     */
     public function withDomains($domains): self
     {
         $domains = (array) $domains;
@@ -143,6 +190,12 @@ class Tenant implements ArrayAccess
         return $this;
     }
 
+    /**
+     * Set (overwrite) tenant data.
+     *
+     * @param array $data
+     * @return self
+     */
     public function withData(array $data): self
     {
         $this->data = $data;
@@ -150,11 +203,21 @@ class Tenant implements ArrayAccess
         return $this;
     }
 
+    /**
+     * Generate a random ID.
+     *
+     * @return void
+     */
     public function generateId()
     {
         $this->id = $this->idGenerator->generate($this->domains, $this->data);
     }
 
+    /**
+     * Write the tenant's state to storage.
+     *
+     * @return self
+     */
     public function save(): self
     {
         if (! isset($this->data['id'])) {
@@ -188,7 +251,7 @@ class Tenant implements ArrayAccess
     }
 
     /**
-     * Unassign all domains from the tenant.
+     * Unassign all domains from the tenant and write to storage.
      *
      * @return self
      */
@@ -201,12 +264,22 @@ class Tenant implements ArrayAccess
         return $this;
     }
 
-    public function getDatabaseName()
+    /**
+     * Get the tenant's database's name.
+     *
+     * @return string
+     */
+    public function getDatabaseName(): string
     {
         return $this->data['_tenancy_db_name'] ?? ($this->app['config']['tenancy.database.prefix'] . $this->id . $this->app['config']['tenancy.database.suffix']);
     }
 
-    public function getConnectionName()
+    /**
+     * Get the tenant's database connection's name.
+     *
+     * @return string
+     */
+    public function getConnectionName(): string
     {
         return $this->data['_tenancy_db_connection'] ?? 'tenant';
     }
@@ -243,6 +316,13 @@ class Tenant implements ArrayAccess
         return $this->data[$key];
     }
 
+    /**
+     * Set a value and write to storage.
+     *
+     * @param string|array<string, mixed> $key
+     * @param mixed $value
+     * @return self
+     */
     public function put($key, $value = null): self
     {
         if ($key === 'id') {
@@ -268,6 +348,20 @@ class Tenant implements ArrayAccess
         return $this->put($key, $value);
     }
 
+    /**
+     * Set a value.
+     *
+     * @param string $key
+     * @param mixed $value
+     * @return self
+     */
+    public function with(string $key, $value): self
+    {
+        $this->data[$key] = $value;
+
+        return $this;
+    }
+
     public function __get($key)
     {
         return $this->get($key);
@@ -278,6 +372,16 @@ class Tenant implements ArrayAccess
         if ($key === 'id' && isset($this->data['id'])) {
             throw new TenantStorageException("Tenant ids can't be changed.");
         }
+
         $this->data[$key] = $value;
+    }
+
+    public function __call($method, $parameters)
+    {
+        if (Str::startsWith($method, 'with')) {
+            return $this->with(Str::snake(substr($method, 4)), $parameters[0]);
+        }
+
+        static::throwBadMethodCallException($method);
     }
 }

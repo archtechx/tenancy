@@ -11,25 +11,26 @@ use Illuminate\Database\Eloquent\Model;
  */
 class TenantModel extends Model
 {
+    use CentralConnection;
+
     protected $guarded = [];
     protected $primaryKey = 'id';
     public $incrementing = false;
     public $timestamps = false;
-    public $table = 'tenants';
+
+    public function getTable()
+    {
+        return config('tenancy.storage_drivers.db.table_names.TenantModel', 'tenants');
+    }
 
     public static function dataColumn()
     {
-        return config('tenancy.storage.db.data_column', 'data');
+        return config('tenancy.storage_drivers.db.data_column', 'data');
     }
 
     public static function customColumns()
     {
-        return config('tenancy.storage.db.custom_columns', []);
-    }
-
-    public function getConnectionName()
-    {
-        return config('tenancy.storage.db.connection') ?? app(DatabaseManager::class)->originalDefaultConnectionName;
+        return config('tenancy.storage_drivers.db.custom_columns', []);
     }
 
     public static function getAllTenants(array $ids)
@@ -81,7 +82,7 @@ class TenantModel extends Model
 
     public function getMany(array $keys): array
     {
-        return array_reduce($keys, function ($result, $key) { // todo2 performance
+        return array_reduce($keys, function ($result, $key) {
             $result[$key] = $this->get($key);
 
             return $result;

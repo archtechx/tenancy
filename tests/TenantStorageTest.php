@@ -16,9 +16,9 @@ class TenantStorageTest extends TestCase
     {
         $abc = Tenant::new()->withDomains(['abc.localhost'])->save();
         $exists = function () use ($abc) {
-            return tenancy()->all()->reduce(function ($result, $tenant) use ($abc) {
-                return $result ?: $tenant->id === $abc->id;
-            }, false);
+            return tenancy()->all()->contains(function ($tenant) use ($abc) {
+                return $tenant->id === $abc->id;
+            });
         };
 
         $this->assertTrue($exists());
@@ -95,26 +95,26 @@ class TenantStorageTest extends TestCase
     public function data_is_stored_with_correct_data_types()
     {
         tenant()->put('someBool', false);
-        $this->assertSame('boolean', \gettype(tenant()->get('someBool')));
-        $this->assertSame('boolean', \gettype(tenant()->get(['someBool'])['someBool']));
+        $this->assertSame('boolean', gettype(tenant()->get('someBool')));
+        $this->assertSame('boolean', gettype(tenant()->get(['someBool'])['someBool']));
 
         tenant()->put('someInt', 5);
-        $this->assertSame('integer', \gettype(tenant()->get('someInt')));
-        $this->assertSame('integer', \gettype(tenant()->get(['someInt'])['someInt']));
+        $this->assertSame('integer', gettype(tenant()->get('someInt')));
+        $this->assertSame('integer', gettype(tenant()->get(['someInt'])['someInt']));
 
         tenant()->put('someDouble', 11.40);
-        $this->assertSame('double', \gettype(tenant()->get('someDouble')));
-        $this->assertSame('double', \gettype(tenant()->get(['someDouble'])['someDouble']));
+        $this->assertSame('double', gettype(tenant()->get('someDouble')));
+        $this->assertSame('double', gettype(tenant()->get(['someDouble'])['someDouble']));
 
         tenant()->put('string', 'foo');
-        $this->assertSame('string', \gettype(tenant()->get('string')));
-        $this->assertSame('string', \gettype(tenant()->get(['string'])['string']));
+        $this->assertSame('string', gettype(tenant()->get('string')));
+        $this->assertSame('string', gettype(tenant()->get(['string'])['string']));
     }
 
     /** @test */
     public function tenant_model_uses_correct_connection()
     {
-        config(['tenancy.storage.db.connection' => 'foo']);
+        config(['tenancy.storage_drivers.db.connection' => 'foo']);
         $this->assertSame('foo', (new TenantModel)->getConnectionName());
     }
 
@@ -149,7 +149,7 @@ class TenantStorageTest extends TestCase
         ]);
         config(['database.default' => 'sqlite']); // fix issue caused by loadMigrationsFrom
 
-        config(['tenancy.storage.db.custom_columns' => [
+        config(['tenancy.storage_drivers.db.custom_columns' => [
             'foo',
         ]]);
 
@@ -159,6 +159,6 @@ class TenantStorageTest extends TestCase
         tenant()->put(['foo' => 'bar', 'abc' => 'xyz']);
         $this->assertSame(['bar', 'xyz'], tenant()->get(['foo', 'abc']));
 
-        $this->assertSame('bar', \DB::connection('central')->table('tenants')->where('id', tenant('id'))->first()->foo);
+        $this->assertSame('bar', DB::connection('central')->table('tenants')->where('id', tenant('id'))->first()->foo);
     }
 }
