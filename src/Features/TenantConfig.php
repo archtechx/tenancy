@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Features;
 
-use Illuminate\Config\Repository;
+use Illuminate\Contracts\Config\Repository;
 use Stancl\Tenancy\Contracts\Feature;
 use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\TenantManager;
