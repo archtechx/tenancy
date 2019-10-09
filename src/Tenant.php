@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use ArrayAccess;
+use Closure;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\ForwardsCalls;
@@ -360,6 +361,27 @@ class Tenant implements ArrayAccess
         $this->data[$key] = $value;
 
         return $this;
+    }
+
+    /**
+     * Run a closure inside the tenant's environment.
+     *
+     * @param Closure $closure
+     * @return mixed
+     */
+    public function run(Closure $closure)
+    {
+        $originalTenant = $this->manager->getTenant();
+
+        $this->manager->initializeTenancy($this);
+        $result = $closure($this);
+        $this->manager->endTenancy($this);
+
+        if ($originalTenant) {
+            $this->manager->initializeTenancy($originalTenant);
+        }
+
+        return $result;
     }
 
     public function __get($key)

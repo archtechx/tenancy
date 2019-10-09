@@ -105,4 +105,67 @@ class TenantClassTest extends TestCase
 
         $this->assertSame(['foo' => 'bar'], $data);
     }
+
+    /** @test */
+    public function run_method_works()
+    {
+        $this->assertSame(null, tenancy()->getTenant());
+
+        $users_table_empty = function () {
+            return count(\DB::table('users')->get()) === 0;
+        };
+
+        $tenant = Tenant::new()->save();
+        \Artisan::call('tenants:migrate', [
+            '--tenants' => [$tenant->id],
+        ]);
+        tenancy()->initialize($tenant);
+        $this->assertTrue($users_table_empty());
+        tenancy()->end();
+
+        $foo = $tenant->run(function () {
+            \DB::table('users')->insert([
+                'name' => 'foo',
+                'email' => 'foo@bar.xy',
+                'password' => bcrypt('secret'),
+            ]);
+
+            return 'foo';
+        });
+
+        // test return value
+        $this->assertSame('foo', $foo);
+
+        // test that tenancy was ended
+        $this->assertSame(false, tenancy()->initialized);
+        $this->assertSame(null, tenancy()->getTenant());
+
+        // test closure
+        tenancy()->initialize($tenant);
+        $this->assertFalse($users_table_empty());
+
+        // test returning to original tenant
+        $tenant2 = Tenant::new()->save();
+        \Artisan::call('tenants:migrate', [
+            '--tenants' => [$tenant2->id],
+        ]);
+
+        tenancy()->initialize($tenant2);
+        $this->assertSame($tenant2, tenancy()->getTenant());
+        $this->assertTrue($users_table_empty());
+
+        $tenant->run(function () {
+            \DB::table('users')->insert([
+                'name' => 'bar',
+                'email' => 'bar@bar.xy',
+                'password' => bcrypt('secret'),
+            ]);
+        });
+
+        $this->assertSame($tenant2, tenancy()->getTenant());
+
+        $this->assertSame(2, $tenant->run(function () {
+            return \DB::table('users')->count();
+        }));
+    }
 }
