@@ -167,5 +167,10 @@ class TenantClassTest extends TestCase
         $this->assertSame(2, $tenant->run(function () {
             return \DB::table('users')->count();
         }));
+
+        // test that the tenant variable can be accessed
+        $this->assertSame($tenant->id, $tenant->run(function ($tenant) {
+            return $tenant->id;
+        }));
     }
 }
