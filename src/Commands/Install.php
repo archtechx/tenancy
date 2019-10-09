@@ -79,7 +79,7 @@ Route::get('/app', function () {
             '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
             '--tag' => 'migrations',
             ]);
-            $this->info('✔️  Created migrations.');
+            $this->info('✔️  Created migrations. Remember to run [php artisan migrate]!');
         }
 
         if (! is_dir(database_path('migrations/tenant'))) {
