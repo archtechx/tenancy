@@ -206,6 +206,10 @@ class TenantManager
      */
     public function initializeTenancy(Tenant $tenant): self
     {
+        if ($this->initialized) {
+            $this->endTenancy();
+        }
+
         $this->setTenant($tenant);
         $this->bootstrapTenancy($tenant);
         $this->initialized = true;
