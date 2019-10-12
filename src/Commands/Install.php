@@ -73,7 +73,7 @@ Route::get('/app', function () {
         $this->info('✔️  Created routes/tenant.php');
 
         $this->line('');
-        $this->line("This package lets you store data about tenants either in Redis or in a relational database like MySQL. If you're going to use the database storage, you need to create a tenants table.");
+        $this->line("This package lets you store data about tenants either in Redis or in a relational database like MySQL. If you're going to use the database storage, you need to create tables for tenants and domains.");
         if ($this->confirm('Do you want to publish the default database migrations?', true)) {
             $this->callSilent('vendor:publish', [
             '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
