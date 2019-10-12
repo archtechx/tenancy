@@ -28,10 +28,12 @@ class InitializeTenancy
      */
     public function handle($request, Closure $next)
     {
-        try {
-            tenancy()->init($request->getHost());
-        } catch (TenantCouldNotBeIdentifiedException $e) {
-            ($this->onFail)($e);
+        if (! in_array($request->getHost(), config('tenancy.exempt_domains', []), true)) {
+            try {
+                tenancy()->init($request->getHost());
+            } catch (TenantCouldNotBeIdentifiedException $e) {
+                ($this->onFail)($e);
+            }
         }
 
         return $next($request);

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Illuminate\Cache\CacheManager;
+use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains;
 use Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper;
 
 class TenancyServiceProvider extends ServiceProvider
@@ -79,8 +81,13 @@ class TenancyServiceProvider extends ServiceProvider
 
         $this->loadRoutesFrom(__DIR__ . '/routes.php');
 
+        $this->app->make(Kernel::class)->prependMiddleware([
+            Middleware\InitializeTenancy::class,
+        ]);
+
         Route::middlewareGroup('tenancy', [
-            \Stancl\Tenancy\Middleware\InitializeTenancy::class,
+            /** Prevent access from tenant domains to central routes and vice versa. */
+            Middleware\PreventAccessFromTenantDomains::class,
         ]);
 
         $this->app->singleton('globalUrl', function ($app) {
