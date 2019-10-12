@@ -80,9 +80,7 @@ class TenancyServiceProvider extends ServiceProvider
 
         $this->loadRoutesFrom(__DIR__ . '/routes.php');
 
-        $this->app->make(Kernel::class)->prependMiddleware([
-            Middleware\InitializeTenancy::class,
-        ]);
+        $this->app->make(Kernel::class)->prependMiddleware(Middleware\InitializeTenancy::class);
 
         Route::middlewareGroup('tenancy', [
             /* Prevent access from tenant domains to central routes and vice versa. */
