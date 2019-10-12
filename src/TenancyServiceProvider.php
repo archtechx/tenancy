@@ -8,7 +8,6 @@ use Illuminate\Cache\CacheManager;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
-use Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains;
 use Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper;
 
 class TenancyServiceProvider extends ServiceProvider
@@ -86,7 +85,7 @@ class TenancyServiceProvider extends ServiceProvider
         ]);
 
         Route::middlewareGroup('tenancy', [
-            /** Prevent access from tenant domains to central routes and vice versa. */
+            /* Prevent access from tenant domains to central routes and vice versa. */
             Middleware\PreventAccessFromTenantDomains::class,
         ]);
 
