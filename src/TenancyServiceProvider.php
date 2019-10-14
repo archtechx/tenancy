@@ -82,8 +82,7 @@ class TenancyServiceProvider extends ServiceProvider
 
         $this->app->make(Kernel::class)->prependMiddleware(Middleware\InitializeTenancy::class);
 
-
-        /**
+        /*
          * Since tenancy is initialized in the global middleware stack, this
          * middleware group acts mostly as a 'flag' for the PreventAccess
          * middleware to decide whether the request should be aborted.
