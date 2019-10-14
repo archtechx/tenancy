@@ -8,7 +8,7 @@ use Closure;
 
 /**
  * Prevent access to non-tenant routes from domains that are not exempt from tenancy.
- * = allow access to central routes only from routes listed in tenancy.exempt_domains.
+ * = allow access to central routes only from domains listed in tenancy.exempt_domains.
  */
 class PreventAccessFromTenantDomains
 {
