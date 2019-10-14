@@ -48,7 +48,7 @@ class PreventAccessFromTenantDomains
         }
 
         // Loop one level deep and check if the route's middleware
-        // groups have a `tenancy` middleware grouú inside them
+        // groups have a `tenancy` middleware group inside them
         $middlewareGroups = Router::getMiddlewareGroups();
         foreach ($route->middleware() as $middleware) {
             if (isset($middlewareGroups[$middleware]) && in_array('tenancy', $middlewareGroups[$middleware], true)) {
