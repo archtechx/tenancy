@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Middleware;
 
 use Closure;
+use Illuminate\Routing\Route;
+use Illuminate\Support\Facades\Route as Router;
 
 /**
  * Prevent access to non-tenant routes from domains that are not exempt from tenancy.
@@ -26,7 +28,7 @@ class PreventAccessFromTenantDomains
         $isExemptDomain = in_array($request->getHost(), config('tenancy.exempt_domains'));
         $isTenantDomain = ! $isExemptDomain;
 
-        $isTenantRoute = in_array('tenancy', $request->route()->middleware());
+        $isTenantRoute = $this->isTenantRoute($request->route());
 
         if ($isTenantDomain && ! $isTenantRoute) { // accessing web routes from tenant domains
             return redirect(config('tenancy.home_url'));
@@ -37,5 +39,23 @@ class PreventAccessFromTenantDomains
         }
 
         return $next($request);
+    }
+
+    public function isTenantRoute(Route $route): bool
+    {
+        if (in_array('tenancy', $route->middleware(), true)) {
+            return true;
+        }
+
+        // Loop one level deep and check if the route's middleware
+        // groups have a `tenancy` middleware grouú inside them
+        $middlewareGroups = Router::getMiddlewareGroups();
+        foreach ($route->middleware() as $middleware) {
+            if (isset($middlewareGroups[$middleware]) && in_array('tenancy', $middlewareGroups[$middleware], true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
