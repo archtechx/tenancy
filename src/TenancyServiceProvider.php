@@ -78,8 +78,6 @@ class TenancyServiceProvider extends ServiceProvider
             __DIR__ . '/../assets/migrations/' => database_path('migrations'),
         ], 'migrations');
 
-        $this->loadRoutesFrom(__DIR__ . '/routes.php');
-
         $this->app->make(Kernel::class)->prependMiddleware(Middleware\InitializeTenancy::class);
 
         /*
@@ -91,6 +89,8 @@ class TenancyServiceProvider extends ServiceProvider
             /* Prevent access from tenant domains to central routes and vice versa. */
             Middleware\PreventAccessFromTenantDomains::class,
         ]);
+
+        $this->loadRoutesFrom(__DIR__ . '/routes.php');
 
         $this->app->singleton('globalUrl', function ($app) {
             if ($app->bound(FilesystemTenancyBootstrapper::class)) {
