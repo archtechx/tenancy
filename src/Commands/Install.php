@@ -59,9 +59,9 @@ class Install extends Command
 | Tenant Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register tenant routes for your application. These
-| routes are loaded by the TenantRouteServiceProvider within a group
-| which contains the \"InitializeTenancy\" middleware. Good luck!
+| Here you can register the tenant routes for your application.
+| These routes are loaded by the TenantRouteServiceProvider
+| with the tenancy and web middleware groups. Good luck!
 |
 */
 
@@ -73,11 +73,11 @@ Route::get('/app', function () {
         $this->info('✔️  Created routes/tenant.php');
 
         $this->line('');
-        $this->line("This package lets you store data about tenants either in Redis or in a relational database like MySQL. If you're going to use the database storage, you need to create tables for tenants and domains.");
-        if ($this->confirm('Do you want to publish the default database migrations?', true)) {
+        $this->line("This package lets you store data about tenants either in Redis or in a relational database like MySQL. To store data about tenants in a relational database, you need a few database tables.");
+        if ($this->confirm('Do you wish to publish the migrations that create these tables?', true)) {
             $this->callSilent('vendor:publish', [
-            '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
-            '--tag' => 'migrations',
+                '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
+                '--tag' => 'migrations',
             ]);
             $this->info('✔️  Created migrations. Remember to run [php artisan migrate]!');
         }
