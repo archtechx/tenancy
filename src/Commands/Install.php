@@ -47,6 +47,9 @@ class Install extends Command
         $newKernel = str_replace("'web' => [", "'web' => [
             \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,", $newKernel);
 
+        $newKernel = str_replace("'api' => [", "'api' => [
+            \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,", $newKernel);
+
         file_put_contents(app_path('Http/Kernel.php'), $newKernel);
         $this->info('✔️  Set middleware priority');
 
