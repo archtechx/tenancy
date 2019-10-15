@@ -39,6 +39,7 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
+            \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,
             'throttle:60,1',
             'bindings',
         ],

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Illuminate\Cache\CacheManager;
+use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper;
@@ -77,15 +78,27 @@ class TenancyServiceProvider extends ServiceProvider
             __DIR__ . '/../assets/migrations/' => database_path('migrations'),
         ], 'migrations');
 
-        $this->loadRoutesFrom(__DIR__ . '/routes.php');
+        $this->app->make(Kernel::class)->prependMiddleware(Middleware\InitializeTenancy::class);
 
+        /*
+         * Since tenancy is initialized in the global middleware stack, this
+         * middleware group acts mostly as a 'flag' for the PreventAccess
+         * middleware to decide whether the request should be aborted.
+         */
         Route::middlewareGroup('tenancy', [
-            \Stancl\Tenancy\Middleware\InitializeTenancy::class,
+            /* Prevent access from tenant domains to central routes and vice versa. */
+            Middleware\PreventAccessFromTenantDomains::class,
         ]);
 
+        $this->loadRoutesFrom(__DIR__ . '/routes.php');
+
         $this->app->singleton('globalUrl', function ($app) {
-            $instance = clone $app['url'];
-            $instance->setAssetRoot($app[FilesystemTenancyBootstrapper::class]->originalPaths['asset_url']);
+            if ($app->bound(FilesystemTenancyBootstrapper::class)) {
+                $instance = clone $app['url'];
+                $instance->setAssetRoot($app[FilesystemTenancyBootstrapper::class]->originalPaths['asset_url']);
+            } else {
+                $instance = $app['url'];
+            }
 
             return $instance;
         });

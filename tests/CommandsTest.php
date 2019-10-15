@@ -130,7 +130,7 @@ class CommandsTest extends TestCase
         file_put_contents(app_path('Http/Kernel.php'), file_get_contents(__DIR__ . '/Etc/defaultHttpKernel.stub'));
 
         $this->artisan('tenancy:install')
-            ->expectsQuestion('Do you want to publish the default database migrations?', 'yes');
+            ->expectsQuestion('Do you wish to publish the migrations that create these tables?', 'yes');
         $this->assertFileExists(base_path('routes/tenant.php'));
         $this->assertFileExists(base_path('config/tenancy.php'));
         $this->assertFileExists(database_path('migrations/2019_09_15_000010_create_tenants_table.php'));
