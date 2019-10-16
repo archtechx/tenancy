@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
+use Stancl\Tenancy\Exceptions\TenantDoesNotExistException;
 use Stancl\Tenancy\Exceptions\TenantWithThisIdAlreadyExistsException;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseMigrator;
 use Stancl\Tenancy\Tenant;
@@ -265,5 +266,12 @@ class TenantManagerTest extends TestCase
         $this->assertFalse(\Schema::hasTable('users'));
         (new QueuedTenantDatabaseMigrator($tenant))->handle();
         $this->assertTrue(\Schema::hasTable('users'));
+    }
+
+    /** @test */
+    public function TenantDoesNotExistException_is_thrown_when_find_is_called_on_an_id_that_does_not_belong_to_any_tenant()
+    {
+        $this->expectException(TenantDoesNotExistException::class);
+        tenancy()->find('gjnfdgf');
     }
 }

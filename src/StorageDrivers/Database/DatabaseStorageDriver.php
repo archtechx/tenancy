@@ -10,6 +10,7 @@ use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
+use Stancl\Tenancy\Exceptions\TenantDoesNotExistException;
 use Stancl\Tenancy\Exceptions\TenantWithThisIdAlreadyExistsException;
 use Stancl\Tenancy\StorageDrivers\Database\DomainModel as Domains;
 use Stancl\Tenancy\StorageDrivers\Database\TenantModel as Tenants;
@@ -59,7 +60,13 @@ class DatabaseStorageDriver implements StorageDriver
 
     public function findById(string $id): Tenant
     {
-        return Tenant::fromStorage(Tenants::find($id)->decoded())
+        $tenant = Tenants::find($id);
+
+        if (! $tenant) {
+            throw new TenantDoesNotExistException($id);
+        }
+
+        return Tenant::fromStorage($tenant->decoded())
             ->withDomains($this->getTenantDomains($id));
     }
 
