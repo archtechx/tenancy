@@ -22,6 +22,7 @@ class MySQLDatabaseManager implements TenantDatabaseManager
     {
         $charset = $this->database->getConfig('charset');
         $collation = $this->database->getConfig('collation');
+
         return $this->database->statement("CREATE DATABASE `$name` CHARACTER SET `$charset` COLLATE `$collation`");
     }
 
