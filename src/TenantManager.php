@@ -62,7 +62,7 @@ class TenantManager
         $this->ensureTenantCanBeCreated($tenant);
 
         $this->storage->createTenant($tenant);
-        
+
         $afterCreating = [];
         if ($this->shouldMigrateAfterCreation()) {
             if ($this->shouldQueueMigration()) {
