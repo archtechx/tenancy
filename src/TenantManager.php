@@ -62,17 +62,25 @@ class TenantManager
         $this->ensureTenantCanBeCreated($tenant);
 
         $this->storage->createTenant($tenant);
-        $this->database->createDatabase($tenant);
-
+        
+        $afterCreating = [];
         if ($this->shouldMigrateAfterCreation()) {
             if ($this->shouldQueueMigration()) {
-                QueuedTenantDatabaseMigrator::dispatch($tenant);
+                $afterCreating = [
+                    new QueuedTenantDatabaseMigrator($tenant),
+                ];
             } else {
-                $this->artisan->call('tenants:migrate', [
-                    '--tenants' => [$tenant['id']],
-                ]);
+                $afterCreating = [
+                    function () use ($tenant) {
+                        $this->artisan->call('tenants:migrate', [
+                            '--tenants' => [$tenant['id']],
+                        ]);
+                    },
+                ];
             }
         }
+
+        $this->database->createDatabase($tenant, $afterCreating);
 
         return $this;
     }
