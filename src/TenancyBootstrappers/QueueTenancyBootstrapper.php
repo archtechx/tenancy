@@ -25,8 +25,8 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
 
         $queue = $this->app['queue'];
         if (! $queue instanceof QueueFake) {
-            $queue->createPayloadUsing(function () use (&$bootstrapper) {
-                return $bootstrapper->getPayload();
+            $queue->createPayloadUsing(function ($connection) use (&$bootstrapper) {
+                return $bootstrapper->getPayload($connection);
             });
         }
     }
@@ -41,9 +41,13 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         $this->started = false;
     }
 
-    public function getPayload()
+    public function getPayload(string $connection)
     {
         if (! $this->started) {
+            return [];
+        }
+
+        if ($this->app['config']["queue.connections.$connection.tenancy"] === false) {
             return [];
         }
 

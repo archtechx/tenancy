@@ -33,6 +33,24 @@ class QueueTest extends TestCase
             return $event->job->payload()['tenant_id'] === tenant('id');
         });
     }
+
+    /** @test */
+    public function tenancy_is_not_initialized_in_non_tenant_queues()
+    {
+        $this->loadLaravelMigrations(['--database' => 'tenant']);
+        Event::fake();
+
+        config(['queue.connections.central' => [
+            'driver' => 'sync',
+            'tenancy' => false,
+        ]]);
+
+        dispatch(new TestJob())->onConnection('central');
+
+        Event::assertDispatched(JobProcessing::class, function ($event) {
+            return ! isset($event->job->payload()['tenant_id']);
+        });
+    }
 }
 
 class TestJob implements ShouldQueue
