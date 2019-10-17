@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\TenancyBootstrappers;
 
-use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Config\Repository;
+use Illuminate\Queue\QueueManager;
 use Illuminate\Support\Testing\Fakes\QueueFake;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Tenant;
@@ -14,16 +15,15 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
     /** @var bool Has tenancy been started. */
     public $started = false;
 
-    /** @var Application */
-    protected $app;
+    /** @var Repository */
+    protected $config;
 
-    public function __construct(Application $app)
+    public function __construct(Repository $config, QueueManager $queue)
     {
-        $this->app = $app;
+        $this->config = $config;
 
         $bootstrapper = &$this;
 
-        $queue = $this->app['queue'];
         if (! $queue instanceof QueueFake) {
             $queue->createPayloadUsing(function ($connection) use (&$bootstrapper) {
                 return $bootstrapper->getPayload($connection);
@@ -47,7 +47,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             return [];
         }
 
-        if ($this->app['config']["queue.connections.$connection.tenancy"] === false) {
+        if ($this->config["queue.connections.$connection.tenancy"] === false) {
             return [];
         }
 
