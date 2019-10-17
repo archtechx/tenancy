@@ -250,7 +250,7 @@ class TenantManagerTest extends TestCase
     }
 
     /** @test */
-    public function automigration_is_queued()
+    public function automigration_is_queued_when_db_creation_is_queued()
     {
         Queue::fake();
 
