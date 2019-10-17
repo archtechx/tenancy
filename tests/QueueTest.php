@@ -40,11 +40,6 @@ class QueueTest extends TestCase
         $this->loadLaravelMigrations(['--database' => 'tenant']);
         Event::fake();
 
-        config(['queue.connections.central' => [
-            'driver' => 'sync',
-            'tenancy' => false,
-        ]]);
-
         dispatch(new TestJob())->onConnection('central');
 
         Event::assertDispatched(JobProcessing::class, function ($event) {

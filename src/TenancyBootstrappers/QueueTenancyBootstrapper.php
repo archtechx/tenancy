@@ -47,7 +47,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             return [];
         }
 
-        if ($this->config["queue.connections.$connection.tenancy"] === false) {
+        if ($this->config["queue.connections.$connection.central"]) {
             return [];
         }
 

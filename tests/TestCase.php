@@ -99,6 +99,10 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'tenancy.migrations_directory' => database_path('../migrations'),
             'tenancy.storage_drivers.db.connection' => 'central',
             'tenancy.bootstrappers.redis' => \Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class,
+            'queue.connections.central' => [
+                'driver' => 'sync',
+                'central' => true,
+            ],
         ]);
 
         $app->singleton(\Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class);
