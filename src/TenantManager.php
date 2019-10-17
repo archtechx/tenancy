@@ -62,7 +62,7 @@ class TenantManager
         $this->ensureTenantCanBeCreated($tenant);
 
         $this->storage->createTenant($tenant);
-        
+
         /** @var \Illuminate\Contracts\Queue\ShouldQueue[]|callable[] $afterCreating */
         $afterCreating = [];
 

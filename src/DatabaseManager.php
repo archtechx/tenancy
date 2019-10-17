@@ -133,7 +133,7 @@ class DatabaseManager
     {
         $database = $tenant->getDatabaseName();
         $manager = $this->getTenantDatabaseManager($tenant);
-        
+
         if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
             QueuedTenantDatabaseCreator::withChain($afterCreating)->dispatch($manager, $database);
         } else {
