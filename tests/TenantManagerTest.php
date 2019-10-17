@@ -12,8 +12,10 @@ use Stancl\Tenancy\Exceptions\TenantDoesNotExistException;
 use Stancl\Tenancy\Exceptions\TenantWithThisIdAlreadyExistsException;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseMigrator;
+use Stancl\Tenancy\Jobs\QueuedTenantDatabaseSeeder;
 use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\TenantManager;
+use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
 
 class TenantManagerTest extends TestCase
 {
@@ -238,6 +240,27 @@ class TenantManagerTest extends TestCase
     }
 
     /** @test */
+    public function automatic_seeding_works()
+    {
+        config(['tenancy.migrate_after_creation' => true]);
+
+        $tenant = Tenant::create(['foo.localhost']);
+        tenancy()->initialize($tenant);
+        $this->assertSame(0, \DB::table('users')->count());
+
+        config([
+            'tenancy.seed_after_migration' => true,
+            'tenancy.seeder_parameters' => [
+                '--class' => ExampleSeeder::class,
+            ],
+        ]);
+
+        $tenant2 = Tenant::create(['bar.localhost']);
+        tenancy()->initialize($tenant2);
+        $this->assertSame(1, \DB::table('users')->count());
+    }
+
+    /** @test */
     public function ensureTenantCanBeCreated_works()
     {
         $id = 'foo' . $this->randomString();
@@ -270,6 +293,25 @@ class TenantManagerTest extends TestCase
         // }
         // tenancy()->initialize($tenant);
         // $this->assertTrue(\Schema::hasTable('users'));
+    }
+
+    /** @test */
+    public function autoseeding_is_queued_when_db_creation_is_queued()
+    {
+        Queue::fake();
+
+        config([
+            'tenancy.queue_database_creation' => true,
+            'tenancy.migrate_after_creation' => true,
+            'tenancy.seed_after_migration' => true,
+        ]);
+
+        Tenant::new()->save();
+
+        Queue::assertPushedWithChain(QueuedTenantDatabaseCreator::class, [
+            QueuedTenantDatabaseMigrator::class,
+            QueuedTenantDatabaseSeeder::class,
+        ]);
     }
 
     /** @test */

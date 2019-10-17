@@ -10,6 +10,7 @@ use Illuminate\Support\Collection;
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseMigrator;
+use Stancl\Tenancy\Jobs\QueuedTenantDatabaseSeeder;
 
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
@@ -67,15 +68,23 @@ class TenantManager
         $afterCreating = [];
 
         if ($this->shouldMigrateAfterCreation()) {
-            $afterCreating += $this->databaseCreationQueued() ? [
-                new QueuedTenantDatabaseMigrator($tenant),
-            ] : [
-                function () use ($tenant) {
+            $afterCreating[] = $this->databaseCreationQueued()
+                ? new QueuedTenantDatabaseMigrator($tenant)
+                : function () use ($tenant) {
                     $this->artisan->call('tenants:migrate', [
                         '--tenants' => [$tenant['id']],
                     ]);
-                },
-            ];
+                };
+        }
+
+        if ($this->shouldSeedAfterMigration()) {
+            $afterCreating[] = $this->databaseCreationQueued()
+                ? new QueuedTenantDatabaseSeeder($tenant, $this->getSeederParameters())
+                : function () use ($tenant) {
+                    $this->artisan->call('tenants:seed', [
+                        '--tenants' => [$tenant['id']],
+                    ] + $this->getSeederParameters());
+                };
         }
 
         $this->database->createDatabase($tenant, $afterCreating);
@@ -321,6 +330,11 @@ class TenantManager
         return $this->app['config']['tenancy.migrate_after_creation'] ?? false;
     }
 
+    public function shouldSeedAfterMigration(): bool
+    {
+        return $this->shouldMigrateAfterCreation() && $this->app['config']['tenancy.seed_after_migration'] ?? false;
+    }
+
     public function databaseCreationQueued(): bool
     {
         return $this->app['config']['tenancy.queue_database_creation'] ?? false;
@@ -329,6 +343,11 @@ class TenantManager
     public function shouldDeleteDatabase(): bool
     {
         return $this->app['config']['tenancy.delete_database_after_tenant_deletion'] ?? false;
+    }
+
+    public function getSeederParameters()
+    {
+        return $this->app['config']['tenancy.seeder_parameters'] ?? [];
     }
 
     /**
