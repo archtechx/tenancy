@@ -237,7 +237,6 @@ class TenantManagerTest extends TestCase
         $tenant2 = Tenant::create(['bar.localhost']);
         tenancy()->initialize($tenant2);
         $this->assertTrue(\Schema::hasTable('users'));
-        $this->assertCount(0, \DB::select('select * from users'));
     }
 
     /** @test */
