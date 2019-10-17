@@ -20,12 +20,12 @@ class QueuedTenantDatabaseSeeder implements ShouldQueue
     protected $tenantId;
 
     /** @var array */
-    protected $seederClassParameter = [];
+    protected $seederParameters = [];
 
-    public function __construct(Tenant $tenant, string $seederClassName)
+    public function __construct(Tenant $tenant, $seederParameters = [])
     {
         $this->tenantId = $tenant->id;
-        $this->seederClassParameter = ! empty($seederClassName) ? ['--class' => $seederClassName] : [];
+        $this->seederParameters = $seederParameters;
     }
 
     /**
@@ -37,6 +37,6 @@ class QueuedTenantDatabaseSeeder implements ShouldQueue
     {
         Artisan::call('tenants:seed', [
             '--tenants' => [$this->tenantId],
-        ] + $this->seederClassParameter);
+        ] + $this->seederParameters);
     }
 }

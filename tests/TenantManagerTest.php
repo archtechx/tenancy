@@ -15,6 +15,7 @@ use Stancl\Tenancy\Jobs\QueuedTenantDatabaseMigrator;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseSeeder;
 use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\TenantManager;
+use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
 
 class TenantManagerTest extends TestCase
 {
@@ -242,19 +243,22 @@ class TenantManagerTest extends TestCase
     /** @test */
     public function automatic_seeding_works()
     {
+        config(['tenancy.migrate_after_creation' => true]);
+
         $tenant = Tenant::create(['foo.localhost']);
         tenancy()->initialize($tenant);
-        $this->assertFalse(\Schema::hasTable('users'));
+        $this->assertSame(0, \DB::table('users')->count());
 
         config([
-            'tenancy.migrate_after_creation' => true,
             'tenancy.seed_after_migration' => true,
-            'tenancy.seeder_class' => \Stancl\Tenancy\Tests\Etc\ExampleSeeder::class,
+            'tenancy.seeder_parameters' => [
+                '--class' => ExampleSeeder::class,
+            ],
         ]);
+
         $tenant2 = Tenant::create(['bar.localhost']);
         tenancy()->initialize($tenant2);
-        $this->assertTrue(\Schema::hasTable('users'));
-        $this->assertCount(1, \DB::select('select * from users'));
+        $this->assertSame(1, \DB::table('users')->count());
     }
 
     /** @test */
@@ -293,7 +297,7 @@ class TenantManagerTest extends TestCase
     }
 
     /** @test */
-    public function auto_seeding_is_queued_when_enabled()
+    public function autoseeding_is_queued_when_db_creation_is_queued()
     {
         Queue::fake();
 
@@ -303,7 +307,7 @@ class TenantManagerTest extends TestCase
             'tenancy.seed_after_migration' => true,
         ]);
 
-        $tenant = Tenant::new()->save();
+        Tenant::new()->save();
 
         Queue::assertPushedWithChain(QueuedTenantDatabaseCreator::class, [
             QueuedTenantDatabaseMigrator::class,

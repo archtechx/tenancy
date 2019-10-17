@@ -68,30 +68,23 @@ class TenantManager
         $afterCreating = [];
 
         if ($this->shouldMigrateAfterCreation()) {
-            $afterCreating = array_merge($afterCreating, $this->databaseCreationQueued() ? [
-                new QueuedTenantDatabaseMigrator($tenant),
-            ] : [
-                function () use ($tenant) {
+            $afterCreating[] = $this->databaseCreationQueued()
+                ? new QueuedTenantDatabaseMigrator($tenant)
+                : function () use ($tenant) {
                     $this->artisan->call('tenants:migrate', [
                         '--tenants' => [$tenant['id']],
                     ]);
-                },
-            ]);
+                };
+        }
 
-            if ($this->shouldSeedAfterMigration()) {
-                $seederClassName = $this->getSeederRootClass();
-                $seederClassParameter = ! empty($seederClassName) ? ['--class' => $seederClassName] : [];
-
-                $afterCreating = array_merge($afterCreating, $this->databaseCreationQueued() ? [
-                    new QueuedTenantDatabaseSeeder($tenant, $seederClassName),
-                ] : [
-                    function () use ($tenant, $seederClassParameter) {
-                        $this->artisan->call('tenants:seed', [
-                            '--tenants' => [$tenant['id']],
-                         ] + $seederClassParameter);
-                    },
-                ]);
-            }
+        if ($this->shouldSeedAfterMigration()) {
+            $afterCreating[] = $this->databaseCreationQueued()
+                ? new QueuedTenantDatabaseSeeder($tenant, $this->getSeederParameters())
+                : function () use ($tenant) {
+                    $this->artisan->call('tenants:seed', [
+                        '--tenants' => [$tenant['id']],
+                    ] + $this->getSeederParameters());
+                };
         }
 
         $this->database->createDatabase($tenant, $afterCreating);
@@ -352,9 +345,9 @@ class TenantManager
         return $this->app['config']['tenancy.delete_database_after_tenant_deletion'] ?? false;
     }
 
-    public function getSeederRootClass()
+    public function getSeederParameters()
     {
-        return $this->app['config']['tenancy.seeder_class'] ?? null;
+        return $this->app['config']['tenancy.seeder_parameters'] ?? [];
     }
 
     /**
