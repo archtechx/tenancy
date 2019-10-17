@@ -10,6 +10,7 @@ use Illuminate\Support\Collection;
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseMigrator;
+use Stancl\Tenancy\Jobs\QueuedTenantDatabaseSeeder;
 
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
@@ -67,7 +68,7 @@ class TenantManager
         $afterCreating = [];
 
         if ($this->shouldMigrateAfterCreation()) {
-            $afterCreating += $this->databaseCreationQueued() ? [
+            $afterCreating = array_merge($afterCreating, $this->databaseCreationQueued() ? [
                 new QueuedTenantDatabaseMigrator($tenant),
             ] : [
                 function () use ($tenant) {
@@ -75,13 +76,13 @@ class TenantManager
                         '--tenants' => [$tenant['id']],
                     ]);
                 },
-            ];
+            ]);
 
             if ($this->shouldSeedAfterMigration()) {
                 $seederClassName = $this->getSeederRootClass();
                 $seederClassParameter = ! empty($seederClassName) ? ['--class' => $seederClassName] : [];
 
-                $afterCreating += $this->databaseCreationQueued() ? [
+                $afterCreating = array_merge($afterCreating, $this->databaseCreationQueued() ? [
                     new QueuedTenantDatabaseSeeder($tenant, $seederClassName),
                 ] : [
                     function () use ($tenant, $seederClassParameter) {
@@ -89,7 +90,7 @@ class TenantManager
                             '--tenants' => [$tenant['id']],
                          ] + $seederClassParameter);
                     },
-                ];
+                ]);
             }
         }
 

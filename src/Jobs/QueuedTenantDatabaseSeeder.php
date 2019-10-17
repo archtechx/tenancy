@@ -22,7 +22,7 @@ class QueuedTenantDatabaseSeeder implements ShouldQueue
     /** @var array */
     protected $seederClassParameter = [];
 
-    public function __construct(Tenant $tenant, $seederClassName = '')
+    public function __construct(Tenant $tenant, string $seederClassName)
     {
         $this->tenantId = $tenant->id;
         $this->seederClassParameter = ! empty($seederClassName) ? ['--class' => $seederClassName] : [];

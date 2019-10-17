@@ -12,6 +12,7 @@ use Stancl\Tenancy\Exceptions\TenantDoesNotExistException;
 use Stancl\Tenancy\Exceptions\TenantWithThisIdAlreadyExistsException;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseMigrator;
+use Stancl\Tenancy\Jobs\QueuedTenantDatabaseSeeder;
 use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\TenantManager;
 
@@ -235,6 +236,25 @@ class TenantManagerTest extends TestCase
         $tenant2 = Tenant::create(['bar.localhost']);
         tenancy()->initialize($tenant2);
         $this->assertTrue(\Schema::hasTable('users'));
+        $this->assertCount(0, \DB::select('select * from users'));
+    }
+
+    /** @test */
+    public function automatic_seeding_works()
+    {
+        $tenant = Tenant::create(['foo.localhost']);
+        tenancy()->initialize($tenant);
+        $this->assertFalse(\Schema::hasTable('users'));
+
+        config([
+            'tenancy.migrate_after_creation' => true,
+            'tenancy.seed_after_migration' => true,
+            'tenancy.seeder_class' => \Stancl\Tenancy\Tests\Etc\ExampleSeeder::class,
+        ]);
+        $tenant2 = Tenant::create(['bar.localhost']);
+        tenancy()->initialize($tenant2);
+        $this->assertTrue(\Schema::hasTable('users'));
+        $this->assertCount(1, \DB::select('select * from users'));
     }
 
     /** @test */
@@ -270,6 +290,25 @@ class TenantManagerTest extends TestCase
         // }
         // tenancy()->initialize($tenant);
         // $this->assertTrue(\Schema::hasTable('users'));
+    }
+
+    /** @test */
+    public function auto_seeding_is_queued_when_enabled()
+    {
+        Queue::fake();
+
+        config([
+            'tenancy.queue_database_creation' => true,
+            'tenancy.migrate_after_creation' => true,
+            'tenancy.seed_after_migration' => true,
+        ]);
+
+        $tenant = Tenant::new()->save();
+
+        Queue::assertPushedWithChain(QueuedTenantDatabaseCreator::class, [
+            QueuedTenantDatabaseMigrator::class,
+            QueuedTenantDatabaseSeeder::class,
+        ]);
     }
 
     /** @test */
