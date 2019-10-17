@@ -20,7 +20,10 @@ class MySQLDatabaseManager implements TenantDatabaseManager
 
     public function createDatabase(string $name): bool
     {
-        return $this->database->statement("CREATE DATABASE `$name` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        $charset = $this->database->getConfig('charset');
+        $collation = $this->database->getConfig('collation');
+
+        return $this->database->statement("CREATE DATABASE `$name` CHARACTER SET `$charset` COLLATE `$collation`");
     }
 
     public function deleteDatabase(string $name): bool
