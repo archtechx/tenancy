@@ -76,6 +76,21 @@ class TenantManager
                     ]);
                 },
             ];
+
+            if ($this->shouldSeedAfterMigration()) {
+                $seederClassName = $this->getSeederRootClass();
+                $seederClassParameter = ! empty($seederClassName) ? ['--class' => $seederClassName] : [];
+
+                $afterCreating += $this->databaseCreationQueued() ? [
+                    new QueuedTenantDatabaseSeeder($tenant, $seederClassName),
+                ] : [
+                    function () use ($tenant, $seederClassParameter) {
+                        $this->artisan->call('tenants:seed', [
+                            '--tenants' => [$tenant['id']],
+                         ] + $seederClassParameter);
+                    },
+                ];
+            }
         }
 
         $this->database->createDatabase($tenant, $afterCreating);
@@ -321,6 +336,11 @@ class TenantManager
         return $this->app['config']['tenancy.migrate_after_creation'] ?? false;
     }
 
+    public function shouldSeedAfterMigration(): bool
+    {
+        return $this->shouldMigrateAfterCreation() && $this->app['config']['tenancy.seed_after_migration'] ?? false;
+    }
+
     public function databaseCreationQueued(): bool
     {
         return $this->app['config']['tenancy.queue_database_creation'] ?? false;
@@ -329,6 +349,11 @@ class TenantManager
     public function shouldDeleteDatabase(): bool
     {
         return $this->app['config']['tenancy.delete_database_after_tenant_deletion'] ?? false;
+    }
+
+    public function getSeederRootClass()
+    {
+        return $this->app['config']['tenancy.seeder_class'] ?? null;
     }
 
     /**
