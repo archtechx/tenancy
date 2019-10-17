@@ -9,6 +9,7 @@ use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
+use Stancl\Tenancy\Exceptions\TenantDoesNotExistException;
 use Stancl\Tenancy\Exceptions\TenantWithThisIdAlreadyExistsException;
 use Stancl\Tenancy\Tenant;
 
@@ -73,7 +74,13 @@ class RedisStorageDriver implements StorageDriver
 
     public function findById(string $id): Tenant
     {
-        return $this->makeTenant($this->redis->hgetall("tenants:$id"));
+        $data = $this->redis->hgetall("tenants:$id");
+
+        if (! $data) {
+            throw new TenantDoesNotExistException($id);
+        }
+
+        return $this->makeTenant($data);
     }
 
     public function getTenantIdByDomain(string $domain): ?string

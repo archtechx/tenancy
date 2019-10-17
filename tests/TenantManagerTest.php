@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
+use Stancl\Tenancy\Exceptions\TenantDoesNotExistException;
 use Stancl\Tenancy\Exceptions\TenantWithThisIdAlreadyExistsException;
+use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseMigrator;
 use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\TenantManager;
@@ -248,22 +250,32 @@ class TenantManagerTest extends TestCase
     }
 
     /** @test */
-    public function automigration_can_be_queued()
+    public function automigration_is_queued_when_db_creation_is_queued()
     {
         Queue::fake();
 
         config([
+            'tenancy.queue_database_creation' => true,
             'tenancy.migrate_after_creation' => true,
-            'tenancy.queue_automatic_migration' => true,
         ]);
 
         $tenant = Tenant::new()->save();
-        tenancy()->initialize($tenant);
 
-        Queue::assertPushed(QueuedTenantDatabaseMigrator::class);
+        Queue::assertPushedWithChain(QueuedTenantDatabaseCreator::class, [
+            QueuedTenantDatabaseMigrator::class,
+        ]);
 
-        $this->assertFalse(\Schema::hasTable('users'));
-        (new QueuedTenantDatabaseMigrator($tenant))->handle();
-        $this->assertTrue(\Schema::hasTable('users'));
+        // foreach (Queue::pushedJobs() as $job) {
+        //     $job[0]['job']->handle(); // this doesn't execute the chained job
+        // }
+        // tenancy()->initialize($tenant);
+        // $this->assertTrue(\Schema::hasTable('users'));
+    }
+
+    /** @test */
+    public function TenantDoesNotExistException_is_thrown_when_find_is_called_on_an_id_that_does_not_belong_to_any_tenant()
+    {
+        $this->expectException(TenantDoesNotExistException::class);
+        tenancy()->find('gjnfdgf');
     }
 }

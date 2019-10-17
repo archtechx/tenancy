@@ -126,17 +126,21 @@ class DatabaseManager
      * Create a database for a tenant.
      *
      * @param Tenant $tenant
+     * @param \Illuminate\Contracts\Queue\ShouldQueue[]|callable[] $afterCreating
      * @return void
      */
-    public function createDatabase(Tenant $tenant)
+    public function createDatabase(Tenant $tenant, array $afterCreating = [])
     {
         $database = $tenant->getDatabaseName();
         $manager = $this->getTenantDatabaseManager($tenant);
 
         if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
-            QueuedTenantDatabaseCreator::dispatch($manager, $database);
+            QueuedTenantDatabaseCreator::withChain($afterCreating)->dispatch($manager, $database);
         } else {
             $manager->createDatabase($database);
+            foreach ($afterCreating as $callback) {
+                $callback();
+            }
         }
     }
 

@@ -62,17 +62,23 @@ class TenantManager
         $this->ensureTenantCanBeCreated($tenant);
 
         $this->storage->createTenant($tenant);
-        $this->database->createDatabase($tenant);
+
+        /** @var \Illuminate\Contracts\Queue\ShouldQueue[]|callable[] $afterCreating */
+        $afterCreating = [];
 
         if ($this->shouldMigrateAfterCreation()) {
-            if ($this->shouldQueueMigration()) {
-                QueuedTenantDatabaseMigrator::dispatch($tenant);
-            } else {
-                $this->artisan->call('tenants:migrate', [
-                    '--tenants' => [$tenant['id']],
-                ]);
-            }
+            $afterCreating += $this->databaseCreationQueued() ? [
+                new QueuedTenantDatabaseMigrator($tenant),
+            ] : [
+                function () use ($tenant) {
+                    $this->artisan->call('tenants:migrate', [
+                        '--tenants' => [$tenant['id']],
+                    ]);
+                },
+            ];
         }
+
+        $this->database->createDatabase($tenant, $afterCreating);
 
         return $this;
     }
@@ -315,9 +321,9 @@ class TenantManager
         return $this->app['config']['tenancy.migrate_after_creation'] ?? false;
     }
 
-    public function shouldQueueMigration(): bool
+    public function databaseCreationQueued(): bool
     {
-        return $this->app['config']['tenancy.queue_automatic_migration'] ?? false;
+        return $this->app['config']['tenancy.queue_database_creation'] ?? false;
     }
 
     public function shouldDeleteDatabase(): bool
