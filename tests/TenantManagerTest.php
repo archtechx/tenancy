@@ -262,7 +262,7 @@ class TenantManagerTest extends TestCase
         $tenant = Tenant::new()->save();
 
         Queue::assertPushedWithChain(QueuedTenantDatabaseCreator::class, [
-            QueuedTenantDatabaseMigrator::class
+            QueuedTenantDatabaseMigrator::class,
         ]);
 
         // foreach (Queue::pushedJobs() as $job) {
