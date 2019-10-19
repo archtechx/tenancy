@@ -33,6 +33,24 @@ class TenantModel extends Model
         return config('tenancy.storage_drivers.db.custom_columns', []);
     }
 
+    public static function encodeData(array $data)
+    {
+        $result = [];
+        $jsonData = [];
+
+        foreach ($data as $key => $value) {
+            if (in_array($key, static::customColumns(), true)) {
+                $result[$key] = $value;
+            } else {
+                $jsonData[$key] = $value;
+            }
+        }
+
+        $result['data'] = $jsonData ? json_encode($jsonData) : '{}';
+
+        return $result;
+    }
+
     public static function getAllTenants(array $ids)
     {
         $tenants = $ids ? static::findMany($ids) : static::all();

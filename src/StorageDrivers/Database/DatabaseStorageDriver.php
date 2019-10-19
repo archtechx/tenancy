@@ -103,7 +103,9 @@ class DatabaseStorageDriver implements StorageDriver
     public function createTenant(Tenant $tenant): void
     {
         $this->centralDatabase->transaction(function () use ($tenant) {
-            Tenants::create(['id' => $tenant->id, 'data' => json_encode($tenant->data)])->toArray();
+            Tenants::create(array_merge(Tenants::encodeData($tenant->data), [
+                'id' => $tenant->id,
+            ]))->toArray();
 
             $domainData = [];
             foreach ($tenant->domains as $domain) {
