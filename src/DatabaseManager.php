@@ -39,6 +39,7 @@ class DatabaseManager
     public function connect(Tenant $tenant)
     {
         $this->createTenantConnection($tenant->getDatabaseName(), $tenant->getConnectionName());
+        $this->setDefaultConnection($tenant->getConnectionName());
         $this->switchConnection($tenant->getConnectionName());
     }
 
@@ -49,7 +50,21 @@ class DatabaseManager
      */
     public function reconnect()
     {
+        // Opposite order to connect() because we don't
+        // want to ever purge the central connection
+        $this->setDefaultConnection($this->originalDefaultConnectionName);
         $this->switchConnection($this->originalDefaultConnectionName);
+    }
+
+    /**
+     * Change the default database connection config.
+     *
+     * @param string $connection
+     * @return void
+     */
+    public function setDefaultConnection(string $connection)
+    {
+        $this->app['config']['database.default'] = $connection;
     }
 
     /**
@@ -102,7 +117,6 @@ class DatabaseManager
      */
     public function switchConnection(string $connection)
     {
-        $this->app['config']['database.default'] = $connection;
         $this->database->purge();
         $this->database->reconnect($connection);
         $this->database->setDefaultConnection($connection);
