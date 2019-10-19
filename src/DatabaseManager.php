@@ -39,6 +39,7 @@ class DatabaseManager
     public function connect(Tenant $tenant)
     {
         $this->createTenantConnection($tenant->getDatabaseName(), $tenant->getConnectionName());
+        $this->setDefaultConnection($tenant->getConnectionName());
         $this->switchConnection($tenant->getConnectionName());
     }
 
@@ -49,7 +50,10 @@ class DatabaseManager
      */
     public function reconnect()
     {
+        // Opposite order to connect() because we don't
+        // want to ever purge the central connection
         $this->switchConnection($this->originalDefaultConnectionName);
+        $this->setDefaultConnection($this->originalDefaultConnectionName);
     }
 
     /**
