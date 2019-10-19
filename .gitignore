@@ -7,3 +7,4 @@ psysh
 phpunit_var_*.xml
 coverage/
 clover.xml
+.idea/

@@ -103,7 +103,22 @@ class DatabaseStorageDriver implements StorageDriver
     public function createTenant(Tenant $tenant): void
     {
         $this->centralDatabase->transaction(function () use ($tenant) {
-            Tenants::create(['id' => $tenant->id, 'data' => json_encode($tenant->data)])->toArray();
+            $custom_columns = Tenants::customColumns();
+
+            $tenant_data = ['id' => $tenant->id];
+
+            $data = collect($tenant->data)
+                ->reject(function($value, $key) use ($tenant, $custom_columns, &$tenant_data) {
+                    if (isset($custom_columns[$key])) {
+                        $tenant_data[$key] = $value;
+                        return true;
+                    }
+                    return false;
+                })->all();
+
+            $tenant_data['data'] = json_encode($data);
+
+            Tenants::create($tenant_data)->toArray();
 
             $domainData = [];
             foreach ($tenant->domains as $domain) {
