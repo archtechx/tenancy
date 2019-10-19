@@ -45,4 +45,21 @@ class DatabaseManagerTest extends TestCase
         $this->assertSame('tenant', config('database.default'));
         $this->assertSame('bar', config('database.connections.' . config('database.default') . '.foo'));
     }
+
+    /** @test */
+    public function ending_tenancy_doesnt_purge_the_central_connection()
+    {
+        $this->markTestIncomplete('Seems like this only happens on MySQL?');
+        
+        // regression test for https://github.com/stancl/tenancy/pull/189
+        // config(['tenancy.migrate_after_creation' => true]);
+
+        tenancy()->create(['foo.localhost']);
+        tenancy()->init('foo.localhost');
+        tenancy()->end();
+
+        $this->assertNotEmpty(tenancy()->all());
+
+        tenancy()->all()->each->delete();
+    }
 }
