@@ -53,27 +53,8 @@ class Install extends Command
         file_put_contents(app_path('Http/Kernel.php'), $newKernel);
         $this->info('✔️  Set middleware priority');
 
-        if (! file_exists(base_path('routes/tenant.php')) {
-            file_put_contents(
-                base_path('routes/tenant.php'),
-                "<?php
-
-/*
-|--------------------------------------------------------------------------
-| Tenant Routes
-|--------------------------------------------------------------------------
-|
-| Here you can register the tenant routes for your application.
-| These routes are loaded by the TenantRouteServiceProvider
-| with the tenancy and web middleware groups. Good luck!
-|
-*/
-
-Route::get('/app', function () {
-    return 'This is your multi-tenant application. The id of the current tenant is ' . tenant('id');
-});
-"
-            );
+        if (! file_exists(base_path('routes/tenant.php'))) {
+            file_put_contents(base_path('routes/tenant.php'), file_get_contents(__DIR__ . '/../../assets/tenant_routes.php.stub'));
             $this->info('✔️  Created routes/tenant.php');
         } else {
             $this->info('Found routes/tenant.php.');
