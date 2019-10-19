@@ -53,9 +53,10 @@ class Install extends Command
         file_put_contents(app_path('Http/Kernel.php'), $newKernel);
         $this->info('✔️  Set middleware priority');
 
-        file_put_contents(
-            base_path('routes/tenant.php'),
-            "<?php
+        if (! file_exists(base_path('routes/tenant.php')) {
+            file_put_contents(
+                base_path('routes/tenant.php'),
+                "<?php
 
 /*
 |--------------------------------------------------------------------------
@@ -72,8 +73,11 @@ Route::get('/app', function () {
     return 'This is your multi-tenant application. The id of the current tenant is ' . tenant('id');
 });
 "
-        );
-        $this->info('✔️  Created routes/tenant.php');
+            );
+            $this->info('✔️  Created routes/tenant.php');
+        } else {
+            $this->info('Found routes/tenant.php.');
+        }
 
         $this->line('');
         $this->line('This package lets you store data about tenants either in Redis or in a relational database like MySQL. To store data about tenants in a relational database, you need a few database tables.');
