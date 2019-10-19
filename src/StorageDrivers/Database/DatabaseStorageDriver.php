@@ -108,8 +108,8 @@ class DatabaseStorageDriver implements StorageDriver
             $tenant_data = ['id' => $tenant->id];
 
             $data = collect($tenant->data)
-                ->reject(function($value, $key) use ($tenant, $custom_columns, &$tenant_data) {
-                    if (isset($custom_columns[$key])) {
+                ->reject(function($value, $key) use ($custom_columns, &$tenant_data) {
+                    if (in_array($key, $custom_columns)) {
                         $tenant_data[$key] = $value;
                         return true;
                     }
