@@ -137,7 +137,7 @@ class TenantStorageTest extends TestCase
     /** @test */
     public function custom_columns_work_with_db_storage_driver()
     {
-        if (config('tenancy.storage_driver') != 'Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver') {
+        if (config('tenancy.storage_driver') != 'db') {
             $this->markTestSkipped();
         }
 
@@ -153,12 +153,38 @@ class TenantStorageTest extends TestCase
             'foo',
         ]]);
 
-        tenant()->create(['foo.localhost']);
+        tenancy()->create(['foo.localhost']);
         tenancy()->init('foo.localhost');
 
         tenant()->put(['foo' => 'bar', 'abc' => 'xyz']);
-        $this->assertSame(['bar', 'xyz'], tenant()->get(['foo', 'abc']));
+        $this->assertSame(['foo' => 'bar', 'abc' => 'xyz'], tenant()->get(['foo', 'abc']));
 
-        $this->assertSame('bar', DB::connection('central')->table('tenants')->where('id', tenant('id'))->first()->foo);
+        $this->assertSame('bar', \DB::connection('central')->table('tenants')->where('id', tenant('id'))->first()->foo);
+    }
+
+    /** @test */
+    public function custom_columns_can_be_used_on_tenant_create()
+    {
+        if (config('tenancy.storage_driver') != 'db') {
+            $this->markTestSkipped();
+        }
+
+        tenancy()->endTenancy();
+
+        $this->loadMigrationsFrom([
+            '--path' => __DIR__ . '/Etc',
+            '--database' => 'central',
+        ]);
+        config(['database.default' => 'sqlite']); // fix issue caused by loadMigrationsFrom
+
+        config(['tenancy.storage_drivers.db.custom_columns' => [
+            'foo',
+        ]]);
+
+        tenancy()->create(['foo.localhost'], ['foo' => 'bar', 'abc' => 'xyz']);
+        tenancy()->init('foo.localhost');
+
+        $this->assertSame(['foo' => 'bar', 'abc' => 'xyz'], tenant()->get(['foo', 'abc']));
+        $this->assertSame('bar', \DB::connection('central')->table('tenants')->where('id', tenant('id'))->first()->foo);
     }
 }
