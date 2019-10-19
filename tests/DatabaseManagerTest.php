@@ -50,7 +50,7 @@ class DatabaseManagerTest extends TestCase
     public function ending_tenancy_doesnt_purge_the_central_connection()
     {
         $this->markTestIncomplete('Seems like this only happens on MySQL?');
-        
+
         // regression test for https://github.com/stancl/tenancy/pull/189
         // config(['tenancy.migrate_after_creation' => true]);
 
