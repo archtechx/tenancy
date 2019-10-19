@@ -57,6 +57,17 @@ class DatabaseManager
     }
 
     /**
+     * Change the default database connection config.
+     *
+     * @param string $connection
+     * @return void
+     */
+    public function setDefaultConnection(string $connection)
+    {
+        $this->app['config']['database.default'] = $connection;
+    }
+
+    /**
      * Create the tenant database connection.
      *
      * @param string $databaseName
@@ -106,7 +117,6 @@ class DatabaseManager
      */
     public function switchConnection(string $connection)
     {
-        $this->app['config']['database.default'] = $connection;
         $this->database->purge();
         $this->database->reconnect($connection);
         $this->database->setDefaultConnection($connection);
