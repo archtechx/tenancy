@@ -383,6 +383,23 @@ class Tenant implements ArrayAccess
 
         return $result;
     }
+    
+     /**
+     * Get a route specific to this tenant.
+     *
+     * @param String $path
+     * @return string
+     */
+    public function route($path)
+    {
+        $path = $path[0] !== '/' ? '/'.$path : $path;
+
+        $url = $this->app->config->get('app.url');
+        $subdomain = $this->domains[0];
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+
+        return sprintf('%s://%s%s', $scheme, $subdomain, $path);
+    }
 
     public function __get($key)
     {
