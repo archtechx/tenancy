@@ -385,14 +385,14 @@ class Tenant implements ArrayAccess
     }
     
      /**
-     * Get a route specific to this tenant.
+     * Generate a route specific to this tenant with the given path.
      *
      * @param String $path
      * @return string
      */
-    public function route($path)
+    public function route($path): string
     {
-        $path = $path[0] !== '/' ? '/'.$path : $path;
+        $path = $path[0] === '/' ?: sprintf('/%s', $path);
 
         $url = $this->app->config->get('app.url');
         $subdomain = $this->domains[0];
