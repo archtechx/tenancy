@@ -52,8 +52,8 @@ class DatabaseManager
     {
         // Opposite order to connect() because we don't
         // want to ever purge the central connection
-        $this->setDefaultConnection($this->originalDefaultConnectionName);
         $this->switchConnection($this->originalDefaultConnectionName);
+        $this->setDefaultConnection($this->originalDefaultConnectionName);
     }
 
     /**
