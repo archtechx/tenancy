@@ -87,7 +87,7 @@ class TenantManager
                 };
         }
 
-        $afterCreating = array_merge($afterCreating, $this->getUserPostCreationCallbacks());
+        $afterCreating = array_merge($afterCreating, $this->getUserPostCreationActions());
 
         $this->database->createDatabase($tenant, $afterCreating);
 
@@ -337,10 +337,15 @@ class TenantManager
         return $this->shouldMigrateAfterCreation() && $this->app['config']['tenancy.seed_after_migration'] ?? false;
     }
 
-    /** @return callable[] */
-    public function getUserPostCreationCallbacks(): array
+    /**
+     * A user-specified list of callbacks or jobs executed after
+     * creating, migrating, and seeding the tenant database.
+     *
+     * @return \Illuminate\Contracts\Queue\ShouldQueue[]|callable[]
+     */
+    public function getUserPostCreationActions(): array
     {
-        return $this->app['tenancy.postCreationCallbacks'] ?? [];
+        return $this->app['tenancy.postCreationActions'] ?? [];
     }
 
     public function databaseCreationQueued(): bool
