@@ -1,3 +1,7 @@
+<p align="center">
+    <img width="400" height="335" src="/art/logo.png" alt="Tenancy logo" />
+</p>
+
 # [stancl/tenancy](https://tenancy.samuelstancl.me)
 
 [![Laravel 6.x](https://img.shields.io/badge/laravel-6.x-red.svg)](https://laravel.com)
@@ -19,3 +23,8 @@ You won't have to change a thing in your application's code.
 Documentation can be found here: https://tenancy.samuelstancl.me/docs/v2/
 
 The repository with the documentation source code can be found here: [stancl/tenancy-docs](https://github.com/stancl/tenancy-docs).
+
+### Credits
+
+- Created by [Samuel Štancl](https://github.com/stancl)
+- Logo by [Caneco](https://twitter.com/caneco)
