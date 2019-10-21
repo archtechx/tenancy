@@ -87,7 +87,7 @@ class TenantManager
                 };
         }
 
-        $afterCreating = array_merge($afterCreating, $this->getUserPostCreateCallbacks());
+        $afterCreating = array_merge($afterCreating, $this->getUserPostCreationCallbacks());
 
         $this->database->createDatabase($tenant, $afterCreating);
 
@@ -338,7 +338,7 @@ class TenantManager
     }
 
     /** @return callable[] */
-    public function getUserPostCreateCallbacks(): array
+    public function getUserPostCreationCallbacks(): array
     {
         return $this->app['tenancy.postCreationCallbacks'] ?? [];
     }
