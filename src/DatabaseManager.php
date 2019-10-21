@@ -149,11 +149,12 @@ class DatabaseManager
         $manager = $this->getTenantDatabaseManager($tenant);
 
         if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
+            // todo the chain does not get $tenant
             QueuedTenantDatabaseCreator::withChain($afterCreating)->dispatch($manager, $database);
         } else {
             $manager->createDatabase($database);
             foreach ($afterCreating as $callback) {
-                $callback();
+                $callback($tenant);
             }
         }
     }
