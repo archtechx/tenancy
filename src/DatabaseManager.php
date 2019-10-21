@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
@@ -140,7 +141,7 @@ class DatabaseManager
      * Create a database for a tenant.
      *
      * @param Tenant $tenant
-     * @param \Illuminate\Contracts\Queue\ShouldQueue[]|callable[] $afterCreating
+     * @param ShouldQueue[]|callable[] $afterCreating
      * @return void
      */
     public function createDatabase(Tenant $tenant, array $afterCreating = [])
@@ -149,7 +150,17 @@ class DatabaseManager
         $manager = $this->getTenantDatabaseManager($tenant);
 
         if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
-            // todo the chain does not get $tenant
+            $chain = [];
+            foreach ($afterCreating as $item) {
+                if (is_callable($item)) {
+                    $chain[] = $item($tenant); // Callables are called and given $tenant
+                } elseif (is_string($item) && class_exists($item)) {
+                    $chain[] = new $item($tenant); // Classes are instantiated and given $tenant
+                } elseif ($item instanceof ShouldQueue) {
+                    $chain[] = $item;
+                }
+            }
+
             QueuedTenantDatabaseCreator::withChain($afterCreating)->dispatch($manager, $database);
         } else {
             $manager->createDatabase($database);
