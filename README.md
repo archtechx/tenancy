@@ -1,5 +1,5 @@
 <p align="center">
-    <img width="400" height="335" src="/art/logo.png" alt="Tenancy logo" />
+    <a href="https://tenancy.samuelstancl.me"><img width="400" height="335" src="/art/logo.png" alt="Tenancy logo" /></a>
 </p>
 
 <p align="center">
