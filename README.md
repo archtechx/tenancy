@@ -2,13 +2,15 @@
     <img width="400" height="335" src="/art/logo.png" alt="Tenancy logo" />
 </p>
 
-# [stancl/tenancy](https://tenancy.samuelstancl.me)
+<p align="center">
+    <a href="https://laravel.com"><img alt="Laravel 6.x" src="https://img.shields.io/badge/laravel-6.x-red.svg"></a>
+    <a href="https://packagist.org/packages/stancl/tenancy"><img alt="Latest Stable Version" src="https://poser.pugx.org/stancl/tenancy/version"></a>
+    <a href="https://travis-ci.com/stancl/tenancy"><img alt="Travis CI build" src="https://travis-ci.com/stancl/tenancy.svg?branch=2.x"></a>
+    <a href="https://codecov.io/gh/stancl/tenancy"><img alt="codecov" src="https://codecov.io/gh/stancl/tenancy/branch/2.x/graph/badge.svg"></a>
+    <a href="https://gumroad.com/l/tenancy"><img alt="Donate" src="https://img.shields.io/badge/Donate-%3C3-red"></a>
+</p>
 
-[![Laravel 6.x](https://img.shields.io/badge/laravel-6.x-red.svg)](https://laravel.com)
-[![Latest Stable Version](https://poser.pugx.org/stancl/tenancy/version)](https://packagist.org/packages/stancl/tenancy)
-[![Travis CI build](https://travis-ci.com/stancl/tenancy.svg?branch=2.x)](https://travis-ci.com/stancl/tenancy)
-[![codecov](https://codecov.io/gh/stancl/tenancy/branch/2.x/graph/badge.svg)](https://codecov.io/gh/stancl/tenancy)
-[![Donate](https://img.shields.io/badge/Donate-%3C3-red)](https://gumroad.com/l/tenancy)
+<h1><a href="https://tenancy.samuelstancl.me">stancl/tenancy</a></h1>
 
 ### *Automatic multi-tenancy for your Laravel app.*
 
