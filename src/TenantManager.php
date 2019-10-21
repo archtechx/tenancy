@@ -87,6 +87,8 @@ class TenantManager
                 };
         }
 
+        $afterCreating = array_merge($afterCreating, $this->getUserPostCreateCallbacks());
+
         $this->database->createDatabase($tenant, $afterCreating);
 
         return $this;
@@ -333,6 +335,12 @@ class TenantManager
     public function shouldSeedAfterMigration(): bool
     {
         return $this->shouldMigrateAfterCreation() && $this->app['config']['tenancy.seed_after_migration'] ?? false;
+    }
+
+    /** @return callable[] */
+    public function getUserPostCreateCallbacks(): array
+    {
+        return $this->app['tenancy.postCreationCallbacks'] ?? [];
     }
 
     public function databaseCreationQueued(): bool
