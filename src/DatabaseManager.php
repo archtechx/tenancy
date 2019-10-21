@@ -182,7 +182,7 @@ class DatabaseManager
      * @param Tenant $tenant
      * @return TenantDatabaseManager
      */
-    protected function getTenantDatabaseManager(Tenant $tenant): TenantDatabaseManager
+    public function getTenantDatabaseManager(Tenant $tenant): TenantDatabaseManager
     {
         $driver = $this->getDriver($this->getBaseConnection($tenant->getConnectionName()));
 
