@@ -1,0 +1,77 @@
+<?php
+
+namespace Tests;
+
+use Stancl\Tenancy\Tenant;
+use Stancl\Tenancy\TenantManager;
+use Illuminate\Foundation\Testing\TestCase;
+
+abstract class TenancyTestCase extends TestCase
+{
+    use CreatesApplication;
+
+    public $createTenant = true;
+
+    /**
+     * Setup the test environment
+     * before each individual test
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['database.default' => 'sqlite']);
+        config(['tenancy.database.suffix' => '.sqlite']);
+
+        $this->artisan('migrate');
+
+        if ($this->createTenant) {
+            $tenant = $this->createTenant();
+            $this->initTenancy($tenant);
+        }
+    }
+
+    /**
+     * Create a new Tenant
+     *
+     * @param array $domains
+     * @return Tenant
+     */
+    protected function createTenant($domains = ['test.localhost']): Tenant
+    {
+        return Tenant::new()
+            ->withDomains($domains)
+            ->withData(['name' => 'test', 'host' => 'test'])
+            ->save();
+    }
+
+    /**
+     * Change to the new Tenant
+     *
+     * @param Tenant $tenant
+     * @return TenantManager
+     */
+    protected function initTenancy(Tenant $tenant): TenantManager
+    {
+        return tenancy()->initialize($tenant);
+    }
+
+
+    /**
+     * Destroy any tenant and their database
+     * between each individual test-case
+     * to ensure data separation
+     *
+     * @return void
+     */
+    protected function tearDown(): void
+    {
+        config(['tenancy.delete_database_after_tenant_deletion' => true]);
+
+        tenancy()->all()->each->delete();
+
+        parent::tearDown();
+    }
+}

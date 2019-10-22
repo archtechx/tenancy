@@ -34,7 +34,7 @@ class Install extends Command
             '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
             '--tag' => 'config',
             ]);
-        $this->info('✔️  Created config/tenancy.php');
+        $this->info('✔️  Created config/tenancy.php.');
 
         $newKernel = str_replace(
             'protected $middlewarePriority = [',
@@ -51,13 +51,20 @@ class Install extends Command
             \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,", $newKernel);
 
         file_put_contents(app_path('Http/Kernel.php'), $newKernel);
-        $this->info('✔️  Set middleware priority');
+        $this->info('✔️  Set middleware priority.');
 
         if (! file_exists(base_path('routes/tenant.php'))) {
             file_put_contents(base_path('routes/tenant.php'), file_get_contents(__DIR__ . '/../../assets/tenant_routes.php.stub'));
-            $this->info('✔️  Created routes/tenant.php');
+            $this->info('✔️  Created routes/tenant.php.');
         } else {
             $this->info('Found routes/tenant.php.');
+        }
+
+        if (! file_exists(base_path('tests/TenancyTestCase.php'))) {
+            file_put_contents(base_path('tests/TenancyTestCase.php'), file_get_contents(__DIR__ . '/../../assets/tenancy_test_case.php.stub'));
+            $this->info('✔️  Created tests/TenancyTestCase.php.');
+        } else {
+            $this->info('Found tests/TenancyTestCase.php.');
         }
 
         $this->line('');
