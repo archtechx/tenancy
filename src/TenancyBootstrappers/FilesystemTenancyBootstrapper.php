@@ -38,7 +38,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         $suffix = $this->app['config']['tenancy.filesystem.suffix_base'] . $tenant->id;
 
         // storage_path()
-        if ($this->app['config']['tenancy.filesystem.suffix_storage_path'] ?? false) {
+        if ($this->app['config']['tenancy.filesystem.suffix_storage_path'] ?? true) {
             $this->app->useStoragePath($this->originalPaths['storage'] . "/{$suffix}");
         }
 
