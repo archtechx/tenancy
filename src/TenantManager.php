@@ -259,6 +259,8 @@ class TenantManager
 
     public function endTenancy(): self
     {
+        if (! $this->initialized) { return $this; }
+
         $prevented = $this->event('ending');
 
         foreach ($this->tenancyBootstrappers($prevented) as $bootstrapper) {
