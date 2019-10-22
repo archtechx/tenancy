@@ -259,7 +259,9 @@ class TenantManager
 
     public function endTenancy(): self
     {
-        if (! $this->initialized) { return $this; }
+        if (! $this->initialized) {
+            return $this;
+        }
 
         $prevented = $this->event('ending');
 
