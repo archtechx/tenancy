@@ -8,6 +8,7 @@ use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Collection;
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
+use Stancl\Tenancy\Exceptions\NotImplementedException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseMigrator;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseSeeder;
@@ -198,6 +199,26 @@ class TenantManager
     public function findByDomain(string $domain): Tenant
     {
         return $this->storage->findByDomain($domain);
+    }
+
+    /**
+     * Find a tenant using an arbitrary key.
+     *
+     * @param string $key
+     * @param mixed $value
+     * @return Tenant
+     * @throws TenantCouldNotBeIdentifiedException
+     * @throws NotImplementedException
+     */
+    public function findBy(string $key, $value): Tenant
+    {
+        if (! method_exists($this->storage, 'findBy')) {
+            throw new NotImplementedException(get_class($this->storage), 'findBy',
+                "This method was added to storage drivers provided by the package in 2.2.0 and will be part of the StorageDriver contract in 3.0.0."
+            );
+        }
+
+        return $this->storage->find($key, $value);
     }
 
     /**
