@@ -83,7 +83,7 @@ class DatabaseStorageDriver implements StorageDriver
     {
         // [WIP] [TODO] Temporary implementation, key has to be a custom column.
         $tenant = Tenant::where($key, $value)->first();
-        
+
         if (! $tenant) {
             throw new TenantDoesNotExistException($value, $key);
         }
