@@ -7,6 +7,7 @@ namespace Stancl\Tenancy;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Traits\ForwardsCalls;
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 use Stancl\Tenancy\Exceptions\NotImplementedException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
@@ -18,6 +19,8 @@ use Stancl\Tenancy\Jobs\QueuedTenantDatabaseSeeder;
  */
 class TenantManager
 {
+    use ForwardsCalls;
+
     /**
      * The current tenant.
      *
@@ -425,5 +428,14 @@ class TenantManager
 
             return $prevented;
         }, []);
+    }
+
+    public function __call($method, $parameters)
+    {
+        if (Str::startsWith($method, 'findBy')) {
+            return $this->findBy(Str::snake(substr($method, 6)), $parameters[0]);
+        }
+
+        static::throwBadMethodCallException($method);
     }
 }
