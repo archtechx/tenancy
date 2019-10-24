@@ -70,6 +70,28 @@ class DatabaseStorageDriver implements StorageDriver
             ->withDomains($this->getTenantDomains($id));
     }
 
+    /**
+     * Find a tenant using an arbitrary key.
+     *
+     * @param string $key
+     * @param mixed $value
+     * @return Tenant
+     * @throws TenantCouldNotBeIdentifiedException
+     * @throws NotImplementedException
+     */
+    public function findBy(string $key, $value): Tenant
+    {
+        // [WIP] [TODO] Temporary implementation, key has to be a custom column.
+        $tenant = Tenant::where($key, $value)->first();
+        
+        if (! $tenant) {
+            throw new TenantDoesNotExistException($value, $key);
+        }
+
+        return Tenant::fromStorage($tenant->decoded())
+            ->withDomains($this->getTenantDomains($tenant->id));
+    }
+
     protected function getTenantDomains($id)
     {
         return Domains::where('tenant_id', $id)->get()->map(function ($model) {
@@ -193,4 +215,24 @@ class DatabaseStorageDriver implements StorageDriver
         $tenant = $tenant ?? $this->currentTenant();
         Tenants::find($tenant->id)->putMany($kvPairs);
     }
+}
+
+class TenantModelTODO
+{
+    public static function makeTenant($data, $domains)
+    {
+        // TODO
+    }
+
+    public static function findBy(string $key, $value)
+    {
+        // TODO
+    }
+
+    // TODO Use this w/ DB builder calls instead of an Eloquent model
+}
+
+class DomainModelTODO
+{
+    // TODO Use this w/ DB builder calls instead of an Eloquent model
 }
