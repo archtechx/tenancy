@@ -217,7 +217,7 @@ class TenantManager
     {
         if (! method_exists($this->storage, 'findBy')) {
             throw new NotImplementedException(get_class($this->storage), 'findBy',
-                "This method was added to storage drivers provided by the package in 2.2.0 and will be part of the StorageDriver contract in 3.0.0."
+                'This method was added to storage drivers provided by the package in 2.2.0 and will be part of the StorageDriver contract in 3.0.0.'
             );
         }
 
