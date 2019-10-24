@@ -6,6 +6,7 @@ use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\TenantManager;
 
 if (! \function_exists('tenancy')) {
+    /** @return TenantManager|mixed */
     function tenancy($key = null)
     {
         if ($key) {
@@ -17,6 +18,7 @@ if (! \function_exists('tenancy')) {
 }
 
 if (! \function_exists('tenant')) {
+    /** @return Tenant|mixed */
     function tenant($key = null)
     {
         if (! is_null($key)) {
@@ -28,6 +30,7 @@ if (! \function_exists('tenant')) {
 }
 
 if (! \function_exists('tenant_asset')) {
+    /** @return string */
     function tenant_asset($asset)
     {
         return route('stancl.tenancy.asset', ['path' => $asset]);
