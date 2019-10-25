@@ -7,6 +7,7 @@ namespace Stancl\Tenancy;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Illuminate\Support\Traits\ForwardsCalls;
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 use Stancl\Tenancy\Exceptions\NotImplementedException;
