@@ -64,6 +64,8 @@ class TenantManager
      */
     public function createTenant(Tenant $tenant): self
     {
+        $this->event('creating', $tenant);
+
         $this->ensureTenantCanBeCreated($tenant);
 
         $this->storage->createTenant($tenant);
@@ -95,6 +97,8 @@ class TenantManager
 
         $this->database->createDatabase($tenant, $afterCreating);
 
+        $this->event('created', $tenant);
+
         return $this;
     }
 
@@ -106,11 +110,15 @@ class TenantManager
      */
     public function deleteTenant(Tenant $tenant): self
     {
+        $this->event('deleting', $tenant);
+
         $this->storage->deleteTenant($tenant);
 
         if ($this->shouldDeleteDatabase()) {
             $this->database->deleteDatabase($tenant);
         }
+
+        $this->event('deleted', $tenant);
 
         return $this;
     }
@@ -272,20 +280,20 @@ class TenantManager
      */
     public function bootstrapTenancy(Tenant $tenant): self
     {
-        $prevented = $this->event('bootstrapping');
+        $prevented = $this->event('bootstrapping', $tenant);
 
         foreach ($this->tenancyBootstrappers($prevented) as $bootstrapper) {
             $this->app[$bootstrapper]->start($tenant);
         }
 
-        $this->event('bootstrapped');
+        $this->event('bootstrapped', $tenant);
 
         return $this;
     }
 
     public function endTenancy(): self
     {
-        $prevented = $this->event('ending');
+        $prevented = $this->event('ending', $this->getTenant());
 
         foreach ($this->tenancyBootstrappers($prevented) as $bootstrapper) {
             $this->app[$bootstrapper]->end();
@@ -419,14 +427,15 @@ class TenantManager
      * Execute event listeners.
      *
      * @param string $name
+     * @param mixed ...$args
      * @return string[]
      */
-    protected function event(string $name): array
+    protected function event(string $name, ...$args): array
     {
-        return array_reduce($this->eventListeners[$name] ?? [], function ($prevented, $listener) {
-            $prevented = array_merge($prevented, $listener($this) ?? []);
+        return array_reduce($this->eventListeners[$name] ?? [], function ($results, $listener) use ($args) {
+            $results = array_merge($results, $listener($this, ...$args) ?? []);
 
-            return $prevented;
+            return $results;
         }, []);
     }
 
