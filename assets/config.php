@@ -98,5 +98,5 @@ return [
     'queue_database_deletion' => false,
     'delete_database_after_tenant_deletion' => false, // delete the tenant's database after deleting the tenant
     'unique_id_generator' => Stancl\Tenancy\UniqueIDGenerators\UUIDGenerator::class,
-    'push_middleware_to_global_stack' => true,
+    'push_initialization_middleware_to_global_stack' => true,
 ];
