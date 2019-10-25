@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
+use Exception;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Collection;
@@ -224,6 +225,14 @@ class TenantManager
      */
     public function findBy(string $key, $value): Tenant
     {
+        if ($key === null) {
+            throw new Exception('No key supplied.');
+        }
+
+        if ($value === null) {
+            throw new Exception('No value supplied.');
+        }
+
         if (! method_exists($this->storage, 'findBy')) {
             throw new NotImplementedException(get_class($this->storage), 'findBy',
                 'This method was added to storage drivers provided by the package in 2.2.0 and will be part of the StorageDriver contract in 3.0.0.'
