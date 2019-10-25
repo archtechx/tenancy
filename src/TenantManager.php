@@ -230,7 +230,7 @@ class TenantManager
             );
         }
 
-        return $this->storage->find($key, $value);
+        return $this->storage->findBy($key, $value);
     }
 
     /**
