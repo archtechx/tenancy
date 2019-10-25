@@ -161,11 +161,15 @@ class DatabaseManager
                 }
             }
 
-            QueuedTenantDatabaseCreator::withChain($afterCreating)->dispatch($manager, $database);
+            QueuedTenantDatabaseCreator::withChain($chain)->dispatch($manager, $database);
         } else {
             $manager->createDatabase($database);
-            foreach ($afterCreating as $callback) {
-                $callback($tenant);
+            foreach ($afterCreating as $item) {
+                if (is_object($item)) {
+                    $item->handle($tenant);
+                } else {
+                    $item($tenant);
+                }
             }
         }
     }
