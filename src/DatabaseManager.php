@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
+use Closure;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Illuminate\Foundation\Application;
@@ -165,7 +166,7 @@ class DatabaseManager
         } else {
             $manager->createDatabase($database);
             foreach ($afterCreating as $item) {
-                if (is_object($item)) {
+                if (is_object($item) && ! $item instanceof Closure) {
                     $item->handle($tenant);
                 } else {
                     $item($tenant);
