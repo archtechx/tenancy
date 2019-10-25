@@ -93,7 +93,7 @@ return [
     'migrate_after_creation' => false, // run migrations after creating a tenant
     'seed_after_migration' => false, // should the seeder run after automatic migration
     'seeder_parameters' => [
-        '--class' => 'DatabaseSeeder', // root seeder class to run after automatic migrations, eg: 'DatabaseSeeder'
+        '--class' => 'DatabaseSeeder', // root seeder class to run after automatic migrations, e.g.: 'DatabaseSeeder'
     ],
     'queue_database_deletion' => false,
     'delete_database_after_tenant_deletion' => false, // delete the tenant's database after deleting the tenant
