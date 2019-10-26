@@ -11,7 +11,7 @@ return [
             'custom_columns' => [
                 // 'plan',
             ],
-            'connection' => null,
+            'connection' => null, // Your central database connection. Set to null to use the default connection.
             'table_names' => [
                 'TenantModel' => 'tenants',
                 'DomainModel' => 'domains',
@@ -27,7 +27,7 @@ return [
         // 'localhost',
     ],
     'database' => [
-        'based_on' => null, // The connection that will be used as a base for the dynamically created tenant connection.
+        'based_on' => null, // The connection that will be used as a base for the dynamically created tenant connection. Set to null to use the default connection.
         'prefix' => 'tenant',
         'suffix' => '',
     ],
