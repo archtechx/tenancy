@@ -42,7 +42,7 @@ final class MigrateFresh extends Command
                     '--database' => $tenant->getConnectionName(),
                     '--force' => true,
                 ]));
-    
+
                 $this->info('Migrating.');
                 $this->callSilent('tenants:migrate', [
                     '--tenants' => [$tenant->id],
