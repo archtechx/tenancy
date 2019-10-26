@@ -33,30 +33,23 @@ final class MigrateFresh extends Command
      */
     public function handle()
     {
-        $originalTenant = tenancy()->getTenant();
-        $this->info('Dropping tables.');
-
         tenancy()->all($this->option('tenants'))->each(function ($tenant) {
             $this->line("Tenant: {$tenant->id}");
 
-            tenancy()->initialize($tenant);
-
-            $this->call('db:wipe', array_filter([
-                '--database' => $tenant->getConnectionName(),
-                '--force' => true,
-            ]));
-
-            $this->call('tenants:migrate', [
-                '--tenants' => [$tenant->id],
-            ]);
-
-            tenancy()->end();
+            $tenant->run(function ($tenant) {
+                $this->info('Dropping tables.');
+                $this->call('db:wipe', array_filter([
+                    '--database' => $tenant->getConnectionName(),
+                    '--force' => true,
+                ]));
+    
+                $this->info('Migrating.');
+                $this->callSilent('tenants:migrate', [
+                    '--tenants' => [$tenant->id],
+                ]);
+            });
         });
 
         $this->info('Done.');
-
-        if ($originalTenant) {
-            tenancy()->initialize($originalTenant);
-        }
     }
 }
