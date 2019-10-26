@@ -95,8 +95,6 @@ class TenantManager
                 };
         }
 
-        $afterCreating = array_merge($afterCreating, $this->getUserPostCreationActions());
-
         $this->database->createDatabase($tenant, $afterCreating);
 
         $this->event('created', $tenant);
@@ -379,17 +377,6 @@ class TenantManager
         return $this->shouldMigrateAfterCreation() && $this->app['config']['tenancy.seed_after_migration'] ?? false;
     }
 
-    /**
-     * A user-specified list of callbacks or jobs executed after
-     * creating, migrating, and seeding the tenant database.
-     *
-     * @return \Illuminate\Contracts\Queue\ShouldQueue[]|callable[]
-     */
-    public function getUserPostCreationActions(): array
-    {
-        return $this->app['tenancy.postCreationActions'] ?? [];
-    }
-
     public function databaseCreationQueued(): bool
     {
         return $this->app['config']['tenancy.queue_database_creation'] ?? false;
@@ -440,7 +427,7 @@ class TenantManager
      * @param mixed ...$args
      * @return string[]
      */
-    protected function event(string $name, ...$args): array
+    public function event(string $name, ...$args): array
     {
         return array_reduce($this->eventListeners[$name] ?? [], function ($results, $listener) use ($args) {
             $results = array_merge($results, $listener($this, ...$args) ?? []);

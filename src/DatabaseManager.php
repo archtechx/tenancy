@@ -25,10 +25,14 @@ class DatabaseManager
     /** @var BaseDatabaseManager */
     protected $database;
 
-    public function __construct(Application $app, BaseDatabaseManager $database)
+    /** @var TenantManager */
+    protected $tenancy;
+
+    public function __construct(Application $app, BaseDatabaseManager $database, TenantManager $tenantManager)
     {
         $this->app = $app;
         $this->database = $database;
+        $this->tenancy = $tenantManager;
         $this->originalDefaultConnectionName = $app['config']['database.default'];
     }
 
@@ -150,6 +154,11 @@ class DatabaseManager
         $database = $tenant->getDatabaseName();
         $manager = $this->getTenantDatabaseManager($tenant);
 
+        $afterCreating = array_merge(
+            $afterCreating,
+            $this->tenancy->event('database.creating', $database, $tenant)
+        );
+
         if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
             $chain = [];
             foreach ($afterCreating as $item) {
@@ -173,6 +182,8 @@ class DatabaseManager
                 }
             }
         }
+
+        $this->tenancy->event('database.created', $database, $tenant);
     }
 
     /**
@@ -186,11 +197,15 @@ class DatabaseManager
         $database = $tenant->getDatabaseName();
         $manager = $this->getTenantDatabaseManager($tenant);
 
+        $this->event('database.deleting', $database, $tenant);
+
         if ($this->app['config']['tenancy.queue_database_deletion'] ?? false) {
             QueuedTenantDatabaseDeleter::dispatch($manager, $database);
         } else {
             $manager->deleteDatabase($database);
         }
+
+        $this->event('database.deleted', $database, $tenant);
     }
 
     /**
