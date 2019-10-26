@@ -162,9 +162,7 @@ class DatabaseManager
         if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
             $chain = [];
             foreach ($afterCreating as $item) {
-                if (is_callable($item)) {
-                    $chain[] = $item($tenant); // Callables are called and given $tenant
-                } elseif (is_string($item) && class_exists($item)) {
+                if (is_string($item) && class_exists($item)) {
                     $chain[] = new $item($tenant); // Classes are instantiated and given $tenant
                 } elseif ($item instanceof ShouldQueue) {
                     $chain[] = $item;
