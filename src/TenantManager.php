@@ -67,7 +67,7 @@ class TenantManager
      */
     public function createTenant(Tenant $tenant): self
     {
-        $this->event('creating', $tenant);
+        $this->event('tenant.creating', $tenant);
 
         $this->ensureTenantCanBeCreated($tenant);
 
@@ -98,7 +98,7 @@ class TenantManager
 
         $this->database->createDatabase($tenant, $afterCreating);
 
-        $this->event('created', $tenant);
+        $this->event('tenant.created', $tenant);
 
         return $this;
     }
@@ -111,7 +111,7 @@ class TenantManager
      */
     public function deleteTenant(Tenant $tenant): self
     {
-        $this->event('deleting', $tenant);
+        $this->event('tenant.deleting', $tenant);
 
         $this->storage->deleteTenant($tenant);
 
@@ -119,7 +119,7 @@ class TenantManager
             $this->database->deleteDatabase($tenant);
         }
 
-        $this->event('deleted', $tenant);
+        $this->event('tenant.deleted', $tenant);
 
         return $this;
     }
