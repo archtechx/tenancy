@@ -13,8 +13,8 @@ return [
             ],
             'connection' => null, // Your central database connection. Set to null to use the default connection.
             'table_names' => [
-                'TenantModel' => 'tenants',
-                'DomainModel' => 'domains',
+                'tenants' => 'tenants',
+                'domains' => 'domains',
             ],
         ],
         'redis' => [
