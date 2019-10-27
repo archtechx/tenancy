@@ -84,8 +84,6 @@ class RedisStorageDriver implements StorageDriver, CanDeleteKeys
         return $this->makeTenant($data);
     }
 
-    // TODO find by *
-
     public function getTenantIdByDomain(string $domain): ?string
     {
         return $this->redis->hget("domains:$domain", 'tenant_id') ?: null;

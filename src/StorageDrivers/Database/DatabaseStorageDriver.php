@@ -77,11 +77,11 @@ class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys
      * @param string $key
      * @param mixed $value
      * @return Tenant
-     * @throws TenantCouldNotBeIdentifiedException // todo ?
+     * @throws TenantDoesNotExistException
      */
     public function findBy(string $key, $value): Tenant
     {
-        // [WIP] [TODO] Temporary implementation, key has to be a custom column.
+        // The key has to be a custom column. It's recommended to set up an index
         $tenant = Tenants::where($key, $value)->first();
 
         if (! $tenant) {
