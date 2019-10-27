@@ -78,7 +78,9 @@ class TenancyServiceProvider extends ServiceProvider
             __DIR__ . '/../assets/migrations/' => database_path('migrations'),
         ], 'migrations');
 
-        $this->app->make(Kernel::class)->prependMiddleware(Middleware\InitializeTenancy::class);
+        if ($this->app['config']['tenancy.push_initialization_middleware_to_global_stack'] ?? true) {
+            $this->app->make(Kernel::class)->prependMiddleware(Middleware\InitializeTenancy::class);
+        }
 
         /*
          * Since tenancy is initialized in the global middleware stack, this
