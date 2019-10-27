@@ -28,12 +28,24 @@ class DatabaseManager
     /** @var TenantManager */
     protected $tenancy;
 
-    public function __construct(Application $app, BaseDatabaseManager $database, TenantManager $tenantManager)
+    public function __construct(Application $app, BaseDatabaseManager $database)
     {
         $this->app = $app;
         $this->database = $database;
-        $this->tenancy = $tenantManager;
         $this->originalDefaultConnectionName = $app['config']['database.default'];
+    }
+
+    /**
+     * Set the TenantManager instance, used to dispatch tenancy events.
+     *
+     * @param TenantManager $tenantManager
+     * @return self
+     */
+    public function withTenantManager(TenantManager $tenantManager): self
+    {
+        $this->tenancy = $tenantManager;
+
+        return $this;
     }
 
     /**

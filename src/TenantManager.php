@@ -54,7 +54,7 @@ class TenantManager
         $this->app = $app;
         $this->storage = $storage;
         $this->artisan = $artisan;
-        $this->database = $database;
+        $this->database = $database->withTenantManager($this);
 
         $this->bootstrapFeatures();
     }
