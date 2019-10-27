@@ -365,12 +365,12 @@ class Tenant implements ArrayAccess
 
         if (! $this->storage instanceof CanDeleteKeys) {
             throw new NotImplementedException(get_class($this->storage), 'deleteMany',
-                'This method was added to storage drivers provided by the package in 2.2.0 and will be part of the StorageDriver contract in 3.0.0.'    
+                'This method was added to storage drivers provided by the package in 2.2.0 and will be part of the StorageDriver contract in 3.0.0.'
             );
         } else {
             $this->storage->deleteMany($keys);
         }
-        
+
         return $this;
     }
 
