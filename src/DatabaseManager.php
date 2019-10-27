@@ -207,7 +207,7 @@ class DatabaseManager
         $database = $tenant->getDatabaseName();
         $manager = $this->getTenantDatabaseManager($tenant);
 
-        $this->event('database.deleting', $database, $tenant);
+        $this->tenancy->event('database.deleting', $database, $tenant);
 
         if ($this->app['config']['tenancy.queue_database_deletion'] ?? false) {
             QueuedTenantDatabaseDeleter::dispatch($manager, $database);
@@ -215,7 +215,7 @@ class DatabaseManager
             $manager->deleteDatabase($database);
         }
 
-        $this->event('database.deleted', $database, $tenant);
+        $this->tenancy->event('database.deleted', $database, $tenant);
     }
 
     /**

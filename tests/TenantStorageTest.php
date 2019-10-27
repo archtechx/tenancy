@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
-use Stancl\Tenancy\StorageDrivers\Database\TenantModel;
+use Stancl\Tenancy\StorageDrivers\Database\TenantRepository;
 use Stancl\Tenancy\Tenant;
 
 class TenantStorageTest extends TestCase
@@ -112,10 +112,11 @@ class TenantStorageTest extends TestCase
     }
 
     /** @test */
-    public function tenant_model_uses_correct_connection()
+    public function tenant_repository_uses_correct_connection()
     {
+        config(['database.connections.foo' => config('database.connections.sqlite')]);
         config(['tenancy.storage_drivers.db.connection' => 'foo']);
-        $this->assertSame('foo', (new TenantModel)->getConnectionName());
+        $this->assertSame('foo', app(TenantRepository::class)->database->getName());
     }
 
     /** @test */
@@ -155,6 +156,9 @@ class TenantStorageTest extends TestCase
 
         tenancy()->create(['foo.localhost']);
         tenancy()->init('foo.localhost');
+
+        tenant()->put('foo', '111');
+        $this->assertSame('111', tenant()->get('foo'));
 
         tenant()->put(['foo' => 'bar', 'abc' => 'xyz']);
         $this->assertSame(['foo' => 'bar', 'abc' => 'xyz'], tenant()->get(['foo', 'abc']));

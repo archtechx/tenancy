@@ -38,8 +38,8 @@ class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys
     {
         $this->app = $app;
         $this->centralDatabase = $this->getCentralConnection();
-        $this->tenants = new TenantRepository($this->centralDatabase, $config);
-        $this->domains = new DomainRepository($this->centralDatabase, $config);
+        $this->tenants = new TenantRepository($config);
+        $this->domains = new DomainRepository($config);
     }
 
     /**
@@ -121,11 +121,7 @@ class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys
     public function createTenant(Tenant $tenant): void
     {
         $this->centralDatabase->transaction(function () use ($tenant) {
-            $this->tenants->insert(array_merge(
-                $this->tenants->encodeData($tenant->data),
-                [] // ['id' => $tenant->id] // todo remove this line if things work
-            ));
-
+            $this->tenants->insert($tenant);
             $this->domains->insertTenantDomains($tenant);
         });
     }
@@ -142,7 +138,7 @@ class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys
     public function deleteTenant(Tenant $tenant): void
     {
         $this->centralDatabase->transaction(function () use ($tenant) {
-            $this->tenants->find($tenant)->delete();
+            $this->tenants->where('id', $tenant->id)->delete();
             $this->domains->where('tenant_id', $tenant->id)->delete();
         });
     }
@@ -156,7 +152,8 @@ class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys
     public function all(array $ids = []): array
     {
         return $this->tenants->all($ids)->map(function ($data) {
-            return Tenant::fromStorage($data)->withDomains($this->domains->getTenantDomains($data['id']));
+            return Tenant::fromStorage($data)
+                ->withDomains($this->domains->getTenantDomains($data['id']));
         })->toArray();
     }
 

@@ -10,21 +10,30 @@ use Illuminate\Database\Query\Builder;
 abstract class Repository
 {
     /** @var Connection */
-    protected $database;
+    public $database;
+
+    /** @var string */
+    protected $tableName;
 
     /** @var Builder */
-    protected $table;
+    private $table;
 
-    public function __construct(Connection $database, ConfigRepository $config)
+    public function __construct(ConfigRepository $config)
     {
-        $this->database = $database;
-        $this->table = $database->table($this->getTable($config));
+        $this->database = DatabaseStorageDriver::getCentralConnection();
+        $this->tableName = $this->getTable($config);
+        $this->table = $this->database->table($this->tableName);
+    }
+
+    public function table()
+    {
+        return $this->table->newQuery()->from($this->tableName);
     }
 
     abstract public function getTable(ConfigRepository $config);
 
     public function __call($method, $parameters)
     {
-        return $this->table->$method(...$parameters);
+        return $this->table()->$method(...$parameters);
     }
 }

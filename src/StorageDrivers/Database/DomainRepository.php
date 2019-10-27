@@ -7,7 +7,7 @@ use Stancl\Tenancy\Tenant;
 
 class DomainRepository extends Repository
 {
-    public function getTenantIdByDomain(string $domain): string
+    public function getTenantIdByDomain(string $domain): ?string
     {
         return $this->where('domain', $domain)->first()->tenant_id ?? null;
     }
@@ -20,7 +20,7 @@ class DomainRepository extends Repository
     public function getTenantDomains($tenant)
     {
         $id = $tenant instanceof Tenant ? $tenant->id : $tenant;
-        return $this->where('tenant_id', $id)->get('domain')->toArray();
+        return $this->where('tenant_id', $id)->get('domain')->pluck('domain')->all();
     }
 
     public function insertTenantDomains(Tenant $tenant)
@@ -32,11 +32,11 @@ class DomainRepository extends Repository
 
     public function updateTenantDomains(Tenant $tenant)
     {
-        $originalDomains = $this->domains->getTenantDomains($tenant);
+        $originalDomains = $this->getTenantDomains($tenant);
         $deletedDomains = array_diff($originalDomains, $tenant->domains);
-        $newDomains = array_intersect($originalDomains, $tenant->domains);
+        $newDomains = array_diff($tenant->domains, $originalDomains);
 
-        $this->domains->whereIn('domain', $deletedDomains)->delete();
+        $this->whereIn('domain', $deletedDomains)->delete();
 
         foreach ($newDomains as $domain) {
             $this->insert([

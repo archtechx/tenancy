@@ -4,21 +4,26 @@ namespace Stancl\Tenancy\StorageDrivers\Database;
 
 use Illuminate\Config\Repository as ConfigRepository;
 use Stancl\Tenancy\Tenant;
+use stdClass;
 
 class TenantRepository extends Repository
 {
     public function all($ids = [])
     {
         if ($ids) {
-            return $this->whereIn('id', $ids)->get();
+            $data = $this->whereIn('id', $ids)->get();
+        } else {
+            $data = $this->table()->get();
         }
 
-        return $this->table->get();
+        return $data->map(function (stdClass $obj) {
+            return $this->decodeData((array) $obj);
+        });
     }
 
     public function find($tenant)
     {
-        return $this->table->find(
+        return (array) $this->table()->find(
             $tenant instanceof Tenant ? $tenant->id : $tenant
         );
     }
@@ -35,17 +40,17 @@ class TenantRepository extends Repository
 
     public function get(string $key, Tenant $tenant)
     {
-        return $this->decodedData($tenant)[$key];
+        return $this->decodeFreshDataForTenant($tenant)[$key] ?? null;
     }
 
     public function getMany(array $keys, Tenant $tenant)
     {
-        $decodedData = $this->decodedData($tenant);
+        $decodedData = $this->decodeFreshDataForTenant($tenant);
 
         $result = [];
         
         foreach ($keys as $key) {
-            $result[$key] = $decodedData[$key];
+            $result[$key] = $decodedData[$key] ?? null;
         }
 
         return $result;
@@ -58,7 +63,7 @@ class TenantRepository extends Repository
         if (in_array($key, static::customColumns())) {
             $record->update([$key => $value]);
         } else {
-            $data = json_decode($record->first(static::dataColumn()), true);
+            $data = json_decode($record->first(static::dataColumn())->data, true);
             $data[$key] = $value;
 
             $record->update([static::dataColumn() => $data]);
@@ -70,11 +75,11 @@ class TenantRepository extends Repository
         $record = $this->where('id', $tenant->id);
 
         $data = [];
-        $jsonData = json_decode($record->first(static::dataColumn()), true);
+        $jsonData = json_decode($record->first(static::dataColumn())->data, true);
         foreach ($kvPairs as $key => $value) {
             if (in_array($key, static::customColumns())) {
                 $data[$key] = $value;
-                return;
+                continue;
             } else {
                 $jsonData[$key] = $value;
             }
@@ -90,7 +95,7 @@ class TenantRepository extends Repository
         $record = $this->where('id', $tenant->id);
 
         $data = [];
-        $jsonData = json_decode($record->first(static::dataColumn()), true);
+        $jsonData = json_decode($record->first(static::dataColumn())->data, true);
         foreach ($keys as $key => $key) {
             if (in_array($key, static::customColumns())) {
                 $data[$key] = null;
@@ -105,10 +110,10 @@ class TenantRepository extends Repository
         $record->update($data);
     }
 
-    public function decodedData($tenant): array
+    public function decodeFreshDataForTenant(Tenant $tenant): array
     {
         return $this->decodeData(
-            $this->table->where('id', $tenant->id)->get()->toArray()
+            (array) $this->table()->where('id', $tenant->id)->first()
         );
     }
 
@@ -124,6 +129,14 @@ class TenantRepository extends Repository
         }
 
         return $columns;
+    }
+
+    public function insert(Tenant $tenant)
+    {
+        $this->table()->insert(array_merge(
+            $this->encodeData($tenant->data),
+            ['id' => $tenant->id]
+        ));
     }
 
     public static function encodeData(array $data): array
