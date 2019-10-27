@@ -6,6 +6,7 @@ namespace Stancl\Tenancy\StorageDrivers;
 
 use Illuminate\Contracts\Redis\Factory as Redis;
 use Illuminate\Foundation\Application;
+use Stancl\Tenancy\Contracts\Future\CanDeleteKeys;
 use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
@@ -13,7 +14,7 @@ use Stancl\Tenancy\Exceptions\TenantDoesNotExistException;
 use Stancl\Tenancy\Exceptions\TenantWithThisIdAlreadyExistsException;
 use Stancl\Tenancy\Tenant;
 
-class RedisStorageDriver implements StorageDriver
+class RedisStorageDriver implements StorageDriver, CanDeleteKeys
 {
     /** @var Application */
     protected $app;
@@ -231,5 +232,12 @@ class RedisStorageDriver implements StorageDriver
         }
 
         $this->redis->hmset("tenants:{$tenant->id}", $kvPairs);
+    }
+
+    public function deleteMany(array $keys, Tenant $tenant = null): void
+    {
+        $tenant = $tenant ?? $this->tenant();
+
+        $this->redis->hdel("tenants:{$tenant->id}", $keys);
     }
 }

@@ -139,4 +139,23 @@ class TenantModel extends Model
             $this->dataColumn() => json_encode($jsonObj),
         ]));
     }
+
+    public function deleteKeys(array $keys)
+    {
+        $customColumns = [];
+        $jsonObj = json_decode($this->{$this->dataColumn()});
+
+        foreach ($keys as $key) {
+            if (in_array($key, $this->customColumns())) {
+                $customColumns[$key] = null;
+                continue;
+            }
+
+            unset($jsonObj->$key);
+        }
+
+        $this->update(array_merge($customColumns, [
+            $this->dataColumn() => json_encode($jsonObj),
+        ]));
+    }
 }

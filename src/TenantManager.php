@@ -231,7 +231,7 @@ class TenantManager
             throw new Exception('No value supplied.');
         }
 
-        if (! method_exists($this->storage, 'findBy')) {
+        if (! method_exists($this->storage, 'findBy')) { // todo use a contract instead
             throw new NotImplementedException(get_class($this->storage), 'findBy',
                 'This method was added to storage drivers provided by the package in 2.2.0 and will be part of the StorageDriver contract in 3.0.0.'
             );

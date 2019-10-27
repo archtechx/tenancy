@@ -6,6 +6,7 @@ namespace Stancl\Tenancy\StorageDrivers\Database;
 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\DB;
+use Stancl\Tenancy\Contracts\Future\CanDeleteKeys;
 use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
@@ -16,7 +17,7 @@ use Stancl\Tenancy\StorageDrivers\Database\DomainModel as Domains;
 use Stancl\Tenancy\StorageDrivers\Database\TenantModel as Tenants;
 use Stancl\Tenancy\Tenant;
 
-class DatabaseStorageDriver implements StorageDriver
+class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys
 {
     /** @var Application */
     protected $app;
@@ -76,8 +77,7 @@ class DatabaseStorageDriver implements StorageDriver
      * @param string $key
      * @param mixed $value
      * @return Tenant
-     * @throws TenantCouldNotBeIdentifiedException
-     * @throws NotImplementedException
+     * @throws TenantCouldNotBeIdentifiedException // todo ?
      */
     public function findBy(string $key, $value): Tenant
     {
@@ -214,6 +214,12 @@ class DatabaseStorageDriver implements StorageDriver
     {
         $tenant = $tenant ?? $this->currentTenant();
         Tenants::find($tenant->id)->putMany($kvPairs);
+    }
+
+    public function deleteMany(array $keys, Tenant $tenant = null): void
+    {
+        $tenant = $tenant ?? $this->currentTenant();
+        Tenants::find($tenant->id)->deleteMany($keys);
     }
 }
 
