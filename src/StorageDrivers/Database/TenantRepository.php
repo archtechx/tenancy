@@ -30,6 +30,18 @@ class TenantRepository extends Repository
         );
     }
 
+    public function findBy(string $key, $value)
+    {
+        if (in_array($key, static::customColumns())) {
+            return (array) $this->table()->where($key, $value)->first();
+        }
+
+        return (array) $this->table()->where(
+            static::dataColumn() . '->' . $key,
+            $value
+        )->first();
+    }
+
     public function updateTenant(Tenant $tenant)
     {
         $this->putMany($tenant->data, $tenant);
@@ -98,11 +110,11 @@ class TenantRepository extends Repository
 
         $data = [];
         $jsonData = json_decode($record->first(static::dataColumn())->data, true);
-        foreach ($keys as $key => $key) {
+        foreach ($keys as $key) {
             if (in_array($key, static::customColumns())) {
                 $data[$key] = null;
 
-                return;
+                continue;
             } else {
                 unset($jsonData[$key]);
             }

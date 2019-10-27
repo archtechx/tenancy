@@ -9,6 +9,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Contracts\Future\CanDeleteKeys;
+use Stancl\Tenancy\Contracts\Future\CanFindByAnyKey;
 use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
@@ -17,7 +18,7 @@ use Stancl\Tenancy\Exceptions\TenantDoesNotExistException;
 use Stancl\Tenancy\Exceptions\TenantWithThisIdAlreadyExistsException;
 use Stancl\Tenancy\Tenant;
 
-class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys
+class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys, CanFindByAnyKey
 {
     /** @var Application */
     protected $app;
@@ -89,15 +90,14 @@ class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys
      */
     public function findBy(string $key, $value): Tenant
     {
-        // The key has to be a custom column. It's recommended to set up an index // TODO can we query JSON?
-        $tenant = $this->tenants->where($key, $value)->first()->toArray();
+        $tenant = $this->tenants->findBy($key, $value);
 
         if (! $tenant) {
             throw new TenantDoesNotExistException($value, $key);
         }
 
-        return Tenant::fromStorage($tenant->decoded())
-            ->withDomains($this->domains->getTenantDomains($tenant->id));
+        return Tenant::fromStorage($this->tenants->decodeData($tenant))
+            ->withDomains($this->domains->getTenantDomains($tenant['id']));
     }
 
     public function ensureTenantCanBeCreated(Tenant $tenant): void

@@ -10,7 +10,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\ForwardsCalls;
-use Stancl\Tenancy\Contracts\Future\CanFindByAnyKeys;
+use Stancl\Tenancy\Contracts\Future\CanFindByAnyKey;
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 use Stancl\Tenancy\Exceptions\NotImplementedException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
@@ -232,7 +232,7 @@ class TenantManager
             throw new Exception('No value supplied.');
         }
 
-        if (! $this->storage instanceof CanFindByAnyKeys) {
+        if (! $this->storage instanceof CanFindByAnyKey) {
             throw new NotImplementedException(get_class($this->storage), 'findBy',
                 'This method was added to the DB storage driver provided by the package in 2.2.0 and might be part of the StorageDriver contract in 3.0.0.'
             );

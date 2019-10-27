@@ -236,6 +236,6 @@ class RedisStorageDriver implements StorageDriver, CanDeleteKeys
     {
         $tenant = $tenant ?? $this->tenant();
 
-        $this->redis->hdel("tenants:{$tenant->id}", $keys);
+        $this->redis->hdel("tenants:{$tenant->id}", ...$keys);
     }
 }
