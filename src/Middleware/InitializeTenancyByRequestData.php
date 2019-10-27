@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Middleware;
 
 use Closure;
+use Illuminate\Http\Request;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 
 class InitializeTenancyByRequestData
@@ -28,9 +29,9 @@ class InitializeTenancyByRequestData
      */
     public function handle($request, Closure $next)
     {
-        if (request()->method() !== 'OPTIONS') {
+        if ($request->method() !== 'OPTIONS') {
             try {
-                $this->parseTenant();
+                $this->parseTenant($request);
             } catch (TenantCouldNotBeIdentifiedException $e) {
                 ($this->onFail)($e);
             }
@@ -39,23 +40,23 @@ class InitializeTenancyByRequestData
         return $next($request);
     }
 
-    protected function parseTenant()
+    protected function parseTenant(Request $request)
     {
         if (tenancy()->initialized) {
             return;
         }
 
         $tenant = null;
-        if (request()->hasHeader('X-Tenant')) {
-            $tenant = request()->header('X-Tenant');
-        } elseif (request()->has('_tenant')) {
-            $tenant = request()->get('_tenant');
-        } elseif (! in_array(request()->getHost(), config('tenancy.exempt_domains', []), true)) {
-            $tenant = explode('.', request()->getHost())[0];
+        if ($request->hasHeader('X-Tenant')) {
+            $tenant = $request->header('X-Tenant');
+        } elseif ($request->has('_tenant')) {
+            $tenant = $request->get('_tenant');
+        } elseif (! in_array($request->getHost(), config('tenancy.exempt_domains', []), true)) {
+            $tenant = explode('.', $request->getHost())[0];
         }
 
         if (! $tenant) {
-            throw new TenantCouldNotBeIdentifiedException(request()->getHost());
+            throw new TenantCouldNotBeIdentifiedException($request->getHost());
         }
 
         tenancy()->initialize(tenancy()->find($tenant));
