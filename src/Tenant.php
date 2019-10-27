@@ -9,8 +9,10 @@ use Closure;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\ForwardsCalls;
+use Stancl\Tenancy\Contracts\Future\CanDeleteKeys;
 use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
+use Stancl\Tenancy\Exceptions\NotImplementedException;
 use Stancl\Tenancy\Exceptions\TenantStorageException;
 
 /**
@@ -347,6 +349,39 @@ class Tenant implements ArrayAccess
     public function set($key, $value = null): self
     {
         return $this->put($key, $value);
+    }
+
+    /**
+     * Delete a key from the tenant's storage.
+     *
+     * @param string $key
+     * @return self
+     */
+    public function deleteKey(string $key): self
+    {
+        return $this->deleteKeys([$key]);
+    }
+
+    /**
+     * Delete keys from the tenant's storage.
+     *
+     * @param string[] $keys
+     * @return self
+     */
+    public function deleteKeys(array $keys): self
+    {
+        if (! $this->storage instanceof CanDeleteKeys) {
+            throw new NotImplementedException(get_class($this->storage), 'deleteMany',
+                'This method was added to storage drivers provided by the package in 2.2.0 and will be part of the StorageDriver contract in 3.0.0.'
+            );
+        } else {
+            $this->storage->deleteMany($keys);
+            foreach ($keys as $key) {
+                unset($this->data[$key]);
+            }
+        }
+
+        return $this;
     }
 
     /**

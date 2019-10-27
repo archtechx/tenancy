@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
+use Exception;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
+use Illuminate\Support\Traits\ForwardsCalls;
+use Stancl\Tenancy\Contracts\Future\CanFindByAnyKey;
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
+use Stancl\Tenancy\Exceptions\NotImplementedException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseMigrator;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseSeeder;
@@ -17,6 +22,8 @@ use Stancl\Tenancy\Jobs\QueuedTenantDatabaseSeeder;
  */
 class TenantManager
 {
+    use ForwardsCalls;
+
     /**
      * The current tenant.
      *
@@ -47,7 +54,7 @@ class TenantManager
         $this->app = $app;
         $this->storage = $storage;
         $this->artisan = $artisan;
-        $this->database = $database;
+        $this->database = $database->withTenantManager($this);
 
         $this->bootstrapFeatures();
     }
@@ -60,6 +67,8 @@ class TenantManager
      */
     public function createTenant(Tenant $tenant): self
     {
+        $this->event('tenant.creating', $tenant);
+
         $this->ensureTenantCanBeCreated($tenant);
 
         $this->storage->createTenant($tenant);
@@ -89,6 +98,8 @@ class TenantManager
 
         $this->database->createDatabase($tenant, $afterCreating);
 
+        $this->event('tenant.created', $tenant);
+
         return $this;
     }
 
@@ -100,11 +111,15 @@ class TenantManager
      */
     public function deleteTenant(Tenant $tenant): self
     {
+        $this->event('tenant.deleting', $tenant);
+
         $this->storage->deleteTenant($tenant);
 
         if ($this->shouldDeleteDatabase()) {
             $this->database->deleteDatabase($tenant);
         }
+
+        $this->event('tenant.deleted', $tenant);
 
         return $this;
     }
@@ -199,6 +214,34 @@ class TenantManager
     }
 
     /**
+     * Find a tenant using an arbitrary key.
+     *
+     * @param string $key
+     * @param mixed $value
+     * @return Tenant
+     * @throws TenantCouldNotBeIdentifiedException
+     * @throws NotImplementedException
+     */
+    public function findBy(string $key, $value): Tenant
+    {
+        if ($key === null) {
+            throw new Exception('No key supplied.');
+        }
+
+        if ($value === null) {
+            throw new Exception('No value supplied.');
+        }
+
+        if (! $this->storage instanceof CanFindByAnyKey) {
+            throw new NotImplementedException(get_class($this->storage), 'findBy',
+                'This method was added to the DB storage driver provided by the package in 2.2.0 and might be part of the StorageDriver contract in 3.0.0.'
+            );
+        }
+
+        return $this->storage->findBy($key, $value);
+    }
+
+    /**
      * Get all tenants.
      *
      * @param Tenant[]|string[] $only
@@ -246,13 +289,13 @@ class TenantManager
      */
     public function bootstrapTenancy(Tenant $tenant): self
     {
-        $prevented = $this->event('bootstrapping');
+        $prevented = $this->event('bootstrapping', $tenant);
 
         foreach ($this->tenancyBootstrappers($prevented) as $bootstrapper) {
             $this->app[$bootstrapper]->start($tenant);
         }
 
-        $this->event('bootstrapped');
+        $this->event('bootstrapped', $tenant);
 
         return $this;
     }
@@ -263,7 +306,7 @@ class TenantManager
             return $this;
         }
 
-        $prevented = $this->event('ending');
+        $prevented = $this->event('ending', $this->getTenant());
 
         foreach ($this->tenancyBootstrappers($prevented) as $bootstrapper) {
             $this->app[$bootstrapper]->end();
@@ -383,17 +426,27 @@ class TenantManager
     }
 
     /**
-     * Execute event listeners.
+     * Trigger an event and execute event listeners.
      *
      * @param string $name
+     * @param mixed ...$args
      * @return string[]
      */
-    protected function event(string $name): array
+    public function event(string $name, ...$args): array
     {
-        return array_reduce($this->eventListeners[$name] ?? [], function ($prevented, $listener) {
-            $prevented = array_merge($prevented, $listener($this) ?? []);
+        return array_reduce($this->eventListeners[$name] ?? [], function ($results, $listener) use ($args) {
+            $results = array_merge($results, $listener($this, ...$args) ?? []);
 
-            return $prevented;
+            return $results;
         }, []);
+    }
+
+    public function __call($method, $parameters)
+    {
+        if (Str::startsWith($method, 'findBy')) {
+            return $this->findBy(Str::snake(substr($method, 6)), $parameters[0]);
+        }
+
+        static::throwBadMethodCallException($method);
     }
 }

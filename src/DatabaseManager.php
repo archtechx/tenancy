@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
+use Closure;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
@@ -23,11 +25,27 @@ class DatabaseManager
     /** @var BaseDatabaseManager */
     protected $database;
 
+    /** @var TenantManager */
+    protected $tenancy;
+
     public function __construct(Application $app, BaseDatabaseManager $database)
     {
         $this->app = $app;
         $this->database = $database;
         $this->originalDefaultConnectionName = $app['config']['database.default'];
+    }
+
+    /**
+     * Set the TenantManager instance, used to dispatch tenancy events.
+     *
+     * @param TenantManager $tenantManager
+     * @return self
+     */
+    public function withTenantManager(TenantManager $tenantManager): self
+    {
+        $this->tenancy = $tenantManager;
+
+        return $this;
     }
 
     /**
@@ -140,7 +158,7 @@ class DatabaseManager
      * Create a database for a tenant.
      *
      * @param Tenant $tenant
-     * @param \Illuminate\Contracts\Queue\ShouldQueue[]|callable[] $afterCreating
+     * @param ShouldQueue[]|callable[] $afterCreating
      * @return void
      */
     public function createDatabase(Tenant $tenant, array $afterCreating = [])
@@ -148,14 +166,34 @@ class DatabaseManager
         $database = $tenant->getDatabaseName();
         $manager = $this->getTenantDatabaseManager($tenant);
 
+        $afterCreating = array_merge(
+            $afterCreating,
+            $this->tenancy->event('database.creating', $database, $tenant)
+        );
+
         if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
-            QueuedTenantDatabaseCreator::withChain($afterCreating)->dispatch($manager, $database);
+            $chain = [];
+            foreach ($afterCreating as $item) {
+                if (is_string($item) && class_exists($item)) {
+                    $chain[] = new $item($tenant); // Classes are instantiated and given $tenant
+                } elseif ($item instanceof ShouldQueue) {
+                    $chain[] = $item;
+                }
+            }
+
+            QueuedTenantDatabaseCreator::withChain($chain)->dispatch($manager, $database);
         } else {
             $manager->createDatabase($database);
-            foreach ($afterCreating as $callback) {
-                $callback();
+            foreach ($afterCreating as $item) {
+                if (is_object($item) && ! $item instanceof Closure) {
+                    $item->handle($tenant);
+                } else {
+                    $item($tenant);
+                }
             }
         }
+
+        $this->tenancy->event('database.created', $database, $tenant);
     }
 
     /**
@@ -169,11 +207,15 @@ class DatabaseManager
         $database = $tenant->getDatabaseName();
         $manager = $this->getTenantDatabaseManager($tenant);
 
+        $this->tenancy->event('database.deleting', $database, $tenant);
+
         if ($this->app['config']['tenancy.queue_database_deletion'] ?? false) {
             QueuedTenantDatabaseDeleter::dispatch($manager, $database);
         } else {
             $manager->deleteDatabase($database);
         }
+
+        $this->tenancy->event('database.deleted', $database, $tenant);
     }
 
     /**
@@ -182,7 +224,7 @@ class DatabaseManager
      * @param Tenant $tenant
      * @return TenantDatabaseManager
      */
-    protected function getTenantDatabaseManager(Tenant $tenant): TenantDatabaseManager
+    public function getTenantDatabaseManager(Tenant $tenant): TenantDatabaseManager
     {
         $driver = $this->getDriver($this->getBaseConnection($tenant->getConnectionName()));
 

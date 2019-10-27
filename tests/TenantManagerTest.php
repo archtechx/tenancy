@@ -320,4 +320,14 @@ class TenantManagerTest extends TestCase
         $this->expectException(TenantDoesNotExistException::class);
         tenancy()->find('gjnfdgf');
     }
+
+    /** @test */
+    public function event_listeners_can_accept_arguments()
+    {
+        tenancy()->hook('tenant.creating', function ($tenantManager, $tenant) {
+            $this->assertSame('bar', $tenant->foo);
+        });
+
+        Tenant::new()->withData(['foo' => 'bar'])->save();
+    }
 }

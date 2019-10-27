@@ -8,8 +8,8 @@ use Exception;
 
 class TenantDoesNotExistException extends Exception
 {
-    public function __construct(string $id)
+    public function __construct(string $id, string $key = 'id')
     {
-        $this->message = "Tenant with this id does not exist: $id";
+        $this->message = "Tenant with this $key does not exist: $id";
     }
 }
