@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\StorageDrivers\Database;
 
 use Illuminate\Config\Repository as ConfigRepository;
