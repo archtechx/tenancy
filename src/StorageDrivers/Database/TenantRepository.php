@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\StorageDrivers\Database;
 
 use Illuminate\Config\Repository as ConfigRepository;
@@ -43,7 +45,7 @@ class TenantRepository extends Repository
         $decodedData = $this->decodedData($tenant);
 
         $result = [];
-        
+
         foreach ($keys as $key) {
             $result[$key] = $decodedData[$key];
         }
@@ -74,6 +76,7 @@ class TenantRepository extends Repository
         foreach ($kvPairs as $key => $value) {
             if (in_array($key, static::customColumns())) {
                 $data[$key] = $value;
+
                 return;
             } else {
                 $jsonData[$key] = $value;
@@ -94,6 +97,7 @@ class TenantRepository extends Repository
         foreach ($keys as $key => $key) {
             if (in_array($key, static::customColumns())) {
                 $data[$key] = null;
+
                 return;
             } else {
                 unset($jsonData[$key]);
@@ -117,7 +121,7 @@ class TenantRepository extends Repository
         $dataColumn = static::dataColumn();
         $decoded = json_decode($columns[$dataColumn], true);
         $columns = array_merge($columns, $decoded);
-        
+
         // If $columns[$dataColumn] has been overriden by a value, don't delete the key.
         if (! array_key_exists($dataColumn, $decoded)) {
             unset($columns[$dataColumn]);
