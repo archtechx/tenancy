@@ -47,21 +47,15 @@ class Seed extends SeedCommand
             return;
         }
 
-        $originalTenant = tenancy()->getTenant();
         tenancy()->all($this->option('tenants'))->each(function ($tenant) {
             $this->line("Tenant: {$tenant['id']}");
 
             $this->input->setOption('database', $tenant->getConnectionName());
-            tenancy()->initialize($tenant);
 
-            // Seed
-            parent::handle();
-
-            tenancy()->endTenancy();
+            $tenant->run(function () {
+                // Seed
+                parent::handle();
+            });
         });
-
-        if ($originalTenant) {
-            tenancy()->initialize($originalTenant);
-        }
     }
 }
