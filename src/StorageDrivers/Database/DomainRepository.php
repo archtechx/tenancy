@@ -22,6 +22,7 @@ class DomainRepository extends Repository
     public function getTenantDomains($tenant)
     {
         $id = $tenant instanceof Tenant ? $tenant->id : $tenant;
+
         return $this->where('tenant_id', $id)->get('domain')->pluck('domain')->all();
     }
 
