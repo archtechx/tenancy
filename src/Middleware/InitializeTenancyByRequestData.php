@@ -7,7 +7,7 @@ namespace Stancl\Tenancy\Middleware;
 use Closure;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
 
-class InitializeTenancy
+class InitializeTenancyByRequestData
 {
     /** @var callable */
     protected $onFail;
@@ -28,7 +28,7 @@ class InitializeTenancy
      */
     public function handle($request, Closure $next)
     {
-        if(request()->method() !== 'OPTIONS') {
+        if (request()->method() !== 'OPTIONS') {
             try {
                 $this->parseTenant();
             } catch (TenantCouldNotBeIdentifiedException $e) {
