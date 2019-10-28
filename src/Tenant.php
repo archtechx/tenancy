@@ -333,12 +333,18 @@ class Tenant implements ArrayAccess
         }
 
         if (is_array($key)) {
-            $this->storage->putMany($key);
+            if ($this->persisted) {
+                $this->storage->putMany($key);
+            }
+
             foreach ($key as $k => $v) { // Add to cache
                 $this->data[$k] = $v;
             }
         } else {
-            $this->storage->put($key, $value);
+            if ($this->persisted) {
+                $this->storage->put($key, $value);
+            }
+
             $this->data[$key] = $value;
         }
 
