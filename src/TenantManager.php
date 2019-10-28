@@ -306,7 +306,7 @@ class TenantManager
             return $this;
         }
 
-        $prevented = $this->event('ending', $this->getTenant());
+        $prevented = $this->event('ending', $this->tenant);
 
         foreach ($this->tenancyBootstrappers($prevented) as $bootstrapper) {
             $this->app[$bootstrapper]->end();
