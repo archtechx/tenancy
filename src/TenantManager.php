@@ -435,9 +435,7 @@ class TenantManager
     public function event(string $name, &...$args): array
     {
         return array_reduce($this->eventListeners[$name] ?? [], function ($results, $listener) use ($args) {
-            $results = array_merge($results, $listener($this, ...$args) ?? []);
-
-            return $results;
+            return array_merge($results, $listener($this, ...$args) ?? []);
         }, []);
     }
 
