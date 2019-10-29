@@ -330,4 +330,19 @@ class TenantManagerTest extends TestCase
 
         Tenant::new()->withData(['foo' => 'bar'])->save();
     }
+
+    /** @test */
+    public function tenant_creating_hook_can_be_used_to_modify_tenants_data()
+    {
+        tenancy()->hook('tenant.creating', function ($tm, Tenant $tenant) {
+            $tenant->put([
+                'foo' => 'bar',
+                'abc123' => 'def456',
+            ]);
+        });
+        $tenant = Tenant::new()->save();
+
+        $this->assertArrayHasKey('foo', $tenant->data);
+        $this->assertArrayHasKey('abc123', $tenant->data);
+    }
 }
