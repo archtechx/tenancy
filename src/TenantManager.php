@@ -157,7 +157,11 @@ class TenantManager
      */
     public function updateTenant(Tenant $tenant): self
     {
+        $this->event('tenant.updating', $tenant);
+
         $this->storage->updateTenant($tenant);
+
+        $this->event('tenant.updated', $tenant);
 
         return $this;
     }
