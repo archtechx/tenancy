@@ -77,7 +77,7 @@ class TenantRepository extends Repository
         if (in_array($key, static::customColumns())) {
             $record->update([$key => $value]);
         } else {
-            $data = json_decode($record->first(static::dataColumn())->data, true);
+            $data = json_decode($record->first()->{static::dataColumn()}, true);
             $data[$key] = $value;
 
             $record->update([static::dataColumn() => $data]);
@@ -89,7 +89,7 @@ class TenantRepository extends Repository
         $record = $this->where('id', $tenant->id);
 
         $data = [];
-        $jsonData = json_decode($record->first(static::dataColumn())->data, true);
+        $jsonData = json_decode($record->first()->{static::dataColumn()}, true);
         foreach ($kvPairs as $key => $value) {
             if (in_array($key, static::customColumns())) {
                 $data[$key] = $value;
