@@ -83,7 +83,7 @@ class Tenant implements ArrayAccess
         $app = $app ?? app();
 
         return new static(
-            $app,
+            $app[Repository::class],
             $app[StorageDriver::class],
             $app[TenantManager::class],
             $app[UniqueIdentifierGenerator::class]
