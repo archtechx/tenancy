@@ -23,7 +23,7 @@ class PreventAccessFromTenantDomains
     public function handle($request, Closure $next)
     {
         // If the route is universal, always let the request pass.
-        if ($this->routeHasMiddleware($request()->route(), 'universal')) {
+        if ($this->routeHasMiddleware($request->route(), 'universal')) {
             return $next($request);
         }
 
@@ -54,8 +54,8 @@ class PreventAccessFromTenantDomains
         // Loop one level deep and check if the route's middleware
         // groups have a `tenancy` middleware group inside them
         $middlewareGroups = Router::getMiddlewareGroups();
-        foreach ($route->gatherMiddleware() as $middleware) {
-            if (isset($middlewareGroups[$middleware]) && in_array($middleware, $middlewareGroups[$middleware], true)) {
+        foreach ($route->gatherMiddleware() as $inner) {
+            if (isset($middlewareGroups[$inner]) && in_array($middleware, $middlewareGroups[$inner], true)) {
                 return true;
             }
         }
