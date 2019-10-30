@@ -6,6 +6,7 @@ namespace Stancl\Tenancy;
 
 use ArrayAccess;
 use Closure;
+use Illuminate\Config\Repository;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\ForwardsCalls;
@@ -37,8 +38,8 @@ class Tenant implements ArrayAccess
      */
     public $domains = [];
 
-    /** @var Application */
-    protected $app;
+    /** @var Repository */
+    protected $config;
 
     /** @var StorageDriver */
     protected $storage;
@@ -59,14 +60,13 @@ class Tenant implements ArrayAccess
     /**
      * Use new() if you don't want to swap dependencies.
      *
-     * @param Application $app
      * @param StorageDriver $storage
      * @param TenantManager $tenantManager
      * @param UniqueIdentifierGenerator $idGenerator
      */
-    public function __construct(Application $app, StorageDriver $storage, TenantManager $tenantManager, UniqueIdentifierGenerator $idGenerator)
+    public function __construct(Repository $config, StorageDriver $storage, TenantManager $tenantManager, UniqueIdentifierGenerator $idGenerator)
     {
-        $this->app = $app;
+        $this->config = $config;
         $this->storage = $storage->withDefaultTenant($this);
         $this->manager = $tenantManager;
         $this->idGenerator = $idGenerator;
@@ -274,7 +274,7 @@ class Tenant implements ArrayAccess
      */
     public function getDatabaseName(): string
     {
-        return $this->data['_tenancy_db_name'] ?? ($this->app['config']['tenancy.database.prefix'] . $this->id . $this->app['config']['tenancy.database.suffix']);
+        return $this->data['_tenancy_db_name'] ?? ($this->config->get('tenancy.database.prefix') . $this->id . $this->config->get('tenancy.database.suffix'));
     }
 
     /**
