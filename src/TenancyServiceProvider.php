@@ -92,6 +92,8 @@ class TenancyServiceProvider extends ServiceProvider
             Middleware\PreventAccessFromTenantDomains::class,
         ]);
 
+        Route::middlewareGroup('universal', []);
+
         $this->loadRoutesFrom(__DIR__ . '/routes.php');
 
         $this->app->singleton('globalUrl', function ($app) {
