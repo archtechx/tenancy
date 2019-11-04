@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests;
+namespace Stancl\Tenancy\Tests\Feature;
+
+use Stancl\Tenancy\Tests\TestCase;
 
 class TenantConfigTest extends TestCase
 {
