@@ -82,6 +82,7 @@ return [
         // not needed for tenancy to be bootstrapped. They are run
         // regardless of whether tenancy has been initialized.
 
+        // Stancl\Tenancy\Features\Timestamps::class,
         // Stancl\Tenancy\Features\TenantConfig::class,
         // Stancl\Tenancy\Features\TelescopeTags::class,
         // Stancl\Tenancy\Features\TenantRedirect::class,

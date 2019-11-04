@@ -8,6 +8,7 @@ use ArrayAccess;
 use Closure;
 use Illuminate\Config\Repository;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\ForwardsCalls;
 use Stancl\Tenancy\Contracts\Future\CanDeleteKeys;
@@ -260,9 +261,15 @@ class Tenant implements ArrayAccess
      */
     public function softDelete(): self
     {
-        $this->put('_tenancy_original_domains', $this->domains);
+        $this->manager->event('tenant.softDeleting', $this);
+
+        $this->put([
+            '_tenancy_original_domains' => $this->domains,
+        ]);
         $this->clearDomains();
         $this->save();
+
+        $this->manager->event('tenant.softDeleted', $this);
 
         return $this;
     }
@@ -391,7 +398,7 @@ class Tenant implements ArrayAccess
     }
 
     /**
-     * Set a value.
+     * Set a value in the data array without saving into storage.
      *
      * @param string $key
      * @param mixed $value
