@@ -8,7 +8,6 @@ use ArrayAccess;
 use Closure;
 use Illuminate\Config\Repository;
 use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\ForwardsCalls;
 use Stancl\Tenancy\Contracts\Future\CanDeleteKeys;
