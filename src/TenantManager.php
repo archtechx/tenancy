@@ -430,7 +430,7 @@ class TenantManager
     }
 
     /**
-     * Trigger an event and execute event listeners.
+     * Trigger an event and execute its listeners.
      *
      * @param string $name
      * @param mixed ...$args
