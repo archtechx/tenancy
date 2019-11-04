@@ -11,7 +11,7 @@ use Stancl\Tenancy\TenantManager;
 
 class Timestamps implements Feature
 {
-    public function bootstrap(TenantManager $tenantManager)
+    public function bootstrap(TenantManager $tenantManager): void
     {
         $tenantManager->hook('tenant.creating', function ($tm, Tenant $tenant) {
             $tenant->with('created_at', Date::now());
