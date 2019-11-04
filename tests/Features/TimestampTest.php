@@ -26,7 +26,8 @@ class TimestampTest extends TestCase
     public function create_and_update_timestamps_are_added_on_create()
     {
         $tenant = Tenant::new()->save();
-        $this->assertArraySubset(['created_at', 'updated_at'], $tenant->data);
+        $this->assertArrayHasKey('created_at', $tenant->data);
+        $this->assertArrayHasKey('updated_at', $tenant->data);
     }
 
     /** @test */
@@ -34,13 +35,22 @@ class TimestampTest extends TestCase
     {
         $tenant = Tenant::new()->save();
         $this->assertSame($tenant->created_at, $tenant->updated_at);
+        $this->assertSame('string', gettype($tenant->created_at));
+        
+        sleep(1);
 
-        $this->assert($tenant->updated_at > $tenant->created_at);
+        $tenant->put('abc', 'def');
+
+        $this->assertTrue($tenant->updated_at > $tenant->created_at);
     }
 
     /** @test */
     public function softdelete_timestamps_are_added()
     {
-        $this->assertSame();
+        $tenant = Tenant::new()->save();
+        $this->assertNull($tenant->deleted_at);
+
+        $tenant->softDelete();
+        $this->assertNotNull($tenant->deleted_at);
     }
 }

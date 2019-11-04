@@ -334,6 +334,8 @@ class Tenant implements ArrayAccess
      */
     public function put($key, $value = null): self
     {
+        $this->manager->event('tenant.updating', $this);
+
         if ($key === 'id') {
             throw new TenantStorageException("Tenant ids can't be changed.");
         }
@@ -353,6 +355,8 @@ class Tenant implements ArrayAccess
 
             $this->data[$key] = $value;
         }
+
+        $this->manager->event('tenant.updated', $this);
 
         return $this;
     }
@@ -382,6 +386,8 @@ class Tenant implements ArrayAccess
      */
     public function deleteKeys(array $keys): self
     {
+        $this->manager->event('tenant.updating', $this);
+
         if (! $this->storage instanceof CanDeleteKeys) {
             throw new NotImplementedException(get_class($this->storage), 'deleteMany',
                 'This method was added to storage drivers provided by the package in 2.2.0 and will be part of the StorageDriver contract in 3.0.0.'
@@ -392,6 +398,8 @@ class Tenant implements ArrayAccess
                 unset($this->data[$key]);
             }
         }
+
+        $this->manager->event('tenant.updated', $this);
 
         return $this;
     }
