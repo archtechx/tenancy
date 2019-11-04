@@ -36,7 +36,7 @@ class TimestampTest extends TestCase
         $tenant = Tenant::new()->save();
         $this->assertSame($tenant->created_at, $tenant->updated_at);
         $this->assertSame('string', gettype($tenant->created_at));
-        
+
         sleep(1);
 
         $tenant->put('abc', 'def');
