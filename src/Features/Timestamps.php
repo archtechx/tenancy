@@ -40,7 +40,7 @@ class Timestamps implements Feature
     {
         // Add this key to your tenancy.php config if you need to change the format.
         return Date::now()->format(
-            $this->config->get('tenancy.features.timestamps.format') ?? 'c' // ISO 8601
+            $this->config->get('tenancy.timestamp_format') ?? 'c' // ISO 8601
         );
     }
 }
