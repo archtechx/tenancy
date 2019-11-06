@@ -10,6 +10,7 @@
         }
     ],
     "require": {
+        "ext-json": "*",
         "illuminate/support": "^6.0",
         "ramsey/uuid": "^3.7"
     },
