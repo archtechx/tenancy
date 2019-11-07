@@ -8,7 +8,7 @@ trait DealsWithMigrations
 {
     protected function getMigrationPaths()
     {
-        if ($this->input->hasOption('path')) {
+        if ($this->input->hasOption('path') && $this->input->getOption('path')) {
             return parent::getMigrationPaths();
         }
 
