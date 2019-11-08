@@ -11,7 +11,7 @@ trait HasATenantsOption
     protected function getOptions()
     {
         return array_merge([
-            ['tenants', null, InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, '', null],
+            ['tenant', null, InputOption::VALUE_REQUIRED, '', null],
         ], parent::getOptions());
     }
 
