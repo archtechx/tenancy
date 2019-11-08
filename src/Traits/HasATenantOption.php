@@ -6,7 +6,7 @@ namespace Stancl\Tenancy\Traits;
 
 use Symfony\Component\Console\Input\InputOption;
 
-trait HasATenantsOption
+trait HasATenantOption
 {
     protected function getOptions()
     {
