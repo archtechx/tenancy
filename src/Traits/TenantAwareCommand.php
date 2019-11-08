@@ -19,11 +19,11 @@ trait TenantAwareCommand
             });
         }
 
-        array_map(function (Tenant $tenant) {
+        foreach ($tenants as $tenant) {
             $tenant->run(function () {
                 $this->laravel->call([$this, 'handle']);
             });
-        }, $tenants);
+        }
     }
 
     /**
