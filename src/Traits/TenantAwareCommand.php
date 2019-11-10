@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace Stancl\Tenancy\Traits;
+
 use Stancl\Tenancy\Tenant;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;

@@ -19,4 +19,11 @@ trait HasATenantsOption
     {
         return tenancy()->all($this->option('tenants'))->all();
     }
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->specifyParameters();
+    }
 }
