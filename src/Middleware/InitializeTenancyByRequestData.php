@@ -46,11 +46,14 @@ class InitializeTenancyByRequestData
             return;
         }
 
+        $header = config('tenancy.identification.header');
+        $query = config('tenancy.identification.query_parameter');
+
         $tenant = null;
-        if ($request->hasHeader('X-Tenant')) {
-            $tenant = $request->header('X-Tenant');
-        } elseif ($request->has('_tenant')) {
-            $tenant = $request->get('_tenant');
+        if ($request->hasHeader($header)) {
+            $tenant = $request->header($header);
+        } elseif ($request->has($query)) {
+            $tenant = $request->get($query);
         } elseif (! in_array($request->getHost(), config('tenancy.exempt_domains', []), true)) {
             $tenant = explode('.', $request->getHost())[0];
         }
