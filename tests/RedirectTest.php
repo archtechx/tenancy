@@ -13,11 +13,6 @@ class RedirectTest extends TestCase
     public $autoCreateTenant = false;
     public $autoInitTenancy = false;
 
-    public function setUp(): void
-    {
-        parent::setUp();
-    }
-
     /** @test */
     public function tenant_redirect_macro_replaces_only_the_hostname()
     {
