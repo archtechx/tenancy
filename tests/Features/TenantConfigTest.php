@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests\Feature;
+namespace Stancl\Tenancy\Tests\Features;
 
 use Stancl\Tenancy\Tests\TestCase;
 

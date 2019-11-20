@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests\Feature;
+namespace Stancl\Tenancy\Tests\Features;
 
 use Stancl\Tenancy\Features\Timestamps;
 use Stancl\Tenancy\Tenant;
