@@ -8,10 +8,15 @@ use Route;
 use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\Tests\TestCase;
 
-class TenantRedirectMacroTest extends TestCase
+class RedirectTest extends TestCase
 {
     public $autoCreateTenant = false;
     public $autoInitTenancy = false;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+    }
 
     /** @test */
     public function tenant_redirect_macro_replaces_only_the_hostname()
@@ -33,5 +38,18 @@ class TenantRedirectMacroTest extends TestCase
 
         $this->get('/redirect')
             ->assertRedirect('http://abcd/foobar');
+    }
+
+    /** @test */
+    public function tenant_route_helper_generates_correct_url()
+    {
+        Route::get('/abcdef/{a?}/{b?}', function () {
+            return 'Foo';
+        })->name('foo');
+
+        $this->assertSame('http://foo.localhost/abcdef/as/df', tenant_route('foo', ['a' => 'as', 'b' => 'df'], 'foo.localhost'));
+        $this->assertSame('http://foo.localhost/abcdef', tenant_route('foo', [], 'foo.localhost'));
+
+        $this->assertSame('http://' . request()->getHost() . '/abcdef/x/y', tenant_route('foo', ['a' => 'x', 'b' => 'y']));
     }
 }
