@@ -6,7 +6,6 @@ namespace Stancl\Tenancy\Tests;
 
 use Route;
 use Stancl\Tenancy\Tenant;
-use Stancl\Tenancy\Tests\TestCase;
 
 class RedirectTest extends TestCase
 {
