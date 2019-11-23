@@ -12,6 +12,7 @@
     "require": {
         "ext-json": "*",
         "illuminate/support": "^6.0",
+        "facade/ignition-contracts": "^1.0",
         "ramsey/uuid": "^3.7"
     },
     "require-dev": {
@@ -20,7 +21,6 @@
         "laravel/framework": "^6.0",
         "orchestra/testbench-browser-kit": "^4.0",
         "league/flysystem-aws-s3-v3": "~1.0",
-        "facade/ignition-contracts": "^1.0",
         "phpunit/phpcov": "^6.0"
     },
     "autoload": {
