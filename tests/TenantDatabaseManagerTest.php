@@ -11,6 +11,7 @@ use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager;
+use Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLSchemaManager;
 
 class TenantDatabaseManagerTest extends TestCase
 {
@@ -78,6 +79,7 @@ class TenantDatabaseManagerTest extends TestCase
             ['mysql', MySQLDatabaseManager::class],
             ['sqlite', SQLiteDatabaseManager::class],
             ['pgsql', PostgreSQLDatabaseManager::class],
+            ['schema', PostgreSQLSchemaManager::class]
         ];
     }
 

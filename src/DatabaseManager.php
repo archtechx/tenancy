@@ -100,7 +100,12 @@ class DatabaseManager
 
         // Change database name.
         $databaseName = $this->getDriver($connectionName) === 'sqlite' ? database_path($databaseName) : $databaseName;
-        $this->app['config']["database.connections.$connectionName.database"] = $databaseName;
+
+        if ($this->isUsingSchema($connectionName)) {
+            $this->app['config']["database.connections.$connectionName.schema"] = $databaseName;
+        } else {
+            $this->app['config']["database.connections.$connectionName.database"] = $databaseName;
+        }
     }
 
     /**
@@ -226,7 +231,7 @@ class DatabaseManager
      */
     public function getTenantDatabaseManager(Tenant $tenant): TenantDatabaseManager
     {
-        $driver = $this->getDriver($this->getBaseConnection($tenant->getConnectionName()));
+        $driver = $this->isUsingSchema($tenant->getConnectionName()) ? 'schema' : $this->getDriver($this->getBaseConnection($tenant->getConnectionName()));
 
         $databaseManagers = $this->app['config']['tenancy.database_managers'];
 
@@ -235,5 +240,16 @@ class DatabaseManager
         }
 
         return $this->app[$databaseManagers[$driver]];
+    }
+    
+    /**
+     * Check if using schema connection
+     * 
+     * @param string $connectionName
+     * @return bool
+     */
+    protected function isUsingSchema(string $connectionName): bool
+    {
+        return $this->getDriver($this->getBaseConnection($connectionName)) === 'pgsql' && $this->app['config']['tenancy.using_schema_connection'];
     }
 }
