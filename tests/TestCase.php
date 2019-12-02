@@ -24,11 +24,12 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         Redis::connection('tenancy')->flushdb();
         Redis::connection('cache')->flushdb();
 
+        $originalConnection = config('database.default');
         $this->loadMigrationsFrom([
             '--path' => realpath(__DIR__ . '/../assets/migrations'),
             '--database' => 'central',
         ]);
-        config(['database.default' => 'sqlite']); // fix issue caused by loadMigrationsFrom
+        config(['database.default' => $originalConnection]); // fix issue caused by loadMigrationsFrom
 
         if ($this->autoCreateTenant) {
             $this->createTenant();

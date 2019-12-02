@@ -59,8 +59,8 @@ return [
         // Tenant database managers handle the creation & deletion of tenant databases.
         'sqlite' => Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager::class,
         'mysql' => Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager::class,
-        'pgsql' => Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager::class,
-        'schema' => Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLSchemaManager::class
+        // 'pgsql' => Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager::class,
+        'pgsql' => Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLSchemaManager::class, // Separate by schema instead of database
     ],
     'database_manager_connections' => [
         // Connections used by TenantDatabaseManagers. This tells, for example, the
@@ -68,9 +68,8 @@ return [
         'sqlite' => 'sqlite',
         'mysql' => 'mysql',
         'pgsql' => 'pgsql',
-        'schema' => 'pgsql'
     ],
-    'using_schema_connection' => false, // Only work with pgsql connection
+    'separate_by' => 'database', // database or schema (only supported by pgsql)
     'bootstrappers' => [
         // Tenancy bootstrappers are executed when tenancy is initialized.
         // Their responsibility is making Laravel features tenant-aware.

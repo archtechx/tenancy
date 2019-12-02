@@ -79,7 +79,7 @@ class TenantDatabaseManagerTest extends TestCase
             ['mysql', MySQLDatabaseManager::class],
             ['sqlite', SQLiteDatabaseManager::class],
             ['pgsql', PostgreSQLDatabaseManager::class],
-            ['schema', PostgreSQLSchemaManager::class]
+            ['pgsql', PostgreSQLSchemaManager::class]
         ];
     }
 
