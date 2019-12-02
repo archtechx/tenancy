@@ -18,14 +18,23 @@ if (! function_exists('tenancy')) {
 }
 
 if (! function_exists('tenant')) {
-    /** @return Tenant|mixed */
+    /**
+     * Get a key from the current tenant's storage.
+     *
+     * @param string|Closure|null $key
+     * @return Tenant|mixed
+     */
     function tenant($key = null)
     {
-        if (! is_null($key)) {
-            return optional(app(Tenant::class))->get($key) ?? null;
+        if (is_null($key)) {
+            return app(Tenant::class);
         }
 
-        return app(Tenant::class);
+        if ($key instanceof Closure) {
+            return app(Tenant::class)->run($key);
+        }
+
+        return optional(app(Tenant::class))->get($key) ?? null;
     }
 }
 
