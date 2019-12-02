@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Closure;
-use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Illuminate\Foundation\Application;
@@ -239,10 +238,10 @@ class DatabaseManager
 
         return $this->app[$databaseManagers[$driver]];
     }
-    
+
     /**
      * What key on the connection config should be used to separate tenants.
-     * 
+     *
      * @param string $connectionName
      * @return string
      */
@@ -250,7 +249,7 @@ class DatabaseManager
     {
         if ($this->getDriver($this->getBaseConnection($connectionName)) === 'pgsql'
             && $this->app['config']['tenancy.separate_by'] === 'schema') {
-                return 'schema';
+            return 'schema';
         }
 
         return 'database';

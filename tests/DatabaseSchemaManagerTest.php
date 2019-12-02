@@ -42,7 +42,7 @@ class DatabaseSchemaManagerTest extends TestCase
     public function the_default_db_is_used_when_based_on_is_null()
     {
         config(['database.default' => 'pgsql']);
-        
+
         $this->assertSame('pgsql', config('database.default'));
         config([
             'database.connections.pgsql.foo' => 'bar',
