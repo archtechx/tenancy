@@ -10,8 +10,8 @@ use Stancl\Tenancy\Jobs\QueuedTenantDatabaseDeleter;
 use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager;
-use Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLSchemaManager;
+use Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager;
 
 class TenantDatabaseManagerTest extends TestCase
 {
@@ -79,7 +79,7 @@ class TenantDatabaseManagerTest extends TestCase
             ['mysql', MySQLDatabaseManager::class],
             ['sqlite', SQLiteDatabaseManager::class],
             ['pgsql', PostgreSQLDatabaseManager::class],
-            ['schema', PostgreSQLSchemaManager::class]
+            ['pgsql', PostgreSQLSchemaManager::class],
         ];
     }
 

@@ -15,7 +15,7 @@ class PostgreSQLSchemaManager implements TenantDatabaseManager
 
     public function __construct(Repository $config, IlluminateDatabaseManager $databaseManager)
     {
-        $this->database = $databaseManager->connection($config['tenancy.database_manager_connections.schema']);
+        $this->database = $databaseManager->connection($config['tenancy.database_manager_connections.pgsql']);
     }
 
     public function createDatabase(string $name): bool

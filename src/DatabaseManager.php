@@ -100,12 +100,9 @@ class DatabaseManager
 
         // Change database name.
         $databaseName = $this->getDriver($connectionName) === 'sqlite' ? database_path($databaseName) : $databaseName;
+        $separateBy = $this->separateBy($connectionName);
 
-        if ($this->isUsingSchema($connectionName)) {
-            $this->app['config']["database.connections.$connectionName.schema"] = $databaseName;
-        } else {
-            $this->app['config']["database.connections.$connectionName.database"] = $databaseName;
-        }
+        $this->app['config']["database.connections.$connectionName.$separateBy"] = $databaseName;
     }
 
     /**
@@ -231,7 +228,7 @@ class DatabaseManager
      */
     public function getTenantDatabaseManager(Tenant $tenant): TenantDatabaseManager
     {
-        $driver = $this->isUsingSchema($tenant->getConnectionName()) ? 'schema' : $this->getDriver($this->getBaseConnection($tenant->getConnectionName()));
+        $driver = $this->getDriver($this->getBaseConnection($tenant->getConnectionName()));
 
         $databaseManagers = $this->app['config']['tenancy.database_managers'];
 
@@ -241,15 +238,20 @@ class DatabaseManager
 
         return $this->app[$databaseManagers[$driver]];
     }
-    
+
     /**
-     * Check if using schema connection
-     * 
+     * What key on the connection config should be used to separate tenants.
+     *
      * @param string $connectionName
-     * @return bool
+     * @return string
      */
-    protected function isUsingSchema(string $connectionName): bool
+    public function separateBy(string $connectionName): string
     {
-        return $this->getDriver($this->getBaseConnection($connectionName)) === 'pgsql' && $this->app['config']['tenancy.using_schema_connection'];
+        if ($this->getDriver($this->getBaseConnection($connectionName)) === 'pgsql'
+            && $this->app['config']['tenancy.separate_by'] === 'schema') {
+            return 'schema';
+        }
+
+        return 'database';
     }
 }
