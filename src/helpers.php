@@ -57,7 +57,7 @@ if (! function_exists('global_cache')) {
 }
 
 if (! function_exists('tenant_route')) {
-    function tenant_route(string $route, array $parameters = [], string $domain = null): string
+    function tenant_route($route, $parameters = [], string $domain = null)
     {
         $domain = $domain ?? request()->getHost();
 
