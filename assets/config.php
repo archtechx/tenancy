@@ -30,6 +30,7 @@ return [
         'based_on' => null, // The connection that will be used as a base for the dynamically created tenant connection. Set to null to use the default connection.
         'prefix' => 'tenant',
         'suffix' => '',
+        'separate_by' => 'database', // database or schema (only supported by pgsql)
     ],
     'redis' => [
         'prefix_base' => 'tenant',
@@ -69,7 +70,6 @@ return [
         'mysql' => 'mysql',
         'pgsql' => 'pgsql',
     ],
-    'separate_by' => 'database', // database or schema (only supported by pgsql)
     'bootstrappers' => [
         // Tenancy bootstrappers are executed when tenancy is initialized.
         // Their responsibility is making Laravel features tenant-aware.

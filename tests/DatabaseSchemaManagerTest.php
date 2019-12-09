@@ -20,7 +20,7 @@ class DatabaseSchemaManagerTest extends TestCase
             'database.connections.pgsql.schema' => 'public',
             'tenancy.database.based_on' => null,
             'tenancy.database.suffix' => '',
-            'tenancy.separate_by' => 'schema',
+            'tenancy.database.separate_by' => 'schema',
         ]);
     }
 

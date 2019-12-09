@@ -248,7 +248,7 @@ class DatabaseManager
     public function separateBy(string $connectionName): string
     {
         if ($this->getDriver($this->getBaseConnection($connectionName)) === 'pgsql'
-            && $this->app['config']['tenancy.separate_by'] === 'schema') {
+            && $this->app['config']['tenancy.database.separate_by'] === 'schema') {
             return 'schema';
         }
 
