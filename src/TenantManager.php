@@ -78,11 +78,11 @@ class TenantManager
 
         if ($this->shouldMigrateAfterCreation()) {
             $afterCreating[] = $this->databaseCreationQueued()
-                ? new QueuedTenantDatabaseMigrator($tenant)
+                ? new QueuedTenantDatabaseMigrator($tenant, $this->getMigrationParameters())
                 : function () use ($tenant) {
                     $this->artisan->call('tenants:migrate', [
                         '--tenants' => [$tenant['id']],
-                    ]);
+                    ] + $this->getMigrationParameters());
                 };
         }
 
@@ -399,6 +399,11 @@ class TenantManager
     public function getSeederParameters()
     {
         return $this->app['config']['tenancy.seeder_parameters'] ?? [];
+    }
+
+    public function getMigrationParameters()
+    {
+        return $this->app['config']['tenancy.migration_parameters'] ?? [];
     }
 
     /**

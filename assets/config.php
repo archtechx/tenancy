@@ -93,9 +93,13 @@ return [
     'home_url' => '/app',
     'queue_database_creation' => false,
     'migrate_after_creation' => false, // run migrations after creating a tenant
+    'migration_parameters' => [
+        // '--force' => true, // force database migrations
+    ],
     'seed_after_migration' => false, // should the seeder run after automatic migration
     'seeder_parameters' => [
         '--class' => 'DatabaseSeeder', // root seeder class to run after automatic migrations, e.g.: 'DatabaseSeeder'
+        // '--force' => true, // force database seeder
     ],
     'queue_database_deletion' => false,
     'delete_database_after_tenant_deletion' => false, // delete the tenant's database after deleting the tenant
