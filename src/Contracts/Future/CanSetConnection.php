@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Contracts\Future;
 
 use Illuminate\Database\Connection;
