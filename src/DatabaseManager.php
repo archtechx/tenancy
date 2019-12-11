@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Illuminate\Foundation\Application;
+use Stancl\Tenancy\Contracts\Future\CanSetConnection;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
@@ -226,7 +227,7 @@ class DatabaseManager
      */
     public function getTenantDatabaseManager(Tenant $tenant): TenantDatabaseManager
     {
-        $driver = $this->getDriver($this->getBaseConnection($tenant->getConnectionName()));
+        $driver = $this->getDriver($this->getBaseConnection($connectionName = $tenant->getConnectionName()));
 
         $databaseManagers = $this->app['config']['tenancy.database_managers'];
 
@@ -234,6 +235,12 @@ class DatabaseManager
             throw new DatabaseManagerNotRegisteredException($driver);
         }
 
-        return $this->app[$databaseManagers[$driver]];
+        $databaseManager = $this->app[$databaseManagers[$driver]];
+
+        if ($connectionName !== 'tenant' && $databaseManager instanceof CanSetConnection) {
+            $databaseManager->setConnection($this->database->connection($connectionName));
+        }
+
+        return $databaseManager;
     }
 }
