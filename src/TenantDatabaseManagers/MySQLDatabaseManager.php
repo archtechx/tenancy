@@ -5,17 +5,24 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\TenantDatabaseManagers;
 
 use Illuminate\Contracts\Config\Repository;
+use Illuminate\Database\Connection;
 use Illuminate\Database\DatabaseManager as IlluminateDatabaseManager;
+use Stancl\Tenancy\Contracts\Future\CanSetConnection;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 
-class MySQLDatabaseManager implements TenantDatabaseManager
+class MySQLDatabaseManager implements TenantDatabaseManager, CanSetConnection
 {
-    /** @var \Illuminate\Database\Connection */
+    /** @var Connection */
     protected $database;
 
     public function __construct(Repository $config, IlluminateDatabaseManager $databaseManager)
     {
         $this->database = $databaseManager->connection($config['tenancy.database_manager_connections.mysql']);
+    }
+
+    public function setConnection(Connection $connection)
+    {
+        $this->database = $connection;
     }
 
     public function createDatabase(string $name): bool
