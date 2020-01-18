@@ -12,6 +12,6 @@ trait DealsWithMigrations
             return parent::getMigrationPaths();
         }
 
-        return [config('tenancy.migrations_directory', database_path('migrations/tenant'))];
+        return config('tenancy.migrations_paths', [database_path('migrations/tenant')]);
     }
 }
