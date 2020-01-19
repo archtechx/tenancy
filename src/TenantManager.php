@@ -73,6 +73,8 @@ class TenantManager
 
         $this->storage->createTenant($tenant);
 
+        $tenant->persisted = true;
+
         /** @var \Illuminate\Contracts\Queue\ShouldQueue[]|callable[] $afterCreating */
         $afterCreating = [];
 
