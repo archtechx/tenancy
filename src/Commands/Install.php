@@ -33,7 +33,7 @@ class Install extends Command
         $this->callSilent('vendor:publish', [
             '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
             '--tag' => 'config',
-            ]);
+        ]);
         $this->info('✔️  Created config/tenancy.php');
 
         $newKernel = str_replace(
