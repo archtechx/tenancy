@@ -121,4 +121,18 @@ class TenantManagerEventsTest extends TestCase
         tenancy()->init('abc.localhost');
         $this->assertSame('tenant', \DB::connection()->getConfig()['name']);
     }
+
+    /** @test */
+    public function tenant_is_persisted_before_the_created_hook_is_called()
+    {
+        $was_persisted = false;
+
+        Tenancy::eventListener('tenant.created', function ($tenancy, $tenant) use (&$was_persisted) {
+            $was_persisted = $tenant->persisted;
+        });
+
+        Tenant::new()->save();
+
+        $this->assertTrue($was_persisted);
+    }
 }
