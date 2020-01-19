@@ -41,7 +41,7 @@ class Tenant implements ArrayAccess
     /** @var Repository */
     protected $config;
 
-    /** @var StorageDriver */
+    /** @var StorageDriver|CanDeleteKeys */
     protected $storage;
 
     /** @var TenantManager */
@@ -232,8 +232,6 @@ class Tenant implements ArrayAccess
         } else {
             $this->manager->createTenant($this);
         }
-
-        $this->persisted = true;
 
         return $this;
     }
