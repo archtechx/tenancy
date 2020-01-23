@@ -109,10 +109,12 @@ class TenancyServiceProvider extends ServiceProvider
 
         // Queue tenancy
         $this->app['events']->listen(\Illuminate\Queue\Events\JobProcessing::class, function ($event) {
-            if (array_key_exists('tenant_id', $event->job->payload())) {
-                if (! tenancy()->initialized) { // dispatchNow
-                    tenancy()->initialize(tenancy()->find($event->job->payload()['tenant_id']));
-                }
+            $tenantId = $event->job->payload()['tenant_id'] ?? null;
+            if (
+                $tenantId !== null &&
+                (! tenancy()->initialized || tenancy('id') !== $tenantId)
+            ) {
+                tenancy()->initById($tenantId);
             }
         });
     }
