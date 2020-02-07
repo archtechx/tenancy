@@ -6,7 +6,6 @@ namespace Stancl\Tenancy\TenantDatabaseManagers;
 
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\Connection;
-use Illuminate\Database\DatabaseManager as IlluminateDatabaseManager;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Contracts\Future\CanSetConnection;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
