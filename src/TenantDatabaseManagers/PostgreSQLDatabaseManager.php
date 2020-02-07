@@ -6,22 +6,28 @@ namespace Stancl\Tenancy\TenantDatabaseManagers;
 
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\Connection;
-use Illuminate\Database\DatabaseManager as IlluminateDatabaseManager;
+use Illuminate\Support\Facades\DB;
+use Stancl\Tenancy\Contracts\Future\CanSetConnection;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 
-class PostgreSQLDatabaseManager implements TenantDatabaseManager
+class PostgreSQLDatabaseManager implements TenantDatabaseManager, CanSetConnection
 {
-    /** @var Connection */
-    protected $database;
+    /** @var string */
+    protected $connection;
 
-    public function __construct(Repository $config, IlluminateDatabaseManager $databaseManager)
+    public function __construct(Repository $config)
     {
-        $this->database = $databaseManager->connection($config['tenancy.database_manager_connections.pgsql']);
+        $this->connection = $config->get('tenancy.database_manager_connections.pgsql');
     }
 
-    public function setConnection(Connection $connection)
+    protected function database(): Connection
     {
-        $this->database = $connection;
+        return DB::connection($this->connection);
+    }
+
+    public function setConnection(string $connection): void
+    {
+        $this->connection = $connection;
     }
 
     public function createDatabase(string $name): bool
