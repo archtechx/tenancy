@@ -32,16 +32,16 @@ class PostgreSQLDatabaseManager implements TenantDatabaseManager, CanSetConnecti
 
     public function createDatabase(string $name): bool
     {
-        return $this->database->statement("CREATE DATABASE \"$name\" WITH TEMPLATE=template0");
+        return $this->database()->statement("CREATE DATABASE \"$name\" WITH TEMPLATE=template0");
     }
 
     public function deleteDatabase(string $name): bool
     {
-        return $this->database->statement("DROP DATABASE \"$name\"");
+        return $this->database()->statement("DROP DATABASE \"$name\"");
     }
 
     public function databaseExists(string $name): bool
     {
-        return (bool) $this->database->select("SELECT datname FROM pg_database WHERE datname = '$name'");
+        return (bool) $this->database()->select("SELECT datname FROM pg_database WHERE datname = '$name'");
     }
 }
