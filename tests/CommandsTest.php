@@ -18,7 +18,7 @@ class CommandsTest extends TestCase
     {
         parent::setUp();
 
-        config('tenancy.migrations_paths', [database_path('migrations/tenant')]);
+        config('tenancy.migrations_paths', [database_path('../migrations')]);
     }
 
     /** @test */
