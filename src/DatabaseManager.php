@@ -238,7 +238,7 @@ class DatabaseManager
         $databaseManager = $this->app[$databaseManagers[$driver]];
 
         if ($connectionName !== 'tenant' && $databaseManager instanceof CanSetConnection) {
-            $databaseManager->setConnection($this->database->connection($connectionName));
+            $databaseManager->setConnection($connectionName);
         }
 
         return $databaseManager;
