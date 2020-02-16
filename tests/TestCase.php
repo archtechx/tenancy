@@ -96,7 +96,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'tenancy.redis.tenancy' => env('TENANCY_TEST_REDIS_TENANCY', true),
             'database.redis.client' => env('TENANCY_TEST_REDIS_CLIENT', 'phpredis'),
             'tenancy.redis.prefixed_connections' => ['default'],
-            'tenancy.migrations_directory' => database_path('../migrations'),
+            'tenancy.migration_paths' => [database_path('../migrations')],
             'tenancy.storage_drivers.db.connection' => 'central',
             'tenancy.bootstrappers.redis' => \Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class,
             'queue.connections.central' => [
