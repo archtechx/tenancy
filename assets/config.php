@@ -91,6 +91,7 @@ return [
         // 'paypal_api_key' => 'services.paypal.api_key',
     ],
     'home_url' => '/app',
+    'create_database' => true,
     'queue_database_creation' => false,
     'migrate_after_creation' => false, // run migrations after creating a tenant
     'migration_parameters' => [
