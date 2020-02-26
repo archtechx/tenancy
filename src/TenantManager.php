@@ -98,7 +98,9 @@ class TenantManager
                 };
         }
 
-        $this->database->createDatabase($tenant, $afterCreating);
+        if ($this->shouldCreateDatabase($tenant)) {
+            $this->database->createDatabase($tenant, $afterCreating);
+        }
 
         $this->event('tenant.created', $tenant);
 
@@ -376,6 +378,15 @@ class TenantManager
     public function tenancyBootstrappers($except = []): array
     {
         return array_diff_key($this->app['config']['tenancy.bootstrappers'], array_flip($except));
+    }
+
+    public function shouldCreateDatabase(Tenant $tenant): bool
+    {
+        if (array_key_exists('_tenancy_create_database', $tenant->data)) {
+            return $tenant->data['_tenancy_create_database'];
+        }
+
+        return $this->app['config']['tenancy.create_database'] ?? true;
     }
 
     public function shouldMigrateAfterCreation(): bool
