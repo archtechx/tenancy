@@ -6,6 +6,7 @@ namespace Stancl\Tenancy;
 
 use Closure;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\Future\CanSetConnection;
@@ -110,9 +111,9 @@ class DatabaseManager
      * Get the name of the connection that $connectionName should be based on.
      *
      * @param string $connectionName
-     * @return string
+     * @return string|null
      */
-    public function getBaseConnection(string $connectionName): string
+    public function getBaseConnection(string $connectionName): ?string
     {
         return ($connectionName !== 'tenant' ? $connectionName : null) // 'tenant' is not a specific connection, it's the default
             ?? $this->app['config']['tenancy.database.based_on']
@@ -149,6 +150,8 @@ class DatabaseManager
      * @param Tenant $tenant
      * @return void
      * @throws TenantCannotBeCreatedException
+     * @throws DatabaseManagerNotRegisteredException
+     * @throws TenantDatabaseAlreadyExistsException
      */
     public function ensureTenantCanBeCreated(Tenant $tenant): void
     {
@@ -163,6 +166,7 @@ class DatabaseManager
      * @param Tenant $tenant
      * @param ShouldQueue[]|callable[] $afterCreating
      * @return void
+     * @throws DatabaseManagerNotRegisteredException
      */
     public function createDatabase(Tenant $tenant, array $afterCreating = [])
     {
@@ -204,6 +208,7 @@ class DatabaseManager
      *
      * @param Tenant $tenant
      * @return void
+     * @throws DatabaseManagerNotRegisteredException
      */
     public function deleteDatabase(Tenant $tenant)
     {
@@ -226,6 +231,7 @@ class DatabaseManager
      *
      * @param Tenant $tenant
      * @return TenantDatabaseManager
+     * @throws DatabaseManagerNotRegisteredException
      */
     public function getTenantDatabaseManager(Tenant $tenant): TenantDatabaseManager
     {

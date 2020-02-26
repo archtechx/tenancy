@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Stancl\Tenancy\Tenant;
+use Illuminate\Support\Str;
 
 class DatabaseSchemaManagerTest extends TestCase
 {
@@ -21,6 +22,7 @@ class DatabaseSchemaManagerTest extends TestCase
             'tenancy.database.based_on' => null,
             'tenancy.database.suffix' => '',
             'tenancy.database.separate_by' => 'schema',
+            'tenancy.database_managers.pgsql' => \Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLSchemaManager::class,
         ]);
     }
 
@@ -88,7 +90,7 @@ class DatabaseSchemaManagerTest extends TestCase
     }
 
     /** @test */
-    public function databases_are_separated()
+    public function schemas_are_separated()
     {
         // copied from DataSeparationTest
 
@@ -135,7 +137,7 @@ class DatabaseSchemaManagerTest extends TestCase
         $this->assertSame(null, User::first());
 
         tenancy()->init('tenant1.localhost');
-        DB::table('users')->where('id', 1)->update(['name' => 'xxx']);
+        \DB::table('users')->where('id', 1)->update(['name' => 'xxx']);
         $this->assertSame('xxx', User::first()->name);
     }
 }

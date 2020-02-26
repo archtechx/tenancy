@@ -4,18 +4,25 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\TenantDatabaseManagers;
 
+use Illuminate\Database\Connection;
 use Illuminate\Contracts\Config\Repository;
-use Illuminate\Database\DatabaseManager as IlluminateDatabaseManager;
+use Stancl\Tenancy\Contracts\Future\CanSetConnection;
+use Illuminate\Database\DatabaseManager;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 
-class PostgreSQLSchemaManager implements TenantDatabaseManager
+class PostgreSQLSchemaManager implements TenantDatabaseManager, CanSetConnection
 {
-    /** @var \Illuminate\Database\Connection */
+    /** @var Connection */
     protected $database;
 
-    public function __construct(Repository $config, IlluminateDatabaseManager $databaseManager)
+    /** @var string */
+    protected $connection;
+
+    public function __construct(Repository $config, DatabaseManager $databaseManager)
     {
-        $this->database = $databaseManager->connection($config['tenancy.database_manager_connections.pgsql']);
+        $this->connection = $config['tenancy.database_manager_connections.pgsql'];
+
+        $this->database = $databaseManager->connection($this->connection);
     }
 
     public function createDatabase(string $name): bool
@@ -31,5 +38,10 @@ class PostgreSQLSchemaManager implements TenantDatabaseManager
     public function databaseExists(string $name): bool
     {
         return (bool) $this->database->select("SELECT schema_name FROM information_schema.schemata WHERE schema_name = '$name'");
+    }
+
+    public function setConnection(string $connection): void
+    {
+        $this->connection = $connection;
     }
 }
