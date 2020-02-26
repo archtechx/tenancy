@@ -43,6 +43,7 @@ return [
     'filesystem' => [ // https://tenancy.samuelstancl.me/docs/v2/filesystem-tenancy/
         'suffix_base' => 'tenant',
         'suffix_storage_path' => true, // Note: Disabling this will likely break local disk tenancy. Only disable this if you're using an external file storage service like S3.
+        'asset_helper_tenancy' => true, // should asset() be automatically tenant-aware. You may want to disable this if you use tools like Horizon.
         // Disks which should be suffixed with the suffix_base + tenant id.
         'disks' => [
             'local',
