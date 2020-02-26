@@ -73,16 +73,18 @@ class TenantManager
 
         $this->storage->createTenant($tenant);
 
+        $tenant->persisted = true;
+
         /** @var \Illuminate\Contracts\Queue\ShouldQueue[]|callable[] $afterCreating */
         $afterCreating = [];
 
         if ($this->shouldMigrateAfterCreation()) {
             $afterCreating[] = $this->databaseCreationQueued()
-                ? new QueuedTenantDatabaseMigrator($tenant)
+                ? new QueuedTenantDatabaseMigrator($tenant, $this->getMigrationParameters())
                 : function () use ($tenant) {
                     $this->artisan->call('tenants:migrate', [
                         '--tenants' => [$tenant['id']],
-                    ]);
+                    ] + $this->getMigrationParameters());
                 };
         }
 
@@ -96,7 +98,9 @@ class TenantManager
                 };
         }
 
-        $this->database->createDatabase($tenant, $afterCreating);
+        if ($this->shouldCreateDatabase($tenant)) {
+            $this->database->createDatabase($tenant, $afterCreating);
+        }
 
         $this->event('tenant.created', $tenant);
 
@@ -376,6 +380,15 @@ class TenantManager
         return array_diff_key($this->app['config']['tenancy.bootstrappers'], array_flip($except));
     }
 
+    public function shouldCreateDatabase(Tenant $tenant): bool
+    {
+        if (array_key_exists('_tenancy_create_database', $tenant->data)) {
+            return $tenant->data['_tenancy_create_database'];
+        }
+
+        return $this->app['config']['tenancy.create_database'] ?? true;
+    }
+
     public function shouldMigrateAfterCreation(): bool
     {
         return $this->app['config']['tenancy.migrate_after_creation'] ?? false;
@@ -399,6 +412,11 @@ class TenantManager
     public function getSeederParameters()
     {
         return $this->app['config']['tenancy.seeder_parameters'] ?? [];
+    }
+
+    public function getMigrationParameters()
+    {
+        return $this->app['config']['tenancy.migration_parameters'] ?? [];
     }
 
     /**

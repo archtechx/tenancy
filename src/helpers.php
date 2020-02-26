@@ -18,14 +18,19 @@ if (! function_exists('tenancy')) {
 }
 
 if (! function_exists('tenant')) {
-    /** @return Tenant|mixed */
+    /**
+     * Get a key from the current tenant's storage.
+     *
+     * @param string|null $key
+     * @return Tenant|mixed
+     */
     function tenant($key = null)
     {
-        if (! is_null($key)) {
-            return optional(app(Tenant::class))->get($key) ?? null;
+        if (is_null($key)) {
+            return app(Tenant::class);
         }
 
-        return app(Tenant::class);
+        return optional(app(Tenant::class))->get($key) ?? null;
     }
 }
 
@@ -52,7 +57,7 @@ if (! function_exists('global_cache')) {
 }
 
 if (! function_exists('tenant_route')) {
-    function tenant_route(string $route, array $parameters = [], string $domain = null): string
+    function tenant_route($route, $parameters = [], string $domain = null)
     {
         $domain = $domain ?? request()->getHost();
 

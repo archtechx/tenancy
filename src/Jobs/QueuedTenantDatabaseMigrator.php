@@ -19,9 +19,13 @@ class QueuedTenantDatabaseMigrator implements ShouldQueue
     /** @var string */
     protected $tenantId;
 
-    public function __construct(Tenant $tenant)
+    /** @var array */
+    protected $migrationParameters = [];
+
+    public function __construct(Tenant $tenant, $migrationParameters = [])
     {
         $this->tenantId = $tenant->id;
+        $this->migrationParameters = $migrationParameters;
     }
 
     /**
@@ -33,6 +37,6 @@ class QueuedTenantDatabaseMigrator implements ShouldQueue
     {
         Artisan::call('tenants:migrate', [
             '--tenants' => [$this->tenantId],
-        ]);
+        ] + $this->migrationParameters);
     }
 }

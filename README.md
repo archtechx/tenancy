@@ -26,6 +26,8 @@ Documentation can be found here: https://tenancy.samuelstancl.me/docs/v2/
 
 The repository with the documentation source code can be found here: [stancl/tenancy-docs](https://github.com/stancl/tenancy-docs).
 
+### [Need help?](https://github.com/stancl/tenancy/blob/2.x/SUPPORT.md)
+
 ### Credits
 
 - Created by [Samuel Štancl](https://github.com/stancl)

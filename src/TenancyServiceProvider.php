@@ -109,11 +109,21 @@ class TenancyServiceProvider extends ServiceProvider
 
         // Queue tenancy
         $this->app['events']->listen(\Illuminate\Queue\Events\JobProcessing::class, function ($event) {
-            if (array_key_exists('tenant_id', $event->job->payload())) {
-                if (! tenancy()->initialized) { // dispatchNow
-                    tenancy()->initialize(tenancy()->find($event->job->payload()['tenant_id']));
-                }
+            $tenantId = $event->job->payload()['tenant_id'] ?? null;
+
+            // The job is not tenant-aware
+            if (! $tenantId) {
+                return;
             }
+
+            // Tenancy is already initialized for the tenant (e.g. dispatchNow was used)
+            if (tenancy()->initialized && tenant('id') === $tenantId) {
+                return;
+            }
+
+            // Tenancy was either not initialized, or initialized for a different tenant.
+            // Therefore, we initialize it for the correct tenant.
+            tenancy()->initById($tenantId);
         });
     }
 }

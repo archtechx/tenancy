@@ -44,6 +44,7 @@ return [
     'filesystem' => [ // https://tenancy.samuelstancl.me/docs/v2/filesystem-tenancy/
         'suffix_base' => 'tenant',
         'suffix_storage_path' => true, // Note: Disabling this will likely break local disk tenancy. Only disable this if you're using an external file storage service like S3.
+        'asset_helper_tenancy' => true, // should asset() be automatically tenant-aware. You may want to disable this if you use tools like Horizon.
         // Disks which should be suffixed with the suffix_base + tenant id.
         'disks' => [
             'local',
@@ -93,11 +94,16 @@ return [
         // 'paypal_api_key' => 'services.paypal.api_key',
     ],
     'home_url' => '/app',
+    'create_database' => true,
     'queue_database_creation' => false,
     'migrate_after_creation' => false, // run migrations after creating a tenant
+    'migration_parameters' => [
+        // '--force' => true, // force database migrations
+    ],
     'seed_after_migration' => false, // should the seeder run after automatic migration
     'seeder_parameters' => [
         '--class' => 'DatabaseSeeder', // root seeder class to run after automatic migrations, e.g.: 'DatabaseSeeder'
+        // '--force' => true, // force database seeder
     ],
     'queue_database_deletion' => false,
     'delete_database_after_tenant_deletion' => false, // delete the tenant's database after deleting the tenant

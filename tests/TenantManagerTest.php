@@ -345,4 +345,38 @@ class TenantManagerTest extends TestCase
         $this->assertArrayHasKey('foo', $tenant->data);
         $this->assertArrayHasKey('abc123', $tenant->data);
     }
+
+    /** @test */
+    public function database_creation_can_be_disabled()
+    {
+        config(['tenancy.create_database' => false]);
+
+        tenancy()->hook('database.creating', function () {
+            $this->fail();
+        });
+
+        $tenant = Tenant::new()->save();
+
+        $this->assertTrue(true);
+    }
+
+    /** @test */
+    public function database_creation_can_be_disabled_for_specific_tenants()
+    {
+        config(['tenancy.create_database' => true]);
+
+        tenancy()->hook('database.creating', function () {
+            $this->assertTrue(true);
+        });
+
+        $tenant = Tenant::new()->save();
+
+        tenancy()->hook('database.creating', function () {
+            $this->fail();
+        });
+
+        $tenant2 = Tenant::new()->withData([
+            '_tenancy_create_database' => false,
+        ])->save();
+    }
 }
