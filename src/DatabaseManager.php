@@ -6,10 +6,10 @@ namespace Stancl\Tenancy;
 
 use Closure;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\Future\CanSetConnection;
+use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;

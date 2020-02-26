@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\TenantDatabaseManagers;
 
-use Illuminate\Database\Connection;
 use Illuminate\Contracts\Config\Repository;
-use Stancl\Tenancy\Contracts\Future\CanSetConnection;
+use Illuminate\Database\Connection;
 use Illuminate\Database\DatabaseManager;
+use Stancl\Tenancy\Contracts\Future\CanSetConnection;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 
 class PostgreSQLSchemaManager implements TenantDatabaseManager, CanSetConnection

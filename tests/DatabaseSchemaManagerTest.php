@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
-use Stancl\Tenancy\Tenant;
 use Illuminate\Support\Str;
+use Stancl\Tenancy\Tenant;
 
 class DatabaseSchemaManagerTest extends TestCase
 {
