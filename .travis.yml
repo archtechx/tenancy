@@ -14,7 +14,6 @@ before_install:
 
 install:
   - travis_retry docker-compose exec test composer require --no-interaction "laravel/framework:$LARAVEL_VERSION"
-install:
   - travis_retry docker-compose exec test composer install --no-interaction
 
 before_script:
