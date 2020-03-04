@@ -39,7 +39,7 @@ class TenantManagerTest extends TestCase
     /** @test */
     public function initById_works()
     {
-        if (app()->version()[0] === '6') {
+        if (app()->version()[0] === '7') {
             $this->fail('laravel 7 is used');
         }
 
