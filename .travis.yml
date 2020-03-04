@@ -2,9 +2,9 @@ env:
   - LARAVEL_VERSION="^6.0"
   - LARAVEL_VERSION="^7.0"
 
-language: php
-php:
-  - '7.4'
+# language: php
+# php:
+#   - '7.4'
 
 services:
   - docker
