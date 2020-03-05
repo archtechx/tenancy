@@ -12,36 +12,36 @@ use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 
 class PostgreSQLSchemaManager implements TenantDatabaseManager, CanSetConnection
 {
-    /** @var Connection */
-    protected $database;
-
     /** @var string */
     protected $connection;
 
-    public function __construct(Repository $config, DatabaseManager $databaseManager)
+    public function __construct(Repository $config)
     {
-        $this->connection = $config['tenancy.database_manager_connections.pgsql'];
-
-        $this->database = $databaseManager->connection($this->connection);
+        $this->connection = $config->get('tenancy.database_manager_connections.mysql');
     }
 
-    public function createDatabase(string $name): bool
+    protected function database(): Connection
     {
-        return $this->database->statement("CREATE SCHEMA \"$name\"");
-    }
-
-    public function deleteDatabase(string $name): bool
-    {
-        return $this->database->statement("DROP SCHEMA \"$name\"");
-    }
-
-    public function databaseExists(string $name): bool
-    {
-        return (bool) $this->database->select("SELECT schema_name FROM information_schema.schemata WHERE schema_name = '$name'");
+        return DB::connection($this->connection);
     }
 
     public function setConnection(string $connection): void
     {
         $this->connection = $connection;
+    }
+
+    public function createDatabase(string $name): bool
+    {
+        return $this->database()->statement("CREATE SCHEMA \"$name\"");
+    }
+
+    public function deleteDatabase(string $name): bool
+    {
+        return $this->database()->statement("DROP SCHEMA \"$name\"");
+    }
+
+    public function databaseExists(string $name): bool
+    {
+        return (bool) $this->database()->select("SELECT schema_name FROM information_schema.schemata WHERE schema_name = '$name'");
     }
 }
