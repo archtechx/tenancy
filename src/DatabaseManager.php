@@ -111,9 +111,9 @@ class DatabaseManager
      * Get the name of the connection that $connectionName should be based on.
      *
      * @param string $connectionName
-     * @return string|null
+     * @return string
      */
-    public function getBaseConnection(string $connectionName): ?string
+    public function getBaseConnection(string $connectionName): string
     {
         return ($connectionName !== 'tenant' ? $connectionName : null) // 'tenant' is not a specific connection, it's the default
             ?? $this->app['config']['tenancy.database.based_on']
