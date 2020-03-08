@@ -17,7 +17,7 @@ class PostgreSQLSchemaManager implements TenantDatabaseManager, CanSetConnection
 
     public function __construct(Repository $config)
     {
-        $this->connection = $config->get('tenancy.database_manager_connections.mysql');
+        $this->connection = $config->get('tenancy.database_manager_connections.pgsql');
     }
 
     protected function database(): Connection
