@@ -24,11 +24,7 @@ class TenantManager
 {
     use ForwardsCalls;
 
-    /**
-     * The current tenant.
-     *
-     * @var Tenant
-     */
+    /** @var Tenant The current tenant. */
     protected $tenant;
 
     /** @var Application */
