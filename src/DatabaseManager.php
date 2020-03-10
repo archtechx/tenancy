@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\Future\CanSetConnection;
+use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
@@ -101,7 +102,9 @@ class DatabaseManager
 
         // Change database name.
         $databaseName = $this->getDriver($connectionName) === 'sqlite' ? database_path($databaseName) : $databaseName;
-        $this->app['config']["database.connections.$connectionName.database"] = $databaseName;
+        $separateBy = $this->separateBy($connectionName);
+
+        $this->app['config']["database.connections.$connectionName.$separateBy"] = $databaseName;
     }
 
     /**
@@ -147,6 +150,8 @@ class DatabaseManager
      * @param Tenant $tenant
      * @return void
      * @throws TenantCannotBeCreatedException
+     * @throws DatabaseManagerNotRegisteredException
+     * @throws TenantDatabaseAlreadyExistsException
      */
     public function ensureTenantCanBeCreated(Tenant $tenant): void
     {
@@ -161,6 +166,7 @@ class DatabaseManager
      * @param Tenant $tenant
      * @param ShouldQueue[]|callable[] $afterCreating
      * @return void
+     * @throws DatabaseManagerNotRegisteredException
      */
     public function createDatabase(Tenant $tenant, array $afterCreating = [])
     {
@@ -202,6 +208,7 @@ class DatabaseManager
      *
      * @param Tenant $tenant
      * @return void
+     * @throws DatabaseManagerNotRegisteredException
      */
     public function deleteDatabase(Tenant $tenant)
     {
@@ -224,6 +231,7 @@ class DatabaseManager
      *
      * @param Tenant $tenant
      * @return TenantDatabaseManager
+     * @throws DatabaseManagerNotRegisteredException
      */
     public function getTenantDatabaseManager(Tenant $tenant): TenantDatabaseManager
     {
@@ -242,5 +250,21 @@ class DatabaseManager
         }
 
         return $databaseManager;
+    }
+
+    /**
+     * What key on the connection config should be used to separate tenants.
+     *
+     * @param string $connectionName
+     * @return string
+     */
+    public function separateBy(string $connectionName): string
+    {
+        if ($this->getDriver($this->getBaseConnection($connectionName)) === 'pgsql'
+            && $this->app['config']['tenancy.database.separate_by'] === 'schema') {
+            return 'schema';
+        }
+
+        return 'database';
     }
 }
