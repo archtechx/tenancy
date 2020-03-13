@@ -32,12 +32,16 @@ class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys, CanFindByAn
     /** @var DomainRepository */
     protected $domains;
 
+    /** @var CachedTenantResolver */
+    protected $cache;
+
     /** @var Tenant The default tenant. */
     protected $tenant;
 
-    public function __construct(Application $app, ConfigRepository $config)
+    public function __construct(Application $app, ConfigRepository $config, CachedTenantResolver $cache)
     {
         $this->app = $app;
+        $this->cache = $cache;
         $this->centralDatabase = $this->getCentralConnection();
         $this->tenants = new TenantRepository($config);
         $this->domains = new DomainRepository($config);
@@ -60,7 +64,16 @@ class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys, CanFindByAn
 
     public function findByDomain(string $domain): Tenant
     {
-        $id = $this->domains->getTenantIdByDomain($domain);
+        $query = function () use ($domain) {
+            return $this->domains->getTenantIdByDomain($domain);
+        };
+
+        if ($this->usesCache()) {
+            $id = $this->cache->getTenantIdByDomain($domain, $query);
+        } else {
+            $id = $query();
+        }
+
         if (! $id) {
             throw new TenantCouldNotBeIdentifiedException($domain);
         }
@@ -70,14 +83,25 @@ class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys, CanFindByAn
 
     public function findById(string $id): Tenant
     {
-        $tenant = $this->tenants->find($id);
+        $dataQuery = function () use ($id) {
+            return $this->tenants->decodeData($this->tenants->find($id));
+        };
+        $domainsQuery = function () use ($id) {
+            return $this->domains->getTenantDomains($id);
+        };
 
-        if (! $tenant) {
+        if ($this->usesCache()) {
+            return $this->cache->findById($id, $dataQuery, $domainsQuery);
+        } else {
+            $data = $dataQuery();
+        }
+
+        if (! $data) {
             throw new TenantDoesNotExistException($id);
         }
 
-        return Tenant::fromStorage($this->tenants->decodeData($tenant))
-            ->withDomains($this->domains->getTenantDomains($id));
+        return Tenant::fromStorage($data)
+            ->withDomains($domainsQuery());
     }
 
     /**
@@ -190,5 +214,11 @@ class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys, CanFindByAn
     public function deleteMany(array $keys, Tenant $tenant = null): void
     {
         $this->tenants->deleteMany($keys, $tenant ?? $this->currentTenant());
+    }
+
+    public function usesCache(): bool
+    {
+        // null is also truthy here
+        return $this->app['config']['tenancy.storage_drivers.db.cache_store'] !== false;
     }
 }
