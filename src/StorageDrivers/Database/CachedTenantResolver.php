@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\StorageDrivers\Database;
 
 use Closure;
 use Illuminate\Cache\CacheManager;
-use Illuminate\Config\Repository as ConfigRepository;
 use Illuminate\Cache\Repository as CacheRepository;
-use Illuminate\Contracts\Cache\Store;
+use Illuminate\Config\Repository as ConfigRepository;
 use Stancl\Tenancy\Tenant;
 
 class CachedTenantResolver

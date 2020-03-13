@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Tests;
 
 use Stancl\Tenancy\Tenant;
@@ -42,7 +44,6 @@ class CachedResolverTest extends TestCase
     /** @test */
     public function modifying_tenants_domains_updates_domains_in_the_cached_domain_to_id_mapping()
     {
-        
     }
 
     /** @test */
