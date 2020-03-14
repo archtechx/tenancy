@@ -73,14 +73,33 @@ class CachedResolverTest extends TestCase
     }
 
     /** @test */
-    public function modifying_tenants_domains_updates_domains_in_the_cached_domain_to_id_mapping()
+    public function modifying_tenant_domains_invalidates_the_cached_domain_to_id_mapping()
     {
-        // todo adding domain adds mapping
-        // todo removing domain removes mapping
+        $tenant = Tenant::new()
+            ->withDomains(['foo.localhost', 'bar.localhost'])
+            ->save();
+        
+        // queried
+        $this->assertSame($tenant->id, tenancy()->findByDomain('foo.localhost')->id);
+        $this->assertSame($tenant->id, tenancy()->findByDomain('bar.localhost')->id);
+
+        // assert cache set
+        $this->assertSame($tenant->id, Cache::get('_tenancy_domain_to_id:foo.localhost'));
+        $this->assertSame($tenant->id, Cache::get('_tenancy_domain_to_id:bar.localhost'));
+
+        $tenant
+            ->removeDomains(['foo.localhost', 'bar.localhost'])
+            ->addDomains(['xyz.localhost'])
+            ->save();
+
+        // assert neither domain is cached
+        $this->assertSame(null, Cache::get('_tenancy_domain_to_id:foo.localhost'));
+        $this->assertSame(null, Cache::get('_tenancy_domain_to_id:bar.localhost'));
+        $this->assertSame(null, Cache::get('_tenancy_domain_to_id:xyz.localhost'));
     }
 
     /** @test */
-    public function modifying_tenants_data_updates_data_in_the_cached_id_to_tenant_data_mapping()
+    public function modifying_tenants_data_invalidates_tenant_data_cache()
     {
         $tenant = Tenant::new()->withData(['foo' => 'bar'])->save();
 
@@ -103,7 +122,7 @@ class CachedResolverTest extends TestCase
     }
 
     /** @test */
-    public function modifying_tenants_domains_updates_domains_in_the_cached_id_to_tenant_domains_mapping()
+    public function modifying_tenants_domains_invalidates_tenant_domain_cache()
     {
         $tenant = Tenant::new()
             ->withData(['foo' => 'bar'])
@@ -121,5 +140,22 @@ class CachedResolverTest extends TestCase
         $this->assertEquals(['foo.localhost', 'bar.localhost'], tenancy()->find($tenant->id)->domains);
     }
 
-    // todo deleting tenant invalidates all caches
+    /** @test */
+    public function deleting_a_tenant_invalidates_all_caches()
+    {
+        $tenant = Tenant::new()
+            ->withData(['foo' => 'bar'])
+            ->withDomains(['foo.localhost'])
+            ->save();
+
+        tenancy()->findByDomain('foo.localhost');
+        $this->assertEquals($tenant->id, Cache::get('_tenancy_domain_to_id:foo.localhost'));
+        $this->assertEquals($tenant->data, Cache::get('_tenancy_id_to_data:' . $tenant->id));
+        $this->assertEquals(['foo.localhost'], Cache::get('_tenancy_id_to_domains:' . $tenant->id));
+
+        $tenant->delete();
+        $this->assertEquals(null, Cache::get('_tenancy_domain_to_id:foo.localhost'));
+        $this->assertEquals(null, Cache::get('_tenancy_id_to_data:' . $tenant->id));
+        $this->assertEquals(null, Cache::get('_tenancy_id_to_domains:' . $tenant->id));
+    }
 }

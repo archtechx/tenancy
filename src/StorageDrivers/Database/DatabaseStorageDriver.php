@@ -168,10 +168,17 @@ class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys, CanFindByAn
 
     public function deleteTenant(Tenant $tenant): void
     {
+        $originalDomains = $this->domains->getTenantDomains($tenant);
+
         $this->centralDatabase->transaction(function () use ($tenant) {
             $this->tenants->where('id', $tenant->id)->delete();
             $this->domains->where('tenant_id', $tenant->id)->delete();
         });
+
+        if ($this->usesCache()) {
+            $this->cache->invalidateTenant($tenant->id);
+            $this->cache->invalidateDomainToIdMapping($originalDomains);
+        }
     }
 
     /**

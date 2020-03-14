@@ -64,6 +64,4 @@ class CachedTenantResolver
             $this->cache->forget('_tenancy_domain_to_id:' . $domain);
         }
     }
-
-    // todo update cache on writes to data & domains
 }
