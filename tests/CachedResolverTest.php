@@ -78,7 +78,7 @@ class CachedResolverTest extends TestCase
         $tenant = Tenant::new()
             ->withDomains(['foo.localhost', 'bar.localhost'])
             ->save();
-        
+
         // queried
         $this->assertSame($tenant->id, tenancy()->findByDomain('foo.localhost')->id);
         $this->assertSame($tenant->id, tenancy()->findByDomain('bar.localhost')->id);
