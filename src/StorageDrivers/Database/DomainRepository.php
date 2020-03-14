@@ -33,9 +33,8 @@ class DomainRepository extends Repository
         }, $tenant->domains));
     }
 
-    public function updateTenantDomains(Tenant $tenant)
+    public function updateTenantDomains(Tenant $tenant, array $originalDomains)
     {
-        $originalDomains = $this->getTenantDomains($tenant);
         $deletedDomains = array_diff($originalDomains, $tenant->domains);
         $newDomains = array_diff($tenant->domains, $originalDomains);
 
