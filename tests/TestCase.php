@@ -99,7 +99,6 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'tenancy.redis.prefixed_connections' => ['default'],
             'tenancy.migration_paths' => [database_path('../migrations')],
             'tenancy.storage_drivers.db.connection' => 'central',
-            'tenancy.storage_drivers.db.cache_store' => null, // TODO REMOVE THIS BEFORE MERGING TO 2.X
             'tenancy.bootstrappers.redis' => \Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class,
             'queue.connections.central' => [
                 'driver' => 'sync',
