@@ -114,7 +114,7 @@ class CachedResolverTest extends TestCase
         // cache record is set
         $this->assertSame('xyz', tenancy()->find($tenant->id)->get('foo'));
         $this->assertSame('xyz', Cache::get('_tenancy_id_to_data:' . $tenant->id)['foo']);
-        
+
         // cache record is invalidated
         $tenant->foo = 'abc';
         $tenant->save();
@@ -136,7 +136,7 @@ class CachedResolverTest extends TestCase
         // cache record is invalidated
         $tenant->addDomains(['bar.localhost'])->save();
         $this->assertEquals(null, Cache::get('_tenancy_id_to_domains:' . $tenant->id));
-        
+
         $this->assertEquals(['foo.localhost', 'bar.localhost'], tenancy()->find($tenant->id)->domains);
     }
 
