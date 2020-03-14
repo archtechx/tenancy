@@ -8,7 +8,6 @@ use Closure;
 use Illuminate\Cache\CacheManager;
 use Illuminate\Cache\Repository as CacheRepository;
 use Illuminate\Config\Repository as ConfigRepository;
-use Stancl\Tenancy\Tenant;
 
 class CachedTenantResolver
 {
