@@ -152,11 +152,18 @@ class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys, CanFindByAn
 
     public function updateTenant(Tenant $tenant): void
     {
-        $this->centralDatabase->transaction(function () use ($tenant) {
+        $originalDomains = $this->domains->getTenantDomains($tenant);
+
+        $this->centralDatabase->transaction(function () use ($tenant, $originalDomains) {
             $this->tenants->updateTenant($tenant);
 
-            $this->domains->updateTenantDomains($tenant);
+            $this->domains->updateTenantDomains($tenant, $originalDomains);
         });
+
+        if ($this->usesCache()) {
+            $this->cache->invalidateTenant($tenant->id);
+            $this->cache->invalidateDomainToIdMapping($originalDomains);
+        }
     }
 
     public function deleteTenant(Tenant $tenant): void
@@ -203,17 +210,32 @@ class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys, CanFindByAn
 
     public function put(string $key, $value, Tenant $tenant = null): void
     {
-        $this->tenants->put($key, $value, $tenant ?? $this->currentTenant());
+        $tenant = $tenant ?? $this->currentTenant();
+        $this->tenants->put($key, $value, $tenant);
+
+        if ($this->usesCache()) {
+            $this->cache->invalidateTenantData($tenant->id);
+        }
     }
 
     public function putMany(array $kvPairs, Tenant $tenant = null): void
     {
-        $this->tenants->putMany($kvPairs, $tenant ?? $this->currentTenant());
+        $tenant = $tenant ?? $this->currentTenant();
+        $this->tenants->putMany($kvPairs, $tenant);
+
+        if ($this->usesCache()) {
+            $this->cache->invalidateTenantData($tenant->id);
+        }
     }
 
     public function deleteMany(array $keys, Tenant $tenant = null): void
     {
-        $this->tenants->deleteMany($keys, $tenant ?? $this->currentTenant());
+        $tenant = $tenant ?? $this->currentTenant();
+        $this->tenants->deleteMany($keys, $tenant);
+
+        if ($this->usesCache()) {
+            $this->cache->invalidateTenantData($tenant->id);
+        }
     }
 
     public function usesCache(): bool

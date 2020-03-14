@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
+use Illuminate\Support\Facades\Cache;
+use Stancl\Tenancy\StorageDrivers\Database\DatabaseStorageDriver;
 use Stancl\Tenancy\Tenant;
 
 class CachedResolverTest extends TestCase
@@ -23,43 +25,101 @@ class CachedResolverTest extends TestCase
     /** @test */
     public function a_query_is_not_made_for_tenant_id_once_domain_is_cached()
     {
-        $tenant = Tenant::new()->withDomains(['foo.localhost'])->save();
+        $tenant = Tenant::new()
+            ->withData(['foo' => 'bar'])
+            ->withDomains(['foo.localhost'])
+            ->save();
 
-        // todo assert query is made:
+        // query is made
         $queried = tenancy()->findByDomain('foo.localhost');
+        $this->assertEquals($tenant->data, $queried->data);
+        $this->assertSame($tenant->domains, $queried->domains);
 
-        // todo assert query is not made but cache call is made:
+        // cache is set
+        $this->assertEquals($tenant->data, Cache::get('_tenancy_id_to_data:' . $tenant->id));
+        $this->assertSame($tenant->domains, Cache::get('_tenancy_id_to_domains:' . $tenant->id));
+
+        // query is not made
+        DatabaseStorageDriver::getCentralConnection()->enableQueryLog();
         $cached = tenancy()->findByDomain('foo.localhost');
+        $this->assertEquals($tenant->data, $cached->data);
+        $this->assertSame($tenant->domains, $cached->domains);
+        $this->assertSame([], DatabaseStorageDriver::getCentralConnection()->getQueryLog());
     }
 
     /** @test */
     public function a_query_is_not_made_for_tenant_once_id_is_cached()
     {
-        $tenant = Tenant::new()->withData(['id' => '123'])->save();
+        $tenant = Tenant::new()
+            ->withData(['foo' => 'bar'])
+            ->withDomains(['foo.localhost'])
+            ->save();
 
-        // todo assert query is made:
-        $queried = tenancy()->find('123');
+        // query is made
+        $queried = tenancy()->find($tenant->id);
+        $this->assertEquals($tenant->data, $queried->data);
+        $this->assertSame($tenant->domains, $queried->domains);
 
-        // todo assert query is not made but cache call is made:
-        $cached = tenancy()->find('123');
+        // cache is set
+        $this->assertEquals($tenant->data, Cache::get('_tenancy_id_to_data:' . $tenant->id));
+        $this->assertSame($tenant->domains, Cache::get('_tenancy_id_to_domains:' . $tenant->id));
+
+        // query is not made
+        DatabaseStorageDriver::getCentralConnection()->enableQueryLog();
+        $cached = tenancy()->find($tenant->id);
+        $this->assertEquals($tenant->data, $cached->data);
+        $this->assertSame($tenant->domains, $cached->domains);
+        $this->assertSame([], DatabaseStorageDriver::getCentralConnection()->getQueryLog());
     }
 
     /** @test */
     public function modifying_tenants_domains_updates_domains_in_the_cached_domain_to_id_mapping()
     {
+        // todo adding domain adds mapping
+        // todo removing domain removes mapping
     }
 
     /** @test */
     public function modifying_tenants_data_updates_data_in_the_cached_id_to_tenant_data_mapping()
     {
-        $tenant = Tenant::new()->withData(['id' => '123', 'foo' => 'bar'])->save();
+        $tenant = Tenant::new()->withData(['foo' => 'bar'])->save();
 
-        // todo assert cache record is set
-        $this->assertSame('bar', tenancy()->find('123')->get('foo'));
+        // cache record is set
+        $this->assertSame('bar', tenancy()->find($tenant->id)->get('foo'));
+        $this->assertSame('bar', Cache::get('_tenancy_id_to_data:' . $tenant->id)['foo']);
 
-        // todo assert cache record is updated
+        // cache record is invalidated
         $tenant->set('foo', 'xyz');
+        $this->assertSame(null, Cache::get('_tenancy_id_to_data:' . $tenant->id));
 
-        $this->assertSame('xyz', tenancy()->find('123')->get('foo'));
+        // cache record is set
+        $this->assertSame('xyz', tenancy()->find($tenant->id)->get('foo'));
+        $this->assertSame('xyz', Cache::get('_tenancy_id_to_data:' . $tenant->id)['foo']);
+        
+        // cache record is invalidated
+        $tenant->foo = 'abc';
+        $tenant->save();
+        $this->assertSame(null, Cache::get('_tenancy_id_to_data:' . $tenant->id));
     }
+
+    /** @test */
+    public function modifying_tenants_domains_updates_domains_in_the_cached_id_to_tenant_domains_mapping()
+    {
+        $tenant = Tenant::new()
+            ->withData(['foo' => 'bar'])
+            ->withDomains(['foo.localhost'])
+            ->save();
+
+        // cache record is set
+        $this->assertSame(['foo.localhost'], tenancy()->find($tenant->id)->domains);
+        $this->assertSame(['foo.localhost'], Cache::get('_tenancy_id_to_domains:' . $tenant->id));
+
+        // cache record is invalidated
+        $tenant->addDomains(['bar.localhost'])->save();
+        $this->assertEquals(null, Cache::get('_tenancy_id_to_domains:' . $tenant->id));
+        
+        $this->assertEquals(['foo.localhost', 'bar.localhost'], tenancy()->find($tenant->id)->domains);
+    }
+
+    // todo deleting tenant invalidates all caches
 }

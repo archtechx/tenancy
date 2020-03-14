@@ -42,5 +42,28 @@ class CachedTenantResolver
         return Tenant::fromStorage($data)->withDomains($domains);
     }
 
+    public function invalidateTenant(string $id): void
+    {
+        $this->invalidateTenantData($id);
+        $this->invalidateTenantDomains($id);
+    }
+
+    public function invalidateTenantData(string $id): void
+    {
+        $this->cache->forget('_tenancy_id_to_data:' . $id);
+    }
+
+    public function invalidateTenantDomains(string $id): void
+    {
+        $this->cache->forget('_tenancy_id_to_domains:' . $id);
+    }
+
+    public function invalidateDomainToIdMapping(array $domains): void
+    {
+        foreach ($domains as $domain) {
+            $this->cache->forget('_tenancy_domain_to_id:' . $domain);
+        }
+    }
+
     // todo update cache on writes to data & domains
 }
