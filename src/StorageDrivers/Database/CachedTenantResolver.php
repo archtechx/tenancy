@@ -34,12 +34,14 @@ class CachedTenantResolver
         return $this->cache->remember('_tenancy_domain_to_id:' . $domain, $this->ttl(), $query);
     }
 
-    public function findById(string $id, Closure $dataQuery, Closure $domainsQuery): Tenant
+    public function getDataById(string $id, Closure $dataQuery): ?array
     {
-        $data = $this->cache->remember('_tenancy_id_to_data:' . $id, $this->ttl(), $dataQuery);
-        $domains = $this->cache->remember('_tenancy_id_to_domains:' . $id, $this->ttl(), $domainsQuery);
+        return $this->cache->remember('_tenancy_id_to_data:' . $id, $this->ttl(), $dataQuery);
+    }
 
-        return Tenant::fromStorage($data)->withDomains($domains);
+    public function getDomainsById(string $id, Closure $domainsQuery): ?array
+    {
+        return $this->cache->remember('_tenancy_id_to_domains:' . $id, $this->ttl(), $domainsQuery);
     }
 
     public function invalidateTenant(string $id): void

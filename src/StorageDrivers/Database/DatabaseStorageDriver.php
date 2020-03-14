@@ -91,9 +91,11 @@ class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys, CanFindByAn
         };
 
         if ($this->usesCache()) {
-            return $this->cache->findById($id, $dataQuery, $domainsQuery);
+            $data = $this->cache->getDataById($id, $dataQuery);
+            $domains = $this->cache->getDomainsById($id, $domainsQuery);
         } else {
             $data = $dataQuery();
+            $domains = $domainsQuery();
         }
 
         if (! $data) {
@@ -101,7 +103,7 @@ class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys, CanFindByAn
         }
 
         return Tenant::fromStorage($data)
-            ->withDomains($domainsQuery());
+            ->withDomains($domains);
     }
 
     /**
