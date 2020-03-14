@@ -84,7 +84,8 @@ class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys, CanFindByAn
     public function findById(string $id): Tenant
     {
         $dataQuery = function () use ($id) {
-            return $this->tenants->decodeData($this->tenants->find($id));
+            $data = $this->tenants->find($id);
+            return $data ? $this->tenants->decodeData($data) : null;
         };
         $domainsQuery = function () use ($id) {
             return $this->domains->getTenantDomains($id);
