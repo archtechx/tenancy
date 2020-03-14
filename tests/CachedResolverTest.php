@@ -8,6 +8,9 @@ use Stancl\Tenancy\Tenant;
 
 class CachedResolverTest extends TestCase
 {
+    public $autoCreateTenant = false;
+    public $autoInitTenancy = false;
+
     public function setUp(): void
     {
         parent::setUp();
@@ -20,7 +23,7 @@ class CachedResolverTest extends TestCase
     /** @test */
     public function a_query_is_not_made_for_tenant_id_once_domain_is_cached()
     {
-        $tenant = Tenant::new()->withDomains(['foo.localhost']);
+        $tenant = Tenant::new()->withDomains(['foo.localhost'])->save();
 
         // todo assert query is made:
         $queried = tenancy()->findByDomain('foo.localhost');
@@ -32,7 +35,7 @@ class CachedResolverTest extends TestCase
     /** @test */
     public function a_query_is_not_made_for_tenant_once_id_is_cached()
     {
-        $tenant = Tenant::new()->withData(['id' => '123']);
+        $tenant = Tenant::new()->withData(['id' => '123'])->save();
 
         // todo assert query is made:
         $queried = tenancy()->find('123');
@@ -49,7 +52,7 @@ class CachedResolverTest extends TestCase
     /** @test */
     public function modifying_tenants_data_updates_data_in_the_cached_id_to_tenant_data_mapping()
     {
-        $tenant = Tenant::new()->withData(['id' => '123', 'foo' => 'bar']);
+        $tenant = Tenant::new()->withData(['id' => '123', 'foo' => 'bar'])->save();
 
         // todo assert cache record is set
         $this->assertSame('bar', tenancy()->find('123')->get('foo'));
