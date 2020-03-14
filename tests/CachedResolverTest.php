@@ -20,6 +20,8 @@ class CachedResolverTest extends TestCase
         if (config('tenancy.storage_driver') !== 'db') {
             $this->markTestSkipped('This test is only relevant for the DB storage driver.');
         }
+
+        config(['tenancy.storage_drivers.db.cache_store' => null]); // default driver
     }
 
     /** @test */
@@ -36,6 +38,7 @@ class CachedResolverTest extends TestCase
         $this->assertSame($tenant->domains, $queried->domains);
 
         // cache is set
+        $this->assertEquals($tenant->id, Cache::get('_tenancy_domain_to_id:foo.localhost'));
         $this->assertEquals($tenant->data, Cache::get('_tenancy_id_to_data:' . $tenant->id));
         $this->assertSame($tenant->domains, Cache::get('_tenancy_id_to_domains:' . $tenant->id));
 
