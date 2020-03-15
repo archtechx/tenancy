@@ -36,13 +36,7 @@ class Install extends Command
         ]);
         $this->info('✔️  Created config/tenancy.php');
 
-        $newKernel = str_replace(
-            'protected $middlewarePriority = [',
-            "protected \$middlewarePriority = [
-        \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,
-        \Stancl\Tenancy\Middleware\InitializeTenancy::class,",
-            file_get_contents(app_path('Http/Kernel.php'))
-        );
+        $newKernel = $this->setMiddlewarePriority();
 
         $newKernel = str_replace("'web' => [", "'web' => [
             \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,", $newKernel);
@@ -76,5 +70,35 @@ class Install extends Command
         }
 
         $this->comment('✨️ stancl/tenancy installed successfully.');
+    }
+
+    protected function setMiddlewarePriority(): string
+    {
+        if (app()->version()[0] === '6') {
+            return str_replace(
+                'protected $middlewarePriority = [',
+                "protected \$middlewarePriority = [
+            \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,
+            \Stancl\Tenancy\Middleware\InitializeTenancy::class,",
+                file_get_contents(app_path('Http/Kernel.php'))
+            );
+        } else {
+            return str_replace(
+                '];\n}',
+                "protected \$middlewarePriority = [
+        \App\Http\Middleware\CheckForMaintenanceMode::class,
+        \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,
+        \Stancl\Tenancy\Middleware\InitializeTenancy::class,
+        \Illuminate\Session\Middleware\StartSession::class,
+        \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+        \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+        \Illuminate\Routing\Middleware\ThrottleRequests::class,
+        \Illuminate\Session\Middleware\AuthenticateSession::class,
+        \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        \Illuminate\Auth\Middleware\Authorize::class,
+    ];",
+                file_get_contents(app_path('Http/Kernel.php'))
+            );
+        }
     }
 }
