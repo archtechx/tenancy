@@ -24,9 +24,9 @@ RUN apt-get install -y python3
 RUN apt-get install -y php7.4-dev php-pear
 
 RUN pecl install redis-4.3.0
-RUN echo "extension=redis.so" > /etc/php/7.2/mods-available/redis.ini
-RUN ln -sf /etc/php/7.2/mods-available/redis.ini /etc/php/7.2/fpm/conf.d/20-redis.ini
-RUN ln -sf /etc/php/7.2/mods-available/redis.ini /etc/php/7.2/cli/conf.d/20-redis.ini
+RUN echo "extension=redis.so" > /etc/php/7.4/mods-available/redis.ini
+RUN ln -sf /etc/php/7.4/mods-available/redis.ini /etc/php/7.4/fpm/conf.d/20-redis.ini
+RUN ln -sf /etc/php/7.4/mods-available/redis.ini /etc/php/7.4/cli/conf.d/20-redis.ini
 
 RUN pecl install xdebug
 RUN echo 'zend_extension=/usr/lib/php/20190902/xdebug.so' > /etc/php/7.4/cli/conf.d/20-xdebug.ini
