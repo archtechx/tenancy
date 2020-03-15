@@ -97,7 +97,7 @@ return [
     ],
     'identification' => [
         'header' => 'X-Tenant', // Can be anything, but should really start with "X-",
-        'query_parameter' => '_tenant'
+        'query_parameter' => '_tenant',
     ],
     'home_url' => '/app',
     'create_database' => true,
