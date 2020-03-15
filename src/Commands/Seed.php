@@ -53,7 +53,7 @@ class Seed extends SeedCommand
             $this->input->setOption('database', $tenant->getConnectionName());
 
             foreach (config('tenancy.seeder_parameters') as $parameter => $value) {
-                $this->input->setOption($parameter, $value);
+                $this->input->setOption(ltrim($parameter, '-'), $value);
             }
 
             $tenant->run(function () {
