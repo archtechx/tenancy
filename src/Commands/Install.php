@@ -85,7 +85,7 @@ class Install extends Command
         } else {
             return str_replace(
                 '];\n}',
-                "protected \$middlewarePriority = [
+                "    protected \$middlewarePriority = [
         \App\Http\Middleware\CheckForMaintenanceMode::class,
         \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,
         \Stancl\Tenancy\Middleware\InitializeTenancy::class,
