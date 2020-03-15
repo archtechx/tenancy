@@ -95,6 +95,10 @@ return [
     'storage_to_config_map' => [ // Used by the TenantConfig feature
         // 'paypal_api_key' => 'services.paypal.api_key',
     ],
+    'identification' => [
+        'header' => 'X-Tenant', // Can be anything, but should really start with "X-",
+        'query_parameter' => '_tenant'
+    ],
     'home_url' => '/app',
     'create_database' => true,
     'queue_database_creation' => false,
