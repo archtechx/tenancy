@@ -7,14 +7,23 @@ namespace Stancl\Tenancy\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
+use Stancl\Tenancy\TenantManager;
 
 class InitializeTenancyByRequestData
 {
+    /** @var string|null */
+    protected $header;
+
+    /** @var string|null */
+    protected $queryParameter;
+
     /** @var callable */
     protected $onFail;
 
-    public function __construct(callable $onFail = null)
+    public function __construct(?string $header = 'X-Tenant', ?string $queryParameter = 'tenant', callable $onFail = null)
     {
+        $this->header = $header;
+        $this->queryParameter = $queryParameter;
         $this->onFail = $onFail ?? function ($e) {
             throw $e;
         };
@@ -27,11 +36,11 @@ class InitializeTenancyByRequestData
      * @param  \Closure  $next
      * @return mixed
      */
-    public function handle($request, Closure $next)
+    public function handle($request, Closure $next, TenantManager $tenantManager)
     {
         if ($request->method() !== 'OPTIONS') {
             try {
-                $this->parseTenant($request);
+                $this->initializeTenancy($request, $tenantManager);
             } catch (TenantCouldNotBeIdentifiedException $e) {
                 ($this->onFail)($e);
             }
@@ -40,28 +49,23 @@ class InitializeTenancyByRequestData
         return $next($request);
     }
 
-    protected function parseTenant(Request $request)
+    protected function initializeTenancy(Request $request, TenantManager $tenancy)
     {
-        if (tenancy()->initialized) {
+        if ($tenancy->initialized) {
             return;
         }
 
-        $header = config('tenancy.identification.header');
-        $query = config('tenancy.identification.query_parameter');
-
         $tenant = null;
-        if ($request->hasHeader($header)) {
-            $tenant = $request->header($header);
-        } elseif ($request->has($query)) {
-            $tenant = $request->get($query);
-        } elseif (! in_array($request->getHost(), config('tenancy.exempt_domains', []), true)) {
-            $tenant = explode('.', $request->getHost())[0];
+        if ($this->header && $request->hasHeader($this->header)) {
+            $tenant = $request->header($this->header);
+        } elseif ($this->queryParameter && $request->has($this->queryParameter)) {
+            $tenant = $request->get($this->queryParameter);
         }
 
         if (! $tenant) {
             throw new TenantCouldNotBeIdentifiedException($request->getHost());
         }
 
-        tenancy()->initialize(tenancy()->find($tenant));
+        $tenancy->initialize($tenancy->find($tenant));
     }
 }
