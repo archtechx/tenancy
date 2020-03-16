@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Route;
@@ -42,7 +44,7 @@ class RequestDataIdentificationTest extends TestCase
             ])
             ->assertSee($tenant->id);
     }
-    
+
     /** @test */
     public function query_parameter_identification_works()
     {

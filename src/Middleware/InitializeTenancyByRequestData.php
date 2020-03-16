@@ -7,7 +7,6 @@ namespace Stancl\Tenancy\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
-use Stancl\Tenancy\TenantManager;
 
 class InitializeTenancyByRequestData
 {
