@@ -36,11 +36,11 @@ class InitializeTenancyByRequestData
      * @param  \Closure  $next
      * @return mixed
      */
-    public function handle($request, Closure $next, TenantManager $tenantManager)
+    public function handle($request, Closure $next)
     {
         if ($request->method() !== 'OPTIONS') {
             try {
-                $this->initializeTenancy($request, $tenantManager);
+                $this->initializeTenancy($request);
             } catch (TenantCouldNotBeIdentifiedException $e) {
                 ($this->onFail)($e);
             }
@@ -49,9 +49,9 @@ class InitializeTenancyByRequestData
         return $next($request);
     }
 
-    protected function initializeTenancy(Request $request, TenantManager $tenancy)
+    protected function initializeTenancy(Request $request)
     {
-        if ($tenancy->initialized) {
+        if (tenancy()->initialized) {
             return;
         }
 
@@ -66,6 +66,6 @@ class InitializeTenancyByRequestData
             throw new TenantCouldNotBeIdentifiedException($request->getHost());
         }
 
-        $tenancy->initialize($tenancy->find($tenant));
+        tenancy()->initialize(tenancy()->find($tenant));
     }
 }
