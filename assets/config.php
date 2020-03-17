@@ -16,7 +16,7 @@ return [
                 'tenants' => 'tenants',
                 'domains' => 'domains',
             ],
-            'cache_store' => false, // What store should be used to cache tenant resolution. Set to false to disable cache, null to use default store, or a string with a specific cache store name.
+            'cache_store' => null, // What store should be used to cache tenant resolution. Set to null to disable cache or a string with a specific cache store name.
             'cache_ttl' => 3600, // seconds
         ],
         'redis' => [
