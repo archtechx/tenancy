@@ -25,10 +25,6 @@ class TenantManagerTest extends TestCase
     /** @test */
     public function current_tenant_can_be_retrieved_using_getTenant()
     {
-        if (app()->version()[0] === '6') {
-            $this->fail('laravel 6 is used');
-        }
-
         $tenant = Tenant::new()->withDomains(['test2.localhost'])->save();
 
         tenancy()->init('test2.localhost');
@@ -39,10 +35,6 @@ class TenantManagerTest extends TestCase
     /** @test */
     public function initById_works()
     {
-        if (app()->version()[0] === '7') {
-            $this->fail('laravel 7 is used');
-        }
-
         $tenant = Tenant::new()->withDomains(['foo.localhost'])->save();
 
         $this->assertNotEquals($tenant, tenancy()->getTenant());
