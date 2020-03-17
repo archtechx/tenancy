@@ -84,9 +84,8 @@ class Install extends Command
             );
         } else {
             return str_replace(
-                '];\n}',
-                "    protected \$middlewarePriority = [
-        \App\Http\Middleware\CheckForMaintenanceMode::class,
+                "];\n}",
+                "];\n\n    protected \$middlewarePriority = [
         \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,
         \Stancl\Tenancy\Middleware\InitializeTenancy::class,
         \Illuminate\Session\Middleware\StartSession::class,
@@ -96,7 +95,8 @@ class Install extends Command
         \Illuminate\Session\Middleware\AuthenticateSession::class,
         \Illuminate\Routing\Middleware\SubstituteBindings::class,
         \Illuminate\Auth\Middleware\Authorize::class,
-    ];",
+    ];
+}",
                 file_get_contents(app_path('Http/Kernel.php'))
             );
         }
