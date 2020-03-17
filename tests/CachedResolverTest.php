@@ -21,7 +21,7 @@ class CachedResolverTest extends TestCase
             $this->markTestSkipped('This test is only relevant for the DB storage driver.');
         }
 
-        config(['tenancy.storage_drivers.db.cache_store' => null]); // default driver
+        config(['tenancy.storage_drivers.db.cache_store' => config('cache.default')]);
     }
 
     /** @test */
