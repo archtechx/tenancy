@@ -86,11 +86,11 @@ class TenantManager
 
         if ($this->shouldSeedAfterMigration()) {
             $afterCreating[] = $this->databaseCreationQueued()
-                ? new QueuedTenantDatabaseSeeder($tenant, $this->getSeederParameters())
+                ? new QueuedTenantDatabaseSeeder($tenant)
                 : function () use ($tenant) {
                     $this->artisan->call('tenants:seed', [
                         '--tenants' => [$tenant['id']],
-                    ] + $this->getSeederParameters());
+                    ]);
                 };
         }
 

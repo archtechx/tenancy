@@ -104,7 +104,7 @@ return [
     ],
     'seed_after_migration' => false, // should the seeder run after automatic migration
     'seeder_parameters' => [
-        '--class' => 'DatabaseSeeder', // root seeder class to run after automatic migrations, e.g.: 'DatabaseSeeder'
+        '--class' => 'DatabaseSeeder', // root seeder class, e.g.: 'DatabaseSeeder'
         // '--force' => true, // force database seeder
     ],
     'queue_database_deletion' => false,

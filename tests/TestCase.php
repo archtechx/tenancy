@@ -104,6 +104,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'driver' => 'sync',
                 'central' => true,
             ],
+            'tenancy.seeder_parameters' => [],
         ]);
 
         $app->singleton(\Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class);
