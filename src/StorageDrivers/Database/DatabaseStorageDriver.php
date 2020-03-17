@@ -251,7 +251,6 @@ class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys, CanFindByAn
 
     public function usesCache(): bool
     {
-        // null is also truthy here
-        return $this->app['config']['tenancy.storage_drivers.db.cache_store'] !== false;
+        return $this->app['config']['tenancy.storage_drivers.db.cache_store'] !== null;
     }
 }
