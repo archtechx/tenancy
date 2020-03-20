@@ -26,6 +26,8 @@ trait TenantAwareCommand
                 $this->laravel->call([$this, 'handle']);
             });
         }
+
+        return 1;
     }
 
     /**
