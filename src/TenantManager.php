@@ -148,7 +148,7 @@ class TenantManager
         if ($this->shouldCreateDatabase($tenant)) {
             $this->database->ensureTenantCanBeCreated($tenant);
         }
-        
+
         $this->storage->ensureTenantCanBeCreated($tenant);
     }
 
