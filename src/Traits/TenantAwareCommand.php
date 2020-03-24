@@ -10,7 +10,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 trait TenantAwareCommand
 {
-    /** @return mixed|void */
+    /** @return int */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $tenants = $this->getTenants();
@@ -21,13 +21,18 @@ trait TenantAwareCommand
             });
         }
 
+        $exitCode = 0;
         foreach ($tenants as $tenant) {
-            $tenant->run(function () {
-                $this->laravel->call([$this, 'handle']);
+            $result = $tenant->run(function () {
+                return $this->laravel->call([$this, 'handle']);
             });
+
+            if ($result !== 0) {
+                $exitCode = $result;
+            }
         }
 
-        return 1;
+        return $exitCode;
     }
 
     /**
