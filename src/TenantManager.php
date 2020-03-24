@@ -145,8 +145,11 @@ class TenantManager
      */
     public function ensureTenantCanBeCreated(Tenant $tenant): void
     {
+        if ($this->shouldCreateDatabase($tenant)) {
+            $this->database->ensureTenantCanBeCreated($tenant);
+        }
+        
         $this->storage->ensureTenantCanBeCreated($tenant);
-        $this->database->ensureTenantCanBeCreated($tenant);
     }
 
     /**
