@@ -23,7 +23,7 @@ trait TenantAwareCommand
 
         $exitCode = 0;
         foreach ($tenants as $tenant) {
-            $result = $tenant->run(function () {
+            $result = (int) $tenant->run(function () {
                 return $this->laravel->call([$this, 'handle']);
             });
 
