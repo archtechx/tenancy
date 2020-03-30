@@ -22,7 +22,7 @@ class TenantAwareCommandTest extends TestCase
         ]);
 
         $this->artisan('user:add')
-            ->assertExitCode(1);
+            ->assertExitCode(0);
 
         tenancy()->initializeTenancy($tenant1);
         $this->assertNotEmpty(\DB::table('users')->get());
