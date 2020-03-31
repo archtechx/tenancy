@@ -31,8 +31,7 @@ return [
     'database' => [
         'based_on' => null, // The connection that will be used as a base for the dynamically created tenant connection. Set to null to use the default connection.
         'prefix' => 'tenant',
-        'suffix' => '',
-        'separate_by' => 'database', // database or schema (only supported by pgsql)
+        'suffix' => ''
     ],
     'redis' => [
         'prefix_base' => 'tenant',

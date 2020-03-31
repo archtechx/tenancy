@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\Future\CanSetConnection;
+use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
@@ -58,7 +59,7 @@ class DatabaseManager
      */
     public function connect(Tenant $tenant)
     {
-        $this->createTenantConnection($tenant->getDatabaseName(), $tenant->getConnectionName());
+        $this->createTenantConnection($tenant);
         $this->setDefaultConnection($tenant->getConnectionName());
         $this->switchConnection($tenant->getConnectionName());
     }
@@ -90,21 +91,21 @@ class DatabaseManager
     /**
      * Create the tenant database connection.
      *
-     * @param string $databaseName
-     * @param string $connectionName
+     * @param Tenant $tenant
      * @return void
+     * @throws DatabaseManagerNotRegisteredException
      */
-    public function createTenantConnection($databaseName, $connectionName)
+    public function createTenantConnection(Tenant $tenant)
     {
-        // Create the database connection.
-        $based_on = $this->getBaseConnection($connectionName);
-        $this->app['config']["database.connections.$connectionName"] = $this->app['config']['database.connections.' . $based_on];
+        $configuration = $this->getTenantDatabaseManager($tenant)
+            ->createDatabaseConnection(
+                $tenant,
+                $this->getBaseConnectionConfiguration($tenant)
+            );
 
-        // Change database name.
-        $databaseName = $this->getDriver($connectionName) === 'sqlite' ? database_path($databaseName) : $databaseName;
-        $separateBy = $this->separateBy($connectionName);
+        $connectionName = $tenant->getConnectionName();
 
-        $this->app['config']["database.connections.$connectionName.$separateBy"] = $databaseName;
+        $this->app['config']->set("database.connections.{$connectionName}", $configuration);
     }
 
     /**
@@ -188,9 +189,9 @@ class DatabaseManager
                 }
             }
 
-            QueuedTenantDatabaseCreator::withChain($chain)->dispatch($manager, $database);
+            QueuedTenantDatabaseCreator::withChain($chain)->dispatch($manager, $database, $tenant);
         } else {
-            $manager->createDatabase($database);
+            $manager->createDatabase($database, $tenant);
             foreach ($afterCreating as $item) {
                 if (is_object($item) && ! $item instanceof Closure) {
                     $item->handle($tenant);
@@ -253,18 +254,15 @@ class DatabaseManager
     }
 
     /**
-     * What key on the connection config should be used to separate tenants.
+     * Get the connection base configuration for a tenant
      *
-     * @param string $connectionName
-     * @return string
+     * @param Tenant $tenant
+     * @return array
      */
-    public function separateBy(string $connectionName): string
+    protected function getBaseConnectionConfiguration(Tenant $tenant): array
     {
-        if ($this->getDriver($this->getBaseConnection($connectionName)) === 'pgsql'
-            && $this->app['config']['tenancy.database.separate_by'] === 'schema') {
-            return 'schema';
-        }
+        $basedOn = $this->getBaseConnection($tenant->getConnectionName());
 
-        return 'database';
+        return $this->app['config']->get("database.connections.{$basedOn}");
     }
 }

@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\TenantDatabaseManagers;
 
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
+use Stancl\Tenancy\Tenant;
 
 class SQLiteDatabaseManager implements TenantDatabaseManager
 {
-    public function createDatabase(string $name): bool
+    public function createDatabase(string $name, Tenant $tenant): bool
     {
         try {
             return fclose(fopen(database_path($name), 'w'));
@@ -29,5 +30,12 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
     public function databaseExists(string $name): bool
     {
         return file_exists(database_path($name));
+    }
+
+    public function createDatabaseConnection(Tenant $tenant, array $baseConfiguration): array
+    {
+        return array_replace_recursive($baseConfiguration, [
+            'database' => database_path($tenant->getDatabaseName())
+        ]);
     }
 }

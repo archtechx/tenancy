@@ -9,6 +9,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Contracts\Future\CanSetConnection;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
+use Stancl\Tenancy\Tenant;
 
 class MySQLDatabaseManager implements TenantDatabaseManager, CanSetConnection
 {
@@ -30,7 +31,7 @@ class MySQLDatabaseManager implements TenantDatabaseManager, CanSetConnection
         $this->connection = $connection;
     }
 
-    public function createDatabase(string $name): bool
+    public function createDatabase(string $name, Tenant $tenant): bool
     {
         $charset = $this->database()->getConfig('charset');
         $collation = $this->database()->getConfig('collation');
@@ -46,5 +47,15 @@ class MySQLDatabaseManager implements TenantDatabaseManager, CanSetConnection
     public function databaseExists(string $name): bool
     {
         return (bool) $this->database()->select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$name'");
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function createDatabaseConnection(Tenant $tenant, array $baseConfiguration): array
+    {
+        return array_replace_recursive($baseConfiguration, [
+            'database' => $tenant->getDatabaseName(),
+        ]);
     }
 }

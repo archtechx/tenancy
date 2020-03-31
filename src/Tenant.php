@@ -15,6 +15,7 @@ use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 use Stancl\Tenancy\Exceptions\NotImplementedException;
 use Stancl\Tenancy\Exceptions\TenantStorageException;
+use Stancl\Tenancy\Traits\ProvidesDatabaseUser;
 
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
@@ -22,7 +23,8 @@ use Stancl\Tenancy\Exceptions\TenantStorageException;
 class Tenant implements ArrayAccess
 {
     use Traits\HasArrayAccess,
-        ForwardsCalls;
+        ForwardsCalls,
+        ProvidesDatabaseUser;
 
     /**
      * Tenant data. A "cache" of tenant storage.
