@@ -36,7 +36,7 @@ class InitializeTenancy
             try {
                 tenancy()->init($request->getHost());
             } catch (TenantCouldNotBeIdentifiedException $e) {
-                return ($this->onFail)($e);
+                return ($this->onFail)($e, $request, $next);
             }
         }
 
