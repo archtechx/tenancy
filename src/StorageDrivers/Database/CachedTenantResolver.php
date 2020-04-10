@@ -28,7 +28,7 @@ class CachedTenantResolver
         return $this->config->get('tenancy.storage_drivers.db.cache_ttl');
     }
 
-    public function getTenantIdByDomain(string $domain, Closure $query): string
+    public function getTenantIdByDomain(string $domain, Closure $query): ?string
     {
         return $this->cache->remember('_tenancy_domain_to_id:' . $domain, $this->ttl(), $query);
     }
