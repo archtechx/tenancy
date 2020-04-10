@@ -13,11 +13,11 @@ return [
          * The majority of applications will want to use this storage driver.
          * The information about tenants is persisted in a relational DB
          * like MySQL or PostgreSQL. The only downside is performance.
-         * 
+         *
          * A database connection to the central database has to be established on each
          * request, to identify the tenant based on the domain. This takes three DB
          * queries. Then, the connection to the tenant database is established.
-         * 
+         *
          * Note: From v2.3.0, the performance of the DB storage driver can be improved
          * by a lot by using Cached Tenant Lookup. Be sure to enable that if you're
          * using this storage driver. Enabling that feature can completely avoid
@@ -32,7 +32,7 @@ return [
 
             /**
              * Your central database connection. Set to null to use the default one.
-             * 
+             *
              * Note: It's recommended to create a designated central connection,
              * to let you easily use it in your app, e.g. via the DB facade.
              */
@@ -45,7 +45,7 @@ return [
 
             /**
              * Here you can enable the Cached Tenant Lookup.
-             * 
+             *
              * You can specify what cache store should be used to cache the tenant resolution.
              * Set to string with a specific cache store name, or to null to disable cache.
              */
@@ -58,7 +58,7 @@ return [
          * However, by default, Redis is a not a durable data storage. It works well for ephemeral data
          * like cache, but to hold critical data, it needs to be configured in a way that guarantees
          * that data will be persisted permanently. Specifically, you want to enable both AOF and
-         * RDB. Read this here: https://tenancy.samuelstancl.me/docs/v2/storage-drivers/#redis
+         * RDB. Read this here: https://tenancy.samuelstancl.me/docs/v2/storage-drivers/#redis.
          */
         'redis' => [
             'driver' => Stancl\Tenancy\StorageDrivers\RedisStorageDriver::class,
@@ -67,12 +67,12 @@ return [
     ],
 
     /**
-     * Controller namespace used for routes in routes/tenant.php
+     * Controller namespace used for routes in routes/tenant.php.
      */
     'tenant_route_namespace' => 'App\Http\Controllers',
 
     /**
-     * Central domains (hostnames), e.g. domains which host landing pages, sign up pages, etc
+     * Central domains (hostnames), e.g. domains which host landing pages, sign up pages, etc.
      */
     'exempt_domains' => [
         // 'localhost',
@@ -81,7 +81,7 @@ return [
     /**
      * Tenancy bootstrappers are executed when tenancy is initialized.
      * Their responsibility is making Laravel features tenant-aware.
-     * 
+     *
      * To configure their behavior, see the config keys below.
      */
     'bootstrappers' => [
@@ -104,7 +104,7 @@ return [
 
         /**
          * Tenant database names are created like this:
-         * prefix + tenant_id + suffix
+         * prefix + tenant_id + suffix.
          */
         'prefix' => 'tenant',
         'suffix' => '',
@@ -114,9 +114,9 @@ return [
 
     /**
      * Redis tenancy config. Used by RedisTenancyBoostrapper.
-     * 
+     *
      * Note: You need phpredis to use Redis tenancy.
-     * 
+     *
      * Note: You don't need to use this if you're using Redis only for cache.
      * Redis tenancy is only relevant if you're making direct Redis calls,
      * either using the Redis facade or by injecting it as a dependency.
@@ -130,10 +130,10 @@ return [
 
     /**
      * Cache tenancy config. Used by CacheTenancyBootstrapper.
-     * 
+     *
      * This works for all Cache facade calls, cache() helper
      * calls and direct calls to injected cache stores.
-     * 
+     *
      * Each key in cache will have a tag applied on it. This tag is used to
      * scope the cache both when writing to it and when reading from it.
      */
@@ -143,7 +143,7 @@ return [
 
     /**
      * Filesystem tenancy config. Used by FilesystemTenancyBootstrapper.
-     * https://tenancy.samuelstancl.me/docs/v2/filesystem-tenancy/
+     * https://tenancy.samuelstancl.me/docs/v2/filesystem-tenancy/.
      */
     'filesystem' => [
         /**
@@ -158,7 +158,7 @@ return [
 
         /**
          * Use this for local disks.
-         * 
+         *
          * See https://tenancy.samuelstancl.me/docs/v2/filesystem-tenancy/
          */
         'root_override' => [
@@ -169,15 +169,15 @@ return [
 
         /**
          * Should storage_path() be suffixed.
-         * 
+         *
          * Note: Disabling this will likely break local disk tenancy. Only disable this if you're using an external file storage service like S3.
-         * 
+         *
          * For the vast majority of applications, this feature should be enabled. But in some
          * edge cases, it can cause issues (like using Passport with Vapor - see #196), so
          * you may want to disable this if you are experiencing these edge case issues.
          */
         'suffix_storage_path' => true,
-        
+
         /**
          * By default, asset() calls are made multi-tenant too. You can use global_asset() and mix()
          * for global, non-tenant-specific assets. However, you might have some issues when using
@@ -218,7 +218,7 @@ return [
      * Features are classes that provide additional functionality
      * not needed for tenancy to be bootstrapped. They are run
      * regardless of whether tenancy has been initialized.
-     * 
+     *
      * See the documentation page for each class to
      * understand which ones you want to enable.
      */
@@ -271,7 +271,7 @@ return [
 
     /**
      * Automatically delete the tenant's database after the tenant is deleted.
-     * 
+     *
      * This will save space but permanently delete data which you might want to keep.
      */
     'delete_database_after_tenant_deletion' => false,
