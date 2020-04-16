@@ -4,9 +4,13 @@ Any donations will be greatly appreciated and help ensure that the package is de
 
 If you're a company and this package is helping you make money, please consider donating.
 
+### Patreon
+
+If you would like to support me on a monthly basis, you can use Patreon: https://patreon.com/samuelstancl
+
 ### PayPal
 
-PayPal is the preferable donation method as it comes with the lowest fees.
+PayPal is the preferable donation method for one-time donations as it comes with the lowest fees.
 
 You can donate here: [https://paypal.me/samuelstancl](https://paypal.me/samuelstancl)
 
