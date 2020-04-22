@@ -17,7 +17,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
-      run: travis_retry docker-compose exec test composer require --no-interaction "laravel/framework:$LARAVEL_VERSION"
+      run: docker-compose exec test composer require --no-interaction "laravel/framework:$LARAVEL_VERSION"
     - name: Run tests
       run: ./fulltest
     - name: Send code coverage to codecov
