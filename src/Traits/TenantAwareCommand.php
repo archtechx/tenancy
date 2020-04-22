@@ -14,14 +14,8 @@ trait TenantAwareCommand
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $tenants = $this->getTenants();
-
-        if (count($tenants) === 1) {
-            return $tenants[0]->run(function () {
-                return $this->laravel->call([$this, 'handle']);
-            });
-        }
-
         $exitCode = 0;
+
         foreach ($tenants as $tenant) {
             $result = (int) $tenant->run(function () {
                 return $this->laravel->call([$this, 'handle']);
