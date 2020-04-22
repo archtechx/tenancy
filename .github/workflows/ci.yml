@@ -16,6 +16,8 @@ jobs:
     
     steps:
     - uses: actions/checkout@v2
+    - name: Start docker containers
+      run: docker-compose up -d
     - name: Install dependencies
       run: docker-compose exec test composer require --no-interaction "laravel/framework:$LARAVEL_VERSION"
     - name: Run tests
