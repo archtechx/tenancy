@@ -1,5 +1,5 @@
 <p align="center">
-    <a href="https://tenancyforlaravel.com"><img width="400" src="/art/logo.png" alt="Tenancy for Laravel logo" /></a>
+    <a href="https://tenancyforlaravel.com"><img width="800" src="/art/logo.png" alt="Tenancy for Laravel logo" /></a>
 </p>
 
 <p align="center">
