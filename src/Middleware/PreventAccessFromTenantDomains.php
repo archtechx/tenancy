@@ -45,7 +45,7 @@ class PreventAccessFromTenantDomains
         return $next($request);
     }
 
-    public function routeHasMiddleware(Route $route, $middleware): bool
+    public static function routeHasMiddleware(Route $route, $middleware): bool
     {
         if (in_array($middleware, $route->middleware(), true)) {
             return true;
