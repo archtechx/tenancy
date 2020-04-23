@@ -1,5 +1,8 @@
 name: CI
 
+env:
+  COMPOSE_INTERACTIVE_NO_CLI: 1
+
 on:
   push:
     branches: [ 2.x ]
