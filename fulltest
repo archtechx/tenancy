@@ -4,4 +4,4 @@ set -e
 # for development
 docker-compose up -d
 ./test "$@"
-docker-compose exec test vendor/bin/phpcov merge --clover clover.xml coverage/
+docker-compose exec -T test vendor/bin/phpcov merge --clover clover.xml coverage/
