@@ -31,6 +31,10 @@ class TelescopeTags implements Feature
         Telescope::tag(function (IncomingEntry $entry) {
             $tags = $this->getTags($entry);
 
+            if (! request()->route()) {
+                return $tags;
+            }
+
             $tenantRoute = PreventAccessFromTenantDomains::routeHasMiddleware(request()->route(), 'tenancy')
                 || PreventAccessFromTenantDomains::routeHasMiddleware(request()->route(), 'universal');
 

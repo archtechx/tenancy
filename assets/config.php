@@ -67,7 +67,7 @@ return [
     ],
 
     /**
-     * Controller namespace used for routes in routes/tenant.php.
+     * Controller namespace used by routes in routes/tenant.php.
      */
     'tenant_route_namespace' => 'App\Http\Controllers',
 
