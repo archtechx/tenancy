@@ -13,6 +13,16 @@ use Illuminate\Support\Facades\Route as Router;
  */
 class PreventAccessFromTenantDomains
 {
+    /** @var callable */
+    protected $central404;
+
+    public function __construct(callable $central404 = null)
+    {
+        $this->central404 = $central404 ?? function () {
+            return 404;
+        };
+    }
+
     /**
      * Handle an incoming request.
      *
@@ -39,7 +49,7 @@ class PreventAccessFromTenantDomains
         }
 
         if ($isExemptDomain && $isTenantRoute) { // accessing tenant routes on web domains
-            abort(404);
+            return ($this->central404)($request, $next);
         }
 
         return $next($request);
