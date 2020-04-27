@@ -39,7 +39,7 @@ class TelescopeTags implements Feature
                 || PreventAccessFromTenantDomains::routeHasMiddleware(request()->route(), 'universal');
 
             // Don't do anything if we're visiting a universal route on a central domain
-            if ($tenantRoute && tenancy()->initialized()) {
+            if ($tenantRoute && tenancy()->initialized) {
                 $tags = array_merge($tags, [
                     'tenant:' . tenant('id'),
                 ]);
