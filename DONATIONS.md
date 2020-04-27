@@ -4,6 +4,8 @@ Any donations will be greatly appreciated and help ensure that the package is de
 
 If you're a company and this package is helping you make money, please consider donating.
 
+**If you'd like to donate in your local currency, see the Bank transfer section.**
+
 ### Patreon
 
 If you would like to support me on a monthly basis, you can use Patreon: https://patreon.com/samuelstancl
