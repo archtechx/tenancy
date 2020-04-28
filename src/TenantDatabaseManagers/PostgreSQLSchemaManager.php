@@ -53,7 +53,7 @@ class PostgreSQLSchemaManager implements TenantDatabaseManager, CanSetConnection
         }
 
         return array_replace_recursive($baseConfiguration, [
-            'schema' => $tenant->getDatabaseName()
+            'schema' => $tenant->getDatabaseName(),
         ]);
     }
 }

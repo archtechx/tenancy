@@ -1,10 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\TenantDatabaseManagers;
 
-use Illuminate\Contracts\Config\Repository;
-use Illuminate\Support\Str;
-use Stancl\Tenancy\Contracts\DatabaseUserGenerator;
 use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
 use Stancl\Tenancy\Tenant;
 
@@ -28,7 +27,7 @@ class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager impl
                 'username' => $tenant->getDatabaseUsername(),
                 'password' => $tenant->getDatabasePassword(),
                 'port' => $tenant->getDatabasePort(),
-                'url' => $tenant->getDatabaseUrl()
+                'url' => $tenant->getDatabaseUrl(),
             ])
         );
     }
@@ -53,7 +52,7 @@ class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager impl
             '_tenancy_db_username' => $username,
             '_tenancy_db_password' => $password,
             '_tenancy_db_host' => $appHost,
-            '_tenancy_db_link' => $tenant->getDatabaseLink()
+            '_tenancy_db_link' => $tenant->getDatabaseLink(),
         ])->save();
     }
 

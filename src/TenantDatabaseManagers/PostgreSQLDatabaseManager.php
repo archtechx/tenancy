@@ -47,7 +47,7 @@ class PostgreSQLDatabaseManager implements TenantDatabaseManager, CanSetConnecti
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function createDatabaseConnection(Tenant $tenant, array $baseConfiguration): array
     {
@@ -56,7 +56,7 @@ class PostgreSQLDatabaseManager implements TenantDatabaseManager, CanSetConnecti
         }
 
         return array_replace_recursive($baseConfiguration, [
-            'database' => $tenant->getDatabaseName()
+            'database' => $tenant->getDatabaseName(),
         ]);
     }
 }

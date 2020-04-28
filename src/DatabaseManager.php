@@ -9,7 +9,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\Future\CanSetConnection;
-use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
@@ -254,7 +253,7 @@ class DatabaseManager
     }
 
     /**
-     * Get the connection base configuration for a tenant
+     * Get the connection base configuration for a tenant.
      *
      * @param Tenant $tenant
      * @return array

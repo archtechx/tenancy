@@ -50,7 +50,7 @@ class MySQLDatabaseManager implements TenantDatabaseManager, CanSetConnection
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function createDatabaseConnection(Tenant $tenant, array $baseConfiguration): array
     {

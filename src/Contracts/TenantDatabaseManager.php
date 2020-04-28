@@ -33,9 +33,8 @@ interface TenantDatabaseManager
      */
     public function databaseExists(string $name): bool;
 
-
     /**
-     * Override the base connection
+     * Override the base connection.
      *
      * @param Tenant $tenant
      * @param array $baseConfiguration

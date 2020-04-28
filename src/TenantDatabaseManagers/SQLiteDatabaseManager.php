@@ -35,7 +35,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
     public function createDatabaseConnection(Tenant $tenant, array $baseConfiguration): array
     {
         return array_replace_recursive($baseConfiguration, [
-            'database' => database_path($tenant->getDatabaseName())
+            'database' => database_path($tenant->getDatabaseName()),
         ]);
     }
 }
