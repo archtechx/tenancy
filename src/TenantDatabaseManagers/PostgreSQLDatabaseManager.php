@@ -9,6 +9,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Contracts\Future\CanSetConnection;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
+use Stancl\Tenancy\Tenant;
 
 class PostgreSQLDatabaseManager implements TenantDatabaseManager, CanSetConnection
 {
@@ -30,7 +31,7 @@ class PostgreSQLDatabaseManager implements TenantDatabaseManager, CanSetConnecti
         $this->connection = $connection;
     }
 
-    public function createDatabase(string $name): bool
+    public function createDatabase(string $name, Tenant $tenant): bool
     {
         return $this->database()->statement("CREATE DATABASE \"$name\" WITH TEMPLATE=template0");
     }
@@ -43,5 +44,19 @@ class PostgreSQLDatabaseManager implements TenantDatabaseManager, CanSetConnecti
     public function databaseExists(string $name): bool
     {
         return (bool) $this->database()->select("SELECT datname FROM pg_database WHERE datname = '$name'");
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function createDatabaseConnection(Tenant $tenant, array $baseConfiguration): array
+    {
+        if ('pgsql' !== $baseConfiguration['driver']) {
+            throw new \Exception('Mismatching driver for tenant');
+        }
+
+        return array_replace_recursive($baseConfiguration, [
+            'database' => $tenant->getDatabaseName()
+        ]);
     }
 }

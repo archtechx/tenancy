@@ -108,8 +108,6 @@ return [
          */
         'prefix' => 'tenant',
         'suffix' => '',
-
-        'separate_by' => 'database', // database or schema (only supported by pgsql)
     ],
 
     /**
