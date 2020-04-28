@@ -43,6 +43,12 @@ class Seed extends SeedCommand
      */
     public function handle()
     {
+        foreach (config('tenancy.seeder_parameters') as $parameter => $value) {
+            if (! $this->input->hasParameterOption($parameter)) {
+                $this->input->setOption(ltrim($parameter, '-'), $value);
+            }
+        }
+
         if (! $this->confirmToProceed()) {
             return;
         }
@@ -51,12 +57,6 @@ class Seed extends SeedCommand
             $this->line("Tenant: {$tenant['id']}");
 
             $this->input->setOption('database', $tenant->getConnectionName());
-
-            foreach (config('tenancy.seeder_parameters') as $parameter => $value) {
-                if (! $this->input->hasParameterOption($parameter)) {
-                    $this->input->setOption(ltrim($parameter, '-'), $value);
-                }
-            }
 
             $tenant->run(function () {
                 // Seed

@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Features;
 use Laravel\Telescope\IncomingEntry;
 use Laravel\Telescope\Telescope;
 use Stancl\Tenancy\Contracts\Feature;
+use Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains;
 use Stancl\Tenancy\TenantManager;
 
 class TelescopeTags implements Feature
@@ -30,7 +31,15 @@ class TelescopeTags implements Feature
         Telescope::tag(function (IncomingEntry $entry) {
             $tags = $this->getTags($entry);
 
-            if (in_array('tenancy', optional(request()->route())->middleware() ?? [])) {
+            if (! request()->route()) {
+                return $tags;
+            }
+
+            $tenantRoute = PreventAccessFromTenantDomains::routeHasMiddleware(request()->route(), 'tenancy')
+                || PreventAccessFromTenantDomains::routeHasMiddleware(request()->route(), 'universal');
+
+            // Don't do anything if we're visiting a universal route on a central domain
+            if ($tenantRoute && tenancy()->initialized) {
                 $tags = array_merge($tags, [
                     'tenant:' . tenant('id'),
                 ]);

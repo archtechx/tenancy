@@ -41,7 +41,7 @@ class InitializeTenancyByRequestData
             try {
                 $this->initializeTenancy($request);
             } catch (TenantCouldNotBeIdentifiedException $e) {
-                ($this->onFail)($e);
+                return ($this->onFail)($e, $request, $next);
             }
         }
 
