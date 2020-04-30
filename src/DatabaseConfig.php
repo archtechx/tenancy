@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy;
 
 use Illuminate\Support\Facades\Hash;
@@ -10,7 +12,7 @@ use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 
 class DatabaseConfig
-{ 
+{
     /** @var Tenant */
     public $tenant;
 
@@ -104,7 +106,7 @@ class DatabaseConfig
         // and it doesn't exist, we'll go for the default DB template.
         if (! array_key_exists($name, config('database.connections'))) {
             $name = config('tenancy.database.template_connection') ?? DatabaseManager::$originalDefaultConnectionName;
-        };
+        }
 
         return $name;
     }

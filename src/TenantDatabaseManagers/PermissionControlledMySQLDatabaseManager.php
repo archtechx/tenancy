@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\TenantDatabaseManagers;
 
 use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
@@ -19,7 +21,7 @@ class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager impl
         $username = $databaseConfig->getUsername();
         $hostname = $databaseConfig->connection()['host'];
         $password = $databaseConfig->getPassword();
-        
+
         $this->database()->statement("CREATE USER `{$username}`@`{$hostname}` IDENTIFIED BY `{$password}`");
 
         $grants = implode(', ', static::$grants);
