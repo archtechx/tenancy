@@ -59,7 +59,7 @@ class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys, CanFindByAn
 
     public static function getCentralConnectionName(): string
     {
-        return config('tenancy.storage_drivers.db.connection') ?? app(DatabaseManager::class)->originalDefaultConnectionName;
+        return config('tenancy.storage_drivers.db.connection') ?? DatabaseManager::$originalDefaultConnectionName;
     }
 
     public function findByDomain(string $domain): Tenant

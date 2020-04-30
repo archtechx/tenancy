@@ -54,7 +54,7 @@ class DatabaseManager
      */
     public function connect(Tenant $tenant)
     {
-        $this->createTenantConnection($tenant, $tenant->database()->getTemplateConnectionName());
+        $this->createTenantConnection($tenant);
         $this->setDefaultConnection($tenant->database()->getTemplateConnectionName());
         $this->switchConnection($tenant->database()->getTemplateConnectionName());
     }
@@ -66,8 +66,8 @@ class DatabaseManager
     {
         // Opposite order to connect() because we don't
         // want to ever purge the central connection
-        $this->switchConnection($this->originalDefaultConnectionName);
-        $this->setDefaultConnection($this->originalDefaultConnectionName);
+        $this->switchConnection(static::$originalDefaultConnectionName);
+        $this->setDefaultConnection(static::$originalDefaultConnectionName);
     }
 
     /**
@@ -81,9 +81,9 @@ class DatabaseManager
     /**
      * Create the tenant database connection.
      */
-    public function createTenantConnection(Tenant $tenant, $connectionName)
+    public function createTenantConnection(Tenant $tenant)
     {
-        $this->app['config']["database.connections.$connectionName"] = $tenant->database()->connection();
+        $this->app['config']["database.connections.{$tenant->database()->getTemplateConnectionName()}"] = $tenant->database()->connection();
     }
 
     /**
