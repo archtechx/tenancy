@@ -8,10 +8,9 @@ use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Contracts\Future\CanSetConnection;
-use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 
-class MySQLDatabaseManager implements TenantDatabaseManager, CanSetConnection, ManagesDatabaseUsers
+class MySQLDatabaseManager implements TenantDatabaseManager, CanSetConnection
 {
     /** @var string */
     protected $connection;
