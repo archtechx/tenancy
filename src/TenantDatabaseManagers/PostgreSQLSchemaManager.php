@@ -9,6 +9,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Contracts\Future\CanSetConnection;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
+use Stancl\Tenancy\Tenant;
 
 class PostgreSQLSchemaManager implements TenantDatabaseManager, CanSetConnection
 {
@@ -35,14 +36,14 @@ class PostgreSQLSchemaManager implements TenantDatabaseManager, CanSetConnection
         $this->connection = $connection;
     }
 
-    public function createDatabase(string $name): bool
+    public function createDatabase(Tenant $tenant): bool
     {
-        return $this->database()->statement("CREATE SCHEMA \"$name\"");
+        return $this->database()->statement("CREATE SCHEMA \"{$tenant->database()->getName()}\"");
     }
 
-    public function deleteDatabase(string $name): bool
+    public function deleteDatabase(Tenant $tenant): bool
     {
-        return $this->database()->statement("DROP SCHEMA \"$name\"");
+        return $this->database()->statement("DROP SCHEMA \"{$tenant->database()->getName()}\"");
     }
 
     public function databaseExists(string $name): bool

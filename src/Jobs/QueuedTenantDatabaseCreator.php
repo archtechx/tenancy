@@ -36,10 +36,6 @@ class QueuedTenantDatabaseCreator implements ShouldQueue
      */
     public function handle()
     {
-        $this->databaseManager->createDatabase($this->databaseName);
-
-        if ($this->databaseManager instanceof ManagesDatabaseUsers) {
-            $this->databaseManager->createUser($this->tenant->database());
-        }
+        $this->databaseManager->createDatabase($this->tenant);
     }
 }

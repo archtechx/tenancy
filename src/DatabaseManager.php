@@ -153,11 +153,7 @@ class DatabaseManager
     protected function createDatabaseSynchronously(Tenant $tenant, array $afterCreating)
     {
         $manager = $tenant->database()->manager();
-        $manager->createDatabase($tenant->database()->getName());
-
-        if ($manager instanceof ManagesDatabaseUsers) {
-            $manager->createUser($tenant->database());
-        }
+        $manager->createDatabase($tenant);
 
         foreach ($afterCreating as $item) {
             if (is_object($item) && ! $item instanceof Closure) {
@@ -183,10 +179,7 @@ class DatabaseManager
         if ($this->app['config']['tenancy.queue_database_deletion'] ?? false) {
             QueuedTenantDatabaseDeleter::dispatch($manager, $tenant);
         } else {
-            $manager->deleteDatabase($database);
-            if ($manager instanceof ManagesDatabaseUsers) {
-                $manager->deleteUser($tenant->database());
-            }
+            $manager->deleteDatabase($tenant);
         }
 
         $this->tenancy->event('database.deleted', $database, $tenant);

@@ -6,6 +6,7 @@ namespace Stancl\Tenancy\TenantDatabaseManagers;
 
 use Stancl\Tenancy\Contracts\ModifiesDatabaseNameForConnection;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
+use Stancl\Tenancy\Tenant;
 
 class SQLiteDatabaseManager implements TenantDatabaseManager, ModifiesDatabaseNameForConnection
 {
@@ -14,19 +15,19 @@ class SQLiteDatabaseManager implements TenantDatabaseManager, ModifiesDatabaseNa
         return 'database';
     }
 
-    public function createDatabase(string $name): bool
+    public function createDatabase(Tenant $tenant): bool
     {
         try {
-            return fclose(fopen(database_path($name), 'w'));
+            return fclose(fopen(database_path($tenant->database()->getName()), 'w'));
         } catch (\Throwable $th) {
             return false;
         }
     }
 
-    public function deleteDatabase(string $name): bool
+    public function deleteDatabase(Tenant $tenant): bool
     {
         try {
-            return unlink(database_path($name));
+            return unlink(database_path($tenant->database()->getName()));
         } catch (\Throwable $th) {
             return false;
         }
