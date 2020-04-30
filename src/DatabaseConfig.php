@@ -114,9 +114,10 @@ class DatabaseConfig
     {
         $templateConnection = config("database.connections.{$this->getTemplateConnectionName()}");
 
+        $databaseName = $this->getName();
         if (($manager = $this->manager()) instanceof ModifiesDatabaseNameForConnection) {
             /** @var ModifiesDatabaseNameForConnection $manager */
-            $databaseName = $manager->getDatabaseNameForConnection($this->getName());
+            $databaseName = $manager->getDatabaseNameForConnection($databaseName);
         }
 
         return array_merge($templateConnection, $this->tenantConfig(), [
