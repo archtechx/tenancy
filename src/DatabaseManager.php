@@ -147,7 +147,7 @@ class DatabaseManager
             }
         }
 
-        QueuedTenantDatabaseCreator::withChain($chain)->dispatch($tenant->database()->manager(), $tenant->database());
+        QueuedTenantDatabaseCreator::withChain($chain)->dispatch($tenant->database()->manager(), $tenant);
     }
 
     protected function createDatabaseSynchronously(Tenant $tenant, array $afterCreating)
@@ -181,7 +181,7 @@ class DatabaseManager
         $this->tenancy->event('database.deleting', $database, $tenant);
 
         if ($this->app['config']['tenancy.queue_database_deletion'] ?? false) {
-            QueuedTenantDatabaseDeleter::dispatch($manager, $database);
+            QueuedTenantDatabaseDeleter::dispatch($manager, $tenant);
         } else {
             $manager->deleteDatabase($database);
             if ($manager instanceof ManagesDatabaseUsers) {
