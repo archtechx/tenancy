@@ -32,12 +32,12 @@ class DatabaseManagerTest extends TestCase
     }
 
     /** @test */
-    public function the_default_db_is_used_when_based_on_is_null()
+    public function the_default_db_is_used_when_template_connection_is_null()
     {
         $this->assertSame('sqlite', config('database.default'));
         config([
             'database.connections.sqlite.foo' => 'bar',
-            'tenancy.database.based_on' => null,
+            'tenancy.database.template_connection' => null,
         ]);
 
         tenancy()->init('test.localhost');

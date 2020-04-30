@@ -8,18 +8,20 @@ use Closure;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Illuminate\Foundation\Application;
-use Stancl\Tenancy\Contracts\Future\CanSetConnection;
+use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
-use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseDeleter;
 
+/**
+ * @internal Class is subject to breaking changes in minor and patch versions.
+ */
 class DatabaseManager
 {
     /** @var string */
-    public $originalDefaultConnectionName;
+    public static $originalDefaultConnectionName;
 
     /** @var Application */
     protected $app;
@@ -34,14 +36,11 @@ class DatabaseManager
     {
         $this->app = $app;
         $this->database = $database;
-        $this->originalDefaultConnectionName = $app['config']['database.default'];
+        static::$originalDefaultConnectionName = $app['config']['database.default'];
     }
 
     /**
      * Set the TenantManager instance, used to dispatch tenancy events.
-     *
-     * @param TenantManager $tenantManager
-     * @return self
      */
     public function withTenantManager(TenantManager $tenantManager): self
     {
@@ -52,21 +51,16 @@ class DatabaseManager
 
     /**
      * Connect to a tenant's database.
-     *
-     * @param Tenant $tenant
-     * @return void
      */
     public function connect(Tenant $tenant)
     {
-        $this->createTenantConnection($tenant->getDatabaseName(), $tenant->getConnectionName());
+        $this->createTenantConnection($tenant, $tenant->getConnectionName());
         $this->setDefaultConnection($tenant->getConnectionName());
         $this->switchConnection($tenant->getConnectionName());
     }
 
     /**
      * Reconnect to the default non-tenant connection.
-     *
-     * @return void
      */
     public function reconnect()
     {
@@ -78,9 +72,6 @@ class DatabaseManager
 
     /**
      * Change the default database connection config.
-     *
-     * @param string $connection
-     * @return void
      */
     public function setDefaultConnection(string $connection)
     {
@@ -89,53 +80,14 @@ class DatabaseManager
 
     /**
      * Create the tenant database connection.
-     *
-     * @param string $databaseName
-     * @param string $connectionName
-     * @return void
      */
-    public function createTenantConnection($databaseName, $connectionName)
+    public function createTenantConnection(Tenant $tenant, $connectionName)
     {
-        // Create the database connection.
-        $based_on = $this->getBaseConnection($connectionName);
-        $this->app['config']["database.connections.$connectionName"] = $this->app['config']['database.connections.' . $based_on];
-
-        // Change database name.
-        $databaseName = $this->getDriver($connectionName) === 'sqlite' ? database_path($databaseName) : $databaseName;
-        $separateBy = $this->separateBy($connectionName);
-
-        $this->app['config']["database.connections.$connectionName.$separateBy"] = $databaseName;
-    }
-
-    /**
-     * Get the name of the connection that $connectionName should be based on.
-     *
-     * @param string $connectionName
-     * @return string
-     */
-    public function getBaseConnection(string $connectionName): string
-    {
-        return ($connectionName !== 'tenant' ? $connectionName : null) // 'tenant' is not a specific connection, it's the default
-            ?? $this->app['config']['tenancy.database.based_on']
-            ?? $this->originalDefaultConnectionName; // tenancy.database.based_on === null => use the default connection
-    }
-
-    /**
-     * Get the driver of a database connection.
-     *
-     * @param string $connectionName
-     * @return string|null
-     */
-    public function getDriver(string $connectionName): ?string
-    {
-        return $this->app['config']["database.connections.$connectionName.driver"];
+        $this->app['config']["database.connections.$connectionName"] = $tenant->database->connection();
     }
 
     /**
      * Switch the application's connection.
-     *
-     * @param string $connection
-     * @return void
      */
     public function switchConnection(string $connection)
     {
@@ -146,16 +98,14 @@ class DatabaseManager
 
     /**
      * Check if a tenant can be created.
-     *
-     * @param Tenant $tenant
-     * @return void
+     * 
      * @throws TenantCannotBeCreatedException
      * @throws DatabaseManagerNotRegisteredException
      * @throws TenantDatabaseAlreadyExistsException
      */
     public function ensureTenantCanBeCreated(Tenant $tenant): void
     {
-        if ($this->getTenantDatabaseManager($tenant)->databaseExists($database = $tenant->getDatabaseName())) {
+        if ($tenant->database()->manager()->databaseExists($database = $tenant->database()->getName())) {
             throw new TenantDatabaseAlreadyExistsException($database);
         }
     }
@@ -170,50 +120,63 @@ class DatabaseManager
      */
     public function createDatabase(Tenant $tenant, array $afterCreating = [])
     {
-        $database = $tenant->getDatabaseName();
-        $manager = $this->getTenantDatabaseManager($tenant);
+        $tenant->database()->makeCredentials();
 
         $afterCreating = array_merge(
             $afterCreating,
-            $this->tenancy->event('database.creating', $database, $tenant)
+            $this->tenancy->event('database.creating', $tenant->database()->getName(), $tenant)
         );
 
         if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
-            $chain = [];
-            foreach ($afterCreating as $item) {
-                if (is_string($item) && class_exists($item)) {
-                    $chain[] = new $item($tenant); // Classes are instantiated and given $tenant
-                } elseif ($item instanceof ShouldQueue) {
-                    $chain[] = $item;
-                }
-            }
-
-            QueuedTenantDatabaseCreator::withChain($chain)->dispatch($manager, $database);
+            $this->createDatabaseAsynchronously($tenant, $afterCreating);
         } else {
-            $manager->createDatabase($database);
-            foreach ($afterCreating as $item) {
-                if (is_object($item) && ! $item instanceof Closure) {
-                    $item->handle($tenant);
-                } else {
-                    $item($tenant);
-                }
+            $this->createDatabaseSynchronously($tenant, $afterCreating);
+        }
+
+        $this->tenancy->event('database.created', $tenant->database()->getName(), $tenant);
+    }
+
+    protected function createDatabaseAsynchronously(Tenant $tenant, array $afterCreating)
+    {
+        $chain = [];
+        foreach ($afterCreating as $item) {
+            if (is_string($item) && class_exists($item)) {
+                $chain[] = new $item($tenant); // Classes are instantiated and given $tenant
+            } elseif ($item instanceof ShouldQueue) {
+                $chain[] = $item;
             }
         }
 
-        $this->tenancy->event('database.created', $database, $tenant);
+        QueuedTenantDatabaseCreator::withChain($chain)->dispatch($tenant->database()->manager(), $tenant->database());
+    }
+
+    protected function createDatabaseSynchronously(Tenant $tenant, array $afterCreating)
+    {
+        $manager = $tenant->database()->manager();
+        $manager->createDatabase($tenant->database()->getName());
+
+        if ($manager instanceof ManagesDatabaseUsers) {
+            $manager->createUser($tenant->database());
+        }
+
+        foreach ($afterCreating as $item) {
+            if (is_object($item) && !$item instanceof Closure) {
+                $item->handle($tenant);
+            } else {
+                $item($tenant);
+            }
+        }
     }
 
     /**
      * Delete a tenant's database.
-     *
-     * @param Tenant $tenant
-     * @return void
+     * 
      * @throws DatabaseManagerNotRegisteredException
      */
     public function deleteDatabase(Tenant $tenant)
     {
-        $database = $tenant->getDatabaseName();
-        $manager = $this->getTenantDatabaseManager($tenant);
+        $database = $tenant->database()->getName();
+        $manager = $tenant->database()->manager();
 
         $this->tenancy->event('database.deleting', $database, $tenant);
 
@@ -221,50 +184,11 @@ class DatabaseManager
             QueuedTenantDatabaseDeleter::dispatch($manager, $database);
         } else {
             $manager->deleteDatabase($database);
+            if ($manager instanceof ManagesDatabaseUsers) {
+                $manager->deleteUser($tenant->database());
+            }
         }
 
         $this->tenancy->event('database.deleted', $database, $tenant);
-    }
-
-    /**
-     * Get the TenantDatabaseManager for a tenant's database connection.
-     *
-     * @param Tenant $tenant
-     * @return TenantDatabaseManager
-     * @throws DatabaseManagerNotRegisteredException
-     */
-    public function getTenantDatabaseManager(Tenant $tenant): TenantDatabaseManager
-    {
-        $driver = $this->getDriver($this->getBaseConnection($connectionName = $tenant->getConnectionName()));
-
-        $databaseManagers = $this->app['config']['tenancy.database_managers'];
-
-        if (! array_key_exists($driver, $databaseManagers)) {
-            throw new DatabaseManagerNotRegisteredException($driver);
-        }
-
-        $databaseManager = $this->app[$databaseManagers[$driver]];
-
-        if ($connectionName !== 'tenant' && $databaseManager instanceof CanSetConnection) {
-            $databaseManager->setConnection($connectionName);
-        }
-
-        return $databaseManager;
-    }
-
-    /**
-     * What key on the connection config should be used to separate tenants.
-     *
-     * @param string $connectionName
-     * @return string
-     */
-    public function separateBy(string $connectionName): string
-    {
-        if ($this->getDriver($this->getBaseConnection($connectionName)) === 'pgsql'
-            && $this->app['config']['tenancy.database.separate_by'] === 'schema') {
-            return 'schema';
-        }
-
-        return 'database';
     }
 }

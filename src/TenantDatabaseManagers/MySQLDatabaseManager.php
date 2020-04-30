@@ -8,9 +8,10 @@ use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Contracts\Future\CanSetConnection;
+use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 
-class MySQLDatabaseManager implements TenantDatabaseManager, CanSetConnection
+class MySQLDatabaseManager implements TenantDatabaseManager, CanSetConnection, ManagesDatabaseUsers
 {
     /** @var string */
     protected $connection;
@@ -18,6 +19,11 @@ class MySQLDatabaseManager implements TenantDatabaseManager, CanSetConnection
     public function __construct(Repository $config)
     {
         $this->connection = $config->get('tenancy.database_manager_connections.mysql');
+    }
+
+    public function getSeparator(): string
+    {
+        return 'database';
     }
 
     protected function database(): Connection

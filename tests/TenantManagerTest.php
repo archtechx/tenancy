@@ -180,7 +180,7 @@ class TenantManagerTest extends TestCase
             '_tenancy_db_name' => $database,
         ]);
 
-        $this->assertSame($database, $tenant->getDatabaseName());
+        $this->assertSame($database, $tenant->database()->getName());
     }
 
     /** @test */

@@ -8,6 +8,11 @@ use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 
 class SQLiteDatabaseManager implements TenantDatabaseManager
 {
+    public function getSeparator(): string
+    {
+        return 'database';
+    }
+
     public function createDatabase(string $name): bool
     {
         try {

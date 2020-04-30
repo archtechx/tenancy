@@ -20,6 +20,11 @@ class PostgreSQLDatabaseManager implements TenantDatabaseManager, CanSetConnecti
         $this->connection = $config->get('tenancy.database_manager_connections.pgsql');
     }
 
+    public function getSeparator(): string
+    {
+        return 'database';
+    }
+
     protected function database(): Connection
     {
         return DB::connection($this->connection);

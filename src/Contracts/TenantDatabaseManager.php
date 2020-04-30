@@ -7,6 +7,13 @@ namespace Stancl\Tenancy\Contracts;
 interface TenantDatabaseManager
 {
     /**
+     * Return the config key that separates databases (e.g. 'database' or 'schema').
+     *
+     * @return string
+     */
+    public function getSeparator(): string;
+
+    /**
      * Create a database.
      *
      * @param  string $name Name of the database.

@@ -82,7 +82,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'database' => database_path('central.sqlite'),
             ],
             'tenancy.database' => [
-                'based_on' => 'sqlite',
+                'template_connection' => 'sqlite',
                 'prefix' => 'tenant',
                 'suffix' => '.sqlite',
             ],

@@ -9,7 +9,9 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
+use Stancl\Tenancy\Tenant;
 
 class QueuedTenantDatabaseDeleter implements ShouldQueue
 {
@@ -18,20 +20,13 @@ class QueuedTenantDatabaseDeleter implements ShouldQueue
     /** @var TenantDatabaseManager */
     protected $databaseManager;
 
-    /** @var string */
-    protected $databaseName;
+    /** @var Tenant */
+    protected $tenant;
 
-    /**
-     * Create a new job instance.
-     *
-     * @param TenantDatabaseManager $databaseManager
-     * @param string $databaseName
-     * @return void
-     */
-    public function __construct(TenantDatabaseManager $databaseManager, string $databaseName)
+    public function __construct(TenantDatabaseManager $databaseManager, Tenant $tenant)
     {
         $this->databaseManager = $databaseManager;
-        $this->databaseName = $databaseName;
+        $this->tenant = $tenant;
     }
 
     /**
@@ -41,6 +36,9 @@ class QueuedTenantDatabaseDeleter implements ShouldQueue
      */
     public function handle()
     {
-        $this->databaseManager->deleteDatabase($this->databaseName);
+        $this->databaseManager->deleteDatabase($this->tenant->database()->getName());
+        if ($this->databaseManager instanceof ManagesDatabaseUsers) {
+            $this->databaseManager->deleteUser($this->tenant->database());
+        }
     }
 }
