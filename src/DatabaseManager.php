@@ -98,7 +98,7 @@ class DatabaseManager
 
     /**
      * Check if a tenant can be created.
-     * 
+     *
      * @throws TenantCannotBeCreatedException
      * @throws DatabaseManagerNotRegisteredException
      * @throws TenantDatabaseAlreadyExistsException
@@ -160,7 +160,7 @@ class DatabaseManager
         }
 
         foreach ($afterCreating as $item) {
-            if (is_object($item) && !$item instanceof Closure) {
+            if (is_object($item) && ! $item instanceof Closure) {
                 $item->handle($tenant);
             } else {
                 $item($tenant);
@@ -170,7 +170,7 @@ class DatabaseManager
 
     /**
      * Delete a tenant's database.
-     * 
+     *
      * @throws DatabaseManagerNotRegisteredException
      */
     public function deleteDatabase(Tenant $tenant)
