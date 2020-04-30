@@ -39,7 +39,7 @@ final class MigrateFresh extends Command
             $tenant->run(function ($tenant) {
                 $this->info('Dropping tables.');
                 $this->call('db:wipe', array_filter([
-                    '--database' => $tenant->getConnectionName(),
+                    '--database' => $tenant->database()->getTemplateConnectionName(),
                     '--force' => true,
                 ]));
 

@@ -54,9 +54,9 @@ class DatabaseManager
      */
     public function connect(Tenant $tenant)
     {
-        $this->createTenantConnection($tenant, $tenant->getConnectionName());
-        $this->setDefaultConnection($tenant->getConnectionName());
-        $this->switchConnection($tenant->getConnectionName());
+        $this->createTenantConnection($tenant, $tenant->database()->getTemplateConnectionName());
+        $this->setDefaultConnection($tenant->database()->getTemplateConnectionName());
+        $this->switchConnection($tenant->database()->getTemplateConnectionName());
     }
 
     /**
@@ -83,7 +83,7 @@ class DatabaseManager
      */
     public function createTenantConnection(Tenant $tenant, $connectionName)
     {
-        $this->app['config']["database.connections.$connectionName"] = $tenant->database->connection();
+        $this->app['config']["database.connections.$connectionName"] = $tenant->database()->connection();
     }
 
     /**

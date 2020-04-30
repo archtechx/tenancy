@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Contracts\Future\CanSetConnection;
 use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
+use Stancl\Tenancy\Contracts\ModifiesDatabaseNameForConnection;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 
@@ -62,24 +63,19 @@ class DatabaseConfig
         static::$passwordGenerator = $passwordGenerator;
     }
 
-    public function getName(): string
+    public function getName(): ?string
     {
-        return $this->tenant->data['_tenancy_db_name'];
+        return $this->tenant->data['_tenancy_db_name'] ?? (static::$databaseNameGenerator)($this->tenant);
     }
 
-    public function getUsername(): string
+    public function getUsername(): ?string
     {
-        return $this->tenant->data['_tenancy_db_username'];
+        return $this->tenant->data['_tenancy_db_username'] ?? null;
     }
 
-    public function getPassword(): string
+    public function getPassword(): ?string
     {
-        return $this->tenant->data['_tenancy_db_password'];
-    }
-
-    public function getTemplateDatabaseConnection(): string
-    {
-        return $this->tenant->data['_tenancy_db_connection'];
+        return $this->tenant->data['_tenancy_db_password'] ?? null;
     }
 
     public function makeCredentials(): void
@@ -100,7 +96,7 @@ class DatabaseConfig
      */
     public function getTemplateConnectionName()
     {
-        $name = $this->tenant->getTemplateDatabaseConnection();
+        $name = $this->tenant->data['_tenancy_db_connection'] ?? 'tenant';
 
         // If we're using e.g. 'tenant', the default, template connection
         // and it doesn't exist, we'll go for the default DB template.
@@ -118,8 +114,13 @@ class DatabaseConfig
     {
         $templateConnection = config("database.connections.{$this->getTemplateConnectionName()}");
 
+        if (($manager = $this->manager()) instanceof ModifiesDatabaseNameForConnection) {
+            /** @var ModifiesDatabaseNameForConnection $manager */
+            $databaseName = $manager->getDatabaseNameForConnection($this->getName());
+        }
+
         return array_merge($templateConnection, $this->tenantConfig(), [
-            $this->manager()->getSeparator() => $this->tenant->database()->getName(),
+            $this->manager()->getSeparator() => $databaseName,
         ]);
     }
 
