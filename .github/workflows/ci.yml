@@ -1,0 +1,31 @@
+name: CI
+
+env:
+  COMPOSE_INTERACTIVE_NO_CLI: 1
+
+on:
+  push:
+    branches: [ 2.x, master ]
+  pull_request:
+    branches: [ 2.x, master ]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    strategy:
+     matrix:
+       laravel: ["^6.0", "^7.0"]
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Start docker containers
+      run: docker-compose up -d
+    - name: Install dependencies
+      run: docker-compose exec -T test composer require --no-interaction "laravel/framework:${{ matrix.laravel }}"
+    - name: Run tests
+      run: ./fulltest
+    - name: Send code coverage to codecov
+      env:
+        CODECOV_TOKEN: 24382d15-84e7-4a55-bea4-c4df96a24a9b
+      run: bash <(curl -s https://codecov.io/bash)

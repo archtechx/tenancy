@@ -7,7 +7,7 @@ namespace Stancl\Tenancy\Tests;
 use Route;
 use Stancl\Tenancy\Tenant;
 
-class TenantRedirectMacroTest extends TestCase
+class RedirectTest extends TestCase
 {
     public $autoCreateTenant = false;
     public $autoInitTenancy = false;
@@ -32,5 +32,18 @@ class TenantRedirectMacroTest extends TestCase
 
         $this->get('/redirect')
             ->assertRedirect('http://abcd/foobar');
+    }
+
+    /** @test */
+    public function tenant_route_helper_generates_correct_url()
+    {
+        Route::get('/abcdef/{a?}/{b?}', function () {
+            return 'Foo';
+        })->name('foo');
+
+        $this->assertSame('http://foo.localhost/abcdef/as/df', tenant_route('foo', ['a' => 'as', 'b' => 'df'], 'foo.localhost'));
+        $this->assertSame('http://foo.localhost/abcdef', tenant_route('foo', [], 'foo.localhost'));
+
+        $this->assertSame('http://' . request()->getHost() . '/abcdef/x/y', tenant_route('foo', ['a' => 'x', 'b' => 'y']));
     }
 }

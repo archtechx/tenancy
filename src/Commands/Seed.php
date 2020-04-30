@@ -43,25 +43,25 @@ class Seed extends SeedCommand
      */
     public function handle()
     {
+        foreach (config('tenancy.seeder_parameters') as $parameter => $value) {
+            if (! $this->input->hasParameterOption($parameter)) {
+                $this->input->setOption(ltrim($parameter, '-'), $value);
+            }
+        }
+
         if (! $this->confirmToProceed()) {
             return;
         }
 
-        $originalTenant = tenancy()->getTenant();
         tenancy()->all($this->option('tenants'))->each(function ($tenant) {
             $this->line("Tenant: {$tenant['id']}");
 
             $this->input->setOption('database', $tenant->getConnectionName());
-            tenancy()->initialize($tenant);
 
-            // Seed
-            parent::handle();
-
-            tenancy()->endTenancy();
+            $tenant->run(function () {
+                // Seed
+                parent::handle();
+            });
         });
-
-        if ($originalTenant) {
-            tenancy()->initialize($originalTenant);
-        }
     }
 }

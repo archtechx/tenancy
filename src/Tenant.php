@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use ArrayAccess;
+use Closure;
+use Illuminate\Config\Repository;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\ForwardsCalls;
+use Stancl\Tenancy\Contracts\Future\CanDeleteKeys;
 use Stancl\Tenancy\Contracts\StorageDriver;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
+use Stancl\Tenancy\Exceptions\NotImplementedException;
 use Stancl\Tenancy\Exceptions\TenantStorageException;
 
 /**
@@ -34,10 +38,10 @@ class Tenant implements ArrayAccess
      */
     public $domains = [];
 
-    /** @var Application */
-    protected $app;
+    /** @var Repository */
+    protected $config;
 
-    /** @var StorageDriver */
+    /** @var StorageDriver|CanDeleteKeys */
     protected $storage;
 
     /** @var TenantManager */
@@ -56,14 +60,13 @@ class Tenant implements ArrayAccess
     /**
      * Use new() if you don't want to swap dependencies.
      *
-     * @param Application $app
      * @param StorageDriver $storage
      * @param TenantManager $tenantManager
      * @param UniqueIdentifierGenerator $idGenerator
      */
-    public function __construct(Application $app, StorageDriver $storage, TenantManager $tenantManager, UniqueIdentifierGenerator $idGenerator)
+    public function __construct(Repository $config, StorageDriver $storage, TenantManager $tenantManager, UniqueIdentifierGenerator $idGenerator)
     {
-        $this->app = $app;
+        $this->config = $config;
         $this->storage = $storage->withDefaultTenant($this);
         $this->manager = $tenantManager;
         $this->idGenerator = $idGenerator;
@@ -80,7 +83,7 @@ class Tenant implements ArrayAccess
         $app = $app ?? app();
 
         return new static(
-            $app,
+            $app[Repository::class],
             $app[StorageDriver::class],
             $app[TenantManager::class],
             $app[UniqueIdentifierGenerator::class]
@@ -230,8 +233,6 @@ class Tenant implements ArrayAccess
             $this->manager->createTenant($this);
         }
 
-        $this->persisted = true;
-
         return $this;
     }
 
@@ -257,9 +258,15 @@ class Tenant implements ArrayAccess
      */
     public function softDelete(): self
     {
-        $this->put('_tenancy_original_domains', $this->domains);
+        $this->manager->event('tenant.softDeleting', $this);
+
+        $this->put([
+            '_tenancy_original_domains' => $this->domains,
+        ]);
         $this->clearDomains();
         $this->save();
+
+        $this->manager->event('tenant.softDeleted', $this);
 
         return $this;
     }
@@ -271,7 +278,7 @@ class Tenant implements ArrayAccess
      */
     public function getDatabaseName(): string
     {
-        return $this->data['_tenancy_db_name'] ?? ($this->app['config']['tenancy.database.prefix'] . $this->id . $this->app['config']['tenancy.database.suffix']);
+        return $this->data['_tenancy_db_name'] ?? ($this->config->get('tenancy.database.prefix') . $this->id . $this->config->get('tenancy.database.suffix'));
     }
 
     /**
@@ -325,19 +332,29 @@ class Tenant implements ArrayAccess
      */
     public function put($key, $value = null): self
     {
+        $this->manager->event('tenant.updating', $this);
+
         if ($key === 'id') {
             throw new TenantStorageException("Tenant ids can't be changed.");
         }
 
         if (is_array($key)) {
-            $this->storage->putMany($key);
+            if ($this->persisted) {
+                $this->storage->putMany($key);
+            }
+
             foreach ($key as $k => $v) { // Add to cache
                 $this->data[$k] = $v;
             }
         } else {
-            $this->storage->put($key, $value);
+            if ($this->persisted) {
+                $this->storage->put($key, $value);
+            }
+
             $this->data[$key] = $value;
         }
+
+        $this->manager->event('tenant.updated', $this);
 
         return $this;
     }
@@ -349,7 +366,44 @@ class Tenant implements ArrayAccess
     }
 
     /**
-     * Set a value.
+     * Delete a key from the tenant's storage.
+     *
+     * @param string $key
+     * @return self
+     */
+    public function deleteKey(string $key): self
+    {
+        return $this->deleteKeys([$key]);
+    }
+
+    /**
+     * Delete keys from the tenant's storage.
+     *
+     * @param string[] $keys
+     * @return self
+     */
+    public function deleteKeys(array $keys): self
+    {
+        $this->manager->event('tenant.updating', $this);
+
+        if (! $this->storage instanceof CanDeleteKeys) {
+            throw new NotImplementedException(get_class($this->storage), 'deleteMany',
+                'This method was added to storage drivers provided by the package in 2.2.0 and will be part of the StorageDriver contract in 3.0.0.'
+            );
+        } else {
+            $this->storage->deleteMany($keys);
+            foreach ($keys as $key) {
+                unset($this->data[$key]);
+            }
+        }
+
+        $this->manager->event('tenant.updated', $this);
+
+        return $this;
+    }
+
+    /**
+     * Set a value in the data array without saving into storage.
      *
      * @param string $key
      * @param mixed $value
@@ -360,6 +414,27 @@ class Tenant implements ArrayAccess
         $this->data[$key] = $value;
 
         return $this;
+    }
+
+    /**
+     * Run a closure inside the tenant's environment.
+     *
+     * @param Closure $closure
+     * @return mixed
+     */
+    public function run(Closure $closure)
+    {
+        $originalTenant = $this->manager->getTenant();
+
+        $this->manager->initializeTenancy($this);
+        $result = $closure($this);
+        $this->manager->endTenancy($this);
+
+        if ($originalTenant) {
+            $this->manager->initializeTenancy($originalTenant);
+        }
+
+        return $result;
     }
 
     public function __get($key)

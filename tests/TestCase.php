@@ -24,11 +24,12 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         Redis::connection('tenancy')->flushdb();
         Redis::connection('cache')->flushdb();
 
+        $originalConnection = config('database.default');
         $this->loadMigrationsFrom([
             '--path' => realpath(__DIR__ . '/../assets/migrations'),
             '--database' => 'central',
         ]);
-        config(['database.default' => 'sqlite']); // fix issue caused by loadMigrationsFrom
+        config(['database.default' => $originalConnection]); // fix issue caused by loadMigrationsFrom
 
         if ($this->autoCreateTenant) {
             $this->createTenant();
@@ -96,9 +97,14 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'tenancy.redis.tenancy' => env('TENANCY_TEST_REDIS_TENANCY', true),
             'database.redis.client' => env('TENANCY_TEST_REDIS_CLIENT', 'phpredis'),
             'tenancy.redis.prefixed_connections' => ['default'],
-            'tenancy.migrations_directory' => database_path('../migrations'),
+            'tenancy.migration_paths' => [database_path('../migrations')],
             'tenancy.storage_drivers.db.connection' => 'central',
             'tenancy.bootstrappers.redis' => \Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class,
+            'queue.connections.central' => [
+                'driver' => 'sync',
+                'central' => true,
+            ],
+            'tenancy.seeder_parameters' => [],
         ]);
 
         $app->singleton(\Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class);

@@ -8,6 +8,10 @@ trait DealsWithMigrations
 {
     protected function getMigrationPaths()
     {
-        return [config('tenancy.migrations_directory', database_path('migrations/tenant'))];
+        if ($this->input->hasOption('path') && $this->input->getOption('path')) {
+            return parent::getMigrationPaths();
+        }
+
+        return config('tenancy.migration_paths', [config('tenancy.migrations_directory') ?? database_path('migrations/tenant')]);
     }
 }

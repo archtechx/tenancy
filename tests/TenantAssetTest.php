@@ -68,4 +68,20 @@ class TenantAssetTest extends TestCase
 
         $this->assertSame($original, global_asset('foobar'));
     }
+
+    /** @test */
+    public function asset_helper_tenancy_can_be_disabled()
+    {
+        $original = asset('foo');
+
+        config([
+            'app.asset_url' => null,
+            'tenancy.filesystem.asset_helper_tenancy' => false,
+        ]);
+
+        Tenant::create('foo.localhost');
+        tenancy()->init('foo.localhost');
+
+        $this->assertSame($original, asset('foo'));
+    }
 }

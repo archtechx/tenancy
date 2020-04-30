@@ -8,10 +8,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
+use Stancl\Tenancy\Exceptions\TenantDoesNotExistException;
 use Stancl\Tenancy\Exceptions\TenantWithThisIdAlreadyExistsException;
+use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseMigrator;
+use Stancl\Tenancy\Jobs\QueuedTenantDatabaseSeeder;
 use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\TenantManager;
+use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
 
 class TenantManagerTest extends TestCase
 {
@@ -236,6 +240,27 @@ class TenantManagerTest extends TestCase
     }
 
     /** @test */
+    public function automatic_seeding_works()
+    {
+        config(['tenancy.migrate_after_creation' => true]);
+
+        $tenant = Tenant::create(['foo.localhost']);
+        tenancy()->initialize($tenant);
+        $this->assertSame(0, \DB::table('users')->count());
+
+        config([
+            'tenancy.seed_after_migration' => true,
+            'tenancy.seeder_parameters' => [
+                '--class' => ExampleSeeder::class,
+            ],
+        ]);
+
+        $tenant2 = Tenant::create(['bar.localhost']);
+        tenancy()->initialize($tenant2);
+        $this->assertSame(1, \DB::table('users')->count());
+    }
+
+    /** @test */
     public function ensureTenantCanBeCreated_works()
     {
         $id = 'foo' . $this->randomString();
@@ -248,22 +273,110 @@ class TenantManagerTest extends TestCase
     }
 
     /** @test */
-    public function automigration_can_be_queued()
+    public function automigration_is_queued_when_db_creation_is_queued()
     {
         Queue::fake();
 
         config([
+            'tenancy.queue_database_creation' => true,
             'tenancy.migrate_after_creation' => true,
-            'tenancy.queue_automatic_migration' => true,
         ]);
 
         $tenant = Tenant::new()->save();
-        tenancy()->initialize($tenant);
 
-        Queue::assertPushed(QueuedTenantDatabaseMigrator::class);
+        Queue::assertPushedWithChain(QueuedTenantDatabaseCreator::class, [
+            QueuedTenantDatabaseMigrator::class,
+        ]);
 
-        $this->assertFalse(\Schema::hasTable('users'));
-        (new QueuedTenantDatabaseMigrator($tenant))->handle();
-        $this->assertTrue(\Schema::hasTable('users'));
+        // foreach (Queue::pushedJobs() as $job) {
+        //     $job[0]['job']->handle(); // this doesn't execute the chained job
+        // }
+        // tenancy()->initialize($tenant);
+        // $this->assertTrue(\Schema::hasTable('users'));
+    }
+
+    /** @test */
+    public function autoseeding_is_queued_when_db_creation_is_queued()
+    {
+        Queue::fake();
+
+        config([
+            'tenancy.queue_database_creation' => true,
+            'tenancy.migrate_after_creation' => true,
+            'tenancy.seed_after_migration' => true,
+        ]);
+
+        Tenant::new()->save();
+
+        Queue::assertPushedWithChain(QueuedTenantDatabaseCreator::class, [
+            QueuedTenantDatabaseMigrator::class,
+            QueuedTenantDatabaseSeeder::class,
+        ]);
+    }
+
+    /** @test */
+    public function TenantDoesNotExistException_is_thrown_when_find_is_called_on_an_id_that_does_not_belong_to_any_tenant()
+    {
+        $this->expectException(TenantDoesNotExistException::class);
+        tenancy()->find('gjnfdgf');
+    }
+
+    /** @test */
+    public function event_listeners_can_accept_arguments()
+    {
+        tenancy()->hook('tenant.creating', function ($tenantManager, $tenant) {
+            $this->assertSame('bar', $tenant->foo);
+        });
+
+        Tenant::new()->withData(['foo' => 'bar'])->save();
+    }
+
+    /** @test */
+    public function tenant_creating_hook_can_be_used_to_modify_tenants_data()
+    {
+        tenancy()->hook('tenant.creating', function ($tm, Tenant $tenant) {
+            $tenant->put([
+                'foo' => 'bar',
+                'abc123' => 'def456',
+            ]);
+        });
+        $tenant = Tenant::new()->save();
+
+        $this->assertArrayHasKey('foo', $tenant->data);
+        $this->assertArrayHasKey('abc123', $tenant->data);
+    }
+
+    /** @test */
+    public function database_creation_can_be_disabled()
+    {
+        config(['tenancy.create_database' => false]);
+
+        tenancy()->hook('database.creating', function () {
+            $this->fail();
+        });
+
+        $tenant = Tenant::new()->save();
+
+        $this->assertTrue(true);
+    }
+
+    /** @test */
+    public function database_creation_can_be_disabled_for_specific_tenants()
+    {
+        config(['tenancy.create_database' => true]);
+
+        tenancy()->hook('database.creating', function () {
+            $this->assertTrue(true);
+        });
+
+        $tenant = Tenant::new()->save();
+
+        tenancy()->hook('database.creating', function () {
+            $this->fail();
+        });
+
+        $tenant2 = Tenant::new()->withData([
+            '_tenancy_create_database' => false,
+        ])->save();
     }
 }

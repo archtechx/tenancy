@@ -14,4 +14,16 @@ trait HasATenantsOption
             ['tenants', null, InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, '', null],
         ], parent::getOptions());
     }
+
+    protected function getTenants(): array
+    {
+        return tenancy()->all($this->option('tenants'))->all();
+    }
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->specifyParameters();
+    }
 }

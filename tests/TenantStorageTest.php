@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
-use Stancl\Tenancy\StorageDrivers\Database\DatabaseStorageDriver;
-use Stancl\Tenancy\StorageDrivers\Database\TenantModel;
-use Stancl\Tenancy\StorageDrivers\RedisStorageDriver;
+use Stancl\Tenancy\StorageDrivers\Database\TenantRepository;
 use Stancl\Tenancy\Tenant;
 
 class TenantStorageTest extends TestCase
@@ -84,10 +82,12 @@ class TenantStorageTest extends TestCase
     /** @test */
     public function correct_storage_driver_is_used()
     {
-        if (config('tenancy.storage_driver') == DatabaseStorageDriver::class) {
+        if (config('tenancy.storage_driver') == 'db') {
             $this->assertSame('DatabaseStorageDriver', class_basename(tenancy()->storage));
-        } elseif (config('tenancy.storage_driver') == RedisStorageDriver::class) {
+        } elseif (config('tenancy.storage_driver') == 'redis') {
             $this->assertSame('RedisStorageDriver', class_basename(tenancy()->storage));
+        } else {
+            dd(class_basename(config('tenancy.storage_driver')));
         }
     }
 
@@ -112,10 +112,11 @@ class TenantStorageTest extends TestCase
     }
 
     /** @test */
-    public function tenant_model_uses_correct_connection()
+    public function tenant_repository_uses_correct_connection()
     {
+        config(['database.connections.foo' => config('database.connections.sqlite')]);
         config(['tenancy.storage_drivers.db.connection' => 'foo']);
-        $this->assertSame('foo', (new TenantModel)->getConnectionName());
+        $this->assertSame('foo', app(TenantRepository::class)->database->getName());
     }
 
     /** @test */
@@ -137,7 +138,7 @@ class TenantStorageTest extends TestCase
     /** @test */
     public function custom_columns_work_with_db_storage_driver()
     {
-        if (config('tenancy.storage_driver') != 'Stancl\Tenancy\StorageDrivers\DatabaseStorageDriver') {
+        if (config('tenancy.storage_driver') != 'db') {
             $this->markTestSkipped();
         }
 
@@ -153,12 +154,41 @@ class TenantStorageTest extends TestCase
             'foo',
         ]]);
 
-        tenant()->create(['foo.localhost']);
+        tenancy()->create(['foo.localhost']);
         tenancy()->init('foo.localhost');
 
-        tenant()->put(['foo' => 'bar', 'abc' => 'xyz']);
-        $this->assertSame(['bar', 'xyz'], tenant()->get(['foo', 'abc']));
+        tenant()->put('foo', '111');
+        $this->assertSame('111', tenant()->get('foo'));
 
-        $this->assertSame('bar', DB::connection('central')->table('tenants')->where('id', tenant('id'))->first()->foo);
+        tenant()->put(['foo' => 'bar', 'abc' => 'xyz']);
+        $this->assertSame(['foo' => 'bar', 'abc' => 'xyz'], tenant()->get(['foo', 'abc']));
+
+        $this->assertSame('bar', \DB::connection('central')->table('tenants')->where('id', tenant('id'))->first()->foo);
+    }
+
+    /** @test */
+    public function custom_columns_can_be_used_on_tenant_create()
+    {
+        if (config('tenancy.storage_driver') != 'db') {
+            $this->markTestSkipped();
+        }
+
+        tenancy()->endTenancy();
+
+        $this->loadMigrationsFrom([
+            '--path' => __DIR__ . '/Etc',
+            '--database' => 'central',
+        ]);
+        config(['database.default' => 'sqlite']); // fix issue caused by loadMigrationsFrom
+
+        config(['tenancy.storage_drivers.db.custom_columns' => [
+            'foo',
+        ]]);
+
+        tenancy()->create(['foo.localhost'], ['foo' => 'bar', 'abc' => 'xyz']);
+        tenancy()->init('foo.localhost');
+
+        $this->assertSame(['foo' => 'bar', 'abc' => 'xyz'], tenant()->get(['foo', 'abc']));
+        $this->assertSame('bar', \DB::connection('central')->table('tenants')->where('id', tenant('id'))->first()->foo);
     }
 }

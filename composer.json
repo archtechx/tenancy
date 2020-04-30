@@ -10,17 +10,17 @@
         }
     ],
     "require": {
-        "illuminate/support": "^6.0",
+        "ext-json": "*",
+        "illuminate/support": "^6.0|^7.0",
         "facade/ignition-contracts": "^1.0",
-        "ramsey/uuid": "^3.7"
+        "ramsey/uuid": "^3.7|^4.0"
     },
     "require-dev": {
-        "vlucas/phpdotenv": "^3.3",
-        "laravel/telescope": "^2.0",
-        "laravel/framework": "^6.0",
-        "orchestra/testbench-browser-kit": "^4.0",
+        "vlucas/phpdotenv": "^3.3|^4.0",
+        "laravel/framework": "^6.0|^7.0",
+        "orchestra/testbench-browser-kit": "^4.0|^5.0",
         "league/flysystem-aws-s3-v3": "~1.0",
-        "phpunit/phpcov": "^6.0"
+        "phpunit/phpcov": "^6.0|^7.0"
     },
     "autoload": {
         "psr-4": {

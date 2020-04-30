@@ -16,12 +16,16 @@ class QueuedTenantDatabaseMigrator implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /** @var Tenant */
-    protected $tenant;
+    /** @var string */
+    protected $tenantId;
 
-    public function __construct(Tenant $tenant)
+    /** @var array */
+    protected $migrationParameters = [];
+
+    public function __construct(Tenant $tenant, $migrationParameters = [])
     {
-        $this->tenant = $tenant;
+        $this->tenantId = $tenant->id;
+        $this->migrationParameters = $migrationParameters;
     }
 
     /**
@@ -32,7 +36,7 @@ class QueuedTenantDatabaseMigrator implements ShouldQueue
     public function handle()
     {
         Artisan::call('tenants:migrate', [
-            '--tenants' => [$this->tenant->id],
-        ]);
+            '--tenants' => [$this->tenantId],
+        ] + $this->migrationParameters);
     }
 }

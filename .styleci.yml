@@ -1,8 +1,6 @@
 preset: laravel
 enabled:
 - declare_strict_types
-- alpha_ordered_imports
 disabled:
 - concat_without_spaces
 - ternary_operator_spaces
-- length_ordered_imports
