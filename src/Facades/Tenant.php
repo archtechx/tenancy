@@ -10,11 +10,11 @@ class Tenant extends Facade
 {
     protected static function getFacadeAccessor()
     {
-        return Tenant::class;
+        return self::class;
     }
 
     public static function create($domains, array $data = []): \Stancl\Tenancy\Tenant
     {
-        return Tenant::create($domains, $data);
+        return self::create($domains, $data);
     }
 }
