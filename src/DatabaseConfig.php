@@ -125,13 +125,18 @@ class DatabaseConfig
         });
 
         // Remove DB name because we set that separately
-        if (isset($dbConfig['_tenancy_db_name'])) {
-            unset($dbConfig['_tenancy_db_name']);
+        if (($pos = array_search('_tenancy_db_name', $dbConfig)) !== false) {
+            unset($dbConfig[$pos]);
+        }
+        
+        // Remove DB connection because that's not used inside the array
+        if (($pos = array_search('_tenancy_db_connection', $dbConfig)) !== false) {
+            unset($dbConfig[$pos]);
         }
 
         return array_reduce($dbConfig, function ($config, $key) {
             return array_merge($config, [
-                Str::substr($key, 0, strlen('_tenancy_db_')) => $this->tenant[$key],
+                Str::substr($key, strlen('_tenancy_db_')) => $this->tenant[$key],
             ]);
         }, []);
     }

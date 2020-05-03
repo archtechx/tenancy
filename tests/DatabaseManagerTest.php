@@ -70,9 +70,4 @@ class DatabaseManagerTest extends TestCase
 
         tenancy()->all()->each->delete();
     }
-
-    /** @test */
-    public function extra_config_is_merged_into_the_connection_config_array()
-    {
-    }
 }

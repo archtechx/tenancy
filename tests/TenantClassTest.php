@@ -174,4 +174,54 @@ class TenantClassTest extends TestCase
             return $tenant->id;
         }));
     }
+
+    /** @test */
+    public function extra_config_is_merged_into_the_connection_config_array()
+    {
+        $tenant = Tenant::new()->withData([
+            '_tenancy_db_link' => 'foo',
+            '_tenancy_db_name' => 'dbname',
+            '_tenancy_db_username' => 'usernamefoo',
+            '_tenancy_db_password' => 'passwordfoo',
+            '_tenancy_db_connection' => 'mysql',
+        ]);
+
+        config(['database.connections.mysql' => [
+            "driver" => "mysql",
+            "url" => null,
+            "host" => "mysql",
+            "port" => "3306",
+            "database" => "main",
+            "username" => "root",
+            "password" => "password",
+            "unix_socket" => "",
+            "charset" => "utf8mb4",
+            "collation" => "utf8mb4_unicode_ci",
+            "prefix" => "",
+            "prefix_indexes" => true,
+            "strict" => true,
+            "engine" => null,
+            "options" => [],
+        ]]);
+
+        $this->assertEquals([
+            'database' => 'dbname',
+            'username' => 'usernamefoo',
+            'password' => 'passwordfoo',
+            'link' => 'foo',
+
+            "driver" => "mysql",
+            "url" => null,
+            "host" => "mysql",
+            "port" => "3306",
+            "unix_socket" => "",
+            "charset" => "utf8mb4",
+            "collation" => "utf8mb4_unicode_ci",
+            "prefix" => "",
+            "prefix_indexes" => true,
+            "strict" => true,
+            "engine" => null,
+            "options" => [],
+        ], $tenant->database()->connection());
+    }
 }
