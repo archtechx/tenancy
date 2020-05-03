@@ -8,11 +8,10 @@ use Stancl\Tenancy\Tenant;
 
 class CacheManagerTest extends TestCase
 {
-    public $autoInitTenancy = false;
-
     /** @test */
     public function default_tag_is_automatically_applied()
     {
+        $this->createTenant();
         $this->initTenancy();
         $this->assertArrayIsSubset([config('tenancy.cache.tag_base') . tenant('id')], cache()->tags('foo')->getTags()->getNames());
     }
@@ -20,6 +19,7 @@ class CacheManagerTest extends TestCase
     /** @test */
     public function tags_are_merged_when_array_is_passed()
     {
+        $this->createTenant();
         $this->initTenancy();
         $expected = [config('tenancy.cache.tag_base') . tenant('id'), 'foo', 'bar'];
         $this->assertEquals($expected, cache()->tags(['foo', 'bar'])->getTags()->getNames());
@@ -28,6 +28,7 @@ class CacheManagerTest extends TestCase
     /** @test */
     public function tags_are_merged_when_string_is_passed()
     {
+        $this->createTenant();
         $this->initTenancy();
         $expected = [config('tenancy.cache.tag_base') . tenant('id'), 'foo'];
         $this->assertEquals($expected, cache()->tags('foo')->getTags()->getNames());
@@ -36,6 +37,7 @@ class CacheManagerTest extends TestCase
     /** @test */
     public function exception_is_thrown_when_zero_arguments_are_passed_to_tags_method()
     {
+        $this->createTenant();
         $this->initTenancy();
         $this->expectException(\Exception::class);
         cache()->tags();
@@ -44,6 +46,7 @@ class CacheManagerTest extends TestCase
     /** @test */
     public function exception_is_thrown_when_more_than_one_argument_is_passed_to_tags_method()
     {
+        $this->createTenant();
         $this->initTenancy();
         $this->expectException(\Exception::class);
         cache()->tags(1, 2);

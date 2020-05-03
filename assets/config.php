@@ -100,7 +100,7 @@ return [
          * The connection that will be used as a template for the dynamically created tenant connection.
          * Set to null to use the default connection.
          */
-        'based_on' => null,
+        'template_connection' => null,
 
         /**
          * Tenant database names are created like this:
@@ -108,8 +108,6 @@ return [
          */
         'prefix' => 'tenant',
         'suffix' => '',
-
-        'separate_by' => 'database', // database or schema (only supported by pgsql)
     ],
 
     /**
@@ -197,9 +195,14 @@ return [
         'pgsql' => Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager::class,
 
         /**
-         * Disable the pgsql manager above, enable the one below, and set the
-         * tenancy.database.separate_by config key to 'schema' if you would
-         * like to separate tenant DBs by schemas rather than databases.
+         * Use this database manager for MySQL to have a DB user created for each tenant database.
+         * You can customize the grants given to these users by changing the $grants property.
+         */
+        // 'mysql' => Stancl\Tenancy\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager::class,
+
+        /**
+         * Disable the pgsql manager above, and enable the one below if you
+         * want to separate tenant DBs by schemas rather than databases.
          */
         // 'pgsql' => Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLSchemaManager::class, // Separate by schema instead of database
     ],
@@ -252,8 +255,8 @@ return [
      */
     'migrate_after_creation' => false,
     'migration_parameters' => [
-        // '--force' => true, // Set this to true to be able to run migrations in production
-        // '--path' => [], // If you need to customize paths to tenant migrations
+        '--force' => true, // Set this to true to be able to run migrations in production
+        // '--path' => [database_path('migrations/tenant')], // If you need to customize paths to tenant migrations
     ],
 
     /**

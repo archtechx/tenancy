@@ -6,9 +6,11 @@ namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Tenant;
+use Stancl\Tenancy\Tests\Etc\User;
 
 class DatabaseSchemaManagerTest extends TestCase
 {
+    public $autoCreateTenant = true;
     public $autoInitTenancy = false;
 
     protected function getEnvironmentSetUp($app)
@@ -17,11 +19,11 @@ class DatabaseSchemaManagerTest extends TestCase
 
         $app['config']->set([
             'database.default' => 'pgsql',
+            'tenancy.storage_drivers.db.connection' => 'pgsql',
             'database.connections.pgsql.database' => 'main',
             'database.connections.pgsql.schema' => 'public',
-            'tenancy.database.based_on' => null,
+            'tenancy.database.template_connection' => null,
             'tenancy.database.suffix' => '',
-            'tenancy.database.separate_by' => 'schema',
             'tenancy.database_managers.pgsql' => \Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLSchemaManager::class,
         ]);
     }
@@ -41,20 +43,18 @@ class DatabaseSchemaManagerTest extends TestCase
     }
 
     /** @test */
-    public function the_default_db_is_used_when_based_on_is_null()
+    public function the_default_db_is_used_when_template_connection_is_null()
     {
-        config(['database.default' => 'pgsql']);
-
         $this->assertSame('pgsql', config('database.default'));
         config([
             'database.connections.pgsql.foo' => 'bar',
-            'tenancy.database.based_on' => null,
+            'tenancy.database.template_connection' => null,
         ]);
 
         tenancy()->init('test.localhost');
 
         $this->assertSame('tenant', config('database.default'));
-        $this->assertSame('bar', config('database.connections.' . config('database.default') . '.foo'));
+        $this->assertSame('bar', config('database.connections.tenant.foo'));
     }
 
     /** @test */
@@ -63,7 +63,7 @@ class DatabaseSchemaManagerTest extends TestCase
         $tenant = tenancy()->create(['schema.localhost']);
         tenancy()->init('schema.localhost');
 
-        $this->assertSame($tenant->getDatabaseName(), config('database.connections.' . config('database.default') . '.schema'));
+        $this->assertSame($tenant->database()->getName(), config('database.connections.' . config('database.default') . '.schema'));
     }
 
     /** @test */
@@ -96,6 +96,7 @@ class DatabaseSchemaManagerTest extends TestCase
 
         $tenant1 = Tenant::create('tenant1.localhost');
         $tenant2 = Tenant::create('tenant2.localhost');
+
         \Artisan::call('tenants:migrate', [
             '--tenants' => [$tenant1['id'], $tenant2['id']],
         ]);

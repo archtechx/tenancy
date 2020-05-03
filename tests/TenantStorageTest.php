@@ -9,6 +9,9 @@ use Stancl\Tenancy\Tenant;
 
 class TenantStorageTest extends TestCase
 {
+    public $autoCreateTenant = true;
+    public $autoInitTenancy = true;
+
     /** @test */
     public function deleting_a_tenant_works()
     {

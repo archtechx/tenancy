@@ -21,8 +21,8 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
 
     public function start(Tenant $tenant)
     {
-        $database = $tenant->getDatabaseName();
-        if (! $this->database->getTenantDatabaseManager($tenant)->databaseExists($database)) {
+        $database = $tenant->database()->getName();
+        if (! $tenant->database()->manager()->databaseExists($database)) {
             throw new TenantDatabaseDoesNotExistException($database);
         }
 

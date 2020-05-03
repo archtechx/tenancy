@@ -54,8 +54,8 @@ class TenantClassTest extends TestCase
         $tenant = Tenant::create(['foo.localhost'], ['id' => $id]);
         $tenant->foo = 'bar';
         $tenant->save();
-        $this->assertEquals(['id' => $id, 'foo' => 'bar'], $tenant->data);
-        $this->assertEquals(['id' => $id, 'foo' => 'bar'], tenancy()->find($id)->data);
+        $this->assertEquals(['id' => $id, 'foo' => 'bar', '_tenancy_db_name' => $tenant->database()->getName()], $tenant->data);
+        $this->assertEquals(['id' => $id, 'foo' => 'bar', '_tenancy_db_name' => $tenant->database()->getName()], tenancy()->find($id)->data);
 
         $tenant->addDomains('abc.localhost');
         $tenant->save();
@@ -102,6 +102,7 @@ class TenantClassTest extends TestCase
 
         $data = tenancy()->all()->first()->data;
         unset($data['id']);
+        unset($data['_tenancy_db_name']);
 
         $this->assertSame(['foo' => 'bar'], $data);
     }
@@ -172,5 +173,55 @@ class TenantClassTest extends TestCase
         $this->assertSame($tenant->id, $tenant->run(function ($tenant) {
             return $tenant->id;
         }));
+    }
+
+    /** @test */
+    public function extra_config_is_merged_into_the_connection_config_array()
+    {
+        $tenant = Tenant::new()->withData([
+            '_tenancy_db_link' => 'foo',
+            '_tenancy_db_name' => 'dbname',
+            '_tenancy_db_username' => 'usernamefoo',
+            '_tenancy_db_password' => 'passwordfoo',
+            '_tenancy_db_connection' => 'mysql',
+        ]);
+
+        config(['database.connections.mysql' => [
+            'driver' => 'mysql',
+            'url' => null,
+            'host' => 'mysql',
+            'port' => '3306',
+            'database' => 'main',
+            'username' => 'root',
+            'password' => 'password',
+            'unix_socket' => '',
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => [],
+        ]]);
+
+        $this->assertEquals([
+            'database' => 'dbname',
+            'username' => 'usernamefoo',
+            'password' => 'passwordfoo',
+            'link' => 'foo',
+
+            'driver' => 'mysql',
+            'url' => null,
+            'host' => 'mysql',
+            'port' => '3306',
+            'unix_socket' => '',
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => [],
+        ], $tenant->database()->connection());
     }
 }

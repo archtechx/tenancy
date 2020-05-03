@@ -19,6 +19,7 @@ use Stancl\Tenancy\Exceptions\TenantStorageException;
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
  */
+// todo make this class serializable
 class Tenant implements ArrayAccess
 {
     use Traits\HasArrayAccess,
@@ -91,8 +92,7 @@ class Tenant implements ArrayAccess
     }
 
     /**
-     * DO NOT CALL THIS METHOD FROM USERLAND. Used by storage
-     * drivers to create persisted instances of Tenant.
+     * Used by storage drivers to create persisted instances of Tenant.
      *
      * @param array $data
      * @return self
@@ -230,6 +230,7 @@ class Tenant implements ArrayAccess
         if ($this->persisted) {
             $this->manager->updateTenant($this);
         } else {
+            $this->database()->makeCredentials();
             $this->manager->createTenant($this);
         }
 
@@ -272,23 +273,13 @@ class Tenant implements ArrayAccess
     }
 
     /**
-     * Get the tenant's database's name.
+     * Get database config.
      *
-     * @return string
+     * @return DatabaseConfig
      */
-    public function getDatabaseName(): string
+    public function database(): DatabaseConfig
     {
-        return $this->data['_tenancy_db_name'] ?? ($this->config->get('tenancy.database.prefix') . $this->id . $this->config->get('tenancy.database.suffix'));
-    }
-
-    /**
-     * Get the tenant's database connection's name.
-     *
-     * @return string
-     */
-    public function getConnectionName(): string
-    {
-        return $this->data['_tenancy_db_connection'] ?? 'tenant';
+        return new DatabaseConfig($this);
     }
 
     /**

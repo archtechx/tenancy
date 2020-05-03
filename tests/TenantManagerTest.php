@@ -167,6 +167,7 @@ class TenantManagerTest extends TestCase
 
         $tenant_data = $tenant->data;
         unset($tenant_data['id']);
+        unset($tenant_data['_tenancy_db_name']);
 
         $this->assertSame($data, $tenant_data);
     }
@@ -180,7 +181,7 @@ class TenantManagerTest extends TestCase
             '_tenancy_db_name' => $database,
         ]);
 
-        $this->assertSame($database, $tenant->getDatabaseName());
+        $this->assertSame($database, $tenant->database()->getName());
     }
 
     /** @test */

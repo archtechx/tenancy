@@ -9,8 +9,8 @@ use Stancl\Tenancy\Tenant;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
-    public $autoCreateTenant = true;
-    public $autoInitTenancy = true;
+    public $autoCreateTenant = false;
+    public $autoInitTenancy = false;
 
     /**
      * Setup the test environment.
@@ -24,12 +24,12 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         Redis::connection('tenancy')->flushdb();
         Redis::connection('cache')->flushdb();
 
-        $originalConnection = config('database.default');
-        $this->loadMigrationsFrom([
-            '--path' => realpath(__DIR__ . '/../assets/migrations'),
-            '--database' => 'central',
+        file_put_contents(database_path('central.sqlite'), '');
+        $this->artisan('migrate:fresh', [
+            '--force' => true,
+            '--path' => __DIR__ . '/../assets/migrations',
+            '--realpath' => true,
         ]);
-        config(['database.default' => $originalConnection]); // fix issue caused by loadMigrationsFrom
 
         if ($this->autoCreateTenant) {
             $this->createTenant();
@@ -62,9 +62,8 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             \Dotenv\Dotenv::create(__DIR__ . '/..')->load();
         }
 
-        fclose(fopen(database_path('central.sqlite'), 'w'));
-
         $app['config']->set([
+            'database.default' => 'central',
             'database.redis.cache.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
             'database.redis.default.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
             'database.redis.options.prefix' => 'foo',
@@ -80,9 +79,10 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'database.connections.central' => [
                 'driver' => 'sqlite',
                 'database' => database_path('central.sqlite'),
+                // 'database' => ':memory:',
             ],
             'tenancy.database' => [
-                'based_on' => 'sqlite',
+                'template_connection' => 'central',
                 'prefix' => 'tenant',
                 'suffix' => '.sqlite',
             ],
@@ -97,7 +97,11 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'tenancy.redis.tenancy' => env('TENANCY_TEST_REDIS_TENANCY', true),
             'database.redis.client' => env('TENANCY_TEST_REDIS_CLIENT', 'phpredis'),
             'tenancy.redis.prefixed_connections' => ['default'],
-            'tenancy.migration_paths' => [database_path('../migrations')],
+            'tenancy.migration_parameters' => [
+                '--path' => [database_path('../migrations')],
+                '--realpath' => true,
+                '--force' => true,
+            ],
             'tenancy.storage_drivers.db.connection' => 'central',
             'tenancy.bootstrappers.redis' => \Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class,
             'queue.connections.central' => [

@@ -45,14 +45,18 @@ class Migrate extends MigrateCommand
      */
     public function handle()
     {
+        foreach (config('tenancy.migration_parameters') as $parameter => $value) {
+            if (! $this->input->hasParameterOption($parameter)) {
+                $this->input->setOption(ltrim($parameter, '-'), $value);
+            }
+        }
+
         if (! $this->confirmToProceed()) {
             return;
         }
 
         tenancy()->all($this->option('tenants'))->each(function ($tenant) {
             $this->line("Tenant: {$tenant['id']}");
-
-            $this->input->setOption('database', $tenant->getConnectionName());
 
             $tenant->run(function () {
                 // Migrate

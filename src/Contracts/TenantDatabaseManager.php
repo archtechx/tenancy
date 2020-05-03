@@ -4,23 +4,26 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Contracts;
 
+use Stancl\Tenancy\Tenant;
+
 interface TenantDatabaseManager
 {
     /**
-     * Create a database.
+     * Return the config key that separates databases (e.g. 'database' or 'schema').
      *
-     * @param  string $name Name of the database.
-     * @return bool
+     * @return string
      */
-    public function createDatabase(string $name): bool;
+    public function getSeparator(): string;
+
+    /**
+     * Create a database.
+     */
+    public function createDatabase(Tenant $tenant): bool;
 
     /**
      * Delete a database.
-     *
-     * @param  string $name Name of the database.
-     * @return bool
      */
-    public function deleteDatabase(string $name): bool;
+    public function deleteDatabase(Tenant $tenant): bool;
 
     /**
      * Does a database exist.

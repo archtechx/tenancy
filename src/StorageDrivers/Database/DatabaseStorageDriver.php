@@ -21,22 +21,22 @@ use Stancl\Tenancy\Tenant;
 class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys, CanFindByAnyKey
 {
     /** @var Application */
-    protected $app;
+    public $app;
 
     /** @var Connection */
-    protected $centralDatabase;
+    public $centralDatabase;
 
     /** @var TenantRepository */
-    protected $tenants;
+    public $tenants;
 
     /** @var DomainRepository */
-    protected $domains;
+    public $domains;
 
     /** @var CachedTenantResolver */
-    protected $cache;
+    public $cache;
 
     /** @var Tenant The default tenant. */
-    protected $tenant;
+    public $tenant;
 
     public function __construct(Application $app, ConfigRepository $config, CachedTenantResolver $cache)
     {
@@ -59,7 +59,7 @@ class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys, CanFindByAn
 
     public static function getCentralConnectionName(): string
     {
-        return config('tenancy.storage_drivers.db.connection') ?? app(DatabaseManager::class)->originalDefaultConnectionName;
+        return config('tenancy.storage_drivers.db.connection') ?? DatabaseManager::$originalDefaultConnectionName;
     }
 
     public function findByDomain(string $domain): Tenant
