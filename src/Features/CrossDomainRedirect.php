@@ -8,7 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Stancl\Tenancy\Contracts\Feature;
 use Stancl\Tenancy\TenantManager;
 
-class TenantRedirect implements Feature
+class CrossDomainRedirect implements Feature
 {
     public function bootstrap(TenantManager $tenantManager): void
     {
