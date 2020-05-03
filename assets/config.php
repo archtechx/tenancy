@@ -226,7 +226,7 @@ return [
         // Stancl\Tenancy\Features\Timestamps::class, // https://tenancy.samuelstancl.me/docs/v2/features/timestamps/
         // Stancl\Tenancy\Features\TenantConfig::class, // https://tenancy.samuelstancl.me/docs/v2/features/tenant-config/
         // Stancl\Tenancy\Features\TelescopeTags::class, // https://tenancy.samuelstancl.me/docs/v2/telescope/
-        // Stancl\Tenancy\Features\TenantRedirect::class, // https://tenancy.samuelstancl.me/docs/v2/features/tenant-redirect/
+        // Stancl\Tenancy\Features\CrossDomainRedirect::class, // https://tenancy.samuelstancl.me/docs/v2/features/tenant-redirect/
     ],
     'storage_to_config_map' => [ // Used by the TenantConfig feature
         // 'paypal_api_key' => 'services.paypal.api_key',

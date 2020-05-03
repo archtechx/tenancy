@@ -8,11 +8,11 @@ use Illuminate\Http\RedirectResponse;
 use Stancl\Tenancy\Contracts\Feature;
 use Stancl\Tenancy\TenantManager;
 
-class TenantRedirect implements Feature
+class CrossDomainRedirect implements Feature
 {
     public function bootstrap(TenantManager $tenantManager): void
     {
-        RedirectResponse::macro('tenant', function (string $domain) {
+        RedirectResponse::macro('domain', function (string $domain) {
             // replace first occurance of hostname fragment with $domain
             $url = $this->getTargetUrl();
             $hostname = parse_url($url, PHP_URL_HOST);
