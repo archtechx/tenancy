@@ -28,25 +28,46 @@ class TenantDatabaseManagerTest extends TestCase
             $this->markTestSkipped('As to not bloat your computer with test databases, this test is not run by default.');
         }
 
+        config()->set([
+            "tenancy.database_managers.$driver" => $databaseManager,
+        ]);
+
         $name = 'db' . $this->randomString();
+        $tenant = Tenant::new()->withData([
+            '_tenancy_db_name' => $name,
+            '_tenancy_db_connection' => $driver,
+        ]);
+
         $this->assertFalse(app($databaseManager)->databaseExists($name));
-        app($databaseManager)->createDatabase($name);
+        $tenant->save(); // generate credentials & create DB
         $this->assertTrue(app($databaseManager)->databaseExists($name));
-        app($databaseManager)->deleteDatabase($name);
+        app($databaseManager)->deleteDatabase($tenant);
         $this->assertFalse(app($databaseManager)->databaseExists($name));
     }
 
     /** @test */
     public function dbs_can_be_created_when_another_driver_is_used_for_the_central_db()
     {
-        $this->assertSame('sqlite', config('database.default'));
+        $this->assertSame('central', config('database.default'));
 
         $database = 'db' . $this->randomString();
-        app(MySQLDatabaseManager::class)->createDatabase($database);
+        $tenant = Tenant::new()->withData([
+            '_tenancy_db_name' => $database,
+            '_tenancy_db_connection' => 'mysql',
+        ]);
+
+        $this->assertFalse(app(MySQLDatabaseManager::class)->databaseExists($database));
+        $tenant->save(); // create DB
         $this->assertTrue(app(MySQLDatabaseManager::class)->databaseExists($database));
 
-        $database = 'db2' . $this->randomString();
-        app(PostgreSQLDatabaseManager::class)->createDatabase($database);
+        $database = 'db' . $this->randomString();
+        $tenant = Tenant::new()->withData([
+            '_tenancy_db_name' => $database,
+            '_tenancy_db_connection' => 'pgsql',
+        ]);
+
+        $this->assertFalse(app(PostgreSQLDatabaseManager::class)->databaseExists($database));
+        $tenant->save(); // create DB
         $this->assertTrue(app(PostgreSQLDatabaseManager::class)->databaseExists($database));
     }
 
@@ -60,16 +81,25 @@ class TenantDatabaseManagerTest extends TestCase
             $this->markTestSkipped('As to not bloat your computer with test databases, this test is not run by default.');
         }
 
-        config()->set('database.default', $driver);
+        config()->set([
+            'database.default' => $driver,
+            "tenancy.database_managers.$driver" => $databaseManager,
+        ]);
 
         $name = 'db' . $this->randomString();
+        $tenant = Tenant::new()->withData([
+            '_tenancy_db_name' => $name,
+            '_tenancy_db_connection' => $driver,
+        ]);
+        $tenant->database()->makeCredentials();
+
         $this->assertFalse(app($databaseManager)->databaseExists($name));
-        $job = new QueuedTenantDatabaseCreator(app($databaseManager), $name);
+        $job = new QueuedTenantDatabaseCreator(app($databaseManager), $tenant);
 
         $job->handle();
         $this->assertTrue(app($databaseManager)->databaseExists($name));
 
-        $job = new QueuedTenantDatabaseDeleter(app($databaseManager), $name);
+        $job = new QueuedTenantDatabaseDeleter(app($databaseManager), $tenant);
         $job->handle();
         $this->assertFalse(app($databaseManager)->databaseExists($name));
     }

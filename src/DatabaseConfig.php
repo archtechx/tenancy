@@ -48,17 +48,17 @@ class DatabaseConfig
         $this->tenant = $tenant;
     }
 
-    public static function generateDatabaseNameUsing(callable $databaseNameGenerator): void
+    public static function generateDatabaseNamesUsing(callable $databaseNameGenerator): void
     {
         static::$databaseNameGenerator = $databaseNameGenerator;
     }
 
-    public static function generateUsernameUsing(callable $usernameGenerator): void
+    public static function generateUsernamesUsing(callable $usernameGenerator): void
     {
         static::$usernameGenerator = $usernameGenerator;
     }
 
-    public static function generatePasswordUsing(callable $passwordGenerator): void
+    public static function generatePasswordsUsing(callable $passwordGenerator): void
     {
         static::$passwordGenerator = $passwordGenerator;
     }
@@ -86,25 +86,13 @@ class DatabaseConfig
             $this->tenant->data['_tenancy_db_username'] = $this->getUsername() ?? (static::$usernameGenerator)($this->tenant);
             $this->tenant->data['_tenancy_db_password'] = $this->getPassword() ?? (static::$passwordGenerator)($this->tenant);
         }
-
-        $this->tenant->save();
     }
 
-    /**
-     * Template used to construct the tenant connection. Also serves as
-     * the root connection on which the tenant database is created.
-     */
-    public function getTemplateConnectionName()
+    public function getTemplateConnectionName(): string
     {
-        $name = $this->tenant->data['_tenancy_db_connection'] ?? 'tenant';
-
-        // If we're using e.g. 'tenant', the default, template connection
-        // and it doesn't exist, we'll go for the default DB template.
-        if (! array_key_exists($name, config('database.connections'))) {
-            $name = config('tenancy.database.template_connection') ?? DatabaseManager::$originalDefaultConnectionName;
-        }
-
-        return $name;
+        return $this->tenant->data['_tenancy_db_connection']
+            ?? config('tenancy.database.template_connection')
+            ?? DatabaseManager::$originalDefaultConnectionName;
     }
 
     /**
@@ -112,7 +100,9 @@ class DatabaseConfig
      */
     public function connection(): array
     {
-        $templateConnection = config("database.connections.{$this->getTemplateConnectionName()}");
+        $template = $this->getTemplateConnectionName();
+
+        $templateConnection = config("database.connections.{$template}");
 
         $databaseName = $this->getName();
         if (($manager = $this->manager()) instanceof ModifiesDatabaseNameForConnection) {

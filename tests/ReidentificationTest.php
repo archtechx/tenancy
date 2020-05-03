@@ -8,7 +8,9 @@ use Stancl\Tenancy\Tenant;
 
 class ReidentificationTest extends TestCase
 {
+    public $autoCreateTenant = true;
     public $autoInitTenancy = false;
+
     /**
      * These tests are run when a tenant is identified after another tenant has already been identified.
      */

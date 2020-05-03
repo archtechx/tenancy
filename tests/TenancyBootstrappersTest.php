@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Redis;
 
 class TenancyBootstrappersTest extends TestCase
 {
+    public $autoCreateTenant = true;
     public $autoInitTenancy = false;
 
     /** @test */

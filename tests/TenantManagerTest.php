@@ -167,6 +167,7 @@ class TenantManagerTest extends TestCase
 
         $tenant_data = $tenant->data;
         unset($tenant_data['id']);
+        unset($tenant_data['_tenancy_db_name']);
 
         $this->assertSame($data, $tenant_data);
     }

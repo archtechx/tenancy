@@ -55,8 +55,8 @@ class DatabaseManager
     public function connect(Tenant $tenant)
     {
         $this->createTenantConnection($tenant);
-        $this->setDefaultConnection($tenant->database()->getTemplateConnectionName());
-        $this->switchConnection($tenant->database()->getTemplateConnectionName());
+        $this->setDefaultConnection('tenant');
+        $this->switchConnection('tenant');
     }
 
     /**
@@ -64,10 +64,11 @@ class DatabaseManager
      */
     public function reconnect()
     {
-        // Opposite order to connect() because we don't
-        // want to ever purge the central connection
-        $this->switchConnection(static::$originalDefaultConnectionName);
+        if ($this->tenancy->initialized) {
+            $this->database->purge('tenant');
+        }
         $this->setDefaultConnection(static::$originalDefaultConnectionName);
+        $this->switchConnection(static::$originalDefaultConnectionName);
     }
 
     /**
@@ -83,7 +84,7 @@ class DatabaseManager
      */
     public function createTenantConnection(Tenant $tenant)
     {
-        $this->app['config']["database.connections.{$tenant->database()->getTemplateConnectionName()}"] = $tenant->database()->connection();
+        $this->app['config']["database.connections.tenant"] = $tenant->database()->connection();
     }
 
     /**
@@ -91,7 +92,6 @@ class DatabaseManager
      */
     public function switchConnection(string $connection)
     {
-        $this->database->purge();
         $this->database->reconnect($connection);
         $this->database->setDefaultConnection($connection);
     }
@@ -120,8 +120,6 @@ class DatabaseManager
      */
     public function createDatabase(Tenant $tenant, array $afterCreating = [])
     {
-        $tenant->database()->makeCredentials();
-
         $afterCreating = array_merge(
             $afterCreating,
             $this->tenancy->event('database.creating', $tenant->database()->getName(), $tenant)

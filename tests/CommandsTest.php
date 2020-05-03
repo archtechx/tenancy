@@ -12,14 +12,8 @@ use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
 
 class CommandsTest extends TestCase
 {
+    public $autoCreateTenant = true;
     public $autoInitTenancy = false;
-
-    public function setUp(): void
-    {
-        parent::setUp();
-
-        config(['tenancy.migration_paths', [database_path('../migrations')]]);
-    }
 
     /** @test */
     public function migrate_command_doesnt_change_the_db_connection()
@@ -173,6 +167,7 @@ class CommandsTest extends TestCase
         $tenant = tenancy()->all()[1]; // a tenant is autocreated prior to this
         $data = $tenant->data;
         unset($data['id']);
+        unset($data['_tenancy_db_name']);
 
         $this->assertSame(['plan' => 'free', 'email' => 'foo@test.local'], $data);
         $this->assertSame(['aaa.localhost', 'bbb.localhost'], $tenant->domains);

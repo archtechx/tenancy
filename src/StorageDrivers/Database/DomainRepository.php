@@ -50,8 +50,6 @@ class DomainRepository extends Repository
 
     public function getTable(ConfigRepository $config)
     {
-        return $config->get('tenancy.storage_drivers.db.table_names.DomainModel') // legacy
-            ?? $config->get('tenancy.storage_drivers.db.table_names.domains')
-            ?? 'domains';
+        return $config->get('tenancy.storage_drivers.db.table_names.domains') ?? 'domains';
     }
 }

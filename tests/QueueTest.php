@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\Event;
 
 class QueueTest extends TestCase
 {
+    public $autoCreateTenant = true;
+    public $autoInitTenancy = true;
+
     /** @test */
     public function queues_use_non_tenant_db_connection()
     {

@@ -54,8 +54,8 @@ class TenantClassTest extends TestCase
         $tenant = Tenant::create(['foo.localhost'], ['id' => $id]);
         $tenant->foo = 'bar';
         $tenant->save();
-        $this->assertEquals(['id' => $id, 'foo' => 'bar'], $tenant->data);
-        $this->assertEquals(['id' => $id, 'foo' => 'bar'], tenancy()->find($id)->data);
+        $this->assertEquals(['id' => $id, 'foo' => 'bar', '_tenancy_db_name' => $tenant->database()->getName()], $tenant->data);
+        $this->assertEquals(['id' => $id, 'foo' => 'bar', '_tenancy_db_name' => $tenant->database()->getName()], tenancy()->find($id)->data);
 
         $tenant->addDomains('abc.localhost');
         $tenant->save();
@@ -102,6 +102,7 @@ class TenantClassTest extends TestCase
 
         $data = tenancy()->all()->first()->data;
         unset($data['id']);
+        unset($data['_tenancy_db_name']);
 
         $this->assertSame(['foo' => 'bar'], $data);
     }

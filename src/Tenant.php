@@ -230,6 +230,7 @@ class Tenant implements ArrayAccess
         if ($this->persisted) {
             $this->manager->updateTenant($this);
         } else {
+            $this->database()->makeCredentials();
             $this->manager->createTenant($this);
         }
 

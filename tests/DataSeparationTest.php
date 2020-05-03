@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Tenant;
+use Stancl\Tenancy\Tests\Etc\User;
 
 class DataSeparationTest extends TestCase
 {
@@ -150,9 +151,4 @@ class DataSeparationTest extends TestCase
         $this->assertFalse(Storage::disk('public')->exists('foo'));
         $this->assertFalse(Storage::disk('public')->exists('abc'));
     }
-}
-
-class User extends \Illuminate\Database\Eloquent\Model
-{
-    protected $guarded = [];
 }

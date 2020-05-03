@@ -25,12 +25,12 @@ class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager impl
         $hostname = $databaseConfig->connection()['host'];
         $password = $databaseConfig->getPassword();
 
-        $this->database()->statement("CREATE USER `{$username}`@`{$hostname}` IDENTIFIED BY `{$password}`");
+        $this->database()->statement("CREATE USER `{$username}`@`{$hostname}` IDENTIFIED BY '{$password}'");
 
         $grants = implode(', ', static::$grants);
 
         if ($this->isVersion8()) { // MySQL 8+
-            $grantQuery = "GRANT $grants ON `$database`.* TO `$username`@`$hostname`";
+            $grantQuery = "GRANT $grants ON $database.* TO `$username`@`$hostname`";
         } else { // MySQL 5.7
             $grantQuery = "GRANT $grants ON $database.* TO `$username`@`$hostname` IDENTIFIED BY '$password'";
         }
@@ -40,13 +40,13 @@ class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager impl
 
     protected function isVersion8(): bool
     {
-        $version = $this->database()->select($this->db->raw('select version()'))[0]->{'version()'};
+        $version = $this->database()->select($this->database()->raw('select version()'))[0]->{'version()'};
 
         return version_compare($version, '8.0.0') >= 0;
     }
 
     public function deleteUser(DatabaseConfig $databaseConfig): bool
     {
-        return $this->database()->statement("DROP USER IF EXISTS '{$databaseConfig->username}'");
+        return $this->database()->statement("DROP USER IF EXISTS '{$databaseConfig->getUsername()}'");
     }
 }

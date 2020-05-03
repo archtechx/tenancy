@@ -9,6 +9,9 @@ use Tenant;
 
 class FacadeTest extends TestCase
 {
+    public $autoCreateTenant = true;
+    public $autoInitTenancy = true;
+
     /** @test */
     public function tenant_manager_can_be_accessed_using_the_Tenancy_facade()
     {
