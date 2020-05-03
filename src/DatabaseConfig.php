@@ -128,7 +128,7 @@ class DatabaseConfig
         if (($pos = array_search('_tenancy_db_name', $dbConfig)) !== false) {
             unset($dbConfig[$pos]);
         }
-        
+
         // Remove DB connection because that's not used inside the array
         if (($pos = array_search('_tenancy_db_connection', $dbConfig)) !== false) {
             unset($dbConfig[$pos]);
