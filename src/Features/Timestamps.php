@@ -15,6 +15,8 @@ class Timestamps implements Feature
     /** @var Repository */
     protected $config;
 
+    public static $format = 'c'; // ISO 8601
+
     public function __construct(Repository $config)
     {
         $this->config = $config;
@@ -38,9 +40,6 @@ class Timestamps implements Feature
 
     public function now(): string
     {
-        // Add this key to your tenancy.php config if you need to change the format.
-        return Date::now()->format(
-            $this->config->get('tenancy.timestamp_format') ?? 'c' // ISO 8601
-        );
+        return Date::now()->format(static::$format);
     }
 }
