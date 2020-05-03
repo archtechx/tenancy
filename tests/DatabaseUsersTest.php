@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\DB;
-use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
-use Stancl\Tenancy\Tenant;
-use Stancl\Tenancy\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager;
 use Illuminate\Support\Str;
-use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
+use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
 use Stancl\Tenancy\Exceptions\TenantDatabaseUserAlreadyExistsException;
+use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
+use Stancl\Tenancy\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager;
 
 class DatabaseUsersTest extends TestCase
 {
@@ -42,7 +41,7 @@ class DatabaseUsersTest extends TestCase
 
         $this->assertTrue($manager->userExists($tenant->database()->getUsername()));
     }
-    
+
     /** @test */
     public function a_tenants_database_cannot_be_created_when_the_user_already_exists()
     {
@@ -79,7 +78,7 @@ class DatabaseUsersTest extends TestCase
         ])->save();
 
         $query = DB::connection('mysql')->select("SHOW GRANTS FOR `{$tenant->database()->getUsername()}`@`{$tenant->database()->connection()['host']}`")[1];
-        $this->assertStringStartsWith("GRANT CREATE, ALTER, ALTER ROUTINE ON", $query->{"Grants for {$user}@mysql"}); // @mysql because that's the hostname within the docker network
+        $this->assertStringStartsWith('GRANT CREATE, ALTER, ALTER ROUTINE ON', $query->{"Grants for {$user}@mysql"}); // @mysql because that's the hostname within the docker network
     }
 
     /** @test */
