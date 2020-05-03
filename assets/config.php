@@ -231,9 +231,6 @@ return [
         // Stancl\Tenancy\Features\TelescopeTags::class, // https://tenancy.samuelstancl.me/docs/v2/telescope/
         // Stancl\Tenancy\Features\CrossDomainRedirect::class, // https://tenancy.samuelstancl.me/docs/v2/features/tenant-redirect/
     ],
-    'storage_to_config_map' => [ // Used by the TenantConfig feature
-        // 'paypal_api_key' => 'services.paypal.api_key',
-    ],
 
     /**
      * The URL to which users will be redirected when they try to acceess a central route on a tenant domain.

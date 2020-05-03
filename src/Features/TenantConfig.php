@@ -17,6 +17,10 @@ class TenantConfig implements Feature
     /** @var array */
     public $originalConfig = [];
 
+    public static $storageToConfigMap = [
+        // 'paypal_api_key' => 'services.paypal.api_key',
+    ];
+
     public function __construct(Repository $config)
     {
         $this->config = $config;
@@ -56,6 +60,6 @@ class TenantConfig implements Feature
 
     public function getStorageToConfigMap(): array
     {
-        return $this->config['tenancy.storage_to_config_map'] ?? [];
+        return static::$storageToConfigMap;
     }
 }
