@@ -5,16 +5,17 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Facades;
 
 use Illuminate\Support\Facades\Facade;
+use Stancl\Tenancy\Tenant as TenantObject;
 
 class Tenant extends Facade
 {
     protected static function getFacadeAccessor()
     {
-        return Tenant::class;
+        return TenantObject::class;
     }
 
-    public static function create($domains, array $data = []): \Stancl\Tenancy\Tenant
+    public static function create($domains, array $data = []): TenantObject
     {
-        return Tenant::create($domains, $data);
+        return TenantObject::create($domains, $data);
     }
 }
