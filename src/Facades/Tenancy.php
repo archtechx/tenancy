@@ -7,7 +7,7 @@ namespace Stancl\Tenancy\Facades;
 use Illuminate\Support\Facades\Facade;
 use Stancl\Tenancy\TenantManager;
 
-class TenancyFacade extends Facade
+class Tenancy extends Facade
 {
     protected static function getFacadeAccessor()
     {

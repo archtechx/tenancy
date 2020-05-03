@@ -6,7 +6,7 @@ namespace Stancl\Tenancy\Facades;
 
 use Illuminate\Support\Facades\Facade;
 
-class GlobalCacheFacade extends Facade
+class GlobalCache extends Facade
 {
     protected static function getFacadeAccessor()
     {
