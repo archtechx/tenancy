@@ -83,7 +83,7 @@ class DatabaseManager
      */
     public function createTenantConnection(Tenant $tenant)
     {
-        $this->app['config']["database.connections.tenant"] = $tenant->database()->connection();
+        $this->app['config']['database.connections.tenant'] = $tenant->database()->connection();
     }
 
     /**

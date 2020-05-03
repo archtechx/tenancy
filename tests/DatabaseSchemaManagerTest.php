@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\Tests\Etc\User;
