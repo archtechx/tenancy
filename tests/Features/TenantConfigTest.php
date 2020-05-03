@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests\Features;
 
+use Stancl\Tenancy\Features\TenantConfig;
 use Stancl\Tenancy\Tests\TestCase;
 
 class TenantConfigTest extends TestCase
@@ -16,12 +17,12 @@ class TenantConfigTest extends TestCase
     {
         $this->assertSame(null, config('services.paypal'));
         config([
-            'tenancy.storage_to_config_map' => [
-                'paypal_api_public' => 'services.paypal.public',
-                'paypal_api_private' => 'services.paypal.private',
-            ],
-            'tenancy.features' => ['Stancl\Tenancy\Features\TenantConfig'],
+            'tenancy.features' => [TenantConfig::class],
         ]);
+        TenantConfig::$storageToConfigMap = [
+            'paypal_api_public' => 'services.paypal.public',
+            'paypal_api_private' => 'services.paypal.private',
+        ];
 
         tenancy()->create('foo.localhost', [
             'paypal_api_public' => 'foo',
