@@ -2,6 +2,7 @@
 composer.lock
 vendor/
 .vscode/
+.idea
 psysh
 .phpunit.result.cache
 phpunit_var_*.xml
