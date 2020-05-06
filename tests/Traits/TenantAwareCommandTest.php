@@ -32,4 +32,44 @@ class TenantAwareCommandTest extends TestCase
         $this->assertNotEmpty(\DB::table('users')->get());
         tenancy()->end();
     }
+
+    /** @test */
+    public function commands_can_optionally_specify_a_hook_that_should_be_ran_before_running_the_command_within_a_tenant()
+    {
+        $tenant1 = Tenant::new()->save();
+        $tenant2 = Tenant::new()->save();
+
+        \Artisan::call('tenants:migrate', [
+            '--tenants' => [$tenant1['id'], $tenant2['id']],
+        ]);
+
+        $this->withoutMockingConsoleOutput();
+        $response = $this->artisan('user:add_conditionally', [
+            '--tenants' => [$tenant1['id'], $tenant2['id']],
+            '--stop' => true
+        ]);
+
+        $this->assertEquals(1, $response);
+
+        tenancy()->initializeTenancy($tenant1);
+        $this->assertEmpty(\DB::table('users')->get());
+        tenancy()->end();
+
+        tenancy()->initializeTenancy($tenant2);
+        $this->assertEmpty(\DB::table('users')->get());
+        tenancy()->end();
+
+        $this->artisan('user:add_conditionally', [
+            '--tenants' => [$tenant1['id'], $tenant2['id']],
+            '--stop' => false
+        ]);
+
+        tenancy()->initializeTenancy($tenant1);
+        $this->assertNotEmpty(\DB::table('users')->get());
+        tenancy()->end();
+
+        tenancy()->initializeTenancy($tenant2);
+        $this->assertNotEmpty(\DB::table('users')->get());
+        tenancy()->end();
+    }
 }

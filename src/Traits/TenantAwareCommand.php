@@ -13,6 +13,12 @@ trait TenantAwareCommand
     /** @return int */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $callback = $this->runBeforeRunningTenantsHook();
+
+        if ($callback !== 0) {
+            return $callback;
+        }
+
         $tenants = $this->getTenants();
         $exitCode = 0;
 
@@ -35,4 +41,13 @@ trait TenantAwareCommand
      * @return Tenant[]
      */
     abstract protected function getTenants(): array;
+
+    private function runBeforeRunningTenantsHook()
+    {
+        if (! method_exists($this, 'beforeRunningTenants')) {
+            return;
+        }
+
+        return (int) $this->laravel->call([$this, 'beforeRunningTenants']);
+    }
 }
