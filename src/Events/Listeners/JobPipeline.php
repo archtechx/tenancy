@@ -2,6 +2,7 @@
 
 namespace Stancl\Tenancy\Events\Listeners;
 
+use Closure;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Pipeline\Pipeline;
 
@@ -70,5 +71,21 @@ class JobPipeline implements ShouldQueue
             ->send(($this->send)($event))
             ->through($this->jobs)
             ->thenReturn();
+    }
+
+    /**
+     * Generate a closure that runs this listener.
+     * 
+     * Technically, the string|Closure typehint is not enforced by
+     * Laravel, but for correct typing we wrap this callable in
+     * simple Closures, to match Laravel's docblock typehint.
+     *
+     * @return Closure
+     */
+    public function toClosure(): Closure
+    {
+        return function (...$args) {
+            $this->handle(...$args);
+        };
     }
 }

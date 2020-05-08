@@ -62,13 +62,8 @@ class TenancyServiceProvider extends ServiceProvider
     {
         foreach ($this->events() as $event => $listeners) {
             foreach (array_unique($listeners) as $listener) {
-                // Technically, the string|Closure typehint is not enforced by
-                // Laravel, but for type correctness, we wrap callables in
-                // simple Closures, to match Laravel's docblock typehint.
-                if (is_callable($listener) && !$listener instanceof Closure) {
-                    $listener = function ($event) use ($listener) {
-                        $listener($event);
-                    };
+                if ($listener instanceof JobPipeline) {
+                    $listener = $listener->toClosure();
                 }
 
                 Event::listen($event, $listener);

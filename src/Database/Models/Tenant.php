@@ -29,11 +29,6 @@ class Tenant extends Model
 
     public $guarded = [];
 
-    public function domains() // todo not required
-    {
-        return $this->hasMany(Domain::class);
-    }
-
     public static function internalPrefix(): string
     {
         return config('tenancy.database_prefix');
@@ -71,6 +66,7 @@ class Tenant extends Model
 
     public function run(callable $callback)
     {
+        // todo new logic with the manager
         $originalTenant = $this->manager->getTenant();
 
         $this->manager->initializeTenancy($this);
