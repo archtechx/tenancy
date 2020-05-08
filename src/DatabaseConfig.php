@@ -10,6 +10,7 @@ use Stancl\Tenancy\Contracts\Future\CanSetConnection;
 use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
 use Stancl\Tenancy\Contracts\ModifiesDatabaseNameForConnection;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
+use Stancl\Tenancy\Database\Models\Tenant;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 
 class DatabaseConfig
@@ -65,33 +66,33 @@ class DatabaseConfig
 
     public function getName(): ?string
     {
-        return $this->tenant->data['_tenancy_db_name'] ?? (static::$databaseNameGenerator)($this->tenant);
+        return $this->tenant->getInternal('db_name') ?? (static::$databaseNameGenerator)($this->tenant);
     }
 
     public function getUsername(): ?string
     {
-        return $this->tenant->data['_tenancy_db_username'] ?? null;
+        return $this->tenant->getInternal('db_username') ?? null;
     }
 
     public function getPassword(): ?string
     {
-        return $this->tenant->data['_tenancy_db_password'] ?? null;
+        return $this->tenant->getInternal('db_password') ?? null;
     }
 
     public function makeCredentials(): void
     {
-        $this->tenant->data['_tenancy_db_name'] = $this->getName() ?? (static::$databaseNameGenerator)($this->tenant);
+        $this->tenant->setInternal('db_name', $this->getName() ?? (static::$databaseNameGenerator)($this->tenant));
 
         if ($this->manager() instanceof ManagesDatabaseUsers) {
-            $this->tenant->data['_tenancy_db_username'] = $this->getUsername() ?? (static::$usernameGenerator)($this->tenant);
-            $this->tenant->data['_tenancy_db_password'] = $this->getPassword() ?? (static::$passwordGenerator)($this->tenant);
+            $this->tenant->setInternal('db_username', $this->getUsername() ?? (static::$usernameGenerator)($this->tenant));
+            $this->tenant->setInternal('db_password', $this->getPassword() ?? (static::$passwordGenerator)($this->tenant));
         }
     }
 
     public function getTemplateConnectionName(): string
     {
-        return $this->tenant->data['_tenancy_db_connection']
-            ?? config('tenancy.database.template_connection')
+        return $this->tenant->getInternal('db_connection')
+            ?? config('tenancy.template_tenant_connection')
             ?? DatabaseManager::$originalDefaultConnectionName;
     }
 
@@ -120,23 +121,23 @@ class DatabaseConfig
      */
     public function tenantConfig(): array
     {
-        $dbConfig = array_filter(array_keys($this->tenant->data), function ($key) {
-            return Str::startsWith($key, '_tenancy_db_');
+        $dbConfig = array_filter(array_keys($this->tenant->getAttributes()), function ($key) {
+            return Str::startsWith($key, $this->tenant->internalPrefix() . 'db_');
         });
 
         // Remove DB name because we set that separately
-        if (($pos = array_search('_tenancy_db_name', $dbConfig)) !== false) {
+        if (($pos = array_search($this->tenant->internalPrefix() . 'db_name', $dbConfig)) !== false) {
             unset($dbConfig[$pos]);
         }
 
         // Remove DB connection because that's not used inside the array
-        if (($pos = array_search('_tenancy_db_connection', $dbConfig)) !== false) {
+        if (($pos = array_search($this->tenant->internalPrefix() . 'db_connection', $dbConfig)) !== false) {
             unset($dbConfig[$pos]);
         }
 
         return array_reduce($dbConfig, function ($config, $key) {
             return array_merge($config, [
-                Str::substr($key, strlen('_tenancy_db_')) => $this->tenant[$key],
+                Str::substr($key, strlen($this->tenant->internalPrefix() . 'db_')) => $this->tenant->getAttribute($key),
             ]);
         }, []);
     }

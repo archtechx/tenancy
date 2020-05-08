@@ -9,30 +9,24 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Artisan;
-use Stancl\Tenancy\Tenant;
+use Stancl\Tenancy\Database\Models\Tenant;
 
-class QueuedTenantDatabaseSeeder implements ShouldQueue
+class CreateDatabase implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /** @var string */
-    protected $tenantId;
+    /** @var Tenant */
+    protected $tenant;
 
     public function __construct(Tenant $tenant)
     {
-        $this->tenantId = $tenant->id;
+        $this->tenant = $tenant;
     }
 
-    /**
-     * Execute the job.
-     *
-     * @return void
-     */
     public function handle()
     {
-        Artisan::call('tenants:seed', [
-            '--tenants' => [$this->tenantId],
-        ]);
+        if ($this->tenant->getAttribute('_tenancy_create_database') !== false) {
+            $this->tenant->database()->manager()->createDatabase($this->tenant);
+        }
     }
 }

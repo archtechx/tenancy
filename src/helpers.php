@@ -2,18 +2,14 @@
 
 declare(strict_types=1);
 
-use Stancl\Tenancy\Tenant;
-use Stancl\Tenancy\TenantManager;
+use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Tenancy;
 
 if (! function_exists('tenancy')) {
-    /** @return TenantManager|mixed */
-    function tenancy($key = null)
+    /** @return Tenancy */
+    function tenancy()
     {
-        if ($key) {
-            return app(TenantManager::class)->getTenant($key) ?? null;
-        }
-
-        return app(TenantManager::class);
+        return app(Tenancy::class);
     }
 }
 

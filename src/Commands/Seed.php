@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Commands;
 use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Database\Console\Seeds\SeedCommand;
 use Stancl\Tenancy\DatabaseManager;
+use Stancl\Tenancy\Events\DatabaseSeeded;
 use Stancl\Tenancy\Traits\HasATenantsOption;
 
 class Seed extends SeedCommand
@@ -60,6 +61,8 @@ class Seed extends SeedCommand
                 // Seed
                 parent::handle();
             });
+
+            event(new DatabaseSeeded($tenant));
         });
     }
 }

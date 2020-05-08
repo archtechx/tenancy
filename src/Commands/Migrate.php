@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Illuminate\Database\Console\Migrations\MigrateCommand;
 use Illuminate\Database\Migrations\Migrator;
 use Stancl\Tenancy\DatabaseManager;
+use Stancl\Tenancy\Events\DatabaseMigrated;
 use Stancl\Tenancy\Traits\DealsWithMigrations;
 use Stancl\Tenancy\Traits\HasATenantsOption;
 
@@ -62,6 +63,8 @@ class Migrate extends MigrateCommand
                 // Migrate
                 parent::handle();
             });
+
+            event(new DatabaseMigrated($tenant));
         });
     }
 }

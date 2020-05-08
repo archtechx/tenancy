@@ -1,7 +1,3 @@
 #!/bin/bash
-set -e
 
-printf "Variant 1 (DB)\n\n"
-docker-compose exec -T test env TENANCY_TEST_STORAGE_DRIVER=db vendor/bin/phpunit --coverage-php coverage/1.cov "$@"
-printf "Variant 2 (Redis)\n\n"
-docker-compose exec -T test env TENANCY_TEST_STORAGE_DRIVER=redis vendor/bin/phpunit --coverage-php coverage/2.cov "$@"
+docker-compose exec -T test vendor/bin/phpunit "$@"

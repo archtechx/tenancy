@@ -21,8 +21,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     {
         parent::setUp();
 
-        Redis::connection('tenancy')->flushdb();
-        Redis::connection('cache')->flushdb();
+        // Redis::connection('cache')->flushdb();
 
         file_put_contents(database_path('central.sqlite'), '');
         $this->artisan('migrate:fresh', [
@@ -102,7 +101,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 '--realpath' => true,
                 '--force' => true,
             ],
-            'tenancy.storage_drivers.db.connection' => 'central',
+            'tenancy.storage.connection' => 'central',
             'tenancy.bootstrappers.redis' => \Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class,
             'queue.connections.central' => [
                 'driver' => 'sync',
@@ -112,8 +111,6 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         ]);
 
         $app->singleton(\Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class);
-
-        $app['config']->set(['tenancy.storage_driver' => env('TENANCY_TEST_STORAGE_DRIVER', 'redis')]);
     }
 
     protected function getPackageProviders($app)

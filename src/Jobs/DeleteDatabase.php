@@ -10,31 +10,22 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
-use Stancl\Tenancy\Tenant;
+use Stancl\Tenancy\Database\Models\Tenant;
 
-class QueuedTenantDatabaseDeleter implements ShouldQueue
+class DeleteDatabase implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
-    /** @var TenantDatabaseManager */
-    protected $databaseManager;
 
     /** @var Tenant */
     protected $tenant;
 
-    public function __construct(TenantDatabaseManager $databaseManager, Tenant $tenant)
+    public function __construct(Tenant $tenant)
     {
-        $this->databaseManager = $databaseManager;
         $this->tenant = $tenant;
     }
 
-    /**
-     * Execute the job.
-     *
-     * @return void
-     */
     public function handle()
     {
-        $this->databaseManager->deleteDatabase($this->tenant);
+        $this->tenant->database()->manager()->deleteDatabase($this->tenant);
     }
 }

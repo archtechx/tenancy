@@ -8,6 +8,9 @@ use Illuminate\Cache\CacheManager;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Database\TenantObserver;
+use Stancl\Tenancy\StorageDrivers\Database\DatabaseStorageDriver;
 use Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper;
 
 class TenancyServiceProvider extends ServiceProvider
@@ -22,13 +25,13 @@ class TenancyServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__ . '/../assets/config.php', 'tenancy');
 
         $this->app->bind(Contracts\StorageDriver::class, function ($app) {
-            return $app->make($app['config']['tenancy.storage_drivers'][$app['config']['tenancy.storage_driver']]['driver']);
+            return $app->make(DatabaseStorageDriver::class);
         });
         $this->app->bind(Contracts\UniqueIdentifierGenerator::class, $this->app['config']['tenancy.unique_id_generator']);
         $this->app->singleton(DatabaseManager::class);
-        $this->app->singleton(TenantManager::class);
+        $this->app->singleton(Tenancy::class);
         $this->app->bind(Tenant::class, function ($app) {
-            return $app[TenantManager::class]->getTenant();
+            return $app[Tenancy::class]->tenant;
         });
 
         foreach ($this->app['config']['tenancy.bootstrappers'] as $bootstrapper) {

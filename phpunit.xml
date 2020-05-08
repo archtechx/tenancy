@@ -30,6 +30,5 @@
         <env name="SESSION_DRIVER" value="array"/>
         <env name="DB_CONNECTION" value="central"/>
         <env name="AWS_DEFAULT_REGION" value="us-west-2"/>
-        <env name="STANCL_TENANCY_TEST_VARIANT" value="1"/>
     </php>
 </phpunit>

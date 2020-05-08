@@ -2,68 +2,36 @@
 
 declare(strict_types=1);
 
+use Stancl\Tenancy\Database\Models\Tenant;
+
 return [
-    /**
-     * Storage drivers are used to store information about your tenants.
-     * They hold the Tenant Storage data and keeps track of domains.
-     */
-    'storage_driver' => 'db',
-    'storage_drivers' => [
-        /**
-         * The majority of applications will want to use this storage driver.
-         * The information about tenants is persisted in a relational DB
-         * like MySQL or PostgreSQL. The only downside is performance.
-         *
-         * A database connection to the central database has to be established on each
-         * request, to identify the tenant based on the domain. This takes three DB
-         * queries. Then, the connection to the tenant database is established.
-         *
-         * Note: From v2.3.0, the performance of the DB storage driver can be improved
-         * by a lot by using Cached Tenant Lookup. Be sure to enable that if you're
-         * using this storage driver. Enabling that feature can completely avoid
-         * querying the central database to identify build the Tenant object.
-         */
-        'db' => [
-            'driver' => Stancl\Tenancy\StorageDrivers\Database\DatabaseStorageDriver::class,
-            'data_column' => 'data',
-            'custom_columns' => [
-                // 'plan',
-            ],
+    'tenant_model' => Tenant::class,
+    'internal_prefix' => 'tenancy_',
 
-            /**
-             * Your central database connection. Set to null to use the default one.
-             *
-             * Note: It's recommended to create a designated central connection,
-             * to let you easily use it in your app, e.g. via the DB facade.
-             */
-            'connection' => null,
+    'central_connection' => 'central',
+    'template_tenant_connection' => null,
 
-            'table_names' => [
-                'tenants' => 'tenants',
-                'domains' => 'domains',
-            ],
+    'id_generator' => Stancl\Tenancy\UniqueIDGenerators\UUIDGenerator::class,
 
-            /**
-             * Here you can enable the Cached Tenant Lookup.
-             *
-             * You can specify what cache store should be used to cache the tenant resolution.
-             * Set to string with a specific cache store name, or to null to disable cache.
-             */
-            'cache_store' => null,
-            'cache_ttl' => 3600, // seconds
+    'custom_columns' => [
+        // 
+    ],
+
+
+    'storage' => [
+        'data_column' => 'data',
+        'custom_columns' => [
+            // 'plan',
         ],
 
         /**
-         * The Redis storage driver is much more performant than the database driver.
-         * However, by default, Redis is a not a durable data storage. It works well for ephemeral data
-         * like cache, but to hold critical data, it needs to be configured in a way that guarantees
-         * that data will be persisted permanently. Specifically, you want to enable both AOF and
-         * RDB. Read this here: https://tenancy.samuelstancl.me/docs/v2/storage-drivers/#redis.
+         * Here you can enable the Cached Tenant Lookup.
+         *
+         * You can specify what cache store should be used to cache the tenant resolution.
+         * Set to string with a specific cache store name, or to null to disable cache.
          */
-        'redis' => [
-            'driver' => Stancl\Tenancy\StorageDrivers\RedisStorageDriver::class,
-            'connection' => 'tenancy',
-        ],
+        'cache_store' => null, // env('CACHE_DRIVER')
+        'cache_ttl' => 3600, // seconds
     ],
 
     /**
@@ -108,6 +76,7 @@ return [
          */
         'prefix' => 'tenant',
         'suffix' => '',
+        // todo get rid of this stuff, just set the closure instead
     ],
 
     /**
@@ -238,39 +207,19 @@ return [
     'home_url' => '/app',
 
     /**
-     * Automatically create a database when creating a tenant.
-     */
-    'create_database' => true,
-
-    /**
      * Should tenant databases be created asynchronously in a queued job.
      */
-    'queue_database_creation' => false,
+    'queue_database_creation' => false, // todo make this a static property
 
-    /**
-     * Should tenant migrations be ran after the tenant's database is created.
-     */
-    'migrate_after_creation' => false,
     'migration_parameters' => [
         '--force' => true, // Set this to true to be able to run migrations in production
         // '--path' => [database_path('migrations/tenant')], // If you need to customize paths to tenant migrations
     ],
 
-    /**
-     * Should tenant databases be automatically seeded after they're created & migrated.
-     */
-    'seed_after_migration' => false, // should the seeder run after automatic migration
     'seeder_parameters' => [
         '--class' => 'DatabaseSeeder', // root seeder class, e.g.: 'DatabaseSeeder'
         // '--force' => true,
     ],
-
-    /**
-     * Automatically delete the tenant's database after the tenant is deleted.
-     *
-     * This will save space but permanently delete data which you might want to keep.
-     */
-    'delete_database_after_tenant_deletion' => false,
 
     /**
      * Should tenant databases be deleted asynchronously in a queued job.
@@ -278,14 +227,9 @@ return [
     'queue_database_deletion' => false,
 
     /**
-     * If you don't supply an id when creating a tenant, this class will be used to generate a random ID.
-     */
-    'unique_id_generator' => Stancl\Tenancy\UniqueIDGenerators\UUIDGenerator::class,
-
-    /**
      * Middleware pushed to the global middleware stack.
      */
-    'global_middleware' => [
+    'global_middleware' => [ // todo get rid of this
         Stancl\Tenancy\Middleware\InitializeTenancy::class,
     ],
 ];

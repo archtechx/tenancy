@@ -10,22 +10,18 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Artisan;
-use Stancl\Tenancy\Tenant;
+use Stancl\Tenancy\Database\Models\Tenant;
 
-class QueuedTenantDatabaseMigrator implements ShouldQueue
+class MigrateDatabase implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /** @var string */
-    protected $tenantId;
+    /** @var Tenant */
+    protected $tenant;
 
-    /** @var array */
-    protected $migrationParameters = [];
-
-    public function __construct(Tenant $tenant, $migrationParameters = [])
+    public function __construct(Tenant $tenant)
     {
-        $this->tenantId = $tenant->id;
-        $this->migrationParameters = $migrationParameters;
+        $this->tenant = $tenant;
     }
 
     /**
@@ -35,8 +31,12 @@ class QueuedTenantDatabaseMigrator implements ShouldQueue
      */
     public function handle()
     {
+        $migrationParameters = [
+            // todo ...
+        ];
+
         Artisan::call('tenants:migrate', [
-            '--tenants' => [$this->tenantId],
-        ] + $this->migrationParameters);
+            '--tenants' => [$this->tenant->id],
+        ] + $migrationParameters);
     }
 }
