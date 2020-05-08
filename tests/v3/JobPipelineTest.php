@@ -16,7 +16,7 @@ class JobPipelineTest extends TestCase
     {
         Event::listen(TenantCreated::class, JobPipeline::make([
             FooJob::class,
-        ])->toClosure());
+        ])->toListener());
 
         $this->assertFalse(app()->bound('foo'));
         
@@ -28,20 +28,20 @@ class JobPipelineTest extends TestCase
     /** @test */
     public function job_pipeline_can_be_queued()
     {
-        // todo: This does not work because of toClosure
-
         Queue::fake();
 
         Event::listen(TenantCreated::class, JobPipeline::make([
             FooJob::class,
-        ])->queue(true)->toClosure());
+        ])->shouldQueue(true)->toListener());
 
         Queue::assertNothingPushed();
 
         Tenant::create();
         $this->assertFalse(app()->bound('foo'));
 
-        Queue::assertPushed(JobPipeline::class);
+        Queue::pushed(JobPipeline::class, function (JobPipeline $pipeline) {
+            $this->assertSame([FooJob::class], $pipeline->jobs);
+        });
     }
 
     /** @test */
@@ -52,11 +52,10 @@ class JobPipelineTest extends TestCase
             SecondJob::class,
         ])->send(function (TenantCreated $event) {
             return $event->tenant;
-        })->toClosure());
+        })->toListener());
 
         $this->assertFalse(app()->bound('foo'));
 
-        // todo: for some reason, SecondJob is not reached in the pipeline
         Tenant::create();
 
         $this->assertSame('first job changed property', app('foo'));

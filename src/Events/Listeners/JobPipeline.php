@@ -4,7 +4,6 @@ namespace Stancl\Tenancy\Events\Listeners;
 
 use Closure;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Pipeline\Pipeline;
 
 class JobPipeline implements ShouldQueue
 {
@@ -12,13 +11,18 @@ class JobPipeline implements ShouldQueue
     public static $shouldQueueByDefault = true;
 
     /** @var callable[]|string[] */
-    public $jobs = [];
-    
-    /** @var callable */
+    public $jobs;
+
+    /** @var callable|null */
     public $send;
-    
+
+    /**
+     * A value passed to the jobs. This is the return value of $send.
+     */
+    public $passable;
+
     /** @var bool */
-    public $shouldQueue = true;
+    public $shouldQueue;
 
     public function __construct($jobs, callable $send = null, bool $shouldQueue = null)
     {
@@ -36,13 +40,6 @@ class JobPipeline implements ShouldQueue
         return new static($jobs);
     }
 
-    public function queue(bool $shouldQueue): self
-    {
-        $this->shouldQueue = $shouldQueue;
-
-        return $this;
-    }
-
     public function send(callable $send): self
     {
         $this->send = $send;
@@ -50,7 +47,6 @@ class JobPipeline implements ShouldQueue
         return $this;
     }
 
-    /** @return bool|$this */
     public function shouldQueue(bool $shouldQueue = null)
     {
         if ($shouldQueue !== null) {
@@ -62,30 +58,33 @@ class JobPipeline implements ShouldQueue
         return $this->shouldQueue;
     }
 
-    public function handle($event): void
+    public function handle(): void
     {
-        /** @var Pipeline $pipeline */
-        $pipeline = app(Pipeline::class);
-
-        $pipeline
-            ->send(($this->send)($event))
-            ->through($this->jobs)
-            ->thenReturn();
+        foreach ($this->jobs as $job) {
+            app($job)->handle($this->passable);
+        }
     }
 
     /**
-     * Generate a closure that runs this listener.
-     * 
-     * Technically, the string|Closure typehint is not enforced by
-     * Laravel, but for correct typing we wrap this callable in
-     * simple Closures, to match Laravel's docblock typehint.
-     *
-     * @return Closure
+     * Generate a closure that can be used as a listener.
      */
-    public function toClosure(): Closure
+    public function toListener(): Closure
     {
         return function (...$args) {
-            $this->handle(...$args);
+            dispatch($this->queueFriendly($args));
         };
+    }
+
+    /**
+     * Return a serializable version of the current object.
+     */
+    public function queueFriendly($listenerArgs): self
+    {
+        $clone = clone $this;
+
+        $clone->passable = ($clone->send)(...$listenerArgs);
+        unset($clone->send);
+
+        return $clone;
     }
 }
