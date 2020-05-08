@@ -5,9 +5,11 @@ namespace Stancl\Tenancy\Database\Models;
 use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\DatabaseConfig;
 use Stancl\Tenancy\Events;
+use Stancl\Tenancy\Contracts;
 
 // todo use a contract
-class Tenant extends Model
+// todo @property
+class Tenant extends Model implements Contracts\Tenant
 {
     use Concerns\CentralConnection, Concerns\HasADataColumn, Concerns\GeneratesIds, Concerns\HasADataColumn {
         Concerns\HasADataColumn::getCasts as dataColumnCasts;
@@ -80,7 +82,7 @@ class Tenant extends Model
         return $result;
     }
 
-    protected $dispatchesEvents = [
+    public $dispatchesEvents = [
         'saved' => Events\TenantSaved::class,
         'created' => Events\TenantCreated::class,
         'updated' => Events\TenantUpdated::class,

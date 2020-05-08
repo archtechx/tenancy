@@ -7,8 +7,9 @@ namespace Stancl\Tenancy\Exceptions;
 use Facade\IgnitionContracts\BaseSolution;
 use Facade\IgnitionContracts\ProvidesSolution;
 use Facade\IgnitionContracts\Solution;
+use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
 
-class TenantCouldNotBeIdentifiedException extends \Exception implements ProvidesSolution
+class TenantCouldNotBeIdentifiedOnDomainException extends TenantCouldNotBeIdentifiedException implements ProvidesSolution
 {
     public function __construct($domain)
     {
@@ -20,7 +21,7 @@ class TenantCouldNotBeIdentifiedException extends \Exception implements Provides
         return BaseSolution::create('Tenant could not be identified on this domain')
             ->setSolutionDescription('Did you forget to create a tenant for this domain?')
             ->setDocumentationLinks([
-                'Creating Tenants' => 'https://tenancy.samuelstancl.me/docs/v2/creating-tenants/',
+                'Creating Tenants' => 'https://tenancyforlaravel.com/docs/v2/creating-tenants/', // todo update link for v3
             ]);
     }
 }

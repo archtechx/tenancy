@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+use Stancl\Tenancy\Database\Models\Domain;
 use Stancl\Tenancy\Database\Models\Tenant;
 
 return [
     'tenant_model' => Tenant::class,
+    'domain_model' => Domain::class,
     'internal_prefix' => 'tenancy_',
 
     'central_connection' => 'central',
