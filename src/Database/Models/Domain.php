@@ -19,6 +19,9 @@ use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
 class Domain extends Model
 {
     public $guarded = [];
+    public $casts = [
+        'is_primary' => 'bool',
+    ];
 
     public static function booted()
     {

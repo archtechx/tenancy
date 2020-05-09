@@ -3,7 +3,7 @@
 namespace Stancl\Tenancy\Tests\v3;
 
 use Stancl\Tenancy\Database\Models;
-use Stancl\Tenancy\Database\Models\Domain;
+use Stancl\Tenancy\Database\Models\Concerns\HasDomains;
 use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
@@ -63,8 +63,5 @@ class DomainTest extends TestCase
 
 class Tenant extends Models\Tenant
 {
-    public function domains()
-    {
-        return $this->hasMany(Domain::class);
-    }
+    use HasDomains;
 }

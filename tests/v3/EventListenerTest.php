@@ -2,6 +2,7 @@
 
 namespace Stancl\Tenancy\Tests\v3;
 
+use Illuminate\Events\CallQueuedListener;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Stancl\Tenancy\Database\Models\Tenant;
@@ -9,7 +10,6 @@ use Stancl\Tenancy\Events\Listeners\QueueableListener;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Tests\TestCase;
 
-// todo these tests do not pass: https://github.com/laravel/framework/issues/32722
 class EventListenerTest extends TestCase
 {
     /** @test */
@@ -30,12 +30,14 @@ class EventListenerTest extends TestCase
     {
         Queue::fake();
         
-        FooListener::$shouldQueue = true;
         Event::listen(TenantCreated::class, FooListener::class);
+        FooListener::$shouldQueue = true;
 
         Tenant::create();
 
-        Queue::assertPushed(FooListener::class);
+        Queue::assertPushed(CallQueuedListener::class, function (CallQueuedListener $job) {
+            return $job->class === FooListener::class;
+        });
 
         $this->assertFalse(app()->bound('foo'));
     }

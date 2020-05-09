@@ -53,12 +53,10 @@ if (! function_exists('global_cache')) {
 }
 
 if (! function_exists('tenant_route')) {
-    function tenant_route($route, $parameters = [], string $domain = null)
+    function tenant_route(string $domain, $route, $parameters = [], $absolute = true)
     {
-        $domain = $domain ?? request()->getHost();
-
         // replace first occurance of hostname fragment with $domain
-        $url = route($route, $parameters);
+        $url = route($route, $parameters, $absolute);
         $hostname = parse_url($url, PHP_URL_HOST);
         $position = strpos($url, $hostname);
 

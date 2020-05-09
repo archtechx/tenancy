@@ -106,4 +106,16 @@ class TenantModelTest extends TestCase
         $this->assertSame(1, $tenant1->id);
         $this->assertSame(2, $tenant2->id);
     }
+
+    /** @test */
+    public function custom_tenant_model_can_be_used()
+    {
+        
+    }
+    
+    /** @test */
+    public function custom_tenant_model_that_doesnt_extend_vendor_Tenant_model_can_be_used()
+    {
+        
+    }
 }

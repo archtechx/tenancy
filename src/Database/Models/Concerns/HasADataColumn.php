@@ -1,7 +1,9 @@
 <?php
 
+// todo move namespace one dir above
 namespace Stancl\Tenancy\Database\Models\Concerns;
 
+// todo rename
 trait HasADataColumn
 {
     public static function bootHasADataColumn()

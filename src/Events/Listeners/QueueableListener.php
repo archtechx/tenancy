@@ -8,8 +8,18 @@ abstract class QueueableListener implements ShouldQueue
 {
     public static $shouldQueue = false;
 
-    public function shouldQueue()
+    abstract public function handle();
+
+    public function shouldQueue($event)
     {
-        return static::$shouldQueue;
+        if (static::$shouldQueue) {
+            return true;
+        } else {
+            // The listener is not queued so we manually
+            // pass the event to the handle() method.
+            $this->handle($event);
+
+            return false;
+        }
     }
 }
