@@ -74,38 +74,4 @@ class PathIdentificationTest extends TestCase
          
         $this->assertFalse(tenancy()->initialized);
     }
-
-    /** @test */
-    public function tenancy_is_initialized_prior_to_controller_constructors()
-    {
-        // todo same test for domain resolver
-
-        Tenant::create([
-            'id' => 'acme',
-        ]);
-
-        $this->assertFalse(tenancy()->initialized);
-
-        $this
-            ->get('/acme/bar')
-            ->assertSee('foo');
-
-        // todo make this pass
-        $this->assertTrue(app('tenancy_was_initialized_in_constructor'));
-        $this->assertTrue(tenancy()->initialized);
-        $this->assertSame('acme', tenant('id'));
-    }
-}
-
-class TestController
-{
-    public function __construct()
-    {
-        app()->instance('tenancy_was_initialized_in_constructor', tenancy()->initialized);
-    }
-
-    public function index()
-    {
-        return 'foo';
-    }
 }

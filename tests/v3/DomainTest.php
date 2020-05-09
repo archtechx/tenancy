@@ -59,9 +59,31 @@ class DomainTest extends TestCase
 
         app(DomainTenantResolver::class)->resolve('foo.localhost');
     }
+
+    /** @test */
+    public function tenancy_is_initialized_prior_to_controller_constructors()
+    {
+        // todo
+        $this->assertTrue(app('tenancy_was_initialized_in_constructor'));
+        $this->assertTrue(tenancy()->initialized);
+        $this->assertSame('acme', tenant('id'));
+    }
 }
 
 class Tenant extends Models\Tenant
 {
     use HasDomains;
+}
+
+class TestController
+{
+    public function __construct()
+    {
+        app()->instance('tenancy_was_initialized_in_constructor', tenancy()->initialized);
+    }
+
+    public function index()
+    {
+        return 'foo';
+    }
 }
