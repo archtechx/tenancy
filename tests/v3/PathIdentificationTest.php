@@ -69,8 +69,11 @@ class PathIdentificationTest extends TestCase
     /** @test */
     public function exception_is_thrown_when_tenant_cannot_be_identified_by_path()
     {
-        // todo the exception assertion doesn't work
         $this->expectException(TenantCouldNotBeIdentifiedByPathException::class);
+
+         $this
+            ->withoutExceptionHandling()
+            ->get('/acme/foo/abc/xyz');
          
         $this->assertFalse(tenancy()->initialized);
     }
