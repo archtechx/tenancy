@@ -3,7 +3,7 @@
 namespace Stancl\Tenancy;
 
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
-use Stancl\Tenancy\Database\Models\Tenant; // todo contract
+use Stancl\Tenancy\Contracts\Tenant;
 
 class Tenancy
 {
@@ -18,8 +18,7 @@ class Tenancy
 
     public function initialize(Tenant $tenant): void
     {
-        // todo the id is something that should be on the contract, with a method
-        if ($this->initialized && $this->tenant->id === $tenant->id) {
+        if ($this->initialized && $this->tenant->getTenantKey() === $tenant->getTenantKey()) {
             return;
         }
 
@@ -42,6 +41,7 @@ class Tenancy
     /** @return TenancyBootstrapper[] */
     public function getBootstrappers(): array
     {
+        // If no callback for getting bootstrappers is set, we just return all of them.
         $resolve = static::$getBootstrappers ?? function (Tenant $tenant) {
             return config('tenancy.bootstrappers');
         };

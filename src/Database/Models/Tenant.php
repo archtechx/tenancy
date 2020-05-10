@@ -7,7 +7,6 @@ use Stancl\Tenancy\DatabaseConfig;
 use Stancl\Tenancy\Events;
 use Stancl\Tenancy\Contracts;
 
-// todo use a contract
 // todo @property
 class Tenant extends Model implements Contracts\Tenant
 {
@@ -16,6 +15,17 @@ class Tenant extends Model implements Contracts\Tenant
     }
 
     public $primaryKey = 'id';
+    public $guarded = [];
+
+    public function getTenantKeyName(): string
+    {
+        return 'id';
+    }
+
+    public function getTenantKey(): string
+    {
+        return $this->getAttribute($this->getTenantKeyName());
+    }
 
     public function getCasts()
     {
@@ -28,8 +38,6 @@ class Tenant extends Model implements Contracts\Tenant
     {
         return config('tenancy.id_generator') === null;
     }
-
-    public $guarded = [];
 
     public static function internalPrefix(): string
     {
