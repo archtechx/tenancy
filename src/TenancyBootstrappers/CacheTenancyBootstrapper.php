@@ -8,7 +8,7 @@ use Illuminate\Cache\CacheManager;
 use Illuminate\Contracts\Foundation\Application;
 use Stancl\Tenancy\CacheManager as TenantCacheManager;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
-use Stancl\Tenancy\Tenant;
+use Stancl\Tenancy\Contracts\Tenant;
 
 class CacheTenancyBootstrapper implements TenancyBootstrapper
 {

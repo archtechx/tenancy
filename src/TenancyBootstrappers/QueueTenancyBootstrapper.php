@@ -8,8 +8,9 @@ use Illuminate\Config\Repository;
 use Illuminate\Queue\QueueManager;
 use Illuminate\Support\Testing\Fakes\QueueFake;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
-use Stancl\Tenancy\Tenant;
+use Stancl\Tenancy\Contracts\Tenant;
 
+// todo rewrite this
 class QueueTenancyBootstrapper implements TenancyBootstrapper
 {
     /** @var bool Has tenancy been started. */

@@ -7,7 +7,7 @@ namespace Stancl\Tenancy\TenancyBootstrappers;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Exceptions\TenantDatabaseDoesNotExistException;
-use Stancl\Tenancy\Tenant;
+use Stancl\Tenancy\Contracts\TenantWithDatabase;
 
 class DatabaseTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -19,18 +19,18 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
         $this->database = $database;
     }
 
-    public function start(Tenant $tenant)
+    public function start(TenantWithDatabase $tenant)
     {
         $database = $tenant->database()->getName();
         if (! $tenant->database()->manager()->databaseExists($database)) {
             throw new TenantDatabaseDoesNotExistException($database);
         }
 
-        $this->database->connect($tenant);
+        $this->database->connectToTenant($tenant);
     }
 
     public function end()
     {
-        $this->database->reconnect();
+        $this->database->revertToCentral();
     }
 }

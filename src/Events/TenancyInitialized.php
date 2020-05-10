@@ -2,15 +2,15 @@
 
 namespace Stancl\Tenancy\Events;
 
-use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Tenancy;
 
 class TenancyInitialized
 {
-    /** @var Tenant */
-    protected $tenant;
+    /** @var Tenancy */
+    public $tenancy;
 
-    public function __construct(Tenant $tenant)
+    public function __construct(Tenancy $tenancy)
     {
-        $this->tenant = $tenant;
+        $this->tenancy = $tenancy;
     }
 }

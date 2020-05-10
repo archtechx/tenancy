@@ -2,31 +2,85 @@
 
 namespace Stancl\Tenancy\Tests\v3;
 
+use Illuminate\Support\Facades\Event;
+use Stancl\Tenancy\Contracts\TenancyBootstrapper;
+use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Events\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Events\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Events\TenancyEnded;
+use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Tests\TestCase;
 
 class AutomaticModeTest extends TestCase
 {
-    /** @test */
-    public function custom_bootstrappers_can_be_registered()
+    public function setUp(): void
     {
-        
+        parent::setUp();
+
+        Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+        Event::listen(TenancyEnded::class, RevertToCentralContext::class);
     }
 
     /** @test */
     public function context_is_switched_when_tenancy_is_initialized()
     {
-        
+        config(['tenancy.bootstrappers' => [
+            MyBootstrapper::class,
+        ]]);
+
+        $tenant = Tenant::create([
+            'id' => 'acme',
+        ]);
+
+        tenancy()->initialize($tenant);
+
+        $this->assertSame('acme', app('tenancy_initialized_for_tenant'));
     }
 
     /** @test */
     public function context_is_reverted_when_tenancy_is_ended()
     {
-        
+        $this->context_is_switched_when_tenancy_is_initialized();
+
+        tenancy()->end();
+
+        $this->assertSame(true, app('tenancy_ended'));
     }
 
     /** @test */
     public function context_is_switched_when_tenancy_is_reinitialized()
     {
-        
+        config(['tenancy.bootstrappers' => [
+            MyBootstrapper::class,
+        ]]);
+
+        $tenant = Tenant::create([
+            'id' => 'acme',
+        ]);
+
+        tenancy()->initialize($tenant);
+
+        $this->assertSame('acme', app('tenancy_initialized_for_tenant'));
+
+        $tenant2 = Tenant::create([
+            'id' => 'foobar',
+        ]);
+
+        tenancy()->initialize($tenant2);
+
+        $this->assertSame('foobar', app('tenancy_initialized_for_tenant'));
+    }
+}
+
+class MyBootstrapper implements TenancyBootstrapper
+{
+    public function start(\Stancl\Tenancy\Contracts\Tenant $tenant)
+    {
+        app()->instance('tenancy_initialized_for_tenant', $tenant->getTenantKey());
+    }
+
+    public function end()
+    {
+        app()->instance('tenancy_ended', true);
     }
 }

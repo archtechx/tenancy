@@ -26,14 +26,14 @@ class Tenancy
 
         $this->initialized = true;
 
-        event(new Events\TenancyInitialized($tenant));
+        event(new Events\TenancyInitialized($this));
     }
 
     public function end(): void
     {
         $this->initialized = false;
 
-        event(new Events\TenancyEnded($this->tenant));
+        event(new Events\TenancyEnded($this));
 
         $this->tenant = null;
     }
@@ -43,7 +43,7 @@ class Tenancy
     {
         // If no callback for getting bootstrappers is set, we just return all of them.
         $resolve = static::$getBootstrappers ?? function (Tenant $tenant) {
-            return config('tenancy.bootstrappers');
+            return array_map('app', config('tenancy.bootstrappers'));
         };
 
         return $resolve($this->tenant);

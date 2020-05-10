@@ -2,6 +2,7 @@
 
 namespace Stancl\Tenancy\Tests\v3;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -10,6 +11,7 @@ use Stancl\Tenancy\Database\Models\Tenant;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Tests\TestCase;
 use Stancl\Tenancy\UniqueIDGenerators\UUIDGenerator;
+use Stancl\Tenancy\Contracts;
 
 class TenantModelTest extends TestCase
 {
@@ -110,12 +112,43 @@ class TenantModelTest extends TestCase
     /** @test */
     public function custom_tenant_model_can_be_used()
     {
-        
+        $tenant = MyTenant::create();
+
+        tenancy()->initialize($tenant);
+
+        $this->assertTrue(tenant() instanceof MyTenant);
     }
     
     /** @test */
     public function custom_tenant_model_that_doesnt_extend_vendor_Tenant_model_can_be_used()
     {
-        
+        $tenant = AnotherTenant::create([
+            'id' => 'acme',
+        ]);
+
+        tenancy()->initialize($tenant);
+
+        $this->assertTrue(tenant() instanceof AnotherTenant);
+    }
+}
+
+class MyTenant extends Tenant
+{
+    protected $table = 'tenants';
+}
+
+class AnotherTenant extends Model implements Contracts\Tenant
+{
+    protected $guarded = [];
+    protected $table = 'tenants';
+
+    public function getTenantKeyName(): string
+    {
+        return 'id';
+    }
+
+    public function getTenantKey(): string
+    {
+        return $this->getAttribute('id');
     }
 }

@@ -8,7 +8,7 @@ use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
-use Stancl\Tenancy\Tenant;
+use Stancl\Tenancy\Contracts\Tenant;
 
 class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -36,7 +36,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
     public function start(Tenant $tenant)
     {
-        $suffix = $this->app['config']['tenancy.filesystem.suffix_base'] . $tenant->id;
+        $suffix = $this->app['config']['tenancy.filesystem.suffix_base'] . $tenant->getTenantKey();
 
         // storage_path()
         if ($this->app['config']['tenancy.filesystem.suffix_storage_path'] ?? true) {

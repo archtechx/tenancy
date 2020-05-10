@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
+use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
 use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
@@ -17,6 +18,7 @@ use Stancl\Tenancy\Jobs\QueuedTenantDatabaseDeleter;
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
  */
+// todo rewrite everything
 class DatabaseManager
 {
     /** @var string */
@@ -41,7 +43,7 @@ class DatabaseManager
     /**
      * Set the TenantManager instance, used to dispatch tenancy events.
      */
-    public function withTenantManager(TenantManager $tenantManager): self
+    public function withTenantManager(Tenancy $tenantManager): self
     {
         $this->tenancy = $tenantManager;
 
@@ -51,7 +53,7 @@ class DatabaseManager
     /**
      * Connect to a tenant's database.
      */
-    public function connect(Tenant $tenant)
+    public function connect(TenantWithDatabase $tenant)
     {
         $this->createTenantConnection($tenant);
         $this->setDefaultConnection('tenant');
