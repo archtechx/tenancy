@@ -50,7 +50,7 @@ class PathIdentificationTest extends TestCase
 
         $this
             ->get('/acme/foo/abc/xyz')
-            ->assertSee('abc + xyz');
+            ->assertContent('abc + xyz');
 
         $this->assertTrue(tenancy()->initialized);
         $this->assertSame('acme', tenant('id'));
@@ -77,6 +77,6 @@ class PathIdentificationTest extends TestCase
 
         $this
             ->get('/acme/foo/abc/xyz')
-            ->assertSee('foo');
+            ->assertContent('foo');
     }
 }

@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
-use Illuminate\Support\Facades\Redis;
+use Illuminate\Testing\Assert as PHPUnit;
+use Illuminate\Testing\TestResponse;
 use Stancl\Tenancy\Tenant;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
@@ -37,6 +38,14 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         if ($this->autoInitTenancy) {
             $this->initTenancy();
         }
+
+        TestResponse::macro('assertContent', function ($content) {
+            /** @var TestResponse $this */
+
+            PHPUnit::assertSame($content, $this->baseResponse->getContent());
+
+            return $this;
+        });
     }
 
     public function createTenant($domains = ['test.localhost'])
