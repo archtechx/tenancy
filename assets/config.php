@@ -19,6 +19,11 @@ return [
         // 
     ],
 
+    'central_domains' => [
+        '127.0.0.1',
+        'localhost',
+    ],
+
 
     'storage' => [
         'data_column' => 'data',
@@ -232,6 +237,6 @@ return [
      * Middleware pushed to the global middleware stack.
      */
     'global_middleware' => [ // todo get rid of this
-        Stancl\Tenancy\Middleware\InitializeTenancy::class,
+        // Stancl\Tenancy\Middleware\InitializeTenancy::class,
     ],
 ];

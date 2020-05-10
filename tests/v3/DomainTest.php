@@ -2,10 +2,12 @@
 
 namespace Stancl\Tenancy\Tests\v3;
 
+use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Database\Models;
 use Stancl\Tenancy\Database\Models\Concerns\HasDomains;
-use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
+use Stancl\Tenancy\Exceptions\DomainOccupiedByOtherTenantException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
+use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 use Stancl\Tenancy\Tests\TestCase;
 
@@ -14,6 +16,14 @@ class DomainTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
+
+        Route::group([
+            'middleware' => InitializeTenancyByDomain::class,
+        ], function () {
+            Route::get('/foo/{a}/{b}', function ($a, $b) {
+                return "$a + $b";
+            });
+        });
 
         config(['tenancy.tenant_model' => Tenant::class]);
     }
@@ -46,7 +56,7 @@ class DomainTest extends TestCase
 
         $tenant2 = Tenant::create();
 
-        $this->expectException(DomainsOccupiedByOtherTenantException::class);
+        $this->expectException(DomainOccupiedByOtherTenantException::class);
         $tenant2->domains()->create([
             'domain' => 'foo.localhost',
         ]);
@@ -61,29 +71,40 @@ class DomainTest extends TestCase
     }
 
     /** @test */
-    public function tenancy_is_initialized_prior_to_controller_constructors()
+    public function tenant_can_be_identified_by_domain()
     {
-        // todo
-        $this->assertTrue(app('tenancy_was_initialized_in_constructor'));
+        $tenant = Tenant::create([
+            'id' => 'acme',
+        ]);
+
+        $tenant->domains()->create([
+            'domain' => 'foo.localhost',
+        ]);
+
+        $this->assertFalse(tenancy()->initialized);
+
+        $this
+            ->get('http://foo.localhost/foo/abc/xyz')
+            ->assertSee('abc + xyz');
+
         $this->assertTrue(tenancy()->initialized);
         $this->assertSame('acme', tenant('id'));
+    }
+
+    /** @test */
+    public function onfail_logic_can_be_customized()
+    {
+        InitializeTenancyByDomain::$onFail = function () {
+            return 'foo';
+        };
+
+        $this
+            ->get('http://foo.localhost/foo/abc/xyz')
+            ->assertSee('foo');
     }
 }
 
 class Tenant extends Models\Tenant
 {
     use HasDomains;
-}
-
-class TestController
-{
-    public function __construct()
-    {
-        app()->instance('tenancy_was_initialized_in_constructor', tenancy()->initialized);
-    }
-
-    public function index()
-    {
-        return 'foo';
-    }
 }

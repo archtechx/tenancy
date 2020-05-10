@@ -8,7 +8,8 @@ use Stancl\Tenancy\Events\DomainCreated;
 use Stancl\Tenancy\Events\DomainDeleted;
 use Stancl\Tenancy\Events\DomainSaved;
 use Stancl\Tenancy\Events\DomainUpdated;
-use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
+use Stancl\Tenancy\Exceptions\DomainOccupiedByOtherTenantException;
+use Stancl\Tenancy\Contracts;
 
 /**
  * @property string $domain
@@ -16,7 +17,7 @@ use Stancl\Tenancy\Exceptions\DomainsOccupiedByOtherTenantException;
  *
  * @property-read Tenant $tenant
  */
-class Domain extends Model
+class Domain extends Model implements Contracts\Domain
 {
     public $guarded = [];
     public $casts = [
@@ -28,7 +29,7 @@ class Domain extends Model
         $ensureDomainIsNotOccupied = function (Domain $self) {
             if ($domain = Domain::where('domain', $self->domain)->first()) {
                 if ($domain->getKey() !== $self->getKey()) {
-                    throw new DomainsOccupiedByOtherTenantException;
+                    throw new DomainOccupiedByOtherTenantException($self->domain);
                 }
             }
         };

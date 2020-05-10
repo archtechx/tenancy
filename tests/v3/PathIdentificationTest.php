@@ -10,13 +10,6 @@ use Stancl\Tenancy\Tests\TestCase;
 
 class PathIdentificationTest extends TestCase
 {
-    public function getEnvironmentSetup($app)
-    {
-        parent::getEnvironmentSetUp($app);
-
-        config(['tenancy.global_middleware' => []]);
-    }
-
     public function setUp(): void
     {
         parent::setUp();
@@ -28,8 +21,6 @@ class PathIdentificationTest extends TestCase
             Route::get('/foo/{a}/{b}', function ($a, $b) {
                 return "$a + $b";
             });
-
-            Route::get('/bar', [TestController::class, 'index']);
         });
     }
 
@@ -42,8 +33,7 @@ class PathIdentificationTest extends TestCase
 
         $this->assertFalse(tenancy()->initialized);
 
-        $this
-            ->get('/acme/foo/abc/xyz');
+        $this->get('/acme/foo/abc/xyz');
 
         $this->assertTrue(tenancy()->initialized);
         $this->assertSame('acme', tenant('id'));
@@ -76,5 +66,17 @@ class PathIdentificationTest extends TestCase
             ->get('/acme/foo/abc/xyz');
          
         $this->assertFalse(tenancy()->initialized);
+    }
+
+    /** @test */
+    public function onfail_logic_can_be_customized()
+    {
+        InitializeTenancyByPath::$onFail = function () {
+            return 'foo';
+        };
+
+        $this
+            ->get('/acme/foo/abc/xyz')
+            ->assertSee('foo');
     }
 }

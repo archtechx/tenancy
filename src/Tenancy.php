@@ -3,7 +3,7 @@
 namespace Stancl\Tenancy;
 
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
-use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Database\Models\Tenant; // todo contract
 
 class Tenancy
 {
@@ -18,6 +18,11 @@ class Tenancy
 
     public function initialize(Tenant $tenant): void
     {
+        // todo the id is something that should be on the contract, with a method
+        if ($this->initialized && $this->tenant->id === $tenant->id) {
+            return;
+        }
+
         $this->tenant = $tenant;
 
         $this->initialized = true;
