@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Middleware;
 use Closure;
 use Illuminate\Http\Response;
 use Stancl\Tenancy\Exceptions\NotASubdomainException;
+use Illuminate\Support\Str;
 
 class InitializeTenancyBySubdomain extends InitializeTenancyByDomain
 {
@@ -51,16 +52,16 @@ class InitializeTenancyBySubdomain extends InitializeTenancyByDomain
         $parts = explode('.', $hostname);
 
         // If we're on localhost or an IP address, then we're not visiting a subdomain.
-        if (in_array(count($parts), [1, 4])) {
+        $notADomain = in_array(count($parts), [1, 4]);
+        $thirdPartyDomain = ! Str::endsWith($hostname, config('tenancy.central_domains'));;
+
+        if ($notADomain || $thirdPartyDomain) {
             $handle = static::$onInvalidSubdomain ?? function ($e) {
                 throw $e;
             };
 
             return $handle(new NotASubdomainException($hostname));
         }
-
-        // todo should we verify that the subdomain belongs to one of our central domains?
-        // if yes, then write a test for it.
 
         return $parts[static::$subdomainIndex];
     }

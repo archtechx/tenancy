@@ -15,6 +15,9 @@ class SubdomainTest extends TestCase
     {
         parent::setUp();
 
+        // Global state cleanup after some tests
+        InitializeTenancyBySubdomain::$onInvalidSubdomain = null;
+
         Route::group([
             'middleware' => InitializeTenancyBySubdomain::class,
         ], function () {
@@ -92,6 +95,29 @@ class SubdomainTest extends TestCase
             ->withoutExceptionHandling()
             ->get('http://127.0.0.1/foo/abc/xyz')
             ->assertSee('foo custom invalid subdomain handler');
+    }
+
+    /** @test */
+    public function we_cant_use_a_subdomain_that_doesnt_belong_to_our_central_domains()
+    {
+        config(['tenancy.central_domains' => [
+            '127.0.0.1',
+            // not 'localhost'
+        ]]);
+
+        $tenant = Tenant::create([
+            'id' => 'acme',
+        ]);
+
+        $tenant->domains()->create([
+            'domain' => 'foo',
+        ]);
+
+        $this->expectException(NotASubdomainException::class);
+
+        $this
+            ->withoutExceptionHandling()
+            ->get('http://foo.localhost/foo/abc/xyz');
     }
 }
 
