@@ -4,8 +4,10 @@ namespace Stancl\Tenancy\Tests\v3;
 
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Exceptions\RouteIsMissingTenantParameterException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByPathException;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
+use Stancl\Tenancy\Resolvers\PathTenantResolver;
 use Stancl\Tenancy\Tests\TestCase;
 
 class PathIdentificationTest extends TestCase
@@ -13,6 +15,8 @@ class PathIdentificationTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
+
+        PathTenantResolver::$tenantParameterName = 'tenant';
 
         Route::group([
             'prefix' => '/{tenant}',
@@ -78,5 +82,59 @@ class PathIdentificationTest extends TestCase
         $this
             ->get('/acme/foo/abc/xyz')
             ->assertContent('foo');
+    }
+
+    /** @test */
+    public function an_exception_is_thrown_when_the_routes_first_parameter_is_not_tenant()
+    {
+        Route::group([
+            // 'prefix' => '/{tenant}', -- intentionally commented
+            'middleware' => InitializeTenancyByPath::class,
+        ], function () {
+            Route::get('/bar/{a}/{b}', function ($a, $b) {
+                return "$a + $b";
+            });
+        });
+
+        Tenant::create([
+            'id' => 'acme',
+        ]);
+
+        $this->expectException(RouteIsMissingTenantParameterException::class);
+
+        $this
+            ->withoutExceptionHandling()
+            ->get('/bar/foo/bar');
+    }
+
+
+    /** @test */
+    public function tenant_parameter_name_can_be_customized()
+    {
+        PathTenantResolver::$tenantParameterName = 'team';
+
+        Route::group([
+            'prefix' => '/{team}',
+            'middleware' => InitializeTenancyByPath::class,
+        ], function () {
+            Route::get('/bar/{a}/{b}', function ($a, $b) {
+                return "$a + $b";
+            });
+        });
+
+        Tenant::create([
+            'id' => 'acme',
+        ]);
+
+        $this
+            ->get('/acme/bar/abc/xyz')
+            ->assertContent('abc + xyz');
+
+        // Parameter for resolver is changed, so the /{tenant}/foo route will no longer work.
+        $this->expectException(RouteIsMissingTenantParameterException::class);
+
+        $this
+            ->withoutExceptionHandling()
+            ->get('/acme/foo/abc/xyz');
     }
 }
