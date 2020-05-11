@@ -2,7 +2,6 @@
 
 namespace Stancl\Tenancy\Contracts;
 
-// todo add comments
 interface Syncable
 {
     public function getGlobalIdentifierKeyName(): string;

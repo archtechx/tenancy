@@ -33,6 +33,10 @@ class Tenancy
 
     public function end(): void
     {
+        if (! $this->initialized) {
+            return;
+        }
+
         $this->initialized = false;
 
         event(new Events\TenancyEnded($this));
@@ -67,5 +71,29 @@ class Tenancy
     public function find($id): ?Tenant
     {
         return $this->model()->find($id);
+    }
+
+    /**
+     * Run a callback for multiple tenants.
+     * More performant than running $tenant->run() one by one.
+     *
+     * @param Tenant[]|\Illuminate\Support\Collection $tenants
+     * @param callable $callback
+     * @return void
+     */
+    public function runForMultiple($tenants, callable $callback)
+    {
+        $originalTenant = $this->tenant;
+
+        foreach ($tenants as $tenant) {
+            $this->initialize($tenant);
+            $callback($tenant);
+        }
+
+        if ($originalTenant) {
+            $this->initialize($originalTenant);
+        } else {
+            $this->end();
+        }
     }
 }

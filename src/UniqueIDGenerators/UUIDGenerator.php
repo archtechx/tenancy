@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\UniqueIDGenerators;
 
+use Illuminate\Database\Eloquent\Model;
 use Ramsey\Uuid\Uuid;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 class UUIDGenerator implements UniqueIdentifierGenerator
 {
-    public static function generate(Tenant $tenant): string
+    public static function generate(Model $model): string
     {
         return Uuid::uuid4()->toString();
     }

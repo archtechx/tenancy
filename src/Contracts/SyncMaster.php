@@ -3,12 +3,13 @@
 namespace Stancl\Tenancy\Contracts;
 
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-// todo rename?
 /**
  * @property-read Tenant[]|Collection $tenants
  */
 interface SyncMaster extends Syncable
 {
-    public function tenants(); // Probably should return BelongsToMany
+    public function tenants(): BelongsToMany;
+    public function getTenantModelName(): string;
 }
