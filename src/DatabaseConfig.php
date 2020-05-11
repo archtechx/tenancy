@@ -93,7 +93,7 @@ class DatabaseConfig
     {
         return $this->tenant->getInternal('db_connection')
             ?? config('tenancy.template_tenant_connection')
-            ?? DatabaseManager::$originalDefaultConnectionName;
+            ?? config('tenancy.central_connection');
     }
 
     /**
@@ -105,6 +105,7 @@ class DatabaseConfig
 
         $templateConnection = config("database.connections.{$template}");
 
+        // todo move a lot of this logic to the tenant DB manager so that we dont have to deal with the separators & modifying DB names here
         $databaseName = $this->getName();
         if (($manager = $this->manager()) instanceof ModifiesDatabaseNameForConnection) {
             /** @var ModifiesDatabaseNameForConnection $manager */

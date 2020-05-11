@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Closure;
+use Illuminate\Config\Repository;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Illuminate\Foundation\Application;
@@ -18,58 +19,43 @@ use Stancl\Tenancy\Jobs\QueuedTenantDatabaseDeleter;
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
  */
-// todo rewrite everything
 class DatabaseManager
 {
-    /** @var string */
-    public static $originalDefaultConnectionName;
-
     /** @var Application */
     protected $app;
 
     /** @var BaseDatabaseManager */
     protected $database;
 
-    /** @var TenantManager */
-    protected $tenancy;
+    /** @var Repository */
+    protected $config;
 
-    public function __construct(Application $app, BaseDatabaseManager $database)
+    public function __construct(Application $app, BaseDatabaseManager $database, Repository $config)
     {
         $this->app = $app;
         $this->database = $database;
-        static::$originalDefaultConnectionName = $app['config']['database.default'];
-    }
-
-    /**
-     * Set the TenantManager instance, used to dispatch tenancy events.
-     */
-    public function withTenantManager(Tenancy $tenantManager): self
-    {
-        $this->tenancy = $tenantManager;
-
-        return $this;
+        $this->config = $config;
     }
 
     /**
      * Connect to a tenant's database.
      */
-    public function connect(TenantWithDatabase $tenant)
+    public function connectToTenant(TenantWithDatabase $tenant)
     {
         $this->createTenantConnection($tenant);
         $this->setDefaultConnection('tenant');
-        $this->switchConnection('tenant');
+        $this->database->purge('tenant');
     }
 
     /**
      * Reconnect to the default non-tenant connection.
      */
-    public function reconnect()
+    public function reconnectToCentral()
     {
-        if ($this->tenancy->initialized) {
+        if (tenancy()->initialized) {
             $this->database->purge('tenant');
         }
-        $this->setDefaultConnection(static::$originalDefaultConnectionName);
-        $this->switchConnection(static::$originalDefaultConnectionName);
+        $this->setDefaultConnection($this->config->get('tenancy.central_connection'));
     }
 
     /**
@@ -78,23 +64,15 @@ class DatabaseManager
     public function setDefaultConnection(string $connection)
     {
         $this->app['config']['database.default'] = $connection;
+        $this->database->setDefaultConnection($connection);
     }
 
     /**
      * Create the tenant database connection.
      */
-    public function createTenantConnection(Tenant $tenant)
+    public function createTenantConnection(TenantWithDatabase $tenant)
     {
         $this->app['config']['database.connections.tenant'] = $tenant->database()->connection();
-    }
-
-    /**
-     * Switch the application's connection.
-     */
-    public function switchConnection(string $connection)
-    {
-        $this->database->reconnect($connection);
-        $this->database->setDefaultConnection($connection);
     }
 
     /**
@@ -104,7 +82,7 @@ class DatabaseManager
      * @throws DatabaseManagerNotRegisteredException
      * @throws TenantDatabaseAlreadyExistsException
      */
-    public function ensureTenantCanBeCreated(Tenant $tenant): void
+    public function ensureTenantCanBeCreated(TenantWithDatabase $tenant): void
     {
         if ($tenant->database()->manager()->databaseExists($database = $tenant->database()->getName())) {
             throw new TenantDatabaseAlreadyExistsException($database);
@@ -119,8 +97,9 @@ class DatabaseManager
      * @return void
      * @throws DatabaseManagerNotRegisteredException
      */
-    public function createDatabase(Tenant $tenant, array $afterCreating = [])
+    public function createDatabase(TenantWithDatabase $tenant, array $afterCreating = [])
     {
+        // todo get rid of aftercreating logic
         $afterCreating = array_merge(
             $afterCreating,
             $this->tenancy->event('database.creating', $tenant->database()->getName(), $tenant)
@@ -168,7 +147,7 @@ class DatabaseManager
      *
      * @throws DatabaseManagerNotRegisteredException
      */
-    public function deleteDatabase(Tenant $tenant)
+    public function deleteDatabase(TenantWithDatabase $tenant)
     {
         $database = $tenant->database()->getName();
         $manager = $tenant->database()->manager();

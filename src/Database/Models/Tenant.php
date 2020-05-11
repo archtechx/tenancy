@@ -8,7 +8,7 @@ use Stancl\Tenancy\Events;
 use Stancl\Tenancy\Contracts;
 
 // todo @property
-class Tenant extends Model implements Contracts\Tenant
+class Tenant extends Model implements Contracts\TenantWithDatabase
 {
     use Concerns\CentralConnection, Concerns\HasADataColumn, Concerns\GeneratesIds, Concerns\HasADataColumn {
         Concerns\HasADataColumn::getCasts as dataColumnCasts;
@@ -41,7 +41,7 @@ class Tenant extends Model implements Contracts\Tenant
 
     public static function internalPrefix(): string
     {
-        return config('tenancy.database_prefix');
+        return config('tenancy.internal_column_prefix');
     }
 
     /**
@@ -76,15 +76,15 @@ class Tenant extends Model implements Contracts\Tenant
 
     public function run(callable $callback)
     {
-        // todo new logic with the manager
-        $originalTenant = $this->manager->getTenant();
+        $originalTenant = tenant();
 
-        $this->manager->initializeTenancy($this);
+        tenancy()->initialize($this);
         $result = $callback($this);
-        $this->manager->endTenancy($this);
 
         if ($originalTenant) {
-            $this->manager->initializeTenancy($originalTenant);
+            tenancy()->initialize($originalTenant);
+        } else {
+            tenancy()->end();
         }
 
         return $result;

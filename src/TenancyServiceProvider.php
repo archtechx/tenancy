@@ -8,10 +8,9 @@ use Illuminate\Cache\CacheManager;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
-use Stancl\Tenancy\Database\Models\Tenant;
-use Stancl\Tenancy\Database\TenantObserver;
 use Stancl\Tenancy\StorageDrivers\Database\DatabaseStorageDriver;
 use Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper;
+use Stancl\Tenancy\Contracts\Tenant;
 
 class TenancyServiceProvider extends ServiceProvider
 {

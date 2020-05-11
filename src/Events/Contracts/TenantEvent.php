@@ -3,7 +3,7 @@
 namespace Stancl\Tenancy\Events\Contracts;
 
 use Illuminate\Queue\SerializesModels;
-use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Contracts\Tenant;
 
 abstract class TenantEvent
 {

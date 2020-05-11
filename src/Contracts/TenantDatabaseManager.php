@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Contracts;
 
-use Stancl\Tenancy\Tenant;
-
 interface TenantDatabaseManager
 {
     /**
@@ -18,12 +16,12 @@ interface TenantDatabaseManager
     /**
      * Create a database.
      */
-    public function createDatabase(Tenant $tenant): bool;
+    public function createDatabase(TenantWithDatabase $tenant): bool;
 
     /**
      * Delete a database.
      */
-    public function deleteDatabase(Tenant $tenant): bool;
+    public function deleteDatabase(TenantWithDatabase $tenant): bool;
 
     /**
      * Does a database exist.

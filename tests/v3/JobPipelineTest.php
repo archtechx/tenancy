@@ -9,6 +9,7 @@ use Stancl\Tenancy\Events\Listeners\JobPipeline;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Tests\TestCase;
 
+// todo the shouldQueue() doesnt make sense? test if it really works or if its just because of sync queue driver
 class JobPipelineTest extends TestCase
 {
     /** @test */
@@ -19,7 +20,7 @@ class JobPipelineTest extends TestCase
         ])->toListener());
 
         $this->assertFalse(app()->bound('foo'));
-        
+
         Tenant::create();
 
         $this->assertSame('bar', app('foo'));
@@ -59,6 +60,12 @@ class JobPipelineTest extends TestCase
         Tenant::create();
 
         $this->assertSame('first job changed property', app('foo'));
+    }
+
+    /** @test */
+    public function send_can_return_multiple_arguments()
+    {
+        // todo
     }
 }
 

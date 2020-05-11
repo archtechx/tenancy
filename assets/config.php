@@ -8,7 +8,7 @@ use Stancl\Tenancy\Database\Models\Tenant;
 return [
     'tenant_model' => Tenant::class,
     'domain_model' => Domain::class,
-    'internal_prefix' => 'tenancy_',
+    'internal_column_prefix' => 'tenancy_',
 
     'central_connection' => 'central',
     'template_tenant_connection' => null,

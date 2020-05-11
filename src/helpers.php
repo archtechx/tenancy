@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Stancl\Tenancy\Database\Models\Tenant;
 use Stancl\Tenancy\Tenancy;
+use Stancl\Tenancy\Contracts\Tenant;
 
 if (! function_exists('tenancy')) {
     /** @return Tenancy */
@@ -18,10 +18,14 @@ if (! function_exists('tenant')) {
      * Get a key from the current tenant's storage.
      *
      * @param string|null $key
-     * @return Tenant|mixed
+     * @return Tenant|null|mixed
      */
     function tenant($key = null)
     {
+        if (! app()->bound(Tenant::class)) {
+            return null;
+        }
+
         if (is_null($key)) {
             return app(Tenant::class);
         }

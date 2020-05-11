@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Database\Console\Migrations\MigrateCommand;
 use Illuminate\Database\Migrations\Migrator;
+use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Events\DatabaseMigrated;
 use Stancl\Tenancy\Traits\DealsWithMigrations;
@@ -56,15 +57,20 @@ class Migrate extends MigrateCommand
             return;
         }
 
-        tenancy()->all($this->option('tenants'))->each(function ($tenant) {
-            $this->line("Tenant: {$tenant['id']}");
+        tenancy()
+            ->query()
+            ->when($this->option('tenants'), function ($query) {
+                $query->whereIn(tenancy()->model()->getTenantKeyName(), $this->option('tenants'));
+            })
+            ->each(function (TenantWithDatabase $tenant) {
+                $this->line("Tenant: {$tenant['id']}");
 
-            $tenant->run(function () {
-                // Migrate
-                parent::handle();
+                $tenant->run(function () {
+                    // Migrate
+                    parent::handle();
+                });
+
+                event(new DatabaseMigrated($tenant));
             });
-
-            event(new DatabaseMigrated($tenant));
-        });
     }
 }

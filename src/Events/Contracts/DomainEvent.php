@@ -3,7 +3,7 @@
 namespace Stancl\Tenancy\Events\Contracts;
 
 use Illuminate\Queue\SerializesModels;
-use Stancl\Tenancy\Database\Models\Domain;
+use Stancl\Tenancy\Contracts\Domain;
 
 abstract class DomainEvent
 {

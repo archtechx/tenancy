@@ -61,7 +61,7 @@ class JobPipeline implements ShouldQueue
     public function handle(): void
     {
         foreach ($this->jobs as $job) {
-            app($job)->handle($this->passable);
+            app()->call([new $job(...$this->passable), 'handle']);
         }
     }
 
@@ -82,7 +82,10 @@ class JobPipeline implements ShouldQueue
     {
         $clone = clone $this;
 
-        $clone->passable = ($clone->send)(...$listenerArgs);
+        $passable = ($clone->send)(...$listenerArgs);
+        $passable = is_array($passable) ? $passable : [$passable];
+
+        $clone->passable = $passable;
         unset($clone->send);
 
         return $clone;

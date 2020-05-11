@@ -2,12 +2,14 @@
 
 namespace Stancl\Tenancy;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
 class Tenancy
 {
-    /** @var Tenant|null */
+    /** @var Tenant|Model|null */
     public $tenant;
 
     /** @var callable|null */
@@ -47,5 +49,18 @@ class Tenancy
         };
 
         return $resolve($this->tenant);
+    }
+
+    public function query(): Builder
+    {
+        return $this->model()->query();
+    }
+
+    /** @return Tenant|Model */
+    public function model()
+    {
+        $class = config('tenancy.tenant_model');
+
+        return new $class;
     }
 }
