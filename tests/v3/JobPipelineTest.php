@@ -23,7 +23,6 @@ class JobPipelineTest extends TestCase
 
         config(['queue.default' => 'redis']);
 
-        file_put_contents(__DIR__ . '/../Etc/tmp/jobpipelinetest.json', '{}');
         $this->valuestore = Valuestore::make(__DIR__ . '/../Etc/tmp/jobpipelinetest.json')->flush();
     }
 
@@ -62,6 +61,22 @@ class JobPipelineTest extends TestCase
         Queue::pushed(JobPipeline::class, function (JobPipeline $pipeline) {
             $this->assertSame([FooJob::class], $pipeline->jobs);
         });
+    }
+
+    /** @test */
+    public function job_pipelines_run_when_queued()
+    {
+        Event::listen(TenantCreated::class, JobPipeline::make([
+            FooJob::class,
+        ])->send(function () {
+            return $this->valuestore;
+        })->shouldBeQueued(true)->toListener());
+
+        $this->assertFalse($this->valuestore->has('foo'));
+        Tenant::create();
+        $this->artisan('queue:work --once');
+
+        $this->assertSame('bar', $this->valuestore->get('foo'));
     }
 
     /** @test */
@@ -159,6 +174,7 @@ class JobWithMultipleArguments
 
     public function handle()
     {
+        // we dont queue this job so no need to use valuestore here
         app()->instance('test_args', [$this->first, $this->second]);
     }
 }

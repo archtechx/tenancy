@@ -178,9 +178,5 @@ class BootstrapperTest extends TestCase
         $this->assertFalse(Storage::disk('public')->exists('abc'));
     }
 
-    /** @test */
-    public function queue_data_is_separated()
-    {
-        // todo
-    }
+    // for queues see QueueTest
 }

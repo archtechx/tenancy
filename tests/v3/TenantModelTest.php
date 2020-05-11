@@ -130,6 +130,8 @@ class TenantModelTest extends TestCase
 
         $this->assertTrue(tenant() instanceof AnotherTenant);
     }
+
+    // todo test that tenant can be created even in another DB context - that the central trait works
 }
 
 class MyTenant extends Tenant

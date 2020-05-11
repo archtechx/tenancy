@@ -63,4 +63,9 @@ class Tenancy
 
         return new $class;
     }
+
+    public function find($id): ?Tenant
+    {
+        return $this->model()->find($id);
+    }
 }

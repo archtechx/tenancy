@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Testing\Assert as PHPUnit;
 use Illuminate\Testing\TestResponse;
-use Stancl\Tenancy\Tenant;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
-    public $autoCreateTenant = false;
-    public $autoInitTenancy = false;
-
     /**
      * Setup the test environment.
      *
@@ -22,7 +19,8 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     {
         parent::setUp();
 
-        // Redis::connection('cache')->flushdb();
+        Redis::connection('default')->flushdb();
+        Redis::connection('cache')->flushdb();
 
         file_put_contents(database_path('central.sqlite'), '');
         $this->artisan('migrate:fresh', [
@@ -31,14 +29,6 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             '--realpath' => true,
         ]);
 
-        if ($this->autoCreateTenant) {
-            $this->createTenant();
-        }
-
-        if ($this->autoInitTenancy) {
-            $this->initTenancy();
-        }
-
         TestResponse::macro('assertContent', function ($content) {
             /** @var TestResponse $this */
 
@@ -46,16 +36,6 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
             return $this;
         });
-    }
-
-    public function createTenant($domains = ['test.localhost'])
-    {
-        Tenant::new()->withDomains($domains)->save();
-    }
-
-    public function initTenancy($domain = 'test.localhost')
-    {
-        return tenancy()->init($domain);
     }
 
     /**
@@ -75,24 +55,10 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'database.redis.cache.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
             'database.redis.default.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
             'database.redis.options.prefix' => 'foo',
-            'database.redis.tenancy' => [
-                'host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
-                'password' => env('TENANCY_TEST_REDIS_PASSWORD', null),
-                'port' => env('TENANCY_TEST_REDIS_PORT', 6379),
-                // Use the #14 Redis database unless specified otherwise.
-                // Make sure you don't store anything in this db!
-                'database' => env('TENANCY_TEST_REDIS_DB', 14),
-                'prefix' => 'abc', // unrelated to tenancy, but this doesn't seem to have an effect? try to replicate in a fresh laravel installation
-            ],
             'database.connections.central' => [
                 'driver' => 'sqlite',
                 'database' => database_path('central.sqlite'),
                 // 'database' => ':memory:',
-            ],
-            'tenancy.database' => [
-                'template_connection' => 'central',
-                'prefix' => 'tenant',
-                'suffix' => '.sqlite',
             ],
             'database.connections.sqlite.database' => ':memory:',
             'database.connections.mysql.host' => env('TENANCY_TEST_MYSQL_HOST', '127.0.0.1'),
@@ -132,7 +98,6 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     protected function getPackageAliases($app)
     {
         return [
-            'Tenant' => \Stancl\Tenancy\Facades\Tenant::class,
             'Tenancy' => \Stancl\Tenancy\Facades\Tenancy::class,
             'GlobalCache' => \Stancl\Tenancy\Facades\GlobalCache::class,
         ];
@@ -163,11 +128,6 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     public function randomString(int $length = 10)
     {
         return substr(str_shuffle(str_repeat($x = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', (int) (ceil($length / strlen($x))))), 1, $length);
-    }
-
-    public function isContainerized()
-    {
-        return env('CONTINUOUS_INTEGRATION') || env('DOCKER');
     }
 
     public function assertArrayIsSubset($subset, $array, string $message = ''): void
