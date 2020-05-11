@@ -8,7 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 class JobPipeline implements ShouldQueue
 {
     /** @var bool */
-    public static $shouldQueueByDefault = true;
+    public static $shouldBeQueuedByDefault = false;
 
     /** @var callable[]|string[] */
     public $jobs;
@@ -22,16 +22,16 @@ class JobPipeline implements ShouldQueue
     public $passable;
 
     /** @var bool */
-    public $shouldQueue;
+    public $shouldBeQueued;
 
-    public function __construct($jobs, callable $send = null, bool $shouldQueue = null)
+    public function __construct($jobs, callable $send = null, bool $shouldBeQueued = null)
     {
         $this->jobs = $jobs;
         $this->send = $send ?? function ($event) {
             // If no $send callback is set, we'll just pass the event through the jobs.
             return $event;
         };
-        $this->shouldQueue = $shouldQueue ?? static::$shouldQueueByDefault;
+        $this->shouldBeQueued = $shouldBeQueued ?? static::$shouldBeQueuedByDefault;
     }
 
     /** @param callable[]|string[] $jobs */
@@ -47,15 +47,11 @@ class JobPipeline implements ShouldQueue
         return $this;
     }
 
-    public function shouldQueue(bool $shouldQueue = null)
+    public function shouldBeQueued(bool $shouldBeQueued)
     {
-        if ($shouldQueue !== null) {
-            $this->shouldQueue = $shouldQueue;
+        $this->shouldBeQueued = $shouldBeQueued;
 
-            return $this;
-        }
-
-        return $this->shouldQueue;
+        return $this;
     }
 
     public function handle(): void
@@ -71,14 +67,20 @@ class JobPipeline implements ShouldQueue
     public function toListener(): Closure
     {
         return function (...$args) {
-            dispatch($this->queueFriendly($args));
+            $executable = $this->executable($args);
+
+            if ($this->shouldBeQueued) {
+                dispatch($executable);
+            } else {
+                dispatch_now($executable);
+            }
         };
     }
 
     /**
      * Return a serializable version of the current object.
      */
-    public function queueFriendly($listenerArgs): self
+    public function executable($listenerArgs): self
     {
         $clone = clone $this;
 

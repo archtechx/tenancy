@@ -4,26 +4,43 @@ namespace Stancl\Tenancy\Tests\v3;
 
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
+use Spatie\Valuestore\Valuestore;
 use Stancl\Tenancy\Database\Models\Tenant;
 use Stancl\Tenancy\Events\Listeners\JobPipeline;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Tests\TestCase;
 
-// todo the shouldQueue() doesnt make sense? test if it really works or if its just because of sync queue driver
 class JobPipelineTest extends TestCase
 {
+    public $mockConsoleOutput = false;
+
+    /** @var Valuestore */
+    protected $valuestore;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        config(['queue.default' => 'redis']);
+
+        file_put_contents(__DIR__ . '/../Etc/tmp/jobpipelinetest.json', '{}');
+        $this->valuestore = Valuestore::make(__DIR__ . '/../Etc/tmp/jobpipelinetest.json')->flush();
+    }
+
     /** @test */
     public function job_pipeline_can_listen_to_any_event()
     {
         Event::listen(TenantCreated::class, JobPipeline::make([
             FooJob::class,
-        ])->toListener());
+        ])->send(function () {
+            return $this->valuestore;
+        })->toListener());
 
-        $this->assertFalse(app()->bound('foo'));
+        $this->assertFalse($this->valuestore->has('foo'));
 
         Tenant::create();
 
-        $this->assertSame('bar', app('foo'));
+        $this->assertSame('bar', $this->valuestore->get('foo'));
     }
 
     /** @test */
@@ -33,12 +50,14 @@ class JobPipelineTest extends TestCase
 
         Event::listen(TenantCreated::class, JobPipeline::make([
             FooJob::class,
-        ])->shouldQueue(true)->toListener());
+        ])->send(function () {
+            return $this->valuestore;
+        })->shouldBeQueued(true)->toListener());
 
         Queue::assertNothingPushed();
 
         Tenant::create();
-        $this->assertFalse(app()->bound('foo'));
+        $this->assertFalse($this->valuestore->has('foo'));
 
         Queue::pushed(JobPipeline::class, function (JobPipeline $pipeline) {
             $this->assertSame([FooJob::class], $pipeline->jobs);
@@ -52,43 +71,94 @@ class JobPipelineTest extends TestCase
             FirstJob::class,
             SecondJob::class,
         ])->send(function (TenantCreated $event) {
-            return $event->tenant;
+            return [$event->tenant, $this->valuestore];
         })->toListener());
 
-        $this->assertFalse(app()->bound('foo'));
+        $this->assertFalse($this->valuestore->has('foo'));
 
         Tenant::create();
 
-        $this->assertSame('first job changed property', app('foo'));
+        $this->assertSame('first job changed property', $this->valuestore->get('foo'));
     }
 
     /** @test */
     public function send_can_return_multiple_arguments()
     {
-        // todo
+        Event::listen(TenantCreated::class, JobPipeline::make([
+            JobWithMultipleArguments::class
+        ])->send(function () {
+            return ['a', 'b'];
+        })->toListener());
+
+        $this->assertFalse(app()->bound('test_args'));
+
+        Tenant::create();
+
+        $this->assertSame(['a', 'b'], app('test_args'));
     }
 }
 
 class FooJob
 {
+    protected $valuestore;
+
+    public function __construct(Valuestore $valuestore)
+    {
+        $this->valuestore = $valuestore;
+    }
+
     public function handle()
     {
-        app()->instance('foo', 'bar');
+        $this->valuestore->put('foo', 'bar');
     }
 };
 
 class FirstJob
 {
-    public function handle(Tenant $tenant)
+    public $tenant;
+
+    public function __construct(Tenant $tenant)
     {
-        $tenant->foo = 'first job changed property';
+        $this->tenant = $tenant;
+    }
+
+    public function handle()
+    {
+        $this->tenant->foo = 'first job changed property';
     }
 }
 
 class SecondJob
 {
-    public function handle(Tenant $tenant)
+    public $tenant;
+
+    protected $valuestore;
+
+    public function __construct(Tenant $tenant, Valuestore $valuestore)
     {
-        app()->instance('foo', $tenant->foo);
+        $this->tenant = $tenant;
+        $this->valuestore = $valuestore;
+    }
+
+    public function handle()
+    {
+        $this->valuestore->put('foo', $this->tenant->foo);
+    }
+}
+
+class JobWithMultipleArguments
+{
+    protected $first;
+    protected $second;
+
+    public function __construct($first, $second)
+    {
+        $this->first = $first;
+        $this->second = $second;
+    }
+
+    public function handle()
+    {
+        app()->instance('test_args', [$this->first, $this->second]);
     }
 }
