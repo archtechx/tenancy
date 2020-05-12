@@ -54,4 +54,11 @@ class MySQLDatabaseManager implements TenantDatabaseManager, CanSetConnection
     {
         return (bool) $this->database()->select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$name'");
     }
+
+    public function makeConnectionConfig(array $baseConfig, string $databaseName): array
+    {
+        $baseConfig['database'] = $databaseName;
+
+        return $baseConfig;
+    }
 }

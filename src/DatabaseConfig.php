@@ -102,19 +102,11 @@ class DatabaseConfig
     public function connection(): array
     {
         $template = $this->getTemplateConnectionName();
-
         $templateConnection = config("database.connections.{$template}");
 
-        // todo move a lot of this logic to the tenant DB manager so that we dont have to deal with the separators & modifying DB names here
-        $databaseName = $this->getName();
-        if (($manager = $this->manager()) instanceof ModifiesDatabaseNameForConnection) {
-            /** @var ModifiesDatabaseNameForConnection $manager */
-            $databaseName = $manager->getDatabaseNameForConnection($databaseName);
-        }
-
-        return array_merge($templateConnection, $this->tenantConfig(), [
-            $this->manager()->getSeparator() => $databaseName,
-        ]);
+        return $this->manager()->makeConnectionConfig(
+            array_merge($templateConnection, $this->tenantConfig()), $this->getName()
+        );
     }
 
     /**

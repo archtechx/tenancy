@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\TenantDatabaseManagers;
 
-use Stancl\Tenancy\Contracts\ModifiesDatabaseNameForConnection;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 
-class SQLiteDatabaseManager implements TenantDatabaseManager, ModifiesDatabaseNameForConnection
+class SQLiteDatabaseManager implements TenantDatabaseManager
 {
     public function getSeparator(): string
     {
@@ -38,8 +37,10 @@ class SQLiteDatabaseManager implements TenantDatabaseManager, ModifiesDatabaseNa
         return file_exists(database_path($name));
     }
 
-    public function getDatabaseNameForConnection(string $original): string
+    public function makeConnectionConfig(array $baseConfig, string $databaseName): array
     {
-        return database_path($original);
+        $baseConfig['database'] = database_path($databaseName);;
+
+        return $baseConfig;
     }
 }
