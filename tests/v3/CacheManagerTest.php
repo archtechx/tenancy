@@ -2,25 +2,41 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests;
+namespace Stancl\Tenancy\Tests\v3;
 
-use Stancl\Tenancy\Tenant;
+use Illuminate\Support\Facades\Event;
+use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Events\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\TenancyBootstrappers\CacheTenancyBootstrapper;
+use Stancl\Tenancy\Tests\TestCase;
 
 class CacheManagerTest extends TestCase
 {
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        config(['tenancy.bootstrappers' => [
+            CacheTenancyBootstrapper::class,
+        ]]);
+        
+        Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    }
+
     /** @test */
     public function default_tag_is_automatically_applied()
     {
-        $this->createTenant();
-        $this->initTenancy();
+        tenancy()->initialize(Tenant::create());
+
         $this->assertArrayIsSubset([config('tenancy.cache.tag_base') . tenant('id')], cache()->tags('foo')->getTags()->getNames());
     }
 
     /** @test */
     public function tags_are_merged_when_array_is_passed()
     {
-        $this->createTenant();
-        $this->initTenancy();
+        tenancy()->initialize(Tenant::create());
+
         $expected = [config('tenancy.cache.tag_base') . tenant('id'), 'foo', 'bar'];
         $this->assertEquals($expected, cache()->tags(['foo', 'bar'])->getTags()->getNames());
     }
@@ -28,8 +44,8 @@ class CacheManagerTest extends TestCase
     /** @test */
     public function tags_are_merged_when_string_is_passed()
     {
-        $this->createTenant();
-        $this->initTenancy();
+        tenancy()->initialize(Tenant::create());
+
         $expected = [config('tenancy.cache.tag_base') . tenant('id'), 'foo'];
         $this->assertEquals($expected, cache()->tags('foo')->getTags()->getNames());
     }
@@ -37,8 +53,8 @@ class CacheManagerTest extends TestCase
     /** @test */
     public function exception_is_thrown_when_zero_arguments_are_passed_to_tags_method()
     {
-        $this->createTenant();
-        $this->initTenancy();
+        tenancy()->initialize(Tenant::create());
+
         $this->expectException(\Exception::class);
         cache()->tags();
     }
@@ -46,8 +62,8 @@ class CacheManagerTest extends TestCase
     /** @test */
     public function exception_is_thrown_when_more_than_one_argument_is_passed_to_tags_method()
     {
-        $this->createTenant();
-        $this->initTenancy();
+        tenancy()->initialize(Tenant::create());
+
         $this->expectException(\Exception::class);
         cache()->tags(1, 2);
     }
@@ -55,14 +71,14 @@ class CacheManagerTest extends TestCase
     /** @test */
     public function tags_separate_cache_well_enough()
     {
-        Tenant::new()->withDomains(['foo.localhost'])->save();
-        tenancy()->init('foo.localhost');
+        $tenant1 = Tenant::create();
+        tenancy()->initialize($tenant1);
 
         cache()->put('foo', 'bar', 1);
         $this->assertSame('bar', cache()->get('foo'));
 
-        Tenant::new()->withDomains(['bar.localhost'])->save();
-        tenancy()->init('bar.localhost');
+        $tenant2 = Tenant::create();
+        tenancy()->initialize($tenant2);
 
         $this->assertNotSame('bar', cache()->get('foo'));
 
@@ -73,14 +89,14 @@ class CacheManagerTest extends TestCase
     /** @test */
     public function invoking_the_cache_helper_works()
     {
-        Tenant::new()->withDomains(['foo.localhost'])->save();
-        tenancy()->init('foo.localhost');
+        $tenant1 = Tenant::create();
+        tenancy()->initialize($tenant1);
 
         cache(['foo' => 'bar'], 1);
         $this->assertSame('bar', cache('foo'));
 
-        Tenant::new()->withDomains(['bar.localhost'])->save();
-        tenancy()->init('bar.localhost');
+        $tenant2 = Tenant::create();
+        tenancy()->initialize($tenant2);
 
         $this->assertNotSame('bar', cache('foo'));
 
@@ -91,32 +107,32 @@ class CacheManagerTest extends TestCase
     /** @test */
     public function cache_is_persisted()
     {
-        Tenant::new()->withDomains(['foo.localhost'])->save();
-        tenancy()->init('foo.localhost');
+        $tenant1 = Tenant::create();
+        tenancy()->initialize($tenant1);
 
         cache(['foo' => 'bar'], 10);
         $this->assertSame('bar', cache('foo'));
 
-        tenancy()->endTenancy();
+        tenancy()->end();
 
-        tenancy()->init('foo.localhost');
+        tenancy()->initialize($tenant1);
         $this->assertSame('bar', cache('foo'));
     }
 
     /** @test */
     public function cache_is_persisted_when_reidentification_is_used()
     {
-        Tenant::new()->withDomains(['foo.localhost'])->save();
-        Tenant::new()->withDomains(['bar.localhost'])->save();
-        tenancy()->init('foo.localhost');
+        $tenant1 = Tenant::create();
+        $tenant2 = Tenant::create();
+        tenancy()->initialize($tenant1);
 
         cache(['foo' => 'bar'], 10);
         $this->assertSame('bar', cache('foo'));
 
-        tenancy()->init('bar.localhost');
-        tenancy()->endTenancy();
+        tenancy()->initialize($tenant2);
+        tenancy()->end();
 
-        tenancy()->init('foo.localhost');
+        tenancy()->initialize($tenant1);
         $this->assertSame('bar', cache('foo'));
     }
 }

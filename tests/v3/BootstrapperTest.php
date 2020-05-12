@@ -154,6 +154,12 @@ class BootstrapperTest extends TestCase
             FilesystemTenancyBootstrapper::class
         ]]);
 
+        $old_storage_path = storage_path();
+        $old_storage_facade_roots = [];
+        foreach (config('tenancy.filesystem.disks') as $disk) {
+            $old_storage_facade_roots[$disk] = config("filesystems.disks.{$disk}.root");
+        }
+
         $tenant1 = Tenant::create();
         $tenant2 = Tenant::create();
 
@@ -176,6 +182,27 @@ class BootstrapperTest extends TestCase
         tenancy()->initialize($tenant3);
         $this->assertFalse(Storage::disk('public')->exists('foo'));
         $this->assertFalse(Storage::disk('public')->exists('abc'));
+
+        // Check suffixing logic
+        $new_storage_path = storage_path();
+        $this->assertEquals($old_storage_path . '/' . config('tenancy.filesystem.suffix_base') . tenant('id'), $new_storage_path);
+
+        foreach (config('tenancy.filesystem.disks') as $disk) {
+            $suffix = config('tenancy.filesystem.suffix_base') . tenant('id');
+            $current_path_prefix = Storage::disk($disk)->getAdapter()->getPathPrefix();
+
+            if ($override = config("tenancy.filesystem.root_override.{$disk}")) {
+                $correct_path_prefix = str_replace('%storage_path%', storage_path(), $override);
+            } else {
+                if ($base = $old_storage_facade_roots[$disk]) {
+                    $correct_path_prefix = $base . "/$suffix/";
+                } else {
+                    $correct_path_prefix = "$suffix/";
+                }
+            }
+
+            $this->assertSame($correct_path_prefix, $current_path_prefix);
+        }
     }
 
     // for queues see QueueTest

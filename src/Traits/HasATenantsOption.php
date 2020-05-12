@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Traits;
 
+use Illuminate\Support\LazyCollection;
 use Symfony\Component\Console\Input\InputOption;
 
 trait HasATenantsOption
@@ -15,9 +16,14 @@ trait HasATenantsOption
         ], parent::getOptions());
     }
 
-    protected function getTenants(): array
+    protected function getTenants(): LazyCollection
     {
-        return tenancy()->all($this->option('tenants'))->all();
+        return tenancy()
+            ->query()
+            ->when($this->option('tenants'), function ($query) {
+                $query->whereIn(tenancy()->model()->getTenantKeyName(), $this->option('tenants'));
+            })
+            ->cursor();
     }
 
     public function __construct()

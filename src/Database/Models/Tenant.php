@@ -10,7 +10,7 @@ use Stancl\Tenancy\Contracts;
 // todo @property
 class Tenant extends Model implements Contracts\TenantWithDatabase
 {
-    use Concerns\CentralConnection, Concerns\HasADataColumn, Concerns\GeneratesIds, Concerns\HasADataColumn {
+    use Concerns\CentralConnection, Concerns\HasADataColumn, Concerns\GeneratesIds, Concerns\HasADataColumn  {
         Concerns\HasADataColumn::getCasts as dataColumnCasts;
     }
 
@@ -41,14 +41,11 @@ class Tenant extends Model implements Contracts\TenantWithDatabase
 
     public static function internalPrefix(): string
     {
-        return config('tenancy.internal_column_prefix');
+        return config('tenancy.internal_prefix');
     }
 
     /**
      * Get an internal key.
-     *
-     * @param string $key
-     * @return mixed
      */
     public function getInternal(string $key)
     {
@@ -57,14 +54,10 @@ class Tenant extends Model implements Contracts\TenantWithDatabase
 
     /**
      * Set internal key.
-     *
-     * @param string $key
-     * @param mixed $value
-     * @return $this
      */
     public function setInternal(string $key, $value)
     {
-        $this->setAttribute($key, $value);
+        $this->setAttribute(static::internalPrefix() . $key, $value);
 
         return $this;
     }

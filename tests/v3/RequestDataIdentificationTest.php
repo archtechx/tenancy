@@ -2,26 +2,27 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests;
+namespace Stancl\Tenancy\Tests\v3;
 
 use Illuminate\Support\Facades\Route;
+use Stancl\Tenancy\Database\Models\Tenant;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
-use Stancl\Tenancy\Tenant;
+use Stancl\Tenancy\Tests\TestCase;
 
 class RequestDataIdentificationTest extends TestCase
 {
-    public $autoCreateTenant = false;
-    public $autoInitTenancy = false;
-
     public function setUp(): void
     {
         parent::setUp();
 
         config([
-            'tenancy.exempt_domains' => [
+            'tenancy.central_domains' => [
                 'localhost',
             ],
         ]);
+
+        InitializeTenancyByRequestData::$header = 'X-Tenant';
+        InitializeTenancyByRequestData::$queryParameter = 'tenant';
 
         Route::middleware(InitializeTenancyByRequestData::class)->get('/test', function () {
             return 'Tenant id: ' . tenant('id');
@@ -31,11 +32,9 @@ class RequestDataIdentificationTest extends TestCase
     /** @test */
     public function header_identification_works()
     {
-        $this->app->bind(InitializeTenancyByRequestData::class, function () {
-            return new InitializeTenancyByRequestData('X-Tenant');
-        });
-        $tenant = Tenant::new()->save();
-        $tenant2 = Tenant::new()->save();
+        InitializeTenancyByRequestData::$header = 'X-Tenant';
+        $tenant = Tenant::create();
+        $tenant2 = Tenant::create();
 
         $this
             ->withoutExceptionHandling()
@@ -48,11 +47,11 @@ class RequestDataIdentificationTest extends TestCase
     /** @test */
     public function query_parameter_identification_works()
     {
-        $this->app->bind(InitializeTenancyByRequestData::class, function () {
-            return new InitializeTenancyByRequestData(null, 'tenant');
-        });
-        $tenant = Tenant::new()->save();
-        $tenant2 = Tenant::new()->save();
+        InitializeTenancyByRequestData::$header = null;
+        InitializeTenancyByRequestData::$queryParameter = 'tenant';
+
+        $tenant = Tenant::create();
+        $tenant2 = Tenant::create();
 
         $this
             ->withoutExceptionHandling()

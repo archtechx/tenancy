@@ -2,18 +2,41 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests;
+namespace Stancl\Tenancy\Tests\v3;
 
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
-use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
+use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Events\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Events\Listeners\JobPipeline;
+use Stancl\Tenancy\Events\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Events\TenancyEnded;
+use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\TenancyBootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Tests\TestCase;
 
 class CommandsTest extends TestCase
 {
-    public $autoCreateTenant = true;
-    public $autoInitTenancy = false;
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+            return $event->tenant;
+        })->toListener());
+
+        config(['tenancy.bootstrappers' => [
+            DatabaseTenancyBootstrapper::class
+        ]]);
+        
+        Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+        Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+    }
 
     /** @test */
     public function migrate_command_doesnt_change_the_db_connection()
@@ -32,35 +55,42 @@ class CommandsTest extends TestCase
     /** @test */
     public function migrate_command_works_without_options()
     {
+        $tenant = Tenant::create();
+
         $this->assertFalse(Schema::hasTable('users'));
         Artisan::call('tenants:migrate');
         $this->assertFalse(Schema::hasTable('users'));
-        tenancy()->init('test.localhost');
+        
+        tenancy()->initialize($tenant);
+        
         $this->assertTrue(Schema::hasTable('users'));
     }
 
     /** @test */
     public function migrate_command_works_with_tenants_option()
     {
-        $tenant = Tenant::new()->withDomains(['test2.localhost'])->save();
+        $tenant = Tenant::create();
         Artisan::call('tenants:migrate', [
             '--tenants' => [$tenant['id']],
         ]);
 
         $this->assertFalse(Schema::hasTable('users'));
-        tenancy()->init('test.localhost');
+        tenancy()->initialize(Tenant::create());
         $this->assertFalse(Schema::hasTable('users'));
 
-        tenancy()->init('test2.localhost');
+        tenancy()->initialize($tenant);
         $this->assertTrue(Schema::hasTable('users'));
     }
 
     /** @test */
     public function rollback_command_works()
     {
+        $tenant = Tenant::create();
         Artisan::call('tenants:migrate');
         $this->assertFalse(Schema::hasTable('users'));
-        tenancy()->init('test.localhost');
+        
+        tenancy()->initialize($tenant);
+        
         $this->assertTrue(Schema::hasTable('users'));
         Artisan::call('tenants:rollback');
         $this->assertFalse(Schema::hasTable('users'));
@@ -93,7 +123,7 @@ class CommandsTest extends TestCase
     /** @test */
     public function database_connection_is_switched_to_default_when_tenancy_has_been_initialized()
     {
-        tenancy()->init('test.localhost');
+        tenancy()->initialize(Tenant::create());
 
         $this->database_connection_is_switched_to_default();
     }
@@ -101,7 +131,7 @@ class CommandsTest extends TestCase
     /** @test */
     public function run_commands_works()
     {
-        $id = Tenant::new()->withDomains(['run.localhost'])->save()['id'];
+        $id = Tenant::create()->id;
 
         Artisan::call('tenants:migrate', ['--tenants' => [$id]]);
 
@@ -121,34 +151,25 @@ class CommandsTest extends TestCase
             mkdir($dir, 0777, true);
         }
 
-        if (app()->version()[0] === '6') {
-            file_put_contents(app_path('Http/Kernel.php'), file_get_contents(__DIR__ . '/Etc/defaultHttpKernelv6.stub'));
-        } else {
-            file_put_contents(app_path('Http/Kernel.php'), file_get_contents(__DIR__ . '/Etc/defaultHttpKernelv7.stub'));
-        }
-
-        $this->artisan('tenancy:install')
-            ->expectsQuestion('Do you wish to publish the migrations that create these tables?', 'yes');
+        $this->artisan('tenancy:install');
         $this->assertFileExists(base_path('routes/tenant.php'));
         $this->assertFileExists(base_path('config/tenancy.php'));
         $this->assertFileExists(database_path('migrations/2019_09_15_000010_create_tenants_table.php'));
         $this->assertFileExists(database_path('migrations/2019_09_15_000020_create_domains_table.php'));
         $this->assertDirectoryExists(database_path('migrations/tenant'));
-
-        if (app()->version()[0] === '6') {
-            $this->assertSame(file_get_contents(__DIR__ . '/Etc/modifiedHttpKernelv6.stub'), file_get_contents(app_path('Http/Kernel.php')));
-        } else {
-            $this->assertSame(file_get_contents(__DIR__ . '/Etc/modifiedHttpKernelv7.stub'), file_get_contents(app_path('Http/Kernel.php')));
-        }
     }
 
     /** @test */
     public function migrate_fresh_command_works()
     {
+        $tenant = Tenant::create();
+
         $this->assertFalse(Schema::hasTable('users'));
         Artisan::call('tenants:migrate-fresh');
         $this->assertFalse(Schema::hasTable('users'));
-        tenancy()->init('test.localhost');
+        
+        tenancy()->initialize($tenant);
+        
         $this->assertTrue(Schema::hasTable('users'));
 
         $this->assertFalse(DB::table('users')->exists());
@@ -158,18 +179,5 @@ class CommandsTest extends TestCase
         // test that db is wiped
         Artisan::call('tenants:migrate-fresh');
         $this->assertFalse(DB::table('users')->exists());
-    }
-
-    /** @test */
-    public function create_command_works()
-    {
-        Artisan::call('tenants:create -d aaa.localhost -d bbb.localhost plan=free email=foo@test.local');
-        $tenant = tenancy()->all()[1]; // a tenant is autocreated prior to this
-        $data = $tenant->data;
-        unset($data['id']);
-        unset($data['_tenancy_db_name']);
-
-        $this->assertSame(['plan' => 'free', 'email' => 'foo@test.local'], $data);
-        $this->assertSame(['aaa.localhost', 'bbb.localhost'], $tenant->domains);
     }
 }

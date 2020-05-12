@@ -32,7 +32,7 @@ trait TenantAwareCommand
     /**
      * Get an array of tenants for which the command should be executed.
      *
-     * @return Tenant[]
+     * @return Tenant[]|mixed
      */
-    abstract protected function getTenants(): array;
+    abstract protected function getTenants();
 }

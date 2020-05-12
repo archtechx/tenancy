@@ -6,9 +6,11 @@ namespace Stancl\Tenancy\Features;
 
 use Illuminate\Contracts\Config\Repository;
 use Stancl\Tenancy\Contracts\Feature;
+use Stancl\Tenancy\Tenancy;
 use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\TenantManager;
 
+// todo rewrite this
 class TenantConfig implements Feature
 {
     /** @var Repository */
@@ -30,7 +32,7 @@ class TenantConfig implements Feature
         }
     }
 
-    public function bootstrap(TenantManager $tenantManager): void
+    public function bootstrap(Tenancy $tenancy): void
     {
         $tenantManager->eventListener('bootstrapped', function (TenantManager $manager) {
             $this->setTenantConfig($manager->getTenant());

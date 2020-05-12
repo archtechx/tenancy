@@ -39,10 +39,6 @@ class HttpKernel extends Kernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
 
-        'tenancy' => [
-            \Stancl\Tenancy\Middleware\InitializeTenancy::class,
-        ],
-
         'api' => [
             'throttle:60,1',
             'bindings',
@@ -66,18 +62,5 @@ class HttpKernel extends Kernel
         'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-
-        'tenancy' => \Stancl\Tenancy\Middleware\InitializeTenancy::class,
-    ];
-
-    /**
-     * The priority-sorted list of middleware.
-     *
-     * This forces non-global middleware to always be in the given order.
-     *
-     * @var array
-     */
-    protected $middlewarePriority = [
-        \Stancl\Tenancy\Middleware\InitializeTenancy::class,
     ];
 }

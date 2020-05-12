@@ -2,29 +2,58 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests;
+namespace Stancl\Tenancy\Tests\v3;
 
-use Stancl\Tenancy\Tenant;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
+use Stancl\Tenancy\Controllers\TenantAssetsController;
+use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Events\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
+use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
+use Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper;
+use Stancl\Tenancy\Tests\TestCase;
 
 class TenantAssetTest extends TestCase
 {
-    public $autoCreateTenant = false;
-    public $autoInitTenancy = false;
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        config(['tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class
+        ]]);
+        
+        Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    }
+
+    public function tearDown(): void
+    {
+        parent::tearDown();
+
+        // Cleanup
+        TenantAssetsController::$tenancyMiddleware = InitializeTenancyByDomain::class;
+    }
 
     /** @test */
     public function asset_can_be_accessed_using_the_url_returned_by_the_tenant_asset_helper()
     {
-        Tenant::create('localhost');
-        tenancy()->init('localhost');
+        TenantAssetsController::$tenancyMiddleware = InitializeTenancyByRequestData::class;
+
+        $tenant = Tenant::create();
+        tenancy()->initialize($tenant);
 
         $filename = 'testfile' . $this->randomString(10);
-        \Storage::disk('public')->put($filename, 'bar');
+        Storage::disk('public')->put($filename, 'bar');
         $path = storage_path("app/public/$filename");
 
         // response()->file() returns BinaryFileResponse whose content is
         // inaccessible via getContent, so ->assertSee() can't be used
         $this->assertFileExists($path);
-        $response = $this->get(tenant_asset($filename));
+        $response = $this->get(tenant_asset($filename), [
+            'X-Tenant' => $tenant->id,
+        ]);
 
         $response->assertSuccessful();
 
@@ -40,8 +69,8 @@ class TenantAssetTest extends TestCase
     {
         config(['app.asset_url' => null]);
 
-        Tenant::create('foo.localhost');
-        tenancy()->init('foo.localhost');
+        $tenant = Tenant::create();
+        tenancy()->initialize($tenant);
 
         $this->assertSame(route('stancl.tenancy.asset', ['path' => 'foo']), asset('foo'));
     }
@@ -51,8 +80,8 @@ class TenantAssetTest extends TestCase
     {
         config(['app.asset_url' => 'https://an-s3-bucket']);
 
-        $tenant = Tenant::create(['foo.localhost']);
-        tenancy()->init('foo.localhost');
+        $tenant = Tenant::create();
+        tenancy()->initialize($tenant);
 
         $this->assertSame("https://an-s3-bucket/tenant{$tenant->id}/foo", asset('foo'));
     }
@@ -63,8 +92,8 @@ class TenantAssetTest extends TestCase
         $original = global_asset('foobar');
         $this->assertSame(asset('foobar'), global_asset('foobar'));
 
-        Tenant::create(['foo.localhost']);
-        tenancy()->init('foo.localhost');
+        $tenant = Tenant::create();
+        tenancy()->initialize($tenant);
 
         $this->assertSame($original, global_asset('foobar'));
     }
@@ -79,8 +108,8 @@ class TenantAssetTest extends TestCase
             'tenancy.filesystem.asset_helper_tenancy' => false,
         ]);
 
-        Tenant::create('foo.localhost');
-        tenancy()->init('foo.localhost');
+        $tenant = Tenant::create();
+        tenancy()->initialize($tenant);
 
         $this->assertSame($original, asset('foo'));
     }

@@ -32,8 +32,7 @@ class Run extends Command
      */
     public function handle()
     {
-        $originalTenant = tenancy()->getTenant();
-        tenancy()->all($this->option('tenants'))->each(function ($tenant) {
+        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
             $this->line("Tenant: {$tenant['id']}");
             tenancy()->initialize($tenant);
 
@@ -54,12 +53,6 @@ class Run extends Command
 
             // Run command
             $this->call($this->argument('commandname'), array_merge($arguments, $options));
-
-            tenancy()->endTenancy();
         });
-
-        if ($originalTenant) {
-            tenancy()->initialize($originalTenant);
-        }
     }
 }

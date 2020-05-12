@@ -9,11 +9,6 @@ use Stancl\Tenancy\Contracts\TenantWithDatabase;
 
 class SQLiteDatabaseManager implements TenantDatabaseManager
 {
-    public function getSeparator(): string
-    {
-        return 'database';
-    }
-
     public function createDatabase(TenantWithDatabase $tenant): bool
     {
         try {
@@ -39,7 +34,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
 
     public function makeConnectionConfig(array $baseConfig, string $databaseName): array
     {
-        $baseConfig['database'] = database_path($databaseName);;
+        $baseConfig['database'] = database_path($databaseName);
 
         return $baseConfig;
     }

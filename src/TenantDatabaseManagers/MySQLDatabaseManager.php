@@ -21,11 +21,6 @@ class MySQLDatabaseManager implements TenantDatabaseManager, CanSetConnection
         $this->connection = $config->get('tenancy.database_manager_connections.mysql');
     }
 
-    public function getSeparator(): string
-    {
-        return 'database';
-    }
-
     protected function database(): Connection
     {
         return DB::connection($this->connection);

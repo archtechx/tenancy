@@ -2,17 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests;
+namespace Stancl\Tenancy\Tests\Features;
 
-use Route;
+use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Features\CrossDomainRedirect;
-use Stancl\Tenancy\Tenant;
+use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Tests\TestCase;
 
 class RedirectTest extends TestCase
 {
-    public $autoCreateTenant = false;
-    public $autoInitTenancy = false;
-
     /** @test */
     public function tenant_redirect_macro_replaces_only_the_hostname()
     {
@@ -28,8 +26,8 @@ class RedirectTest extends TestCase
             return redirect()->route('home')->domain('abcd');
         });
 
-        Tenant::create('foo.localhost');
-        tenancy()->init('foo.localhost');
+        $tenant = Tenant::create();
+        tenancy()->initialize($tenant);
 
         $this->get('/redirect')
             ->assertRedirect('http://abcd/foobar');
@@ -42,9 +40,7 @@ class RedirectTest extends TestCase
             return 'Foo';
         })->name('foo');
 
-        $this->assertSame('http://foo.localhost/abcdef/as/df', tenant_route('foo', ['a' => 'as', 'b' => 'df'], 'foo.localhost'));
-        $this->assertSame('http://foo.localhost/abcdef', tenant_route('foo', [], 'foo.localhost'));
-
-        $this->assertSame('http://' . request()->getHost() . '/abcdef/x/y', tenant_route('foo', ['a' => 'x', 'b' => 'y']));
+        $this->assertSame('http://foo.localhost/abcdef/as/df', tenant_route('foo.localhost', 'foo', ['a' => 'as', 'b' => 'df']));
+        $this->assertSame('http://foo.localhost/abcdef', tenant_route('foo.localhost', 'foo', []));
     }
 }

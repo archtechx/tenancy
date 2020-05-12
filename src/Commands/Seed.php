@@ -55,18 +55,11 @@ class Seed extends SeedCommand
             return;
         }
 
-        tenancy()
-            ->query()
-            ->when($this->option('tenants'), function ($query) {
-                $query->whereIn(tenancy()->model()->getTenantKeyName(), $this->option('tenants'));
-            })
-            ->each(function (TenantWithDatabase $tenant) {
+        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
             $this->line("Tenant: {$tenant['id']}");
 
-            $tenant->run(function () {
-                // Seed
-                parent::handle();
-            });
+            // Seed
+            parent::handle();
 
             event(new DatabaseSeeded($tenant));
         });

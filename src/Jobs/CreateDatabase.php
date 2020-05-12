@@ -27,7 +27,8 @@ class CreateDatabase implements ShouldQueue
 
     public function handle()
     {
-        if ($this->tenant->getAttribute('_tenancy_create_database') !== false) {
+        if ($this->tenant->getInternal('create_database') !== false) {
+            $this->tenant->database()->makeCredentials();
             $this->tenant->database()->manager()->createDatabase($this->tenant);
         }
     }

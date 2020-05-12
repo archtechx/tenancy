@@ -8,7 +8,7 @@ use Stancl\Tenancy\Database\Models\Tenant;
 return [
     'tenant_model' => Tenant::class,
     'domain_model' => Domain::class,
-    'internal_column_prefix' => 'tenancy_',
+    'internal_prefix' => 'tenancy_',
 
     'central_connection' => 'central',
     'template_tenant_connection' => null,
@@ -45,13 +45,6 @@ return [
      * Controller namespace used by routes in routes/tenant.php.
      */
     'tenant_route_namespace' => 'App\Http\Controllers',
-
-    /**
-     * Central domains (hostnames), e.g. domains which host landing pages, sign up pages, etc.
-     */
-    'exempt_domains' => [
-        // 'localhost',
-    ],
 
     /**
      * Tenancy bootstrappers are executed when tenancy is initialized.
