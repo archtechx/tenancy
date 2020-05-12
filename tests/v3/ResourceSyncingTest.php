@@ -11,12 +11,13 @@ use Stancl\Tenancy\Contracts\Syncable;
 use Stancl\Tenancy\Contracts\SyncMaster;
 use Stancl\Tenancy\Database\Models\Concerns\CentralConnection;
 use Stancl\Tenancy\Database\Models\Concerns\ResourceSyncing;
-use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Database\Models;
 use Stancl\Tenancy\Database\Models\TenantPivot;
 use Stancl\Tenancy\Events\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Events\Listeners\JobPipeline;
 use Stancl\Tenancy\Events\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Events\Listeners\UpdateSyncedResource;
+use Stancl\Tenancy\Events\SyncedResourceChangedInForeignDatabase;
 use Stancl\Tenancy\Events\SyncedResourceSaved;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
@@ -80,7 +81,7 @@ class ResourceSyncingTest extends TestCase
             return $event->model === $user;
         });
     }
-    
+
     /** @test */
     public function only_the_synced_columns_are_updated_in_the_central_db()
     {
@@ -208,6 +209,35 @@ class ResourceSyncingTest extends TestCase
 
         $tenant->run(function () {
             $this->assertCount(1, User::all());
+        });
+    }
+
+    /** @test */
+    public function attaching_users_to_tenants_DOES_NOT_DO_ANYTHING()
+    {
+        $centralUser = CentralUser::create([
+            'global_id' => 'acme',
+            'name' => 'John Doe',
+            'email' => 'john@localhost',
+            'password' => 'secret',
+            'role' => 'commenter', // unsynced
+        ]);
+
+        $tenant = Tenant::create([
+            'id' => 't1',
+        ]);
+        $this->migrateTenants();
+
+        $tenant->run(function () {
+            $this->assertCount(0, User::all());
+        });
+
+        // The child model is inaccessible in the Pivot Model, so we can't fire any events.
+        $tenant->users()->attach($centralUser);
+
+        $tenant->run(function () {
+            // Still zero
+            $this->assertCount(0, User::all());
         });
     }
 
@@ -439,6 +469,93 @@ class ResourceSyncingTest extends TestCase
             return $job->class === UpdateSyncedResource::class;
         });
     }
+
+    /** @test */
+    public function an_event_is_fired_for_all_touched_resources()
+    {
+        Event::fake([SyncedResourceChangedInForeignDatabase::class]);
+
+        // create shared resource
+        $centralUser = CentralUser::create([
+            'global_id' => 'acme',
+            'name' => 'John Doe',
+            'email' => 'john@localhost',
+            'password' => 'secret',
+            'role' => 'commenter', // unsynced
+        ]);
+
+        $t1 = Tenant::create([
+            'id' => 't1',
+        ]);
+        $t2 = Tenant::create([
+            'id' => 't2',
+        ]);
+        $t3 = Tenant::create([
+            'id' => 't3',
+        ]);
+        $this->migrateTenants();
+
+        // Copy (cascade) user to t1 DB
+        $centralUser->tenants()->attach('t1');
+        Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+            return $event->tenant->getTenantKey() === 't1';
+        });
+        
+        $centralUser->tenants()->attach('t2');
+        Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+            return $event->tenant->getTenantKey() === 't2';
+        });
+
+        $centralUser->tenants()->attach('t3');
+        Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+            return $event->tenant->getTenantKey() === 't3';
+        });
+
+        // Assert no event for central
+        Event::assertNotDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+            return $event->tenant === null;
+        });
+
+        // Flush
+        Event::fake([SyncedResourceChangedInForeignDatabase::class]);
+
+        $t3->run(function () {
+            User::first()->update([
+                'name' => 'John 3',
+                'role' => 'employee', // unsynced
+            ]);
+
+            $this->assertSame('employee', User::first()->role);
+        });
+
+        Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+            return optional($event->tenant)->getTenantKey() === 't1';
+        });
+        Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+            return optional($event->tenant)->getTenantKey() === 't2';
+        });
+
+        // Assert NOT dispatched in t3
+        Event::assertNotDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+            return optional($event->tenant)->getTenantKey() === 't3';
+        });
+
+        // Assert dispatched in central
+        Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+            return $event->tenant === null;
+        });
+
+        // todo update in global
+    }
+}
+
+class Tenant extends Models\Tenant
+{
+    public function users()
+    {
+        return $this->belongsToMany(CentralUser::class, 'tenant_users', 'tenant_id', 'global_user_id')
+            ->using(TenantPivot::class);
+    }
 }
 
 class CentralUser extends Model implements SyncMaster
@@ -451,7 +568,7 @@ class CentralUser extends Model implements SyncMaster
 
     public function tenants(): BelongsToMany
     {
-        return $this->belongsToMany(Tenant::class, 'tenant_users', 'tenant_id', 'global_user_id')
+        return $this->belongsToMany(Tenant::class, 'tenant_users', 'global_user_id', 'tenant_id')
             ->using(TenantPivot::class);
     }
 

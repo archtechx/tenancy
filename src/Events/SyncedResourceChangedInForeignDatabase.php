@@ -2,16 +2,15 @@
 
 namespace Stancl\Tenancy\Events;
 
-use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\Contracts\Syncable;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 
-class SyncedResourceSaved
+class SyncedResourceChangedInForeignDatabase
 {
-    /** @var Syncable|Model */
+    /** @var Syncable */
     public $model;
 
-    /** @var TenantWithDatabase|Model|null */
+    /** @var TenantWithDatabase|null */
     public $tenant;
 
     public function __construct(Syncable $model, ?TenantWithDatabase $tenant)
