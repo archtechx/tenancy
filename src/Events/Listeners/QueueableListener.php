@@ -4,11 +4,12 @@ namespace Stancl\Tenancy\Events\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 
+/**
+ * @method handle(object $event)
+ */
 abstract class QueueableListener implements ShouldQueue
 {
     public static $shouldQueue = false;
-
-    abstract public function handle();
 
     public function shouldQueue($event)
     {

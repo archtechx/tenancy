@@ -77,7 +77,7 @@ class Tenancy
      * Run a callback for multiple tenants.
      * More performant than running $tenant->run() one by one.
      *
-     * @param Tenant[]|\Illuminate\Support\Collection|string[]|null $tenants
+     * @param Tenant[]|\Traversable|string[]|null $tenants
      * @param callable $callback
      * @return void
      */
