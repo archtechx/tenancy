@@ -1,6 +1,6 @@
 <?php
 
-namespace Stancl\Tenancy\Tests\v3;
+namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
