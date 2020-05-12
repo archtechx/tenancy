@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Database\Console\Migrations\RollbackCommand;
 use Illuminate\Database\Migrations\Migrator;
+use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Traits\DealsWithMigrations;
 use Stancl\Tenancy\Traits\HasATenantsOption;
@@ -55,13 +56,13 @@ class Rollback extends RollbackCommand
             return;
         }
 
-        tenancy()->all($this->option('tenants'))->each(function ($tenant) {
+        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
             $this->line("Tenant: {$tenant['id']}");
 
-            $tenant->run(function () {
-                // Rollback
-                parent::handle();
-            });
+            // Rollback
+            parent::handle();
+
+            // todo DatabaseRolledBack event
         });
     }
 }

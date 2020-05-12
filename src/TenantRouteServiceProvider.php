@@ -13,7 +13,7 @@ class TenantRouteServiceProvider extends RouteServiceProvider
     {
         $this->app->booted(function () {
             if (file_exists(base_path('routes/tenant.php'))) {
-                Route::middleware(['web', 'tenancy'])
+                Route::middleware(['web'])
                     ->namespace($this->app['config']['tenancy.tenant_route_namespace'] ?? 'App\Http\Controllers')
                     ->group(base_path('routes/tenant.php'));
             }

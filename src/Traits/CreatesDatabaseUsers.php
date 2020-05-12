@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Traits;
 
-use Stancl\Tenancy\Tenant;
+use Stancl\Tenancy\Contracts\TenantWithDatabase;
 
 trait CreatesDatabaseUsers
 {
-    public function createDatabase(Tenant $tenant): bool
+    public function createDatabase(TenantWithDatabase $tenant): bool
     {
         return $this->database()->transaction(function () use ($tenant) {
             parent::createDatabase($tenant);
@@ -17,7 +17,7 @@ trait CreatesDatabaseUsers
         });
     }
 
-    public function deleteDatabase(Tenant $tenant): bool
+    public function deleteDatabase(TenantWithDatabase $tenant): bool
     {
         return $this->database()->transaction(function () use ($tenant) {
             parent::deleteDatabase($tenant);

@@ -8,8 +8,9 @@ use Laravel\Telescope\IncomingEntry;
 use Laravel\Telescope\Telescope;
 use Stancl\Tenancy\Contracts\Feature;
 use Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains;
-use Stancl\Tenancy\TenantManager;
+use Stancl\Tenancy\Tenancy;
 
+// todo rewrite this
 class TelescopeTags implements Feature
 {
     /** @var callable User-specific callback that returns tags. */
@@ -22,7 +23,7 @@ class TelescopeTags implements Feature
         };
     }
 
-    public function bootstrap(TenantManager $tenantManager): void
+    public function bootstrap(Tenancy $tenancy): void
     {
         if (! class_exists(Telescope::class)) {
             return;
@@ -35,6 +36,7 @@ class TelescopeTags implements Feature
                 return $tags;
             }
 
+            // todo lines below
             $tenantRoute = PreventAccessFromTenantDomains::routeHasMiddleware(request()->route(), 'tenancy')
                 || PreventAccessFromTenantDomains::routeHasMiddleware(request()->route(), 'universal');
 

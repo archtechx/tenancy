@@ -1,8 +1,6 @@
 <?php
 
-declare(strict_types=1);
-
-namespace Stancl\Tenancy\Tests;
+namespace Stancl\Tenancy\Tests\v3;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -11,26 +9,46 @@ use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Event;
+use Spatie\Valuestore\Valuestore;
+use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Events\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\TenancyBootstrappers\QueueTenancyBootstrapper;
+use Stancl\Tenancy\Tests\TestCase;
 
 class QueueTest extends TestCase
 {
-    public $autoCreateTenant = true;
-    public $autoInitTenancy = true;
+    public $mockConsoleOutput = false;
 
-    /** @test */
-    public function queues_use_non_tenant_db_connection()
+    /** @var Valuestore */
+    protected $valuestore;
+
+    public function setUp(): void
     {
-        // requires using the db driver
-        $this->markTestIncomplete();
+        parent::setUp();
+
+        config([
+            'tenancy.bootstrappers' => [
+                QueueTenancyBootstrapper::class,
+            ],
+            'queue.default' => 'redis',
+        ]);
+
+        Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+
+        $this->valuestore = Valuestore::make(__DIR__ . '/../Etc/tmp/queuetest.json')->flush();
     }
 
     /** @test */
-    public function tenancy_is_initialized_inside_queues()
+    public function tenant_id_is_passed_to_tenant_queues()
     {
-        $this->loadLaravelMigrations(['--database' => 'tenant']);
+        $tenant = Tenant::create();
+
+        tenancy()->initialize($tenant);
+
         Event::fake();
 
-        dispatch(new TestJob());
+        dispatch(new TestJob($this->valuestore));
 
         Event::assertDispatched(JobProcessing::class, function ($event) {
             return $event->job->payload()['tenant_id'] === tenant('id');
@@ -38,16 +56,64 @@ class QueueTest extends TestCase
     }
 
     /** @test */
-    public function tenancy_is_not_initialized_in_non_tenant_queues()
+    public function tenant_id_is_not_passed_to_central_queues()
     {
-        $this->loadLaravelMigrations(['--database' => 'tenant']);
+        $tenant = Tenant::create();
+
+        tenancy()->initialize($tenant);
+
         Event::fake();
 
-        dispatch(new TestJob())->onConnection('central');
+        config(['queue.connections.central' => [
+            'driver' => 'sync',
+            'central' => true,
+        ]]);
+
+        dispatch(new TestJob($this->valuestore))->onConnection('central');
 
         Event::assertDispatched(JobProcessing::class, function ($event) {
             return ! isset($event->job->payload()['tenant_id']);
         });
+    }
+
+    /** @test */
+    public function tenancy_is_initialized_inside_queues()
+    {
+        $tenant = Tenant::create([
+            'id' => 'acme',
+        ]);
+
+        tenancy()->initialize($tenant);
+
+        dispatch(new TestJob($this->valuestore));
+
+        $this->assertFalse($this->valuestore->has('tenant_id'));
+        $this->artisan('queue:work --once');
+
+        $this->assertSame('The current tenant id is: acme', $this->valuestore->get('tenant_id'));
+    }
+
+    /** @test */
+    public function the_tenant_used_by_the_job_doesnt_change_when_the_current_tenant_changes()
+    {
+        $tenant1 = Tenant::create([
+            'id' => 'acme',
+        ]);
+
+        tenancy()->initialize($tenant1);
+
+        dispatch(new TestJob($this->valuestore));
+
+        $tenant2 = Tenant::create([
+            'id' => 'foobar',
+        ]);
+
+        tenancy()->initialize($tenant2);
+
+        $this->assertFalse($this->valuestore->has('tenant_id'));
+        $this->artisan('queue:work --once');
+
+        $this->assertSame('The current tenant id is: acme', $this->valuestore->get('tenant_id'));
     }
 }
 
@@ -55,23 +121,16 @@ class TestJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /**
-     * Create a new job instance.
-     *
-     * @return void
-     */
-    public function __construct()
+    /** @var Valuestore */
+    protected $valuestore;
+
+    public function __construct(Valuestore $valuestore)
     {
-        //
+        $this->valuestore = $valuestore;
     }
 
-    /**
-     * Execute the job.
-     *
-     * @return void
-     */
     public function handle()
     {
-        logger(json_encode(\DB::table('users')->get()));
+        $this->valuestore->put('tenant_id', "The current tenant id is: " . tenant('id'));
     }
 }

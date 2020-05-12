@@ -10,6 +10,7 @@ use Stancl\Tenancy\Contracts\Feature;
 use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\TenantManager;
 
+// todo rewrite this
 class Timestamps implements Feature
 {
     /** @var Repository */

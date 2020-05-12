@@ -12,6 +12,7 @@ use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Tests\TestCase;
 use Stancl\Tenancy\UniqueIDGenerators\UUIDGenerator;
 use Stancl\Tenancy\Contracts;
+use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 
 class TenantModelTest extends TestCase
 {
@@ -34,7 +35,7 @@ class TenantModelTest extends TestCase
 
         tenancy()->initialize($tenant);
 
-        $this->assertSame($tenant->id, app(Tenant::class)->id);
+        $this->assertSame($tenant->id, app(Contracts\Tenant::class)->id);
 
         tenancy()->end();
 
@@ -100,10 +101,10 @@ class TenantModelTest extends TestCase
             $table->bigIncrements('id')->change();
         });
 
-        config(['tenancy.id_generator' => null]);
+        unset(app()[UniqueIdentifierGenerator::class]);
 
-        $tenant1 = Tenant::create();
-        $tenant2 = Tenant::create();
+        $tenant1 = MyTenant::create();
+        $tenant2 = MyTenant::create();
 
         $this->assertSame(1, $tenant1->id);
         $this->assertSame(2, $tenant2->id);
@@ -137,6 +138,7 @@ class TenantModelTest extends TestCase
 class MyTenant extends Tenant
 {
     protected $table = 'tenants';
+    public $increments = true;
 }
 
 class AnotherTenant extends Model implements Contracts\Tenant
@@ -152,5 +154,10 @@ class AnotherTenant extends Model implements Contracts\Tenant
     public function getTenantKey(): string
     {
         return $this->getAttribute('id');
+    }
+
+    public function run(callable $callback)
+    {
+        $callback();
     }
 }

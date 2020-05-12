@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
+use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Traits\DealsWithMigrations;
 use Stancl\Tenancy\Traits\HasATenantsOption;
 
@@ -33,22 +34,18 @@ final class MigrateFresh extends Command
      */
     public function handle()
     {
-        tenancy()->all($this->option('tenants'))->each(function ($tenant) {
-            $this->line("Tenant: {$tenant->id}");
+        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
+            $this->info('Dropping tables.');
+            $this->call('db:wipe', array_filter([
+                '--database' => 'tenant',
+                '--force' => true,
+            ]));
 
-            $tenant->run(function ($tenant) {
-                $this->info('Dropping tables.');
-                $this->call('db:wipe', array_filter([
-                    '--database' => 'tenant',
-                    '--force' => true,
-                ]));
-
-                $this->info('Migrating.');
-                $this->callSilent('tenants:migrate', [
-                    '--tenants' => [$tenant->id],
-                    '--force' => true,
-                ]);
-            });
+            $this->info('Migrating.');
+            $this->callSilent('tenants:migrate', [
+                '--tenants' => [$tenant->id],
+                '--force' => true,
+            ]);
         });
 
         $this->info('Done.');

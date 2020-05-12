@@ -9,7 +9,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Contracts\Future\CanSetConnection;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
-use Stancl\Tenancy\Tenant;
+use Stancl\Tenancy\Contracts\TenantWithDatabase;
 
 class PostgreSQLDatabaseManager implements TenantDatabaseManager, CanSetConnection
 {
@@ -19,11 +19,6 @@ class PostgreSQLDatabaseManager implements TenantDatabaseManager, CanSetConnecti
     public function __construct(Repository $config)
     {
         $this->connection = $config->get('tenancy.database_manager_connections.pgsql');
-    }
-
-    public function getSeparator(): string
-    {
-        return 'database';
     }
 
     protected function database(): Connection
@@ -36,12 +31,12 @@ class PostgreSQLDatabaseManager implements TenantDatabaseManager, CanSetConnecti
         $this->connection = $connection;
     }
 
-    public function createDatabase(Tenant $tenant): bool
+    public function createDatabase(TenantWithDatabase $tenant): bool
     {
         return $this->database()->statement("CREATE DATABASE \"{$tenant->database()->getName()}\" WITH TEMPLATE=template0");
     }
 
-    public function deleteDatabase(Tenant $tenant): bool
+    public function deleteDatabase(TenantWithDatabase $tenant): bool
     {
         return $this->database()->statement("DROP DATABASE \"{$tenant->database()->getName()}\"");
     }
@@ -49,5 +44,12 @@ class PostgreSQLDatabaseManager implements TenantDatabaseManager, CanSetConnecti
     public function databaseExists(string $name): bool
     {
         return (bool) $this->database()->select("SELECT datname FROM pg_database WHERE datname = '$name'");
+    }
+
+    public function makeConnectionConfig(array $baseConfig, string $databaseName): array
+    {
+        $baseConfig['database'] = $databaseName;
+
+        return $baseConfig;
     }
 }

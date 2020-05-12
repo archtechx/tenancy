@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Contracts;
 
-use Stancl\Tenancy\TenantManager;
+use Stancl\Tenancy\Facades\Tenancy;
 
 /** Additional features, like Telescope tags and tenant redirects. */
 interface Feature
 {
-    public function bootstrap(TenantManager $tenantManager): void;
+    public function bootstrap(Tenancy $tenancy): void;
 }

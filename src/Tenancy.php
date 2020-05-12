@@ -77,15 +77,25 @@ class Tenancy
      * Run a callback for multiple tenants.
      * More performant than running $tenant->run() one by one.
      *
-     * @param Tenant[]|\Illuminate\Support\Collection $tenants
+     * @param Tenant[]|\Traversable|string[]|null $tenants
      * @param callable $callback
      * @return void
      */
     public function runForMultiple($tenants, callable $callback)
     {
+        // Wrap string in array
+        $tenants = is_string($tenants) ? [$tenants] : $tenants;
+
+        // Use all tenants if $tenants is falsy
+        $tenants = $tenants ?: $this->model()->cursor();
+
         $originalTenant = $this->tenant;
 
         foreach ($tenants as $tenant) {
+            if (is_string($tenant)) {
+                $tenant = $this->find($tenant);
+            }
+
             $this->initialize($tenant);
             $callback($tenant);
         }

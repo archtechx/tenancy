@@ -2,44 +2,50 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests;
+namespace Stancl\Tenancy\Tests\v3;
 
-use Illuminate\Support\Facades\Queue;
-use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
-use Stancl\Tenancy\Jobs\QueuedTenantDatabaseDeleter;
-use Stancl\Tenancy\Tenant;
+use Illuminate\Support\Facades\Event;
+use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\DatabaseManager;
+use Stancl\Tenancy\Events\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Events\Listeners\JobPipeline;
+use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\TenancyBootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLSchemaManager;
 use Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager;
+use Stancl\Tenancy\Tests\TestCase;
 
 class TenantDatabaseManagerTest extends TestCase
 {
-    public $autoInitTenancy = false;
-
     /**
      * @test
      * @dataProvider database_manager_provider
      */
     public function databases_can_be_created_and_deleted($driver, $databaseManager)
     {
-        if (! $this->isContainerized()) {
-            $this->markTestSkipped('As to not bloat your computer with test databases, this test is not run by default.');
-        }
+        Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+            return $event->tenant;
+        })->toListener());
 
         config()->set([
             "tenancy.database_managers.$driver" => $databaseManager,
+            'tenancy.internal_prefix' => 'tenancy_',
         ]);
 
         $name = 'db' . $this->randomString();
-        $tenant = Tenant::new()->withData([
-            '_tenancy_db_name' => $name,
-            '_tenancy_db_connection' => $driver,
-        ]);
 
         $this->assertFalse(app($databaseManager)->databaseExists($name));
-        $tenant->save(); // generate credentials & create DB
+
+        $tenant = Tenant::create([
+            'tenancy_db_name' => $name,
+            'tenancy_db_connection' => $driver,
+        ]);
+
         $this->assertTrue(app($databaseManager)->databaseExists($name));
         app($databaseManager)->deleteDatabase($tenant);
         $this->assertFalse(app($databaseManager)->databaseExists($name));
@@ -50,58 +56,32 @@ class TenantDatabaseManagerTest extends TestCase
     {
         $this->assertSame('central', config('database.default'));
 
+        Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+            return $event->tenant;
+        })->toListener());
+
+        // todo if the prefix is _tenancy_, this blows up. write a tenantmodel test that the prefix can be _tenancy_
+        config(['tenancy.internal_prefix' => 'tenancy_',]);
+
         $database = 'db' . $this->randomString();
-        $tenant = Tenant::new()->withData([
-            '_tenancy_db_name' => $database,
-            '_tenancy_db_connection' => 'mysql',
-        ]);
 
         $this->assertFalse(app(MySQLDatabaseManager::class)->databaseExists($database));
-        $tenant->save(); // create DB
+        Tenant::create([
+            'tenancy_db_name' => $database,
+            'tenancy_db_connection' => 'mysql',
+        ]);
+
         $this->assertTrue(app(MySQLDatabaseManager::class)->databaseExists($database));
 
         $database = 'db' . $this->randomString();
-        $tenant = Tenant::new()->withData([
-            '_tenancy_db_name' => $database,
-            '_tenancy_db_connection' => 'pgsql',
-        ]);
-
         $this->assertFalse(app(PostgreSQLDatabaseManager::class)->databaseExists($database));
-        $tenant->save(); // create DB
+
+        Tenant::create([
+            'tenancy_db_name' => $database,
+            'tenancy_db_connection' => 'pgsql',
+        ]);
+
         $this->assertTrue(app(PostgreSQLDatabaseManager::class)->databaseExists($database));
-    }
-
-    /**
-     * @test
-     * @dataProvider database_manager_provider
-     */
-    public function databases_can_be_created_and_deleted_using_queued_commands($driver, $databaseManager)
-    {
-        if (! $this->isContainerized()) {
-            $this->markTestSkipped('As to not bloat your computer with test databases, this test is not run by default.');
-        }
-
-        config()->set([
-            'database.default' => $driver,
-            "tenancy.database_managers.$driver" => $databaseManager,
-        ]);
-
-        $name = 'db' . $this->randomString();
-        $tenant = Tenant::new()->withData([
-            '_tenancy_db_name' => $name,
-            '_tenancy_db_connection' => $driver,
-        ]);
-        $tenant->database()->makeCredentials();
-
-        $this->assertFalse(app($databaseManager)->databaseExists($name));
-        $job = new QueuedTenantDatabaseCreator(app($databaseManager), $tenant);
-
-        $job->handle();
-        $this->assertTrue(app($databaseManager)->databaseExists($name));
-
-        $job = new QueuedTenantDatabaseDeleter(app($databaseManager), $tenant);
-        $job->handle();
-        $this->assertFalse(app($databaseManager)->databaseExists($name));
     }
 
     public function database_manager_provider()
@@ -116,30 +96,49 @@ class TenantDatabaseManagerTest extends TestCase
     }
 
     /** @test */
-    public function database_creation_can_be_queued()
+    public function db_name_is_prefixed_with_db_path_when_sqlite_is_used()
     {
-        Queue::fake();
-
-        config()->set([
-            'tenancy.queue_database_creation' => true,
+        if (file_exists(database_path('foodb'))) {
+            unlink(database_path('foodb')); // cleanup
+        }
+        config([
+            'database.connections.fooconn.driver' => 'sqlite',
+            'tenancy.internal_prefix' => 'tenancy_',
         ]);
-        Tenant::create(['test2.localhost']);
 
-        Queue::assertPushed(QueuedTenantDatabaseCreator::class);
+        $tenant = Tenant::create([
+            'tenancy_db_name' => 'foodb',
+            'tenancy_db_connection' => 'fooconn',
+        ]);
+        app(DatabaseManager::class)->createTenantConnection($tenant);
+
+        $this->assertSame(config('database.connections.tenant.database'), database_path('foodb'));
     }
 
     /** @test */
-    public function database_deletion_can_be_queued()
+    public function schema_manager_uses_schema_to_separate_tenant_dbs()
     {
-        Queue::fake();
-
-        $tenant = Tenant::create(['test2.localhost']);
-        config()->set([
-            'tenancy.queue_database_deletion' => true,
-            'tenancy.delete_database_after_tenant_deletion' => true,
+        config([
+            'tenancy.database_managers.pgsql' => \Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLSchemaManager::class,
+            'tenancy.boostrappers' => [
+                DatabaseTenancyBootstrapper::class,
+            ],
         ]);
-        $tenant->delete();
 
-        Queue::assertPushed(QueuedTenantDatabaseDeleter::class);
+        Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+            return $event->tenant;
+        })->toListener());
+
+        Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+
+        $originalDatabaseName = config(['database.connections.pgsql.database']);
+
+        $tenant = Tenant::create([
+            'tenancy_db_connection' => 'pgsql',
+        ]);
+        tenancy()->initialize($tenant);
+
+        $this->assertSame($tenant->database()->getName(), config('database.connections.' . config('database.default') . '.schema'));
+        $this->assertSame($originalDatabaseName, config(['database.connections.pgsql.database']));
     }
 }

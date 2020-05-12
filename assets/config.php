@@ -8,7 +8,7 @@ use Stancl\Tenancy\Database\Models\Tenant;
 return [
     'tenant_model' => Tenant::class,
     'domain_model' => Domain::class,
-    'internal_column_prefix' => 'tenancy_',
+    'internal_prefix' => 'tenancy_',
 
     'central_connection' => 'central',
     'template_tenant_connection' => null,
@@ -45,13 +45,6 @@ return [
      * Controller namespace used by routes in routes/tenant.php.
      */
     'tenant_route_namespace' => 'App\Http\Controllers',
-
-    /**
-     * Central domains (hostnames), e.g. domains which host landing pages, sign up pages, etc.
-     */
-    'exempt_domains' => [
-        // 'localhost',
-    ],
 
     /**
      * Tenancy bootstrappers are executed when tenancy is initialized.
@@ -201,7 +194,7 @@ return [
      * See the documentation page for each class to
      * understand which ones you want to enable.
      */
-    'features' => [
+    'features' => [ // todo test features
         // Stancl\Tenancy\Features\Timestamps::class, // https://tenancy.samuelstancl.me/docs/v2/features/timestamps/
         // Stancl\Tenancy\Features\TenantConfig::class, // https://tenancy.samuelstancl.me/docs/v2/features/tenant-config/
         // Stancl\Tenancy\Features\TelescopeTags::class, // https://tenancy.samuelstancl.me/docs/v2/telescope/
@@ -211,32 +204,15 @@ return [
     /**
      * The URL to which users will be redirected when they try to acceess a central route on a tenant domain.
      */
-    'home_url' => '/app',
-
-    /**
-     * Should tenant databases be created asynchronously in a queued job.
-     */
-    'queue_database_creation' => false, // todo make this a static property
+    'home_url' => '/app', // todo move this to static
 
     'migration_parameters' => [
         '--force' => true, // Set this to true to be able to run migrations in production
-        // '--path' => [database_path('migrations/tenant')], // If you need to customize paths to tenant migrations
+        '--path' => [database_path('migrations/tenant')],
     ],
 
     'seeder_parameters' => [
         '--class' => 'DatabaseSeeder', // root seeder class, e.g.: 'DatabaseSeeder'
         // '--force' => true,
-    ],
-
-    /**
-     * Should tenant databases be deleted asynchronously in a queued job.
-     */
-    'queue_database_deletion' => false,
-
-    /**
-     * Middleware pushed to the global middleware stack.
-     */
-    'global_middleware' => [ // todo get rid of this
-        // Stancl\Tenancy\Middleware\InitializeTenancy::class,
     ],
 ];

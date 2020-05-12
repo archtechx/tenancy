@@ -57,20 +57,13 @@ class Migrate extends MigrateCommand
             return;
         }
 
-        tenancy()
-            ->query()
-            ->when($this->option('tenants'), function ($query) {
-                $query->whereIn(tenancy()->model()->getTenantKeyName(), $this->option('tenants'));
-            })
-            ->each(function (TenantWithDatabase $tenant) {
-                $this->line("Tenant: {$tenant['id']}");
+        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
+            $this->line("Tenant: {$tenant['id']}");
+            
+            // Migrate
+            parent::handle();
 
-                $tenant->run(function () {
-                    // Migrate
-                    parent::handle();
-                });
-
-                event(new DatabaseMigrated($tenant));
-            });
+            event(new DatabaseMigrated($tenant));
+        });
     }
 }

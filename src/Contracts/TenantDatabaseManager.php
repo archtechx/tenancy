@@ -7,13 +7,6 @@ namespace Stancl\Tenancy\Contracts;
 interface TenantDatabaseManager
 {
     /**
-     * Return the config key that separates databases (e.g. 'database' or 'schema').
-     *
-     * @return string
-     */
-    public function getSeparator(): string;
-
-    /**
      * Create a database.
      */
     public function createDatabase(TenantWithDatabase $tenant): bool;
@@ -30,4 +23,13 @@ interface TenantDatabaseManager
      * @return bool
      */
     public function databaseExists(string $name): bool;
+
+    /**
+     * Make a DB connection config array.
+     *
+     * @param array $baseConfig
+     * @param string $databaseName
+     * @return array
+     */
+    public function makeConnectionConfig(array $baseConfig, string $databaseName): array;
 }

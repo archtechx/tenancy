@@ -8,9 +8,11 @@ use Illuminate\Routing\Controller;
 
 class TenantAssetsController extends Controller
 {
+    public static $tenancyMiddleware = 'Stancl\Tenancy\Middleware\InitializeTenancyByDomain';
+
     public function __construct()
     {
-        $this->middleware('tenancy');
+        $this->middleware(static::$tenancyMiddleware);
     }
 
     public function asset($path)

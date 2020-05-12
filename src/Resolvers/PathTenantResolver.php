@@ -19,7 +19,7 @@ class PathTenantResolver implements TenantResolver
         if ($id = $route->parameter(static::$tenantParameterName)) {
             $route->forgetParameter(static::$tenantParameterName);
             
-            if ($tenant = config('tenancy.tenant_model')::find($id)) {
+            if ($tenant = tenancy()->find($id)) {
                 return $tenant;
             }
         }

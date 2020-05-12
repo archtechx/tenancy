@@ -2,15 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests;
+namespace Stancl\Tenancy\Tests\v3;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
 use Stancl\Tenancy\Exceptions\TenantDatabaseUserAlreadyExistsException;
-use Stancl\Tenancy\Tenant;
 use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager;
+use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Events\Listeners\JobPipeline;
+use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Tests\TestCase;
 
 class DatabaseUsersTest extends TestCase
 {
@@ -21,14 +26,18 @@ class DatabaseUsersTest extends TestCase
         config([
             'tenancy.database_managers.mysql' => PermissionControlledMySQLDatabaseManager::class,
             'tenancy.database.suffix' => '',
-            'tenancy.database.template_connection' => 'mysql',
+            'tenancy.template_tenant_connection' => 'mysql',
         ]);
+
+        Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+            return $event->tenant;
+        })->toListener());
     }
 
     /** @test */
     public function users_are_created_when_permission_controlled_mysql_manager_is_used()
     {
-        $tenant = Tenant::new()->withData([
+        $tenant = new Tenant([
             'id' => 'foo' . Str::random(10),
         ]);
         $tenant->database()->makeCredentials();
@@ -46,9 +55,9 @@ class DatabaseUsersTest extends TestCase
     public function a_tenants_database_cannot_be_created_when_the_user_already_exists()
     {
         $username = 'foo' . Str::random(8);
-        $tenant = Tenant::new()->withData([
-            '_tenancy_db_username' => $username,
-        ])->save();
+        $tenant = Tenant::create([
+            'tenancy_db_username' => $username,
+        ]);
 
         /** @var ManagesDatabaseUsers $manager */
         $manager = $tenant->database()->manager();
@@ -56,9 +65,9 @@ class DatabaseUsersTest extends TestCase
         $this->assertTrue($manager->databaseExists($tenant->database()->getName()));
 
         $this->expectException(TenantDatabaseUserAlreadyExistsException::class);
-        $tenant2 = Tenant::new()->withData([
-            '_tenancy_db_username' => $username,
-        ])->save();
+        $tenant2 = Tenant::create([
+            'tenancy_db_username' => $username,
+        ]);
 
         /** @var ManagesDatabaseUsers $manager */
         $manager = $tenant2->database()->manager();
@@ -73,9 +82,9 @@ class DatabaseUsersTest extends TestCase
             'ALTER', 'ALTER ROUTINE', 'CREATE',
         ];
 
-        $tenant = Tenant::new()->withData([
-            '_tenancy_db_username' => $user = 'user' . Str::random(8),
-        ])->save();
+        $tenant = Tenant::create([
+            'tenancy_db_username' => $user = 'user' . Str::random(8),
+        ]);
 
         $query = DB::connection('mysql')->select("SHOW GRANTS FOR `{$tenant->database()->getUsername()}`@`{$tenant->database()->connection()['host']}`")[1];
         $this->assertStringStartsWith('GRANT CREATE, ALTER, ALTER ROUTINE ON', $query->{"Grants for {$user}@mysql"}); // @mysql because that's the hostname within the docker network
@@ -90,15 +99,15 @@ class DatabaseUsersTest extends TestCase
             'tenancy.database.template_connection' => 'mysql',
         ]);
 
-        $tenant = Tenant::new()->withData([
+        $tenant = Tenant::create([
             'id' => 'foo' . Str::random(10),
-        ])->save();
+        ]);
 
         $this->assertTrue($tenant->database()->manager() instanceof MySQLDatabaseManager);
 
-        $tenant = Tenant::new()->withData([
+        $tenant = Tenant::create([
             'id' => 'foo' . Str::random(10),
-        ])->save();
+        ]);
 
         tenancy()->initialize($tenant); // check if everything works
         tenancy()->end();

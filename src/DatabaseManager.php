@@ -83,84 +83,10 @@ class DatabaseManager
      * @throws DatabaseManagerNotRegisteredException
      * @throws TenantDatabaseAlreadyExistsException
      */
-    public function ensureTenantCanBeCreated(TenantWithDatabase $tenant): void
+    public function ensureTenantCanBeCreated(TenantWithDatabase $tenant): void // todo do we need this?
     {
         if ($tenant->database()->manager()->databaseExists($database = $tenant->database()->getName())) {
             throw new TenantDatabaseAlreadyExistsException($database);
         }
-    }
-
-    /**
-     * Create a database for a tenant.
-     *
-     * @param Tenant $tenant
-     * @param ShouldQueue[]|callable[] $afterCreating
-     * @return void
-     * @throws DatabaseManagerNotRegisteredException
-     */
-    public function createDatabase(TenantWithDatabase $tenant, array $afterCreating = [])
-    {
-        // todo get rid of aftercreating logic
-        $afterCreating = array_merge(
-            $afterCreating,
-            $this->tenancy->event('database.creating', $tenant->database()->getName(), $tenant)
-        );
-
-        if ($this->app['config']['tenancy.queue_database_creation'] ?? false) {
-            $this->createDatabaseAsynchronously($tenant, $afterCreating);
-        } else {
-            $this->createDatabaseSynchronously($tenant, $afterCreating);
-        }
-
-        $this->tenancy->event('database.created', $tenant->database()->getName(), $tenant);
-    }
-
-    protected function createDatabaseAsynchronously(Tenant $tenant, array $afterCreating)
-    {
-        $chain = [];
-        foreach ($afterCreating as $item) {
-            if (is_string($item) && class_exists($item)) {
-                $chain[] = new $item($tenant); // Classes are instantiated and given $tenant
-            } elseif ($item instanceof ShouldQueue) {
-                $chain[] = $item;
-            }
-        }
-
-        QueuedTenantDatabaseCreator::withChain($chain)->dispatch($tenant->database()->manager(), $tenant);
-    }
-
-    protected function createDatabaseSynchronously(Tenant $tenant, array $afterCreating)
-    {
-        $manager = $tenant->database()->manager();
-        $manager->createDatabase($tenant);
-
-        foreach ($afterCreating as $item) {
-            if (is_object($item) && ! $item instanceof Closure) {
-                $item->handle($tenant);
-            } else {
-                $item($tenant);
-            }
-        }
-    }
-
-    /**
-     * Delete a tenant's database.
-     *
-     * @throws DatabaseManagerNotRegisteredException
-     */
-    public function deleteDatabase(TenantWithDatabase $tenant)
-    {
-        $database = $tenant->database()->getName();
-        $manager = $tenant->database()->manager();
-
-        $this->tenancy->event('database.deleting', $database, $tenant);
-
-        if ($this->app['config']['tenancy.queue_database_deletion'] ?? false) {
-            QueuedTenantDatabaseDeleter::dispatch($manager, $tenant);
-        } else {
-            $manager->deleteDatabase($tenant);
-        }
-
-        $this->tenancy->event('database.deleted', $database, $tenant);
     }
 }

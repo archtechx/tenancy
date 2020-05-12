@@ -6,26 +6,28 @@ namespace Stancl\Tenancy\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedException;
+use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
+use Stancl\Tenancy\Tenancy;
 
-class InitializeTenancyByRequestData
+// todo write tests for this
+class InitializeTenancyByRequestData extends IdentificationMiddleware
 {
     /** @var string|null */
-    protected $header;
+    public static $header = 'X-Tenant';
 
     /** @var string|null */
-    protected $queryParameter;
+    public static $queryParameter = 'tenant';
 
-    /** @var callable */
-    protected $onFail;
+    /** @var Tenancy */
+    protected $tenancy;
 
-    public function __construct(?string $header = 'X-Tenant', ?string $queryParameter = 'tenant', callable $onFail = null)
+    /** @var TenantResolver */
+    protected $resolver;
+
+    public function __construct(Tenancy $tenancy, RequestDataTenantResolver $resolver)
     {
-        $this->header = $header;
-        $this->queryParameter = $queryParameter;
-        $this->onFail = $onFail ?? function ($e) {
-            throw $e;
-        };
+        $this->tenancy = $tenancy;
+        $this->resolver = $resolver;
     }
 
     /**
@@ -38,33 +40,21 @@ class InitializeTenancyByRequestData
     public function handle($request, Closure $next)
     {
         if ($request->method() !== 'OPTIONS') {
-            try {
-                $this->initializeTenancy($request);
-            } catch (TenantCouldNotBeIdentifiedException $e) {
-                return ($this->onFail)($e, $request, $next);
-            }
+            return $this->initializeTenancy($request, $next, $this->getPayload($request));
         }
 
         return $next($request);
     }
 
-    protected function initializeTenancy(Request $request)
+    protected function getPayload(Request $request): ?string
     {
-        if (tenancy()->initialized) {
-            return;
-        }
-
         $tenant = null;
-        if ($this->header && $request->hasHeader($this->header)) {
-            $tenant = $request->header($this->header);
-        } elseif ($this->queryParameter && $request->has($this->queryParameter)) {
-            $tenant = $request->get($this->queryParameter);
+        if (static::$header && $request->hasHeader(static::$header)) {
+            $tenant = $request->header(static::$header);
+        } elseif (static::$queryParameter && $request->has(static::$queryParameter)) {
+            $tenant = $request->get(static::$queryParameter);
         }
 
-        if (! $tenant) {
-            throw new TenantCouldNotBeIdentifiedException($request->getHost());
-        }
-
-        tenancy()->initialize(tenancy()->find($tenant));
+        return $tenant;
     }
 }
