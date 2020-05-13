@@ -11,8 +11,8 @@ use Stancl\Tenancy\Contracts\Syncable;
 use Stancl\Tenancy\Contracts\SyncMaster;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
 use Stancl\Tenancy\Database\Concerns\ResourceSyncing;
-use Stancl\Tenancy\Database\Models;
 use Stancl\Tenancy\Database\Models\TenantPivot;
+use Stancl\Tenancy\DatabaseConfig;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\JobPipeline;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
@@ -25,7 +25,9 @@ use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Exceptions\ModelNotSyncMaster;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\TenancyBootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Tests\TestCase;
+use Illuminate\Support\Str;
 
 class ResourceSyncingTest extends TestCase
 {
@@ -40,6 +42,10 @@ class ResourceSyncingTest extends TestCase
         Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
             return $event->tenant;
         })->toListener());
+
+        DatabaseConfig::generateDatabaseNamesUsing(function () {
+            return 'db' . Str::random(16);
+        });
 
         Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
         Event::listen(TenancyEnded::class, RevertToCentralContext::class);
@@ -568,7 +574,7 @@ class ResourceSyncingTest extends TestCase
     }
 }
 
-class ResourceTenant extends Models\Tenant
+class ResourceTenant extends Tenant
 {
     public function users()
     {

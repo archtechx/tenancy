@@ -4,7 +4,7 @@ namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
-use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Events\TenancyEnded;
@@ -74,12 +74,12 @@ class AutomaticModeTest extends TestCase
 
 class MyBootstrapper implements TenancyBootstrapper
 {
-    public function start(\Stancl\Tenancy\Contracts\Tenant $tenant)
+    public function bootstrap(\Stancl\Tenancy\Contracts\Tenant $tenant)
     {
         app()->instance('tenancy_initialized_for_tenant', $tenant->getTenantKey());
     }
 
-    public function end()
+    public function revert()
     {
         app()->instance('tenancy_ended', true);
     }

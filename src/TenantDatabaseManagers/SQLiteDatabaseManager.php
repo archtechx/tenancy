@@ -12,7 +12,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
     public function createDatabase(TenantWithDatabase $tenant): bool
     {
         try {
-            return fclose(fopen(database_path($tenant->database()->getName()), 'w'));
+            return file_put_contents(database_path($tenant->database()->getName()), '');
         } catch (\Throwable $th) {
             return false;
         }

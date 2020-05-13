@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
-use Stancl\Tenancy\Database\Models\Tenant;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
+use Stancl\Tenancy\Contracts\TenantWithDatabase as Tenant;
 
 class DatabaseConfig
 {
-    /** @var Tenant */
+    /** @var Tenant|Model */
     public $tenant;
 
     /** @var callable */
@@ -89,6 +90,10 @@ class DatabaseConfig
         if ($this->manager() instanceof ManagesDatabaseUsers) {
             $this->tenant->setInternal('db_username', $this->getUsername() ?? (static::$usernameGenerator)($this->tenant));
             $this->tenant->setInternal('db_password', $this->getPassword() ?? (static::$passwordGenerator)($this->tenant));
+        }
+
+        if ($this->tenant->exists) {
+            $this->tenant->save();
         }
     }
 

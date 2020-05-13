@@ -7,7 +7,7 @@ use Illuminate\Foundation\Auth\User as Authenticable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
-use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Listeners\JobPipeline;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Jobs\CreateDatabase;

@@ -2,7 +2,7 @@
 
 namespace Stancl\Tenancy\Database\Concerns;
 
-trait HasADataColumn
+trait HasDataColumn
 {
     public static $priorityListeners = [];
 
@@ -13,9 +13,9 @@ trait HasADataColumn
      *
      * @var string
      */
-    public $dataEncodingStatus = 'decoded'; // todo write tests for this
+    public $dataEncodingStatus = 'decoded';
 
-    public static function bootHasADataColumn()
+    public static function bootHasDataColumn()
     {
         $encode = function (self $model) {
             if ($model->dataEncodingStatus === 'encoded') {

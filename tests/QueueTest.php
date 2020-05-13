@@ -10,7 +10,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Event;
 use Spatie\Valuestore\Valuestore;
-use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\TenancyBootstrappers\QueueTenancyBootstrapper;

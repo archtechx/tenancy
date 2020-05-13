@@ -83,7 +83,7 @@ class DatabaseManager
      * @throws DatabaseManagerNotRegisteredException
      * @throws TenantDatabaseAlreadyExistsException
      */
-    public function ensureTenantCanBeCreated(TenantWithDatabase $tenant): void // todo do we need this?
+    public function ensureTenantCanBeCreated(TenantWithDatabase $tenant): void
     {
         if ($tenant->database()->manager()->databaseExists($database = $tenant->database()->getName())) {
             throw new TenantDatabaseAlreadyExistsException($database);

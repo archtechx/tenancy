@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Tests;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Testing\Assert as PHPUnit;
 use Illuminate\Testing\TestResponse;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
@@ -83,6 +84,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'central' => true,
             ],
             'tenancy.seeder_parameters' => [],
+            'tenancy.tenant_model' => Tenant::class, // Use test tenant w/ DBs & domains
         ]);
 
         $app->singleton(\Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class);

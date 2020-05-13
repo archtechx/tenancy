@@ -4,7 +4,6 @@ namespace Stancl\Tenancy\Database\Models;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
-use Stancl\Tenancy\DatabaseConfig;
 use Stancl\Tenancy\Events;
 use Stancl\Tenancy\Contracts;
 use Stancl\Tenancy\Database\Concerns;
@@ -15,14 +14,13 @@ use Stancl\Tenancy\Database\Concerns;
  * @property Carbon $updated_at
  * @property array $data
  */
-class Tenant extends Model implements Contracts\TenantWithDatabase // todo base model that isn't TenantWithDatabase & domains
+class Tenant extends Model implements Contracts\Tenant
 {
     use Concerns\CentralConnection,
-        Concerns\HasADataColumn,
+        Concerns\HasDataColumn,
         Concerns\GeneratesIds,
-        Concerns\HasADataColumn,
-        Concerns\HasDomains {
-        Concerns\HasADataColumn::getCasts as dataColumnCasts;
+        Concerns\HasDataColumn {
+        Concerns\HasDataColumn::getCasts as dataColumnCasts;
     }
 
     protected $table = 'tenants';
@@ -67,11 +65,6 @@ class Tenant extends Model implements Contracts\TenantWithDatabase // todo base 
         $this->setAttribute(static::internalPrefix() . $key, $value);
 
         return $this;
-    }
-
-    public function database(): DatabaseConfig
-    {
-        return new DatabaseConfig($this);
     }
 
     public function run(callable $callback)

@@ -11,7 +11,7 @@ use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
 use Stancl\Tenancy\Exceptions\TenantDatabaseUserAlreadyExistsException;
 use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager;
-use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\JobPipeline;
 use Stancl\Tenancy\Events\TenantCreated;

@@ -7,12 +7,18 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
-use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Tests\TestCase;
 use Stancl\Tenancy\UniqueIDGenerators\UUIDGenerator;
 use Stancl\Tenancy\Contracts;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
+use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Listeners\JobPipeline;
+use Stancl\Tenancy\TenancyBootstrappers\DatabaseTenancyBootstrapper;
+use Illuminate\Support\Str;
 
 class TenantModelTest extends TestCase
 {
@@ -132,7 +138,40 @@ class TenantModelTest extends TestCase
         $this->assertTrue(tenant() instanceof AnotherTenant);
     }
 
-    // todo test that tenant can be created even in another DB context - that the central trait works
+    /** @test */
+    public function tenant_can_be_created_even_when_we_are_in_another_tenants_context()
+    {
+        config(['tenancy.bootstrappers' => [
+            DatabaseTenancyBootstrapper::class
+        ]]);
+
+        Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+        Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function ($event) {
+            return $event->tenant;
+        })->toListener());
+
+        $tenant1 = Tenant::create([
+            'id' => 'foo',
+            'tenancy_db_name' => 'db' . Str::random(16),
+        ]);
+
+        tenancy()->initialize($tenant1);
+
+        $tenant2 = Tenant::create([
+            'id' => 'bar',
+            'tenancy_db_name' => 'db' . Str::random(16),
+        ]);
+
+        tenancy()->end();
+
+        $this->assertSame(2, Tenant::count());
+    }
+
+    /** @test */
+    public function data_is_never_encoded_or_decoded_twice()
+    {
+        // todo. tests for registerPriorityListener
+    }
 }
 
 class MyTenant extends Tenant

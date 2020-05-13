@@ -5,7 +5,7 @@ namespace Stancl\Tenancy\Tests;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Spatie\Valuestore\Valuestore;
-use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Listeners\JobPipeline;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Tests\TestCase;
@@ -51,7 +51,7 @@ class JobPipelineTest extends TestCase
             FooJob::class,
         ])->send(function () {
             return $this->valuestore;
-        })->queue(true)->toListener());
+        })->shouldBeQueued(true)->toListener());
 
         Queue::assertNothingPushed();
 
@@ -70,7 +70,7 @@ class JobPipelineTest extends TestCase
             FooJob::class,
         ])->send(function () {
             return $this->valuestore;
-        })->queue(true)->toListener());
+        })->shouldBeQueued(true)->toListener());
 
         $this->assertFalse($this->valuestore->has('foo'));
         Tenant::create();

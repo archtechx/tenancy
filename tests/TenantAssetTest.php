@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Controllers\TenantAssetsController;
-use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
@@ -17,6 +18,19 @@ use Stancl\Tenancy\Tests\TestCase;
 
 class TenantAssetTest extends TestCase
 {
+    public function getEnvironmentSetUp($app)
+    {
+        parent::getEnvironmentSetUp($app);
+
+        $app->booted(function () {
+            if (file_exists(base_path('routes/tenant.php'))) {
+                Route::middleware(['web'])
+                    ->namespace($this->app['config']['tenancy.tenant_route_namespace'] ?? 'App\Http\Controllers')
+                    ->group(base_path('routes/tenant.php'));
+            }
+        });
+    }
+
     public function setUp(): void
     {
         parent::setUp();

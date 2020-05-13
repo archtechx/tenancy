@@ -8,7 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 class JobPipeline implements ShouldQueue
 {
     /** @var bool */
-    public static $queueByDefault = false;
+    public static $shouldBeQueuedByDefault = false;
 
     /** @var callable[]|string[] */
     public $jobs;
@@ -22,16 +22,16 @@ class JobPipeline implements ShouldQueue
     public $passable;
 
     /** @var bool */
-    public $queue;
+    public $shouldBeQueued;
 
-    public function __construct($jobs, callable $send = null, bool $queue = null)
+    public function __construct($jobs, callable $send = null, bool $shouldBeQueued = null)
     {
         $this->jobs = $jobs;
         $this->send = $send ?? function ($event) {
             // If no $send callback is set, we'll just pass the event through the jobs.
             return $event;
         };
-        $this->queue = $queue ?? static::$queueByDefault;
+        $this->shouldBeQueued = $shouldBeQueued ?? static::$shouldBeQueuedByDefault;
     }
 
     /** @param callable[]|string[] $jobs */
@@ -47,9 +47,9 @@ class JobPipeline implements ShouldQueue
         return $this;
     }
 
-    public function queue(bool $queue)
+    public function shouldBeQueued(bool $shouldBeQueued)
     {
-        $this->queue = $queue;
+        $this->shouldBeQueued = $shouldBeQueued;
 
         return $this;
     }
@@ -69,7 +69,7 @@ class JobPipeline implements ShouldQueue
         return function (...$args) {
             $executable = $this->executable($args);
 
-            if ($this->queue) {
+            if ($this->shouldBeQueued) {
                 dispatch($executable);
             } else {
                 dispatch_now($executable);

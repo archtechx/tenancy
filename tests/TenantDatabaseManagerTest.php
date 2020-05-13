@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Event;
-use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\JobPipeline;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\TenancyBootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
@@ -19,6 +20,7 @@ use Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLSchemaManager;
 use Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager;
 use Stancl\Tenancy\Tests\TestCase;
+use Illuminate\Support\Str;
 
 class TenantDatabaseManagerTest extends TestCase
 {
@@ -60,8 +62,7 @@ class TenantDatabaseManagerTest extends TestCase
             return $event->tenant;
         })->toListener());
 
-        // todo if the prefix is _tenancy_, this blows up. write a tenantmodel test that the prefix can be _tenancy_
-        config(['tenancy.internal_prefix' => 'tenancy_',]);
+        config(['tenancy.internal_prefix' => 'tenancy_']);
 
         $database = 'db' . $this->randomString();
 
@@ -140,5 +141,26 @@ class TenantDatabaseManagerTest extends TestCase
 
         $this->assertSame($tenant->database()->getName(), config('database.connections.' . config('database.default') . '.schema'));
         $this->assertSame($originalDatabaseName, config(['database.connections.pgsql.database']));
+    }
+
+    /** @test */
+    public function a_tenants_database_cannot_be_created_when_the_database_already_exists()
+    {
+        Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+            return $event->tenant;
+        })->toListener());
+
+        $name = 'foo' . Str::random(8);
+        $tenant = Tenant::create([
+            'tenancy_db_name' => $name,
+        ]);
+
+        $manager = $tenant->database()->manager();
+        $this->assertTrue($manager->databaseExists($tenant->database()->getName()));
+
+        $this->expectException(TenantDatabaseAlreadyExistsException::class);
+        $tenant2 = Tenant::create([
+            'tenancy_db_name' => $name,
+        ]);
     }
 }

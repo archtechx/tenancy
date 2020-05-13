@@ -43,7 +43,11 @@ class Install extends Command
             $this->info('Found routes/tenant.php.');
         }
 
-        // todo tenancy SP stub
+        $this->callSilent('vendor:publish', [
+            '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
+            '--tag' => 'provider',
+        ]);
+        $this->info('✔️  Created TenancyServiceProvider.php');
 
         $this->callSilent('vendor:publish', [
             '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',

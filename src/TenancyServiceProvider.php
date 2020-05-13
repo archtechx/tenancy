@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Illuminate\Cache\CacheManager;
-use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
@@ -22,6 +21,31 @@ class TenancyServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__ . '/../assets/config.php', 'tenancy');
 
         $this->app->singleton(DatabaseManager::class);
+
+        // Make sure Tenancy is stateful.
+        $this->app->singleton(Tenancy::class);
+
+        // Make sure features are bootstrapped as soon as Tenancy is instantiated.
+        $this->app->extend(Tenancy::class, function (Tenancy $tenancy) {
+            foreach ($this->app['config']['tenancy.features'] as $feature) {
+                $this->app[$feature]->bootstrap($tenancy);
+            }
+
+            return $tenancy;
+        });
+
+        // Make it possible to inject the current tenant by typehinting the Tenant contract.
+        $this->app->bind(Tenant::class, function ($app) {
+            return $app[Tenancy::class]->tenant;
+        });
+
+        // Make sure bootstrappers are stateful (singletons).
+        foreach ($this->app['config']['tenancy.bootstrappers'] as $bootstrapper) {
+            $this->app->singleton($bootstrapper);
+        }
+
+        // Bind the class in the tenancy.id_generator config to the UniqueIdentifierGenerator abstract.
+        $this->app->bind(Contracts\UniqueIdentifierGenerator::class, $this->app['config']['tenancy.id_generator']);
 
         $this->app->singleton(Commands\Migrate::class, function ($app) {
             return new Commands\Migrate($app['migrator'], $app[DatabaseManager::class]);
@@ -61,6 +85,10 @@ class TenancyServiceProvider extends ServiceProvider
 
         $this->publishes([
             __DIR__ . '/../assets/migrations/' => database_path('migrations'),
+        ], 'migrations');
+
+        $this->publishes([
+            __DIR__ . '/../assets/TenancyServiceProvider.stub.php' => app_path('Providers/TenancyServiceProvider.php'),
         ], 'migrations');
 
         $this->loadRoutesFrom(__DIR__ . '/routes.php');

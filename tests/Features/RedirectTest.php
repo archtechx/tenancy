@@ -6,7 +6,7 @@ namespace Stancl\Tenancy\Tests\Features;
 
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Features\CrossDomainRedirect;
-use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Tests\TestCase;
 
 class RedirectTest extends TestCase

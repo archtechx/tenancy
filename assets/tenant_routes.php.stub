@@ -1,5 +1,7 @@
 <?php
 
+use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
+
 /*
 |--------------------------------------------------------------------------
 | Tenant Routes
@@ -14,7 +16,7 @@
 */
 
 Route::group([
-    'middleware' => InitializeTenancyByDomain::class,
+    'middleware' => ['web', InitializeTenancyByDomain::class],
     'prefix' => '/app',
 ], function () {
     Route::get('/', function () {
