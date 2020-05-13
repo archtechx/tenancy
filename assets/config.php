@@ -24,23 +24,6 @@ return [
         'localhost',
     ],
 
-
-    'storage' => [
-        'data_column' => 'data',
-        'custom_columns' => [
-            // 'plan',
-        ],
-
-        /**
-         * Here you can enable the Cached Tenant Lookup.
-         *
-         * You can specify what cache store should be used to cache the tenant resolution.
-         * Set to string with a specific cache store name, or to null to disable cache.
-         */
-        'cache_store' => null, // env('CACHE_DRIVER')
-        'cache_ttl' => 3600, // seconds
-    ],
-
     /**
      * Controller namespace used by routes in routes/tenant.php.
      */
@@ -76,7 +59,6 @@ return [
          */
         'prefix' => 'tenant',
         'suffix' => '',
-        // todo get rid of this stuff, just set the closure instead
     ],
 
     /**
@@ -194,17 +176,10 @@ return [
      * See the documentation page for each class to
      * understand which ones you want to enable.
      */
-    'features' => [ // todo test features
-        // Stancl\Tenancy\Features\Timestamps::class, // https://tenancy.samuelstancl.me/docs/v2/features/timestamps/
+    'features' => [
         // Stancl\Tenancy\Features\TenantConfig::class, // https://tenancy.samuelstancl.me/docs/v2/features/tenant-config/
-        // Stancl\Tenancy\Features\TelescopeTags::class, // https://tenancy.samuelstancl.me/docs/v2/telescope/
         // Stancl\Tenancy\Features\CrossDomainRedirect::class, // https://tenancy.samuelstancl.me/docs/v2/features/tenant-redirect/
     ],
-
-    /**
-     * The URL to which users will be redirected when they try to acceess a central route on a tenant domain.
-     */
-    'home_url' => '/app', // todo move this to static
 
     'migration_parameters' => [
         '--force' => true, // Set this to true to be able to run migrations in production

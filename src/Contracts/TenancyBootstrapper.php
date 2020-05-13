@@ -9,8 +9,7 @@ namespace Stancl\Tenancy\Contracts;
  */
 interface TenancyBootstrapper
 {
-    // todo rename methods
-    public function start(Tenant $tenant);
+    public function bootstrap(Tenant $tenant);
 
-    public function end();
+    public function revert();
 }

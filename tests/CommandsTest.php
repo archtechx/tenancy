@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests\v3;
+namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -10,9 +10,9 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
 use Stancl\Tenancy\Database\Models\Tenant;
-use Stancl\Tenancy\Events\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Events\Listeners\JobPipeline;
-use Stancl\Tenancy\Events\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Listeners\JobPipeline;
+use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Events\TenantCreated;

@@ -2,18 +2,30 @@
 
 namespace Stancl\Tenancy\Database\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\DatabaseConfig;
 use Stancl\Tenancy\Events;
 use Stancl\Tenancy\Contracts;
+use Stancl\Tenancy\Database\Concerns;
 
-// todo @property
-class Tenant extends Model implements Contracts\TenantWithDatabase
+/**
+ * @property string|int $id
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property array $data
+ */
+class Tenant extends Model implements Contracts\TenantWithDatabase // todo base model that isn't TenantWithDatabase & domains
 {
-    use Concerns\CentralConnection, Concerns\HasADataColumn, Concerns\GeneratesIds, Concerns\HasADataColumn  {
+    use Concerns\CentralConnection,
+        Concerns\HasADataColumn,
+        Concerns\GeneratesIds,
+        Concerns\HasADataColumn,
+        Concerns\HasDomains {
         Concerns\HasADataColumn::getCasts as dataColumnCasts;
     }
 
+    protected $table = 'tenants';
     public $primaryKey = 'id';
     public $guarded = [];
 
@@ -32,11 +44,6 @@ class Tenant extends Model implements Contracts\TenantWithDatabase
         return array_merge($this->dataColumnCasts(), [
             'id' => $this->getIncrementing() ? 'integer' : 'string',
         ]);
-    }
-
-    public function getIncrementing()
-    {
-        return config('tenancy.id_generator') === null;
     }
 
     public static function internalPrefix(): string

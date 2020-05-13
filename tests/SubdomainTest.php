@@ -1,10 +1,10 @@
 <?php
 
-namespace Stancl\Tenancy\Tests\v3;
+namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Database\Models;
-use Stancl\Tenancy\Database\Models\Concerns\HasDomains;
+use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Exceptions\NotASubdomainException;
 use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Tests\TestCase;
@@ -26,13 +26,13 @@ class SubdomainTest extends TestCase
             });
         });
 
-        config(['tenancy.tenant_model' => Tenant::class]);
+        config(['tenancy.tenant_model' => SubdomainTenant::class]);
     }
 
     /** @test */
     public function tenant_can_be_identified_by_subdomain()
     {
-        $tenant = Tenant::create([
+        $tenant = SubdomainTenant::create([
             'id' => 'acme',
         ]);
 
@@ -105,7 +105,7 @@ class SubdomainTest extends TestCase
             // not 'localhost'
         ]]);
 
-        $tenant = Tenant::create([
+        $tenant = SubdomainTenant::create([
             'id' => 'acme',
         ]);
 
@@ -121,7 +121,7 @@ class SubdomainTest extends TestCase
     }
 }
 
-class Tenant extends Models\Tenant
+class SubdomainTenant extends Models\Tenant
 {
     use HasDomains;
 }

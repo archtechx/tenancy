@@ -1,7 +1,8 @@
 <?php
 
-namespace Stancl\Tenancy\Events\Listeners;
+namespace Stancl\Tenancy\Listeners;
 
+use Stancl\Tenancy\Events\RevertedToCentralContext;
 use Stancl\Tenancy\Events\TenancyEnded;
 
 class RevertToCentralContext
@@ -9,7 +10,9 @@ class RevertToCentralContext
     public function handle(TenancyEnded $event)
     {
         foreach ($event->tenancy->getBootstrappers() as $bootstrapper) {
-            $bootstrapper->end();
+            $bootstrapper->revert();
         }
+
+        event(new RevertedToCentralContext($event->tenancy));
     }   
 }

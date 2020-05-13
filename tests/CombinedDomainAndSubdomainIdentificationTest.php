@@ -1,10 +1,10 @@
 <?php
 
-namespace Stancl\Tenancy\Tests\v3;
+namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Database\Models;
-use Stancl\Tenancy\Database\Models\Concerns\HasDomains;
+use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomainOrSubdomain;
 use Stancl\Tenancy\Tests\TestCase;
 
@@ -22,7 +22,7 @@ class CombinedDomainAndSubdomainIdentificationTest extends TestCase
             });
         });
 
-        config(['tenancy.tenant_model' => Tenant::class]);
+        config(['tenancy.tenant_model' => CombinedTenant::class]);
     }
 
     /** @test */
@@ -30,7 +30,7 @@ class CombinedDomainAndSubdomainIdentificationTest extends TestCase
     {
         config(['tenancy.central_domains' => ['localhost']]);
 
-        $tenant = Tenant::create([
+        $tenant = CombinedTenant::create([
             'id' => 'acme',
         ]);
 
@@ -53,7 +53,7 @@ class CombinedDomainAndSubdomainIdentificationTest extends TestCase
     {
         config(['tenancy.central_domains' => []]);
 
-        $tenant = Tenant::create([
+        $tenant = CombinedTenant::create([
             'id' => 'acme',
         ]);
 
@@ -72,7 +72,7 @@ class CombinedDomainAndSubdomainIdentificationTest extends TestCase
     }
 }
 
-class Tenant extends Models\Tenant
+class CombinedTenant extends Models\Tenant
 {
     use HasDomains;
 }

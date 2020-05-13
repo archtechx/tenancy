@@ -9,14 +9,14 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Stancl\Tenancy\Contracts\Syncable;
 use Stancl\Tenancy\Contracts\SyncMaster;
-use Stancl\Tenancy\Database\Models\Concerns\CentralConnection;
-use Stancl\Tenancy\Database\Models\Concerns\ResourceSyncing;
+use Stancl\Tenancy\Database\Concerns\CentralConnection;
+use Stancl\Tenancy\Database\Concerns\ResourceSyncing;
 use Stancl\Tenancy\Database\Models;
 use Stancl\Tenancy\Database\Models\TenantPivot;
-use Stancl\Tenancy\Events\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Events\Listeners\JobPipeline;
-use Stancl\Tenancy\Events\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Events\Listeners\UpdateSyncedResource;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Listeners\JobPipeline;
+use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Listeners\UpdateSyncedResource;
 use Stancl\Tenancy\Events\SyncedResourceChangedInForeignDatabase;
 use Stancl\Tenancy\Events\SyncedResourceSaved;
 use Stancl\Tenancy\Events\TenancyEnded;
@@ -49,8 +49,8 @@ class ResourceSyncingTest extends TestCase
 
         $this->artisan('migrate', [
             '--path' => [
-                __DIR__ . '/../Etc/synced_resource_migrations',
-                __DIR__ . '/../Etc/synced_resource_migrations/users'
+                __DIR__ . '/Etc/synced_resource_migrations',
+                __DIR__ . '/Etc/synced_resource_migrations/users'
             ],
             '--realpath' => true,
         ])->assertExitCode(0);
@@ -59,7 +59,7 @@ class ResourceSyncingTest extends TestCase
     protected function migrateTenants()
     {
         $this->artisan('tenants:migrate', [
-            '--path' => __DIR__ . '/../Etc/synced_resource_migrations/users',
+            '--path' => __DIR__ . '/Etc/synced_resource_migrations/users',
             '--realpath' => true,
         ])->assertExitCode(0);
     }
@@ -69,7 +69,7 @@ class ResourceSyncingTest extends TestCase
     {
         Event::fake([SyncedResourceSaved::class]);
 
-        $user = User::create([
+        $user = ResourceUser::create([
             'name' => 'Foo',
             'email' => 'foo@email.com',
             'password' => 'secret',
@@ -94,13 +94,13 @@ class ResourceSyncingTest extends TestCase
             'role' => 'superadmin', // unsynced
         ]);
 
-        $tenant = Tenant::create();
+        $tenant = ResourceTenant::create();
         $this->migrateTenants();
 
         tenancy()->initialize($tenant);
 
         // Create the same user in tenant DB
-        $user = User::create([
+        $user = ResourceUser::create([
             'global_id' => 'acme',
             'name' => 'John Doe',
             'email' => 'john@localhost',
@@ -135,22 +135,22 @@ class ResourceSyncingTest extends TestCase
             'email' => 'john@foreignhost', // synced
             'password' => 'secret', // no changes
             'role' => 'superadmin', // unsynced
-        ], User::first()->getAttributes());
+        ], ResourceUser::first()->getAttributes());
     }
 
     /** @test */
     public function creating_the_resource_in_tenant_database_creates_it_in_central_database_and_creates_the_mapping()
     {
         // Assert no user in central DB
-        $this->assertCount(0, User::all());
+        $this->assertCount(0, ResourceUser::all());
 
-        $tenant = Tenant::create();
+        $tenant = ResourceTenant::create();
         $this->migrateTenants();
 
         tenancy()->initialize($tenant);
 
         // Create the same user in tenant DB
-        User::create([
+        ResourceUser::create([
             'global_id' => 'acme',
             'name' => 'John Doe',
             'email' => 'john@localhost',
@@ -170,7 +170,7 @@ class ResourceSyncingTest extends TestCase
         // Assert role change doesn't cascade
         CentralUser::first()->update(['role' => 'central superadmin']);
         tenancy()->initialize($tenant);
-        $this->assertSame('commenter', User::first()->role);
+        $this->assertSame('commenter', ResourceUser::first()->role);
     }
 
     /** @test */
@@ -182,7 +182,7 @@ class ResourceSyncingTest extends TestCase
         $this->assertFalse(tenancy()->initialized);
 
         $this->expectException(ModelNotSyncMaster::class);
-        User::first()->update(['role' => 'foobar']);
+        ResourceUser::first()->update(['role' => 'foobar']);
     }
 
     /** @test */
@@ -196,19 +196,19 @@ class ResourceSyncingTest extends TestCase
             'role' => 'commenter', // unsynced
         ]);
 
-        $tenant = Tenant::create([
+        $tenant = ResourceTenant::create([
             'id' => 't1',
         ]);
         $this->migrateTenants();
 
         $tenant->run(function () {
-            $this->assertCount(0, User::all());
+            $this->assertCount(0, ResourceUser::all());
         });
 
         $centralUser->tenants()->attach('t1');
 
         $tenant->run(function () {
-            $this->assertCount(1, User::all());
+            $this->assertCount(1, ResourceUser::all());
         });
     }
 
@@ -223,13 +223,13 @@ class ResourceSyncingTest extends TestCase
             'role' => 'commenter', // unsynced
         ]);
 
-        $tenant = Tenant::create([
+        $tenant = ResourceTenant::create([
             'id' => 't1',
         ]);
         $this->migrateTenants();
 
         $tenant->run(function () {
-            $this->assertCount(0, User::all());
+            $this->assertCount(0, ResourceUser::all());
         });
 
         // The child model is inaccessible in the Pivot Model, so we can't fire any events.
@@ -237,7 +237,7 @@ class ResourceSyncingTest extends TestCase
 
         $tenant->run(function () {
             // Still zero
-            $this->assertCount(0, User::all());
+            $this->assertCount(0, ResourceUser::all());
         });
     }
 
@@ -252,15 +252,15 @@ class ResourceSyncingTest extends TestCase
             'role' => 'commenter', // unsynced
         ]);
 
-        $t1 = Tenant::create([
+        $t1 = ResourceTenant::create([
             'id' => 't1',
         ]);
 
-        $t2 = Tenant::create([
+        $t2 = ResourceTenant::create([
             'id' => 't2',
         ]);
 
-        $t3 = Tenant::create([
+        $t3 = ResourceTenant::create([
             'id' => 't3',
         ]);
         $this->migrateTenants();
@@ -271,17 +271,17 @@ class ResourceSyncingTest extends TestCase
 
         $t1->run(function () {
             // assert user exists
-            $this->assertCount(1, User::all());
+            $this->assertCount(1, ResourceUser::all());
         });
 
         $t2->run(function () {
             // assert user exists
-            $this->assertCount(1, User::all());
+            $this->assertCount(1, ResourceUser::all());
         });
 
         $t3->run(function () {
             // assert user does NOT exist
-            $this->assertCount(0, User::all());
+            $this->assertCount(0, ResourceUser::all());
         });
     }
 
@@ -297,10 +297,10 @@ class ResourceSyncingTest extends TestCase
             'role' => 'commenter', // unsynced
         ]);
 
-        $t1 = Tenant::create([
+        $t1 = ResourceTenant::create([
             'id' => 't1',
         ]);
-        $t2 = Tenant::create([
+        $t2 = ResourceTenant::create([
             'id' => 't2',
         ]);
         $this->migrateTenants();
@@ -310,7 +310,7 @@ class ResourceSyncingTest extends TestCase
 
         $t2->run(function () {
             // Create user with the same global ID in t2 database
-            User::create([
+            ResourceUser::create([
                 'global_id' => 'acme',
                 'name' => 'John Foo', // changed
                 'email' => 'john@foo', // changed
@@ -325,7 +325,7 @@ class ResourceSyncingTest extends TestCase
         $this->assertSame('commenter', $centralUser->role); // role didn't change
 
         $t1->run(function () {
-            $user = User::first();
+            $user = ResourceUser::first();
             $this->assertSame('John Foo', $user->name); // name changed
             $this->assertSame('john@foo', $user->email); // email changed
             $this->assertSame('commenter', $user->role); // role didn't change, i.e. is the same as from the original copy from central
@@ -344,13 +344,13 @@ class ResourceSyncingTest extends TestCase
             'role' => 'commenter', // unsynced
         ]);
 
-        $t1 = Tenant::create([
+        $t1 = ResourceTenant::create([
             'id' => 't1',
         ]);
-        $t2 = Tenant::create([
+        $t2 = ResourceTenant::create([
             'id' => 't2',
         ]);
-        $t3 = Tenant::create([
+        $t3 = ResourceTenant::create([
             'id' => 't3',
         ]);
         $this->migrateTenants();
@@ -361,17 +361,17 @@ class ResourceSyncingTest extends TestCase
         $centralUser->tenants()->attach('t3');
 
         $t3->run(function () {
-            User::first()->update([
+            ResourceUser::first()->update([
                 'name' => 'John 3',
                 'role' => 'employee', // unsynced
             ]);
 
-            $this->assertSame('employee', User::first()->role);
+            $this->assertSame('employee', ResourceUser::first()->role);
         });
 
         // Check that change was cascaded to other tenants
         $t1->run($check = function () {
-            $user = User::first();
+            $user = ResourceUser::first();
 
             $this->assertSame('John 3', $user->name); // synced
             $this->assertSame('commenter', $user->role); // unsynced
@@ -408,7 +408,7 @@ class ResourceSyncingTest extends TestCase
             'role' => 'employee',
         ]);
 
-        $t1 = Tenant::create([
+        $t1 = ResourceTenant::create([
             'id' => 't1',
         ]);
 
@@ -417,21 +417,21 @@ class ResourceSyncingTest extends TestCase
         $centralUser->tenants()->attach('t1');
 
         $t1->run(function () {
-            $this->assertSame('employee', User::first()->role);
+            $this->assertSame('employee', ResourceUser::first()->role);
         });
     }
 
     /** @test */
     public function when_the_resource_doesnt_exist_in_the_central_db_non_synced_columns_will_bubble_up_too()
     {
-        $t1 = Tenant::create([
+        $t1 = ResourceTenant::create([
             'id' => 't1',
         ]);
 
         $this->migrateTenants();
 
         $t1->run(function () {
-            User::create([
+            ResourceUser::create([
                 'name' => 'John Doe',
                 'email' => 'john@doe',
                 'password' => 'secret',
@@ -448,7 +448,7 @@ class ResourceSyncingTest extends TestCase
         Queue::fake();
         UpdateSyncedResource::$shouldQueue = true;
 
-        $t1 = Tenant::create([
+        $t1 = ResourceTenant::create([
             'id' => 't1',
         ]);
 
@@ -457,7 +457,7 @@ class ResourceSyncingTest extends TestCase
         Queue::assertNothingPushed();
 
         $t1->run(function () {
-            User::create([
+            ResourceUser::create([
                 'name' => 'John Doe',
                 'email' => 'john@doe',
                 'password' => 'secret',
@@ -484,13 +484,13 @@ class ResourceSyncingTest extends TestCase
             'role' => 'commenter', // unsynced
         ]);
 
-        $t1 = Tenant::create([
+        $t1 = ResourceTenant::create([
             'id' => 't1',
         ]);
-        $t2 = Tenant::create([
+        $t2 = ResourceTenant::create([
             'id' => 't2',
         ]);
-        $t3 = Tenant::create([
+        $t3 = ResourceTenant::create([
             'id' => 't3',
         ]);
         $this->migrateTenants();
@@ -520,12 +520,12 @@ class ResourceSyncingTest extends TestCase
         Event::fake([SyncedResourceChangedInForeignDatabase::class]);
 
         $t3->run(function () {
-            User::first()->update([
+            ResourceUser::first()->update([
                 'name' => 'John 3',
                 'role' => 'employee', // unsynced
             ]);
 
-            $this->assertSame('employee', User::first()->role);
+            $this->assertSame('employee', ResourceUser::first()->role);
         });
 
         Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
@@ -545,11 +545,30 @@ class ResourceSyncingTest extends TestCase
             return $event->tenant === null;
         });
 
-        // todo update in global
+        // Flush
+        Event::fake([SyncedResourceChangedInForeignDatabase::class]);
+
+        $centralUser->update([
+            'name' => 'John Central',
+        ]);
+
+        Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+            return optional($event->tenant)->getTenantKey() === 't1';
+        });
+        Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+            return optional($event->tenant)->getTenantKey() === 't2';
+        });
+        Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+            return optional($event->tenant)->getTenantKey() === 't3';
+        });
+        // Assert NOT dispatched in central
+        Event::assertNotDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+            return $event->tenant === null;
+        });
     }
 }
 
-class Tenant extends Models\Tenant
+class ResourceTenant extends Models\Tenant
 {
     public function users()
     {
@@ -568,13 +587,13 @@ class CentralUser extends Model implements SyncMaster
 
     public function tenants(): BelongsToMany
     {
-        return $this->belongsToMany(Tenant::class, 'tenant_users', 'global_user_id', 'tenant_id')
+        return $this->belongsToMany(ResourceTenant::class, 'tenant_users', 'global_user_id', 'tenant_id')
             ->using(TenantPivot::class);
     }
 
     public function getTenantModelName(): string
     {
-        return User::class;
+        return ResourceUser::class;
     }
 
     public function getTenantIdColumnInMapTable(): string
@@ -607,10 +626,11 @@ class CentralUser extends Model implements SyncMaster
     }
 }
 
-class User extends Model implements Syncable
+class ResourceUser extends Model implements Syncable
 {
     use ResourceSyncing;
 
+    protected $table = 'users';
     protected $guarded = [];
     public $timestamps = false;
 

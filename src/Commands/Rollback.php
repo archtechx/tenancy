@@ -9,6 +9,7 @@ use Illuminate\Database\Console\Migrations\RollbackCommand;
 use Illuminate\Database\Migrations\Migrator;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\DatabaseManager;
+use Stancl\Tenancy\Events\DatabaseRolledBack;
 use Stancl\Tenancy\Traits\DealsWithMigrations;
 use Stancl\Tenancy\Traits\HasATenantsOption;
 
@@ -62,7 +63,7 @@ class Rollback extends RollbackCommand
             // Rollback
             parent::handle();
 
-            // todo DatabaseRolledBack event
+            event(new DatabaseRolledBack($tenant));
         });
     }
 }

@@ -34,7 +34,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         });
     }
 
-    public function start(Tenant $tenant)
+    public function bootstrap(Tenant $tenant)
     {
         $suffix = $this->app['config']['tenancy.filesystem.suffix_base'] . $tenant->getTenantKey();
 
@@ -69,7 +69,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         }
     }
 
-    public function end()
+    public function revert()
     {
         // storage_path()
         $this->app->useStoragePath($this->originalPaths['storage']);

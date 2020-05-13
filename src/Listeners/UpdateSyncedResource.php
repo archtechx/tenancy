@@ -1,6 +1,6 @@
 <?php
 
-namespace Stancl\Tenancy\Events\Listeners;
+namespace Stancl\Tenancy\Listeners;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Pivot;

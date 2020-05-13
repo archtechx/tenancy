@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests\v3;
+namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -12,9 +12,12 @@ use Stancl\Tenancy\Exceptions\TenantDatabaseUserAlreadyExistsException;
 use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager;
 use Stancl\Tenancy\Database\Models\Tenant;
-use Stancl\Tenancy\Events\Listeners\JobPipeline;
+use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Listeners\JobPipeline;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\TenancyBootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Tests\TestCase;
 
 class DatabaseUsersTest extends TestCase
@@ -96,18 +99,19 @@ class DatabaseUsersTest extends TestCase
         config([
             'tenancy.database_managers.mysql' => MySQLDatabaseManager::class,
             'tenancy.database.suffix' => '',
-            'tenancy.database.template_connection' => 'mysql',
+            'tenancy.template_tenant_connection' => 'mysql',
+            'tenancy.bootstrappers' => [
+                DatabaseTenancyBootstrapper::class,
+            ],
         ]);
+
+        Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
 
         $tenant = Tenant::create([
             'id' => 'foo' . Str::random(10),
         ]);
 
         $this->assertTrue($tenant->database()->manager() instanceof MySQLDatabaseManager);
-
-        $tenant = Tenant::create([
-            'id' => 'foo' . Str::random(10),
-        ]);
 
         tenancy()->initialize($tenant); // check if everything works
         tenancy()->end();

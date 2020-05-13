@@ -1,6 +1,6 @@
 <?php
 
-namespace Stancl\Tenancy\Database\Models\Concerns;
+namespace Stancl\Tenancy\Database\Concerns;
 
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 
@@ -13,5 +13,10 @@ trait GeneratesIds
                 $model->id = app(UniqueIdentifierGenerator::class)->generate($model);
             }
         });
+    }
+
+    public function getIncrementing()
+    {
+        return ! app()->bound(UniqueIdentifierGenerator::class);
     }
 }

@@ -1,9 +1,7 @@
 <?php
 
-// todo move namespace one dir above
-namespace Stancl\Tenancy\Database\Models\Concerns;
+namespace Stancl\Tenancy\Database\Concerns;
 
-// todo rename
 trait HasADataColumn
 {
     public static $priorityListeners = [];
@@ -53,11 +51,17 @@ trait HasADataColumn
             $model->dataEncodingStatus = 'decoded';
         };
 
-        static::registerPriorityListener('retrieved', $decode);
+        static::registerPriorityListener('retrieved', function ($model) use ($decode) {
+            // We always decode after model retrieval.
+            $model->dataEncodingStatus = 'encoded';
+
+            $decode($model);
+        });
 
         static::registerPriorityListener('saving', $encode);
         static::registerPriorityListener('creating', $encode);
         static::registerPriorityListener('updating', $encode);
+
         static::registerPriorityListener('saved', $decode);
         static::registerPriorityListener('created', $decode);
         static::registerPriorityListener('updated', $decode);

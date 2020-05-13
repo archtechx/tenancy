@@ -31,12 +31,8 @@ class MigrateDatabase implements ShouldQueue
      */
     public function handle()
     {
-        $migrationParameters = [
-            // todo ...
-        ];
-
         Artisan::call('tenants:migrate', [
             '--tenants' => [$this->tenant->id],
-        ] + $migrationParameters);
+        ]);
     }
 }

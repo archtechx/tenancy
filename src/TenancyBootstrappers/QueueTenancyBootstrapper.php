@@ -67,12 +67,12 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         }
     }
 
-    public function start(Tenant $tenant)
+    public function bootstrap(Tenant $tenant)
     {
         $this->tenancyInitialized = true;
     }
 
-    public function end()
+    public function revert()
     {
         $this->tenancyInitialized = false;
     }

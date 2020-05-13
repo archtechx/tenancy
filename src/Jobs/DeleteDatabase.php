@@ -11,6 +11,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Events\DatabaseDeleted;
 
 class DeleteDatabase implements ShouldQueue
 {
@@ -27,5 +28,7 @@ class DeleteDatabase implements ShouldQueue
     public function handle()
     {
         $this->tenant->database()->manager()->deleteDatabase($this->tenant);
+
+        event(new DatabaseDeleted($this->tenant));
     }
 }

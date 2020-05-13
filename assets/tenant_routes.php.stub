@@ -7,10 +7,17 @@
 |
 | Here you can register the tenant routes for your application.
 | These routes are loaded by the TenantRouteServiceProvider
-| with the tenancy and web middleware groups. Good luck!
+| with the namespace configured in your tenancy config.
+|
+| Feel free to customize them however you want. Good luck!
 |
 */
 
-Route::get('/app', function () {
-    return 'This is your multi-tenant application. The id of the current tenant is ' . tenant('id');
+Route::group([
+    'middleware' => InitializeTenancyByDomain::class,
+    'prefix' => '/app',
+], function () {
+    Route::get('/', function () {
+        return 'This is your multi-tenant application. The id of the current tenant is ' . tenant('id');
+    });
 });

@@ -24,7 +24,7 @@ class CacheTenancyBootstrapper implements TenancyBootstrapper
         $this->app = $app;
     }
 
-    public function start(Tenant $tenant)
+    public function bootstrap(Tenant $tenant)
     {
         $this->resetFacadeCache();
 
@@ -34,7 +34,7 @@ class CacheTenancyBootstrapper implements TenancyBootstrapper
         });
     }
 
-    public function end()
+    public function revert()
     {
         $this->resetFacadeCache();
 

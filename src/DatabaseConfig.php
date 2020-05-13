@@ -6,9 +6,7 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Stancl\Tenancy\Contracts\Future\CanSetConnection;
 use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
-use Stancl\Tenancy\Contracts\ModifiesDatabaseNameForConnection;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Database\Models\Tenant;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
@@ -79,6 +77,11 @@ class DatabaseConfig
         return $this->tenant->getInternal('db_password') ?? null;
     }
 
+    /**
+     * Generate DB name, username & password and write them to the tenant model.
+     *
+     * @return void
+     */
     public function makeCredentials(): void
     {
         $this->tenant->setInternal('db_name', $this->getName() ?? (static::$databaseNameGenerator)($this->tenant));
@@ -151,9 +154,7 @@ class DatabaseConfig
         /** @var TenantDatabaseManager $databaseManager */
         $databaseManager = app($databaseManagers[$driver]);
 
-        if ($databaseManager instanceof CanSetConnection) {
-            $databaseManager->setConnection($this->getTemplateConnectionName());
-        }
+        $databaseManager->setConnection($this->getTemplateConnectionName());
 
         return $databaseManager;
     }

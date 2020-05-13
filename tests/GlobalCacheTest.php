@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests\v3;
+namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Facades\GlobalCache;
 use Stancl\Tenancy\Database\Models\Tenant;
-use Stancl\Tenancy\Events\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\TenancyBootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Tests\TestCase;

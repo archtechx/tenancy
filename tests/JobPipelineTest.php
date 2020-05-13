@@ -1,12 +1,12 @@
 <?php
 
-namespace Stancl\Tenancy\Tests\v3;
+namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Spatie\Valuestore\Valuestore;
 use Stancl\Tenancy\Database\Models\Tenant;
-use Stancl\Tenancy\Events\Listeners\JobPipeline;
+use Stancl\Tenancy\Listeners\JobPipeline;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Tests\TestCase;
 
@@ -23,7 +23,7 @@ class JobPipelineTest extends TestCase
 
         config(['queue.default' => 'redis']);
 
-        $this->valuestore = Valuestore::make(__DIR__ . '/../Etc/tmp/jobpipelinetest.json')->flush();
+        $this->valuestore = Valuestore::make(__DIR__ . '/Etc/tmp/jobpipelinetest.json')->flush();
     }
 
     /** @test */
@@ -51,7 +51,7 @@ class JobPipelineTest extends TestCase
             FooJob::class,
         ])->send(function () {
             return $this->valuestore;
-        })->shouldBeQueued(true)->toListener());
+        })->queue(true)->toListener());
 
         Queue::assertNothingPushed();
 
@@ -70,7 +70,7 @@ class JobPipelineTest extends TestCase
             FooJob::class,
         ])->send(function () {
             return $this->valuestore;
-        })->shouldBeQueued(true)->toListener());
+        })->queue(true)->toListener());
 
         $this->assertFalse($this->valuestore->has('foo'));
         Tenant::create();

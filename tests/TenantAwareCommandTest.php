@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests\v3;
+namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;

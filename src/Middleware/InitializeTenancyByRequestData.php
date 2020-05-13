@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
 use Stancl\Tenancy\Tenancy;
 
-// todo write tests for this
 class InitializeTenancyByRequestData extends IdentificationMiddleware
 {
     /** @var string|null */

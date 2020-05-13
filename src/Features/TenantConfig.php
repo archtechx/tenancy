@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Features;
 
 use Illuminate\Contracts\Config\Repository;
+use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Contracts\Feature;
+use Stancl\Tenancy\Events\RevertedToCentralContext;
+use Stancl\Tenancy\Events\TenancyBootstrapped;
 use Stancl\Tenancy\Tenancy;
-use Stancl\Tenancy\Tenant;
-use Stancl\Tenancy\TenantManager;
+use Stancl\Tenancy\Contracts\Tenant;
 
-// todo rewrite this
 class TenantConfig implements Feature
 {
     /** @var Repository */
@@ -27,26 +28,26 @@ class TenantConfig implements Feature
     {
         $this->config = $config;
 
-        foreach ($this->getStorageToConfigMap() as $configKey) {
+        foreach (static::$storageToConfigMap as $configKey) {
             $this->originalConfig[$configKey] = $this->config[$configKey];
         }
     }
 
     public function bootstrap(Tenancy $tenancy): void
     {
-        $tenantManager->eventListener('bootstrapped', function (TenantManager $manager) {
-            $this->setTenantConfig($manager->getTenant());
+        Event::listen(TenancyBootstrapped::class, function (TenancyBootstrapped $event) {
+            $this->setTenantConfig($event->tenancy->tenant);
         });
 
-        $tenantManager->eventListener('ended', function () {
+        Event::listen(RevertedToCentralContext::class, function () {
             $this->unsetTenantConfig();
         });
     }
 
     public function setTenantConfig(Tenant $tenant): void
     {
-        foreach ($this->getStorageToConfigMap() as $storageKey => $configKey) {
-            $override = $tenant->data[$storageKey] ?? null;
+        foreach (static::$storageToConfigMap as $storageKey => $configKey) {
+            $override = $tenant->$storageKey ?? null;
             if (! is_null($override)) {
                 $this->config[$configKey] = $override;
             }
@@ -55,13 +56,8 @@ class TenantConfig implements Feature
 
     public function unsetTenantConfig(): void
     {
-        foreach ($this->getStorageToConfigMap() as $configKey) {
+        foreach (static::$storageToConfigMap as $configKey) {
             $this->config[$configKey] = $this->originalConfig[$configKey];
         }
-    }
-
-    public function getStorageToConfigMap(): array
-    {
-        return static::$storageToConfigMap;
     }
 }

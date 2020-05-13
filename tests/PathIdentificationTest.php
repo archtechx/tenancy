@@ -1,6 +1,6 @@
 <?php
 
-namespace Stancl\Tenancy\Tests\v3;
+namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Database\Models\Tenant;

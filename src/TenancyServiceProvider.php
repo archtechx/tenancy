@@ -21,23 +21,7 @@ class TenancyServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__ . '/../assets/config.php', 'tenancy');
 
-        $this->app->bind(Contracts\UniqueIdentifierGenerator::class, $this->app['config']['tenancy.id_generator']);
         $this->app->singleton(DatabaseManager::class);
-        $this->app->singleton(Tenancy::class);
-        $this->app->extend(Tenancy::class, function (Tenancy $tenancy) {
-            foreach ($this->app['config']['tenancy.features'] as $feature) {
-                $this->app[$feature]->bootstrap($tenancy);
-            }
-
-            return $tenancy;
-        });
-        $this->app->bind(Tenant::class, function ($app) {
-            return $app[Tenancy::class]->tenant;
-        });
-
-        foreach ($this->app['config']['tenancy.bootstrappers'] as $bootstrapper) {
-            $this->app->singleton($bootstrapper);
-        }
 
         $this->app->singleton(Commands\Migrate::class, function ($app) {
             return new Commands\Migrate($app['migrator'], $app[DatabaseManager::class]);
@@ -52,8 +36,6 @@ class TenancyServiceProvider extends ServiceProvider
         $this->app->bind('globalCache', function ($app) {
             return new CacheManager($app);
         });
-
-        $this->app->register(TenantRouteServiceProvider::class);
     }
 
     /**

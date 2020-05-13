@@ -1,6 +1,6 @@
 <?php
 
-namespace Stancl\Tenancy\Tests\v3;
+namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Foundation\Auth\User as Authenticable;
@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Stancl\Tenancy\Database\Models\Tenant;
-use Stancl\Tenancy\Events\Listeners\JobPipeline;
+use Stancl\Tenancy\Listeners\JobPipeline;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Jobs\MigrateDatabase;

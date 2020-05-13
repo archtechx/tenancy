@@ -1,10 +1,10 @@
 <?php
 
-namespace Stancl\Tenancy\Tests\v3;
+namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Database\Models;
-use Stancl\Tenancy\Database\Models\Concerns\HasDomains;
+use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Exceptions\DomainOccupiedByOtherTenantException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
@@ -25,13 +25,13 @@ class DomainTest extends TestCase
             });
         });
 
-        config(['tenancy.tenant_model' => Tenant::class]);
+        config(['tenancy.tenant_model' => DomainTenant::class]);
     }
 
     /** @test */
     public function tenant_can_be_identified_using_hostname()
     {
-        $tenant = Tenant::create();
+        $tenant = DomainTenant::create();
 
         $id = $tenant->id;
 
@@ -48,13 +48,13 @@ class DomainTest extends TestCase
     /** @test */
     public function a_domain_can_belong_to_only_one_tenant()
     {
-        $tenant = Tenant::create();
+        $tenant = DomainTenant::create();
 
         $tenant->domains()->create([
             'domain' => 'foo.localhost',
         ]);
 
-        $tenant2 = Tenant::create();
+        $tenant2 = DomainTenant::create();
 
         $this->expectException(DomainOccupiedByOtherTenantException::class);
         $tenant2->domains()->create([
@@ -73,7 +73,7 @@ class DomainTest extends TestCase
     /** @test */
     public function tenant_can_be_identified_by_domain()
     {
-        $tenant = Tenant::create([
+        $tenant = DomainTenant::create([
             'id' => 'acme',
         ]);
 
@@ -104,7 +104,7 @@ class DomainTest extends TestCase
     }
 }
 
-class Tenant extends Models\Tenant
+class DomainTenant extends Models\Tenant
 {
     use HasDomains;
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Stancl\Tenancy\Database\Models\Concerns;
+namespace Stancl\Tenancy\Database\Concerns;
 
 trait TenantConnection
 {

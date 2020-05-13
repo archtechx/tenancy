@@ -1,6 +1,6 @@
 <?php
 
-namespace Stancl\Tenancy\Tests\v3;
+namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -11,7 +11,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Event;
 use Spatie\Valuestore\Valuestore;
 use Stancl\Tenancy\Database\Models\Tenant;
-use Stancl\Tenancy\Events\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\TenancyBootstrappers\QueueTenancyBootstrapper;
 use Stancl\Tenancy\Tests\TestCase;
@@ -36,17 +36,19 @@ class QueueTest extends TestCase
 
         Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
 
-        $this->valuestore = Valuestore::make(__DIR__ . '/../Etc/tmp/queuetest.json')->flush();
+        $this->valuestore = Valuestore::make(__DIR__ . '/Etc/tmp/queuetest.json')->flush();
     }
 
     /** @test */
     public function tenant_id_is_passed_to_tenant_queues()
     {
+        config(['queue.default' => 'sync']);
+
         $tenant = Tenant::create();
 
         tenancy()->initialize($tenant);
 
-        Event::fake();
+        Event::fake([JobProcessing::class]);
 
         dispatch(new TestJob($this->valuestore));
 

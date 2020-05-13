@@ -1,6 +1,6 @@
 <?php
 
-namespace Stancl\Tenancy\Database\Models\Concerns;
+namespace Stancl\Tenancy\Database\Concerns;
 
 /**
  * @property-read string $primary_domain_hostname

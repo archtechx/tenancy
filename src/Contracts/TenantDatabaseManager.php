@@ -32,4 +32,12 @@ interface TenantDatabaseManager
      * @return array
      */
     public function makeConnectionConfig(array $baseConfig, string $databaseName): array;
+
+    /**
+     * Set the DB connection that should be used by the tenant database manager.
+     *
+     * @param string $connection
+     * @return void
+     */
+    public function setConnection(string $connection): void;
 }

@@ -1,7 +1,8 @@
 <?php
 
-namespace Stancl\Tenancy\Events\Listeners;
+namespace Stancl\Tenancy\Listeners;
 
+use Stancl\Tenancy\Events\TenancyBootstrapped;
 use Stancl\Tenancy\Events\TenancyInitialized;
 
 class BootstrapTenancy
@@ -9,7 +10,9 @@ class BootstrapTenancy
     public function handle(TenancyInitialized $event)
     {
         foreach ($event->tenancy->getBootstrappers() as $bootstrapper) {
-            $bootstrapper->start($event->tenancy->tenant);
+            $bootstrapper->bootstrap($event->tenancy->tenant);
         }
+
+        event(new TenancyBootstrapped($event->tenancy));
     }
 }

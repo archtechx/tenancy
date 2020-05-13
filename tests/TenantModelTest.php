@@ -1,6 +1,6 @@
 <?php
 
-namespace Stancl\Tenancy\Tests\v3;
+namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
@@ -39,7 +39,7 @@ class TenantModelTest extends TestCase
 
         tenancy()->end();
 
-        $this->assertSame(null, app(Tenant::class));
+        $this->assertSame(null, app(Contracts\Tenant::class));
     }
 
     /** @test */
@@ -53,7 +53,7 @@ class TenantModelTest extends TestCase
         $this->assertSame('bar', $tenant->foo);
         $this->assertSame(null, $tenant->data);
 
-        // Low level test to test database structure
+        // Low level test to assert database structure
         $this->assertSame(json_encode(['foo' => 'bar']), DB::table('tenants')->where('id', $tenant->id)->first()->data);
         $this->assertSame(null, DB::table('tenants')->where('id', $tenant->id)->first()->foo ?? null);
 
@@ -103,8 +103,8 @@ class TenantModelTest extends TestCase
 
         unset(app()[UniqueIdentifierGenerator::class]);
 
-        $tenant1 = MyTenant::create();
-        $tenant2 = MyTenant::create();
+        $tenant1 = Tenant::create();
+        $tenant2 = Tenant::create();
 
         $this->assertSame(1, $tenant1->id);
         $this->assertSame(2, $tenant2->id);
@@ -138,7 +138,6 @@ class TenantModelTest extends TestCase
 class MyTenant extends Tenant
 {
     protected $table = 'tenants';
-    public $increments = true;
 }
 
 class AnotherTenant extends Model implements Contracts\Tenant

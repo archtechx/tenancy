@@ -20,7 +20,7 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
         $this->database = $database;
     }
 
-    public function start(Tenant $tenant)
+    public function bootstrap(Tenant $tenant)
     {
         /** @var TenantWithDatabase $tenant */
 
@@ -32,7 +32,7 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
         $this->database->connectToTenant($tenant);
     }
 
-    public function end()
+    public function revert()
     {
         $this->database->reconnectToCentral();
     }

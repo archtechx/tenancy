@@ -1,6 +1,6 @@
 <?php
 
-namespace Stancl\Tenancy\Events\Listeners;
+namespace Stancl\Tenancy\Listeners;
 
 use Closure;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -8,7 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 class JobPipeline implements ShouldQueue
 {
     /** @var bool */
-    public static $shouldBeQueuedByDefault = false;
+    public static $queueByDefault = false;
 
     /** @var callable[]|string[] */
     public $jobs;
@@ -22,16 +22,16 @@ class JobPipeline implements ShouldQueue
     public $passable;
 
     /** @var bool */
-    public $shouldBeQueued;
+    public $queue;
 
-    public function __construct($jobs, callable $send = null, bool $shouldBeQueued = null)
+    public function __construct($jobs, callable $send = null, bool $queue = null)
     {
         $this->jobs = $jobs;
         $this->send = $send ?? function ($event) {
             // If no $send callback is set, we'll just pass the event through the jobs.
             return $event;
         };
-        $this->shouldBeQueued = $shouldBeQueued ?? static::$shouldBeQueuedByDefault;
+        $this->queue = $queue ?? static::$queueByDefault;
     }
 
     /** @param callable[]|string[] $jobs */
@@ -47,9 +47,9 @@ class JobPipeline implements ShouldQueue
         return $this;
     }
 
-    public function shouldBeQueued(bool $shouldBeQueued)
+    public function queue(bool $queue)
     {
-        $this->shouldBeQueued = $shouldBeQueued;
+        $this->queue = $queue;
 
         return $this;
     }
@@ -69,7 +69,7 @@ class JobPipeline implements ShouldQueue
         return function (...$args) {
             $executable = $this->executable($args);
 
-            if ($this->shouldBeQueued) {
+            if ($this->queue) {
                 dispatch($executable);
             } else {
                 dispatch_now($executable);
