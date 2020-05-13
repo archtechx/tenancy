@@ -15,10 +15,10 @@ use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Jobs\CreateDatabase;
-use Stancl\Tenancy\TenancyBootstrappers\CacheTenancyBootstrapper;
-use Stancl\Tenancy\TenancyBootstrappers\DatabaseTenancyBootstrapper;
-use Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper;
-use Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Tests\TestCase;
 
 class BootstrapperTest extends TestCase

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\TenancyBootstrappers;
+namespace Stancl\Tenancy\Bootstrappers;
 
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Support\Facades\Redis;

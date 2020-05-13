@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\TenancyBootstrappers;
+namespace Stancl\Tenancy\Bootstrappers;
 
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\DatabaseManager;

@@ -17,7 +17,7 @@ use Stancl\Tenancy\Listeners\JobPipeline;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\TenancyBootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Tests\TestCase;
 
 class DatabaseUsersTest extends TestCase

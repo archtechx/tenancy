@@ -36,11 +36,11 @@ return [
      * To configure their behavior, see the config keys below.
      */
     'bootstrappers' => [
-        'database' => Stancl\Tenancy\TenancyBootstrappers\DatabaseTenancyBootstrapper::class,
-        'cache' => Stancl\Tenancy\TenancyBootstrappers\CacheTenancyBootstrapper::class,
-        'filesystem' => Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper::class,
-        'queue' => Stancl\Tenancy\TenancyBootstrappers\QueueTenancyBootstrapper::class,
-        // 'redis' => Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
+        'database' => Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper::class,
+        'cache' => Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper::class,
+        'filesystem' => Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper::class,
+        'queue' => Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper::class,
+        // 'redis' => Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
     ],
 
     /**

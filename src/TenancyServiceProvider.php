@@ -6,7 +6,7 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Cache\CacheManager;
 use Illuminate\Support\ServiceProvider;
-use Stancl\Tenancy\TenancyBootstrappers\FilesystemTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
 class TenancyServiceProvider extends ServiceProvider

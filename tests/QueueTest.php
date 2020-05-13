@@ -13,7 +13,7 @@ use Spatie\Valuestore\Valuestore;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Events\TenancyInitialized;
-use Stancl\Tenancy\TenancyBootstrappers\QueueTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper;
 use Stancl\Tenancy\Tests\TestCase;
 
 class QueueTest extends TestCase

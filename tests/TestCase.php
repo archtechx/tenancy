@@ -77,7 +77,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 '--force' => true,
             ],
             'tenancy.storage.connection' => 'central',
-            'tenancy.bootstrappers.redis' => \Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class,
+            'tenancy.bootstrappers.redis' => \Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class,
             'queue.connections.central' => [
                 'driver' => 'sync',
                 'central' => true,
@@ -86,7 +86,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'tenancy.tenant_model' => Tenant::class, // Use test tenant w/ DBs & domains
         ]);
 
-        $app->singleton(\Stancl\Tenancy\TenancyBootstrappers\RedisTenancyBootstrapper::class);
+        $app->singleton(\Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class);
     }
 
     protected function getPackageProviders($app)

@@ -24,7 +24,7 @@ use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Exceptions\ModelNotSyncMaster;
 use Stancl\Tenancy\Jobs\CreateDatabase;
-use Stancl\Tenancy\TenancyBootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Tests\TestCase;
 use Illuminate\Support\Str;

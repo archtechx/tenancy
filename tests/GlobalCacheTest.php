@@ -9,7 +9,7 @@ use Stancl\Tenancy\Facades\GlobalCache;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Events\TenancyInitialized;
-use Stancl\Tenancy\TenancyBootstrappers\CacheTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Tests\TestCase;
 
 class GlobalCacheTest extends TestCase
