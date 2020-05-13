@@ -6,7 +6,6 @@ namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Testing\Assert as PHPUnit;
-use Illuminate\Testing\TestResponse;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
@@ -30,7 +29,9 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             '--realpath' => true,
         ]);
 
-        TestResponse::macro('assertContent', function ($content) {
+        // Laravel 6.x support
+        $testResponse = class_exists('Illuminate\Testing\TestResponse') ? 'Illuminate\Testing\TestResponse' : 'Illuminate\Foundation\Testing\TestResponse';
+        $testResponse::macro('assertContent', function ($content) {
             /** @var TestResponse $this */
 
             PHPUnit::assertSame($content, $this->baseResponse->getContent());
