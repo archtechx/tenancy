@@ -1,5 +1,5 @@
 {
-    "name": "stancl/tenancy",
+    "name": "stancl/tenancy-private",
     "description": "Automatic multi-tenancy for your Laravel application.",
     "keywords": ["laravel", "multi-tenancy", "multi-database", "tenancy"],
     "license": "MIT",

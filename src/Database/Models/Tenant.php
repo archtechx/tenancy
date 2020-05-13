@@ -17,7 +17,6 @@ use Stancl\Tenancy\Database\Concerns;
 class Tenant extends Model implements Contracts\Tenant
 {
     use Concerns\CentralConnection,
-        Concerns\HasDataColumn,
         Concerns\GeneratesIds,
         Concerns\HasDataColumn {
         Concerns\HasDataColumn::getCasts as dataColumnCasts;
