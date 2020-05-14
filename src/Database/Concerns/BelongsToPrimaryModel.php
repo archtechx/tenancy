@@ -6,7 +6,7 @@ use Stancl\Tenancy\Database\ParentModelScope;
 
 trait BelongsToPrimaryModel
 {
-    abstract public function getParentRelationshipName(): string;
+    abstract public function getRelationshipToPrimaryModel(): string;
 
     public static function bootBelongsToPrimaryModel()
     {

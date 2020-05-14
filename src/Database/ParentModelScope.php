@@ -14,7 +14,7 @@ class ParentModelScope implements Scope
             return;
         }
 
-        $builder->whereHas($builder->getModel()->getParentRelationshipName());
+        $builder->whereHas($builder->getModel()->getRelationshipToPrimaryModel());
     }
 
     public function extend(Builder $builder)

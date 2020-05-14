@@ -310,7 +310,7 @@ class ScopedComment extends Comment
 
     protected $table = 'comments';
 
-    public function getParentRelationshipName(): string
+    public function getRelationshipToPrimaryModel(): string
     {
         return 'post';
     }
