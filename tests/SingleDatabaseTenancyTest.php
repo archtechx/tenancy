@@ -7,6 +7,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Stancl\Tenancy\Database\Concerns\BelongsToPrimaryModel;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
@@ -129,8 +130,41 @@ class SingleDatabaseTenancyTest extends TestCase
         // We're in acme context
         $this->assertSame('acme', tenant('id'));
 
-        // There is no way to scope this 🤷‍♂
         $this->assertSame(2, Comment::count());
+    }
+
+    /** @test */
+    public function secondary_models_ARE_scoped_to_the_current_tenant_when_accessed_directly_AND_PARENT_RELATIONSHIP_TRAIT_IS_USED()
+    {
+        $acme = Tenant::create([
+            'id' => 'acme',
+        ]);
+
+        $acme->run(function () {
+            $post = Post::create(['text' => 'Foo']);
+            $post->scoped_comments()->create(['text' => 'Comment Text']);
+
+            $this->assertSame(1, Post::count());
+            $this->assertSame(1, ScopedComment::count());
+        });
+
+        $foobar = Tenant::create([
+            'id' => 'foobar',
+        ]);
+
+        $foobar->run(function () {
+            $this->assertSame(0, Post::count());
+            $this->assertSame(0, ScopedComment::count());
+
+            $post = Post::create(['text' => 'Bar']);
+            $post->scoped_comments()->create(['text' => 'Comment Text 2']);
+
+            $this->assertSame(1, Post::count());
+            $this->assertSame(1, ScopedComment::count());
+        });
+
+        // Global context
+        $this->assertSame(2, ScopedComment::count());
     }
 
     /** @test */
@@ -252,6 +286,11 @@ class Post extends Model
     {
         return $this->hasMany(Comment::class);
     }
+
+    public function scoped_comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
 }
 
 class Comment extends Model
@@ -262,6 +301,18 @@ class Comment extends Model
     public function post()
     {
         return $this->belongsTo(Post::class);
+    }
+}
+
+class ScopedComment extends Comment
+{
+    use BelongsToPrimaryModel;
+
+    protected $table = 'comments';
+
+    public function getParentRelationshipName(): string
+    {
+        return 'post';
     }
 }
 

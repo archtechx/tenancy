@@ -19,7 +19,7 @@ trait BelongsToTenant
 
     public static function bootBelongsToTenant()
     {
-        static::addGlobalScope(new TenantScope(BelongsToTenant::$tenantIdColumn));
+        static::addGlobalScope(new TenantScope);
 
         static::creating(function ($model) {
             if (! $model->getAttribute(BelongsToTenant::$tenantIdColumn) && ! $model->relationLoaded('tenant')) {
