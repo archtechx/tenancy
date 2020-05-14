@@ -1,6 +1,6 @@
 <?php
 
-namespace Stancl\Tenancy\Database\Collections;
+namespace Stancl\Tenancy\Database;
 
 use Illuminate\Database\Eloquent\Collection;
 use Stancl\Tenancy\Contracts\Tenant;

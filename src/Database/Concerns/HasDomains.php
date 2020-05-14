@@ -5,7 +5,7 @@ namespace Stancl\Tenancy\Database\Concerns;
 use Stancl\Tenancy\Contracts\Domain;
 
 /**
- * @property-read Domain[] $domains
+ * @property-read Domain[]\Illuminate\Database\Eloquent\Collection $domains
  */
 trait HasDomains
 {

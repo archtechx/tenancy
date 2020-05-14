@@ -6,7 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\Events;
 use Stancl\Tenancy\Contracts;
-use Stancl\Tenancy\Database\Collections\TenantCollection;
+use Stancl\Tenancy\Database\TenantCollection;
 use Stancl\Tenancy\Database\Concerns;
 
 /**
