@@ -180,7 +180,7 @@ class SingleDatabaseTenancyTest extends TestCase
     /** @test */
     public function global_models_are_not_scoped_at_all()
     {
-        Schema::create('global_resource', function (Blueprint $table) {
+        Schema::create('global_resources', function (Blueprint $table) {
             $table->increments('id');
             $table->string('text');
         });
