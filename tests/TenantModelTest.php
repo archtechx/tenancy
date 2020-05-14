@@ -19,6 +19,7 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Illuminate\Support\Str;
+use Stancl\Tenancy\Database\Collections\TenantCollection;
 
 class TenantModelTest extends TestCase
 {
@@ -172,6 +173,38 @@ class TenantModelTest extends TestCase
     {
         // todo. tests for registerPriorityListener
     }
+
+    /** @test */
+    public function the_model_uses_TenantCollection()
+    {
+        Tenant::create();
+        Tenant::create();
+
+        $this->assertSame(2, Tenant::count());
+        $this->assertTrue(Tenant::all() instanceof TenantCollection);
+    }
+
+    /** @test */
+    public function a_command_can_be_run_on_a_collection_of_tenants()
+    {
+        Tenant::create([
+            'id' => 't1',
+            'foo' => 'bar',
+        ]);
+        Tenant::create([
+            'id' => 't2',
+            'foo' => 'bar',
+        ]);
+
+        Tenant::all()->runForEach(function ($tenant) {
+            $tenant->update([
+                'foo' => 'xyz',
+            ]);
+        });
+
+        $this->assertSame('xyz', Tenant::find('t1')->foo);
+        $this->assertSame('xyz', Tenant::find('t2')->foo);
+    }
 }
 
 class MyTenant extends Tenant
@@ -197,5 +230,15 @@ class AnotherTenant extends Model implements Contracts\Tenant
     public function run(callable $callback)
     {
         $callback();
+    }
+
+    public function getInternal(string $key)
+    {
+        return $this->$key;
+    }
+
+    public function setInternal(string $key, $value)
+    {
+        $this->$key = $value;
     }
 }

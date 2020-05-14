@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\Events;
 use Stancl\Tenancy\Contracts;
+use Stancl\Tenancy\Database\Collections\TenantCollection;
 use Stancl\Tenancy\Database\Concerns;
 
 /**
@@ -13,6 +14,8 @@ use Stancl\Tenancy\Database\Concerns;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property array $data
+ * 
+ * @method TenantCollection all()
  */
 class Tenant extends Model implements Contracts\Tenant
 {
@@ -34,6 +37,11 @@ class Tenant extends Model implements Contracts\Tenant
     public function getTenantKey(): string
     {
         return $this->getAttribute($this->getTenantKeyName());
+    }
+
+    public function newCollection(array $models = []): TenantCollection
+    {
+        return new TenantCollection($models);
     }
 
     public function getCasts()
