@@ -19,7 +19,7 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Illuminate\Support\Str;
-use Stancl\Tenancy\Database\Collections\TenantCollection;
+use Stancl\Tenancy\Database\TenantCollection;
 
 class TenantModelTest extends TestCase
 {
