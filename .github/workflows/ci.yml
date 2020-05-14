@@ -15,7 +15,10 @@ jobs:
 
     strategy:
      matrix:
-       laravel: ["^6.0", "^7.0"]
+       laravel: [
+        # "^6.0",
+        "^7.0"
+       ]
     
     steps:
     - uses: actions/checkout@v2
