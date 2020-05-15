@@ -10,6 +10,8 @@ use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
+use Stancl\Tenancy\Events\TenancyEnded;
+use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\TestCase;
 
 class GlobalCacheTest extends TestCase
@@ -23,6 +25,7 @@ class GlobalCacheTest extends TestCase
         ]]);
 
         Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+        Event::listen(TenancyEnded::class, RevertToCentralContext::class);
     }
 
     /** @test */
