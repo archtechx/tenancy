@@ -37,7 +37,7 @@ class UserImpersonation implements Feature
     {
         $token = $token instanceof ImpersonationToken ? $token : ImpersonationToken::findOrFail($token);
 
-        if (((string) $token->tenant_id) !== ((string) tenant('id'))) {
+        if (((string) $token->tenant_id) !== ((string) tenant()->getTenantKey())) {
             abort(403);
         }
 

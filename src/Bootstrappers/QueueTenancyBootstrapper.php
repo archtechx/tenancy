@@ -46,7 +46,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             }
 
             // Tenancy is already initialized for the tenant (e.g. dispatchNow was used)
-            if (tenancy()->initialized && tenant('id') === $tenantId) {
+            if (tenancy()->initialized && tenant()->getTenantKey() === $tenantId) {
                 return;
             }
 
@@ -87,7 +87,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             return [];
         }
 
-        $id = tenant('id');
+        $id = tenant()->getTenantKey();
 
         return [
             'tenant_id' => $id,
