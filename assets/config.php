@@ -48,12 +48,6 @@ return [
      */
     'database' => [
         /**
-         * The connection that will be used as a template for the dynamically created tenant connection.
-         * Set to null to use the default connection.
-         */
-        'template_connection' => null,
-
-        /**
          * Tenant database names are created like this:
          * prefix + tenant_id + suffix.
          */
@@ -177,6 +171,7 @@ return [
      * understand which ones you want to enable.
      */
     'features' => [
+        // Stancl\Tenancy\Features\UserImpersonation::class,
         // Stancl\Tenancy\Features\TenantConfig::class, // https://tenancy.samuelstancl.me/docs/v2/features/tenant-config/
         // Stancl\Tenancy\Features\CrossDomainRedirect::class, // https://tenancy.samuelstancl.me/docs/v2/features/tenant-redirect/
     ],

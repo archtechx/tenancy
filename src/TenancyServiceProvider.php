@@ -88,6 +88,10 @@ class TenancyServiceProvider extends ServiceProvider
         ], 'migrations');
 
         $this->publishes([
+            __DIR__ . '/../assets/2020_05_15_000010_create_tenant_user_impersonation_tokens_table.php' => database_path('migrations'),
+        ], 'impersonation-migrations');
+
+        $this->publishes([
             __DIR__ . '/../assets/TenancyServiceProvider.stub.php' => app_path('Providers/TenancyServiceProvider.php'),
         ], 'migrations');
 

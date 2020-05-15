@@ -37,7 +37,7 @@ class TenantUserImpersonationTest extends TestCase
         parent::setUp();
 
         $this->artisan('migrate', [
-            '--path' => __DIR__ . '/../assets/2019_09_15_000020_create_tenant_user_impersonation_tokens_table.php',
+            '--path' => __DIR__ . '/../assets/2020_05_15_000010_create_tenant_user_impersonation_tokens_table.php',
             '--realpath' => true,
         ])->assertExitCode(0);
 
