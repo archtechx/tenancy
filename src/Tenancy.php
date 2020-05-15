@@ -4,11 +4,14 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Traits\Macroable;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
 class Tenancy
 {
+    use Macroable;
+
     /** @var Tenant|Model|null */
     public $tenant;
 

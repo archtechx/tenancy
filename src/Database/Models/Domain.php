@@ -10,6 +10,7 @@ use Stancl\Tenancy\Events\DomainSaved;
 use Stancl\Tenancy\Events\DomainUpdated;
 use Stancl\Tenancy\Exceptions\DomainOccupiedByOtherTenantException;
 use Stancl\Tenancy\Contracts;
+use Stancl\Tenancy\Database\Concerns\CentralConnection;
 
 /**
  * @property string $domain
@@ -19,6 +20,8 @@ use Stancl\Tenancy\Contracts;
  */
 class Domain extends Model implements Contracts\Domain
 {
+    use CentralConnection;
+
     public $guarded = [];
     public $casts = [
         'is_primary' => 'bool',

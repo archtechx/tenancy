@@ -6,7 +6,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateDomainsTable extends Migration
+class CreateTenantUserImpersonationTokensTable extends Migration
 {
     /**
      * Run the migrations.
@@ -15,12 +15,14 @@ class CreateDomainsTable extends Migration
      */
     public function up(): void
     {
-        Schema::create('domains', function (Blueprint $table) {
-            $table->increments('id');
-            $table->string('domain', 255)->unique();
+        Schema::create('tenant_user_impersonation_tokens', function (Blueprint $table) {
+            $table->string('token', 128)->primary();
             $table->string('tenant_id');
+            $table->string('user_id');
+            $table->string('auth_guard');
+            $table->string('redirect_url');
+            $table->timestamp('created_at');
 
-            $table->timestamps();
             $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
         });
     }
@@ -32,6 +34,6 @@ class CreateDomainsTable extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('domains');
+        Schema::dropIfExists('tenant_user_impersonation_tokens');
     }
 }

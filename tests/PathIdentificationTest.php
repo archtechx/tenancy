@@ -28,6 +28,14 @@ class PathIdentificationTest extends TestCase
         });
     }
 
+    public function tearDown(): void
+    {
+        parent::tearDown();
+
+        // Global state cleanup
+        PathTenantResolver::$tenantParameterName = 'tenant';
+    }
+
     /** @test */
     public function tenant_can_be_identified_by_path()
     {
