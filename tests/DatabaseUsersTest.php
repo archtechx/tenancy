@@ -13,7 +13,7 @@ use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Events\TenancyInitialized;
-use Stancl\Tenancy\Listeners\JobPipeline;
+use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;

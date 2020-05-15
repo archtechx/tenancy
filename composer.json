@@ -13,7 +13,8 @@
         "ext-json": "*",
         "illuminate/support": "^6.0|^7.0",
         "facade/ignition-contracts": "^1.0",
-        "ramsey/uuid": "^3.7|^4.0"
+        "ramsey/uuid": "^3.7|^4.0",
+        "stancl/jobpipeline": "^1.0"
     },
     "require-dev": {
         "vlucas/phpdotenv": "^3.3|^4.0",

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Listeners\JobPipeline;
+use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;

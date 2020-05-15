@@ -14,7 +14,7 @@ use Stancl\Tenancy\Database\Concerns\ResourceSyncing;
 use Stancl\Tenancy\Database\Models\TenantPivot;
 use Stancl\Tenancy\DatabaseConfig;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Listeners\JobPipeline;
+use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Listeners\UpdateSyncedResource;
 use Stancl\Tenancy\Events\SyncedResourceChangedInForeignDatabase;
