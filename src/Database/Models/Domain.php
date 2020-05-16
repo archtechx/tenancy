@@ -16,7 +16,7 @@ use Stancl\Tenancy\Database\Concerns\CentralConnection;
  * @property string $domain
  * @property string $tenant_id
  *
- * @property-read Tenant $tenant
+ * @property-read Tenant|Model $tenant
  */
 class Domain extends Model implements Contracts\Domain
 {
