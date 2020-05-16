@@ -176,13 +176,20 @@ return [
         // Stancl\Tenancy\Features\CrossDomainRedirect::class, // https://tenancy.samuelstancl.me/docs/v2/features/tenant-redirect/
     ],
 
+    /**
+     * Parameters used by the tenants:migrate command.
+     */
     'migration_parameters' => [
-        '--force' => true, // Set this to true to be able to run migrations in production
+        '--force' => true, // This needs to be true to run migrations in production.
         '--path' => [database_path('migrations/tenant')],
+        '--realpath' => true,
     ],
 
+    /**
+     * Parameters used by the tenants:seed command.
+     */
     'seeder_parameters' => [
-        '--class' => 'DatabaseSeeder', // root seeder class, e.g.: 'DatabaseSeeder'
+        '--class' => 'DatabaseSeeder', // root seeder class
         // '--force' => true,
     ],
 ];

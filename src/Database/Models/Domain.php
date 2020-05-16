@@ -22,10 +22,7 @@ class Domain extends Model implements Contracts\Domain
 {
     use CentralConnection;
 
-    public $guarded = [];
-    public $casts = [
-        'is_primary' => 'bool',
-    ];
+    protected $guarded = [];
 
     public static function booted()
     {
