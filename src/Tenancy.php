@@ -27,9 +27,9 @@ class Tenancy
             return;
         }
 
-        event(new Events\InitializingTenancy($this));
-
         $this->tenant = $tenant;
+        
+        event(new Events\InitializingTenancy($this));
 
         $this->initialized = true;
 
