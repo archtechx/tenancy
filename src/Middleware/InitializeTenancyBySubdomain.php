@@ -53,7 +53,7 @@ class InitializeTenancyBySubdomain extends InitializeTenancyByDomain
 
         // If we're on localhost or an IP address, then we're not visiting a subdomain.
         $notADomain = in_array(count($parts), [1, 4]);
-        $thirdPartyDomain = ! Str::endsWith($hostname, config('tenancy.central_domains'));;
+        $thirdPartyDomain = ! Str::endsWith($hostname, config('tenancy.central_domains'));
 
         if ($notADomain || $thirdPartyDomain) {
             $handle = static::$onInvalidSubdomain ?? function ($e) {

@@ -45,7 +45,7 @@ class Install extends Command
 
         $this->callSilent('vendor:publish', [
             '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
-            '--tag' => 'provider',
+            '--tag' => 'providers',
         ]);
         $this->info('✔️  Created TenancyServiceProvider.php');
 

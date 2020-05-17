@@ -13,4 +13,15 @@ trait HasDomains
     {
         return $this->hasMany(config('tenancy.domain_model'), 'tenant_id');
     }
+
+    public function createDomain($data): Domain
+    {
+        $class = config('tenancy.domain_model');
+
+        $domain = (new $class)->fill($data);
+        $domain->tenant()->associate($this);
+        $domain->save();
+
+        return $domain;
+    }
 }

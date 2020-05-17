@@ -2,6 +2,11 @@
 
 namespace Stancl\Tenancy\Database\Concerns;
 
+/**
+ * This trait lets you add a "data" column functionality to any Eloquent model.
+ * It serializes attributes which don't exist as columns on the model's table
+ * into a JSON column named data (customizable by overriding getDataColumn).
+ */
 trait HasDataColumn
 {
     public static $priorityListeners = [];

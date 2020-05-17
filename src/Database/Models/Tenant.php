@@ -21,9 +21,7 @@ class Tenant extends Model implements Contracts\Tenant
 {
     use Concerns\CentralConnection,
         Concerns\GeneratesIds,
-        Concerns\HasDataColumn {
-        Concerns\HasDataColumn::getCasts as dataColumnCasts;
-    }
+        Concerns\HasDataColumn;
 
     protected $table = 'tenants';
     protected $primaryKey = 'id';
@@ -42,13 +40,6 @@ class Tenant extends Model implements Contracts\Tenant
     public function newCollection(array $models = []): TenantCollection
     {
         return new TenantCollection($models);
-    }
-
-    public function getCasts()
-    {
-        return array_merge($this->dataColumnCasts(), [
-            'id' => $this->getIncrementing() ? 'integer' : 'string',
-        ]);
     }
 
     public static function internalPrefix(): string
