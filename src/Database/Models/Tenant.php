@@ -83,8 +83,12 @@ class Tenant extends Model implements Contracts\Tenant
 
     public $dispatchesEvents = [
         'saved' => Events\TenantSaved::class,
+        'saving' => Events\SavingTenant::class,
         'created' => Events\TenantCreated::class,
+        'creating' => Events\CreatingTenant::class,
         'updated' => Events\TenantUpdated::class,
+        'updating' => Events\UpdatingTenant::class,
         'deleted' => Events\TenantDeleted::class,
+        'deleting' => Events\DeletingTenant::class,
     ];
 }

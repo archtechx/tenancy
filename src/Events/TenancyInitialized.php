@@ -2,15 +2,6 @@
 
 namespace Stancl\Tenancy\Events;
 
-use Stancl\Tenancy\Tenancy;
-
-class TenancyInitialized
+class TenancyInitialized extends Contracts\TenancyEvent
 {
-    /** @var Tenancy */
-    public $tenancy;
-
-    public function __construct(Tenancy $tenancy)
-    {
-        $this->tenancy = $tenancy;
-    }
 }

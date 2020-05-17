@@ -4,10 +4,7 @@ namespace Stancl\Tenancy\Database\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\Events\DomainCreated;
-use Stancl\Tenancy\Events\DomainDeleted;
-use Stancl\Tenancy\Events\DomainSaved;
-use Stancl\Tenancy\Events\DomainUpdated;
+use Stancl\Tenancy\Events;
 use Stancl\Tenancy\Exceptions\DomainOccupiedByOtherTenantException;
 use Stancl\Tenancy\Contracts;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
@@ -42,10 +39,14 @@ class Domain extends Model implements Contracts\Domain
         return $this->belongsTo(config('tenancy.tenant_model'));
     }
 
-    public $dispatchEvents = [
-        'saved' => DomainSaved::class,
-        'created' => DomainCreated::class,
-        'updated' => DomainUpdated::class,
-        'deleted' => DomainDeleted::class,
+    public $dispatchesEvents = [
+        'saved' => Events\DomainSaved::class,
+        'saving' => Events\SavingDomain::class,
+        'created' => Events\DomainCreated::class,
+        'creating' => Events\CreatingDomain::class,
+        'updated' => Events\DomainUpdated::class,
+        'updating' => Events\UpdatingDomain::class,
+        'deleted' => Events\DomainDeleted::class,
+        'deleting' => Events\DeletingDomain::class,
     ];
 }
