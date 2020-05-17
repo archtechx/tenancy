@@ -27,6 +27,8 @@ class Tenancy
             return;
         }
 
+        event(new Events\InitializingTenancy($this));
+
         $this->tenant = $tenant;
 
         $this->initialized = true;
@@ -36,6 +38,8 @@ class Tenancy
 
     public function end(): void
     {
+        event(new Events\EndingTenancy($this));
+
         if (! $this->initialized) {
             return;
         }
