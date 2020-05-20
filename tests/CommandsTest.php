@@ -131,7 +131,7 @@ class CommandsTest extends TestCase
     /** @test */
     public function run_commands_works()
     {
-        $id = Tenant::create()->id;
+        $id = Tenant::create()->getTenantKey();
 
         Artisan::call('tenants:migrate', ['--tenants' => [$id]]);
 

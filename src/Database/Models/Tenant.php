@@ -32,7 +32,7 @@ class Tenant extends Model implements Contracts\Tenant
         return 'id';
     }
 
-    public function getTenantKey(): string
+    public function getTenantKey(): ?string
     {
         return $this->getAttribute($this->getTenantKeyName());
     }

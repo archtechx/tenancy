@@ -9,8 +9,8 @@ trait GeneratesIds
     public static function bootGeneratesIds()
     {
         static::creating(function (self $model) {
-            if (! $model->id && app()->bound(UniqueIdentifierGenerator::class)) {
-                $model->id = app(UniqueIdentifierGenerator::class)->generate($model);
+            if (! $model->getTenantKey() && app()->bound(UniqueIdentifierGenerator::class)) {
+                $model->setAttribute($model->getTenantKeyName(), app(UniqueIdentifierGenerator::class)->generate($model));
             }
         });
     }

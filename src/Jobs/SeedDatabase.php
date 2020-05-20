@@ -10,16 +10,16 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Artisan;
-use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Contracts\TenantWithDatabase;
 
 class SeedDatabase implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /** @var Tenant */
+    /** @var TenantWithDatabase */
     protected $tenant;
 
-    public function __construct(Tenant $tenant)
+    public function __construct(TenantWithDatabase $tenant)
     {
         $this->tenant = $tenant;
     }
@@ -32,7 +32,7 @@ class SeedDatabase implements ShouldQueue
     public function handle()
     {
         Artisan::call('tenants:seed', [
-            '--tenants' => [$this->tenant->id],
+            '--tenants' => [$this->tenant->getTenantKey()],
         ]);
     }
 }

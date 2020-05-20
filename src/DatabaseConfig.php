@@ -37,7 +37,7 @@ class DatabaseConfig
         };
 
         static::$databaseNameGenerator = static::$databaseNameGenerator ?? function (Tenant $tenant) {
-            return config('tenancy.database.prefix') . $tenant->id . config('tenancy.database.suffix');
+            return config('tenancy.database.prefix') . $tenant->getTenantKey() . config('tenancy.database.suffix');
         };
     }
 

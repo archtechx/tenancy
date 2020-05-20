@@ -43,7 +43,7 @@ final class MigrateFresh extends Command
 
             $this->info('Migrating.');
             $this->callSilent('tenants:migrate', [
-                '--tenants' => [$tenant->id],
+                '--tenants' => [$tenant->getTenantKey()],
                 '--force' => true,
             ]);
         });
