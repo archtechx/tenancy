@@ -16,7 +16,6 @@ class TenancyServiceProvider extends ServiceProvider
     public function events()
     {
         return [
-
             // Tenant events
             Events\CreatingTenant::class => [],
             Events\TenantCreated::class => [

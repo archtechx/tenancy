@@ -30,6 +30,15 @@ services:
             MYSQL_PASSWORD: password
         networks:
             - testnet
+    mysql2:
+        image: mysql:5.7
+        environment:
+            MYSQL_ROOT_PASSWORD: password
+            MYSQL_DATABASE: main
+            MYSQL_USER: user # redundant
+            MYSQL_PASSWORD: password
+        networks:
+            - testnet
     postgres:
         image: postgres:11
         environment:

@@ -89,8 +89,8 @@ class DatabaseUsersTest extends TestCase
             'tenancy_db_username' => $user = 'user' . Str::random(8),
         ]);
 
-        $query = DB::connection('mysql')->select("SHOW GRANTS FOR `{$tenant->database()->getUsername()}`@`{$tenant->database()->connection()['host']}`")[1];
-        $this->assertStringStartsWith('GRANT CREATE, ALTER, ALTER ROUTINE ON', $query->{"Grants for {$user}@mysql"}); // @mysql because that's the hostname within the docker network
+        $query = DB::connection('mysql')->select("SHOW GRANTS FOR `{$tenant->database()->getUsername()}`@`%`")[1];
+        $this->assertStringStartsWith('GRANT CREATE, ALTER, ALTER ROUTINE ON', $query->{"Grants for {$user}@%"}); // @mysql because that's the hostname within the docker network
     }
 
     /** @test */

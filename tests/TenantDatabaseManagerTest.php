@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\DatabaseManager;
@@ -21,6 +22,7 @@ use Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLSchemaManager;
 use Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager;
 use Stancl\Tenancy\Tests\TestCase;
 use Illuminate\Support\Str;
+use PDO;
 
 class TenantDatabaseManagerTest extends TestCase
 {
@@ -162,5 +164,50 @@ class TenantDatabaseManagerTest extends TestCase
         $tenant2 = Tenant::create([
             'tenancy_db_name' => $name,
         ]);
+    }
+
+    /** @test */
+    public function tenant_database_can_be_created_on_a_foreign_server()
+    {
+        config([
+            'tenancy.database_managers.mysql' => PermissionControlledMySQLDatabaseManager::class,
+            'database.connections.mysql2' => [
+                'driver' => 'mysql',
+                'host' => 'mysql2', // important line
+                'port' => 3306,
+                'database' => 'main',
+                'username' => 'root',
+                'password' => 'password',
+                'unix_socket' => env('DB_SOCKET', ''),
+                'charset' => 'utf8mb4',
+                'collation' => 'utf8mb4_unicode_ci',
+                'prefix' => '',
+                'prefix_indexes' => true,
+                'strict' => true,
+                'engine' => null,
+                'options' => extension_loaded('pdo_mysql') ? array_filter([
+                    PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                ]) : [],
+            ],
+        ]);
+
+        Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+            return $event->tenant;
+        })->toListener());
+
+        $name = 'foo' . Str::random(8);
+        $tenant = Tenant::create([
+            'tenancy_db_name' => $name,
+            'tenancy_db_connection' => 'mysql2',
+        ]);
+
+        /** @var PermissionControlledMySQLDatabaseManager $manager */
+        $manager = $tenant->database()->manager();
+
+        $manager->setConnection('mysql');
+        $this->assertFalse($manager->databaseExists($name));
+
+        $manager->setConnection('mysql2');
+        $this->assertTrue($manager->databaseExists($name));
     }
 }
