@@ -41,7 +41,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             $tenantId = $event->job->payload()['tenant_id'] ?? null;
 
             // The job is not tenant-aware
-            if (!$tenantId) {
+            if (! $tenantId) {
                 return;
             }
 
