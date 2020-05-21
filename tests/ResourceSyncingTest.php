@@ -22,7 +22,7 @@ use Stancl\Tenancy\Events\SyncedResourceSaved;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Events\TenantCreated;
-use Stancl\Tenancy\Exceptions\ModelNotSyncMaster;
+use Stancl\Tenancy\Exceptions\ModelNotSyncMasterException;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Tests\Etc\Tenant;
@@ -187,7 +187,7 @@ class ResourceSyncingTest extends TestCase
         tenancy()->end();
         $this->assertFalse(tenancy()->initialized);
 
-        $this->expectException(ModelNotSyncMaster::class);
+        $this->expectException(ModelNotSyncMasterException::class);
         ResourceUser::first()->update(['role' => 'foobar']);
     }
 

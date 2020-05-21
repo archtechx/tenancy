@@ -4,24 +4,23 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\TenantDatabaseManagers;
 
-use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
+use Stancl\Tenancy\Exceptions\NoConnectionSetException;
 
 class PostgreSQLDatabaseManager implements TenantDatabaseManager
 {
     /** @var string */
     protected $connection;
 
-    public function __construct(Repository $config)
-    {
-        $this->connection = $config->get('tenancy.database_manager_connections.pgsql');
-    }
-
     protected function database(): Connection
     {
+        if ($this->connection === null) {
+            throw new NoConnectionSetException(static::class);
+        }
+
         return DB::connection($this->connection);
     }
 

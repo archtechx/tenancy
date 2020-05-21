@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Contracts;
 
+use Stancl\Tenancy\Exceptions\NoConnectionSetException;
+
 interface TenantDatabaseManager
 {
     /**
@@ -35,6 +37,8 @@ interface TenantDatabaseManager
 
     /**
      * Set the DB connection that should be used by the tenant database manager.
+     * 
+     * @throws NoConnectionSetException
      *
      * @param string $connection
      * @return void

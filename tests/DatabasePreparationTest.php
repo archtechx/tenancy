@@ -29,7 +29,10 @@ class DatabasePreparationTest extends TestCase
 
         $tenant = Tenant::create();
 
-        $this->assertTrue(app(MySQLDatabaseManager::class)->databaseExists($tenant->database()->getName()));
+        $manager = app(MySQLDatabaseManager::class);
+        $manager->setConnection('mysql');
+
+        $this->assertTrue($manager->databaseExists($tenant->database()->getName()));
     }
 
     /** @test */

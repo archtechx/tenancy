@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 use Stancl\Tenancy\Contracts\SyncMaster;
 use Stancl\Tenancy\Events\SyncedResourceChangedInForeignDatabase;
 use Stancl\Tenancy\Events\SyncedResourceSaved;
-use Stancl\Tenancy\Exceptions\ModelNotSyncMaster;
+use Stancl\Tenancy\Exceptions\ModelNotSyncMasterException;
 
 class UpdateSyncedResource extends QueueableListener
 {
@@ -31,7 +31,7 @@ class UpdateSyncedResource extends QueueableListener
     {
         if (! $centralModel instanceof SyncMaster) {
             // If we're trying to use a tenant User model instead of the central User model, for example.
-            throw new ModelNotSyncMaster(get_class($centralModel));
+            throw new ModelNotSyncMasterException(get_class($centralModel));
         }
 
         /** @var SyncMaster|Model $centralModel */

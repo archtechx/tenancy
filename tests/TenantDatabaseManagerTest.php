@@ -43,16 +43,19 @@ class TenantDatabaseManagerTest extends TestCase
 
         $name = 'db' . $this->randomString();
 
-        $this->assertFalse(app($databaseManager)->databaseExists($name));
+        $manager = app($databaseManager);
+        $manager->setConnection($driver);
+
+        $this->assertFalse($manager->databaseExists($name));
 
         $tenant = Tenant::create([
             'tenancy_db_name' => $name,
             'tenancy_db_connection' => $driver,
         ]);
 
-        $this->assertTrue(app($databaseManager)->databaseExists($name));
-        app($databaseManager)->deleteDatabase($tenant);
-        $this->assertFalse(app($databaseManager)->databaseExists($name));
+        $this->assertTrue($manager->databaseExists($name));
+        $manager->deleteDatabase($tenant);
+        $this->assertFalse($manager->databaseExists($name));
     }
 
     /** @test */
@@ -68,23 +71,29 @@ class TenantDatabaseManagerTest extends TestCase
 
         $database = 'db' . $this->randomString();
 
-        $this->assertFalse(app(MySQLDatabaseManager::class)->databaseExists($database));
+        $mysqlmanager = app(MySQLDatabaseManager::class);
+        $mysqlmanager->setConnection('mysql');
+
+        $this->assertFalse($mysqlmanager->databaseExists($database));
         Tenant::create([
             'tenancy_db_name' => $database,
             'tenancy_db_connection' => 'mysql',
         ]);
 
-        $this->assertTrue(app(MySQLDatabaseManager::class)->databaseExists($database));
+        $this->assertTrue($mysqlmanager->databaseExists($database));
+
+        $postgresManager = app(PostgreSQLDatabaseManager::class);
+        $postgresManager->setConnection('pgsql');
 
         $database = 'db' . $this->randomString();
-        $this->assertFalse(app(PostgreSQLDatabaseManager::class)->databaseExists($database));
+        $this->assertFalse($postgresManager->databaseExists($database));
 
         Tenant::create([
             'tenancy_db_name' => $database,
             'tenancy_db_connection' => 'pgsql',
         ]);
 
-        $this->assertTrue(app(PostgreSQLDatabaseManager::class)->databaseExists($database));
+        $this->assertTrue($postgresManager->databaseExists($database));
     }
 
     public function database_manager_provider()

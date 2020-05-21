@@ -153,16 +153,6 @@ return [
     ],
 
     /**
-     * Connections used by TenantDatabaseManagers. This tells, for example, the
-     * MySQLDatabaseManager to use the mysql connection to create databases.
-     */
-    'database_manager_connections' => [
-        'sqlite' => 'sqlite',
-        'mysql' => 'mysql',
-        'pgsql' => 'pgsql',
-    ],
-
-    /**
      * Features are classes that provide additional functionality
      * not needed for tenancy to be bootstrapped. They are run
      * regardless of whether tenancy has been initialized.

@@ -4,7 +4,7 @@ namespace Stancl\Tenancy\Exceptions;
 
 use Exception;
 
-class ModelNotSyncMaster extends Exception
+class ModelNotSyncMasterException extends Exception
 {
     public function __construct(string $class)
     {
