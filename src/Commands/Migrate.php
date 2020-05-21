@@ -10,8 +10,8 @@ use Illuminate\Database\Migrations\Migrator;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Events\DatabaseMigrated;
-use Stancl\Tenancy\Traits\DealsWithMigrations;
-use Stancl\Tenancy\Traits\HasATenantsOption;
+use Stancl\Tenancy\Concerns\DealsWithMigrations;
+use Stancl\Tenancy\Concerns\HasATenantsOption;
 
 class Migrate extends MigrateCommand
 {

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Schema;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Tests\TestCase;
-use Stancl\Tenancy\UniqueIDGenerators\UUIDGenerator;
+use Stancl\Tenancy\UUIDGenerator;
 use Stancl\Tenancy\Contracts;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 use Stancl\Tenancy\Events\TenancyInitialized;

@@ -9,7 +9,7 @@ use Illuminate\Database\Console\Seeds\SeedCommand;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Events\DatabaseSeeded;
-use Stancl\Tenancy\Traits\HasATenantsOption;
+use Stancl\Tenancy\Concerns\HasATenantsOption;
 
 class Seed extends SeedCommand
 {

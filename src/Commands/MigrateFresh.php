@@ -6,8 +6,8 @@ namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
-use Stancl\Tenancy\Traits\DealsWithMigrations;
-use Stancl\Tenancy\Traits\HasATenantsOption;
+use Stancl\Tenancy\Concerns\DealsWithMigrations;
+use Stancl\Tenancy\Concerns\HasATenantsOption;
 
 final class MigrateFresh extends Command
 {

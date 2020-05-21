@@ -6,8 +6,8 @@ namespace Stancl\Tenancy\Tests\Etc;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
-use Stancl\Tenancy\Traits\HasATenantsOption;
-use Stancl\Tenancy\Traits\TenantAwareCommand;
+use Stancl\Tenancy\Concerns\HasATenantsOption;
+use Stancl\Tenancy\Concerns\TenantAwareCommand;
 
 class AddUserCommand extends Command
 {

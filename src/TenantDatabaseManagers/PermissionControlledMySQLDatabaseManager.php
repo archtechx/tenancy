@@ -7,7 +7,7 @@ namespace Stancl\Tenancy\TenantDatabaseManagers;
 use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
 use Stancl\Tenancy\DatabaseConfig;
 use Stancl\Tenancy\Exceptions\TenantDatabaseUserAlreadyExistsException;
-use Stancl\Tenancy\Traits\CreatesDatabaseUsers;
+use Stancl\Tenancy\Concerns\CreatesDatabaseUsers;
 
 class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager implements ManagesDatabaseUsers
 {
