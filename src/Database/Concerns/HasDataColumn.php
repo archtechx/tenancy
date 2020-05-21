@@ -28,7 +28,7 @@ trait HasDataColumn
             }
 
             foreach ($model->getAttributes() as $key => $value) {
-                if (! in_array($key, static::getCustomColums())) {
+                if (! in_array($key, static::getCustomColumns())) {
                     $current = $model->getAttribute(static::getDataColumn()) ?? [];
 
                     $model->setAttribute(static::getDataColumn(), array_merge($current, [
@@ -119,7 +119,7 @@ trait HasDataColumn
         return 'data';
     }
 
-    public static function getCustomColums(): array
+    public static function getCustomColumns(): array
     {
         return [
             'id',
