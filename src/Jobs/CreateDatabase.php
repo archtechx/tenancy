@@ -13,6 +13,7 @@ use Illuminate\Queue\SerializesModels;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\DatabaseManager;
+use Stancl\Tenancy\Events\CreatingDatabase;
 use Stancl\Tenancy\Events\DatabaseCreated;
 
 class CreateDatabase implements ShouldQueue
@@ -29,6 +30,8 @@ class CreateDatabase implements ShouldQueue
 
     public function handle(DatabaseManager $databaseManager)
     {
+        event(new CreatingDatabase($this->tenant));
+
         if ($this->tenant->getInternal('create_database') !== false) {
             $databaseManager->ensureTenantCanBeCreated($this->tenant);
             $this->tenant->database()->makeCredentials();

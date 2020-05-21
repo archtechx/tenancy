@@ -55,7 +55,6 @@ class TenancyServiceProvider extends ServiceProvider
             Events\DomainDeleted::class => [],
 
             // Database events
-            // todo: let -ing events cacnel the operations
             Events\DatabaseCreated::class => [],
             Events\DatabaseMigrated::class => [],
             Events\DatabaseSeeded::class => [],
@@ -63,7 +62,6 @@ class TenancyServiceProvider extends ServiceProvider
             Events\DatabaseDeleted::class => [],
 
             // Tenancy events
-            // todo: let -ing events cacnel the operations
             Events\InitializingTenancy::class => [],
             Events\TenancyInitialized::class => [
                 Listeners\BootstrapTenancy::class,

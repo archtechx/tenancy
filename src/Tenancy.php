@@ -16,7 +16,7 @@ class Tenancy
     public $tenant;
 
     /** @var callable|null */
-    public static $getBootstrappers = null;
+    public $getBootstrappersUsing = null;
 
     /** @var bool */
     public $initialized = false;
@@ -55,11 +55,12 @@ class Tenancy
     public function getBootstrappers(): array
     {
         // If no callback for getting bootstrappers is set, we just return all of them.
-        $resolve = static::$getBootstrappers ?? function (Tenant $tenant) {
-            return array_map('app', config('tenancy.bootstrappers'));
+        $resolve = $this->getBootstrappersUsing ?? function (Tenant $tenant) {
+            return config('tenancy.bootstrappers');
         };
 
-        return $resolve($this->tenant);
+        // Here We instantiate the bootstrappers and return them.
+        return array_map('app', $resolve($this->tenant));
     }
 
     public function query(): Builder

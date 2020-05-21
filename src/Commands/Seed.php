@@ -10,6 +10,7 @@ use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Events\DatabaseSeeded;
 use Stancl\Tenancy\Concerns\HasATenantsOption;
+use Stancl\Tenancy\Events\SeedingDatabase;
 
 class Seed extends SeedCommand
 {
@@ -57,6 +58,8 @@ class Seed extends SeedCommand
 
         tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
             $this->line("Tenant: {$tenant['id']}");
+
+            event(new SeedingDatabase($tenant));
 
             // Seed
             parent::handle();

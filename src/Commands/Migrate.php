@@ -12,6 +12,7 @@ use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Events\DatabaseMigrated;
 use Stancl\Tenancy\Concerns\DealsWithMigrations;
 use Stancl\Tenancy\Concerns\HasATenantsOption;
+use Stancl\Tenancy\Events\MigratingDatabase;
 
 class Migrate extends MigrateCommand
 {
@@ -59,6 +60,8 @@ class Migrate extends MigrateCommand
 
         tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
             $this->line("Tenant: {$tenant['id']}");
+
+            event(new MigratingDatabase($tenant));
             
             // Migrate
             parent::handle();
