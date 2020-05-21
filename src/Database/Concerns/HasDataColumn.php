@@ -121,6 +121,8 @@ trait HasDataColumn
 
     public static function getCustomColums(): array
     {
-        return array_merge(['id'], config('tenancy.custom_columns'));
+        return [
+            'id',
+        ];
     }
 }

@@ -27,9 +27,9 @@ class DatabaseUsersTest extends TestCase
         parent::setUp();
 
         config([
-            'tenancy.database_managers.mysql' => PermissionControlledMySQLDatabaseManager::class,
+            'tenancy.database.managers.mysql' => PermissionControlledMySQLDatabaseManager::class,
             'tenancy.database.suffix' => '',
-            'tenancy.template_tenant_connection' => 'mysql',
+            'tenancy.database.template_tenant_connection' => 'mysql',
         ]);
 
         Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
@@ -97,9 +97,9 @@ class DatabaseUsersTest extends TestCase
     public function having_existing_databases_without_users_and_switching_to_permission_controlled_mysql_manager_doesnt_break_existing_dbs()
     {
         config([
-            'tenancy.database_managers.mysql' => MySQLDatabaseManager::class,
+            'tenancy.database.managers.mysql' => MySQLDatabaseManager::class,
             'tenancy.database.suffix' => '',
-            'tenancy.template_tenant_connection' => 'mysql',
+            'tenancy.database.template_tenant_connection' => 'mysql',
             'tenancy.bootstrappers' => [
                 DatabaseTenancyBootstrapper::class,
             ],
@@ -116,7 +116,7 @@ class DatabaseUsersTest extends TestCase
         tenancy()->initialize($tenant); // check if everything works
         tenancy()->end();
 
-        config(['tenancy.database_managers.mysql' => PermissionControlledMySQLDatabaseManager::class]);
+        config(['tenancy.database.managers.mysql' => PermissionControlledMySQLDatabaseManager::class]);
 
         tenancy()->initialize($tenant); // check if everything works
 

@@ -37,7 +37,7 @@ class TenantDatabaseManagerTest extends TestCase
         })->toListener());
 
         config()->set([
-            "tenancy.database_managers.$driver" => $databaseManager,
+            "tenancy.database.managers.$driver" => $databaseManager,
             'tenancy.internal_prefix' => 'tenancy_',
         ]);
 
@@ -131,7 +131,7 @@ class TenantDatabaseManagerTest extends TestCase
     public function schema_manager_uses_schema_to_separate_tenant_dbs()
     {
         config([
-            'tenancy.database_managers.pgsql' => \Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLSchemaManager::class,
+            'tenancy.database.managers.pgsql' => \Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLSchemaManager::class,
             'tenancy.boostrappers' => [
                 DatabaseTenancyBootstrapper::class,
             ],
@@ -179,7 +179,7 @@ class TenantDatabaseManagerTest extends TestCase
     public function tenant_database_can_be_created_on_a_foreign_server()
     {
         config([
-            'tenancy.database_managers.mysql' => PermissionControlledMySQLDatabaseManager::class,
+            'tenancy.database.managers.mysql' => PermissionControlledMySQLDatabaseManager::class,
             'database.connections.mysql2' => [
                 'driver' => 'mysql',
                 'host' => 'mysql2', // important line

@@ -76,7 +76,6 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 '--realpath' => true,
                 '--force' => true,
             ],
-            'tenancy.storage.connection' => 'central',
             'tenancy.bootstrappers.redis' => \Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class,
             'queue.connections.central' => [
                 'driver' => 'sync',

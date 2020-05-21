@@ -21,7 +21,7 @@ class DatabasePreparationTest extends TestCase
     /** @test */
     public function database_can_be_created_after_tenant_creation()
     {
-        config(['tenancy.template_tenant_connection' => 'mysql']);
+        config(['tenancy.database.template_tenant_connection' => 'mysql']);
 
         Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
             return $event->tenant;

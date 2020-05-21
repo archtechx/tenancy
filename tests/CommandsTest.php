@@ -38,6 +38,16 @@ class CommandsTest extends TestCase
         Event::listen(TenancyEnded::class, RevertToCentralContext::class);
     }
 
+    public function tearDown(): void
+    {
+        parent::tearDown();
+
+        // Cleanup tenancy config cache
+        if (file_exists(base_path('config/tenancy.php'))) {
+            unlink(base_path('config/tenancy.php'));
+        }
+    }
+
     /** @test */
     public function migrate_command_doesnt_change_the_db_connection()
     {

@@ -100,8 +100,8 @@ class DatabaseConfig
     public function getTemplateConnectionName(): string
     {
         return $this->tenant->getInternal('db_connection')
-            ?? config('tenancy.template_tenant_connection')
-            ?? config('tenancy.central_connection');
+            ?? config('tenancy.database.template_tenant_connection')
+            ?? config('tenancy.database.central_connection');
     }
 
     /**
@@ -150,7 +150,7 @@ class DatabaseConfig
     {
         $driver = config("database.connections.{$this->getTemplateConnectionName()}.driver");
 
-        $databaseManagers = config('tenancy.database_managers');
+        $databaseManagers = config('tenancy.database.managers');
 
         if (! array_key_exists($driver, $databaseManagers)) {
             throw new DatabaseManagerNotRegisteredException($driver);

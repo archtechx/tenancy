@@ -56,7 +56,7 @@ class DatabaseManager
             $this->database->purge('tenant');
         }
 
-        $this->setDefaultConnection($this->config->get('tenancy.central_connection'));
+        $this->setDefaultConnection($this->config->get('tenancy.database.central_connection'));
     }
 
     /**
