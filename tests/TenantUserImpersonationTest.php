@@ -1,29 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Tests;
 
 use Carbon\Carbon;
 use Carbon\CarbonInterval;
 use Closure;
 use Illuminate\Auth\SessionGuard;
+use Illuminate\Foundation\Auth\User as Authenticable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
+use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Database\Models\ImpersonationToken;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Features\UserImpersonation;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
-use Stancl\Tenancy\Tests\Etc\Tenant;
-use Illuminate\Foundation\Auth\User as Authenticable;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
-use Illuminate\Support\Str;
-use Stancl\Tenancy\Features\UserImpersonation;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 
 class TenantUserImpersonationTest extends TestCase
 {
@@ -211,7 +213,7 @@ class TenantUserImpersonationTest extends TestCase
             ->get('http://foo.localhost/impersonate/' . $token->token)
             ->assertSuccessful()
             ->assertSee('You are logged in as Joe');
-        
+
         $this->assertNull(ImpersonationToken::find($token->token));
     }
 

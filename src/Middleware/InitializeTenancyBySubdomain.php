@@ -6,8 +6,8 @@ namespace Stancl\Tenancy\Middleware;
 
 use Closure;
 use Illuminate\Http\Response;
-use Stancl\Tenancy\Exceptions\NotASubdomainException;
 use Illuminate\Support\Str;
+use Stancl\Tenancy\Exceptions\NotASubdomainException;
 
 class InitializeTenancyBySubdomain extends InitializeTenancyByDomain
 {

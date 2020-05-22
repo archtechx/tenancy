@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Cache;
@@ -7,19 +9,18 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
-use Stancl\Tenancy\Tests\Etc\Tenant;
-use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\JobPipeline\JobPipeline;
-use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Events\TenancyEnded;
-use Stancl\Tenancy\Events\TenancyInitialized;
-use Stancl\Tenancy\Events\TenantCreated;
-use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
-use Stancl\Tenancy\Tests\TestCase;
+use Stancl\Tenancy\Events\TenancyEnded;
+use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 
 class BootstrapperTest extends TestCase
 {
@@ -44,7 +45,7 @@ class BootstrapperTest extends TestCase
     public function database_data_is_separated()
     {
         config(['tenancy.bootstrappers' => [
-            DatabaseTenancyBootstrapper::class
+            DatabaseTenancyBootstrapper::class,
         ]]);
 
         $tenant1 = Tenant::create();
@@ -78,7 +79,7 @@ class BootstrapperTest extends TestCase
     {
         config([
             'tenancy.bootstrappers' => [
-                CacheTenancyBootstrapper::class
+                CacheTenancyBootstrapper::class,
             ],
             'cache.default' => 'redis',
         ]);
@@ -106,7 +107,7 @@ class BootstrapperTest extends TestCase
         $this->assertSame('xyz', Cache::get('foo'));
 
         tenancy()->initialize($tenant1);
-        
+
         // Asset data didn't leak to original tenant
         $this->assertSame('bar', Cache::get('foo'));
 
@@ -120,7 +121,7 @@ class BootstrapperTest extends TestCase
     public function redis_data_is_separated()
     {
         config(['tenancy.bootstrappers' => [
-            RedisTenancyBootstrapper::class
+            RedisTenancyBootstrapper::class,
         ]]);
 
         $tenant1 = Tenant::create();
@@ -151,7 +152,7 @@ class BootstrapperTest extends TestCase
     public function filesystem_data_is_separated()
     {
         config(['tenancy.bootstrappers' => [
-            FilesystemTenancyBootstrapper::class
+            FilesystemTenancyBootstrapper::class,
         ]]);
 
         $old_storage_path = storage_path();

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Listeners;
 
 use Stancl\Tenancy\Events\RevertedToCentralContext;
@@ -17,5 +19,5 @@ class RevertToCentralContext
         }
 
         event(new RevertedToCentralContext($event->tenancy));
-    }   
+    }
 }

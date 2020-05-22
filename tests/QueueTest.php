@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Bus\Queueable;
@@ -10,11 +12,10 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Event;
 use Spatie\Valuestore\Valuestore;
-use Stancl\Tenancy\Tests\Etc\Tenant;
-use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper;
-use Stancl\Tenancy\Tests\TestCase;
+use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 
 class QueueTest extends TestCase
 {
@@ -133,6 +134,6 @@ class TestJob implements ShouldQueue
 
     public function handle()
     {
-        $this->valuestore->put('tenant_id', "The current tenant id is: " . tenant('id'));
+        $this->valuestore->put('tenant_id', 'The current tenant id is: ' . tenant('id'));
     }
 }

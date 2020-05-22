@@ -4,25 +4,23 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
-use Stancl\Tenancy\Tests\Etc\Tenant;
-use Stancl\Tenancy\DatabaseManager;
-use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Illuminate\Support\Str;
+use PDO;
 use Stancl\JobPipeline\JobPipeline;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
 use Stancl\Tenancy\Jobs\CreateDatabase;
-use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLSchemaManager;
 use Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager;
-use Stancl\Tenancy\Tests\TestCase;
-use Illuminate\Support\Str;
-use PDO;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 
 class TenantDatabaseManagerTest extends TestCase
 {

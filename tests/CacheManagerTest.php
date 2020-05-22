@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Event;
-use Stancl\Tenancy\Tests\Etc\Tenant;
-use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
-use Stancl\Tenancy\Tests\TestCase;
+use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 
 class CacheManagerTest extends TestCase
 {
@@ -20,7 +19,7 @@ class CacheManagerTest extends TestCase
         config(['tenancy.bootstrappers' => [
             CacheTenancyBootstrapper::class,
         ]]);
-        
+
         Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     }
 

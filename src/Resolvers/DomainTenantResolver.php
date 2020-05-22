@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Resolvers;
 
 use Stancl\Tenancy\Contracts\Domain;

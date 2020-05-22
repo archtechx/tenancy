@@ -39,6 +39,6 @@ class TenantList extends Command
             ->cursor()
             ->each(function (Tenant $tenant) {
                 $this->line("[Tenant] id: {$tenant['id']} @ " . implode('; ', $tenant->domains ?? []));
-        });
+            });
     }
 }

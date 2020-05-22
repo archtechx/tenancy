@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy;
 
 use Illuminate\Database\Eloquent\Builder;
@@ -28,7 +30,7 @@ class Tenancy
         }
 
         $this->tenant = $tenant;
-        
+
         event(new Events\InitializingTenancy($this));
 
         $this->initialized = true;

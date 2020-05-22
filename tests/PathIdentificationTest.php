@@ -1,14 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Route;
-use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Exceptions\RouteIsMissingTenantParameterException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByPathException;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
-use Stancl\Tenancy\Tests\TestCase;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 
 class PathIdentificationTest extends TestCase
 {
@@ -73,10 +74,10 @@ class PathIdentificationTest extends TestCase
     {
         $this->expectException(TenantCouldNotBeIdentifiedByPathException::class);
 
-         $this
+        $this
             ->withoutExceptionHandling()
             ->get('/acme/foo/abc/xyz');
-         
+
         $this->assertFalse(tenancy()->initialized);
     }
 
@@ -114,7 +115,6 @@ class PathIdentificationTest extends TestCase
             ->withoutExceptionHandling()
             ->get('/bar/foo/bar');
     }
-
 
     /** @test */
     public function tenant_parameter_name_can_be_customized()

@@ -37,7 +37,7 @@ interface TenantDatabaseManager
 
     /**
      * Set the DB connection that should be used by the tenant database manager.
-     * 
+     *
      * @throws NoConnectionSetException
      *
      * @param string $connection

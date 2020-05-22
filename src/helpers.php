@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Stancl\Tenancy\Tenancy;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Tenancy;
 
 if (! function_exists('tenancy')) {
     /** @return Tenancy */
@@ -23,7 +23,7 @@ if (! function_exists('tenant')) {
     function tenant($key = null)
     {
         if (! app()->bound(Tenant::class)) {
-            return null;
+            return;
         }
 
         if (is_null($key)) {

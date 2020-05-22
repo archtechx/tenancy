@@ -1,20 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Database\Models;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
-use Stancl\Tenancy\Events;
 use Stancl\Tenancy\Contracts;
-use Stancl\Tenancy\Database\TenantCollection;
 use Stancl\Tenancy\Database\Concerns;
+use Stancl\Tenancy\Database\TenantCollection;
+use Stancl\Tenancy\Events;
 
 /**
  * @property string|int $id
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property array $data
- * 
+ *
  * @method TenantCollection all()
  */
 class Tenant extends Model implements Contracts\Tenant

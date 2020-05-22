@@ -1,14 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Stancl\JobPipeline\JobPipeline;
-use Stancl\Tenancy\Listeners;
 use Stancl\Tenancy\Events;
 use Stancl\Tenancy\Jobs;
+use Stancl\Tenancy\Listeners;
 use Stancl\Tenancy\Middleware;
 
 class TenancyServiceProvider extends ServiceProvider
@@ -81,7 +83,7 @@ class TenancyServiceProvider extends ServiceProvider
 
     public function register()
     {
-        // 
+        //
     }
 
     public function boot()

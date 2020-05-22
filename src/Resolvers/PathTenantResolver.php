@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Resolvers;
 
 use Illuminate\Routing\Route;
@@ -18,7 +20,7 @@ class PathTenantResolver implements TenantResolver
 
         if ($id = $route->parameter(static::$tenantParameterName)) {
             $route->forgetParameter(static::$tenantParameterName);
-            
+
             if ($tenant = tenancy()->find($id)) {
                 return $tenant;
             }

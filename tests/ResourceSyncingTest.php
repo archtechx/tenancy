@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Database\Eloquent\Model;
@@ -7,16 +9,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Events\CallQueuedListener;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Str;
+use Stancl\JobPipeline\JobPipeline;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Syncable;
 use Stancl\Tenancy\Contracts\SyncMaster;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
 use Stancl\Tenancy\Database\Concerns\ResourceSyncing;
 use Stancl\Tenancy\Database\Models\TenantPivot;
 use Stancl\Tenancy\DatabaseConfig;
-use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\JobPipeline\JobPipeline;
-use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Listeners\UpdateSyncedResource;
 use Stancl\Tenancy\Events\SyncedResourceChangedInForeignDatabase;
 use Stancl\Tenancy\Events\SyncedResourceSaved;
 use Stancl\Tenancy\Events\TenancyEnded;
@@ -24,10 +25,10 @@ use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Exceptions\ModelNotSyncMasterException;
 use Stancl\Tenancy\Jobs\CreateDatabase;
-use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Listeners\UpdateSyncedResource;
 use Stancl\Tenancy\Tests\Etc\Tenant;
-use Stancl\Tenancy\Tests\TestCase;
-use Illuminate\Support\Str;
 
 class ResourceSyncingTest extends TestCase
 {
@@ -56,7 +57,7 @@ class ResourceSyncingTest extends TestCase
         $this->artisan('migrate', [
             '--path' => [
                 __DIR__ . '/Etc/synced_resource_migrations',
-                __DIR__ . '/Etc/synced_resource_migrations/users'
+                __DIR__ . '/Etc/synced_resource_migrations/users',
             ],
             '--realpath' => true,
         ])->assertExitCode(0);
@@ -506,7 +507,7 @@ class ResourceSyncingTest extends TestCase
         Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
             return $event->tenant->getTenantKey() === 't1';
         });
-        
+
         $centralUser->tenants()->attach('t2');
         Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
             return $event->tenant->getTenantKey() === 't2';

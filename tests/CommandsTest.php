@@ -8,17 +8,16 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
-use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
-use Stancl\Tenancy\Tests\Etc\Tenant;
-use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\JobPipeline\JobPipeline;
-use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Jobs\CreateDatabase;
-use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
-use Stancl\Tenancy\Tests\TestCase;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 
 class CommandsTest extends TestCase
 {
@@ -31,9 +30,9 @@ class CommandsTest extends TestCase
         })->toListener());
 
         config(['tenancy.bootstrappers' => [
-            DatabaseTenancyBootstrapper::class
+            DatabaseTenancyBootstrapper::class,
         ]]);
-        
+
         Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
         Event::listen(TenancyEnded::class, RevertToCentralContext::class);
     }
@@ -70,9 +69,9 @@ class CommandsTest extends TestCase
         $this->assertFalse(Schema::hasTable('users'));
         Artisan::call('tenants:migrate');
         $this->assertFalse(Schema::hasTable('users'));
-        
+
         tenancy()->initialize($tenant);
-        
+
         $this->assertTrue(Schema::hasTable('users'));
     }
 
@@ -98,9 +97,9 @@ class CommandsTest extends TestCase
         $tenant = Tenant::create();
         Artisan::call('tenants:migrate');
         $this->assertFalse(Schema::hasTable('users'));
-        
+
         tenancy()->initialize($tenant);
-        
+
         $this->assertTrue(Schema::hasTable('users'));
         Artisan::call('tenants:rollback');
         $this->assertFalse(Schema::hasTable('users'));
@@ -178,9 +177,9 @@ class CommandsTest extends TestCase
         $this->assertFalse(Schema::hasTable('users'));
         Artisan::call('tenants:migrate-fresh');
         $this->assertFalse(Schema::hasTable('users'));
-        
+
         tenancy()->initialize($tenant);
-        
+
         $this->assertTrue(Schema::hasTable('users'));
 
         $this->assertFalse(DB::table('users')->exists());

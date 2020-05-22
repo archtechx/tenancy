@@ -6,10 +6,9 @@ namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Database\Console\Seeds\SeedCommand;
-use Stancl\Tenancy\Contracts\TenantWithDatabase;
+use Stancl\Tenancy\Concerns\HasATenantsOption;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Events\DatabaseSeeded;
-use Stancl\Tenancy\Concerns\HasATenantsOption;
 use Stancl\Tenancy\Events\SeedingDatabase;
 
 class Seed extends SeedCommand

@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Features;
 
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Stancl\Tenancy\Contracts\Feature;
-use Stancl\Tenancy\Database\Models\ImpersonationToken;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Database\Models\ImpersonationToken;
 use Stancl\Tenancy\Tenancy;
 
 class UserImpersonation implements Feature
@@ -16,8 +18,7 @@ class UserImpersonation implements Feature
 
     public function bootstrap(Tenancy $tenancy): void
     {
-        $tenancy->macro('impersonate', function (Tenant $tenant, string $userId, string $redirectUrl, string $authGuard = null): ImpersonationToken
-        {
+        $tenancy->macro('impersonate', function (Tenant $tenant, string $userId, string $redirectUrl, string $authGuard = null): ImpersonationToken {
             return ImpersonationToken::create([
                 'tenant_id' => $tenant->getTenantKey(),
                 'user_id' => $userId,
