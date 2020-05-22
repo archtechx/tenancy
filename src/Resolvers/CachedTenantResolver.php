@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Resolvers;
 
-use Illuminate\Cache\Repository;
+use Illuminate\Contracts\Cache\Factory;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Contracts\TenantResolver;
 
 class CachedTenantResolver implements TenantResolver
 {
-    /** @var Repository */
+    /** @var CacheManager */
     protected $cache;
 
-    public function __construct(Repository $cache)
+    public function __construct(Factory $cache)
     {
         $this->cache = $cache;
     }
@@ -22,20 +22,21 @@ class CachedTenantResolver implements TenantResolver
     {
         $resolverClass = $args[0];
         $data = $args[1];
-        $ttl = $args[2];
-        $cacheStore = $args[3];
+        $ttl = $args[2] ?? null;
+        $cacheStore = $args[3] ?? null;
 
         /** @var TenantResolver $resolver */
         $resolver = app($resolverClass);
         $encodedData = json_encode($data);
 
-        if ($this->cache->has($key = "_tenancy_resolver:$resolverClass:$encodedData")) {
-            return $this->cache->get($key);
+        $cache = $this->cache->store($cacheStore);
+
+        if ($cache->has($key = "_tenancy_resolver:$resolverClass:$encodedData")) {
+            return $cache->get($key);
         }
 
-        $this->cache->put($key,
-            $resolved = $resolver->resolve(...$data)
-        );
+        $resolved = $resolver->resolve(...$data);
+        $cache->put($key, $resolved, $ttl);
 
         return $resolved;
     }
