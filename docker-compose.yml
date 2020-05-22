@@ -1,16 +1,17 @@
-version: '3'
+version: '2.4'
 services:
     test:
         build:
             context: .
-        networks:
-            - testnet
         depends_on:
-            - mysql
-            - postgres
-            - redis
+            mysql:
+                condition: service_healthy
+            postgres:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
         volumes:
-            - .:/var/www/html
+            - .:/var/www/html:delegated
         environment:
             DOCKER: 1
             DB_PASSWORD: password
@@ -28,8 +29,10 @@ services:
             MYSQL_DATABASE: main
             MYSQL_USER: user # redundant
             MYSQL_PASSWORD: password
-        networks:
-            - testnet
+        healthcheck:
+            test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+            timeout: 10s
+            retries: 10
     mysql2:
         image: mysql:5.7
         environment:
@@ -37,20 +40,25 @@ services:
             MYSQL_DATABASE: main
             MYSQL_USER: user # redundant
             MYSQL_PASSWORD: password
-        networks:
-            - testnet
+        healthcheck:
+            test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+            timeout: 10s
+            retries: 10
     postgres:
         image: postgres:11
         environment:
             POSTGRES_PASSWORD: password
             POSTGRES_USER: root # superuser name
             POSTGRES_DB: main
-        networks:
-            - testnet
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
     redis:
         image: redis:alpine
-        networks:
-            - testnet
-networks:
-    testnet:
-        driver: bridge
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 1s
+            timeout: 3s
+            retries: 30
