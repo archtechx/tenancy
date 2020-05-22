@@ -69,7 +69,7 @@ class CachedTenantResolverTest extends TestCase
         // create cache
         $this->get('http://acme.localhost/foo')
             ->assertSee('bar');
-        
+
         $this->mock(CachedTenantResolver::class, function ($mock) {
             return $mock->shouldReceive('resolve')->once(); // only once
         });
