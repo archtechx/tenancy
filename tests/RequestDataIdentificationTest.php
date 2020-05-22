@@ -20,12 +20,17 @@ class RequestDataIdentificationTest extends TestCase
             ],
         ]);
 
-        InitializeTenancyByRequestData::$header = 'X-Tenant';
-        InitializeTenancyByRequestData::$queryParameter = 'tenant';
-
         Route::middleware(InitializeTenancyByRequestData::class)->get('/test', function () {
             return 'Tenant id: ' . tenant('id');
         });
+    }
+
+    public function tearDown(): void
+    {
+        InitializeTenancyByRequestData::$header = 'X-Tenant';
+        InitializeTenancyByRequestData::$queryParameter = 'tenant';
+
+        parent::tearDown();
     }
 
     /** @test */
