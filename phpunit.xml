@@ -31,4 +31,8 @@
         <env name="DB_CONNECTION" value="central"/>
         <env name="AWS_DEFAULT_REGION" value="us-west-2"/>
     </php>
+    <logging>
+        <log type="coverage-clover" target="coverage/phpunit/clover.xml" showUncoveredFiles="true"/>
+        <log type="coverage-html" target="coverage/phpunit/html" lowUpperBound="35" highLowerBound="70"/>
+    </logging>
 </phpunit>

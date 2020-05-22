@@ -39,7 +39,7 @@ abstract class IdentificationMiddleware
             } else {
                 $this->tenancy->initialize(
                     $this->resolver->resolve(...$resolverArguments)
-                ); 
+                );
             }
         } catch (TenantCouldNotBeIdentifiedException $e) {
             $onFail = static::$onFail ?? function ($e) {

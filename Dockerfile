@@ -1,38 +1,50 @@
-FROM ubuntu:18.04
+ARG PHP_TARGET=7.4
 
-LABEL maintainer="Samuel Štancl"
+FROM php:${PHP_TARGET}-cli
 
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update
-RUN apt-get install -y software-properties-common
-RUN add-apt-repository -y ppa:ondrej/php
-
-RUN apt-get install -y curl zip unzip git sqlite3 \
-    php7.4-fpm php7.4-cli \
-    php7.4-pgsql php7.4-sqlite3 php7.4-gd \
-    php7.4-curl php7.4-memcached \
-    php7.4-imap php7.4-mysql php7.4-mbstring \
-    php7.4-xml php7.4-zip php7.4-bcmath php7.4-soap \
-    php7.4-intl php7.4-readline php7.4-xdebug \
-    php-msgpack php-igbinary \
-    && php -r "readfile('http://getcomposer.org/installer');" | php -- --install-dir=/usr/bin/ --filename=composer \
-    && mkdir /run/php
-
-RUN apt-get install -y python3
-
-RUN apt-get install -y php7.4-dev php-pear
-
-RUN pecl install redis-4.3.0
-RUN echo "extension=redis.so" > /etc/php/7.4/mods-available/redis.ini
-RUN ln -sf /etc/php/7.4/mods-available/redis.ini /etc/php/7.4/fpm/conf.d/20-redis.ini
-RUN ln -sf /etc/php/7.4/mods-available/redis.ini /etc/php/7.4/cli/conf.d/20-redis.ini
-
-RUN pecl install xdebug
-RUN echo 'zend_extension=/usr/lib/php/20190902/xdebug.so' > /etc/php/7.4/cli/conf.d/20-xdebug.ini
-
-RUN apt-get -y autoremove \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+# We need to do this again as the FROM line seems to clear the ARG
+ARG PHP_TARGET=7.4
+ARG COMPOSER_TARGET=1.10.0
 
 WORKDIR /var/www/html
+
+LABEL org.opencontainers.image.source=https://github.com/stancl/tenancy \
+    org.opencontainers.image.vendor="Samuel Štancl" \
+    org.opencontainers.image.licenses="MIT" \
+    org.opencontainers.image.title="PHP ${PHP_TARGET} with modules for laravel support" \
+    org.opencontainers.image.description="PHP ${PHP_TARGET} with a set of php/os packages suitable for running Laravel apps"
+
+# our default timezone and langauge
+ENV TZ=Europe/London
+ENV LANG=en_GB.UTF-8
+
+# Note: we only install reliable/core 1st-party php extensions here.
+#       If your app needs custom ones install them in the apps own
+#       Dockerfile _and pin the versions_! Eg:
+#       RUN pecl install memcached-2.2.0 && docker-php-ext-enable memcached
+
+RUN apt-get update \
+    # install some OS packages we need
+    && apt-get install -y --no-install-recommends libfreetype6-dev libjpeg62-turbo-dev libpng-dev libgmp-dev libldap2-dev netcat curl sqlite3 libsqlite3-dev libpq-dev libzip-dev unzip vim-tiny gosu git \
+    # install php extensions
+    && if [ "${PHP_TARGET}" = "7.4" ]; then docker-php-ext-configure gd --with-freetype --with-jpeg; else docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/; fi \
+    && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
+    && docker-php-ext-install -j$(nproc) gd pdo pdo_mysql pdo_pgsql pdo_sqlite pgsql zip gmp bcmath pcntl ldap sysvmsg exif \
+    # install the redis php extension
+    && pecl install redis-5.0.2 \
+    && docker-php-ext-enable redis \
+    # install the pcov extention
+    && pecl install pcov \
+    && docker-php-ext-enable pcov \
+    && echo "pcov.enabled = 1" > /usr/local/etc/php/conf.d/pcov.ini \
+    # clear the apt cache
+    && rm -rf /var/lib/apt/lists/* \
+    # install composer
+    && curl -o /tmp/composer-setup.php https://getcomposer.org/installer \
+    && curl -o /tmp/composer-setup.sig https://composer.github.io/installer.sig \
+    && php -r "if (hash('SHA384', file_get_contents('/tmp/composer-setup.php')) !== trim(file_get_contents('/tmp/composer-setup.sig'))) { unlink('/tmp/composer-setup.php'); echo 'Invalid installer' . PHP_EOL; exit(1); }" \
+    && php /tmp/composer-setup.php --version=${COMPOSER_TARGET} --no-ansi --install-dir=/usr/local/bin --filename=composer --snapshot \
+    && rm -f /tmp/composer-setup.* \
+    # set the system timezone
+    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
+    && echo $TZ > /etc/timezone
