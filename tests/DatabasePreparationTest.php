@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Database\Seeder;
@@ -7,14 +9,13 @@ use Illuminate\Foundation\Auth\User as Authenticable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
-use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Jobs\MigrateDatabase;
 use Stancl\Tenancy\Jobs\SeedDatabase;
 use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
-use Stancl\Tenancy\Tests\TestCase;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 
 class DatabasePreparationTest extends TestCase
 {

@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
-use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 use Stancl\Tenancy\Contracts\TenantWithDatabase as Tenant;
+use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 
 class DatabaseConfig
 {

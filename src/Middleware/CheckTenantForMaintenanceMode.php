@@ -1,11 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Middleware;
 
 use Closure;
 use Illuminate\Foundation\Http\Exceptions\MaintenanceModeException;
 use Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode;
-use Illuminate\Http\Request;
 use Stancl\Tenancy\Exceptions\TenancyNotInitializedException;
 use Symfony\Component\HttpFoundation\IpUtils;
 

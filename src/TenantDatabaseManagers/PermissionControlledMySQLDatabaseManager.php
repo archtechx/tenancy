@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\TenantDatabaseManagers;
 
+use Stancl\Tenancy\Concerns\CreatesDatabaseUsers;
 use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
 use Stancl\Tenancy\DatabaseConfig;
 use Stancl\Tenancy\Exceptions\TenantDatabaseUserAlreadyExistsException;
-use Stancl\Tenancy\Concerns\CreatesDatabaseUsers;
 
 class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager implements ManagesDatabaseUsers
 {

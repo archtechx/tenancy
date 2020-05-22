@@ -41,6 +41,6 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
 
     public function setConnection(string $connection): void
     {
-        // 
+        //
     }
 }

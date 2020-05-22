@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Foundation\Http\Exceptions\MaintenanceModeException;
@@ -17,7 +19,7 @@ class MaintenanceModeTest extends TestCase
         Route::get('/foo', function () {
             return 'bar';
         })->middleware([InitializeTenancyByDomain::class, CheckTenantForMaintenanceMode::class]);
-        
+
         $tenant = MaintenanceTenant::create();
         $tenant->domains()->create([
             'domain' => 'acme.localhost',

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Database\Concerns;
 
 use Stancl\Tenancy\Contracts\Syncable;
@@ -12,7 +14,6 @@ trait ResourceSyncing
     {
         static::saved(function (Syncable $model) {
             /** @var ResourceSyncing $model */
-
             $model->triggerSyncEvent();
         });
 

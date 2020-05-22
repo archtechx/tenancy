@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Database\Eloquent\Model;
@@ -7,19 +9,18 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
-use Stancl\Tenancy\Tests\Etc\Tenant;
-use Stancl\Tenancy\Events\TenantCreated;
-use Stancl\Tenancy\Tests\TestCase;
-use Stancl\Tenancy\UUIDGenerator;
-use Stancl\Tenancy\Contracts;
-use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
-use Stancl\Tenancy\Events\TenancyInitialized;
-use Stancl\Tenancy\Jobs\CreateDatabase;
-use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Illuminate\Support\Str;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
-use Illuminate\Support\Str;
+use Stancl\Tenancy\Contracts;
+use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 use Stancl\Tenancy\Database\TenantCollection;
+use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Tests\Etc\Tenant;
+use Stancl\Tenancy\UUIDGenerator;
 
 class TenantModelTest extends TestCase
 {
@@ -126,7 +127,7 @@ class TenantModelTest extends TestCase
 
         $this->assertTrue(tenant() instanceof MyTenant);
     }
-    
+
     /** @test */
     public function custom_tenant_model_that_doesnt_extend_vendor_Tenant_model_can_be_used()
     {
@@ -143,7 +144,7 @@ class TenantModelTest extends TestCase
     public function tenant_can_be_created_even_when_we_are_in_another_tenants_context()
     {
         config(['tenancy.bootstrappers' => [
-            DatabaseTenancyBootstrapper::class
+            DatabaseTenancyBootstrapper::class,
         ]]);
 
         Event::listen(TenancyInitialized::class, BootstrapTenancy::class);

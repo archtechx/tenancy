@@ -7,11 +7,10 @@ namespace Stancl\Tenancy\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Database\Console\Migrations\RollbackCommand;
 use Illuminate\Database\Migrations\Migrator;
-use Stancl\Tenancy\Contracts\TenantWithDatabase;
-use Stancl\Tenancy\DatabaseManager;
-use Stancl\Tenancy\Events\DatabaseRolledBack;
 use Stancl\Tenancy\Concerns\DealsWithMigrations;
 use Stancl\Tenancy\Concerns\HasATenantsOption;
+use Stancl\Tenancy\DatabaseManager;
+use Stancl\Tenancy\Events\DatabaseRolledBack;
 
 class Rollback extends RollbackCommand
 {

@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Route;
-use Stancl\Tenancy\Database\Models;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
+use Stancl\Tenancy\Database\Models;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomainOrSubdomain;
-use Stancl\Tenancy\Tests\TestCase;
 
 class CombinedDomainAndSubdomainIdentificationTest extends TestCase
 {

@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Database\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Stancl\Tenancy\Contracts;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Database\Concerns\CentralConnection;
 use Stancl\Tenancy\Events;
 use Stancl\Tenancy\Exceptions\DomainOccupiedByOtherTenantException;
-use Stancl\Tenancy\Contracts;
-use Stancl\Tenancy\Database\Concerns\CentralConnection;
 
 /**
  * @property string $domain
@@ -25,8 +27,8 @@ class Domain extends Model implements Contracts\Domain
     {
         parent::boot();
 
-        $ensureDomainIsNotOccupied = function (Domain $self) {
-            if ($domain = Domain::where('domain', $self->domain)->first()) {
+        $ensureDomainIsNotOccupied = function (self $self) {
+            if ($domain = self::where('domain', $self->domain)->first()) {
                 if ($domain->getKey() !== $self->getKey()) {
                     throw new DomainOccupiedByOtherTenantException($self->domain);
                 }

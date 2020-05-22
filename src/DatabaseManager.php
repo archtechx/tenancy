@@ -4,17 +4,13 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
-use Closure;
 use Illuminate\Config\Repository;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
-use Stancl\Tenancy\Jobs\QueuedTenantDatabaseCreator;
-use Stancl\Tenancy\Jobs\QueuedTenantDatabaseDeleter;
 
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.

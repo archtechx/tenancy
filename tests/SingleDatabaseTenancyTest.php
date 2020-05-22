@@ -1,14 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 use Stancl\Tenancy\Database\Concerns\BelongsToPrimaryModel;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
@@ -291,7 +291,7 @@ class SingleDatabaseTenancyTest extends TestCase
         tenancy()->initialize($acme = Tenant::create([
             'id' => 'acme',
         ]));
-            
+
         Post::create(['text' => 'Foo', 'slug' => 'foo']);
         $data = ['text' => 'Foo 2', 'slug' => 'foo'];
 
@@ -301,7 +301,7 @@ class SingleDatabaseTenancyTest extends TestCase
         $existsFails = Validator::make($data, [
             'slug' => 'exists:posts',
         ])->fails();
-            
+
         // Assert that 'unique' and 'exists' aren't scoped by default
         // $this->assertFalse($uniqueFails); // todo get these two assertions to pass. for some reason, the validator is passing for both 'unique' and 'exists'
         // $this->assertTrue($existsFails); // todo get these two assertions to pass. for some reason, the validator is passing for both 'unique' and 'exists'

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Listeners;
 
 use Illuminate\Database\Eloquent\Model;
@@ -70,7 +72,7 @@ class UpdateSyncedResource extends QueueableListener
 
         $mappingExists = $centralModel->tenants->contains($currentTenantMapping);
 
-        if (!$mappingExists) {
+        if (! $mappingExists) {
             // Here we should call TenantPivot, but we call general Pivot, so that this works
             // even if people use their own pivot model that is not based on our TenantPivot
             Pivot::withoutEvents(function () use ($centralModel, $event) {
@@ -80,7 +82,7 @@ class UpdateSyncedResource extends QueueableListener
 
         return $centralModel->tenants->filter(function ($model) use ($currentTenantMapping) {
             // Remove the mapping for the current tenant.
-            return !$currentTenantMapping($model);
+            return ! $currentTenantMapping($model);
         });
     }
 

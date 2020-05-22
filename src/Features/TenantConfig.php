@@ -7,10 +7,10 @@ namespace Stancl\Tenancy\Features;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Contracts\Feature;
+use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Events\RevertedToCentralContext;
 use Stancl\Tenancy\Events\TenancyBootstrapped;
 use Stancl\Tenancy\Tenancy;
-use Stancl\Tenancy\Contracts\Tenant;
 
 class TenantConfig implements Feature
 {

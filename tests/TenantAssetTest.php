@@ -7,14 +7,13 @@ namespace Stancl\Tenancy\Tests;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Controllers\TenantAssetsController;
-use Stancl\Tenancy\Tests\Etc\Tenant;
-use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
-use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
-use Stancl\Tenancy\Tests\TestCase;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 
 class TenantAssetTest extends TestCase
 {
@@ -36,9 +35,9 @@ class TenantAssetTest extends TestCase
         parent::setUp();
 
         config(['tenancy.bootstrappers' => [
-            FilesystemTenancyBootstrapper::class
+            FilesystemTenancyBootstrapper::class,
         ]]);
-        
+
         Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     }
 

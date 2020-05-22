@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Events\CallQueuedListener;
@@ -8,19 +10,17 @@ use Illuminate\Support\Facades\Queue;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
-use Stancl\Tenancy\Database\Models\Domain;
 use Stancl\Tenancy\Events\BootstrappingTenancy;
 use Stancl\Tenancy\Events\CreatingDatabase;
 use Stancl\Tenancy\Events\CreatingTenant;
 use Stancl\Tenancy\Events\TenancyInitialized;
-use Stancl\Tenancy\Tests\Etc\Tenant;
-use Stancl\Tenancy\Listeners\QueueableListener;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Events\UpdatingDomain;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Listeners\QueueableListener;
 use Stancl\Tenancy\Tenancy;
-use Stancl\Tenancy\Tests\TestCase;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 
 class EventListenerTest extends TestCase
 {
@@ -41,7 +41,7 @@ class EventListenerTest extends TestCase
     public function listeners_can_be_queued_by_setting_a_static_property()
     {
         Queue::fake();
-        
+
         Event::listen(TenantCreated::class, FooListener::class);
         FooListener::$shouldQueue = true;
 
