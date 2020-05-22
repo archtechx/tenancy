@@ -22,6 +22,8 @@ class CachedTenantResolver implements TenantResolver
     {
         $resolverClass = $args[0];
         $data = $args[1];
+        $ttl = $args[2];
+        $cacheStore = $args[3];
 
         /** @var TenantResolver $resolver */
         $resolver = app($resolverClass);
