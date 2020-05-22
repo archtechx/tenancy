@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\IpUtils;
 
 class CheckTenantForMaintenanceMode extends CheckForMaintenanceMode
 {
-    public function handle(Request $request, Closure $next)
+    public function handle($request, Closure $next)
     {
         if (! tenant()) {
             throw new TenancyNotInitializedException;

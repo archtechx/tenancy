@@ -21,7 +21,7 @@ class ScopeSessionsTest extends TestCase
             'middleware' => [StartSession::class, InitializeTenancyBySubdomain::class, ScopeSessions::class],
         ], function () {
             Route::get('/foo', function () {
-                return true;
+                return 'true';
             });
         });
 

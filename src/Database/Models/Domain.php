@@ -21,8 +21,10 @@ class Domain extends Model implements Contracts\Domain
 
     protected $guarded = [];
 
-    public static function booted()
+    public static function boot()
     {
+        parent::boot();
+
         $ensureDomainIsNotOccupied = function (Domain $self) {
             if ($domain = Domain::where('domain', $self->domain)->first()) {
                 if ($domain->getKey() !== $self->getKey()) {
