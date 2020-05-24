@@ -10,10 +10,10 @@ return [
     'id_generator' => Stancl\Tenancy\UUIDGenerator::class,
 
     'domain_model' => Domain::class,
-    
+
     /**
      * The list of domains hosting your central app.
-     * 
+     *
      * Only relevant if you're using the domain or subdomain identification middleware.
      */
     'central_domains' => [
