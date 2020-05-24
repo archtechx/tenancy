@@ -36,7 +36,6 @@ class TenantDatabaseManagerTest extends TestCase
 
         config()->set([
             "tenancy.database.managers.$driver" => $databaseManager,
-            'tenancy.internal_prefix' => 'tenancy_',
         ]);
 
         $name = 'db' . $this->randomString();
@@ -64,8 +63,6 @@ class TenantDatabaseManagerTest extends TestCase
         Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
             return $event->tenant;
         })->toListener());
-
-        config(['tenancy.internal_prefix' => 'tenancy_']);
 
         $database = 'db' . $this->randomString();
 
@@ -113,7 +110,6 @@ class TenantDatabaseManagerTest extends TestCase
         }
         config([
             'database.connections.fooconn.driver' => 'sqlite',
-            'tenancy.internal_prefix' => 'tenancy_',
         ]);
 
         $tenant = Tenant::create([

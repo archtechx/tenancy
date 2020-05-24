@@ -110,7 +110,7 @@ class TenancyServiceProvider extends ServiceProvider
     protected function mapRoutes()
     {
         if (file_exists(base_path('routes/tenant.php'))) {
-            Route::namespace($this->app['config']['tenancy.tenant_route_namespace'] ?? 'App\Http\Controllers')
+            Route::namespace('App\Http\Controllers')
                 ->group(base_path('routes/tenant.php'));
         }
     }

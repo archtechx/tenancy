@@ -11,7 +11,7 @@ trait GeneratesIds
     public static function bootGeneratesIds()
     {
         static::creating(function (self $model) {
-            if (! $model->getTenantKey() && app()->bound(UniqueIdentifierGenerator::class)) {
+            if (! $model->getTenantKey() && $model->shouldGenerateId()) {
                 $model->setAttribute($model->getTenantKeyName(), app(UniqueIdentifierGenerator::class)->generate($model));
             }
         });
@@ -19,6 +19,11 @@ trait GeneratesIds
 
     public function getIncrementing()
     {
-        return ! app()->bound(UniqueIdentifierGenerator::class);
+        return ! $this->shouldGenerateId();
+    }
+
+    public function shouldGenerateId(): bool
+    {
+        return app()->bound(UniqueIdentifierGenerator::class);
     }
 }

@@ -7,9 +7,8 @@ namespace Stancl\Tenancy\Database\Models;
 use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\Contracts;
 use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\Database\Concerns\CentralConnection;
+use Stancl\Tenancy\Database\Concerns;
 use Stancl\Tenancy\Events;
-use Stancl\Tenancy\Exceptions\DomainOccupiedByOtherTenantException;
 
 /**
  * @property string $domain
@@ -19,38 +18,24 @@ use Stancl\Tenancy\Exceptions\DomainOccupiedByOtherTenantException;
  */
 class Domain extends Model implements Contracts\Domain
 {
-    use CentralConnection;
+    use Concerns\CentralConnection,
+        Concerns\EnsuresDomainIsNotOccupied;
 
     protected $guarded = [];
-
-    public static function boot()
-    {
-        parent::boot();
-
-        $ensureDomainIsNotOccupied = function (self $self) {
-            if ($domain = self::where('domain', $self->domain)->first()) {
-                if ($domain->getKey() !== $self->getKey()) {
-                    throw new DomainOccupiedByOtherTenantException($self->domain);
-                }
-            }
-        };
-
-        static::saving($ensureDomainIsNotOccupied);
-    }
 
     public function tenant()
     {
         return $this->belongsTo(config('tenancy.tenant_model'));
     }
 
-    public $dispatchesEvents = [
-        'saved' => Events\DomainSaved::class,
+    protected $dispatchesEvents = [
         'saving' => Events\SavingDomain::class,
-        'created' => Events\DomainCreated::class,
+        'saved' => Events\DomainSaved::class,
         'creating' => Events\CreatingDomain::class,
-        'updated' => Events\DomainUpdated::class,
+        'created' => Events\DomainCreated::class,
         'updating' => Events\UpdatingDomain::class,
-        'deleted' => Events\DomainDeleted::class,
+        'updated' => Events\DomainUpdated::class,
         'deleting' => Events\DeletingDomain::class,
+        'deleted' => Events\DomainDeleted::class,
     ];
 }

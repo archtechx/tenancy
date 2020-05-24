@@ -23,7 +23,9 @@ class Tenant extends Model implements Contracts\Tenant
 {
     use Concerns\CentralConnection,
         Concerns\GeneratesIds,
-        Concerns\HasDataColumn;
+        Concerns\HasDataColumn,
+        Concerns\HasInternalKeys,
+        Concerns\TenantRun;
 
     protected $table = 'tenants';
     protected $primaryKey = 'id';
@@ -44,53 +46,14 @@ class Tenant extends Model implements Contracts\Tenant
         return new TenantCollection($models);
     }
 
-    public static function internalPrefix(): string
-    {
-        return config('tenancy.internal_prefix');
-    }
-
-    /**
-     * Get an internal key.
-     */
-    public function getInternal(string $key)
-    {
-        return $this->getAttribute(static::internalPrefix() . $key);
-    }
-
-    /**
-     * Set internal key.
-     */
-    public function setInternal(string $key, $value)
-    {
-        $this->setAttribute(static::internalPrefix() . $key, $value);
-
-        return $this;
-    }
-
-    public function run(callable $callback)
-    {
-        $originalTenant = tenant();
-
-        tenancy()->initialize($this);
-        $result = $callback($this);
-
-        if ($originalTenant) {
-            tenancy()->initialize($originalTenant);
-        } else {
-            tenancy()->end();
-        }
-
-        return $result;
-    }
-
-    public $dispatchesEvents = [
-        'saved' => Events\TenantSaved::class,
+    protected $dispatchesEvents = [
         'saving' => Events\SavingTenant::class,
-        'created' => Events\TenantCreated::class,
+        'saved' => Events\TenantSaved::class,
         'creating' => Events\CreatingTenant::class,
-        'updated' => Events\TenantUpdated::class,
+        'created' => Events\TenantCreated::class,
         'updating' => Events\UpdatingTenant::class,
-        'deleted' => Events\TenantDeleted::class,
+        'updated' => Events\TenantUpdated::class,
         'deleting' => Events\DeletingTenant::class,
+        'deleted' => Events\TenantDeleted::class,
     ];
 }
