@@ -1,6 +1,8 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
+use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
 /*
 |--------------------------------------------------------------------------
@@ -8,15 +10,14 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 |--------------------------------------------------------------------------
 |
 | Here you can register the tenant routes for your application.
-| These routes are loaded by the TenantRouteServiceProvider
-| with the namespace configured in your tenancy config.
+| These routes are loaded by the TenantRouteServiceProvider.
 |
 | Feel free to customize them however you want. Good luck!
 |
 */
 
 Route::group([
-    'middleware' => ['web', InitializeTenancyByDomain::class],
+    'middleware' => ['web', PreventAccessFromCentralDomains::class, InitializeTenancyByDomain::class],
     'prefix' => '/app',
 ], function () {
     Route::get('/', function () {

@@ -37,7 +37,10 @@ class Install extends Command
         $this->info('✔️  Created config/tenancy.php');
 
         if (! file_exists(base_path('routes/tenant.php'))) {
-            file_put_contents(base_path('routes/tenant.php'), file_get_contents(__DIR__ . '/../../assets/tenant_routes.php.stub'));
+            $this->callSilent('vendor:publish', [
+                '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
+                '--tag' => 'routes',
+            ]);
             $this->info('✔️  Created routes/tenant.php');
         } else {
             $this->info('Found routes/tenant.php.');

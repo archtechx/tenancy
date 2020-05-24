@@ -92,6 +92,10 @@ class TenancyServiceProvider extends ServiceProvider
         ], 'impersonation-migrations');
 
         $this->publishes([
+            __DIR__ . '/../assets/tenant_routes.stub.php' => config_path('tenancy.php'),
+        ], 'routes');
+
+        $this->publishes([
             __DIR__ . '/../assets/TenancyServiceProvider.stub.php' => app_path('Providers/TenancyServiceProvider.php'),
         ], 'providers');
 
