@@ -11,6 +11,7 @@ use Stancl\Tenancy\Concerns\DealsWithMigrations;
 use Stancl\Tenancy\Concerns\HasATenantsOption;
 use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Events\DatabaseRolledBack;
+use Stancl\Tenancy\Events\RollingBackDatabase;
 
 class Rollback extends RollbackCommand
 {
@@ -58,6 +59,8 @@ class Rollback extends RollbackCommand
 
         tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
             $this->line("Tenant: {$tenant['id']}");
+
+            event(new RollingBackDatabase($tenant));
 
             // Rollback
             parent::handle();
