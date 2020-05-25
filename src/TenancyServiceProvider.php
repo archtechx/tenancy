@@ -27,7 +27,7 @@ class TenancyServiceProvider extends ServiceProvider
 
         // Make sure features are bootstrapped as soon as Tenancy is instantiated.
         $this->app->extend(Tenancy::class, function (Tenancy $tenancy) {
-            foreach ($this->app['config']['tenancy.features'] as $feature) {
+            foreach ($this->app['config']['tenancy.features'] ?? [] as $feature) {
                 $this->app[$feature]->bootstrap($tenancy);
             }
 
@@ -40,7 +40,7 @@ class TenancyServiceProvider extends ServiceProvider
         });
 
         // Make sure bootstrappers are stateful (singletons).
-        foreach ($this->app['config']['tenancy.bootstrappers'] as $bootstrapper) {
+        foreach ($this->app['config']['tenancy.bootstrappers'] ?? [] as $bootstrapper) {
             $this->app->singleton($bootstrapper);
         }
 
