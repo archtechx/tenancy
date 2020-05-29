@@ -33,12 +33,9 @@ class TenantList extends Command
         $this->info('Listing all tenants.');
         tenancy()
             ->query()
-            ->when($this->option('tenants'), function ($query) {
-                $query->whereIn(tenancy()->model()->getTenantKeyName(), $this->option('tenants'));
-            })
             ->cursor()
             ->each(function (Tenant $tenant) {
-                $this->line("[Tenant] id: {$tenant['id']} @ " . implode('; ', $tenant->domains ?? []));
+                $this->line("[Tenant] id: {$tenant['id']} @ " . implode('; ', $tenant->domains->pluck('domain')->toArray() ?? []));
             });
     }
 }
