@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Route;
@@ -31,7 +33,7 @@ class UniversalRouteTest extends TestCase
         $this->get('http://localhost/foo')
             ->assertSuccessful()
             ->assertSee('Tenancy is not initialized.');
-        
+
         $tenant = Tenant::create([
             'id' => 'acme',
         ]);
