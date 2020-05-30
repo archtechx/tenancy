@@ -19,11 +19,11 @@ trait GeneratesIds
 
     public function getIncrementing()
     {
-        return ! $this->shouldGenerateId();
+        return ! app()->bound(UniqueIdentifierGenerator::class);
     }
 
     public function shouldGenerateId(): bool
     {
-        return app()->bound(UniqueIdentifierGenerator::class);
+        return ! $this->getIncrementing();
     }
 }

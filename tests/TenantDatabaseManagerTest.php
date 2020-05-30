@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 use PDO;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
-use Stancl\Tenancy\DatabaseManager;
+use Stancl\Tenancy\Database\DatabaseManager;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;

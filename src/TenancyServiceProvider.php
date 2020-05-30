@@ -20,7 +20,7 @@ class TenancyServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__ . '/../assets/config.php', 'tenancy');
 
-        $this->app->singleton(DatabaseManager::class);
+        $this->app->singleton(Database\DatabaseManager::class);
 
         // Make sure Tenancy is stateful.
         $this->app->singleton(Tenancy::class);
@@ -48,13 +48,13 @@ class TenancyServiceProvider extends ServiceProvider
         $this->app->bind(Contracts\UniqueIdentifierGenerator::class, $this->app['config']['tenancy.id_generator']);
 
         $this->app->singleton(Commands\Migrate::class, function ($app) {
-            return new Commands\Migrate($app['migrator'], $app[DatabaseManager::class]);
+            return new Commands\Migrate($app['migrator']);
         });
         $this->app->singleton(Commands\Rollback::class, function ($app) {
-            return new Commands\Rollback($app['migrator'], $app[DatabaseManager::class]);
+            return new Commands\Rollback($app['migrator']);
         });
         $this->app->singleton(Commands\Seed::class, function ($app) {
-            return new Commands\Seed($app['db'], $app[DatabaseManager::class]);
+            return new Commands\Seed($app['db']);
         });
 
         $this->app->bind('globalCache', function ($app) {

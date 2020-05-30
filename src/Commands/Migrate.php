@@ -4,20 +4,16 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Commands;
 
-use Illuminate\Console\Command;
 use Illuminate\Database\Console\Migrations\MigrateCommand;
 use Illuminate\Database\Migrations\Migrator;
 use Stancl\Tenancy\Concerns\DealsWithMigrations;
 use Stancl\Tenancy\Concerns\HasATenantsOption;
-use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Events\DatabaseMigrated;
 use Stancl\Tenancy\Events\MigratingDatabase;
 
 class Migrate extends MigrateCommand
 {
     use HasATenantsOption, DealsWithMigrations;
-
-    protected $database;
 
     /**
      * The console command description.
@@ -31,10 +27,9 @@ class Migrate extends MigrateCommand
      *
      * @return void
      */
-    public function __construct(Migrator $migrator, DatabaseManager $database)
+    public function __construct(Migrator $migrator)
     {
         parent::__construct($migrator);
-        $this->database = $database;
 
         $this->setName('tenants:migrate');
         $this->specifyParameters();

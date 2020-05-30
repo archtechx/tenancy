@@ -7,15 +7,12 @@ namespace Stancl\Tenancy\Commands;
 use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Database\Console\Seeds\SeedCommand;
 use Stancl\Tenancy\Concerns\HasATenantsOption;
-use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Events\DatabaseSeeded;
 use Stancl\Tenancy\Events\SeedingDatabase;
 
 class Seed extends SeedCommand
 {
     use HasATenantsOption;
-
-    protected $database;
 
     /**
      * The console command description.
@@ -29,10 +26,9 @@ class Seed extends SeedCommand
      *
      * @return void
      */
-    public function __construct(ConnectionResolverInterface $resolver, DatabaseManager $database)
+    public function __construct(ConnectionResolverInterface $resolver)
     {
         parent::__construct($resolver);
-        $this->database = $database;
 
         $this->setName('tenants:seed');
         $this->specifyParameters();

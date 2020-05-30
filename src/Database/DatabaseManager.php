@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy;
+namespace Stancl\Tenancy\Database;
 
 use Illuminate\Config\Repository;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;

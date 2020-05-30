@@ -12,7 +12,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
-use Stancl\Tenancy\DatabaseManager;
+use Stancl\Tenancy\Database\DatabaseManager;
 use Stancl\Tenancy\Events\CreatingDatabase;
 use Stancl\Tenancy\Events\DatabaseCreated;
 

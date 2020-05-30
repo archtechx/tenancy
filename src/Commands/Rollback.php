@@ -4,20 +4,16 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Commands;
 
-use Illuminate\Console\Command;
 use Illuminate\Database\Console\Migrations\RollbackCommand;
 use Illuminate\Database\Migrations\Migrator;
 use Stancl\Tenancy\Concerns\DealsWithMigrations;
 use Stancl\Tenancy\Concerns\HasATenantsOption;
-use Stancl\Tenancy\DatabaseManager;
 use Stancl\Tenancy\Events\DatabaseRolledBack;
 use Stancl\Tenancy\Events\RollingBackDatabase;
 
 class Rollback extends RollbackCommand
 {
     use HasATenantsOption, DealsWithMigrations;
-
-    protected $database;
 
     /**
      * The console command description.
@@ -31,10 +27,9 @@ class Rollback extends RollbackCommand
      *
      * @return void
      */
-    public function __construct(Migrator $migrator, DatabaseManager $database)
+    public function __construct(Migrator $migrator)
     {
         parent::__construct($migrator);
-        $this->database = $database;
 
         $this->setName('tenants:rollback');
         $this->specifyParameters();
