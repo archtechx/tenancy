@@ -28,11 +28,11 @@ return [
      * To configure their behavior, see the config keys below.
      */
     'bootstrappers' => [
-        'database' => Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper::class,
-        'cache' => Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper::class,
-        'filesystem' => Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper::class,
-        'queue' => Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper::class,
-        // 'redis' => Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
+        Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper::class,
+        Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper::class,
+        Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper::class,
+        Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper::class,
+        // Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
     ],
 
     /**
@@ -83,6 +83,8 @@ return [
      *
      * Each key in cache will have a tag applied on it. This tag is used to
      * scope the cache both when writing to it and when reading from it.
+     * 
+     * You can clear cache selectively by specifying the tag.
      */
     'cache' => [
         'tag_base' => 'tenant', // This tag_base, followed by the tenant_id, will form a tag that will be applied on each cache call.

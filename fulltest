@@ -1,6 +1,0 @@
-#!/bin/bash
-set -e
-
-# for development
-docker-compose up -d
-./test "$@"
