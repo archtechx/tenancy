@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Features;
 
 use Illuminate\Contracts\Config\Repository;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Contracts\Feature;
 use Stancl\Tenancy\Contracts\Tenant;
@@ -27,10 +28,6 @@ class TenantConfig implements Feature
     public function __construct(Repository $config)
     {
         $this->config = $config;
-
-        foreach (static::$storageToConfigMap as $configKey) {
-            $this->originalConfig[$configKey] = $this->config[$configKey];
-        }
     }
 
     public function bootstrap(Tenancy $tenancy): void
@@ -46,18 +43,31 @@ class TenantConfig implements Feature
 
     public function setTenantConfig(Tenant $tenant): void
     {
+        /** @var Tenant|Model $tenant */
+
         foreach (static::$storageToConfigMap as $storageKey => $configKey) {
-            $override = $tenant->$storageKey ?? null;
+            $override = $tenant->getAttribute($storageKey);
+
             if (! is_null($override)) {
-                $this->config[$configKey] = $override;
+                if (is_array($configKey)) {
+                    foreach ($configKey as $key) {
+                        $this->originalConfig[$key] = $this->originalConfig[$key] ?? $this->config[$key];
+
+                        $this->config[$key] = $override;    
+                    }
+                } else {
+                    $this->originalConfig[$configKey] = $this->originalConfig[$configKey] ?? $this->config[$configKey];
+
+                    $this->config[$configKey] = $override;
+                }
             }
         }
     }
 
     public function unsetTenantConfig(): void
     {
-        foreach (static::$storageToConfigMap as $configKey) {
-            $this->config[$configKey] = $this->originalConfig[$configKey];
+        foreach ($this->originalConfig as $key => $value) {
+            $this->config[$key] = $value;
         }
     }
 }
