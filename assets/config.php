@@ -83,7 +83,7 @@ return [
      *
      * Each key in cache will have a tag applied on it. This tag is used to
      * scope the cache both when writing to it and when reading from it.
-     * 
+     *
      * You can clear cache selectively by specifying the tag.
      */
     'cache' => [
