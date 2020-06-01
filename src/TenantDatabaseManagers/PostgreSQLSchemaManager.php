@@ -37,7 +37,7 @@ class PostgreSQLSchemaManager implements TenantDatabaseManager, CanSetConnection
 
     public function deleteDatabase(string $name): bool
     {
-        return $this->database()->statement("DROP SCHEMA \"$name\"");
+        return $this->database()->statement("DROP SCHEMA \"$name\" CASCADE");
     }
 
     public function databaseExists(string $name): bool
