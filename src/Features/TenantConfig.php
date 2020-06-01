@@ -44,7 +44,6 @@ class TenantConfig implements Feature
     public function setTenantConfig(Tenant $tenant): void
     {
         /** @var Tenant|Model $tenant */
-
         foreach (static::$storageToConfigMap as $storageKey => $configKey) {
             $override = $tenant->getAttribute($storageKey);
 
@@ -53,7 +52,7 @@ class TenantConfig implements Feature
                     foreach ($configKey as $key) {
                         $this->originalConfig[$key] = $this->originalConfig[$key] ?? $this->config[$key];
 
-                        $this->config[$key] = $override;    
+                        $this->config[$key] = $override;
                     }
                 } else {
                     $this->originalConfig[$configKey] = $this->originalConfig[$configKey] ?? $this->config[$configKey];
