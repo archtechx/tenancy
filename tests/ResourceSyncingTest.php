@@ -117,9 +117,9 @@ class ResourceSyncingTest extends TestCase
 
         // Update user in tenant DB
         $user->update([
+            'name' => 'John Foo', // synced
+            'email' => 'john@foreignhost', // synced
             'role' => 'admin', // unsynced
-            'name' => 'John Foo', // synceed
-            'email' => 'john@foreignhost', // synceed
         ]);
 
         // Assert new values
@@ -601,11 +601,6 @@ class CentralUser extends Model implements SyncMaster
     public function getTenantModelName(): string
     {
         return ResourceUser::class;
-    }
-
-    public function getTenantIdColumnInMapTable(): string
-    {
-        return 'tenant_id';
     }
 
     public function getGlobalIdentifierKey(): string

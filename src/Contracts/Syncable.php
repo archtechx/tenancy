@@ -13,4 +13,6 @@ interface Syncable
     public function getCentralModelName(): string;
 
     public function getSyncedAttributeNames(): array;
+
+    public function triggerSyncEvent();
 }

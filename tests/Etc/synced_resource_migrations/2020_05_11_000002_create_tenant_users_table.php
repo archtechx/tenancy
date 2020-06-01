@@ -8,11 +8,6 @@ use Illuminate\Support\Facades\Schema;
 
 class CreateTenantUsersTable extends Migration
 {
-    /**
-     * Run the migrations.
-     *
-     * @return void
-     */
     public function up()
     {
         Schema::create('tenant_users', function (Blueprint $table) {
