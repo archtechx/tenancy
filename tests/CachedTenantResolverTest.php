@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
-use Illuminate\Support\Facades\Route;
-use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
-use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
-use Stancl\Tenancy\Resolvers\CachedTenantResolver;
+use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
@@ -15,8 +12,7 @@ class CachedTenantResolverTest extends TestCase
 {
     public function tearDown(): void
     {
-        InitializeTenancyByDomain::$shouldCache = false;
-        InitializeTenancyByRequestData::$shouldCache = false;
+        DomainTenantResolver::$shouldCache = false;
 
         parent::tearDown();
     }
@@ -30,7 +26,7 @@ class CachedTenantResolverTest extends TestCase
         ]);
 
         $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
-        $this->assertTrue($tenant->is(app(CachedTenantResolver::class)->resolve(DomainTenantResolver::class, ['acme'])));
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
     }
 
     /** @test */
@@ -41,51 +37,78 @@ class CachedTenantResolverTest extends TestCase
             'domain' => 'acme',
         ]);
 
-        $this->assertTrue($tenant->is(app(CachedTenantResolver::class)->resolve(DomainTenantResolver::class, ['acme'])));
+        DB::enableQueryLog();
 
-        $this->mock(DomainTenantResolver::class, function ($mock) {
-            return $mock->shouldNotReceive('resolve');
-        });
+        DomainTenantResolver::$shouldCache = false;
+        
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
+        DB::flushQueryLog();
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
+        $this->assertNotEmpty(DB::getQueryLog()); // not empty
 
-        $this->assertTrue($tenant->is(app(CachedTenantResolver::class)->resolve(DomainTenantResolver::class, ['acme'])));
+        DomainTenantResolver::$shouldCache = true;
+        
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
+        DB::flushQueryLog();
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
+        $this->assertEmpty(DB::getQueryLog()); // empty
     }
 
     /** @test */
-    public function caching_can_be_configured_selectively_on_initialization_middleware()
+    public function cache_is_invalidated_when_the_tenant_is_updated()
     {
-        InitializeTenancyByDomain::$shouldCache = true;
-
-        $tenant = Tenant::create([
-            'id' => 'acme',
-        ]);
-        $tenant->domains()->create([
-            'domain' => 'acme.localhost',
+        $tenant = Tenant::create();
+        $tenant->createDomain([
+            'domain' => 'acme',
         ]);
 
-        Route::get('/foo', function () {
-            return 'bar';
-        })->middleware(InitializeTenancyByDomain::class);
+        DB::enableQueryLog();
 
-        // create cache
-        $this->get('http://acme.localhost/foo')
-            ->assertSee('bar');
+        DomainTenantResolver::$shouldCache = true;
 
-        $this->mock(CachedTenantResolver::class, function ($mock) {
-            return $mock->shouldReceive('resolve')->once(); // only once
-        });
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
+        DB::flushQueryLog();
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
+        $this->assertEmpty(DB::getQueryLog()); // empty
 
-        // use cache
-        $this->get('http://acme.localhost/foo')
-            ->assertSee('bar');
+        $tenant->update([
+            'foo' => 'bar',
+        ]);
 
-        Route::get('/abc', function () {
-            return 'xyz';
-        })->middleware(InitializeTenancyByRequestData::class);
-
-        $this->get('/abc?tenant=acme')
-            ->assertSee('xyz');
-
-        $this->get('/abc?tenant=acme')
-            ->assertSee('xyz');
+        DB::flushQueryLog();
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
+        $this->assertNotEmpty(DB::getQueryLog()); // not empty
     }
+
+    /** @test */
+    public function cache_is_invalidated_when_a_tenants_domain_is_changed()
+    {
+        $tenant = Tenant::create();
+        $tenant->createDomain([
+            'domain' => 'acme',
+        ]);
+
+        DB::enableQueryLog();
+
+        DomainTenantResolver::$shouldCache = true;
+
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
+        DB::flushQueryLog();
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
+        $this->assertEmpty(DB::getQueryLog()); // empty
+
+        $tenant->createDomain([
+            'domain' => 'bar',
+        ]);
+
+        DB::flushQueryLog();
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
+        $this->assertNotEmpty(DB::getQueryLog()); // not empty
+
+        DB::flushQueryLog();
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('bar')));
+        $this->assertNotEmpty(DB::getQueryLog()); // not empty
+    }
+
+    // todo2 at some point in the future, we could write invalidation tests for the other resolvers too
 }

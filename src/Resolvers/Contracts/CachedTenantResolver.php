@@ -48,6 +48,10 @@ abstract class CachedTenantResolver implements TenantResolver
 
     public function invalidateCache(Tenant $tenant): void
     {
+        if (! static::$shouldCache) {
+            return;
+        }
+
         foreach ($this->getArgsForTenant($tenant) as $args) {
             $this->cache->forget($this->getCacheKey(...$args));
         }

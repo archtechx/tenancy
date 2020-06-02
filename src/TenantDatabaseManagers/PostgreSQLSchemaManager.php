@@ -36,7 +36,7 @@ class PostgreSQLSchemaManager implements TenantDatabaseManager
 
     public function deleteDatabase(TenantWithDatabase $tenant): bool
     {
-        return $this->database()->statement("DROP SCHEMA \"{$tenant->database()->getName()}\"");
+        return $this->database()->statement("DROP SCHEMA \"{$tenant->database()->getName()}\" CASCADE");
     }
 
     public function databaseExists(string $name): bool
