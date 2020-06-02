@@ -20,15 +20,6 @@ class InitializeTenancyByRequestData extends IdentificationMiddleware
     /** @var callable|null */
     public static $onFail;
 
-    /** @var bool */
-    public static $shouldCache = false;
-
-    /** @var int */
-    public static $cacheTTL = 3600; // seconds
-
-    /** @var string|null */
-    public static $cacheStore = null; // default
-
     /** @var Tenancy */
     protected $tenancy;
 

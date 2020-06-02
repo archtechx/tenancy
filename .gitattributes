@@ -2,16 +2,16 @@
 # https://www.kernel.org/pub/software/scm/git/docs/gitattributes.html
 
 # Ignore all test and documentation with "export-ignore".
-/.github            export-ignore
-/art                export-ignore
-/tests              export-ignore
-/.gitattributes     export-ignore
-/.gitignore         export-ignore
-/.styleci.yml       export-ignore
+/.github export-ignore
+/art export-ignore
+/tests export-ignore
+/.gitattributes export-ignore
+/.gitignore export-ignore
+/.styleci.yml export-ignore
 /docker-compose.yml export-ignore
-/Dockerfile         export-ignore
-/fulltest           export-ignore
-/phpunit.xml        export-ignore
-/.editorconfig      export-ignore
-/.coverage.xml      export-ignore
-/coverage           export-ignore
+/Dockerfile export-ignore
+/test export-ignore
+/phpunit.xml export-ignore
+/.editorconfig export-ignore
+/.coverage.xml export-ignore
+/coverage export-ignore

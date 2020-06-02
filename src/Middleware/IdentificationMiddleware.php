@@ -14,15 +14,6 @@ abstract class IdentificationMiddleware
     /** @var callable */
     public static $onFail;
 
-    /** @var bool */
-    public static $shouldCache = false;
-
-    /** @var int */
-    public static $cacheTTL = 3600; // seconds
-
-    /** @var string|null */
-    public static $cacheStore = null; // default
-
     /** @var Tenancy */
     protected $tenancy;
 
@@ -32,15 +23,9 @@ abstract class IdentificationMiddleware
     public function initializeTenancy($request, $next, ...$resolverArguments)
     {
         try {
-            if (static::$shouldCache) {
-                app(CachedTenantResolver::class)->resolve(
-                    get_class($this->resolver), $resolverArguments, static::$cacheTTL, static::$cacheStore
-                );
-            } else {
-                $this->tenancy->initialize(
-                    $this->resolver->resolve(...$resolverArguments)
-                );
-            }
+            $this->tenancy->initialize(
+                $this->resolver->resolve(...$resolverArguments)
+            );
         } catch (TenantCouldNotBeIdentifiedException $e) {
             $onFail = static::$onFail ?? function ($e) {
                 throw $e;
