@@ -6,7 +6,6 @@ namespace Stancl\Tenancy\Middleware;
 
 use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Contracts\TenantResolver;
-use Stancl\Tenancy\Resolvers\CachedTenantResolver;
 use Stancl\Tenancy\Tenancy;
 
 abstract class IdentificationMiddleware

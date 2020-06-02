@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Database\Concerns;
 
 use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\Resolvers\Contracts\CachedTenantResolver;
 use Stancl\Tenancy\Resolvers;
+use Stancl\Tenancy\Resolvers\Contracts\CachedTenantResolver;
 
 trait InvalidatesResolverCache
 {
