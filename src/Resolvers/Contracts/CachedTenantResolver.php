@@ -1,13 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Resolvers\Contracts;
 
 use Illuminate\Contracts\Cache\Factory;
 use Illuminate\Contracts\Cache\Repository;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Contracts\TenantResolver;
-use Stancl\Tenancy\Database\Models\Domain;
-use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 
 abstract class CachedTenantResolver implements TenantResolver
 {
