@@ -8,13 +8,15 @@ use Closure;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Route as Router;
 use Stancl\Tenancy\Contracts\Feature;
-use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
+use Stancl\Tenancy\Middleware;
 use Stancl\Tenancy\Tenancy;
 
 class UniversalRoutes implements Feature
 {
     public static $identificationMiddlewares = [
-        InitializeTenancyByDomain::class,
+        Middleware\InitializeTenancyByDomain::class,
+        Middleware\InitializeTenancyBySubdomain::class,
+        Middleware\InitializeTenancyByDomainOrSubdomain::class,
     ];
 
     public function bootstrap(Tenancy $tenancy): void
