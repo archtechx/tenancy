@@ -40,14 +40,14 @@ class CachedTenantResolverTest extends TestCase
         DB::enableQueryLog();
 
         DomainTenantResolver::$shouldCache = false;
-        
+
         $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
         DB::flushQueryLog();
         $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
         $this->assertNotEmpty(DB::getQueryLog()); // not empty
 
         DomainTenantResolver::$shouldCache = true;
-        
+
         $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
         DB::flushQueryLog();
         $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
