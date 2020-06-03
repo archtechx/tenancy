@@ -91,9 +91,6 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
 
         return [
             'tenant_id' => $id,
-            'tags' => [
-                "tenant:$id",
-            ],
         ];
     }
 }
