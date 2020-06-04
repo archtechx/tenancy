@@ -54,8 +54,11 @@ class InitializeTenancyBySubdomain extends InitializeTenancyByDomain
     {
         $parts = explode('.', $hostname);
 
+        $isLocalhost = count($parts) === 1;
+        $isIpAddress = count(array_filter($parts, 'is_numeric')) === count($parts);
+
         // If we're on localhost or an IP address, then we're not visiting a subdomain.
-        $notADomain = in_array(count($parts), [1, 4]);
+        $notADomain = $isLocalhost || $isIpAddress;
         $thirdPartyDomain = ! Str::endsWith($hostname, config('tenancy.central_domains'));
 
         if ($notADomain || $thirdPartyDomain) {
