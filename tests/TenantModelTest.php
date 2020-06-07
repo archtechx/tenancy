@@ -62,7 +62,7 @@ class TenantModelTest extends TestCase
         $this->assertSame(null, $tenant->data);
 
         // Low level test to assert database structure
-        $this->assertSame(json_encode(['foo' => 'bar']), DB::table('tenants')->where('id', $tenant->id)->first()->data);
+        $this->assertSame(['foo' => 'bar'], json_decode(DB::table('tenants')->where('id', $tenant->id)->first()->data, true));
         $this->assertSame(null, DB::table('tenants')->where('id', $tenant->id)->first()->foo ?? null);
 
         // Model has the correct structure when retrieved
@@ -105,6 +105,7 @@ class TenantModelTest extends TestCase
     /** @test */
     public function autoincrement_ids_are_supported()
     {
+        Schema::drop('domains');
         Schema::table('tenants', function (Blueprint $table) {
             $table->bigIncrements('id')->change();
         });

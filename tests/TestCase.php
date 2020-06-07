@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Redis;
+use PDO;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
@@ -56,9 +57,23 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'database.redis.default.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
             'database.redis.options.prefix' => 'foo',
             'database.connections.central' => [
-                'driver' => 'sqlite',
-                'database' => database_path('central.sqlite'),
-                // 'database' => ':memory:',
+                'driver' => 'mysql',
+                'url' => env('DATABASE_URL'),
+                'host' => 'mysql',
+                'port' => env('DB_PORT', '3306'),
+                'database' => 'main',
+                'username' => env('DB_USERNAME', 'forge'),
+                'password' => env('DB_PASSWORD', ''),
+                'unix_socket' => env('DB_SOCKET', ''),
+                'charset' => 'utf8mb4',
+                'collation' => 'utf8mb4_unicode_ci',
+                'prefix' => '',
+                'prefix_indexes' => true,
+                'strict' => true,
+                'engine' => null,
+                'options' => extension_loaded('pdo_mysql') ? array_filter([
+                    PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                ]) : [],
             ],
             'database.connections.sqlite.database' => ':memory:',
             'database.connections.mysql.host' => env('TENANCY_TEST_MYSQL_HOST', '127.0.0.1'),

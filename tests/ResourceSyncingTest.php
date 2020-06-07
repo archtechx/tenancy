@@ -579,7 +579,7 @@ class ResourceTenant extends Tenant
 {
     public function users()
     {
-        return $this->belongsToMany(CentralUser::class, 'tenant_users', 'tenant_id', 'global_user_id')
+        return $this->belongsToMany(CentralUser::class, 'tenant_users', 'tenant_id', 'global_user_id', 'id', 'global_id')
             ->using(TenantPivot::class);
     }
 }
@@ -594,7 +594,7 @@ class CentralUser extends Model implements SyncMaster
 
     public function tenants(): BelongsToMany
     {
-        return $this->belongsToMany(ResourceTenant::class, 'tenant_users', 'global_user_id', 'tenant_id')
+        return $this->belongsToMany(ResourceTenant::class, 'tenant_users', 'global_user_id', 'tenant_id', 'global_id')
             ->using(TenantPivot::class);
     }
 

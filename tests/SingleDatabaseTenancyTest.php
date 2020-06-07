@@ -9,7 +9,6 @@ use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rules\Unique;
 use Stancl\Tenancy\Database\Concerns\BelongsToPrimaryModel;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 use Stancl\Tenancy\Database\Concerns\HasScopedValidationRules;
@@ -36,7 +35,7 @@ class SingleDatabaseTenancyTest extends TestCase
             $table->increments('id');
             $table->string('text');
 
-            $table->string('post_id');
+            $table->unsignedInteger('post_id');
 
             $table->foreign('post_id')->references('id')->on('posts')->onUpdate('cascade')->onDelete('cascade');
         });
@@ -236,6 +235,7 @@ class SingleDatabaseTenancyTest extends TestCase
     {
         BelongsToTenant::$tenantIdColumn = 'team_id';
 
+        Schema::drop('comments');
         Schema::drop('posts');
         Schema::create('posts', function (Blueprint $table) {
             $table->increments('id');
