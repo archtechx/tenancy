@@ -30,5 +30,5 @@ The repository with the documentation source code can be found here: [stancl/ten
 
 ### Credits
 
-- Created by [Samuel Štancl](https://twitter.com/samuelstancl)
-- Logo by [iskrisis](https://github.com/iskrisis)
+- Package created by [Samuel Štancl](https://twitter.com/samuelstancl)
+- Logo & design help by [Florian Karsten](https://floriankarsten.com/)
