@@ -224,7 +224,7 @@ class AnotherTenant extends Model implements Contracts\Tenant
         return 'id';
     }
 
-    public function getTenantKey(): string
+    public function getTenantKey()
     {
         return $this->getAttribute('id');
     }

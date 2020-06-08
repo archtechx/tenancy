@@ -603,7 +603,7 @@ class CentralUser extends Model implements SyncMaster
         return ResourceUser::class;
     }
 
-    public function getGlobalIdentifierKey(): string
+    public function getGlobalIdentifierKey()
     {
         return $this->getAttribute($this->getGlobalIdentifierKeyName());
     }
@@ -636,7 +636,7 @@ class ResourceUser extends Model implements Syncable
     protected $guarded = [];
     public $timestamps = false;
 
-    public function getGlobalIdentifierKey(): string
+    public function getGlobalIdentifierKey()
     {
         return $this->getAttribute($this->getGlobalIdentifierKeyName());
     }

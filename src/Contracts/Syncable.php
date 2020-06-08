@@ -8,7 +8,7 @@ interface Syncable
 {
     public function getGlobalIdentifierKeyName(): string;
 
-    public function getGlobalIdentifierKey(): string;
+    public function getGlobalIdentifierKey();
 
     public function getCentralModelName(): string;
 

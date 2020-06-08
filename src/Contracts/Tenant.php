@@ -17,7 +17,7 @@ interface Tenant
     public function getTenantKeyName(): string;
 
     /** Get the value of the key used for identifying the tenant. */
-    public function getTenantKey(): ?string;
+    public function getTenantKey();
 
     /** Get the value of an internal key. */
     public function getInternal(string $key);
