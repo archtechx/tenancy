@@ -20,9 +20,9 @@ You won't have to change a thing in your application's code.
 - :heavy_check_mark: No replacing of Laravel classes (`Cache`, `Storage`, ...) with tenancy-aware classes
 - :heavy_check_mark: Built-in tenant identification based on hostname (including second level domains)
 
-### [Documentation](https://tenancyforlaravel.com/docs/v2/)
+### [Documentation](https://tenancyforlaravel.com/docs/v3/)
 
-Documentation can be found here: https://tenancyforlaravel.com/docs/v2/
+Documentation can be found here: https://tenancyforlaravel.com/docs/v3/
 
 The repository with the documentation source code can be found here: [stancl/tenancy-docs](https://github.com/stancl/tenancy-docs).
 
@@ -31,4 +31,4 @@ The repository with the documentation source code can be found here: [stancl/ten
 ### Credits
 
 - Created by [Samuel Štancl](https://twitter.com/samuelstancl)
-- Logo by [Brian Dillingham](https://twitter.com/dillinghammm)
+- Logo by [iskrisis](https://github.com/iskrisis)
