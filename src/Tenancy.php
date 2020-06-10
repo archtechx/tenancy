@@ -93,6 +93,9 @@ class Tenancy
      */
     public function runForMultiple($tenants, callable $callback)
     {
+        // Convert incrementing int ids to strings
+        $tenants = is_int($tenants) ? (string) $tenants : $tenants;
+
         // Wrap string in array
         $tenants = is_string($tenants) ? [$tenants] : $tenants;
 
@@ -102,7 +105,7 @@ class Tenancy
         $originalTenant = $this->tenant;
 
         foreach ($tenants as $tenant) {
-            if (is_string($tenant)) {
+            if (! $tenant instanceof Tenant) {
                 $tenant = $this->find($tenant);
             }
 
