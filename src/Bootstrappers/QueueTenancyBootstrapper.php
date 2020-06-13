@@ -6,6 +6,7 @@ namespace Stancl\Tenancy\Bootstrappers;
 
 use Illuminate\Config\Repository;
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Queue\QueueManager;
 use Illuminate\Support\Testing\Fakes\QueueFake;
@@ -25,19 +26,27 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
     /** @var Dispatcher */
     protected $event;
 
-    public function __construct(Repository $config, QueueManager $queue, Dispatcher $event)
+    /**
+     * The normal constructor is only executed after tenancy is bootstrapped.
+     * However, we're registering a hook to initialize tenancy. Therefore,
+     * we need to register the hook at service provider execution time.
+     */
+    public static function __constructStatic(Application $app)
+    {
+        static::setUpJobListener($app->make(Dispatcher::class));
+    }
+
+    public function __construct(Repository $config, QueueManager $queue)
     {
         $this->config = $config;
         $this->queue = $queue;
-        $this->event = $event;
 
-        $this->setUpJobListener();
         $this->setUpPayloadGenerator();
     }
 
-    protected function setUpJobListener()
+    protected static function setUpJobListener($dispatcher)
     {
-        $this->event->listen(JobProcessing::class, function ($event) {
+        $dispatcher->listen(JobProcessing::class, function ($event) {
             $tenantId = $event->job->payload()['tenant_id'] ?? null;
 
             // The job is not tenant-aware

@@ -41,6 +41,10 @@ class TenancyServiceProvider extends ServiceProvider
 
         // Make sure bootstrappers are stateful (singletons).
         foreach ($this->app['config']['tenancy.bootstrappers'] ?? [] as $bootstrapper) {
+            if (method_exists($bootstrapper, '__constructStatic')) {
+                $bootstrapper::__constructStatic($this->app);
+            }
+
             $this->app->singleton($bootstrapper);
         }
 
