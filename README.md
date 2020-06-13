@@ -31,5 +31,4 @@ The repository with the documentation source code can be found here: [stancl/ten
 ### Credits
 
 - Package created by [Samuel Štancl](https://twitter.com/samuelstancl)
-- Cube logo concept by Brian Dillingham
 - Design help & current logo by [Florian Karsten](https://floriankarsten.com/)
