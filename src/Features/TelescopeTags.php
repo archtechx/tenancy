@@ -11,9 +11,6 @@ use Stancl\Tenancy\Tenancy;
 
 class TelescopeTags implements Feature
 {
-    /** @var callable User-specific callback that returns tags. */
-    public static $getTagsUsing;
-
     public function bootstrap(Tenancy $tenancy): void
     {
         if (! class_exists(Telescope::class)) {
@@ -21,28 +18,19 @@ class TelescopeTags implements Feature
         }
 
         Telescope::tag(function (IncomingEntry $entry) {
-            $tags = $this->getTags($entry);
+            $tags = [];
 
             if (! request()->route()) {
                 return $tags;
             }
 
             if (tenancy()->initialized) {
-                $tags = array_merge($tags, [
+                $tags = [
                     'tenant:' . tenant('id'),
-                ]);
+                ];
             }
 
             return $tags;
         });
-    }
-
-    public static function getTags(IncomingEntry $entry): array
-    {
-        $callback = static::$getTagsUsing ?? function () {
-            return [];
-        };
-
-        return $callback($entry);
     }
 }

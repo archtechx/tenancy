@@ -23,9 +23,6 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
     /** @var QueueManager */
     protected $queue;
 
-    /** @var Dispatcher */
-    protected $event;
-
     /**
      * The normal constructor is only executed after tenancy is bootstrapped.
      * However, we're registering a hook to initialize tenancy. Therefore,
