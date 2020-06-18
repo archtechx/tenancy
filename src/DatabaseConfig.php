@@ -32,7 +32,7 @@ class DatabaseConfig
             return Str::random(16);
         };
 
-        static::$passwordGenerator = static::$usernameGenerator ?? function (Tenant $tenant) {
+        static::$passwordGenerator = static::$passwordGenerator ?? function (Tenant $tenant) {
             return Hash::make(Str::random(32));
         };
 
