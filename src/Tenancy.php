@@ -93,13 +93,16 @@ class Tenancy
      */
     public function runForMultiple($tenants, callable $callback)
     {
+        // Convert null to all tenants
+        $tenants = is_null($tenants) ? $this->model()->cursor() : $tenants;
+
         // Convert incrementing int ids to strings
         $tenants = is_int($tenants) ? (string) $tenants : $tenants;
 
         // Wrap string in array
         $tenants = is_string($tenants) ? [$tenants] : $tenants;
 
-        // Use all tenants if $tenants is falsy
+        // Use all tenants if $tenants is falsey
         $tenants = $tenants ?: $this->model()->cursor();
 
         $originalTenant = $this->tenant;

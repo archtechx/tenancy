@@ -213,4 +213,10 @@ class TenantDatabaseManagerTest extends TestCase
         $manager->setConnection('mysql2');
         $this->assertTrue($manager->databaseExists($name));
     }
+
+    /** @test */
+    public function path_used_by_sqlite_manager_can_be_customized()
+    {
+        
+    }
 }
