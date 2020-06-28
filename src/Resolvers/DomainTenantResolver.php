@@ -32,6 +32,8 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
         $domain = config('tenancy.domain_model')::where('domain', $args[0])->first();
 
         if ($domain) {
+            static::$currentDomain = $domain;
+
             return $domain->tenant;
         }
 
