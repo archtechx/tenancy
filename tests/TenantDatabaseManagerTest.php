@@ -217,6 +217,5 @@ class TenantDatabaseManagerTest extends TestCase
     /** @test */
     public function path_used_by_sqlite_manager_can_be_customized()
     {
-        
     }
 }
