@@ -20,6 +20,10 @@ trait HasDomains
     {
         $class = config('tenancy.domain_model');
 
+        if (! is_array($data)) {
+            $data = ['domain' => $data];
+        }
+
         $domain = (new $class)->fill($data);
         $domain->tenant()->associate($this);
         $domain->save();
