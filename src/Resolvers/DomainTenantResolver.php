@@ -37,7 +37,7 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
             return $domain->tenant;
         }
 
-        throw new TenantCouldNotBeIdentifiedOnDomainException($domain);
+        throw new TenantCouldNotBeIdentifiedOnDomainException($args[0]);
     }
 
     public function getArgsForTenant(Tenant $tenant): array
