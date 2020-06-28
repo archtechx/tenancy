@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Tests;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Database\Models;
+use Stancl\Tenancy\Database\Models\Domain;
 use Stancl\Tenancy\Exceptions\DomainOccupiedByOtherTenantException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
@@ -102,6 +103,18 @@ class DomainTest extends TestCase
         $this
             ->get('http://foo.localhost/foo/abc/xyz')
             ->assertSee('foo');
+    }
+
+    /** @test */
+    public function domains_are_always_lowercase()
+    {
+        $tenant = DomainTenant::create();
+
+        $tenant->domains()->create([
+            'domain' => 'CAPITALS',
+        ]);
+
+        $this->assertSame('capitals', Domain::first()->domain);
     }
 }
 

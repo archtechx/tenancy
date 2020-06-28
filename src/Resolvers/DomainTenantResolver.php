@@ -10,6 +10,13 @@ use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 
 class DomainTenantResolver extends Contracts\CachedTenantResolver
 {
+    /**
+     * The model representing the domain that the tenant was identified on.
+     *
+     * @var Domain
+     */
+    public static $currentDomain;
+
     /** @var bool */
     public static $shouldCache = false;
 

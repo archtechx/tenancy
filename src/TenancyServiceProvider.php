@@ -8,6 +8,7 @@ use Illuminate\Cache\CacheManager;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 
 class TenancyServiceProvider extends ServiceProvider
 {
@@ -37,6 +38,10 @@ class TenancyServiceProvider extends ServiceProvider
         // Make it possible to inject the current tenant by typehinting the Tenant contract.
         $this->app->bind(Tenant::class, function ($app) {
             return $app[Tenancy::class]->tenant;
+        });
+
+        $this->app->bind(Domain::class, function () {
+            return DomainTenantResolver::$currentDomain;
         });
 
         // Make sure bootstrappers are stateful (singletons).
