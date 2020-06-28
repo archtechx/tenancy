@@ -15,8 +15,6 @@ use Stancl\Tenancy\Contracts\Tenant;
 
 class QueueTenancyBootstrapper implements TenancyBootstrapper
 {
-    public $tenancyInitialized = false;
-
     /** @var Repository */
     protected $config;
 
@@ -47,7 +45,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             $tenantId = $event->job->payload()['tenant_id'] ?? null;
 
             // The job is not tenant-aware
-            if (! $tenantId) {
+            if (!$tenantId) {
                 return;
             }
 
@@ -66,7 +64,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
     {
         $bootstrapper = &$this;
 
-        if (! $this->queue instanceof QueueFake) {
+        if (!$this->queue instanceof QueueFake) {
             $this->queue->createPayloadUsing(function ($connection) use (&$bootstrapper) {
                 return $bootstrapper->getPayload($connection);
             });
@@ -75,17 +73,17 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant)
     {
-        $this->tenancyInitialized = true;
+        //
     }
 
     public function revert()
     {
-        $this->tenancyInitialized = false;
+        //
     }
 
     public function getPayload(string $connection)
     {
-        if (! $this->tenancyInitialized) {
+        if (! tenancy()->initialized) {
             return [];
         }
 
