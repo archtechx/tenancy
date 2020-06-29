@@ -32,9 +32,10 @@ class UserImpersonation implements Feature
      * Impersonate a user and get an HTTP redirect response.
      *
      * @param string|ImpersonationToken $token
+     * @param int $ttl
      * @return RedirectResponse
      */
-    public static function makeResponse($token): RedirectResponse
+    public static function makeResponse($token, int $ttl = null): RedirectResponse
     {
         $token = $token instanceof ImpersonationToken ? $token : ImpersonationToken::findOrFail($token);
 
@@ -42,7 +43,9 @@ class UserImpersonation implements Feature
             abort(403);
         }
 
-        if ($token->created_at->diffInSeconds(Carbon::now()) > static::$ttl) {
+        $ttl = $ttl ?? static::$ttl;
+
+        if ($token->created_at->diffInSeconds(Carbon::now()) > $ttl) {
             abort(403);
         }
 
