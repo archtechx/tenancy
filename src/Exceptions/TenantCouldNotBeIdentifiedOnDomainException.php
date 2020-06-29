@@ -21,7 +21,7 @@ class TenantCouldNotBeIdentifiedOnDomainException extends TenantCouldNotBeIdenti
         return BaseSolution::create('Tenant could not be identified on this domain')
             ->setSolutionDescription('Did you forget to create a tenant for this domain?')
             ->setDocumentationLinks([
-                'Creating Tenants' => 'https://tenancyforlaravel.com/docs/v2/creating-tenants/', // todo update link for v3
+                'Creating Tenants' => 'https://tenancyforlaravel.com/docs/v3/tenants/',
             ]);
     }
 }

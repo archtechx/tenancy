@@ -8,7 +8,6 @@ use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\DatabaseManager;
-use Stancl\Tenancy\Exceptions\TenantDatabaseDoesNotExistException;
 
 class DatabaseTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -22,12 +21,6 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant)
     {
-        /** @var TenantWithDatabase $tenant */
-        $database = $tenant->database()->getName();
-        if (! $tenant->database()->manager()->databaseExists($database)) {
-            throw new TenantDatabaseDoesNotExistException($database);
-        }
-
         $this->database->connectToTenant($tenant);
     }
 

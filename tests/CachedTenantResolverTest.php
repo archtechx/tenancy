@@ -109,6 +109,4 @@ class CachedTenantResolverTest extends TestCase
         $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('bar')));
         $this->assertNotEmpty(DB::getQueryLog()); // not empty
     }
-
-    // todo2 at some point in the future, we could write invalidation tests for the other resolvers too
 }
