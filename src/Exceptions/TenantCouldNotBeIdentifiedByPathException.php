@@ -21,7 +21,7 @@ class TenantCouldNotBeIdentifiedByPathException extends TenantCouldNotBeIdentifi
         return BaseSolution::create('Tenant could not be identified on this path')
             ->setSolutionDescription('Did you forget to create a tenant for this path?')
             ->setDocumentationLinks([
-                'Creating Tenants' => 'https://tenancyforlaravel.com/docs/v2/creating-tenants/', // todo update link for v3
+                'Creating Tenants' => 'https://tenancyforlaravel.com/docs/v3/tenants/',
             ]);
     }
 }
