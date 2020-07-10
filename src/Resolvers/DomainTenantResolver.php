@@ -29,7 +29,7 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
     public function resolveWithoutCache(...$args): Tenant
     {
         /** @var Domain $domain */
-        $domain = config('tenancy.domain_model')::where('domain', $args[0])->first();
+        $domain = config('tenancy.domain_model')::with('tenant')->where('domain', $args[0])->first();
 
         if ($domain) {
             static::$currentDomain = $domain;
