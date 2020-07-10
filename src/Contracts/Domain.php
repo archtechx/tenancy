@@ -8,7 +8,7 @@ namespace Stancl\Tenancy\Contracts;
  * @property-read Tenant $tenant
  *
  * @see \Stancl\Tenancy\Database\Models\Domain
- * 
+ *
  * @method __call(string $method, array $parameters) IDE support. This will be a model.
  * @method __callStatic(string $method, array $parameters) IDE support. This will be a model.
  * @mixin \Illuminate\Database\Eloquent\Model
