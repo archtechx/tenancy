@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\DatabaseManager;
 use Stancl\Tenancy\Events\CreatingDatabase;
@@ -23,7 +22,7 @@ class CreateDatabase implements ShouldQueue
     /** @var TenantWithDatabase|Model */
     protected $tenant;
 
-    public function __construct(Tenant $tenant)
+    public function __construct(TenantWithDatabase $tenant)
     {
         $this->tenant = $tenant;
     }
