@@ -60,12 +60,13 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             $this->originalPaths['disks'][$disk] = $filesystemDisk->getAdapter()->getPathPrefix();
 
             if ($root = str_replace('%storage_path%', storage_path(), $this->app['config']["tenancy.filesystem.root_override.{$disk}"])) {
-                $filesystemDisk->getAdapter()->setPathPrefix($root);
+                $filesystemDisk->getAdapter()->setPathPrefix($finalPrefix = $root);
             } else {
                 $root = $this->app['config']["filesystems.disks.{$disk}.root"];
-
-                $filesystemDisk->getAdapter()->setPathPrefix($root . "/{$suffix}");
+                $filesystemDisk->getAdapter()->setPathPrefix($finalPrefix = $root . "/{$suffix}");
             }
+
+            $this->app['config']["filesystems.disks.{$disk}.root"] = $finalPrefix;
         }
     }
 
@@ -83,7 +84,10 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             /** @var FilesystemAdapter $filesystemDisk */
             $filesystemDisk = Storage::disk($disk);
 
-            $filesystemDisk->getAdapter()->setPathPrefix($this->originalPaths['disks'][$disk]);
+            $root = $this->originalPaths['disks'][$disk];
+
+            $filesystemDisk->getAdapter()->setPathPrefix($root);
+            $this->app['config']["filesystems.disks.{$disk}.root"] = $root;
         }
     }
 }
