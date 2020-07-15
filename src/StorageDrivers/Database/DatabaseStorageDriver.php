@@ -121,7 +121,7 @@ class DatabaseStorageDriver implements StorageDriver, CanDeleteKeys, CanFindByAn
         $tenant = $this->tenants->findBy($key, $value);
 
         if (! $tenant) {
-            throw new TenantDoesNotExistException($value, $key);
+            throw new TenantDoesNotExistException((string) $value, $key);
         }
 
         return Tenant::fromStorage($this->tenants->decodeData($tenant))
