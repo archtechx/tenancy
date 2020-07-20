@@ -29,6 +29,10 @@ class Tenancy
             return;
         }
 
+        if ($this->initialized) {
+            $this->end();
+        }
+
         $this->tenant = $tenant;
 
         event(new Events\InitializingTenancy($this));
