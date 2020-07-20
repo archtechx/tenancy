@@ -84,7 +84,7 @@ class Tenancy
 
     public function find($id): ?Tenant
     {
-        return $this->model()->find($id);
+        return $this->model()->where($this->model()->getTenantKeyName(), $id)->first();
     }
 
     /**
