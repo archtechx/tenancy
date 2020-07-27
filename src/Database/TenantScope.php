@@ -17,7 +17,7 @@ class TenantScope implements Scope
             return;
         }
 
-        $builder->where(BelongsToTenant::$tenantIdColumn, tenant()->getTenantKey());
+        $builder->where($model->qualifyColumn(BelongsToTenant::$tenantIdColumn), tenant()->getTenantKey());
     }
 
     public function extend(Builder $builder)
