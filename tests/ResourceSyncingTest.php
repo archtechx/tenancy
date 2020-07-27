@@ -573,6 +573,29 @@ class ResourceSyncingTest extends TestCase
             return $event->tenant === null;
         });
     }
+    
+    /** @test */
+    public function create_central_user_from_tenant_context()
+    {
+        $tenant = ResourceTenant::create();
+        $this->migrateTenants();
+
+        tenancy()->initialize($tenant);
+
+        // Create user in central DB
+        $user = CentralUser::create([
+            'global_id' => 'test2',
+            'name' => 'Test John Doe',
+            'email' => 'testjohn@localhost',
+            'password' => 'secret',
+            'role' => 'superadmin', // unsynced
+        ]);
+
+        //$this->assertCount(1, $tenant->users()->get());
+        $this->assertCount(1, ResourceUser::all());
+
+        tenancy()->end();
+    }
 }
 
 class ResourceTenant extends Tenant
