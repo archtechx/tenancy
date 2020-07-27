@@ -591,8 +591,8 @@ class ResourceSyncingTest extends TestCase
             'role' => 'superadmin', // unsynced
         ]);
 
-        //$this->assertCount(1, $tenant->users()->get());
-        $this->assertCount(1, ResourceUser::all());
+        $this->assertCount(0, $tenant->users()->get()); // No tenant user needed to create in this context.
+        //$this->assertCount(1, ResourceUser::all());
 
         tenancy()->end();
     }
