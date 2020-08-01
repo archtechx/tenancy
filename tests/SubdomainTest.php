@@ -17,7 +17,7 @@ class SubdomainTest extends TestCase
         parent::setUp();
 
         // Global state cleanup after some tests
-        InitializeTenancyBySubdomain::$onInvalidSubdomain = null;
+        InitializeTenancyBySubdomain::$onFail = null;
 
         Route::group([
             'middleware' => InitializeTenancyBySubdomain::class,
@@ -88,8 +88,12 @@ class SubdomainTest extends TestCase
     {
         // in this case, we need to return a response instance
         // since a string would be treated as the subdomain
-        InitializeTenancyBySubdomain::$onInvalidSubdomain = function () {
-            return response('foo custom invalid subdomain handler');
+        InitializeTenancyBySubdomain::$onFail = function ($e) {
+            if ($e instanceof NotASubdomainException) {
+                return response('foo custom invalid subdomain handler');
+            }
+
+            throw $e;
         };
 
         $this
@@ -119,6 +123,28 @@ class SubdomainTest extends TestCase
         $this
             ->withoutExceptionHandling()
             ->get('http://foo.localhost/foo/abc/xyz');
+    }
+
+    /** @test */
+    public function central_domain_is_not_a_subdomain()
+    {
+        config(['tenancy.central_domains' => [
+            'localhost',
+        ]]);
+
+        $tenant = SubdomainTenant::create([
+            'id' => 'acme',
+        ]);
+
+        $tenant->domains()->create([
+            'domain' => 'acme',
+        ]);
+
+        $this->expectException(NotASubdomainException::class);
+
+        $this
+            ->withoutExceptionHandling()
+            ->get('http://localhost/foo/abc/xyz');
     }
 }
 
