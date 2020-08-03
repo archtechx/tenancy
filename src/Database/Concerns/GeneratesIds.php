@@ -11,7 +11,7 @@ trait GeneratesIds
     public static function bootGeneratesIds()
     {
         static::creating(function (self $model) {
-            if (!$model->getKey() && $model->shouldGenerateId()) {
+            if (! $model->getKey() && $model->shouldGenerateId()) {
                 $model->setAttribute($model->getKeyName(), app(UniqueIdentifierGenerator::class)->generate($model));
             }
         });
