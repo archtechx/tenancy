@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Traits\Macroable;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
-use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Exceptions\TenantCountNotBeIdentifiedById;
 
 class Tenancy
 {
@@ -23,17 +23,34 @@ class Tenancy
     /** @var bool */
     public $initialized = false;
 
+    /**
+     * Initializes the tenant
+     * @param Tenant|int|string $tenant 
+     * @return void 
+     */
     public function initialize(Tenant $tenant): void
     {
         if ($this->initialized && $this->tenant->getTenantKey() === $tenant->getTenantKey()) {
             return;
         }
 
+        // TODO: Remove this (so that runForMultiple() is still performant) and make the FS bootstrapper work either way
         if ($this->initialized) {
             $this->end();
         }
 
-        $this->tenant = $tenant;
+        if (is_object($tenant)) {
+            $this->tenant = $tenant;
+        } else {
+            $tenantId = $tenant;
+            $tenant = $this->find($tenantId);
+
+            if (! $tenant) {
+                throw new TenantCountNotBeIdentifiedById($tenantId);
+            }
+
+            $this->tenant = $tenant;
+        }
 
         event(new Events\InitializingTenancy($this));
 
