@@ -34,6 +34,7 @@ class Tenancy
             return;
         }
 
+        // TODO: Remove this (so that runForMultiple() is still performant) and make the FS bootstrapper work either way
         if ($this->initialized) {
             $this->end();
         }
@@ -44,7 +45,7 @@ class Tenancy
             $tenantId = $tenant;
             $tenant = $this->find($tenantId);
 
-            if (!$tenant) {
+            if (! $tenant) {
                 throw new TenantCountNotBeIdentifiedById($tenantId);
             }
 
