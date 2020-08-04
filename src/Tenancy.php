@@ -24,9 +24,9 @@ class Tenancy
     public $initialized = false;
 
     /**
-     * Initializes the tenant
-     * @param Tenant|int|string $tenant 
-     * @return void 
+     * Initializes the tenant.
+     * @param Tenant|int|string $tenant
+     * @return void
      */
     public function initialize(Tenant $tenant): void
     {
