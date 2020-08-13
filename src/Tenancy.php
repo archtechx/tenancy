@@ -29,7 +29,7 @@ class Tenancy
      * @param Tenant|int|string $tenant
      * @return void
      */
-    public function initialize(Tenant $tenant): void
+    public function initialize($tenant): void
     {
         if ($this->initialized && $this->tenant->getTenantKey() === $tenant->getTenantKey()) {
             return;
