@@ -136,7 +136,7 @@ class TenancyServiceProvider extends ServiceProvider
             Middleware\InitializeTenancyByRequestData::class,
         ];
 
-        foreach ($tenancyMiddleware as $middleware) {
+        foreach (array_reverse($tenancyMiddleware) as $middleware) {
             $this->app[\Illuminate\Contracts\Http\Kernel::class]->prependToMiddlewarePriority($middleware);
         }
     }
