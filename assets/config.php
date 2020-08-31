@@ -92,7 +92,7 @@ return [
 
     /**
      * Filesystem tenancy config. Used by FilesystemTenancyBootstrapper.
-     * https://tenancy.samuelstancl.me/docs/v2/filesystem-tenancy/.
+     * https://tenancyforlaravel.com/docs/v3/tenancy-bootstrappers/#filesystem-tenancy-boostrapper.
      */
     'filesystem' => [
         /**
@@ -108,7 +108,7 @@ return [
         /**
          * Use this for local disks.
          *
-         * See https://tenancy.samuelstancl.me/docs/v2/filesystem-tenancy/
+         * See https://tenancyforlaravel.com/docs/v3/tenancy-bootstrappers/#filesystem-tenancy-boostrapper
          */
         'root_override' => [
             // Disks whose roots should be overriden after storage_path() is suffixed.
@@ -165,8 +165,8 @@ return [
         // Stancl\Tenancy\Features\UserImpersonation::class,
         // Stancl\Tenancy\Features\TelescopeTags::class,
         // Stancl\Tenancy\Features\UniversalRoutes::class,
-        // Stancl\Tenancy\Features\TenantConfig::class, // https://tenancy.samuelstancl.me/docs/v2/features/tenant-config/
-        // Stancl\Tenancy\Features\CrossDomainRedirect::class, // https://tenancy.samuelstancl.me/docs/v2/features/tenant-redirect/
+        // Stancl\Tenancy\Features\TenantConfig::class, // https://tenancyforlaravel.com/docs/v3/features/tenant-config
+        // Stancl\Tenancy\Features\CrossDomainRedirect::class, // https://tenancyforlaravel.com/docs/v3/features/cross-domain-redirect
     ],
 
     /**
