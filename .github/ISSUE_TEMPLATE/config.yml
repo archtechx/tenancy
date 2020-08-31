@@ -4,5 +4,5 @@ contact_links:
     url: https://github.com/stancl/tenancy/blob/3.x/SUPPORT.md
     about: 'If you have a question or need help using the package.'
   - name: Documentation Issue
-    url: https://github.com/stancl/tenancy-docs
+    url: https://github.com/stancl/tenancy-docs/issues
     about: 'Suggest how the documentation could be improved.'
