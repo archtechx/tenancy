@@ -31,6 +31,16 @@ class Tenancy
      */
     public function initialize($tenant): void
     {
+        if (! is_object($tenant)) {
+            $tenant = $tenant;
+            $tenantId = $tenant;
+            $tenant = $this->find($tenantId);
+
+            if (! $tenant) {
+                throw new TenantCountNotBeIdentifiedById($tenantId);
+            }
+        }
+
         if ($this->initialized && $this->tenant->getTenantKey() === $tenant->getTenantKey()) {
             return;
         }
@@ -40,18 +50,7 @@ class Tenancy
             $this->end();
         }
 
-        if (is_object($tenant)) {
-            $this->tenant = $tenant;
-        } else {
-            $tenantId = $tenant;
-            $tenant = $this->find($tenantId);
-
-            if (! $tenant) {
-                throw new TenantCountNotBeIdentifiedById($tenantId);
-            }
-
-            $this->tenant = $tenant;
-        }
+        $this->tenant = $tenant;
 
         event(new Events\InitializingTenancy($this));
 
