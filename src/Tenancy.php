@@ -32,7 +32,6 @@ class Tenancy
     public function initialize($tenant): void
     {
         if (! is_object($tenant)) {
-            $tenant = $tenant;
             $tenantId = $tenant;
             $tenant = $this->find($tenantId);
 
