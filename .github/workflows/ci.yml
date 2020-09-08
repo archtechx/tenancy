@@ -17,7 +17,8 @@ jobs:
       matrix:
         laravel: [
           "^6.0",
-          "^7.0"
+          "^7.0",
+          "^8.0"
         ]
     
     steps:

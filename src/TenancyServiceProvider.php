@@ -57,7 +57,7 @@ class TenancyServiceProvider extends ServiceProvider
         $this->app->bind(Contracts\UniqueIdentifierGenerator::class, $this->app['config']['tenancy.id_generator']);
 
         $this->app->singleton(Commands\Migrate::class, function ($app) {
-            return new Commands\Migrate($app['migrator']);
+            return new Commands\Migrate($app['migrator'], $app['events']);
         });
         $this->app->singleton(Commands\Rollback::class, function ($app) {
             return new Commands\Rollback($app['migrator']);

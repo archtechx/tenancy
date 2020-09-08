@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Commands;
 
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Console\Migrations\MigrateCommand;
 use Illuminate\Database\Migrations\Migrator;
 use Stancl\Tenancy\Concerns\DealsWithMigrations;
@@ -25,11 +26,12 @@ class Migrate extends MigrateCommand
     /**
      * Create a new command instance.
      *
-     * @return void
+     * @param Migrator $migrator
+     * @param Dispatcher $dispatcher
      */
-    public function __construct(Migrator $migrator)
+    public function __construct(Migrator $migrator, Dispatcher $dispatcher)
     {
-        parent::__construct($migrator);
+        parent::__construct($migrator, $dispatcher);
 
         $this->setName('tenants:migrate');
         $this->specifyParameters();
