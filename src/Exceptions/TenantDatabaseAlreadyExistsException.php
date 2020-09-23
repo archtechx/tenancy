@@ -18,8 +18,8 @@ class TenantDatabaseAlreadyExistsException extends TenantCannotBeCreatedExceptio
 
     public function __construct(string $database)
     {
-        parent::__construct();
-
         $this->database = $database;
+
+        parent::__construct();
     }
 }
