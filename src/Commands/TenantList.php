@@ -37,7 +37,7 @@ class TenantList extends Command
             ->each(function (Tenant $tenant) {
                 $this->line(
                     "[Tenant] id: {$tenant['id']}" .
-                    ($tenant->domains ? " @ " . implode('; ', $tenant->domains->pluck('domain')->toArray() ?? []) : "")
+                    ($tenant->domains ? ' @ ' . implode('; ', $tenant->domains->pluck('domain')->toArray() ?? []) : '')
                 );
             });
     }
