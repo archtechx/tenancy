@@ -71,10 +71,58 @@ class AutomaticModeTest extends TestCase
 
         $this->assertSame('foobar', app('tenancy_initialized_for_tenant'));
     }
+
+    /** @test */
+    public function running_the_global_tenancy_helper_with_tenant_already_initialized()
+    {
+        MyBootstrapper::$revertedCallCount = 0;
+        GlobalRun::$count = 0;
+
+        config(['tenancy.bootstrappers' => [
+            MyBootstrapper::class,
+        ]]);
+
+        $tenant = Tenant::create([
+            'id' => 'acme',
+        ]);
+
+        tenancy()->initialize($tenant);
+
+        $this->assertSame('acme', app('tenancy_initialized_for_tenant'));
+
+        tenancy()->runGlobal(function () {
+            GlobalRun::$count = 1;
+        });
+
+        $this->assertSame(1, MyBootstrapper::$revertedCallCount);
+        $this->assertSame(1, GlobalRun::$count);
+        $this->assertSame('acme', app('tenancy_initialized_for_tenant'));
+    }
+
+    /** @test */
+    public function running_the_global_tenancy_helper_with_tenant_not_already_initialized()
+    {
+        MyBootstrapper::$revertedCallCount = 0;
+        GlobalRun::$count = 0;
+
+        config(['tenancy.bootstrappers' => [
+            MyBootstrapper::class,
+        ]]);
+
+        tenancy()->runGlobal(function () {
+            GlobalRun::$count = 1;
+        });
+
+        $this->assertSame(0, MyBootstrapper::$revertedCallCount);
+        $this->assertSame(1, GlobalRun::$count);
+        $this->assertFalse(app()->bound('tenancy_initialized_for_tenant'));
+    }
 }
 
 class MyBootstrapper implements TenancyBootstrapper
 {
+    public static $revertedCallCount = 0;
+
     public function bootstrap(\Stancl\Tenancy\Contracts\Tenant $tenant)
     {
         app()->instance('tenancy_initialized_for_tenant', $tenant->getTenantKey());
@@ -82,6 +130,12 @@ class MyBootstrapper implements TenancyBootstrapper
 
     public function revert()
     {
+        static::$revertedCallCount++;
         app()->instance('tenancy_ended', true);
     }
+}
+
+class GlobalRun {
+
+    public static $count = 0;
 }

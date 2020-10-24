@@ -85,6 +85,27 @@ class Tenancy
         return array_map('app', $resolve($this->tenant));
     }
 
+    /**
+     * @param callable $callback
+     * @return mixed
+     */
+    public function runGlobal(callable $callback)
+    {
+        $oldTenant = $this->tenant;
+
+        if ($this->initialized) {
+            $this->end();
+        }
+
+        $result = $callback();
+
+        if ($oldTenant) {
+            $this->initialize($oldTenant);
+        }
+
+        return $result;
+    }
+
     public function query(): Builder
     {
         return $this->model()->query();
