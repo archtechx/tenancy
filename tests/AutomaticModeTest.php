@@ -73,7 +73,7 @@ class AutomaticModeTest extends TestCase
     }
 
     /** @test */
-    public function running_the_global_tenancy_helper_with_tenant_already_initialized()
+    public function running_the_central_tenancy_helper_with_tenant_already_initialized()
     {
         MyBootstrapper::$revertedCallCount = 0;
         GlobalRun::$count = 0;
@@ -90,7 +90,7 @@ class AutomaticModeTest extends TestCase
 
         $this->assertSame('acme', app('tenancy_initialized_for_tenant'));
 
-        tenancy()->runGlobal(function () {
+        tenancy()->central(function () {
             GlobalRun::$count = 1;
         });
 
@@ -100,7 +100,7 @@ class AutomaticModeTest extends TestCase
     }
 
     /** @test */
-    public function running_the_global_tenancy_helper_with_tenant_not_already_initialized()
+    public function running_the_central_tenancy_helper_with_tenant_not_already_initialized()
     {
         MyBootstrapper::$revertedCallCount = 0;
         GlobalRun::$count = 0;
@@ -109,7 +109,7 @@ class AutomaticModeTest extends TestCase
             MyBootstrapper::class,
         ]]);
 
-        tenancy()->runGlobal(function () {
+        tenancy()->central(function () {
             GlobalRun::$count = 1;
         });
 

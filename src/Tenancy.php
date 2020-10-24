@@ -89,7 +89,7 @@ class Tenancy
      * @param callable $callback
      * @return mixed
      */
-    public function runGlobal(callable $callback)
+    public function central(callable $callback)
     {
         $oldTenant = $this->tenant;
 
