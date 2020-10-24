@@ -86,7 +86,7 @@ class Tenancy
     }
 
     /**
-     * Run a callback using the central environment.
+     * Run a callback inside the central environment.
      *
      * @param callable $callback
      * @return mixed
