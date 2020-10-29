@@ -4,7 +4,7 @@ FROM php:${PHP_TARGET}-cli
 
 # We need to do this again as the FROM line seems to clear the ARG
 ARG PHP_TARGET=7.4
-ARG COMPOSER_TARGET=1.10.0
+ARG COMPOSER_TARGET=2.0.3
 
 WORKDIR /var/www/html
 
