@@ -21,7 +21,7 @@ class Run extends Command
      * @var string
      */
     protected $signature = "tenants:run {commandname : The command's name.}
-                            {--tenants= : The tenant(s) to run the command for. Default: all}
+                            {--tenants=* : The tenant(s) to run the command for. Default: all}
                             {--argument=* : The arguments to pass to the command. Default: none}
                             {--option=* : The options to pass to the command. Default: none}";
 
