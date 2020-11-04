@@ -195,12 +195,11 @@ class CommandsTest extends TestCase
     public function run_command_with_array_of_tenants_works()
     {
         $tenantId1 = Tenant::create()->getTenantKey();
-        $tenantId2= Tenant::create()->getTenantKey();
+        $tenantId2 = Tenant::create()->getTenantKey();
         Artisan::call('tenants:migrate-fresh');
 
         $this->artisan("tenants:run foo --tenants=$tenantId1 --tenants=$tenantId2 --argument='a=foo' --option='b=bar' --option='c=xyz'")
-            ->expectsOutput("Tenant: " . $tenantId1)
-            ->expectsOutput("Tenant: " . $tenantId2);
+            ->expectsOutput('Tenant: ' . $tenantId1)
+            ->expectsOutput('Tenant: ' . $tenantId2);
     }
-
 }
