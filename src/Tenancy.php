@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Traits\Macroable;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\Exceptions\TenantCountNotBeIdentifiedById;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedById;
 
 class Tenancy
 {
@@ -36,7 +36,7 @@ class Tenancy
             $tenant = $this->find($tenantId);
 
             if (! $tenant) {
-                throw new TenantCountNotBeIdentifiedById($tenantId);
+                throw new TenantCouldNotBeIdentifiedById($tenantId);
             }
         }
 
