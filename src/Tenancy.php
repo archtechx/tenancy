@@ -105,6 +105,7 @@ class Tenancy
 
     /**
      * Run a callback in the central context.
+     * Atomic, safely reverts to previous context.
      *
      * @param callable $callback
      * @return mixed
