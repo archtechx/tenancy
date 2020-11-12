@@ -35,7 +35,11 @@ class TenantList extends Command
             ->query()
             ->cursor()
             ->each(function (Tenant $tenant) {
-                $this->line("[Tenant] id: {$tenant['id']} @ " . implode('; ', $tenant->domains->pluck('domain')->toArray() ?? []));
+                if ($tenant->domains) {
+                    $this->line("[Tenant] id: {$tenant['id']} @ " . implode('; ', $tenant->domains->pluck('domain')->toArray() ?? []));
+                } else {
+                    $this->line("[Tenant] id: {$tenant['id']}");
+                }
             });
     }
 }
