@@ -190,4 +190,16 @@ class CommandsTest extends TestCase
         Artisan::call('tenants:migrate-fresh');
         $this->assertFalse(DB::table('users')->exists());
     }
+
+    /** @test */
+    public function run_command_with_array_of_tenants_works()
+    {
+        $tenantId1 = Tenant::create()->getTenantKey();
+        $tenantId2 = Tenant::create()->getTenantKey();
+        Artisan::call('tenants:migrate-fresh');
+
+        $this->artisan("tenants:run foo --tenants=$tenantId1 --tenants=$tenantId2 --argument='a=foo' --option='b=bar' --option='c=xyz'")
+            ->expectsOutput('Tenant: ' . $tenantId1)
+            ->expectsOutput('Tenant: ' . $tenantId2);
+    }
 }
