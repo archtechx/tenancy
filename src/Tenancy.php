@@ -104,6 +104,29 @@ class Tenancy
     }
 
     /**
+     * Run a callback in the central context.
+     *
+     * @param callable $callback
+     * @return mixed
+     */
+    public function central(callable $callback)
+    {
+        $previousTenant = $this->tenant;
+
+        $this->end();
+
+        // This callback will usually not accept arguments, but the previous
+        // Tenant is the only value that can be useful here, so we pass that.
+        $result = $callback($previousTenant);
+
+        if ($previousTenant) {
+            $this->initialize($previousTenant);
+        }
+
+        return $result;
+    }
+
+    /**
      * Run a callback for multiple tenants.
      * More performant than running $tenant->run() one by one.
      *
