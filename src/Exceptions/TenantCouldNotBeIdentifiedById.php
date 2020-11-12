@@ -9,7 +9,7 @@ use Facade\IgnitionContracts\ProvidesSolution;
 use Facade\IgnitionContracts\Solution;
 use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
 
-class TenantCountNotBeIdentifiedById extends TenantCouldNotBeIdentifiedException implements ProvidesSolution
+class TenantCouldNotBeIdentifiedById extends TenantCouldNotBeIdentifiedException implements ProvidesSolution
 {
     public function __construct($tenant_id)
     {
