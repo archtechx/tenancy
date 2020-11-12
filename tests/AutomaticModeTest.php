@@ -72,7 +72,6 @@ class AutomaticModeTest extends TestCase
         $this->assertSame('foobar', app('tenancy_initialized_for_tenant'));
     }
 
-
     /** @test */
     public function central_helper_runs_callbacks_in_the_central_state()
     {
