@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Bootstrappers;
 
-use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
