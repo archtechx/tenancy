@@ -13,7 +13,7 @@ trait TenantRun
      * Atomic, safely reverts to previous context.
      *
      * @param callable $callback
-     * @return void
+     * @return mixed
      */
     public function run(callable $callback)
     {
