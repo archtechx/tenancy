@@ -6,7 +6,7 @@ namespace Stancl\Tenancy\Database;
 
 use Illuminate\Config\Repository;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
-use Illuminate\Foundation\Application;
+use Illuminate\Contracts\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
