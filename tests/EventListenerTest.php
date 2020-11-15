@@ -17,6 +17,7 @@ use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Events\UpdatingDomain;
 use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Jobs\MigrateDatabase;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\QueueableListener;
 use Stancl\Tenancy\Tenancy;
@@ -126,6 +127,77 @@ class EventListenerTest extends TestCase
         tenancy()->initialize(Tenant::create());
 
         $this->assertSame([DatabaseTenancyBootstrapper::class], array_map('get_class', tenancy()->getBootstrappers()));
+    }
+
+    /** @test */
+    public function individual_job_pipelines_can_terminate_while_leaving_others_running()
+    {
+        $executed = [];
+
+        Event::listen(
+            TenantCreated::class,
+            JobPipeline::make([
+                function () use (&$executed) {
+                    $executed[] = 'P1J1';
+                },
+
+                function () use (&$executed) {
+                    $executed[] = 'P1J2';
+                },
+            ])->send(function (TenantCreated $event) {
+                return $event->tenant;
+            })->toListener()
+        );
+
+        Event::listen(
+            TenantCreated::class,
+            JobPipeline::make([
+                function () use (&$executed) {
+                    $executed[] = 'P2J1';
+
+                    return false;
+                },
+
+                function () use (&$executed) {
+                    $executed[] = 'P2J2';
+                },
+            ])->send(function (TenantCreated $event) {
+                return $event->tenant;
+            })->toListener()
+        );
+
+        Tenant::create();
+
+        $this->assertSame([
+            'P1J1',
+            'P1J2',
+            'P2J1', // termminated after this
+            // P2J2 was not reached
+        ], $executed);
+    }
+
+    /** @test */
+    public function database_is_not_migrated_if_creation_is_disabled()
+    {
+        Event::listen(
+            TenantCreated::class,
+            JobPipeline::make([
+                CreateDatabase::class,
+                function () {
+                    $this->fail("The job pipeline didn't exit.");
+                },
+                MigrateDatabase::class,
+            ])->send(function (TenantCreated $event) {
+                return $event->tenant;
+            })->toListener()
+        );
+
+        Tenant::create([
+            'tenancy_create_database' => false,
+            'tenancy_db_name' => 'already_created',
+        ]);
+
+        $this->assertFalse($this->hasFailed());
     }
 }
 

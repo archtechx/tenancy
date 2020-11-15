@@ -31,12 +31,15 @@ class CreateDatabase implements ShouldQueue
     {
         event(new CreatingDatabase($this->tenant));
 
-        if ($this->tenant->getInternal('create_database') !== false) {
-            $databaseManager->ensureTenantCanBeCreated($this->tenant);
-            $this->tenant->database()->makeCredentials();
-            $this->tenant->database()->manager()->createDatabase($this->tenant);
-
-            event(new DatabaseCreated($this->tenant));
+        // Terminate execution of this job & other jobs in the pipeline
+        if ($this->tenant->getInternal('create_database') === false) {
+            return false;
         }
+
+        $databaseManager->ensureTenantCanBeCreated($this->tenant);
+        $this->tenant->database()->makeCredentials();
+        $this->tenant->database()->manager()->createDatabase($this->tenant);
+
+        event(new DatabaseCreated($this->tenant));
     }
 }
