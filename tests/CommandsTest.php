@@ -92,6 +92,25 @@ class CommandsTest extends TestCase
     }
 
     /** @test */
+    public function migrate_command_works_with_only_selected_tenants_option()
+    {
+        $tenants = [Tenant::create(), Tenant::create()];
+
+        config()->set('tenancy.migration_filter_tenants_method', [Stancl\Tenancy\Tests\Etc\Tenant::class, 'getTheFirstOne']);
+
+        Artisan::call('tenants:migrate', [
+            '--tenants' => [$tenants[0]['id'], $tenants[1]['id']],
+            '--only-selected' => true
+        ]);
+
+        tenancy()->initialize($tenants[0]);
+        $this->assertTrue(Schema::hasTable('users'));
+
+        tenancy()->initialize($tenants[1]);
+        $this->assertFalse(Schema::hasTable('users'));
+    }
+
+    /** @test */
     public function rollback_command_works()
     {
         $tenant = Tenant::create();

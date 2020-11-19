@@ -12,4 +12,9 @@ use Stancl\Tenancy\Database\Models;
 class Tenant extends Models\Tenant implements TenantWithDatabase
 {
     use HasDatabase, HasDomains;
+
+    public function getTheFirstOne(array $tenantIDs = [])
+    {
+        return $tenantIDs[0];
+    }
 }

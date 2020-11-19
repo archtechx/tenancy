@@ -179,6 +179,11 @@ return [
     ],
 
     /**
+     * The class and method name used by tenants:migrate command with --only-selected option.
+     */
+    'migration_filter_tenants_method' => [\App\Repositories\TenantRepository::class, 'filterBy'],
+
+    /**
      * Parameters used by the tenants:seed command.
      */
     'seeder_parameters' => [
