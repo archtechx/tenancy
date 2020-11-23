@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
+use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Traits\Macroable;
@@ -109,6 +110,8 @@ class Tenancy
      *
      * @param callable $callback
      * @return mixed
+     *
+     * @throw Exception
      */
     public function central(callable $callback)
     {
@@ -116,15 +119,17 @@ class Tenancy
 
         $this->end();
 
-        // This callback will usually not accept arguments, but the previous
-        // Tenant is the only value that can be useful here, so we pass that.
-        $result = $callback($previousTenant);
-
-        if ($previousTenant) {
-            $this->initialize($previousTenant);
+        try {
+            // This callback will usually not accept arguments, but the previous
+            // Tenant is the only value that can be useful here, so we pass that.
+            return $callback($previousTenant);
+        } catch (Exception $e) {
+            throw $e;
+        } finally {
+            if ($previousTenant) {
+                $this->initialize($previousTenant);
+            }
         }
-
-        return $result;
     }
 
     /**
