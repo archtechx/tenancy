@@ -25,7 +25,7 @@ class TenantConfigTest extends TestCase
     /** @test */
     public function config_is_merged_and_removed()
     {
-        $this->assertSame(null, config('services.paypal'));
+        $this->assertNull(config('services.paypal'));
         config([
             'tenancy.features' => [TenantConfig::class],
             'tenancy.bootstrappers' => [],
@@ -56,7 +56,7 @@ class TenantConfigTest extends TestCase
     /** @test */
     public function the_value_can_be_set_to_multiple_config_keys()
     {
-        $this->assertSame(null, config('services.paypal'));
+        $this->assertNull(config('services.paypal'));
         config([
             'tenancy.features' => [TenantConfig::class],
             'tenancy.bootstrappers' => [],

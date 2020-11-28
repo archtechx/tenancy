@@ -45,7 +45,7 @@ class AutomaticModeTest extends TestCase
 
         tenancy()->end();
 
-        $this->assertSame(true, app('tenancy_ended'));
+        $this->assertTrue(app('tenancy_ended'));
     }
 
     /** @test */
@@ -78,7 +78,7 @@ class AutomaticModeTest extends TestCase
         tenancy()->initialize($tenant = Tenant::create());
 
         tenancy()->central(function () {
-            $this->assertSame(null, tenant());
+            $this->assertNull(tenant());
         });
 
         $this->assertSame($tenant, tenant());

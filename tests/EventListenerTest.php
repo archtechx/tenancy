@@ -62,7 +62,7 @@ class EventListenerTest extends TestCase
             return false;
         });
 
-        $this->assertSame(false, Tenant::create()->exists);
+        $this->assertFalse(Tenant::create()->exists);
         $this->assertSame(0, Tenant::count());
     }
 

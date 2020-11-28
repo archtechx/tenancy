@@ -30,7 +30,7 @@ class GlobalCacheTest extends TestCase
     /** @test */
     public function global_cache_manager_stores_data_in_global_cache()
     {
-        $this->assertSame(null, cache('foo'));
+        $this->assertNull(cache('foo'));
         GlobalCache::put(['foo' => 'bar'], 1);
         $this->assertSame('bar', GlobalCache::get('foo'));
 
@@ -45,13 +45,13 @@ class GlobalCacheTest extends TestCase
         tenancy()->end();
         $this->assertSame('xyz', GlobalCache::get('abc'));
         $this->assertSame('bar', GlobalCache::get('foo'));
-        $this->assertSame(null, cache('def'));
+        $this->assertNull(cache('def'));
 
         $tenant2 = Tenant::create();
         tenancy()->initialize($tenant2);
         $this->assertSame('xyz', GlobalCache::get('abc'));
         $this->assertSame('bar', GlobalCache::get('foo'));
-        $this->assertSame(null, cache('def'));
+        $this->assertNull(cache('def'));
         cache(['def' => 'xxx'], 1);
         $this->assertSame('xxx', cache('def'));
 

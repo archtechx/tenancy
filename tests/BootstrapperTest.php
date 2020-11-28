@@ -132,7 +132,7 @@ class BootstrapperTest extends TestCase
         $this->assertSame('bar', Redis::get('foo'));
 
         tenancy()->initialize($tenant2);
-        $this->assertSame(null, Redis::get('foo'));
+        $this->assertNull(Redis::get('foo'));
         Redis::set('foo', 'xyz');
         Redis::set('abc', 'def');
         $this->assertSame('xyz', Redis::get('foo'));
@@ -140,12 +140,12 @@ class BootstrapperTest extends TestCase
 
         tenancy()->initialize($tenant1);
         $this->assertSame('bar', Redis::get('foo'));
-        $this->assertSame(null, Redis::get('abc'));
+        $this->assertNull(Redis::get('abc'));
 
         $tenant3 = Tenant::create();
         tenancy()->initialize($tenant3);
-        $this->assertSame(null, Redis::get('foo'));
-        $this->assertSame(null, Redis::get('abc'));
+        $this->assertNull(Redis::get('foo'));
+        $this->assertNull(Redis::get('abc'));
     }
 
     /** @test */
