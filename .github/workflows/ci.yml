@@ -3,6 +3,14 @@ name: CI
 env:
   COMPOSE_INTERACTIVE_NO_CLI: 1
 
+php-images:
+  - "7.4":
+    - target=php:7.4-cli
+    - version=7.4
+  - "8.0":
+    - target=php:8.0.0RC5-cli
+    - version=8.0
+
 on:
   push:
     branches: [ 3.x, 2.x, master ]
@@ -15,13 +23,11 @@ jobs:
 
     strategy:
       matrix:
-        php:
-          "7.4":
-            - target=php:7.4-cli
-            - version=7.4
-          "8.0":
-            - target=php:8.0.0RC5-cli
-            - version=8.0
+        php: [
+          "7.4",
+          "8.0"
+        ]
+
         laravel: [
           "^6.0",
           "^7.0",
@@ -31,7 +37,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Start docker containers
-      run: PHP_TARGET=${{ matrix.php.target}} PHP_VESRSION=${{ matrix.php.version }} docker-compose up -d
+      run: PHP_TARGET=${{ php[matrix.php].target }} PHP_VERSINON=${{ php[matrix.php].version }} docker-compose up -d
     - name: Install dependencies
       run: docker-compose exec -T test composer require --no-interaction "laravel/framework:${{ matrix.laravel }}"
     - name: Run tests
