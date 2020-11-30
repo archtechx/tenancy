@@ -1,5 +1,5 @@
 {
-    "name": "stancl/tenancy-private",
+    "name": "stancl/tenancy",
     "description": "Automatic multi-tenancy for your Laravel application.",
     "keywords": ["laravel", "multi-tenancy", "multi-database", "tenancy"],
     "license": "MIT",
@@ -23,7 +23,7 @@
         "orchestra/testbench-browser-kit": "^4.0|^5.0|^6.0",
         "league/flysystem-aws-s3-v3": "~1.0",
         "doctrine/dbal": "^2.10",
-        "spatie/valuestore": "^1.2"
+        "spatie/valuestore": "^1.2.5"
     },
     "autoload": {
         "psr-4": {

@@ -3,6 +3,9 @@ services:
     test:
         build:
             context: .
+            args:
+              PHP_VERSION: ${PHP_VERSION}
+              PHP_TARGET: ${PHP_TARGET}
         depends_on:
             mysql:
                 condition: service_healthy
