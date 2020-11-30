@@ -20,8 +20,8 @@ jobs:
         laravel: ["^6.0", "^8.0"]
         include:
           - php_version: "8.0"
-          - php_target: "php:8.0.0RC5-cli"
-          - laravel: "^8.0"
+            php_target: "php:8.0.0RC5-cli"
+            laravel: "^8.0"
 
     steps:
     - uses: actions/checkout@v2
