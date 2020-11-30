@@ -15,7 +15,8 @@ jobs:
 
     strategy:
       matrix:
-        php_version: ["7.4"] # defaults to target php:7.4-cli
+        php_version: ["7.4"]
+        php_target: ["php:7.4-cli"]
         laravel: ["^6.0", "^8.0"]
         include:
           - php_version: "8.0"
