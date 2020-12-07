@@ -96,9 +96,9 @@ return [
      */
     'filesystem' => [
         /**
-         * Each disk listed in the 'disks' array will be suffixed by the suffix_base, followed by the tenant_id.
+         * Each disk listed in the 'disks' array will be prefixed by the storage_base, followed by the tenant_id.
          */
-        'suffix_base' => 'tenant',
+        'storage_base' => 'tenant',
         'disks' => [
             'local',
             'public',
@@ -150,8 +150,8 @@ return [
         'prefix_base' => 'tenant', // Each key in Redis will be prepended by this prefix_base, followed by the tenant id.
         'prefixed_connections' => [ // Redis connections whose keys are prefixed, to separate one tenant's keys from another.
             // 'default',
-        ],
     ],
+],
 
     /**
      * Features are classes that provide additional functionality
