@@ -36,11 +36,11 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant)
     {
-        $storage_base = $this->app['config']['tenancy.filesystem.storage_base'] . $tenant->getTenantKey();
+        $storage = $this->app['config']['tenancy.filesystem.storage_base'] . $tenant->getTenantKey();
 
         // storage_path()
         if ($this->app['config']['tenancy.filesystem.suffix_storage_path'] ?? true) {
-            $this->app->useStoragePath($this->originalPaths['storage'] . "/{$storage_base}");
+            $this->app->useStoragePath($this->originalPaths['storage'] . "/{$storage}");
         }
 
         // asset()
