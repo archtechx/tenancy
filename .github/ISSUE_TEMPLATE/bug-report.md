@@ -17,6 +17,5 @@ assignees: stancl
 A clear and concise description of what you expected to happen.
 
 #### Your setup
- - Laravel version: [e.g. 6.2.0]
- - stancl/tenancy version: [e.g. 2.1.0]
- - Storage driver: [e.g. DB]
+ - Laravel version: [e.g. 8.2.0]
+ - stancl/tenancy version: [e.g. 3.1.0]
