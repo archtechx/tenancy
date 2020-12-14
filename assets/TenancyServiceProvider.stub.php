@@ -15,6 +15,9 @@ use Stancl\Tenancy\Middleware;
 
 class TenancyServiceProvider extends ServiceProvider
 {
+    // By default, no namespace is used to support the callable array syntax.
+    public static string $controllerNamespace = '';
+    
     public function events()
     {
         return [
@@ -118,7 +121,7 @@ class TenancyServiceProvider extends ServiceProvider
     protected function mapRoutes()
     {
         if (file_exists(base_path('routes/tenant.php'))) {
-            Route::namespace('App\Http\Controllers')
+            Route::namespace(static::$controllerNamespace)
                 ->group(base_path('routes/tenant.php'));
         }
     }
