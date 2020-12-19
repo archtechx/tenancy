@@ -17,7 +17,7 @@ use Stancl\Tenancy\Events;
  * @property Carbon $updated_at
  * @property array $data
  *
- * @method static TenantCollection all()
+ * @method static TenantCollection all($columns = ['*'])
  */
 class Tenant extends Model implements Contracts\Tenant
 {
