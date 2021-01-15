@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types = 1);
 
 namespace Stancl\Tenancy\Features;
 
@@ -13,6 +13,8 @@ use Stancl\Tenancy\Tenancy;
 
 class UniversalRoutes implements Feature
 {
+    public static $middlewareUniversalName = 'universal';
+
     public static $identificationMiddlewares = [
         Middleware\InitializeTenancyByDomain::class,
         Middleware\InitializeTenancyBySubdomain::class,
@@ -22,7 +24,7 @@ class UniversalRoutes implements Feature
     {
         foreach (static::$identificationMiddlewares as $middleware) {
             $middleware::$onFail = function ($exception, $request, $next) {
-                if (static::routeHasMiddleware($request->route(), 'universal')) {
+                if (static::routeHasMiddleware($request->route(), static::$middlewareUniversalName)) {
                     return $next($request);
                 }
 
@@ -41,7 +43,7 @@ class UniversalRoutes implements Feature
         // groups have the searhced middleware group inside them
         $middlewareGroups = Router::getMiddlewareGroups();
         foreach ($route->gatherMiddleware() as $inner) {
-            if (! $inner instanceof Closure && isset($middlewareGroups[$inner]) && in_array($middleware, $middlewareGroups[$inner], true)) {
+            if (!$inner instanceof Closure && isset($middlewareGroups[$inner]) && in_array($middleware, $middlewareGroups[$inner], true)) {
                 return true;
             }
         }
