@@ -41,7 +41,7 @@ class PostgreSQLDatabaseManager implements TenantDatabaseManager
 
     public function databaseExists(string $name): bool
     {
-        return (bool) $this->database()->select("SELECT datname FROM pg_database WHERE datname = '$name'");
+        return  config('tenancy.database.check_db_exists') ? (bool)$this->database()->select("SELECT datname FROM pg_database WHERE datname = '$name'") : true;
     }
 
     public function makeConnectionConfig(array $baseConfig, string $databaseName): array

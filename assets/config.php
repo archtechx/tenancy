@@ -39,6 +39,7 @@ return [
      * Database tenancy config. Used by DatabaseTenancyBootstrapper.
      */
     'database' => [
+        'check_db_exists' => true,
         'central_connection' => env('DB_CONNECTION', 'central'),
 
         /**

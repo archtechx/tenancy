@@ -41,7 +41,7 @@ class PostgreSQLSchemaManager implements TenantDatabaseManager
 
     public function databaseExists(string $name): bool
     {
-        return (bool) $this->database()->select("SELECT schema_name FROM information_schema.schemata WHERE schema_name = '$name'");
+        return  config('tenancy.database.check_db_exists') ? (bool) $this->database()->select("SELECT schema_name FROM information_schema.schemata WHERE schema_name = '$name'") : true;
     }
 
     public function makeConnectionConfig(array $baseConfig, string $databaseName): array
