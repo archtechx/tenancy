@@ -46,7 +46,6 @@ class PostgreSQLSchemaManager implements TenantDatabaseManager
         } else {
             return true;
         }
-
     }
 
     public function makeConnectionConfig(array $baseConfig, string $databaseName): array
