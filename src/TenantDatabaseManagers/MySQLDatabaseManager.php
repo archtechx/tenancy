@@ -45,9 +45,9 @@ class MySQLDatabaseManager implements TenantDatabaseManager
 
     public function databaseExists(string $name): bool
     {
-        if(config('tenancy.database.check_db_exists')) {
+        if (config('tenancy.database.check_db_exists')) {
             return (bool) $this->database()->select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$name'");
-        } else  {
+        } else {
             return true;
         }
     }
