@@ -29,7 +29,11 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
 
     public function databaseExists(string $name): bool
     {
-        return  config('tenancy.database.check_db_exists') ? file_exists(database_path($name)) : true;
+        if(config('tenancy.database.check_db_exists')) {
+            return file_exists(database_path($name));
+        } else {
+            return true;
+        }
     }
 
     public function makeConnectionConfig(array $baseConfig, string $databaseName): array
