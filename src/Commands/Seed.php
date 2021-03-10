@@ -21,6 +21,8 @@ class Seed extends SeedCommand
      */
     protected $description = 'Seed tenant database(s).';
 
+    protected $name = 'tenants:seed';
+
     /**
      * Create a new command instance.
      *
@@ -29,9 +31,6 @@ class Seed extends SeedCommand
     public function __construct(ConnectionResolverInterface $resolver)
     {
         parent::__construct($resolver);
-
-        $this->setName('tenants:seed');
-        $this->specifyParameters();
     }
 
     /**
