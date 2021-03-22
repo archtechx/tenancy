@@ -14,6 +14,7 @@ trait InvalidatesResolverCache
         Resolvers\DomainTenantResolver::class,
         Resolvers\PathTenantResolver::class,
         Resolvers\RequestDataTenantResolver::class,
+	    Resolvers\RequestOriginTenantResolver::class
     ];
 
     public static function bootInvalidatesResolverCache()
