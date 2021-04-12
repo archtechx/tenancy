@@ -43,7 +43,7 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
             ->first();
 
         /** @var Domain|null $domain */
-        $domain = $tenant?->domains->first();
+        $domain = $tenant ? $tenant->domains->first() : null;
 
         if ($domain) {
             static::$currentDomain = $domain;
