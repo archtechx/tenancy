@@ -35,15 +35,11 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
             ->whereHas('domains', function ($query) use ($domain) {
                 $query->select(['tenant_id', 'domain'])->where('domain', $domain);
             })
-            ->with([
-                'domains' => function ($query) use ($domain) {
-                    $query->where('domain', $domain);
-                },
-            ])
+            ->with('domains')
             ->first();
 
         if ($tenant) {
-            static::$currentDomain = $tenant->domains->first();
+            $this->tenantIdentified($tenant, ...$args);
 
             return $tenant;
         }
@@ -51,9 +47,9 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
         throw new TenantCouldNotBeIdentifiedOnDomainException($args[0]);
     }
 
-    public function tenantIdentifiedFromCache(Tenant $tenant, ...$args): void
+    public function tenantIdentified(Tenant $tenant, ...$args): void
     {
-        static::$currentDomain = $tenant->domains->first();
+        static::$currentDomain = $tenant->domains->where('domain', $args[0])->first();
     }
 
     public function getArgsForTenant(Tenant $tenant): array
