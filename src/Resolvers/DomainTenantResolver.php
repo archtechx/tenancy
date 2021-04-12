@@ -28,16 +28,35 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
 
     public function resolveWithoutCache(...$args): Tenant
     {
-        /** @var Domain $domain */
-        $domain = config('tenancy.domain_model')::where('domain', $args[0])->first();
+        $domain = $args[0];
+
+        /** @var Tenant|null $tenant */
+        $tenant = config('tenancy.tenant_model')::query()
+            ->whereHas('domains', function ($query) use ($domain) {
+                $query->select(['tenant_id', 'domain'])->where('domain', $domain);
+            })
+            ->with([
+                'domains' => function ($query) use ($domain) {
+                    $query->where('domain', $domain);
+                },
+            ])
+            ->first();
+
+        /** @var Domain|null $domain */
+        $domain = $tenant?->domains->first();
 
         if ($domain) {
             static::$currentDomain = $domain;
 
-            return $domain->tenant;
+            return $tenant;
         }
 
         throw new TenantCouldNotBeIdentifiedOnDomainException($args[0]);
+    }
+
+    public function tenantIdentifiedFromCache(Tenant $tenant, ...$args): void
+    {
+        static::$currentDomain = $tenant->domains->first();
     }
 
     public function getArgsForTenant(Tenant $tenant): array
