@@ -110,7 +110,9 @@ class TenancyServiceProvider extends ServiceProvider
             __DIR__ . '/../assets/TenancyServiceProvider.stub.php' => app_path('Providers/TenancyServiceProvider.php'),
         ], 'providers');
 
-        $this->loadRoutesFrom(__DIR__ . '/../assets/routes.php');
+        if (config('tenancy.routes', true)) {
+            $this->loadRoutesFrom(__DIR__ . '/../assets/routes.php');
+        }
 
         $this->app->singleton('globalUrl', function ($app) {
             if ($app->bound(FilesystemTenancyBootstrapper::class)) {
