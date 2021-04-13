@@ -33,13 +33,13 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
         /** @var Tenant|null $tenant */
         $tenant = config('tenancy.tenant_model')::query()
             ->whereHas('domains', function ($query) use ($domain) {
-                $query->select(['tenant_id', 'domain'])->where('domain', $domain);
+                $query->where('domain', $domain);
             })
             ->with('domains')
             ->first();
 
         if ($tenant) {
-            $this->tenantIdentified($tenant, ...$args);
+            $this->setCurrentDomain($tenant, ...$args);
 
             return $tenant;
         }
@@ -48,6 +48,11 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
     }
 
     public function tenantIdentified(Tenant $tenant, ...$args): void
+    {
+        $this->setCurrentDomain($tenant, ...$args);
+    }
+
+    protected function setCurrentDomain(Tenant $tenant, ...$args): void
     {
         static::$currentDomain = $tenant->domains->where('domain', $args[0])->first();
     }
