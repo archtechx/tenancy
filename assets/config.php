@@ -135,13 +135,6 @@ return [
          * where you want to use tenant-specific assets (product images, avatars, etc).
          */
         'asset_helper_tenancy' => true,
-        
-        /**
-         * Should the tenant asset route be registered. This route enables you to access files
-         * in the tenant-specific storage. By default, this route is enabled. But it may
-         * be useful to disable if you use external storage (e.g. S3 or Dropbox).
-         */
-        'serve_tenant_assets' => true,
     ],
 
     /**
@@ -175,6 +168,15 @@ return [
         // Stancl\Tenancy\Features\TenantConfig::class, // https://tenancyforlaravel.com/docs/v3/features/tenant-config
         // Stancl\Tenancy\Features\CrossDomainRedirect::class, // https://tenancyforlaravel.com/docs/v3/features/cross-domain-redirect
     ],
+    
+    /**
+     * Should tenancy routes be registered. 
+     * 
+     * Tenancy routes include tenant asset routes. By default, this route is 
+     * enabled. But it may be useful to disable them if you use external 
+     * storage (e.g. S3 / Dropbox) or have a custom asset controller.
+     */
+    'routes' => true,
 
     /**
      * Parameters used by the tenants:migrate command.
