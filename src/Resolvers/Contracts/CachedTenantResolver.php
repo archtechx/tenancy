@@ -37,7 +37,11 @@ abstract class CachedTenantResolver implements TenantResolver
         $key = $this->getCacheKey(...$args);
 
         if ($this->cache->has($key)) {
-            return $this->cache->get($key);
+            $tenant = $this->cache->get($key);
+
+            $this->resolved($tenant, ...$args);
+
+            return $tenant;
         }
 
         $tenant = $this->resolveWithoutCache(...$args);
@@ -63,6 +67,10 @@ abstract class CachedTenantResolver implements TenantResolver
     }
 
     abstract public function resolveWithoutCache(...$args): Tenant;
+
+    public function resolved(Tenant $tenant, ...$args): void
+    {
+    }
 
     /**
      * Get all the arg combinations for resolve() that can be used to find this tenant.

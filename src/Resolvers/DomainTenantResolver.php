@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Resolvers;
 
+use Illuminate\Database\Eloquent\Builder;
 use Stancl\Tenancy\Contracts\Domain;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
@@ -28,16 +29,33 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
 
     public function resolveWithoutCache(...$args): Tenant
     {
-        /** @var Domain $domain */
-        $domain = config('tenancy.domain_model')::where('domain', $args[0])->first();
+        $domain = $args[0];
 
-        if ($domain) {
-            static::$currentDomain = $domain;
+        /** @var Tenant|null $tenant */
+        $tenant = config('tenancy.tenant_model')::query()
+            ->whereHas('domains', function (Builder $query) use ($domain) {
+                $query->where('domain', $domain);
+            })
+            ->with('domains')
+            ->first();
 
-            return $domain->tenant;
+        if ($tenant) {
+            $this->setCurrentDomain($tenant, $domain);
+
+            return $tenant;
         }
 
         throw new TenantCouldNotBeIdentifiedOnDomainException($args[0]);
+    }
+
+    public function resolved(Tenant $tenant, ...$args): void
+    {
+        $this->setCurrentDomain($tenant, $args[0]);
+    }
+
+    protected function setCurrentDomain(Tenant $tenant, string $domain): void
+    {
+        static::$currentDomain = $tenant->domains->where('domain', $domain)->first();
     }
 
     public function getArgsForTenant(Tenant $tenant): array
