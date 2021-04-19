@@ -42,7 +42,11 @@ class InitializeTenancyByRequestOrigin extends IdentificationMiddleware
 	{
 		$tenant = null;
 		if ($request->hasHeader('origin')) {
-			$tenant = optional(parse_url($request->headers->get('origin')))['host'];
+			$parts = parse_url($request->headers->get('origin'));
+			$tenant = optional($parts)['host'];
+			if (array_key_exists('port', $parts) && $tenant) {
+				$tenant .= ":{$parts['port']}";
+			}
 		}
 
 		return $tenant;
