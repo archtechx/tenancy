@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types = 1);
 
 namespace Stancl\Tenancy\Tests;
 
@@ -76,8 +76,8 @@ class TenantModelTest extends TestCase
         $tenant1 = Tenant::create();
         $tenant2 = Tenant::create();
 
-        $this->assertSame(1, $tenant1->id);
-        $this->assertSame(2, $tenant2->id);
+        $this->assertSame((string) 1, $tenant1->id);
+        $this->assertSame((string) 2, $tenant2->id);
     }
 
     /** @test */
