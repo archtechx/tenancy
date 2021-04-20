@@ -30,6 +30,7 @@ class Tenant extends Model implements Contracts\Tenant
 
     protected $table = 'tenants';
     protected $primaryKey = 'id';
+    protected $keyType = 'string';
     protected $guarded = [];
 
     public function getTenantKeyName(): string
