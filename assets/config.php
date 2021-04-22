@@ -168,12 +168,12 @@ return [
         // Stancl\Tenancy\Features\TenantConfig::class, // https://tenancyforlaravel.com/docs/v3/features/tenant-config
         // Stancl\Tenancy\Features\CrossDomainRedirect::class, // https://tenancyforlaravel.com/docs/v3/features/cross-domain-redirect
     ],
-    
+
     /**
-     * Should tenancy routes be registered. 
-     * 
-     * Tenancy routes include tenant asset routes. By default, this route is 
-     * enabled. But it may be useful to disable them if you use external 
+     * Should tenancy routes be registered.
+     *
+     * Tenancy routes include tenant asset routes. By default, this route is
+     * enabled. But it may be useful to disable them if you use external
      * storage (e.g. S3 / Dropbox) or have a custom asset controller.
      */
     'routes' => true,
