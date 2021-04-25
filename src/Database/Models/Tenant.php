@@ -56,5 +56,8 @@ class Tenant extends Model implements Contracts\Tenant
         'updated' => Events\TenantUpdated::class,
         'deleting' => Events\DeletingTenant::class,
         'deleted' => Events\TenantDeleted::class,
+        'restoring' => Events\TenantRestoring::class,
+        'restored' => Events\TenantRestored::class,
+        'forceDeleted' => Events\TenantForceDeleted::class,
     ];
 }

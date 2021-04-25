@@ -48,6 +48,9 @@ class TenancyServiceProvider extends ServiceProvider
                     return $event->tenant;
                 })->shouldBeQueued(false), // `false` by default, but you probably want to make this `true` for production.
             ],
+            Events\TenantRestoring::class => [],
+            Events\TenantRestored::class => [],
+            Events\TenantForceDeleted::class => [],
 
             // Domain events
             Events\CreatingDomain::class => [],
