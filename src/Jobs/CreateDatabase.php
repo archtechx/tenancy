@@ -29,6 +29,9 @@ class CreateDatabase implements ShouldQueue
 
     public function handle(DatabaseManager $databaseManager)
     {
+        // update the connection to use the tenant's config
+        $databaseManager->createHostConnection($this->tenant);
+
         event(new CreatingDatabase($this->tenant));
 
         // Terminate execution of this job & other jobs in the pipeline
@@ -41,5 +44,8 @@ class CreateDatabase implements ShouldQueue
         $this->tenant->database()->manager()->createDatabase($this->tenant);
 
         event(new DatabaseCreated($this->tenant));
+
+        // revert the configuration to the original template
+        $databaseManager->resetTenantConnection($this->tenant);
     }
 }

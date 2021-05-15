@@ -73,6 +73,23 @@ class DatabaseManager
     }
 
     /**
+     * Create the tenant's host database connection.
+     */
+    public function createHostConnection(TenantWithDatabase $tenant)
+    {
+        $this->originalTemplate = $this->app['config']["database.connections.{$tenant->database()->getTemplateConnectionName()}"];
+        $this->app['config']["database.connections.{$tenant->database()->getTemplateConnectionName()}"] = $tenant->database()->hostConnection();
+    }
+
+    /**
+     * Reset the tenant database connection.
+     */
+    public function resetTenantConnection(TenantWithDatabase $tenant)
+    {
+        $this->app['config']["database.connections.{$tenant->database()->getTemplateConnectionName()}"] = $this->originalTemplate;
+    }
+
+    /**
      * Check if a tenant can be created.
      *
      * @throws TenantCannotBeCreatedException

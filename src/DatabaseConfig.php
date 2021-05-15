@@ -118,6 +118,20 @@ class DatabaseConfig
     }
 
     /**
+     * Tenant host's database connection config. Used for
+     * creating and deleting the tenant database.
+     */
+    public function hostConnection(): array
+    {
+        $template = $this->getTemplateConnectionName();
+        $templateConnection = config("database.connections.{$template}");
+
+        return $this->manager()->makeConnectionConfig(
+            array_merge($templateConnection, $this->tenantConfig()), $templateConnection['database']
+        );
+    }
+
+    /**
      * Additional config for the database connection, specific to this tenant.
      */
     public function tenantConfig(): array

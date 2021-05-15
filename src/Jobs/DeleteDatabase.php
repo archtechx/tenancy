@@ -10,6 +10,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
+use Stancl\Tenancy\Database\DatabaseManager;
 use Stancl\Tenancy\Events\DatabaseDeleted;
 use Stancl\Tenancy\Events\DeletingDatabase;
 
@@ -25,12 +26,18 @@ class DeleteDatabase implements ShouldQueue
         $this->tenant = $tenant;
     }
 
-    public function handle()
+    public function handle(DatabaseManager $databaseManager)
     {
+        // update the connection to use the tenant's config
+        $databaseManager->createHostConnection($this->tenant);
+
         event(new DeletingDatabase($this->tenant));
 
         $this->tenant->database()->manager()->deleteDatabase($this->tenant);
 
         event(new DatabaseDeleted($this->tenant));
+
+        // revert the configuration to the original template
+        $databaseManager->resetTenantConnection($this->tenant);
     }
 }
