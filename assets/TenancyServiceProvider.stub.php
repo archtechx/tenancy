@@ -108,7 +108,7 @@ class TenancyServiceProvider extends ServiceProvider
     protected function bootEvents()
     {
         foreach ($this->events() as $event => $listeners) {
-            foreach (array_unique($listeners) as $listener) {
+            foreach ($listeners as $listener) {
                 if ($listener instanceof JobPipeline) {
                     $listener = $listener->toListener();
                 }
