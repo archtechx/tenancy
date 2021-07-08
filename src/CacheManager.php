@@ -18,6 +18,7 @@ class CacheManager extends BaseCacheManager
     public function __call($method, $parameters)
     {
         $tags = [config('tenancy.cache.tag_base') . tenant()->getTenantKey()];
+        $supportTags = $this->store()->getStore() instanceof \Illuminate\Cache\TaggableStore;
 
         if ($method === 'tags') {
             if (count($parameters) !== 1) {
@@ -30,6 +31,8 @@ class CacheManager extends BaseCacheManager
             return $this->store()->tags(array_merge($tags, $names));
         }
 
-        return $this->store()->tags($tags)->$method(...$parameters);
+        return $supportTags
+            ? $this->store()->tags($tags)->$method(...$parameters)
+            : $this->store()->$method(...$parameters);
     }
 }
