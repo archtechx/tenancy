@@ -31,7 +31,11 @@ class CommandsTest extends TestCase
 
         config(['tenancy.bootstrappers' => [
             DatabaseTenancyBootstrapper::class,
-        ]]);
+        ],
+        'tenancy.filesystem.suffix_base' => 'tenant-',
+        'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
+        'tenancy.filesystem.url_override.public' => 'storage-%tenant_id%'
+        ]);
 
         Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
         Event::listen(TenancyEnded::class, RevertToCentralContext::class);
@@ -201,5 +205,18 @@ class CommandsTest extends TestCase
         $this->artisan("tenants:run foo --tenants=$tenantId1 --tenants=$tenantId2 --argument='a=foo' --option='b=bar' --option='c=xyz'")
             ->expectsOutput('Tenant: ' . $tenantId1)
             ->expectsOutput('Tenant: ' . $tenantId2);
+    }
+
+    /** @test */
+    public function link_command_works()
+    {
+        $tenantId1 = Tenant::create()->getTenantKey();
+        $tenantId2 = Tenant::create()->getTenantKey();
+        Artisan::call('tenants:link');
+
+        $this->assertDirectoryExists(storage_path("tenant-$tenantId1/app/public"));
+        $this->assertDirectoryExists(public_path("storage-$tenantId1"));
+        $this->assertDirectoryExists(storage_path("tenant-$tenantId2/app/public"));
+        $this->assertDirectoryExists(public_path("storage-$tenantId2"));
     }
 }

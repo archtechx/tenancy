@@ -210,5 +210,32 @@ class BootstrapperTest extends TestCase
         }
     }
 
+    /** @test */
+    public function filesystem_local_storage_has_own_public_url()
+    {
+        config([
+            'tenancy.bootstrappers' => [
+                FilesystemTenancyBootstrapper::class,
+            ],
+            'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
+            'tenancy.filesystem.url_override.public' => 'storage-%tenant_id%'
+        ]);
+
+        $tenant1 = Tenant::create();
+        $tenant2 = Tenant::create();
+
+        tenancy()->initialize($tenant1);
+        $this->assertEquals(
+            'http://localhost/storage-'.$tenant1->getTenantKey().'/',
+            Storage::disk('public')->url('')
+        );
+
+        tenancy()->initialize($tenant2);
+        $this->assertEquals(
+            'http://localhost/storage-'.$tenant2->getTenantKey().'/',
+            Storage::disk('public')->url('')
+        );
+    }
+
     // for queues see QueueTest
 }
