@@ -119,7 +119,7 @@ return [
         /*
          * Use this to support Storage url method on local driver disks.
          * You should create a symbolic link which points to the public directory using command: artisan tenants:link
-         * Then you can use tenant aware Storage url: Storage::disk('public')->url('file.jpg');
+         * Then you can use tenant aware Storage url: Storage::disk('public')->url('file.jpg')
          */
         'url_override' => [
             // The array key is local disk (must exist in root_override) and value is public directory (%tenant_id% will be replaced with actual tenant id).
