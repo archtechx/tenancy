@@ -13,9 +13,11 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Artisan;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Events\CreatingStorageSymlink;
+use Stancl\Tenancy\Events\RemovingStorageSymlink;
 use Stancl\Tenancy\Events\StorageSymlinkCreated;
+use Stancl\Tenancy\Events\StorageSymlinkRemoved;
 
-class CreateStorageSymlinks implements ShouldQueue
+class RemoveStorageSymlinks implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -41,12 +43,13 @@ class CreateStorageSymlinks implements ShouldQueue
      */
     public function handle()
     {
-        event(new CreatingStorageSymlink($this->tenant));
+        event(new RemovingStorageSymlink($this->tenant));
 
         Artisan::call('tenants:link', [
+            '--remove' => true,
             '--tenants' => [$this->tenant->getTenantKey()],
         ]);
 
-        event(new StorageSymlinkCreated($this->tenant));
+        event(new StorageSymlinkRemoved($this->tenant));
     }
 }

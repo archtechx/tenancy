@@ -17,7 +17,10 @@ use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Events\TenantDeleted;
 use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Jobs\CreateStorageSymlinks;
+use Stancl\Tenancy\Jobs\RemoveStorageSymlinks;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\Etc\Tenant;
@@ -218,7 +221,7 @@ class BootstrapperTest extends TestCase
                 FilesystemTenancyBootstrapper::class,
             ],
             'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
-            'tenancy.filesystem.url_override.public' => 'storage-%tenant_id%'
+            'tenancy.filesystem.url_override.public' => 'public-%tenant_id%'
         ]);
 
         $tenant1 = Tenant::create();
@@ -226,15 +229,56 @@ class BootstrapperTest extends TestCase
 
         tenancy()->initialize($tenant1);
         $this->assertEquals(
-            'http://localhost/storage-'.$tenant1->getTenantKey().'/',
+            'http://localhost/public-'.$tenant1->getTenantKey().'/',
             Storage::disk('public')->url('')
         );
 
         tenancy()->initialize($tenant2);
         $this->assertEquals(
-            'http://localhost/storage-'.$tenant2->getTenantKey().'/',
+            'http://localhost/public-'.$tenant2->getTenantKey().'/',
             Storage::disk('public')->url('')
         );
+    }
+
+    /** @test */
+    public function create_and_delete_storage_symlinks_jobs_works()
+    {
+        Event::listen(
+            TenantCreated::class,
+            JobPipeline::make([CreateStorageSymlinks::class])->send(function (TenantCreated $event) {
+                return $event->tenant;
+            })->toListener()
+        );
+
+        Event::listen(
+            TenantDeleted::class,
+            JobPipeline::make([RemoveStorageSymlinks::class])->send(function (TenantDeleted $event) {
+                return $event->tenant;
+            })->toListener()
+        );
+
+        config([
+            'tenancy.bootstrappers' => [
+                FilesystemTenancyBootstrapper::class,
+            ],
+            'tenancy.filesystem.suffix_base' => 'tenant-',
+            'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
+            'tenancy.filesystem.url_override.public' => 'public-%tenant_id%'
+        ]);
+
+        /** @var \Stancl\Tenancy\Database\Models\Tenant $tenant */
+        $tenant = Tenant::create();
+
+        tenancy()->initialize($tenant);
+
+        $tenant_key = $tenant->getTenantKey();
+
+        $this->assertDirectoryExists(storage_path("app/public"));
+        $this->assertEquals(storage_path("app/public/"), readlink(public_path("public-$tenant_key")));
+
+        $tenant->delete();
+
+        $this->assertDirectoryDoesNotExist(public_path("public-$tenant_key"));
     }
 
     // for queues see QueueTest

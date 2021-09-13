@@ -34,7 +34,7 @@ class CommandsTest extends TestCase
         ],
         'tenancy.filesystem.suffix_base' => 'tenant-',
         'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
-        'tenancy.filesystem.url_override.public' => 'storage-%tenant_id%'
+        'tenancy.filesystem.url_override.public' => 'public-%tenant_id%'
         ]);
 
         Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
@@ -215,8 +215,35 @@ class CommandsTest extends TestCase
         Artisan::call('tenants:link');
 
         $this->assertDirectoryExists(storage_path("tenant-$tenantId1/app/public"));
-        $this->assertDirectoryExists(public_path("storage-$tenantId1"));
+        $this->assertEquals(storage_path("tenant-$tenantId1/app/public/"), readlink(public_path("public-$tenantId1")));
+
         $this->assertDirectoryExists(storage_path("tenant-$tenantId2/app/public"));
-        $this->assertDirectoryExists(public_path("storage-$tenantId2"));
+        $this->assertEquals(storage_path("tenant-$tenantId2/app/public/"), readlink(public_path("public-$tenantId2")));
+
+        Artisan::call('tenants:link', [
+            '--remove' => true,
+        ]);
+
+        $this->assertDirectoryDoesNotExist(public_path("public-$tenantId1"));
+        $this->assertDirectoryDoesNotExist(public_path("public-$tenantId2"));
+    }
+
+    /** @test */
+    public function link_command_with_tenant_specified_works()
+    {
+        $tenant_key = Tenant::create()->getTenantKey();
+        Artisan::call('tenants:link', [
+            '--tenants' => [$tenant_key],
+        ]);
+
+        $this->assertDirectoryExists(storage_path("tenant-$tenant_key/app/public"));
+        $this->assertEquals(storage_path("tenant-$tenant_key/app/public/"), readlink(public_path("public-$tenant_key")));
+
+        Artisan::call('tenants:link', [
+            '--remove' => true,
+            '--tenants' => [$tenant_key],
+        ]);
+
+        $this->assertDirectoryDoesNotExist(public_path("public-$tenant_key"));
     }
 }

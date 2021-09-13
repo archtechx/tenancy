@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Commands;
 
-use Illuminate\Foundation\Console\StorageLinkCommand;
+use Illuminate\Console\Command;
 use Stancl\Tenancy\Concerns\HasATenantsOption;
 use Stancl\Tenancy\Contracts\Tenant;
 
-class Link extends StorageLinkCommand
+class Link extends Command
 {
     use HasATenantsOption;
 
@@ -20,7 +20,8 @@ class Link extends StorageLinkCommand
     protected $signature = 'tenants:link
                 {--tenants=* : The tenant(s) to run the command for. Default: all}
                 {--relative : Create the symbolic link using relative paths}
-                {--force : Recreate existing symbolic links}';
+                {--force : Recreate existing symbolic links}
+                {--remove : Remove symbolic links}';
 
     /**
      * The console command description.
@@ -28,6 +29,51 @@ class Link extends StorageLinkCommand
      * @var string
      */
     protected $description = 'Create the symbolic links configured for the tenancy applications';
+
+    /**
+     * Execute the console command.
+     *
+     * @return void
+     */
+    public function handle()
+    {
+        $relative = $this->option('relative');
+
+        if ($this->option('remove')) {
+            foreach ($this->links() as $link => $target) {
+                if (is_link($link)) {
+                    $this->laravel->make('files')->delete($link);
+
+                    $this->info("The [$link] link has been removed.");
+                }
+            }
+
+            $this->info('The links have been removed.');
+
+            return;
+        }
+
+        foreach ($this->links() as $link => $target) {
+            if (file_exists($link) && ! $this->isRemovableSymlink($link, $this->option('force'))) {
+                $this->error("The [$link] link already exists.");
+                continue;
+            }
+
+            if (is_link($link)) {
+                $this->laravel->make('files')->delete($link);
+            }
+
+            if ($relative) {
+                $this->laravel->make('files')->relativeLink($target, $link);
+            } else {
+                $this->laravel->make('files')->link($target, $link);
+            }
+
+            $this->info("The [$link] link has been connected to [$target].");
+        }
+
+        $this->info('The links have been created.');
+    }
 
     /**
      * Get the symbolic links that are configured for the application.
@@ -40,16 +86,20 @@ class Link extends StorageLinkCommand
         $disks = config('tenancy.filesystem.root_override');
         $suffix_base = config('tenancy.filesystem.suffix_base');
 
-        return $this->getTenants()
-            ->map(function (Tenant $tenant) use ($suffix_base, $disk_urls, $disks) {
+        $tenants = $this->option('remove') && filled($this->option('tenants'))
+            ? collect($this->option('tenants'))
+            : $this->getTenants()->map(function(Tenant $tenant) { return $tenant->getTenantKey(); });
+
+        return $tenants
+            ->map(function ($tenant_key) use ($suffix_base, $disk_urls, $disks) {
 
                 $map = [];
 
                 foreach ($disk_urls as $disk => $public_path) {
-                    $storage_path = str_replace('%storage_path%', $suffix_base . $tenant['id'], $disks[$disk]);
+                    $storage_path = str_replace('%storage_path%', $suffix_base . $tenant_key, $disks[$disk]);
                     $storage_path = storage_path($storage_path);
 
-                    $public_path = str_replace('%tenant_id%', $tenant['id'], $public_path);
+                    $public_path = str_replace('%tenant_id%', $tenant_key, $public_path);
                     $public_path = public_path($public_path);
 
                     // make sure storage path exist before we create symlink
@@ -63,7 +113,19 @@ class Link extends StorageLinkCommand
                 return $map;
 
             })->flatten(1)
-            ->mapWithKeys(fn ($item) => $item)
+            ->mapWithKeys(function ($item) {return $item; })
             ->all();
+    }
+
+    /**
+     * Determine if the provided path is a symlink that can be removed.
+     *
+     * @param  string  $link
+     * @param  bool  $force
+     * @return bool
+     */
+    protected function isRemovableSymlink(string $link, bool $force): bool
+    {
+        return is_link($link) && $force;
     }
 }

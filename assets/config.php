@@ -123,7 +123,7 @@ return [
          */
         'url_override' => [
             // The array key is local disk (must exist in root_override) and value is public directory (%tenant_id% will be replaced with actual tenant id).
-            'public' => 'storage-%tenant_id%',
+            'public' => 'public-%tenant_id%',
         ],
 
         /**
