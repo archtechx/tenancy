@@ -20,8 +20,10 @@ class CacheManager extends BaseCacheManager
         $tags = [config('tenancy.cache.tag_base') . tenant()->getTenantKey()];
 
         if ($method === 'tags') {
-            if (count($parameters) !== 1) {
-                throw new \Exception("Method tags() takes exactly 1 argument. {count($parameters)} passed.");
+            $parameter_count = count($parameters);
+            
+            if ($parameter_count !== 1) {
+                throw new \Exception("Method tags() takes exactly 1 argument. {$parameter_count} passed.");
             }
 
             $names = $parameters[0];
