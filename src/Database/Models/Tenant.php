@@ -46,6 +46,15 @@ class Tenant extends Model implements Contracts\Tenant
     {
         return new TenantCollection($models);
     }
+    
+    public static function getCustomColumns(): array
+    {
+        return [
+            'id',
+            'created_at',
+            'updated_at',
+        ];
+    }
 
     protected $dispatchesEvents = [
         'saving' => Events\SavingTenant::class,
