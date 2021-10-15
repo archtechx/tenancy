@@ -78,6 +78,11 @@ class DatabaseConfig
         return $this->tenant->getInternal('db_password') ?? null;
     }
 
+    public function getDbConnectionName(): ?string
+    {
+        return $this->tenant->getInternal('db_connection') ?? null;
+    }
+
     /**
      * Generate DB name, username & password and write them to the tenant model.
      *
@@ -86,6 +91,7 @@ class DatabaseConfig
     public function makeCredentials(): void
     {
         $this->tenant->setInternal('db_name', $this->getName() ?? (static::$databaseNameGenerator)($this->tenant));
+        $this->tenant->setInternal('db_connection', $this->getTemplateConnectionName());
 
         if ($this->manager() instanceof ManagesDatabaseUsers) {
             $this->tenant->setInternal('db_username', $this->getUsername() ?? (static::$usernameGenerator)($this->tenant));
@@ -99,7 +105,7 @@ class DatabaseConfig
 
     public function getTemplateConnectionName(): string
     {
-        return $this->tenant->getInternal('db_connection')
+        return $this->getDbConnectionName()
             ?? config('tenancy.database.template_tenant_connection')
             ?? config('tenancy.database.central_connection');
     }
