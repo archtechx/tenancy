@@ -1,0 +1,45 @@
+name: 🐛 Bug Report
+description: Report unexpected behavior with stancl/tenancy.
+labels: ["bug"]
+assignees:
+  - stancl
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before opening a bug report, please search for the behaviour in the existing issues.
+        ---
+        Thank you for taking the time to file a bug report. To address this bug as fast as possible, we need some information.
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Bug description
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+  - type: textarea
+    id: logs
+    attributes:
+      label: Expected behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+
+  - type: input
+    id: laravel-version
+    attributes:
+      label: Laravel version
+      placeholder: "e.g. 8.2.0"
+    validations:
+      required: true
+  - type: input
+    id: tenancy-version
+    attributes:
+      label: stancl/tenancy version
+      placeholder: "e.g. 3.1.0"
+    validations:
+      required: true
