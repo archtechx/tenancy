@@ -21,6 +21,9 @@ body:
     id: steps
     attributes:
       label: Steps to reproduce
+      description: Step-by-step guide for reproducing the bug in a fresh Laravel application.
+    validations:
+      required: true
   - type: textarea
     id: logs
     attributes:
