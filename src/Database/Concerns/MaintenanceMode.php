@@ -17,4 +17,9 @@ trait MaintenanceMode
             'allowed' => $data['allowed'] ?? [],
         ]]);
     }
+
+    public function bringUpFromMaintenance()
+    {
+        $this->update(['maintenance_mode' => null]);
+    }
 }

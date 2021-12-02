@@ -35,6 +35,12 @@ class MaintenanceModeTest extends TestCase
         $this->expectException(MaintenanceModeException::class);
         $this->withoutExceptionHandling()
             ->get('http://acme.localhost/foo');
+
+        $tenant->bringUpFromMaintenance();
+
+        $this->withoutExceptionHandling()
+            ->get('http://acme.localhost/foo')
+            ->assertSeeText('bar');
     }
 }
 
