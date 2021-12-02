@@ -17,7 +17,7 @@ class Down extends Command
      * @var string
      */
 
-    protected $signature = 'tenants:down
+    protected $signature = 'tenancy:down
                                  {--time= : The time when the app has been set to maintenance mode}
                                  {--message= : Message to display}
                                  {--retry= : The number of seconds after which the request may be retried}

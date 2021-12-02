@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Commands;;
+namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
 use Stancl\Tenancy\Concerns\HasATenantsOption;
@@ -17,7 +17,7 @@ class Up extends Command
      * @var string
      */
 
-    protected $signature = 'tenants:up';
+    protected $signature = 'tenancy:up';
 
     /**
      * The console command description.
