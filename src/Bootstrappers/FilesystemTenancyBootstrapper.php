@@ -57,6 +57,9 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
             /** @var FilesystemAdapter $filesystemDisk */
             $filesystemDisk = Storage::disk($disk);
+
+            // todo0 @v4 \League\Flysystem\PathPrefixer is making this a lot more painful in flysystem v2
+
             $this->originalPaths['disks'][$disk] = $filesystemDisk->getAdapter()->getPathPrefix();
 
             if ($root = str_replace(
