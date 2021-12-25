@@ -33,7 +33,7 @@ class Run extends Command
     public function handle()
     {
         tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
-            $this->line("Tenant: {$tenant['id']}");
+            $this->line("Tenant: {$tenant->getTenantKey()}");
             tenancy()->initialize($tenant);
 
             $callback = function ($prefix = '') {
