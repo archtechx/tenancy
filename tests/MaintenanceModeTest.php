@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
-use Illuminate\Foundation\Http\Exceptions\MaintenanceModeException;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Database\Concerns\MaintenanceMode;
 use Stancl\Tenancy\Middleware\CheckTenantForMaintenanceMode;
@@ -32,15 +31,24 @@ class MaintenanceModeTest extends TestCase
 
         $tenant->putDownForMaintenance();
 
-        $this->expectException(MaintenanceModeException::class);
-        $this->withoutExceptionHandling()
-            ->get('http://acme.localhost/foo');
+        $this->get('http://acme.localhost/foo')
+            ->assertStatus(503);
+
+        tenancy()->end();
 
         $tenant->bringUpFromMaintenance();
 
-        $this->withoutExceptionHandling()
-            ->get('http://acme.localhost/foo')
+        tenancy()->end();
+
+        $this->get('http://acme.localhost/foo')
+            ->assertSuccessful()
             ->assertSeeText('bar');
+    }
+
+    /** @test */
+    public function tenant_can_be_in_maintenance_mode_from_command()
+    {
+
     }
 }
 
