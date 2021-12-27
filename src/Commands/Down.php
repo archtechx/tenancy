@@ -18,10 +18,11 @@ class Down extends Command
      */
 
     protected $signature = 'tenancy:down
-                                 {--time= : The time when the app has been set to maintenance mode}
-                                 {--message= : Message to display}
+                                 {--redirect= : The path that users should be redirected to}
                                  {--retry= : The number of seconds after which the request may be retried}
-                                 {--allowed=* : List of IPs allowed}';
+                                 {--refresh= : The number of seconds after which the browser may refresh}
+                                 {--secret= : The secret phrase that may be used to bypass maintenance mode}
+                                 {--status=503 : The status code that should be used when returning the maintenance mode response}';
 
     /**
      * The console command description.
@@ -40,10 +41,11 @@ class Down extends Command
         tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
             $this->line("Tenant: {$tenant['id']}");
             $tenant->putDownForMaintenance([
-                'time' => $this->option('time'),
-                'message' => $this->option('message'),
+                'redirect' => $this->option('redirect'),
                 'retry' => $this->option('retry'),
-                'allowed' => $this->option('allowed'),
+                'refresh' => $this->option('refresh'),
+                'secret' => $this->option('secret'),
+                'status' => $this->option('status'),
             ]);
         });
 
