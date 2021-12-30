@@ -53,7 +53,7 @@
         "docker-up": "PHP_VERSION=8.0.11 docker-compose up -d",
         "docker-down": "PHP_VERSION=8.0.11 docker-compose down",
         "docker-rebuild": "PHP_VERSION=8.0.11 docker-compose up -d --no-deps --build",
-        "test": "./test"
+        "test": "PHP_VERSION=8.0.11 ./test"
     },
     "minimum-stability": "dev",
     "prefer-stable": true
