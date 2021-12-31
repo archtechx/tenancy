@@ -54,7 +54,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         });
 
         if (Str::startsWith(app()->version(), '8')) {
-            // queue:retry tenancy is only supported in Laravel 8
+            // JobRetryRequested only exists since Laravel 8
             $dispatcher->listen(JobRetryRequested::class, function ($event) use (&$previousTenant) {
                 $previousTenant = tenant();
 
