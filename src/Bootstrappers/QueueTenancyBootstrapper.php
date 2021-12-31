@@ -7,7 +7,10 @@ namespace Stancl\Tenancy\Bootstrappers;
 use Illuminate\Config\Repository;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Queue\Events\JobFailed;
+use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Queue\Events\JobRetryRequested;
 use Illuminate\Queue\QueueManager;
 use Illuminate\Support\Testing\Fakes\QueueFake;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
@@ -28,7 +31,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
      */
     public static function __constructStatic(Application $app)
     {
-        static::setUpJobListener($app->make(Dispatcher::class));
+        static::setUpJobListener($app->make(Dispatcher::class), $app->runningUnitTests());
     }
 
     public function __construct(Repository $config, QueueManager $queue)
@@ -39,25 +42,70 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         $this->setUpPayloadGenerator();
     }
 
-    protected static function setUpJobListener($dispatcher)
+    protected static function setUpJobListener($dispatcher, $runningTests)
     {
-        $dispatcher->listen(JobProcessing::class, function ($event) {
-            $tenantId = $event->job->payload()['tenant_id'] ?? null;
+        $previousTenant = null;
 
-            // The job is not tenant-aware
-            if (! $tenantId) {
-                return;
-            }
+        $dispatcher->listen(JobProcessing::class, function ($event) use (&$previousTenant) {
+            $previousTenant = tenant();
 
-            // Tenancy is already initialized for the tenant (e.g. dispatchNow was used)
-            if (tenancy()->initialized && tenant()->getTenantKey() === $tenantId) {
-                return;
-            }
-
-            // Tenancy was either not initialized, or initialized for a different tenant.
-            // Therefore, we initialize it for the correct tenant.
-            tenancy()->initialize(tenancy()->find($tenantId));
+            static::initializeTenancyForQueue($event->job->payload()['tenant_id'] ?? null);
         });
+
+        $dispatcher->listen(JobRetryRequested::class, function ($event) use (&$previousTenant) {
+            $previousTenant = tenant();
+
+            static::initializeTenancyForQueue($event->payload()['tenant_id'] ?? null);
+        });
+
+        // If we're running tests, we make sure to clean up after any artisan('queue:work') calls
+        $revertToPreviousState = function ($event) use (&$previousTenant, $runningTests) {
+            if ($runningTests) {
+                static::revertToPreviousState($event, $previousTenant);
+            }
+        };
+
+        $dispatcher->listen(JobProcessed::class, $revertToPreviousState); // artisan('queue:work') which succeeds
+        $dispatcher->listen(JobFailed::class, $revertToPreviousState); // artisan('queue:work') which fails
+    }
+
+    protected static function initializeTenancyForQueue($tenantId)
+    {
+        // The job is not tenant-aware
+        if (! $tenantId) {
+            return;
+        }
+
+        if (tenancy()->initialized) {
+            if (tenant()->getTenantKey() === $tenantId) {
+                // Tenancy is already initialized for the tenant (e.g. dispatchNow was used)
+                return;
+            }
+        }
+
+        // Tenancy was either not initialized, or initialized for a different tenant.
+        // Therefore, we initialize it for the correct tenant.
+        tenancy()->initialize(tenancy()->find($tenantId));
+    }
+
+    protected static function revertToPreviousState($event, &$previousTenant)
+    {
+        $tenantId = $event->job->payload()['tenant_id'] ?? null;
+
+        // The job was not tenant-aware
+        if (! $tenantId) {
+            return;
+        }
+
+        // Revert back to the previous tenant
+        if (tenant() && $previousTenant && $previousTenant->isNot(tenant())) {
+            tenancy()->initialize($previousTenant);
+        }
+
+        // End tenancy
+        if (tenant() && (! $previousTenant)) {
+            tenancy()->end();
+        }
     }
 
     protected function setUpPayloadGenerator()

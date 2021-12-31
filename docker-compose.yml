@@ -4,7 +4,7 @@ services:
         build:
             context: .
             args:
-              PHP_VERSION: ${PHP_VERSION}
+              PHP_VERSION: ${PHP_VERSION:-8.1}
         depends_on:
             mysql:
                 condition: service_healthy
