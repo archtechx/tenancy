@@ -57,7 +57,7 @@ class QueueTest extends TestCase
     protected function withFailedJobs()
     {
         Schema::connection('central')->create('failed_jobs', function (Blueprint $table) {
-            $table->id();
+            $table->increments('id');
             $table->string('uuid')->unique();
             $table->text('connection');
             $table->text('queue');
