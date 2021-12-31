@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Bootstrappers;
 
+use Illuminate\Support\Str;
 use Illuminate\Config\Repository;
-use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Queue\QueueManager;
+use Stancl\Tenancy\Contracts\Tenant;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Queue\Events\JobRetryRequested;
-use Illuminate\Queue\QueueManager;
 use Illuminate\Support\Testing\Fakes\QueueFake;
+use Illuminate\Contracts\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
-use Stancl\Tenancy\Contracts\Tenant;
 
 class QueueTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -52,11 +53,14 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             static::initializeTenancyForQueue($event->job->payload()['tenant_id'] ?? null);
         });
 
-        $dispatcher->listen(JobRetryRequested::class, function ($event) use (&$previousTenant) {
-            $previousTenant = tenant();
+        if (Str::startsWith(app()->version(), '8')) {
+            // queue:retry tenancy is only supported in Laravel 8
+            $dispatcher->listen(JobRetryRequested::class, function ($event) use (&$previousTenant) {
+                $previousTenant = tenant();
 
-            static::initializeTenancyForQueue($event->payload()['tenant_id'] ?? null);
-        });
+                static::initializeTenancyForQueue($event->payload()['tenant_id'] ?? null);
+            });
+        }
 
         // If we're running tests, we make sure to clean up after any artisan('queue:work') calls
         $revertToPreviousState = function ($event) use (&$previousTenant, $runningTests) {
