@@ -34,7 +34,6 @@ class Run extends Command
     {
         tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
             $this->line("Tenant: {$tenant->getTenantKey()}");
-            tenancy()->initialize($tenant);
 
             $callback = function ($prefix = '') {
                 return function ($arguments, $argument) use ($prefix) {
