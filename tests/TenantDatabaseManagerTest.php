@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use PDO;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Database\DatabaseManager;
+use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager;
@@ -100,6 +104,52 @@ class TenantDatabaseManagerTest extends TestCase
             ['pgsql', PostgreSQLDatabaseManager::class],
             ['pgsql', PostgreSQLSchemaManager::class],
         ];
+    }
+
+    /** @test */
+    public function the_tenant_connection_is_fully_removed()
+    {
+        config([
+            'tenancy.boostrappers' => [
+                DatabaseTenancyBootstrapper::class,
+            ],
+        ]);
+
+        Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+            return $event->tenant;
+        })->toListener());
+
+        Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+        Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+
+        $tenant = Tenant::create();
+
+        $this->assertSame(['central'], array_keys(app('db')->getConnections()));
+        $this->assertArrayNotHasKey('tenant', config('database.connections'));
+
+        tenancy()->initialize($tenant);
+
+        $this->createUsersTable();
+
+        $this->assertSame(['central', 'tenant'], array_keys(app('db')->getConnections()));
+        $this->assertArrayHasKey('tenant', config('database.connections'));
+
+        tenancy()->end();
+
+        $this->assertSame(['central'], array_keys(app('db')->getConnections()));
+        $this->assertNull(config('database.connections.tenant'));
+    }
+
+    protected function createUsersTable()
+    {
+        Schema::create('users', function (Blueprint $table) {
+            $table->increments('id');
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->string('password');
+            $table->rememberToken();
+            $table->timestamps();
+        });
     }
 
     /** @test */
@@ -217,5 +267,6 @@ class TenantDatabaseManagerTest extends TestCase
     /** @test */
     public function path_used_by_sqlite_manager_can_be_customized()
     {
+        $this->markTestIncomplete();
     }
 }

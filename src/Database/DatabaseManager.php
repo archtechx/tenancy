@@ -38,7 +38,7 @@ class DatabaseManager
      */
     public function connectToTenant(TenantWithDatabase $tenant)
     {
-        $this->database->purge('tenant');
+        $this->purgeTenantConnection();
         $this->createTenantConnection($tenant);
         $this->setDefaultConnection('tenant');
     }
@@ -48,10 +48,7 @@ class DatabaseManager
      */
     public function reconnectToCentral()
     {
-        if (tenancy()->initialized) {
-            $this->database->purge('tenant');
-        }
-
+        $this->purgeTenantConnection();
         $this->setDefaultConnection($this->config->get('tenancy.database.central_connection'));
     }
 
@@ -60,7 +57,7 @@ class DatabaseManager
      */
     public function setDefaultConnection(string $connection)
     {
-        $this->app['config']['database.default'] = $connection;
+        $this->config['database.default'] = $connection;
         $this->database->setDefaultConnection($connection);
     }
 
@@ -69,7 +66,19 @@ class DatabaseManager
      */
     public function createTenantConnection(TenantWithDatabase $tenant)
     {
-        $this->app['config']['database.connections.tenant'] = $tenant->database()->connection();
+        $this->config['database.connections.tenant'] = $tenant->database()->connection();
+    }
+
+    /**
+     * Purge the tenant database connection.
+     */
+    public function purgeTenantConnection()
+    {
+        if (array_key_exists('tenant', $this->database->getConnections())) {
+            $this->database->purge('tenant');
+        }
+
+        unset($this->config['database.connections.tenant']);
     }
 
     /**
