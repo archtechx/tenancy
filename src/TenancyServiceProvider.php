@@ -72,6 +72,8 @@ class TenancyServiceProvider extends ServiceProvider
         $this->app->bind('globalCache', function ($app) {
             return new CacheManager($app);
         });
+        
+        $this->registerMigrateMakeCommand();
     }
 
     /**
@@ -124,6 +126,18 @@ class TenancyServiceProvider extends ServiceProvider
             }
 
             return $instance;
+        });
+    }
+    
+    
+    protected function registerMigrateMakeCommand(): void
+    {
+        $this->app->when(MigrationCreator::class)
+            ->needs('$customStubPath')
+            ->give(fn ($app) => $app->basePath('stubs'));
+
+        $this->app->singleton('command.migrate.make', function ($app) {
+            return new MigrateMakeCommand($app['migration.creator'], $app['composer']);
         });
     }
 }
