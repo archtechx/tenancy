@@ -6,6 +6,8 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Cache\CacheManager;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Database\Console\Migrations\MigrateMakeCommand;
+use Illuminate\Database\Migrations\MigrationCreator;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Domain;
 use Stancl\Tenancy\Contracts\Tenant;
