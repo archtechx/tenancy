@@ -89,6 +89,8 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\Rollback::class,
             Commands\TenantList::class,
             Commands\MigrateFresh::class,
+            Commands\CreateReadiedTenants::class,
+            Commands\ClearReadiedTenants::class,
         ]);
 
         $this->publishes([
