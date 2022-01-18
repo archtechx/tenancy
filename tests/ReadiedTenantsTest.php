@@ -5,8 +5,13 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Commands\ClearReadiedTenants;
 use Stancl\Tenancy\Commands\CreateReadiedTenants;
+use Stancl\Tenancy\Events\PullingReadiedTenant;
+use Stancl\Tenancy\Events\ReadiedTenantPulled;
+use Stancl\Tenancy\Events\ReadyingTenant;
+use Stancl\Tenancy\Events\TenantReadied;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
 class ReadiedTenantsTest extends TestCase
@@ -126,5 +131,26 @@ class ReadiedTenantsTest extends TestCase
 
         $this->assertCount(1, Tenant::all());
         Tenant::all();
+    }
+
+    /** @test */
+    public function readied_events_are_triggerred()
+    {
+        Event::fake([
+            ReadyingTenant::class,
+            TenantReadied::class,
+            PullingReadiedTenant::class,
+            ReadiedTenantPulled::class,
+        ]);
+
+        Tenant::createReadied();
+
+        Event::assertDispatched(ReadyingTenant::class);
+        Event::assertDispatched(TenantReadied::class);
+
+        Tenant::pullReadiedTenant();
+
+        Event::assertDispatched(PullingReadiedTenant::class);
+        Event::assertDispatched(ReadiedTenantPulled::class);
     }
 }

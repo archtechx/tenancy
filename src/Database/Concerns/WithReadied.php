@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Database\Concerns;
 
-use Carbon\Carbon;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Events\PullingReadiedTenant;
+use Stancl\Tenancy\Events\ReadiedTenantPulled;
+use Stancl\Tenancy\Events\ReadyingTenant;
+use Stancl\Tenancy\Events\TenantReadied;
 
 /**
  * @property null|Carbon $readied
@@ -51,11 +54,15 @@ trait WithReadied
     {
         $tenant = static::create($attributes);
 
+        event(new ReadyingTenant($tenant));
+
         // We add the readied value only after the model has then been created.
         // this ensures the model is not marked as readied until the migrations, seeders, etc. are done
         $tenant->update([
             'readied' => now()->timestamp
         ]);
+
+        event(new TenantReadied($tenant));
     }
 
     public static function pullReadiedTenant(bool $firstOrCreate = false): ?Tenant
@@ -70,9 +77,13 @@ trait WithReadied
         // At this point we can guarantee a readied tenant is free and can be called
         $tenant = static::onlyReadied()->first();
 
+        event(new PullingReadiedTenant($tenant));
+
         $tenant->update([
             'readied' => null
         ]);
+
+        event(new ReadiedTenantPulled($tenant));
 
         return $tenant;
     }
