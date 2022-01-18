@@ -31,7 +31,7 @@ trait WithReadied
      *
      * @return void
      */
-    public function initializeSoftDeletes()
+    public function initializeWithReadied()
     {
         $this->casts['readied'] = 'datetime';
     }
