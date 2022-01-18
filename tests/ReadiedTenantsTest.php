@@ -111,11 +111,11 @@ class ReadiedTenantsTest extends TestCase
     /** @test */
     public function tenancy_can_create_if_none_are_readied()
     {
-        $this->assertDatabaseCount(Tenant::class, 0);
+        $this->assertCount(0, Tenant::all());
 
         Tenant::pullReadiedTenant(true);
 
-        $this->assertDatabaseCount(Tenant::class, 1);
+        $this->assertCount(1, Tenant::all());
     }
 
     /** @test */
