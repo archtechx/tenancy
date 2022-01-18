@@ -11,7 +11,7 @@ use Stancl\Tenancy\Events\ReadyingTenant;
 use Stancl\Tenancy\Events\TenantReadied;
 
 /**
- * @property null|Carbon $readied
+ * @property $readied
  *
  * @method static static|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder withReadied(bool $withReadied = true)
  * @method static static|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder onlyReadied()
@@ -36,7 +36,7 @@ trait WithReadied
      */
     public function initializeWithReadied()
     {
-        $this->casts['readied'] = 'datetime';
+        $this->casts['readied'] = 'timestamp';
     }
 
 

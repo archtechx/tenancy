@@ -56,10 +56,10 @@ class ReadiedTenantsTest extends TestCase
 
         Artisan::call(CreateReadiedTenants::class);
 
-        config(['tenancy.readied.older_than_days' => 4]);
+        config(['tenancy.readied.older_than_days' => 2]);
 
         tenancy()->model()->query()->onlyReadied()->first()->update([
-            'readied' => now()->subDays()
+            'readied' => now()->subDays(5)->timestamp
         ]);
 
         Artisan::call(ClearReadiedTenants::class);
