@@ -36,6 +36,22 @@ class ReadiedTenantsTest extends TestCase
     }
 
     /** @test */
+    public function readied_trait_imports_query_scopes()
+    {
+        Tenant::createReadied();
+        Tenant::create();
+        Tenant::create();
+
+        $this->assertCount(1, Tenant::onlyReadied()->get());
+
+        $this->assertCount(3, Tenant::withReadied(true)->get());
+
+        $this->assertCount(2, Tenant::withReadied(false)->get());
+
+        $this->assertCount(2, Tenant::withoutReadied()->get());
+    }
+
+    /** @test */
     public function readied_tenants_are_created_and_deleted_from_the_commands()
     {
         config(['tenancy.readied.count' => 4]);
