@@ -139,11 +139,11 @@ class ReadiedTenantsTest extends TestCase
     {
         Tenant::createReadied();
 
-        config(['tenancy.readied.include_in_scope' => false]);
+        config(['tenancy.readied.include_in_queries' => false]);
 
         $this->assertCount(0, Tenant::all());
 
-        config(['tenancy.readied.include_in_scope' => true]);
+        config(['tenancy.readied.include_in_queries' => true]);
 
         $this->assertCount(1, Tenant::all());
         Tenant::all();

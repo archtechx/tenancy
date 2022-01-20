@@ -46,7 +46,7 @@ return [
          * told otherwise with ::withReadied() or ::onlyReadied().
          * Note: when disabled, this will also ignore tenants when runnings any tenants commands (migration, seed, etc.)
          */
-        'include_in_scope' => true,
+        'include_in_queries' => true,
         /**
          * Defines how many tenants you want to be in a readied state.
          * This value should be changed depending on how often a new tenant is created

@@ -27,7 +27,7 @@ class ReadiedScope implements Scope
      */
     public function apply(Builder $builder, Model $model)
     {
-        $builder->when(!config('tenancy.readied.include_in_scope'), function (Builder $builder){
+        $builder->when(!config('tenancy.readied.include_in_queries'), function (Builder $builder){
             $builder->whereNull('data->readied');
         });
     }
