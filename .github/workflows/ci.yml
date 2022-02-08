@@ -92,7 +92,7 @@ jobs:
         TENANCY_TEST_PGSQL_HOST: postgres
         TENANCY_TEST_REDIS_HOST: redis
 
-    - name: Send code coverage to codecov
-      env:
-        CODECOV_TOKEN: 24382d15-84e7-4a55-bea4-c4df96a24a9b
-      run: bash <(curl -s https://codecov.io/bash)
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v2
+      with:
+        token: 24382d15-84e7-4a55-bea4-c4df96a24a9b
