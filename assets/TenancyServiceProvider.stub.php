@@ -49,11 +49,11 @@ class TenancyServiceProvider extends ServiceProvider
                 })->shouldBeQueued(false), // `false` by default, but you probably want to make this `true` for production.
             ],
 
-            // Readied events
-            Events\ReadyingTenant::class => [],
-            Events\TenantReadied::class => [],
-            Events\PullingReadiedTenant::class => [],
-            Events\ReadiedTenantPulled::class => [],
+            // Pending events
+            Events\CreatingPendingTenant::class => [],
+            Events\PendingTenantCreated::class => [],
+            Events\PullingPendingTenant::class => [],
+            Events\PendingTenantPulled::class => [],
 
             // Domain events
             Events\CreatingDomain::class => [],

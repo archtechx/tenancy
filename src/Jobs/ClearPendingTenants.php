@@ -12,7 +12,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Artisan;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 
-class ClearReadiedTenants implements ShouldQueue
+class ClearPendingTenants implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -23,6 +23,6 @@ class ClearReadiedTenants implements ShouldQueue
      */
     public function handle()
     {
-        Artisan::call('tenants:readied-clear');
+        Artisan::call(\Stancl\Tenancy\Commands\ClearPendingTenants::class);
     }
 }

@@ -12,7 +12,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Artisan;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 
-class CreateReadiedTenants implements ShouldQueue
+class CreatePendingTenants implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -23,6 +23,6 @@ class CreateReadiedTenants implements ShouldQueue
      */
     public function handle()
     {
-        Artisan::call('tenants:readied');
+        Artisan::call(\Stancl\Tenancy\Commands\CreatePendingTenants::class);
     }
 }

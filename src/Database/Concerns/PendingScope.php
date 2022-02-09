@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-class ReadiedScope implements Scope
+class PendingScope implements Scope
 {
 
     /**
@@ -16,7 +16,7 @@ class ReadiedScope implements Scope
      *
      * @var string[]
      */
-    protected $extensions = ['WithReadied', 'WithoutReadied', 'OnlyReadied'];
+    protected $extensions = ['WithPending', 'WithoutPending', 'OnlyPending'];
 
     /**
      * Apply the scope to a given Eloquent query builder.
@@ -27,8 +27,8 @@ class ReadiedScope implements Scope
      */
     public function apply(Builder $builder, Model $model)
     {
-        $builder->when(!config('tenancy.readied.include_in_queries'), function (Builder $builder){
-            $builder->whereNull('data->readied');
+        $builder->when(!config('tenancy.pending.include_in_queries'), function (Builder $builder){
+            $builder->whereNull('data->pending_since');
         });
     }
 
@@ -45,16 +45,16 @@ class ReadiedScope implements Scope
         }
     }
     /**
-     * Add the with-readied extension to the builder.
+     * Add the with-pending extension to the builder.
      *
      * @param  \Illuminate\Database\Eloquent\Builder  $builder
      * @return void
      */
-    protected function addWithReadied(Builder $builder)
+    protected function addWithPending(Builder $builder)
     {
-        $builder->macro('withReadied', function (Builder $builder, $withReadied = true) {
-            if (! $withReadied) {
-                return $builder->withoutReadied();
+        $builder->macro('withPending', function (Builder $builder, $withPending = true) {
+            if (! $withPending) {
+                return $builder->withoutPending();
             }
 
             return $builder->withoutGlobalScope($this);
@@ -62,32 +62,32 @@ class ReadiedScope implements Scope
     }
 
     /**
-     * Add the without-readied extension to the builder.
+     * Add the without-pending extension to the builder.
      *
      * @param  \Illuminate\Database\Eloquent\Builder  $builder
      * @return void
      */
-    protected function addWithoutReadied(Builder $builder)
+    protected function addWithoutPending(Builder $builder)
     {
-        $builder->macro('withoutReadied', function (Builder $builder) {
+        $builder->macro('withoutPending', function (Builder $builder) {
 
-            $builder->withoutGlobalScope($this)->whereNull('data->readied');
+            $builder->withoutGlobalScope($this)->whereNull('data->pending_since');
 
             return $builder;
         });
     }
 
     /**
-     * Add the only-readied extension to the builder.
+     * Add the only-pending extension to the builder.
      *
      * @param  \Illuminate\Database\Eloquent\Builder  $builder
      * @return void
      */
-    protected function addOnlyReadied(Builder $builder)
+    protected function addOnlyPending(Builder $builder)
     {
-        $builder->macro('onlyReadied', function (Builder $builder) {
+        $builder->macro('onlyPending', function (Builder $builder) {
 
-            $builder->withoutGlobalScope($this)->whereNotNull('data->readied');
+            $builder->withoutGlobalScope($this)->whereNotNull('data->pending_since');
 
             return $builder;
         });

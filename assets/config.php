@@ -37,33 +37,33 @@ return [
 
 
     /**
-     * Readied tenancy config.
+     * Pending tenancy config.
      * This is useful if you're looking for a way to always have a tenant ready to be used.
      */
-    'readied' => [
+    'pending' => [
         /**
-         * If disabled, readied tenants will be excluded from all tenant queries. Unless if
-         * told otherwise with ::withReadied() or ::onlyReadied().
+         * If disabled, pending tenants will be excluded from all tenant queries. Unless if
+         * told otherwise with ::withPending() or ::onlyPending().
          * Note: when disabled, this will also ignore tenants when runnings any tenants commands (migration, seed, etc.)
          */
         'include_in_queries' => true,
         /**
-         * Defines how many tenants you want to be in a readied state.
+         * Defines how many tenants you want to be in a pending state.
          * This value should be changed depending on how often a new tenant is created
-         * and how often you run the `tenancy:readied` command via the scheduler.
+         * and how often you run the `tenancy:pending` command via the scheduler.
          */
-        'count' => env('TENANCY_READIED_COUNT', 5),
+        'count' => env('TENANCY_PENDING_COUNT', 5),
 
         /**
-         * If needed, you can define a time limite after when an unused readied tenant
+         * If needed, you can define a time limite after when an unused pending tenant
          * will automatically be deleted.
-         * For this to work automatically, make sure to call the `tenancy:readied-clear` command in the scheduler.
+         * For this to work automatically, make sure to call the `tenancy:pending-clear` command in the scheduler.
          *
-         * If both values are set to null, not time limit will be set and all readied tenants will be deleted.
+         * If both values are set to null, not time limit will be set and all pending tenants will be deleted.
          */
-        'older_than_days' => env('TENANCY_READIED_OLDER_THAN_DAYS', null),
+        'older_than_days' => env('TENANCY_PENDING_OLDER_THAN_DAYS', null),
 
-        'older_than_hours' => env('TENANCY_READIED_OLDER_THAN_HOURS', null),
+        'older_than_hours' => env('TENANCY_PENDING_OLDER_THAN_HOURS', null),
     ],
 
     /**
