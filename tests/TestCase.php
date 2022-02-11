@@ -48,7 +48,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     protected function getEnvironmentSetUp($app)
     {
         if (file_exists(__DIR__ . '/../.env')) {
-            \Dotenv\Dotenv::create(__DIR__ . '/..')->load();
+            \Dotenv\Dotenv::createImmutable(__DIR__ . '/..')->load();
         }
 
         $app['config']->set([
