@@ -27,9 +27,9 @@ trait HasATenantsOption
             ->cursor();
     }
 
-    protected function withPending(): bool
+    protected function withPending(): ?bool
     {
-        return $this->option('with-pending');
+        return $this->option('with-pending') ? true : null;
     }
 
     public function __construct()
