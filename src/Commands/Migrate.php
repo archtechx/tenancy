@@ -63,6 +63,6 @@ class Migrate extends MigrateCommand
             parent::handle();
 
             event(new DatabaseMigrated($tenant));
-        });
+        }, $this->withPending());
     }
 }

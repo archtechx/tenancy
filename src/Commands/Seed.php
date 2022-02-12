@@ -59,6 +59,6 @@ class Seed extends SeedCommand
             parent::handle();
 
             event(new DatabaseSeeded($tenant));
-        });
+        }, $this->withPending());
     }
 }

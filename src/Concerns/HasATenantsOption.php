@@ -13,6 +13,7 @@ trait HasATenantsOption
     {
         return array_merge([
             ['tenants', null, InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, '', null],
+            ['with-pending', null, InputOption::VALUE_NONE, 'include pending tenants in query', null],
         ], parent::getOptions());
     }
 
@@ -24,6 +25,11 @@ trait HasATenantsOption
                 $query->whereIn(tenancy()->model()->getTenantKeyName(), $this->option('tenants'));
             })
             ->cursor();
+    }
+
+    protected function withPending(): bool
+    {
+        return $this->option('with-pending');
     }
 
     public function __construct()

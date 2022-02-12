@@ -52,6 +52,6 @@ class Run extends Command
 
             // Run command
             $this->call($this->argument('commandname'), array_merge($arguments, $options));
-        });
+        }, $this->withPending());
     }
 }

@@ -169,4 +169,28 @@ class PendingTenantsTest extends TestCase
         Event::assertDispatched(PullingPendingTenant::class);
         Event::assertDispatched(PendingTenantPulled::class);
     }
+
+    /** @test */
+    public function tenancy_run_for_multiple_can_scope_pending_tenants()
+    {
+        config(['tenancy.pending.include_in_queries' => false]);
+
+        Tenant::createPending();
+        Tenant::create();
+
+        $executedCount = 0;
+        tenancy()->runForMultiple([], function () use (&$executedCount){
+            $executedCount++;
+        }, false);
+
+        self::assertEquals(1, $executedCount);
+
+        $executedCount = 0;
+
+        tenancy()->runForMultiple([], function () use (&$executedCount){
+            $executedCount++;
+        }, true);
+
+        self::assertEquals(2, $executedCount);
+    }
 }
