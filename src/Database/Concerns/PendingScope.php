@@ -71,7 +71,11 @@ class PendingScope implements Scope
     {
         $builder->macro('withoutPending', function (Builder $builder) {
 
-            $builder->withoutGlobalScope($this)->whereNull('data->pending_since');
+            // Only use whereNull('data->pending_since') when Laravel 6 support is dropped
+            // Issue fixed in Laravel 7 https://github.com/laravel/framework/pull/32417
+            $builder->withoutGlobalScope($this)
+                ->where('data->pending_since', 'like', 'null')
+                ->orWhereNull('data');
 
             return $builder;
         });
@@ -87,7 +91,9 @@ class PendingScope implements Scope
     {
         $builder->macro('onlyPending', function (Builder $builder) {
 
-            $builder->withoutGlobalScope($this)->whereNotNull('data->pending_since');
+            // Use whereNotNull when Laravel 6 is dropped
+            // Issue fixed in Laravel 7 https://github.com/laravel/framework/pull/32417
+            $builder->withoutGlobalScope($this)->where('data->pending_since', 'not like', 'null');
 
             return $builder;
         });
