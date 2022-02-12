@@ -13,7 +13,7 @@ class CreatePendingTenants extends Command
      *
      * @var string
      */
-    protected $signature = 'tenants:pending {--count= The number of tenant to be in a pending state}';
+    protected $signature = 'tenants:pending {--count= : The number of tenant to be in a pending state}';
 
     /**
      * The console command description.
@@ -29,9 +29,9 @@ class CreatePendingTenants extends Command
      */
     public function handle()
     {
-        $this->info('Deploying pendgin tenants.');
+        $this->info('Deploying pending tenants.');
 
-        $pendingObjectifCount = (int)config('tenancy.pending.count');
+        $pendingObjectifCount = (int) ($this->option('count') ?? config('tenancy.pending.count'));
 
         $pendingCurrentCount = $this->getPendingTenantCount();
 
