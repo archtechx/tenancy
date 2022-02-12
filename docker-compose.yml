@@ -25,7 +25,6 @@ services:
         stdin_open: true
         tty: true
     mysql:
-        platform: linux/x86_64
         image: mysql:5.7
         environment:
             MYSQL_ROOT_PASSWORD: password
@@ -37,7 +36,6 @@ services:
             timeout: 10s
             retries: 10
     mysql2:
-        platform: linux/x86_64
         image: mysql:5.7
         environment:
             MYSQL_ROOT_PASSWORD: password
@@ -49,7 +47,6 @@ services:
             timeout: 10s
             retries: 10
     postgres:
-        platform: linux/x86_64
         image: postgres:11
         environment:
             POSTGRES_PASSWORD: password
