@@ -47,7 +47,7 @@ class CreatePendingTenants extends Command
 
         $this->info("$deployedCount tenants deployed, $pendingObjectifCount tenant(s) are ready to be used.");
 
-        return self::SUCCESS;
+        return 1;
     }
 
     /**
