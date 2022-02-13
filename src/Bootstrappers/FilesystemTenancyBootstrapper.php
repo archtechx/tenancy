@@ -64,6 +64,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
                 storage_path(),
                 $this->app['config']["tenancy.filesystem.root_override.{$disk}"] ?? ''
             )) {
+                $root = $this->app['config']["filesystems.disks.{$disk}.root"];
                 $root .= '/' . $suffix;
             }
 
