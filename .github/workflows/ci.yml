@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         php: ["7.4", "8.0"]
-        laravel: ["^6.0", "^8.0"]
+        laravel: ["^6.0", "^8.0", "^9.0"]
 
     steps:
     - uses: actions/checkout@v2
