@@ -87,6 +87,7 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\Seed::class,
             Commands\Install::class,
             Commands\Migrate::class,
+            Commands\Rollback::class,
             Commands\TenantList::class,
             Commands\TenantDump::class,
             Commands\MigrateFresh::class,
