@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Events\TenancyEnded;
@@ -94,6 +95,10 @@ class CommandsTest extends TestCase
     /** @test */
     public function migrate_command_loads_schema_state()
     {
+        if ((int) Str::before($this->app->version(), '.') < 8) {
+            $this->markTestSkipped("'Laravel version doesn't support schema dumps.'");
+        }
+
         $tenant = Tenant::create();
 
         $this->assertFalse(Schema::hasTable('schema_users'));
@@ -114,6 +119,10 @@ class CommandsTest extends TestCase
     /** @test */
     public function dump_command_works()
     {
+        if ((int) Str::before($this->app->version(), '.') < 9) {
+            $this->markTestSkipped("'Laravel version doesn't support schema dumps.'");
+        }
+
         $tenant = Tenant::create();
         Artisan::call('tenants:migrate');
 

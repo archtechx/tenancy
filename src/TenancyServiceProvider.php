@@ -6,6 +6,7 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Cache\CacheManager;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Domain;
 use Stancl\Tenancy\Contracts\Tenant;
@@ -86,11 +87,13 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\Seed::class,
             Commands\Install::class,
             Commands\Migrate::class,
-            Commands\Rollback::class,
-            Commands\TenantDump::class,
             Commands\TenantList::class,
             Commands\MigrateFresh::class,
         ]);
+
+        if ((int) Str::before($this->app->version(), '.') >= 8) {
+            $this->commands([Commands\TenantDump::class]);
+        }
 
         $this->publishes([
             __DIR__ . '/../assets/config.php' => config_path('tenancy.php'),
