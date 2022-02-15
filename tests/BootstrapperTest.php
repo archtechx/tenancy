@@ -194,7 +194,7 @@ class BootstrapperTest extends TestCase
         // Check that disk prefixes respect the root_override logic
         $this->assertSame($expected_storage_path . '/app/', $this->getDiskPrefix('local'));
         $this->assertSame($expected_storage_path . '/app/public/', $this->getDiskPrefix('public'));
-        $this->assertSame('/tenant' . tenant('id') . '/', $this->getDiskPrefix('s3'));
+        $this->assertSame('tenant' . tenant('id') . '/', ltrim($this->getDiskPrefix('s3'), '/'));
 
         // Check suffixing logic
         $new_storage_path = storage_path();
