@@ -24,7 +24,7 @@ ENV LANG=en_GB.UTF-8
 
 # install some OS packages we need
 RUN apt-get update
-RUN apt-get install -y --no-install-recommends libfreetype6-dev libjpeg62-turbo-dev libpng-dev libgmp-dev libldap2-dev netcat curl sqlite3 libsqlite3-dev libpq-dev libzip-dev unzip vim-tiny gosu git
+RUN apt-get install -y --no-install-recommends libfreetype6-dev libjpeg62-turbo-dev libpng-dev libgmp-dev libldap2-dev netcat curl sqlite3 libsqlite3-dev libpq-dev libzip-dev unzip vim-tiny gosu git default-mysql-client
     # install php extensions
 RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
     # && if [ "${PHP_VERSION}" = "7.4" ]; then docker-php-ext-configure gd --with-freetype --with-jpeg; else docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/; fi \
