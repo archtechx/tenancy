@@ -208,7 +208,7 @@ class BootstrapperTest extends TestCase
         $adapter = $disk->getAdapter();
 
         if (! Str::startsWith(app()->version(), '9.')) {
-            return $adapter->getPrefix();
+            return $adapter->getPathPrefix();
         }
 
         $prefixer = (new ReflectionObject($adapter))->getProperty('prefixer');
