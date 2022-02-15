@@ -4,23 +4,27 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Filesystem\FilesystemAdapter;
+use ReflectionObject;
+use ReflectionProperty;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Stancl\JobPipeline\JobPipeline;
+use Stancl\Tenancy\Tests\Etc\Tenant;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
-use Stancl\JobPipeline\JobPipeline;
-use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
-use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
-use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
-use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Events\TenancyEnded;
-use Stancl\Tenancy\Events\TenancyInitialized;
-use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Tests\Etc\Tenant;
+use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 
 class BootstrapperTest extends TestCase
 {
@@ -165,6 +169,7 @@ class BootstrapperTest extends TestCase
         $tenant2 = Tenant::create();
 
         tenancy()->initialize($tenant1);
+
         Storage::disk('public')->put('foo', 'bar');
         $this->assertSame('bar', Storage::disk('public')->get('foo'));
 
@@ -184,9 +189,38 @@ class BootstrapperTest extends TestCase
         $this->assertFalse(Storage::disk('public')->exists('foo'));
         $this->assertFalse(Storage::disk('public')->exists('abc'));
 
+        $expected_storage_path = $old_storage_path . '/tenant' . tenant('id'); // /tenant = suffix base
+
+        // Check that disk prefixes respect the root_override logic
+        $this->assertSame($expected_storage_path . '/app/', $this->getDiskPrefix('local'));
+        $this->assertSame($expected_storage_path . '/app/public/', $this->getDiskPrefix('public'));
+        $this->assertSame('/tenant' . tenant('id') . '/', $this->getDiskPrefix('s3'));
+
         // Check suffixing logic
         $new_storage_path = storage_path();
-        $this->assertEquals($old_storage_path . '/' . config('tenancy.filesystem.suffix_base') . tenant('id'), $new_storage_path);
+        $this->assertEquals($expected_storage_path, $new_storage_path);
+    }
+
+    protected function getDiskPrefix(string $disk): string
+    {
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk($disk);
+        $adapter = $disk->getAdapter();
+
+        if (! Str::startsWith(app()->version(), '9.')) {
+            return $adapter->getPrefix();
+        }
+
+        $prefixer = (new ReflectionObject($adapter))->getProperty('prefixer');
+        $prefixer->setAccessible(true);
+
+        // reflection -> instance
+        $prefixer = $prefixer->getValue($adapter);
+
+        $prefix = (new ReflectionProperty($prefixer, 'prefix'));
+        $prefix->setAccessible(true);
+
+        return $prefix->getValue($prefixer);
     }
 
     // for queues see QueueTest
