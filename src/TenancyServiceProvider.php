@@ -88,12 +88,9 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\Install::class,
             Commands\Migrate::class,
             Commands\TenantList::class,
+            Commands\TenantDump::class,
             Commands\MigrateFresh::class,
         ]);
-
-        if ((int) Str::before($this->app->version(), '.') >= 8) {
-            $this->commands([Commands\TenantDump::class]);
-        }
 
         $this->publishes([
             __DIR__ . '/../assets/config.php' => config_path('tenancy.php'),
