@@ -26,7 +26,3 @@ jobs:
       run: docker-compose exec -T test composer require --no-interaction "laravel/framework:${{ matrix.laravel }}"
     - name: Run tests
       run: ./test
-    - name: Send code coverage to codecov
-      env:
-        CODECOV_TOKEN: 24382d15-84e7-4a55-bea4-c4df96a24a9b
-      run: bash <(curl -s https://codecov.io/bash)
