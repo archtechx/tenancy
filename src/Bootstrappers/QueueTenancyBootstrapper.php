@@ -75,14 +75,20 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
 
     protected static function initializeTenancyForQueue($tenantId)
     {
-        // The job is not tenant-aware
         if (! $tenantId) {
+            // The job is not tenant-aware
+            if (tenancy()->initialized) {
+                // Tenancy was initialized, so we revert back to the central context
+                tenancy()->end();
+            }
+
             return;
         }
 
         if (tenancy()->initialized) {
+            // Tenancy is already initialized
             if (tenant()->getTenantKey() === $tenantId) {
-                // Tenancy is already initialized for the tenant (e.g. dispatchNow was used)
+                // It's initialized for the same tenant (e.g. dispatchNow was used, or the previous job also ran for this tenant)
                 return;
             }
         }
