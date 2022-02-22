@@ -40,7 +40,7 @@ final class MigrateFresh extends Command
             $this->info('Dropping tables.');
             $this->call('db:wipe', array_filter([
                 '--database' => 'tenant',
-                '--drop-views' =>  $this->option('drop-views'),
+                '--drop-views' => $this->option('drop-views'),
                 '--force' => true,
             ]));
 
