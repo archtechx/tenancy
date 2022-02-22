@@ -36,13 +36,11 @@ final class MigrateFresh extends Command
      */
     public function handle()
     {
-        $dropViewsFlag = $this->option('drop-views');
-
-        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) use ($dropViewsFlag) {
+        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
             $this->info('Dropping tables.');
             $this->call('db:wipe', array_filter([
                 '--database' => 'tenant',
-                '--drop-views' =>  $dropViewsFlag,
+                '--drop-views' =>  $this->option('drop-views'),
                 '--force' => true,
             ]));
 
