@@ -244,6 +244,30 @@ class QueueTest extends TestCase
 
         $this->assertSame('The current tenant id is: acme', $this->valuestore->get('tenant_id'));
     }
+
+    /** @test */
+    public function job_can_be_when_not_initialized_inside_queues()
+    {
+        $tenant = Tenant::create([
+            'id' => 'acme',
+        ]);
+
+        tenancy()->initialize($tenant);
+
+        dispatch(new TestJobDeleted($this->valuestore));
+
+        $this->assertEquals(1, \Illuminate\Support\Facades\Queue::size());
+        $this->assertFalse($this->valuestore->has('tenant_id'));
+
+        tenancy()->end();
+        $tenant->delete();
+
+        $this->artisan('queue:work --once');
+
+        $this->assertFalse($this->valuestore->has('tenant_id'));
+        $this->assertEquals(0, \Illuminate\Support\Facades\Queue::size());
+    }
+
 }
 
 class TestJob implements ShouldQueue
@@ -281,3 +305,25 @@ class TestJob implements ShouldQueue
         }
     }
 }
+
+
+class TestJobDeleted implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    /** @var Valuestore */
+    protected $valuestore;
+
+    public $deleteWhenCannotIdentify = true;
+
+    public function __construct(Valuestore $valuestore)
+    {
+        $this->valuestore = $valuestore;
+    }
+
+    public function handle()
+    {
+        $this->valuestore->put('tenant_id', tenant('id'));
+    }
+}
+

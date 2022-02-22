@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Bootstrappers;
 use Illuminate\Support\Str;
 use Illuminate\Config\Repository;
 use Illuminate\Queue\QueueManager;
+use ReflectionClass;
 use Stancl\Tenancy\Contracts\Tenant;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
@@ -16,6 +17,8 @@ use Illuminate\Queue\Events\JobRetryRequested;
 use Illuminate\Support\Testing\Fakes\QueueFake;
 use Illuminate\Contracts\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
+use Stancl\Tenancy\Exceptions\TenancyNotInitializedException;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedById;
 
 class QueueTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -58,7 +61,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         $dispatcher->listen(JobProcessing::class, function ($event) use (&$previousTenant) {
             $previousTenant = tenant();
 
-            static::initializeTenancyForQueue($event->job->payload()['tenant_id'] ?? null);
+            static::initializeTenancyForQueue($event);
         });
 
         if (Str::startsWith(app()->version(), '8')) {
@@ -66,7 +69,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             $dispatcher->listen(JobRetryRequested::class, function ($event) use (&$previousTenant) {
                 $previousTenant = tenant();
 
-                static::initializeTenancyForQueue($event->payload()['tenant_id'] ?? null);
+                static::initializeTenancyForQueue($event);
             });
         }
 
@@ -81,8 +84,11 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         $dispatcher->listen(JobFailed::class, $revertToPreviousState); // artisan('queue:work') which fails
     }
 
-    protected static function initializeTenancyForQueue($tenantId)
+    protected static function initializeTenancyForQueue($event)
     {
+        $tenantId = $event->payload()['tenant_id'] ?? null;
+
+
         if (! $tenantId) {
             // The job is not tenant-aware
             if (tenancy()->initialized) {
@@ -99,7 +105,11 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
                 tenancy()->end();
             }
 
-            tenancy()->initialize(tenancy()->find($tenantId));
+            try {
+                tenancy()->initialize($tenantId);
+            } catch (TenantCouldNotBeIdentifiedById $e) {
+                static::handleTenantCouldNotBeFound($event->job, $e);
+            }
 
             return;
         }
@@ -114,7 +124,11 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
 
         // Tenancy was either not initialized, or initialized for a different tenant.
         // Therefore, we initialize it for the correct tenant.
-        tenancy()->initialize(tenancy()->find($tenantId));
+        try {
+            tenancy()->initialize($tenantId);
+        } catch (TenantCouldNotBeIdentifiedById $e) {
+            static::handleTenantCouldNotBeFound($event->job, $e);
+        }
     }
 
     protected static function revertToPreviousState($event, &$previousTenant)
@@ -146,6 +160,25 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
                 return $bootstrapper->getPayload($connection);
             });
         }
+    }
+
+    protected static function handleTenantCouldNotBeFound($job, \Throwable $e)
+    {
+        $class = $job->resolveName();
+
+        try {
+            $shouldDelete = (new ReflectionClass($class))
+                    ->getDefaultProperties()['deleteWhenCannotIdentify'] ?? false;
+        } catch (\Throwable $e) {
+            $shouldDelete = false;
+        }
+
+        if ($shouldDelete) {
+            return $job->delete();
+        }
+
+        return $job->fail($e);
+
     }
 
     public function bootstrap(Tenant $tenant)
