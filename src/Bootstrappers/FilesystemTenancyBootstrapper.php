@@ -57,19 +57,20 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         Storage::forgetDisk($this->app['config']['tenancy.filesystem.disks']);
 
         foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
-            $root = $this->app['config']->get("filesystems.disks.{$disk}.root");
-            $this->originalPaths['disks'][$disk] = $root;
+            $originalRoot = $this->app['config']["filesystems.disks.{$disk}.root"];
+            $this->originalPaths['disks'][$disk] = $originalRoot;
 
-            if (!($root = str_replace(
+            $finalPrefix = str_replace(
                 '%storage_path%',
                 storage_path(),
-                $this->app['config']["tenancy.filesystem.root_override.{$disk}"] ?? ''
-            ))) {
-                $root = "{$root}/{$suffix}";
+                $this->app['config']["tenancy.filesystem.root_override.{$disk}"] ?? '',
+            );
+
+            if (! $finalPrefix) {
+                $finalPrefix = $originalRoot . '/'. $suffix;
             }
 
-            $this->app['config']["filesystems.disks.{$disk}.root"] = $root;
-
+            $this->app['config']["filesystems.disks.{$disk}.root"] = $finalPrefix;
         }
     }
 
