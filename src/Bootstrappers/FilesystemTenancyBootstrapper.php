@@ -58,12 +58,14 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             /** @var FilesystemAdapter $filesystemDisk */
             $filesystemDisk = Storage::disk($disk);
             $this->originalPaths['disks'][$disk] = $filesystemDisk->getAdapter()->getPathPrefix();
+            $subject = $this->app['config']["tenancy.filesystem.root_override.{$disk}"] ?? '';
 
             if ($root = str_replace(
                 '%storage_path%',
                 storage_path(),
-                $this->app['config']["tenancy.filesystem.root_override.{$disk}"] ?? ''
+                $subject
             )) {
+                $root = str_replace('%tenant%', $suffix, $subject);
                 $filesystemDisk->getAdapter()->setPathPrefix($finalPrefix = $root);
             } else {
                 $root = $this->app['config']["filesystems.disks.{$disk}.root"];
