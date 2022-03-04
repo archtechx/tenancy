@@ -65,7 +65,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
                 storage_path(),
                 $subject
             )) {
-                $root = str_replace('%tenant%', $suffix, $subject);
+                $root = str_replace('%tenant%', $suffix, $root);
                 $filesystemDisk->getAdapter()->setPathPrefix($finalPrefix = $root);
             } else {
                 $root = $this->app['config']["filesystems.disks.{$disk}.root"];
