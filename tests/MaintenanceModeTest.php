@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Artisan;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Database\Concerns\MaintenanceMode;
 use Stancl\Tenancy\Middleware\CheckTenantForMaintenanceMode;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Tests\Etc\Tenant;
-use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class MaintenanceModeTest extends TestCase
 {
