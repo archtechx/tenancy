@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Artisan;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Database\Concerns\MaintenanceMode;
 use Stancl\Tenancy\Middleware\CheckTenantForMaintenanceMode;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 
 class MaintenanceModeTest extends TestCase
 {
@@ -32,8 +34,9 @@ class MaintenanceModeTest extends TestCase
 
         $tenant->putDownForMaintenance();
 
-        $this->get('http://acme.localhost/foo')
-            ->assertStatus(503);
+        $this->expectException(HttpException::class);
+        $this->withoutExceptionHandling()
+            ->get('http://acme.localhost/foo');
 
         tenancy()->end();
 
@@ -65,8 +68,9 @@ class MaintenanceModeTest extends TestCase
 
         Artisan::call('tenancy:down');
 
-        $this->get('http://acme.localhost/foo')
-            ->assertStatus(503);
+        $this->expectException(HttpException::class);
+        $this->withoutExceptionHandling()
+            ->get('http://acme.localhost/foo');
 
         tenancy()->end();
 

@@ -48,7 +48,11 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     protected function getEnvironmentSetUp($app)
     {
         if (file_exists(__DIR__ . '/../.env')) {
-            \Dotenv\Dotenv::create(__DIR__ . '/..')->load();
+            if (method_exists(\Dotenv\Dotenv::class, 'createImmutable')) {
+                \Dotenv\Dotenv::createImmutable(__DIR__ . '/..')->load();
+            } else {
+                \Dotenv\Dotenv::create(__DIR__ . '/..')->load();
+            }
         }
 
         $app['config']->set([
@@ -83,6 +87,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'public',
                 's3',
             ],
+            'filesystems.disks.s3.bucket' => 'foo',
             'tenancy.redis.tenancy' => env('TENANCY_TEST_REDIS_TENANCY', true),
             'database.redis.client' => env('TENANCY_TEST_REDIS_CLIENT', 'phpredis'),
             'tenancy.redis.prefixed_connections' => ['default'],

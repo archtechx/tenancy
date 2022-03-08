@@ -55,6 +55,11 @@ class QueueTest extends TestCase
         $this->valuestore = Valuestore::make(__DIR__ . '/Etc/tmp/queuetest.json')->flush();
     }
 
+    public function tearDown(): void
+    {
+        $this->valuestore->flush();
+    }
+
     protected function withFailedJobs()
     {
         Schema::connection('central')->create('failed_jobs', function (Blueprint $table) {
