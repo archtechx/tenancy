@@ -87,6 +87,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'public',
                 's3',
             ],
+            'filesystems.disks.s3.bucket' => 'foo',
             'tenancy.redis.tenancy' => env('TENANCY_TEST_REDIS_TENANCY', true),
             'database.redis.client' => env('TENANCY_TEST_REDIS_CLIENT', 'phpredis'),
             'tenancy.redis.prefixed_connections' => ['default'],

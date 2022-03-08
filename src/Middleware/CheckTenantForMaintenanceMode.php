@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Middleware;
 
 use Closure;
-use Illuminate\Foundation\Http\Exceptions\MaintenanceModeException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode;
 use Stancl\Tenancy\Exceptions\TenancyNotInitializedException;
 use Symfony\Component\HttpFoundation\IpUtils;
@@ -29,7 +29,12 @@ class CheckTenantForMaintenanceMode extends CheckForMaintenanceMode
                 return $next($request);
             }
 
-            throw new MaintenanceModeException($data['time'], $data['retry'], $data['message']);
+            throw new HttpException(
+                503,
+                'Service Unavailable',
+                null,
+                isset($data['retry']) ? ['Retry-After' => $data['retry']] : []
+            );
         }
 
         return $next($request);
