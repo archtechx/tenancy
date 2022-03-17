@@ -30,8 +30,10 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
      *
      * This is useful when you're changing the tenant's state (e.g. properties in the `data` column) and want the next job to initialize tenancy again
      * with the new data. Features like the Tenant Config are only executed when tenancy is initialized, so the re-initialization is needed in some cases.
+     *
+     * @var bool
      */
-    public static bool $forceRefresh = false;
+    public static $forceRefresh = false;
 
     /**
      * The normal constructor is only executed after tenancy is bootstrapped.
