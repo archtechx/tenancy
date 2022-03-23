@@ -67,7 +67,9 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             );
 
             if (! $finalPrefix) {
-                $finalPrefix = $originalRoot . '/'. $suffix;
+                $finalPrefix = $originalRoot
+                    ? $originalRoot . '/'. $suffix
+                    : $suffix;
             }
 
             $this->app['config']["filesystems.disks.{$disk}.root"] = $finalPrefix;
