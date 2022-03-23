@@ -1,5 +1,0 @@
-services:
-  mysql:
-    platform: linux/amd64
-  mysql2:
-    platform: linux/amd64

@@ -9,3 +9,4 @@ phpunit_var_*.xml
 coverage/
 clover.xml
 tests/Etc/tmp/queuetest.json
+docker-compose.override.yml
