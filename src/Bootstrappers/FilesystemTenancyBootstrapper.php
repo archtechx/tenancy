@@ -68,7 +68,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
             if (! $finalPrefix) {
                 $finalPrefix = $originalRoot
-                    ? $originalRoot . '/'. $suffix
+                    ? rtrim($originalRoot, '/') . '/'. $suffix
                     : $suffix;
             }
 
