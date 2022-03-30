@@ -23,7 +23,7 @@ final class MigrateFresh extends Command
     public function __construct()
     {
         parent::__construct();
-        
+
         $this->addOption('--drop-views', null, InputOption::VALUE_NONE, 'Drop views along with tenant tables.', null);
 
         $this->setName('tenants:migrate-fresh');

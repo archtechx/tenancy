@@ -16,7 +16,7 @@ class Rollback extends RollbackCommand
 {
     use HasATenantsOption, DealsWithMigrations, ExtendsLaravelCommand;
 
-    protected static function getTenantCommandName()
+    protected static function getTenantCommandName(): string
     {
         return 'tenants:rollback';
     }

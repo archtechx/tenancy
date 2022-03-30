@@ -6,21 +6,18 @@ trait ExtendsLaravelCommand
 {
     protected function specifyTenantSignature(): void
     {
-        $this->setName('tenants:migrate');
         $this->specifyParameters();
     }
 
     public function getName(): ?string
     {
-        return static::getDefaultName();
+        return static::getTenantCommandName();
     }
 
     public static function getDefaultName(): ?string
     {
-        if (method_exists(static::class, 'getTenantCommandName')) {
-            return static::getTenantCommandName();
-        }
-
-        return 'tenants:' . parent::getDefaultName();
+        return static::getTenantCommandName();
     }
+
+    abstract protected static function getTenantCommandName(): string;
 }

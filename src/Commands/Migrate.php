@@ -19,11 +19,16 @@ class Migrate extends MigrateCommand
 
     protected $description = 'Run migrations for tenant(s)';
 
+    protected static function getTenantCommandName(): string
+    {
+        return 'tenants:migrate';
+    }
+
     public function __construct(Migrator $migrator, Dispatcher $dispatcher)
     {
         parent::__construct($migrator, $dispatcher);
 
-        $this->specifyTenantSignature();
+        $this->specifyParameters();
     }
 
     /**
