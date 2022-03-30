@@ -7,7 +7,6 @@ namespace Stancl\Tenancy\TenantDatabaseManagers;
 use Stancl\Tenancy\Concerns\CreatesDatabaseUsers;
 use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
 use Stancl\Tenancy\DatabaseConfig;
-use Stancl\Tenancy\Exceptions\TenantDatabaseUserAlreadyExistsException;
 
 class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager implements ManagesDatabaseUsers
 {
@@ -25,10 +24,6 @@ class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager impl
         $username = $databaseConfig->getUsername();
         $hostname = $databaseConfig->connection()['host'];
         $password = $databaseConfig->getPassword();
-
-        if ($this->userExists($username)) {
-            throw new TenantDatabaseUserAlreadyExistsException($username);
-        }
 
         $this->database()->statement("CREATE USER `{$username}`@`%` IDENTIFIED BY '{$password}'");
 
