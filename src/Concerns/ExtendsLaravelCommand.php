@@ -4,6 +4,12 @@ namespace Stancl\Tenancy\Concerns;
 
 trait ExtendsLaravelCommand
 {
+    protected function specifyTenantSignature(): void
+    {
+        $this->setName('tenants:migrate');
+        $this->specifyParameters();
+    }
+
     public function getName(): ?string
     {
         return static::getDefaultName();

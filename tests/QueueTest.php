@@ -67,6 +67,11 @@ class QueueTest extends TestCase
         $valueStorePath = __DIR__ . '/Etc/tmp/queuetest.json';
 
         if (! file_exists($valueStorePath)) {
+            // The directory sometimes goes missing as well when the file is deleted in git
+            if (! is_dir(__DIR__ . '/Etc/tmp')) {
+                mkdir(__DIR__ . '/Etc/tmp');
+            }
+
             file_put_contents($valueStorePath, '');
         }
 

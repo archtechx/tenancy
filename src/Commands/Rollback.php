@@ -37,7 +37,7 @@ class Rollback extends RollbackCommand
     {
         parent::__construct($migrator);
 
-        $this->specifyParameters();
+        $this->specifyTenantSignature();
     }
 
     /**

@@ -23,8 +23,7 @@ class Migrate extends MigrateCommand
     {
         parent::__construct($migrator, $dispatcher);
 
-        // Add the --tenants option
-        $this->specifyParameters();
+        $this->specifyTenantSignature();
     }
 
     /**
