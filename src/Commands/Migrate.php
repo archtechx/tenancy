@@ -31,9 +31,11 @@ class Migrate extends MigrateCommand
      */
     public function __construct(Migrator $migrator, Dispatcher $dispatcher)
     {
+        // Turn 'migrate {-- ...}' into 'tenants:migrate {-- ...}'
+        $this->signature = 'tenants:' . $this->signature;
+
         parent::__construct($migrator, $dispatcher);
 
-        $this->setName('tenants:migrate');
         $this->specifyParameters();
     }
 
