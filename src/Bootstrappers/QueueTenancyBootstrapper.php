@@ -63,8 +63,8 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             static::initializeTenancyForQueue($event->job->payload()['tenant_id'] ?? null);
         });
 
-        if (Str::startsWith(app()->version(), '8')) {
-            // JobRetryRequested only exists since Laravel 8
+        if (version_compare(app()->version(), '8.64', '>=')) {
+            // JobRetryRequested only exists since Laravel 8.64
             $dispatcher->listen(JobRetryRequested::class, function ($event) use (&$previousTenant) {
                 $previousTenant = tenant();
 
