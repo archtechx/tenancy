@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\TenantDatabaseManagers;
 
 use Illuminate\Database\Connection;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
@@ -47,8 +46,11 @@ class PostgreSQLSchemaManager implements TenantDatabaseManager
 
     public function makeConnectionConfig(array $baseConfig, string $databaseName): array
     {
-        Arr::has($baseConfig, 'search_path') ? $baseConfig['search_path'] = $databaseName : null;
-        Arr::has($baseConfig, 'schema') ? $baseConfig['schema'] = $databaseName : null;
+        if (version_compare(app()->version(), '9.0', '>=')) {
+            $baseConfig['search_path'] = $databaseName;
+        } else {
+            $baseConfig['schema'] = $databaseName;
+        }
 
         return $baseConfig;
     }
