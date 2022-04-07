@@ -194,7 +194,11 @@ class TenantDatabaseManagerTest extends TestCase
         ]);
         tenancy()->initialize($tenant);
 
-        $this->assertSame($tenant->database()->getName(), config('database.connections.' . config('database.default') . '.schema'));
+        if (config('database.connections.' . config('database.default') . '.search_path') !== null) {
+            $this->assertSame($tenant->database()->getName(), config('database.connections.' . config('database.default') . '.search_path'));
+        } else {
+            $this->assertSame($tenant->database()->getName(), config('database.connections.' . config('database.default') . '.schema'));
+        }
         $this->assertSame($originalDatabaseName, config(['database.connections.pgsql.database']));
     }
 
