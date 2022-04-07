@@ -194,7 +194,7 @@ class TenantDatabaseManagerTest extends TestCase
         ]);
         tenancy()->initialize($tenant);
 
-        $schemaConfig = config('database.connections.' . config('database.default') . '.search_path') !== null ? 
+        $schemaConfig = version_compare(app()->version(), '9.0', '>=') ? 
             config('database.connections.' . config('database.default') . '.search_path') :
             config('database.connections.' . config('database.default') . '.schema');
 
