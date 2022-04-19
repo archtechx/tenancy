@@ -55,7 +55,7 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
 
     protected function setCurrentDomain(Tenant $tenant, string $domain): void
     {
-        static::$currentDomain = $tenant->domains->where('domain', $domain)->first();
+        static::$currentDomain = $tenant->domains()->where('domain', $domain)->first();
     }
 
     public function getArgsForTenant(Tenant $tenant): array
