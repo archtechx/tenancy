@@ -63,12 +63,12 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             $finalPrefix = str_replace(
                 '%storage_path%',
                 storage_path(),
-                $this->app['config']["tenancy.filesystem.root_override.{$disk}"] ?? '',
+                $this->app['config']["tenancy.filesystem.root_override.{$disk}"] ?? ''
             );
 
-            if (! $finalPrefix) {
+            if (!$finalPrefix) {
                 $finalPrefix = $originalRoot
-                    ? rtrim($originalRoot, '/') . '/'. $suffix
+                    ? rtrim($originalRoot, '/') . '/' . $suffix
                     : $suffix;
             }
 
