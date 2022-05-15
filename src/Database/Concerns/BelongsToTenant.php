@@ -16,7 +16,7 @@ trait BelongsToTenant
 
     public function tenant()
     {
-        return $this->belongsTo(config('tenancy.tenant_model'), static::$tenantIdColumn);
+        return $this->belongsTo(config('tenancy.tenant_model'), BelongsToTenant::$tenantIdColumn);
     }
 
     public static function bootBelongsToTenant()
@@ -24,9 +24,9 @@ trait BelongsToTenant
         static::addGlobalScope(new TenantScope);
 
         static::creating(function ($model) {
-            if (! $model->getAttribute(static::$tenantIdColumn) && ! $model->relationLoaded('tenant')) {
+            if (! $model->getAttribute(BelongsToTenant::$tenantIdColumn) && ! $model->relationLoaded('tenant')) {
                 if (tenancy()->initialized) {
-                    $model->setAttribute(static::$tenantIdColumn, tenant()->getTenantKey());
+                    $model->setAttribute(BelongsToTenant::$tenantIdColumn, tenant()->getTenantKey());
                     $model->setRelation('tenant', tenant());
                 }
             }
