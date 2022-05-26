@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
@@ -61,8 +60,8 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             $this->originalPaths['disks'][$disk] = $originalRoot;
 
             $finalPrefix = str_replace(
-                '%storage_path%',
-                storage_path(),
+                ['%storage_path%', '%tenant%'],
+                [storage_path(), $tenant->getTenantKey()],
                 $this->app['config']["tenancy.filesystem.root_override.{$disk}"] ?? '',
             );
 
