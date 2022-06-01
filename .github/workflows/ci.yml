@@ -15,8 +15,11 @@ jobs:
 
     strategy:
       matrix:
-        php: ["7.4", "8.0.11"]
-        laravel: ["^6.0", "^8.0"]
+        php: ["7.3", "8.0"]
+        laravel: ["^6.0", "^8.0", "^9.0"]
+        exclude:
+          - laravel: "^9.0"
+            php: "7.3"
 
     steps:
     - uses: actions/checkout@v2
@@ -26,7 +29,3 @@ jobs:
       run: docker-compose exec -T test composer require --no-interaction "laravel/framework:${{ matrix.laravel }}"
     - name: Run tests
       run: ./test
-    - name: Send code coverage to codecov
-      env:
-        CODECOV_TOKEN: 24382d15-84e7-4a55-bea4-c4df96a24a9b
-      run: bash <(curl -s https://codecov.io/bash)
