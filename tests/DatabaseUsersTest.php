@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
+use Stancl\Tenancy\Events\DatabaseCreated;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Exceptions\TenantDatabaseUserAlreadyExistsException;
@@ -67,14 +68,18 @@ class DatabaseUsersTest extends TestCase
         $this->assertTrue($manager->databaseExists($tenant->database()->getName()));
 
         $this->expectException(TenantDatabaseUserAlreadyExistsException::class);
+        Event::fake([DatabaseCreated::class]);
+
         $tenant2 = Tenant::create([
             'tenancy_db_username' => $username,
         ]);
 
         /** @var ManagesDatabaseUsers $manager */
-        $manager = $tenant2->database()->manager();
+        $manager2 = $tenant2->database()->manager();
+
         // database was not created because of DB transaction
-        $this->assertFalse($manager->databaseExists($tenant2->database()->getName()));
+        $this->assertFalse($manager2->databaseExists($tenant2->database()->getName()));
+        Event::assertNotDispatched(DatabaseCreated::class);
     }
 
     /** @test */

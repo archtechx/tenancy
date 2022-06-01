@@ -30,8 +30,10 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
      *
      * This is useful when you're changing the tenant's state (e.g. properties in the `data` column) and want the next job to initialize tenancy again
      * with the new data. Features like the Tenant Config are only executed when tenancy is initialized, so the re-initialization is needed in some cases.
+     *
+     * @var bool
      */
-    public static bool $forceRefresh = false;
+    public static $forceRefresh = false;
 
     /**
      * The normal constructor is only executed after tenancy is bootstrapped.
@@ -61,8 +63,8 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             static::initializeTenancyForQueue($event->job->payload()['tenant_id'] ?? null);
         });
 
-        if (Str::startsWith(app()->version(), '8')) {
-            // JobRetryRequested only exists since Laravel 8
+        if (version_compare(app()->version(), '8.64', '>=')) {
+            // JobRetryRequested only exists since Laravel 8.64
             $dispatcher->listen(JobRetryRequested::class, function ($event) use (&$previousTenant) {
                 $previousTenant = tenant();
 

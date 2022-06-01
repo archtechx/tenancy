@@ -5,9 +5,9 @@ env:
 
 on:
   push:
-    branches: [ 3.x, 2.x, master ]
+    branches: [ master ]
   pull_request:
-    branches: [ 3.x, 2.x, master ]
+    branches: [ master ]
 
 jobs:
   tests:
@@ -15,8 +15,8 @@ jobs:
 
     strategy:
       matrix:
-        php: ["7.4", "8.0"]
-        laravel: ["^6.0", "^8.0"]
+        php: ["8.1"]
+        laravel: ["^9.0"]
 
     steps:
     - uses: actions/checkout@v2
