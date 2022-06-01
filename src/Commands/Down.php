@@ -16,13 +16,12 @@ class Down extends Command
      *
      * @var string
      */
-
-    protected $signature = 'tenancy:down
-                                 {--redirect= : The path that users should be redirected to}
-                                 {--retry= : The number of seconds after which the request may be retried}
-                                 {--refresh= : The number of seconds after which the browser may refresh}
-                                 {--secret= : The secret phrase that may be used to bypass maintenance mode}
-                                 {--status=503 : The status code that should be used when returning the maintenance mode response}';
+     protected $signature = 'tenancy:down
+         {--redirect= : The path that users should be redirected to}
+         {--retry= : The number of seconds after which the request may be retried}
+         {--refresh= : The number of seconds after which the browser may refresh}
+         {--secret= : The secret phrase that may be used to bypass maintenance mode}
+         {--status=503 : The status code that should be used when returning the maintenance mode response}';
 
     /**
      * The console command description.
