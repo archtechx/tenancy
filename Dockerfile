@@ -26,7 +26,7 @@ ENV LANG=en_GB.UTF-8
 RUN apt-get update \
     && apt-get install -y gnupg2 \
     && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-    && curl https://packages.microsoft.com/config/debian/9/prod.list \
+    && curl https://packages.microsoft.com/config/debian/11/prod.list \
         > /etc/apt/sources.list.d/mssql-release.list
 
 RUN apt-get install -y --no-install-recommends locales apt-transport-https libfreetype6-dev libjpeg62-turbo-dev libpng-dev libgmp-dev libldap2-dev netcat unixodbc-dev curl mariadb-client sqlite3 libsqlite3-dev libpq-dev libzip-dev unzip vim-tiny gosu git
