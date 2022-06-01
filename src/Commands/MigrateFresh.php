@@ -49,7 +49,7 @@ final class MigrateFresh extends Command
                 '--tenants' => [$tenant->getTenantKey()],
                 '--force' => true,
             ]);
-        });
+        }, $this->withPending());
 
         $this->info('Done.');
     }

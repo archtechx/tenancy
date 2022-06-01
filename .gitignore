@@ -1,4 +1,5 @@
 .env
+.DS_Store
 composer.lock
 vendor/
 .vscode/

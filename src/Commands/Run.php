@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
+use Stancl\Tenancy\Concerns\HasATenantsOption;
 
 class Run extends Command
 {
+    use HasATenantsOption;
     /**
      * The console command description.
      *
@@ -21,7 +23,6 @@ class Run extends Command
      * @var string
      */
     protected $signature = "tenants:run {commandname : The command's name.}
-                            {--tenants=* : The tenant(s) to run the command for. Default: all}
                             {--argument=* : The arguments to pass to the command. Default: none}
                             {--option=* : The options to pass to the command. Default: none}";
 
@@ -52,6 +53,6 @@ class Run extends Command
 
             // Run command
             $this->call($this->argument('commandname'), array_merge($arguments, $options));
-        });
+        }, $this->withPending());
     }
 }

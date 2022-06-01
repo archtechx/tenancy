@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Traits\Macroable;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Database\Concerns\PendingScope;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedById;
 
 class Tenancy
@@ -135,10 +136,15 @@ class Tenancy
      * @param callable $callback
      * @return void
      */
-    public function runForMultiple($tenants, callable $callback)
+    public function runForMultiple($tenants, callable $callback, bool $withPending = null)
     {
+        $query = $this->model()->newQuery();
+
+        if (is_bool($withPending) && $this->model()::hasGlobalScope(PendingScope::class)){
+            $query->withPending($withPending);
+        }
         // Convert null to all tenants
-        $tenants = is_null($tenants) ? $this->model()->cursor() : $tenants;
+        $tenants = is_null($tenants) ? $query->cursor() : $tenants;
 
         // Convert incrementing int ids to strings
         $tenants = is_int($tenants) ? (string) $tenants : $tenants;
@@ -146,8 +152,8 @@ class Tenancy
         // Wrap string in array
         $tenants = is_string($tenants) ? [$tenants] : $tenants;
 
-        // Use all tenants if $tenants is falsey
-        $tenants = $tenants ?: $this->model()->cursor();
+        // Use all tenants if $tenants is false
+        $tenants = $tenants ?: $query->cursor();
 
         $originalTenant = $this->tenant;
 

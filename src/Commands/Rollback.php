@@ -66,6 +66,6 @@ class Rollback extends RollbackCommand
             parent::handle();
 
             event(new DatabaseRolledBack($tenant));
-        });
+        }, $this->withPending());
     }
 }
