@@ -7,6 +7,7 @@ namespace Stancl\Tenancy;
 use Illuminate\Cache\CacheManager;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
+use Stancl\Tenancy\Contracts\Domain;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 
@@ -88,6 +89,7 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\Migrate::class,
             Commands\Rollback::class,
             Commands\TenantList::class,
+            Commands\TenantDump::class,
             Commands\MigrateFresh::class,
         ]);
 

@@ -9,7 +9,7 @@ use Facade\IgnitionContracts\ProvidesSolution;
 use Facade\IgnitionContracts\Solution;
 use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
 
-// todo: in v3 this should be suffixed with Exception
+// todo: in v4 this should be suffixed with Exception
 class TenantCouldNotBeIdentifiedById extends TenantCouldNotBeIdentifiedException implements ProvidesSolution
 {
     public function __construct($tenant_id)

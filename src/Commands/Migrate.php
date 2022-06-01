@@ -8,32 +8,26 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Console\Migrations\MigrateCommand;
 use Illuminate\Database\Migrations\Migrator;
 use Stancl\Tenancy\Concerns\DealsWithMigrations;
+use Stancl\Tenancy\Concerns\ExtendsLaravelCommand;
 use Stancl\Tenancy\Concerns\HasATenantsOption;
 use Stancl\Tenancy\Events\DatabaseMigrated;
 use Stancl\Tenancy\Events\MigratingDatabase;
 
 class Migrate extends MigrateCommand
 {
-    use HasATenantsOption, DealsWithMigrations;
+    use HasATenantsOption, DealsWithMigrations, ExtendsLaravelCommand;
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Run migrations for tenant(s)';
 
-    /**
-     * Create a new command instance.
-     *
-     * @param Migrator $migrator
-     * @param Dispatcher $dispatcher
-     */
+    protected static function getTenantCommandName(): string
+    {
+        return 'tenants:migrate';
+    }
+
     public function __construct(Migrator $migrator, Dispatcher $dispatcher)
     {
         parent::__construct($migrator, $dispatcher);
 
-        $this->setName('tenants:migrate');
         $this->specifyParameters();
     }
 
@@ -55,7 +49,7 @@ class Migrate extends MigrateCommand
         }
 
         tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
-            $this->line("Tenant: {$tenant['id']}");
+            $this->line("Tenant: {$tenant->getTenantKey()}");
 
             event(new MigratingDatabase($tenant));
 

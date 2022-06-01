@@ -66,9 +66,9 @@ class Tenancy
             return;
         }
 
-        $this->initialized = false;
-
         event(new Events\TenancyEnded($this));
+
+        $this->initialized = false;
 
         $this->tenant = null;
     }
