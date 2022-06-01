@@ -3,10 +3,9 @@
 </p>
 
 <p align="center">
-    <a href="https://laravel.com"><img alt="Laravel 6.x/7.x/8.x" src="https://img.shields.io/badge/laravel-6.x/7.x/8.x-red.svg"></a>
+    <a href="https://laravel.com"><img alt="Laravel 9.x" src="https://img.shields.io/badge/laravel-9.x-red.svg"></a>
     <a href="https://packagist.org/packages/stancl/tenancy"><img alt="Latest Stable Version" src="https://poser.pugx.org/stancl/tenancy/version"></a>
     <a href="https://github.com/stancl/tenancy/actions"><img alt="GitHub Actions CI status" src="https://github.com/stancl/tenancy/workflows/CI/badge.svg"></a>
-    <a href="https://codecov.io/gh/stancl/tenancy"><img alt="codecov" src="https://codecov.io/gh/stancl/tenancy/branch/3.x/graph/badge.svg"></a>
     <a href="https://github.com/stancl/tenancy/blob/3.x/DONATIONS.md"><img alt="Donate" src="https://img.shields.io/badge/Donate-%3C3-red"></a>
 </p>
 
