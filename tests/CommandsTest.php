@@ -92,6 +92,38 @@ class CommandsTest extends TestCase
     }
 
     /** @test */
+    public function migrate_command_loads_schema_state()
+    {
+        $tenant = Tenant::create();
+
+        $this->assertFalse(Schema::hasTable('schema_users'));
+        $this->assertFalse(Schema::hasTable('users'));
+
+        Artisan::call('tenants:migrate --schema-path="tests/Etc/tenant-schema.dump"');
+
+        $this->assertFalse(Schema::hasTable('schema_users'));
+        $this->assertFalse(Schema::hasTable('users'));
+
+        tenancy()->initialize($tenant);
+
+        // Check for both tables to see if missing migrations also get executed
+        $this->assertTrue(Schema::hasTable('schema_users'));
+        $this->assertTrue(Schema::hasTable('users'));
+    }
+
+    /** @test */
+    public function dump_command_works()
+    {
+        $tenant = Tenant::create();
+        Artisan::call('tenants:migrate');
+
+        tenancy()->initialize($tenant);
+
+        Artisan::call('tenants:dump --path="tests/Etc/tenant-schema-test.dump"');
+        $this->assertFileExists('tests/Etc/tenant-schema-test.dump');
+    }
+
+    /** @test */
     public function rollback_command_works()
     {
         $tenant = Tenant::create();
