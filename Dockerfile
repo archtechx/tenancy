@@ -28,14 +28,17 @@ RUN apt-get install -y --no-install-recommends libfreetype6-dev libjpeg62-turbo-
     # install php extensions
 RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
     # && if [ "${PHP_VERSION}" = "7.4" ]; then docker-php-ext-configure gd --with-freetype --with-jpeg; else docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/; fi \
-    && docker-php-ext-install -j$(nproc) gd pdo sqlsrv pdo_sqlsrv pdo_mysql pdo_pgsql pdo_sqlite pgsql zip gmp bcmath pcntl ldap sysvmsg exif \
+    && docker-php-ext-install -j$(nproc) gd pdo pdo_mysql pdo_pgsql pdo_sqlite pgsql zip gmp bcmath pcntl ldap sysvmsg exif \
     # install the redis php extension
     && pecl install redis-5.3.2 \
     && docker-php-ext-enable redis \
     # install the pcov extention
     && pecl install pcov \
     && docker-php-ext-enable pcov \
-    && echo "pcov.enabled = 1" > /usr/local/etc/php/conf.d/pcov.ini
+    && echo "pcov.enabled = 1" > /usr/local/etc/php/conf.d/pcov.ini \
+    # install sqlsrv
+    && pecl install sqlsrv pdo_sqlsrv \
+    && docker-php-ext-enable sqlsrv pdo_sqlsrv
 # clear the apt cache
 RUN rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/lib/apt/lists/* \
