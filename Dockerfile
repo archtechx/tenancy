@@ -29,7 +29,7 @@ RUN apt-get update \
     && curl https://packages.microsoft.com/config/debian/9/prod.list \
         > /etc/apt/sources.list.d/mssql-release.list
 
-RUN apt-get install -y --no-install-recommends locales apt-transport-https libfreetype6-dev libjpeg62-turbo-dev libpng-dev libgmp-dev libldap2-dev netcat unixodbc-dev msodbcsql17 curl mariadb-client sqlite3 libsqlite3-dev libpq-dev libzip-dev unzip vim-tiny gosu git
+RUN apt-get install -y --no-install-recommends locales apt-transport-https libfreetype6-dev libjpeg62-turbo-dev libpng-dev libgmp-dev libldap2-dev netcat unixodbc-dev curl mariadb-client sqlite3 libsqlite3-dev libpq-dev libzip-dev unzip vim-tiny gosu git
 
 RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
     # && if [ "${PHP_VERSION}" = "7.4" ]; then docker-php-ext-configure gd --with-freetype --with-jpeg; else docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/; fi \
