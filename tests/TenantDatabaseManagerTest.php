@@ -104,7 +104,7 @@ class TenantDatabaseManagerTest extends TestCase
             ['sqlite', SQLiteDatabaseManager::class],
             ['pgsql', PostgreSQLDatabaseManager::class],
             ['pgsql', PostgreSQLSchemaManager::class],
-            ['sqlsrv', MicrosoftSQLDatabaseManager::class],
+            ['sqlsrv', MicrosoftSQLDatabaseManager::class]
         ];
     }
 
