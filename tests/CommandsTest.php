@@ -106,7 +106,7 @@ class CommandsTest extends TestCase
 
         tenancy()->initialize($tenant);
 
-        // Check for both tables to see if missing migrations also get executed.
+        // Check for both tables to see if missing migrations also get executed
         $this->assertTrue(Schema::hasTable('schema_users'));
         $this->assertTrue(Schema::hasTable('users'));
     }
