@@ -6,6 +6,7 @@ namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Bus\BatchRepository;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Str;
 use ReflectionClass;
 use Stancl\Tenancy\Bootstrappers\BatchTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
@@ -37,6 +38,10 @@ class BatchTest extends TestCase
     /** @test */
     public function batch_repository_is_set_to_tenant_connection_and_reverted()
     {
+        if (! version_compare(app()->version(), '8.0', '>=')) {
+            $this->markTestSkipped('Job batches are only supported in Laravel 8+');
+        }
+
         $tenant = Tenant::create();
 
         $this->assertEquals('central', $this->getBatchRepositoryConnectionName(), 'Expected initial connection to be central');
