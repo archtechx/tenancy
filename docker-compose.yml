@@ -64,3 +64,11 @@ services:
             interval: 1s
             timeout: 3s
             retries: 30
+    mssql:
+        image: mcr.microsoft.com/mssql/server:2019-latest
+        ports:
+            - 1433:1433
+        environment:
+          - ACCEPT_EULA=Y
+          - SA_PASSWORD=password
+        # todo missing health check
