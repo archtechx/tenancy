@@ -21,8 +21,10 @@ services:
             DB_DATABASE: main
             TENANCY_TEST_REDIS_HOST: redis
             TENANCY_TEST_MYSQL_HOST: mysql
-            TENANCY_TEST_MSSQL_HOST: mssql
             TENANCY_TEST_PGSQL_HOST: postgres
+            TENANCY_TEST_MSSQL_HOST: mssql
+            TENANCY_TEST_MSSQL_USERNAME: sa
+            TENANCY_TEST_MSSQL_PASSWORD: P@ssword
         stdin_open: true
         tty: true
     mysql:
@@ -71,5 +73,5 @@ services:
             - 1433:1433
         environment:
           - ACCEPT_EULA=Y
-          - SA_PASSWORD=password
+          - SA_PASSWORD=P@ssword # todo reuse values from env above
         # todo missing health check
