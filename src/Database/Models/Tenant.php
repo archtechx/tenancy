@@ -29,7 +29,9 @@ class Tenant extends Model implements Contracts\Tenant
         Concerns\InvalidatesResolverCache;
 
     protected $table = 'tenants';
+
     protected $primaryKey = 'id';
+
     protected $guarded = [];
 
     public function getTenantKeyName(): string

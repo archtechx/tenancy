@@ -104,7 +104,7 @@ class TenantDatabaseManagerTest extends TestCase
             ['sqlite', SQLiteDatabaseManager::class],
             ['pgsql', PostgreSQLDatabaseManager::class],
             ['pgsql', PostgreSQLSchemaManager::class],
-            ['sqlsrv', MicrosoftSQLDatabaseManager::class]
+            ['sqlsrv', MicrosoftSQLDatabaseManager::class],
         ];
     }
 
@@ -196,7 +196,7 @@ class TenantDatabaseManagerTest extends TestCase
         ]);
         tenancy()->initialize($tenant);
 
-        $schemaConfig = version_compare(app()->version(), '9.0', '>=') ? 
+        $schemaConfig = version_compare(app()->version(), '9.0', '>=') ?
             config('database.connections.' . config('database.default') . '.search_path') :
             config('database.connections.' . config('database.default') . '.schema');
 

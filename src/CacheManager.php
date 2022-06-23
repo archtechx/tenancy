@@ -21,7 +21,7 @@ class CacheManager extends BaseCacheManager
 
         if ($method === 'tags') {
             $count = count($parameters);
-            
+
             if ($count !== 1) {
                 throw new \Exception("Method tags() takes exactly 1 argument. $count passed.");
             }

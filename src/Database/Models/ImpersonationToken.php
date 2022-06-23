@@ -22,10 +22,15 @@ class ImpersonationToken extends Model
     use CentralConnection;
 
     protected $guarded = [];
+
     public $timestamps = false;
+
     protected $primaryKey = 'token';
+
     public $incrementing = false;
+
     protected $table = 'tenant_user_impersonation_tokens';
+
     protected $dates = [
         'created_at',
     ];
