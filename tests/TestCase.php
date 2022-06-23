@@ -81,6 +81,10 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             ],
             'database.connections.sqlite.database' => ':memory:',
             'database.connections.mysql.host' => env('TENANCY_TEST_MYSQL_HOST', '127.0.0.1'),
+            'database.connections.sqlsrv.username' => env('TENANCY_TEST_SQLSRV_USERNAME', 'sa'),
+            'database.connections.sqlsrv.password' => env('TENANCY_TEST_SQLSRV_PASSWORD', 'P@ssword'),
+            'database.connections.sqlsrv.host' => env('TENANCY_TEST_SQLSRV_HOST', '127.0.0.1'),
+            'database.connections.sqlsrv.database' => null,
             'database.connections.pgsql.host' => env('TENANCY_TEST_PGSQL_HOST', '127.0.0.1'),
             'tenancy.filesystem.disks' => [
                 'local',

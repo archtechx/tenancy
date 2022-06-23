@@ -19,6 +19,7 @@ use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\TenantDatabaseManagers\MicrosoftSQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager;
@@ -103,6 +104,7 @@ class TenantDatabaseManagerTest extends TestCase
             ['sqlite', SQLiteDatabaseManager::class],
             ['pgsql', PostgreSQLDatabaseManager::class],
             ['pgsql', PostgreSQLSchemaManager::class],
+            ['sqlsrv', MicrosoftSQLDatabaseManager::class]
         ];
     }
 
