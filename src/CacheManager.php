@@ -13,7 +13,6 @@ class CacheManager extends BaseCacheManager
      *
      * @param string $method
      * @param array $parameters
-     * @return mixed
      */
     public function __call($method, $parameters)
     {
