@@ -171,7 +171,7 @@ test('tokens are deleted after use', function () {
         ->assertSuccessful()
         ->assertSee('You are logged in as Joe');
 
-    $this->assertNull(ImpersonationToken::find($token->token));
+    expect(ImpersonationToken::find($token->token))->toBeNull();
 });
 
 test('impersonation works with multiple models and guards', function () {
@@ -220,8 +220,8 @@ test('impersonation works with multiple models and guards', function () {
         ->assertSee('You are logged in as Joe');
 
     Tenant::first()->run(function () {
-        $this->assertSame('Joe', auth()->guard('another')->user()->name);
-        $this->assertSame(null, auth()->guard('web')->user());
+        expect(auth()->guard('another')->user()->name)->toBe('Joe');
+        expect(auth()->guard('web')->user())->toBe(null);
     });
 });
 

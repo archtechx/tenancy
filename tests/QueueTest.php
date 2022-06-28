@@ -104,7 +104,7 @@ test('tenancy is initialized inside queues', function (bool $shouldEndTenancy) {
 
     dispatch(new TestJob($this->valuestore, $user));
 
-    $this->assertFalse($this->valuestore->has('tenant_id'));
+    expect($this->valuestore->has('tenant_id'))->toBeFalse();
 
     if ($shouldEndTenancy) {
         tenancy()->end();
@@ -112,12 +112,12 @@ test('tenancy is initialized inside queues', function (bool $shouldEndTenancy) {
 
     $this->artisan('queue:work --once');
 
-    $this->assertSame(0, DB::connection('central')->table('failed_jobs')->count());
+    expect(DB::connection('central')->table('failed_jobs')->count())->toBe(0);
 
-    $this->assertSame('The current tenant id is: ' . $tenant->id, $this->valuestore->get('tenant_id'));
+    expect($this->valuestore->get('tenant_id'))->toBe('The current tenant id is: ' . $tenant->id);
 
     $tenant->run(function () use ($user) {
-        $this->assertSame('Bar', $user->fresh()->name);
+        expect($user->fresh()->name)->toBe('Bar');
     });
 });
 
@@ -147,7 +147,7 @@ test('tenancy is initialized when retrying jobs', function (bool $shouldEndTenan
 
     dispatch(new TestJob($this->valuestore, $user));
 
-    $this->assertFalse($this->valuestore->has('tenant_id'));
+    expect($this->valuestore->has('tenant_id'))->toBeFalse();
 
     if ($shouldEndTenancy) {
         tenancy()->end();
@@ -155,18 +155,18 @@ test('tenancy is initialized when retrying jobs', function (bool $shouldEndTenan
 
     $this->artisan('queue:work --once');
 
-    $this->assertSame(1, DB::connection('central')->table('failed_jobs')->count());
-    $this->assertNull($this->valuestore->get('tenant_id')); // job failed
+    expect(DB::connection('central')->table('failed_jobs')->count())->toBe(1);
+    expect($this->valuestore->get('tenant_id'))->toBeNull(); // job failed
 
     $this->artisan('queue:retry all');
     $this->artisan('queue:work --once');
 
-    $this->assertSame(0, DB::connection('central')->table('failed_jobs')->count());
+    expect(DB::connection('central')->table('failed_jobs')->count())->toBe(0);
 
-    $this->assertSame('The current tenant id is: ' . $tenant->id, $this->valuestore->get('tenant_id')); // job succeeded
+    expect($this->valuestore->get('tenant_id'))->toBe('The current tenant id is: ' . $tenant->id); // job succeeded
 
     $tenant->run(function () use ($user) {
-        $this->assertSame('Bar', $user->fresh()->name);
+        expect($user->fresh()->name)->toBe('Bar');
     });
 });
 
@@ -185,10 +185,10 @@ test('the tenant used by the job doesnt change when the current tenant changes',
 
     tenancy()->initialize($tenant2);
 
-    $this->assertFalse($this->valuestore->has('tenant_id'));
+    expect($this->valuestore->has('tenant_id'))->toBeFalse();
     $this->artisan('queue:work --once');
 
-    $this->assertSame('The current tenant id is: acme', $this->valuestore->get('tenant_id'));
+    expect($this->valuestore->get('tenant_id'))->toBe('The current tenant id is: acme');
 });
 
 // Helpers

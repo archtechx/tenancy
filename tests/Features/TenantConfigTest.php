@@ -18,7 +18,7 @@ afterEach(function () {
 });
 
 test('config is merged and removed', function () {
-    $this->assertSame(null, config('services.paypal'));
+    expect(config('services.paypal'))->toBe(null);
     config([
         'tenancy.features' => [TenantConfig::class],
         'tenancy.bootstrappers' => [],
@@ -37,7 +37,7 @@ test('config is merged and removed', function () {
     ]);
 
     tenancy()->initialize($tenant);
-    $this->assertSame(['public' => 'foo', 'private' => 'bar'], config('services.paypal'));
+    expect(config('services.paypal'))->toBe(['public' => 'foo', 'private' => 'bar']);
 
     tenancy()->end();
     $this->assertSame([
@@ -47,7 +47,7 @@ test('config is merged and removed', function () {
 });
 
 test('the value can be set to multiple config keys', function () {
-    $this->assertSame(null, config('services.paypal'));
+    expect(config('services.paypal'))->toBe(null);
     config([
         'tenancy.features' => [TenantConfig::class],
         'tenancy.bootstrappers' => [],

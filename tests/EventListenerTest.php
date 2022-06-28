@@ -31,7 +31,7 @@ test('listeners can be synchronous', function () {
 
     Queue::assertNothingPushed();
 
-    $this->assertSame('bar', app('foo'));
+    expect(app('foo'))->toBe('bar');
 });
 
 test('listeners can be queued by setting a static property', function () {
@@ -46,7 +46,7 @@ test('listeners can be queued by setting a static property', function () {
         return $job->class === FooListener::class;
     });
 
-    $this->assertFalse(app()->bound('foo'));
+    expect(app()->bound('foo'))->toBeFalse();
 });
 
 test('ing events can be used to cancel tenant model actions', function () {
@@ -54,8 +54,8 @@ test('ing events can be used to cancel tenant model actions', function () {
         return false;
     });
 
-    $this->assertSame(false, Tenant::create()->exists);
-    $this->assertSame(0, Tenant::count());
+    expect(Tenant::create()->exists)->toBe(false);
+    expect(Tenant::count())->toBe(0);
 });
 
 test('ing events can be used to cancel domain model actions', function () {
@@ -73,7 +73,7 @@ test('ing events can be used to cancel domain model actions', function () {
         'domain' => 'foo',
     ]);
 
-    $this->assertSame('acme', $domain->refresh()->domain);
+    expect($domain->refresh()->domain)->toBe('acme');
 });
 
 test('ing events can be used to cancel db creation', function () {
@@ -112,7 +112,7 @@ test('ing events can be used to cancel tenancy bootstrapping', function () {
 
     tenancy()->initialize(Tenant::create());
 
-    $this->assertSame([DatabaseTenancyBootstrapper::class], array_map('get_class', tenancy()->getBootstrappers()));
+    expect(array_map('get_class', tenancy()->getBootstrappers()))->toBe([DatabaseTenancyBootstrapper::class]);
 });
 
 test('individual job pipelines can terminate while leaving others running', function () {
@@ -179,7 +179,7 @@ test('database is not migrated if creation is disabled', function () {
         'tenancy_db_name' => 'already_created',
     ]);
 
-    $this->assertFalse($this->hasFailed());
+    expect($this->hasFailed())->toBeFalse();
 });
 
 // Helpers

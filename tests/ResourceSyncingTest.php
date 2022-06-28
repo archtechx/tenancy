@@ -130,7 +130,7 @@ test('only the synced columns are updated in the central db', function () {
 
 test('creating the resource in tenant database creates it in central database and creates the mapping', function () {
     // Assert no user in central DB
-    $this->assertCount(0, ResourceUser::all());
+    expect(ResourceUser::all())->toHaveCount(0);
 
     $tenant = ResourceTenant::create();
     migrateTenants();
@@ -149,23 +149,23 @@ test('creating the resource in tenant database creates it in central database an
     tenancy()->end();
 
     // Asset user was created
-    $this->assertSame('acme', CentralUser::first()->global_id);
-    $this->assertSame('commenter', CentralUser::first()->role);
+    expect(CentralUser::first()->global_id)->toBe('acme');
+    expect(CentralUser::first()->role)->toBe('commenter');
 
     // Assert mapping was created
-    $this->assertCount(1, CentralUser::first()->tenants);
+    expect(CentralUser::first()->tenants)->toHaveCount(1);
 
     // Assert role change doesn't cascade
     CentralUser::first()->update(['role' => 'central superadmin']);
     tenancy()->initialize($tenant);
-    $this->assertSame('commenter', ResourceUser::first()->role);
+    expect(ResourceUser::first()->role)->toBe('commenter');
 });
 
 test('trying to update synced resources from central context using tenant models results in an exception', function () {
     $this->creating_the_resource_in_tenant_database_creates_it_in_central_database_and_creates_the_mapping();
 
     tenancy()->end();
-    $this->assertFalse(tenancy()->initialized);
+    expect(tenancy()->initialized)->toBeFalse();
 
     $this->expectException(ModelNotSyncMasterException::class);
     ResourceUser::first()->update(['role' => 'foobar']);
@@ -186,13 +186,13 @@ test('attaching a tenant to the central resource triggers a pull from the tenant
     migrateTenants();
 
     $tenant->run(function () {
-        $this->assertCount(0, ResourceUser::all());
+        expect(ResourceUser::all())->toHaveCount(0);
     });
 
     $centralUser->tenants()->attach('t1');
 
     $tenant->run(function () {
-        $this->assertCount(1, ResourceUser::all());
+        expect(ResourceUser::all())->toHaveCount(1);
     });
 });
 
@@ -211,7 +211,7 @@ test('attaching users to tenants d o e s n o t d o a n y t h i n g', function ()
     migrateTenants();
 
     $tenant->run(function () {
-        $this->assertCount(0, ResourceUser::all());
+        expect(ResourceUser::all())->toHaveCount(0);
     });
 
     // The child model is inaccessible in the Pivot Model, so we can't fire any events.
@@ -219,7 +219,7 @@ test('attaching users to tenants d o e s n o t d o a n y t h i n g', function ()
 
     $tenant->run(function () {
         // Still zero
-        $this->assertCount(0, ResourceUser::all());
+        expect(ResourceUser::all())->toHaveCount(0);
     });
 });
 
@@ -251,17 +251,17 @@ test('resources are synced only to workspaces that have the resource', function 
 
     $t1->run(function () {
         // assert user exists
-        $this->assertCount(1, ResourceUser::all());
+        expect(ResourceUser::all())->toHaveCount(1);
     });
 
     $t2->run(function () {
         // assert user exists
-        $this->assertCount(1, ResourceUser::all());
+        expect(ResourceUser::all())->toHaveCount(1);
     });
 
     $t3->run(function () {
         // assert user does NOT exist
-        $this->assertCount(0, ResourceUser::all());
+        expect(ResourceUser::all())->toHaveCount(0);
     });
 });
 
@@ -298,15 +298,15 @@ test('when a resource exists in other tenant dbs but is c r e a t e d in a tenan
     });
 
     $centralUser = CentralUser::first();
-    $this->assertSame('John Foo', $centralUser->name); // name changed
-    $this->assertSame('john@foo', $centralUser->email); // email changed
-    $this->assertSame('commenter', $centralUser->role); // role didn't change
+    expect($centralUser->name)->toBe('John Foo'); // name changed
+    expect($centralUser->email)->toBe('john@foo'); // email changed
+    expect($centralUser->role)->toBe('commenter'); // role didn't change
 
     $t1->run(function () {
         $user = ResourceUser::first();
-        $this->assertSame('John Foo', $user->name); // name changed
-        $this->assertSame('john@foo', $user->email); // email changed
-        $this->assertSame('commenter', $user->role); // role didn't change, i.e. is the same as from the original copy from central
+        expect($user->name)->toBe('John Foo'); // name changed
+        expect($user->email)->toBe('john@foo'); // email changed
+        expect($user->role)->toBe('commenter'); // role didn't change, i.e. is the same as from the original copy from central
     });
 });
 
@@ -342,23 +342,23 @@ test('the synced columns are updated in other tenant dbs where the resource exis
             'role' => 'employee', // unsynced
         ]);
 
-        $this->assertSame('employee', ResourceUser::first()->role);
+        expect(ResourceUser::first()->role)->toBe('employee');
     });
 
     // Check that change was cascaded to other tenants
     $t1->run($check = function () {
         $user = ResourceUser::first();
 
-        $this->assertSame('John 3', $user->name); // synced
-        $this->assertSame('commenter', $user->role); // unsynced
+        expect($user->name)->toBe('John 3'); // synced
+        expect($user->role)->toBe('commenter'); // unsynced
     });
     $t2->run($check);
 
     // Check that change bubbled up to central DB
-    $this->assertSame(1, CentralUser::count());
+    expect(CentralUser::count())->toBe(1);
     $centralUser = CentralUser::first();
-    $this->assertSame('John 3', $centralUser->name); // synced
-    $this->assertSame('commenter', $centralUser->role); // unsynced
+    expect($centralUser->name)->toBe('John 3'); // synced
+    expect($centralUser->role)->toBe('commenter'); // unsynced
 });
 
 test('global id is generated using id generator when its not supplied', function () {
@@ -389,7 +389,7 @@ test('when the resource doesnt exist in the tenant db non synced columns will ca
     $centralUser->tenants()->attach('t1');
 
     $t1->run(function () {
-        $this->assertSame('employee', ResourceUser::first()->role);
+        expect(ResourceUser::first()->role)->toBe('employee');
     });
 });
 
@@ -409,7 +409,7 @@ test('when the resource doesnt exist in the central db non synced columns will b
         ]);
     });
 
-    $this->assertSame('employee', CentralUser::first()->role);
+    expect(CentralUser::first()->role)->toBe('employee');
 });
 
 test('the listener can be queued', function () {
@@ -491,7 +491,7 @@ test('an event is fired for all touched resources', function () {
             'role' => 'employee', // unsynced
         ]);
 
-        $this->assertSame('employee', ResourceUser::first()->role);
+        expect(ResourceUser::first()->role)->toBe('employee');
     });
 
     Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {

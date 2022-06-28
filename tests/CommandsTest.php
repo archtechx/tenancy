@@ -40,27 +40,27 @@ afterEach(function () {
 });
 
 test('migrate command doesnt change the db connection', function () {
-    $this->assertFalse(Schema::hasTable('users'));
+    expect(Schema::hasTable('users'))->toBeFalse();
 
     $old_connection_name = app(\Illuminate\Database\DatabaseManager::class)->connection()->getName();
     Artisan::call('tenants:migrate');
     $new_connection_name = app(\Illuminate\Database\DatabaseManager::class)->connection()->getName();
 
-    $this->assertFalse(Schema::hasTable('users'));
-    $this->assertEquals($old_connection_name, $new_connection_name);
+    expect(Schema::hasTable('users'))->toBeFalse();
+    expect($new_connection_name)->toEqual($old_connection_name);
     $this->assertNotEquals('tenant', $new_connection_name);
 });
 
 test('migrate command works without options', function () {
     $tenant = Tenant::create();
 
-    $this->assertFalse(Schema::hasTable('users'));
+    expect(Schema::hasTable('users'))->toBeFalse();
     Artisan::call('tenants:migrate');
-    $this->assertFalse(Schema::hasTable('users'));
+    expect(Schema::hasTable('users'))->toBeFalse();
 
     tenancy()->initialize($tenant);
 
-    $this->assertTrue(Schema::hasTable('users'));
+    expect(Schema::hasTable('users'))->toBeTrue();
 });
 
 test('migrate command works with tenants option', function () {
@@ -69,30 +69,30 @@ test('migrate command works with tenants option', function () {
         '--tenants' => [$tenant['id']],
     ]);
 
-    $this->assertFalse(Schema::hasTable('users'));
+    expect(Schema::hasTable('users'))->toBeFalse();
     tenancy()->initialize(Tenant::create());
-    $this->assertFalse(Schema::hasTable('users'));
+    expect(Schema::hasTable('users'))->toBeFalse();
 
     tenancy()->initialize($tenant);
-    $this->assertTrue(Schema::hasTable('users'));
+    expect(Schema::hasTable('users'))->toBeTrue();
 });
 
 test('migrate command loads schema state', function () {
     $tenant = Tenant::create();
 
-    $this->assertFalse(Schema::hasTable('schema_users'));
-    $this->assertFalse(Schema::hasTable('users'));
+    expect(Schema::hasTable('schema_users'))->toBeFalse();
+    expect(Schema::hasTable('users'))->toBeFalse();
 
     Artisan::call('tenants:migrate --schema-path="tests/Etc/tenant-schema.dump"');
 
-    $this->assertFalse(Schema::hasTable('schema_users'));
-    $this->assertFalse(Schema::hasTable('users'));
+    expect(Schema::hasTable('schema_users'))->toBeFalse();
+    expect(Schema::hasTable('users'))->toBeFalse();
 
     tenancy()->initialize($tenant);
 
     // Check for both tables to see if missing migrations also get executed
-    $this->assertTrue(Schema::hasTable('schema_users'));
-    $this->assertTrue(Schema::hasTable('users'));
+    expect(Schema::hasTable('schema_users'))->toBeTrue();
+    expect(Schema::hasTable('users'))->toBeTrue();
 });
 
 test('dump command works', function () {
@@ -102,19 +102,19 @@ test('dump command works', function () {
     tenancy()->initialize($tenant);
 
     Artisan::call('tenants:dump --path="tests/Etc/tenant-schema-test.dump"');
-    $this->assertFileExists('tests/Etc/tenant-schema-test.dump');
+    expect('tests/Etc/tenant-schema-test.dump')->toBeFile();
 });
 
 test('rollback command works', function () {
     $tenant = Tenant::create();
     Artisan::call('tenants:migrate');
-    $this->assertFalse(Schema::hasTable('users'));
+    expect(Schema::hasTable('users'))->toBeFalse();
 
     tenancy()->initialize($tenant);
 
-    $this->assertTrue(Schema::hasTable('users'));
+    expect(Schema::hasTable('users'))->toBeTrue();
     Artisan::call('tenants:rollback');
-    $this->assertFalse(Schema::hasTable('users'));
+    expect(Schema::hasTable('users'))->toBeFalse();
 });
 
 test('seed command works', function () {
@@ -125,16 +125,16 @@ test('database connection is switched to default', function () {
     $originalDBName = DB::connection()->getDatabaseName();
 
     Artisan::call('tenants:migrate');
-    $this->assertSame($originalDBName, DB::connection()->getDatabaseName());
+    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
 
     Artisan::call('tenants:seed', ['--class' => ExampleSeeder::class]);
-    $this->assertSame($originalDBName, DB::connection()->getDatabaseName());
+    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
 
     Artisan::call('tenants:rollback');
-    $this->assertSame($originalDBName, DB::connection()->getDatabaseName());
+    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
 
     $this->run_commands_works();
-    $this->assertSame($originalDBName, DB::connection()->getDatabaseName());
+    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
 });
 
 test('database connection is switched to default when tenancy has been initialized', function () {
@@ -163,32 +163,32 @@ test('install command works', function () {
     }
 
     $this->artisan('tenancy:install');
-    $this->assertFileExists(base_path('routes/tenant.php'));
-    $this->assertFileExists(base_path('config/tenancy.php'));
-    $this->assertFileExists(app_path('Providers/TenancyServiceProvider.php'));
-    $this->assertFileExists(database_path('migrations/2019_09_15_000010_create_tenants_table.php'));
-    $this->assertFileExists(database_path('migrations/2019_09_15_000020_create_domains_table.php'));
-    $this->assertDirectoryExists(database_path('migrations/tenant'));
+    expect(base_path('routes/tenant.php'))->toBeFile();
+    expect(base_path('config/tenancy.php'))->toBeFile();
+    expect(app_path('Providers/TenancyServiceProvider.php'))->toBeFile();
+    expect(database_path('migrations/2019_09_15_000010_create_tenants_table.php'))->toBeFile();
+    expect(database_path('migrations/2019_09_15_000020_create_domains_table.php'))->toBeFile();
+    expect(database_path('migrations/tenant'))->toBeDirectory();
 });
 
 test('migrate fresh command works', function () {
     $tenant = Tenant::create();
 
-    $this->assertFalse(Schema::hasTable('users'));
+    expect(Schema::hasTable('users'))->toBeFalse();
     Artisan::call('tenants:migrate-fresh');
-    $this->assertFalse(Schema::hasTable('users'));
+    expect(Schema::hasTable('users'))->toBeFalse();
 
     tenancy()->initialize($tenant);
 
-    $this->assertTrue(Schema::hasTable('users'));
+    expect(Schema::hasTable('users'))->toBeTrue();
 
-    $this->assertFalse(DB::table('users')->exists());
+    expect(DB::table('users')->exists())->toBeFalse();
     DB::table('users')->insert(['name' => 'xxx', 'password' => bcrypt('password'), 'email' => 'foo@bar.xxx']);
-    $this->assertTrue(DB::table('users')->exists());
+    expect(DB::table('users')->exists())->toBeTrue();
 
     // test that db is wiped
     Artisan::call('tenants:migrate-fresh');
-    $this->assertFalse(DB::table('users')->exists());
+    expect(DB::table('users')->exists())->toBeFalse();
 });
 
 test('run command with array of tenants works', function () {

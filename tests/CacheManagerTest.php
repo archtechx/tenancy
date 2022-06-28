@@ -28,14 +28,14 @@ test('tags are merged when array is passed', function () {
     tenancy()->initialize(Tenant::create());
 
     $expected = [config('tenancy.cache.tag_base') . tenant('id'), 'foo', 'bar'];
-    $this->assertEquals($expected, cache()->tags(['foo', 'bar'])->getTags()->getNames());
+    expect(cache()->tags(['foo', 'bar'])->getTags()->getNames())->toEqual($expected);
 });
 
 test('tags are merged when string is passed', function () {
     tenancy()->initialize(Tenant::create());
 
     $expected = [config('tenancy.cache.tag_base') . tenant('id'), 'foo'];
-    $this->assertEquals($expected, cache()->tags('foo')->getTags()->getNames());
+    expect(cache()->tags('foo')->getTags()->getNames())->toEqual($expected);
 });
 
 test('exception is thrown when zero arguments are passed to tags method', function () {
@@ -57,7 +57,7 @@ test('tags separate cache well enough', function () {
     tenancy()->initialize($tenant1);
 
     cache()->put('foo', 'bar', 1);
-    $this->assertSame('bar', cache()->get('foo'));
+    expect(cache()->get('foo'))->toBe('bar');
 
     $tenant2 = Tenant::create();
     tenancy()->initialize($tenant2);
@@ -65,7 +65,7 @@ test('tags separate cache well enough', function () {
     $this->assertNotSame('bar', cache()->get('foo'));
 
     cache()->put('foo', 'xyz', 1);
-    $this->assertSame('xyz', cache()->get('foo'));
+    expect(cache()->get('foo'))->toBe('xyz');
 });
 
 test('invoking the cache helper works', function () {
@@ -73,7 +73,7 @@ test('invoking the cache helper works', function () {
     tenancy()->initialize($tenant1);
 
     cache(['foo' => 'bar'], 1);
-    $this->assertSame('bar', cache('foo'));
+    expect(cache('foo'))->toBe('bar');
 
     $tenant2 = Tenant::create();
     tenancy()->initialize($tenant2);
@@ -81,7 +81,7 @@ test('invoking the cache helper works', function () {
     $this->assertNotSame('bar', cache('foo'));
 
     cache(['foo' => 'xyz'], 1);
-    $this->assertSame('xyz', cache('foo'));
+    expect(cache('foo'))->toBe('xyz');
 });
 
 test('cache is persisted', function () {
@@ -89,12 +89,12 @@ test('cache is persisted', function () {
     tenancy()->initialize($tenant1);
 
     cache(['foo' => 'bar'], 10);
-    $this->assertSame('bar', cache('foo'));
+    expect(cache('foo'))->toBe('bar');
 
     tenancy()->end();
 
     tenancy()->initialize($tenant1);
-    $this->assertSame('bar', cache('foo'));
+    expect(cache('foo'))->toBe('bar');
 });
 
 test('cache is persisted when reidentification is used', function () {
@@ -103,11 +103,11 @@ test('cache is persisted when reidentification is used', function () {
     tenancy()->initialize($tenant1);
 
     cache(['foo' => 'bar'], 10);
-    $this->assertSame('bar', cache('foo'));
+    expect(cache('foo'))->toBe('bar');
 
     tenancy()->initialize($tenant2);
     tenancy()->end();
 
     tenancy()->initialize($tenant1);
-    $this->assertSame('bar', cache('foo'));
+    expect(cache('foo'))->toBe('bar');
 });

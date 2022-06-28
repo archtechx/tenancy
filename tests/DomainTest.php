@@ -36,8 +36,8 @@ test('tenant can be identified using hostname', function () {
 
     $resolvedTenant = app(DomainTenantResolver::class)->resolve('foo.localhost');
 
-    $this->assertSame($id, $resolvedTenant->id);
-    $this->assertSame(['foo.localhost'], $resolvedTenant->domains->pluck('domain')->toArray());
+    expect($resolvedTenant->id)->toBe($id);
+    expect($resolvedTenant->domains->pluck('domain')->toArray())->toBe(['foo.localhost']);
 });
 
 test('a domain can belong to only one tenant', function () {
@@ -70,14 +70,14 @@ test('tenant can be identified by domain', function () {
         'domain' => 'foo.localhost',
     ]);
 
-    $this->assertFalse(tenancy()->initialized);
+    expect(tenancy()->initialized)->toBeFalse();
 
     $this
         ->get('http://foo.localhost/foo/abc/xyz')
         ->assertSee('abc + xyz');
 
-    $this->assertTrue(tenancy()->initialized);
-    $this->assertSame('acme', tenant('id'));
+    expect(tenancy()->initialized)->toBeTrue();
+    expect(tenant('id'))->toBe('acme');
 });
 
 test('onfail logic can be customized', function () {
@@ -97,5 +97,5 @@ test('domains are always lowercase', function () {
         'domain' => 'CAPITALS',
     ]);
 
-    $this->assertSame('capitals', Domain::first()->domain);
+    expect(Domain::first()->domain)->toBe('capitals');
 });

@@ -46,13 +46,13 @@ test('primary models are scoped to the current tenant', function () {
 
     $post = Post::create(['text' => 'Foo']);
 
-    $this->assertSame('acme', $post->tenant_id);
-    $this->assertSame('acme', $post->tenant->id);
+    expect($post->tenant_id)->toBe('acme');
+    expect($post->tenant->id)->toBe('acme');
 
     $post = Post::first();
 
-    $this->assertSame('acme', $post->tenant_id);
-    $this->assertSame('acme', $post->tenant->id);
+    expect($post->tenant_id)->toBe('acme');
+    expect($post->tenant->id)->toBe('acme');
 
     // ======================================
     // foobar context
@@ -62,13 +62,13 @@ test('primary models are scoped to the current tenant', function () {
 
     $post = Post::create(['text' => 'Bar']);
 
-    $this->assertSame('foobar', $post->tenant_id);
-    $this->assertSame('foobar', $post->tenant->id);
+    expect($post->tenant_id)->toBe('foobar');
+    expect($post->tenant->id)->toBe('foobar');
 
     $post = Post::first();
 
-    $this->assertSame('foobar', $post->tenant_id);
-    $this->assertSame('foobar', $post->tenant->id);
+    expect($post->tenant_id)->toBe('foobar');
+    expect($post->tenant->id)->toBe('foobar');
 
     // ======================================
     // acme context again
@@ -76,11 +76,11 @@ test('primary models are scoped to the current tenant', function () {
     tenancy()->initialize($acme);
 
     $post = Post::first();
-    $this->assertSame('acme', $post->tenant_id);
-    $this->assertSame('acme', $post->tenant->id);
+    expect($post->tenant_id)->toBe('acme');
+    expect($post->tenant->id)->toBe('acme');
 
     // Assert foobar models are inaccessible in acme context
-    $this->assertSame(1, Post::count());
+    expect(Post::count())->toBe(1);
 });
 
 test('primary models are not scoped in the central context', function () {
@@ -88,7 +88,7 @@ test('primary models are not scoped in the central context', function () {
 
     tenancy()->end();
 
-    $this->assertSame(2, Post::count());
+    expect(Post::count())->toBe(2);
 });
 
 test('secondary models are scoped to the current tenant when accessed via primary model', function () {
@@ -112,17 +112,17 @@ test('secondary models are scoped to the current tenant when accessed via primar
     // ================
     // acme context again
     tenancy()->initialize($acme);
-    $this->assertSame(1, Post::count());
-    $this->assertSame(1, Post::first()->comments->count());
+    expect(Post::count())->toBe(1);
+    expect(Post::first()->comments->count())->toBe(1);
 });
 
 test('secondary models are n o t scoped to the current tenant when accessed directly', function () {
     $this->secondary_models_are_scoped_to_the_current_tenant_when_accessed_via_primary_model();
 
     // We're in acme context
-    $this->assertSame('acme', tenant('id'));
+    expect(tenant('id'))->toBe('acme');
 
-    $this->assertSame(2, Comment::count());
+    expect(Comment::count())->toBe(2);
 });
 
 test('secondary models a r e scoped to the current tenant when accessed directly a n d p a r e n t r e l a t i o n s h i p t r a i t i s u s e d', function () {
@@ -134,8 +134,8 @@ test('secondary models a r e scoped to the current tenant when accessed directly
         $post = Post::create(['text' => 'Foo']);
         $post->scoped_comments()->create(['text' => 'Comment Text']);
 
-        $this->assertSame(1, Post::count());
-        $this->assertSame(1, ScopedComment::count());
+        expect(Post::count())->toBe(1);
+        expect(ScopedComment::count())->toBe(1);
     });
 
     $foobar = Tenant::create([
@@ -143,18 +143,18 @@ test('secondary models a r e scoped to the current tenant when accessed directly
     ]);
 
     $foobar->run(function () {
-        $this->assertSame(0, Post::count());
-        $this->assertSame(0, ScopedComment::count());
+        expect(Post::count())->toBe(0);
+        expect(ScopedComment::count())->toBe(0);
 
         $post = Post::create(['text' => 'Bar']);
         $post->scoped_comments()->create(['text' => 'Comment Text 2']);
 
-        $this->assertSame(1, Post::count());
-        $this->assertSame(1, ScopedComment::count());
+        expect(Post::count())->toBe(1);
+        expect(ScopedComment::count())->toBe(1);
     });
 
     // Global context
-    $this->assertSame(2, ScopedComment::count());
+    expect(ScopedComment::count())->toBe(2);
 });
 
 test('secondary models are n o t scoped in the central context', function () {
@@ -162,7 +162,7 @@ test('secondary models are n o t scoped in the central context', function () {
 
     tenancy()->end();
 
-    $this->assertSame(2, Comment::count());
+    expect(Comment::count())->toBe(2);
 });
 
 test('global models are not scoped at all', function () {
@@ -179,13 +179,13 @@ test('global models are not scoped at all', function () {
     ]);
 
     $acme->run(function () {
-        $this->assertSame(2, GlobalResource::count());
+        expect(GlobalResource::count())->toBe(2);
 
         GlobalResource::create(['text' => 'Third']);
         GlobalResource::create(['text' => 'Fourth']);
     });
 
-    $this->assertSame(4, GlobalResource::count());
+    expect(GlobalResource::count())->toBe(4);
 });
 
 test('tenant id and relationship is auto added when creating primary resources in tenant context', function () {
@@ -195,10 +195,10 @@ test('tenant id and relationship is auto added when creating primary resources i
 
     $post = Post::create(['text' => 'Foo']);
 
-    $this->assertSame('acme', $post->tenant_id);
-    $this->assertTrue($post->relationLoaded('tenant'));
-    $this->assertSame($acme, $post->tenant);
-    $this->assertSame(tenant(), $post->tenant);
+    expect($post->tenant_id)->toBe('acme');
+    expect($post->relationLoaded('tenant'))->toBeTrue();
+    expect($post->tenant)->toBe($acme);
+    expect($post->tenant)->toBe(tenant());
 });
 
 test('tenant id is not auto added when creating primary resources in central context', function () {
@@ -227,7 +227,7 @@ test('tenant id column name can be customized', function () {
 
     $post = Post::create(['text' => 'Foo']);
 
-    $this->assertSame('acme', $post->team_id);
+    expect($post->team_id)->toBe('acme');
 
     // ======================================
     // foobar context
@@ -237,11 +237,11 @@ test('tenant id column name can be customized', function () {
 
     $post = Post::create(['text' => 'Bar']);
 
-    $this->assertSame('foobar', $post->team_id);
+    expect($post->team_id)->toBe('foobar');
 
     $post = Post::first();
 
-    $this->assertSame('foobar', $post->team_id);
+    expect($post->team_id)->toBe('foobar');
 
     // ======================================
     // acme context again
@@ -249,10 +249,10 @@ test('tenant id column name can be customized', function () {
     tenancy()->initialize($acme);
 
     $post = Post::first();
-    $this->assertSame('acme', $post->team_id);
+    expect($post->team_id)->toBe('acme');
 
     // Assert foobar models are inaccessible in acme context
-    $this->assertSame(1, Post::count());
+    expect(Post::count())->toBe(1);
 });
 
 test('the model returned by the tenant helper has unique and exists validation rules', function () {
@@ -287,8 +287,8 @@ test('the model returned by the tenant helper has unique and exists validation r
     ])->fails();
 
     // Assert that tenant()->unique() and tenant()->exists() are scoped
-    $this->assertTrue($uniqueFails);
-    $this->assertFalse($existsFails);
+    expect($uniqueFails)->toBeTrue();
+    expect($existsFails)->toBeFalse();
 });
 
 // Helpers

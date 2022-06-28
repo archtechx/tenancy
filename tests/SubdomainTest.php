@@ -34,14 +34,14 @@ test('tenant can be identified by subdomain', function () {
         'domain' => 'foo',
     ]);
 
-    $this->assertFalse(tenancy()->initialized);
+    expect(tenancy()->initialized)->toBeFalse();
 
     $this
         ->get('http://foo.localhost/foo/abc/xyz')
         ->assertSee('abc + xyz');
 
-    $this->assertTrue(tenancy()->initialized);
-    $this->assertSame('acme', tenant('id'));
+    expect(tenancy()->initialized)->toBeTrue();
+    expect(tenant('id'))->toBe('acme');
 });
 
 test('onfail logic can be customized', function () {

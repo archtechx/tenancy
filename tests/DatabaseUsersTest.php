@@ -40,11 +40,11 @@ test('users are created when permission controlled mysql manager is used', funct
 
     /** @var ManagesDatabaseUsers $manager */
     $manager = $tenant->database()->manager();
-    $this->assertFalse($manager->userExists($tenant->database()->getUsername()));
+    expect($manager->userExists($tenant->database()->getUsername()))->toBeFalse();
 
     $tenant->save();
 
-    $this->assertTrue($manager->userExists($tenant->database()->getUsername()));
+    expect($manager->userExists($tenant->database()->getUsername()))->toBeTrue();
 });
 
 test('a tenants database cannot be created when the user already exists', function () {
@@ -55,8 +55,8 @@ test('a tenants database cannot be created when the user already exists', functi
 
     /** @var ManagesDatabaseUsers $manager */
     $manager = $tenant->database()->manager();
-    $this->assertTrue($manager->userExists($tenant->database()->getUsername()));
-    $this->assertTrue($manager->databaseExists($tenant->database()->getName()));
+    expect($manager->userExists($tenant->database()->getUsername()))->toBeTrue();
+    expect($manager->databaseExists($tenant->database()->getName()))->toBeTrue();
 
     $this->expectException(TenantDatabaseUserAlreadyExistsException::class);
     Event::fake([DatabaseCreated::class]);
@@ -69,7 +69,7 @@ test('a tenants database cannot be created when the user already exists', functi
     $manager2 = $tenant2->database()->manager();
 
     // database was not created because of DB transaction
-    $this->assertFalse($manager2->databaseExists($tenant2->database()->getName()));
+    expect($manager2->databaseExists($tenant2->database()->getName()))->toBeFalse();
     Event::assertNotDispatched(DatabaseCreated::class);
 });
 
@@ -83,7 +83,7 @@ test('correct grants are given to users', function () {
     ]);
 
     $query = DB::connection('mysql')->select("SHOW GRANTS FOR `{$tenant->database()->getUsername()}`@`%`")[1];
-    $this->assertStringStartsWith('GRANT CREATE, ALTER, ALTER ROUTINE ON', $query->{"Grants for {$user}@%"}); // @mysql because that's the hostname within the docker network
+    expect($query->{"Grants for {$user}@%"})->toStartWith('GRANT CREATE, ALTER, ALTER ROUTINE ON'); // @mysql because that's the hostname within the docker network
 });
 
 test('having existing databases without users and switching to permission controlled mysql manager doesnt break existing dbs', function () {
@@ -102,7 +102,7 @@ test('having existing databases without users and switching to permission contro
         'id' => 'foo' . Str::random(10),
     ]);
 
-    $this->assertTrue($tenant->database()->manager() instanceof MySQLDatabaseManager);
+    expect($tenant->database()->manager() instanceof MySQLDatabaseManager)->toBeTrue();
 
     tenancy()->initialize($tenant); // check if everything works
     tenancy()->end();
@@ -111,6 +111,6 @@ test('having existing databases without users and switching to permission contro
 
     tenancy()->initialize($tenant); // check if everything works
 
-    $this->assertTrue($tenant->database()->manager() instanceof PermissionControlledMySQLDatabaseManager);
-    $this->assertSame('root', config('database.connections.tenant.username'));
+    expect($tenant->database()->manager() instanceof PermissionControlledMySQLDatabaseManager)->toBeTrue();
+    expect(config('database.connections.tenant.username'))->toBe('root');
 });

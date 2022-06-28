@@ -40,7 +40,7 @@ test('asset can be accessed using the url returned by the tenant asset helper', 
 
     // response()->file() returns BinaryFileResponse whose content is
     // inaccessible via getContent, so ->assertSee() can't be used
-    $this->assertFileExists($path);
+    expect($path)->toBeFile();
     $response = $this->get(tenant_asset($filename), [
         'X-Tenant' => $tenant->id,
     ]);
@@ -51,7 +51,7 @@ test('asset can be accessed using the url returned by the tenant asset helper', 
     $content = fread($f, filesize($path));
     fclose($f);
 
-    $this->assertSame('bar', $content);
+    expect($content)->toBe('bar');
 });
 
 test('asset helper returns a link to tenant asset controller when asset url is null', function () {
@@ -60,7 +60,7 @@ test('asset helper returns a link to tenant asset controller when asset url is n
     $tenant = Tenant::create();
     tenancy()->initialize($tenant);
 
-    $this->assertSame(route('stancl.tenancy.asset', ['path' => 'foo']), asset('foo'));
+    expect(asset('foo'))->toBe(route('stancl.tenancy.asset', ['path' => 'foo']));
 });
 
 test('asset helper returns a link to an external url when asset url is not null', function () {
@@ -69,17 +69,17 @@ test('asset helper returns a link to an external url when asset url is not null'
     $tenant = Tenant::create();
     tenancy()->initialize($tenant);
 
-    $this->assertSame("https://an-s3-bucket/tenant{$tenant->id}/foo", asset('foo'));
+    expect(asset('foo'))->toBe("https://an-s3-bucket/tenant{$tenant->id}/foo");
 });
 
 test('global asset helper returns the same url regardless of tenancy initialization', function () {
     $original = global_asset('foobar');
-    $this->assertSame(asset('foobar'), global_asset('foobar'));
+    expect(global_asset('foobar'))->toBe(asset('foobar'));
 
     $tenant = Tenant::create();
     tenancy()->initialize($tenant);
 
-    $this->assertSame($original, global_asset('foobar'));
+    expect(global_asset('foobar'))->toBe($original);
 });
 
 test('asset helper tenancy can be disabled', function () {
@@ -93,7 +93,7 @@ test('asset helper tenancy can be disabled', function () {
     $tenant = Tenant::create();
     tenancy()->initialize($tenant);
 
-    $this->assertSame($original, asset('foo'));
+    expect(asset('foo'))->toBe($original);
 });
 
 // Helpers

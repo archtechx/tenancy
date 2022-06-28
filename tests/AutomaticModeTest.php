@@ -28,7 +28,7 @@ test('context is switched when tenancy is initialized', function () {
 
     tenancy()->initialize($tenant);
 
-    $this->assertSame('acme', app('tenancy_initialized_for_tenant'));
+    expect(app('tenancy_initialized_for_tenant'))->toBe('acme');
 });
 
 test('context is reverted when tenancy is ended', function () {
@@ -36,7 +36,7 @@ test('context is reverted when tenancy is ended', function () {
 
     tenancy()->end();
 
-    $this->assertSame(true, app('tenancy_ended'));
+    expect(app('tenancy_ended'))->toBe(true);
 });
 
 test('context is switched when tenancy is reinitialized', function () {
@@ -50,7 +50,7 @@ test('context is switched when tenancy is reinitialized', function () {
 
     tenancy()->initialize($tenant);
 
-    $this->assertSame('acme', app('tenancy_initialized_for_tenant'));
+    expect(app('tenancy_initialized_for_tenant'))->toBe('acme');
 
     $tenant2 = Tenant::create([
         'id' => 'foobar',
@@ -58,17 +58,17 @@ test('context is switched when tenancy is reinitialized', function () {
 
     tenancy()->initialize($tenant2);
 
-    $this->assertSame('foobar', app('tenancy_initialized_for_tenant'));
+    expect(app('tenancy_initialized_for_tenant'))->toBe('foobar');
 });
 
 test('central helper runs callbacks in the central state', function () {
     tenancy()->initialize($tenant = Tenant::create());
 
     tenancy()->central(function () {
-        $this->assertSame(null, tenant());
+        expect(tenant())->toBe(null);
     });
 
-    $this->assertSame($tenant, tenant());
+    expect(tenant())->toBe($tenant);
 });
 
 test('central helper returns the value from the callback', function () {
@@ -86,19 +86,19 @@ test('central helper reverts back to tenant context', function () {
         //
     });
 
-    $this->assertSame($tenant, tenant());
+    expect(tenant())->toBe($tenant);
 });
 
 test('central helper doesnt change tenancy state when called in central context', function () {
-    $this->assertFalse(tenancy()->initialized);
-    $this->assertNull(tenant());
+    expect(tenancy()->initialized)->toBeFalse();
+    expect(tenant())->toBeNull();
 
     tenancy()->central(function () {
         //
     });
 
-    $this->assertFalse(tenancy()->initialized);
-    $this->assertNull(tenant());
+    expect(tenancy()->initialized)->toBeFalse();
+    expect(tenant())->toBeNull();
 });
 
 // Helpers

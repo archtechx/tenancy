@@ -34,6 +34,6 @@ test('tenant route helper generates correct url', function () {
         return 'Foo';
     })->name('foo');
 
-    $this->assertSame('http://foo.localhost/abcdef/as/df', tenant_route('foo.localhost', 'foo', ['a' => 'as', 'b' => 'df']));
-    $this->assertSame('http://foo.localhost/abcdef', tenant_route('foo.localhost', 'foo', []));
+    expect(tenant_route('foo.localhost', 'foo', ['a' => 'as', 'b' => 'df']))->toBe('http://foo.localhost/abcdef/as/df');
+    expect(tenant_route('foo.localhost', 'foo', []))->toBe('http://foo.localhost/abcdef');
 });

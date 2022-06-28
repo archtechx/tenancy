@@ -40,20 +40,20 @@ test('databases can be created and deleted', function ($driver, $databaseManager
     $manager = app($databaseManager);
     $manager->setConnection($driver);
 
-    $this->assertFalse($manager->databaseExists($name));
+    expect($manager->databaseExists($name))->toBeFalse();
 
     $tenant = Tenant::create([
         'tenancy_db_name' => $name,
         'tenancy_db_connection' => $driver,
     ]);
 
-    $this->assertTrue($manager->databaseExists($name));
+    expect($manager->databaseExists($name))->toBeTrue();
     $manager->deleteDatabase($tenant);
-    $this->assertFalse($manager->databaseExists($name));
+    expect($manager->databaseExists($name))->toBeFalse();
 })->with('database_manager_provider');
 
 test('dbs can be created when another driver is used for the central db', function () {
-    $this->assertSame('central', config('database.default'));
+    expect(config('database.default'))->toBe('central');
 
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
@@ -64,26 +64,26 @@ test('dbs can be created when another driver is used for the central db', functi
     $mysqlmanager = app(MySQLDatabaseManager::class);
     $mysqlmanager->setConnection('mysql');
 
-    $this->assertFalse($mysqlmanager->databaseExists($database));
+    expect($mysqlmanager->databaseExists($database))->toBeFalse();
     Tenant::create([
         'tenancy_db_name' => $database,
         'tenancy_db_connection' => 'mysql',
     ]);
 
-    $this->assertTrue($mysqlmanager->databaseExists($database));
+    expect($mysqlmanager->databaseExists($database))->toBeTrue();
 
     $postgresManager = app(PostgreSQLDatabaseManager::class);
     $postgresManager->setConnection('pgsql');
 
     $database = 'db' . $this->randomString();
-    $this->assertFalse($postgresManager->databaseExists($database));
+    expect($postgresManager->databaseExists($database))->toBeFalse();
 
     Tenant::create([
         'tenancy_db_name' => $database,
         'tenancy_db_connection' => 'pgsql',
     ]);
 
-    $this->assertTrue($postgresManager->databaseExists($database));
+    expect($postgresManager->databaseExists($database))->toBeTrue();
 });
 
 test('the tenant connection is fully removed', function () {
@@ -102,20 +102,20 @@ test('the tenant connection is fully removed', function () {
 
     $tenant = Tenant::create();
 
-    $this->assertSame(['central'], array_keys(app('db')->getConnections()));
+    expect(array_keys(app('db')->getConnections()))->toBe(['central']);
     $this->assertArrayNotHasKey('tenant', config('database.connections'));
 
     tenancy()->initialize($tenant);
 
     createUsersTable();
 
-    $this->assertSame(['central', 'tenant'], array_keys(app('db')->getConnections()));
+    expect(array_keys(app('db')->getConnections()))->toBe(['central', 'tenant']);
     $this->assertArrayHasKey('tenant', config('database.connections'));
 
     tenancy()->end();
 
-    $this->assertSame(['central'], array_keys(app('db')->getConnections()));
-    $this->assertNull(config('database.connections.tenant'));
+    expect(array_keys(app('db')->getConnections()))->toBe(['central']);
+    expect(config('database.connections.tenant'))->toBeNull();
 });
 
 test('db name is prefixed with db path when sqlite is used', function () {
@@ -132,7 +132,7 @@ test('db name is prefixed with db path when sqlite is used', function () {
     ]);
     app(DatabaseManager::class)->createTenantConnection($tenant);
 
-    $this->assertSame(config('database.connections.tenant.database'), database_path('foodb'));
+    expect(database_path('foodb'))->toBe(config('database.connections.tenant.database'));
 });
 
 test('schema manager uses schema to separate tenant dbs', function () {
@@ -160,8 +160,8 @@ test('schema manager uses schema to separate tenant dbs', function () {
         config('database.connections.' . config('database.default') . '.search_path') :
         config('database.connections.' . config('database.default') . '.schema');
 
-    $this->assertSame($tenant->database()->getName(), $schemaConfig);
-    $this->assertSame($originalDatabaseName, config(['database.connections.pgsql.database']));
+    expect($schemaConfig)->toBe($tenant->database()->getName());
+    expect(config(['database.connections.pgsql.database']))->toBe($originalDatabaseName);
 });
 
 test('a tenants database cannot be created when the database already exists', function () {
@@ -175,7 +175,7 @@ test('a tenants database cannot be created when the database already exists', fu
     ]);
 
     $manager = $tenant->database()->manager();
-    $this->assertTrue($manager->databaseExists($tenant->database()->getName()));
+    expect($manager->databaseExists($tenant->database()->getName()))->toBeTrue();
 
     $this->expectException(TenantDatabaseAlreadyExistsException::class);
     $tenant2 = Tenant::create([
@@ -220,10 +220,10 @@ test('tenant database can be created on a foreign server', function () {
     $manager = $tenant->database()->manager();
 
     $manager->setConnection('mysql');
-    $this->assertFalse($manager->databaseExists($name));
+    expect($manager->databaseExists($name))->toBeFalse();
 
     $manager->setConnection('mysql2');
-    $this->assertTrue($manager->databaseExists($name));
+    expect($manager->databaseExists($name))->toBeTrue();
 });
 
 test('path used by sqlite manager can be customized', function () {

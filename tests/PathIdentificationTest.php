@@ -34,12 +34,12 @@ test('tenant can be identified by path', function () {
         'id' => 'acme',
     ]);
 
-    $this->assertFalse(tenancy()->initialized);
+    expect(tenancy()->initialized)->toBeFalse();
 
     $this->get('/acme/foo/abc/xyz');
 
-    $this->assertTrue(tenancy()->initialized);
-    $this->assertSame('acme', tenant('id'));
+    expect(tenancy()->initialized)->toBeTrue();
+    expect(tenant('id'))->toBe('acme');
 });
 
 test('route actions dont get the tenant id', function () {
@@ -47,14 +47,14 @@ test('route actions dont get the tenant id', function () {
         'id' => 'acme',
     ]);
 
-    $this->assertFalse(tenancy()->initialized);
+    expect(tenancy()->initialized)->toBeFalse();
 
     $this
         ->get('/acme/foo/abc/xyz')
         ->assertContent('abc + xyz');
 
-    $this->assertTrue(tenancy()->initialized);
-    $this->assertSame('acme', tenant('id'));
+    expect(tenancy()->initialized)->toBeTrue();
+    expect(tenant('id'))->toBe('acme');
 });
 
 test('exception is thrown when tenant cannot be identified by path', function () {
@@ -64,7 +64,7 @@ test('exception is thrown when tenant cannot be identified by path', function ()
         ->withoutExceptionHandling()
         ->get('/acme/foo/abc/xyz');
 
-    $this->assertFalse(tenancy()->initialized);
+    expect(tenancy()->initialized)->toBeFalse();
 });
 
 test('onfail logic can be customized', function () {

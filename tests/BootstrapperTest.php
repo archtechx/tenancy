@@ -50,21 +50,21 @@ test('database data is separated', function () {
 
     // Create Foo user
     DB::table('users')->insert(['name' => 'Foo', 'email' => 'foo@bar.com', 'password' => 'secret']);
-    $this->assertCount(1, DB::table('users')->get());
+    expect(DB::table('users')->get())->toHaveCount(1);
 
     tenancy()->initialize($tenant2);
 
     // Assert Foo user is not in this DB
-    $this->assertCount(0, DB::table('users')->get());
+    expect(DB::table('users')->get())->toHaveCount(0);
     // Create Bar user
     DB::table('users')->insert(['name' => 'Bar', 'email' => 'bar@bar.com', 'password' => 'secret']);
-    $this->assertCount(1, DB::table('users')->get());
+    expect(DB::table('users')->get())->toHaveCount(1);
 
     tenancy()->initialize($tenant1);
 
     // Assert Bar user is not in this DB
-    $this->assertCount(1, DB::table('users')->get());
-    $this->assertSame('Foo', DB::table('users')->first()->name);
+    expect(DB::table('users')->get())->toHaveCount(1);
+    expect(DB::table('users')->first()->name)->toBe('Foo');
 });
 
 test('cache data is separated', function () {
@@ -79,33 +79,33 @@ test('cache data is separated', function () {
     $tenant2 = Tenant::create();
 
     cache()->set('foo', 'central');
-    $this->assertSame('central', Cache::get('foo'));
+    expect(Cache::get('foo'))->toBe('central');
 
     tenancy()->initialize($tenant1);
 
     // Assert central cache doesn't leak to tenant context
-    $this->assertFalse(Cache::has('foo'));
+    expect(Cache::has('foo'))->toBeFalse();
 
     cache()->set('foo', 'bar');
-    $this->assertSame('bar', Cache::get('foo'));
+    expect(Cache::get('foo'))->toBe('bar');
 
     tenancy()->initialize($tenant2);
 
     // Assert one tenant's data doesn't leak to another tenant
-    $this->assertFalse(Cache::has('foo'));
+    expect(Cache::has('foo'))->toBeFalse();
 
     cache()->set('foo', 'xyz');
-    $this->assertSame('xyz', Cache::get('foo'));
+    expect(Cache::get('foo'))->toBe('xyz');
 
     tenancy()->initialize($tenant1);
 
     // Asset data didn't leak to original tenant
-    $this->assertSame('bar', Cache::get('foo'));
+    expect(Cache::get('foo'))->toBe('bar');
 
     tenancy()->end();
 
     // Asset central is still the same
-    $this->assertSame('central', Cache::get('foo'));
+    expect(Cache::get('foo'))->toBe('central');
 });
 
 test('redis data is separated', function () {
@@ -118,23 +118,23 @@ test('redis data is separated', function () {
 
     tenancy()->initialize($tenant1);
     Redis::set('foo', 'bar');
-    $this->assertSame('bar', Redis::get('foo'));
+    expect(Redis::get('foo'))->toBe('bar');
 
     tenancy()->initialize($tenant2);
-    $this->assertSame(null, Redis::get('foo'));
+    expect(Redis::get('foo'))->toBe(null);
     Redis::set('foo', 'xyz');
     Redis::set('abc', 'def');
-    $this->assertSame('xyz', Redis::get('foo'));
-    $this->assertSame('def', Redis::get('abc'));
+    expect(Redis::get('foo'))->toBe('xyz');
+    expect(Redis::get('abc'))->toBe('def');
 
     tenancy()->initialize($tenant1);
-    $this->assertSame('bar', Redis::get('foo'));
-    $this->assertSame(null, Redis::get('abc'));
+    expect(Redis::get('foo'))->toBe('bar');
+    expect(Redis::get('abc'))->toBe(null);
 
     $tenant3 = Tenant::create();
     tenancy()->initialize($tenant3);
-    $this->assertSame(null, Redis::get('foo'));
-    $this->assertSame(null, Redis::get('abc'));
+    expect(Redis::get('foo'))->toBe(null);
+    expect(Redis::get('abc'))->toBe(null);
 });
 
 test('filesystem data is separated', function () {
@@ -154,34 +154,34 @@ test('filesystem data is separated', function () {
     tenancy()->initialize($tenant1);
 
     Storage::disk('public')->put('foo', 'bar');
-    $this->assertSame('bar', Storage::disk('public')->get('foo'));
+    expect(Storage::disk('public')->get('foo'))->toBe('bar');
 
     tenancy()->initialize($tenant2);
-    $this->assertFalse(Storage::disk('public')->exists('foo'));
+    expect(Storage::disk('public')->exists('foo'))->toBeFalse();
     Storage::disk('public')->put('foo', 'xyz');
     Storage::disk('public')->put('abc', 'def');
-    $this->assertSame('xyz', Storage::disk('public')->get('foo'));
-    $this->assertSame('def', Storage::disk('public')->get('abc'));
+    expect(Storage::disk('public')->get('foo'))->toBe('xyz');
+    expect(Storage::disk('public')->get('abc'))->toBe('def');
 
     tenancy()->initialize($tenant1);
-    $this->assertSame('bar', Storage::disk('public')->get('foo'));
-    $this->assertFalse(Storage::disk('public')->exists('abc'));
+    expect(Storage::disk('public')->get('foo'))->toBe('bar');
+    expect(Storage::disk('public')->exists('abc'))->toBeFalse();
 
     $tenant3 = Tenant::create();
     tenancy()->initialize($tenant3);
-    $this->assertFalse(Storage::disk('public')->exists('foo'));
-    $this->assertFalse(Storage::disk('public')->exists('abc'));
+    expect(Storage::disk('public')->exists('foo'))->toBeFalse();
+    expect(Storage::disk('public')->exists('abc'))->toBeFalse();
 
     $expected_storage_path = $old_storage_path . '/tenant' . tenant('id'); // /tenant = suffix base
 
     // Check that disk prefixes respect the root_override logic
-    $this->assertSame($expected_storage_path . '/app/', getDiskPrefix('local'));
-    $this->assertSame($expected_storage_path . '/app/public/', getDiskPrefix('public'));
+    expect(getDiskPrefix('local'))->toBe($expected_storage_path . '/app/');
+    expect(getDiskPrefix('public'))->toBe($expected_storage_path . '/app/public/');
     $this->assertSame('tenant' . tenant('id') . '/', getDiskPrefix('s3'), '/');
 
     // Check suffixing logic
     $new_storage_path = storage_path();
-    $this->assertEquals($expected_storage_path, $new_storage_path);
+    expect($new_storage_path)->toEqual($expected_storage_path);
 });
 
 // Helpers

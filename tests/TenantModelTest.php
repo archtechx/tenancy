@@ -36,11 +36,11 @@ test('current tenant can be resolved from service container using typehint', fun
 
     tenancy()->initialize($tenant);
 
-    $this->assertSame($tenant->id, app(Contracts\Tenant::class)->id);
+    expect(app(Contracts\Tenant::class)->id)->toBe($tenant->id);
 
     tenancy()->end();
 
-    $this->assertSame(null, app(Contracts\Tenant::class));
+    expect(app(Contracts\Tenant::class))->toBe(null);
 });
 
 test('id is generated when no id is supplied', function () {
@@ -66,8 +66,8 @@ test('autoincrement ids are supported', function () {
     $tenant1 = Tenant::create();
     $tenant2 = Tenant::create();
 
-    $this->assertSame(1, $tenant1->id);
-    $this->assertSame(2, $tenant2->id);
+    expect($tenant1->id)->toBe(1);
+    expect($tenant2->id)->toBe(2);
 });
 
 test('custom tenant model can be used', function () {
@@ -75,7 +75,7 @@ test('custom tenant model can be used', function () {
 
     tenancy()->initialize($tenant);
 
-    $this->assertTrue(tenant() instanceof MyTenant);
+    expect(tenant() instanceof MyTenant)->toBeTrue();
 });
 
 test('custom tenant model that doesnt extend vendor tenant model can be used', function () {
@@ -85,7 +85,7 @@ test('custom tenant model that doesnt extend vendor tenant model can be used', f
 
     tenancy()->initialize($tenant);
 
-    $this->assertTrue(tenant() instanceof AnotherTenant);
+    expect(tenant() instanceof AnotherTenant)->toBeTrue();
 });
 
 test('tenant can be created even when we are in another tenants context', function () {
@@ -112,15 +112,15 @@ test('tenant can be created even when we are in another tenants context', functi
 
     tenancy()->end();
 
-    $this->assertSame(2, Tenant::count());
+    expect(Tenant::count())->toBe(2);
 });
 
 test('the model uses tenant collection', function () {
     Tenant::create();
     Tenant::create();
 
-    $this->assertSame(2, Tenant::count());
-    $this->assertTrue(Tenant::all() instanceof TenantCollection);
+    expect(Tenant::count())->toBe(2);
+    expect(Tenant::all() instanceof TenantCollection)->toBeTrue();
 });
 
 test('a command can be run on a collection of tenants', function () {
@@ -139,8 +139,8 @@ test('a command can be run on a collection of tenants', function () {
         ]);
     });
 
-    $this->assertSame('xyz', Tenant::find('t1')->foo);
-    $this->assertSame('xyz', Tenant::find('t2')->foo);
+    expect(Tenant::find('t1')->foo)->toBe('xyz');
+    expect(Tenant::find('t2')->foo)->toBe('xyz');
 });
 
 // Helpers

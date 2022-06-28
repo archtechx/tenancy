@@ -29,7 +29,7 @@ test('database can be created after tenant creation', function () {
     $manager = app(MySQLDatabaseManager::class);
     $manager->setConnection('mysql');
 
-    $this->assertTrue($manager->databaseExists($tenant->database()->getName()));
+    expect($manager->databaseExists($tenant->database()->getName()))->toBeTrue();
 });
 
 test('database can be migrated after tenant creation', function () {
@@ -43,7 +43,7 @@ test('database can be migrated after tenant creation', function () {
     $tenant = Tenant::create();
 
     $tenant->run(function () {
-        $this->assertTrue(Schema::hasTable('users'));
+        expect(Schema::hasTable('users'))->toBeTrue();
     });
 });
 
@@ -63,7 +63,7 @@ test('database can be seeded after tenant creation', function () {
     $tenant = Tenant::create();
 
     $tenant->run(function () {
-        $this->assertSame('Seeded User', User::first()->name);
+        expect(User::first()->name)->toBe('Seeded User');
     });
 });
 
@@ -84,7 +84,7 @@ test('custom job can be added to the pipeline', function () {
     $tenant = Tenant::create();
 
     $tenant->run(function () {
-        $this->assertSame('Foo', User::all()[1]->name);
+        expect(User::all()[1]->name)->toBe('Foo');
     });
 });
 
