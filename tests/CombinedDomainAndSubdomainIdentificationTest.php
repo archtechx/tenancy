@@ -2,78 +2,63 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests;
-
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Database\Models;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomainOrSubdomain;
 
-class CombinedDomainAndSubdomainIdentificationTest extends TestCase
-{
-    public function setUp(): void
-    {
-        parent::setUp();
+uses(Stancl\Tenancy\Tests\TestCase::class);
 
-        Route::group([
-            'middleware' => InitializeTenancyByDomainOrSubdomain::class,
-        ], function () {
-            Route::get('/foo/{a}/{b}', function ($a, $b) {
-                return "$a + $b";
-            });
+beforeEach(function () {
+    Route::group([
+        'middleware' => InitializeTenancyByDomainOrSubdomain::class,
+    ], function () {
+        Route::get('/foo/{a}/{b}', function ($a, $b) {
+            return "$a + $b";
         });
+    });
 
-        config(['tenancy.tenant_model' => CombinedTenant::class]);
-    }
+    config(['tenancy.tenant_model' => CombinedTenant::class]);
+});
 
-    /** @test */
-    public function tenant_can_be_identified_by_subdomain()
-    {
-        config(['tenancy.central_domains' => ['localhost']]);
+test('tenant can be identified by subdomain', function () {
+    config(['tenancy.central_domains' => ['localhost']]);
 
-        $tenant = CombinedTenant::create([
-            'id' => 'acme',
-        ]);
+    $tenant = CombinedTenant::create([
+        'id' => 'acme',
+    ]);
 
-        $tenant->domains()->create([
-            'domain' => 'foo',
-        ]);
+    $tenant->domains()->create([
+        'domain' => 'foo',
+    ]);
 
-        $this->assertFalse(tenancy()->initialized);
+    $this->assertFalse(tenancy()->initialized);
 
-        $this
-            ->get('http://foo.localhost/foo/abc/xyz')
-            ->assertSee('abc + xyz');
+    $this
+        ->get('http://foo.localhost/foo/abc/xyz')
+        ->assertSee('abc + xyz');
 
-        $this->assertTrue(tenancy()->initialized);
-        $this->assertSame('acme', tenant('id'));
-    }
+    $this->assertTrue(tenancy()->initialized);
+    $this->assertSame('acme', tenant('id'));
+});
 
-    /** @test */
-    public function tenant_can_be_identified_by_domain()
-    {
-        config(['tenancy.central_domains' => []]);
+test('tenant can be identified by domain', function () {
+    config(['tenancy.central_domains' => []]);
 
-        $tenant = CombinedTenant::create([
-            'id' => 'acme',
-        ]);
+    $tenant = CombinedTenant::create([
+        'id' => 'acme',
+    ]);
 
-        $tenant->domains()->create([
-            'domain' => 'foobar.localhost',
-        ]);
+    $tenant->domains()->create([
+        'domain' => 'foobar.localhost',
+    ]);
 
-        $this->assertFalse(tenancy()->initialized);
+    $this->assertFalse(tenancy()->initialized);
 
-        $this
-            ->get('http://foobar.localhost/foo/abc/xyz')
-            ->assertSee('abc + xyz');
+    $this
+        ->get('http://foobar.localhost/foo/abc/xyz')
+        ->assertSee('abc + xyz');
 
-        $this->assertTrue(tenancy()->initialized);
-        $this->assertSame('acme', tenant('id'));
-    }
-}
-
-class CombinedTenant extends Models\Tenant
-{
-    use HasDomains;
-}
+    $this->assertTrue(tenancy()->initialized);
+    $this->assertSame('acme', tenant('id'));
+});

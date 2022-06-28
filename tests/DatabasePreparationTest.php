@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests;
-
 use Illuminate\Database\Seeder;
 use Illuminate\Foundation\Auth\User as Authenticable;
 use Illuminate\Support\Facades\DB;
@@ -17,123 +15,102 @@ use Stancl\Tenancy\Jobs\SeedDatabase;
 use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
-class DatabasePreparationTest extends TestCase
-{
-    /** @test */
-    public function database_can_be_created_after_tenant_creation()
-    {
-        config(['tenancy.database.template_tenant_connection' => 'mysql']);
+uses(Stancl\Tenancy\Tests\TestCase::class);
 
-        Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
-            return $event->tenant;
-        })->toListener());
+test('database can be created after tenant creation', function () {
+    config(['tenancy.database.template_tenant_connection' => 'mysql']);
 
-        $tenant = Tenant::create();
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
 
-        $manager = app(MySQLDatabaseManager::class);
-        $manager->setConnection('mysql');
+    $tenant = Tenant::create();
 
-        $this->assertTrue($manager->databaseExists($tenant->database()->getName()));
-    }
+    $manager = app(MySQLDatabaseManager::class);
+    $manager->setConnection('mysql');
 
-    /** @test */
-    public function database_can_be_migrated_after_tenant_creation()
-    {
-        Event::listen(TenantCreated::class, JobPipeline::make([
-            CreateDatabase::class,
-            MigrateDatabase::class,
-        ])->send(function (TenantCreated $event) {
-            return $event->tenant;
-        })->toListener());
+    $this->assertTrue($manager->databaseExists($tenant->database()->getName()));
+});
 
-        $tenant = Tenant::create();
+test('database can be migrated after tenant creation', function () {
+    Event::listen(TenantCreated::class, JobPipeline::make([
+        CreateDatabase::class,
+        MigrateDatabase::class,
+    ])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
 
-        $tenant->run(function () {
-            $this->assertTrue(Schema::hasTable('users'));
-        });
-    }
+    $tenant = Tenant::create();
 
-    /** @test */
-    public function database_can_be_seeded_after_tenant_creation()
-    {
-        config(['tenancy.seeder_parameters' => [
-            '--class' => TestSeeder::class,
-        ]]);
+    $tenant->run(function () {
+        $this->assertTrue(Schema::hasTable('users'));
+    });
+});
 
-        Event::listen(TenantCreated::class, JobPipeline::make([
-            CreateDatabase::class,
-            MigrateDatabase::class,
-            SeedDatabase::class,
-        ])->send(function (TenantCreated $event) {
-            return $event->tenant;
-        })->toListener());
+test('database can be seeded after tenant creation', function () {
+    config(['tenancy.seeder_parameters' => [
+        '--class' => TestSeeder::class,
+    ]]);
 
-        $tenant = Tenant::create();
+    Event::listen(TenantCreated::class, JobPipeline::make([
+        CreateDatabase::class,
+        MigrateDatabase::class,
+        SeedDatabase::class,
+    ])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
 
-        $tenant->run(function () {
-            $this->assertSame('Seeded User', User::first()->name);
-        });
-    }
+    $tenant = Tenant::create();
 
-    /** @test */
-    public function custom_job_can_be_added_to_the_pipeline()
-    {
-        config(['tenancy.seeder_parameters' => [
-            '--class' => TestSeeder::class,
-        ]]);
+    $tenant->run(function () {
+        $this->assertSame('Seeded User', User::first()->name);
+    });
+});
 
-        Event::listen(TenantCreated::class, JobPipeline::make([
-            CreateDatabase::class,
-            MigrateDatabase::class,
-            SeedDatabase::class,
-            CreateSuperuser::class,
-        ])->send(function (TenantCreated $event) {
-            return $event->tenant;
-        })->toListener());
+test('custom job can be added to the pipeline', function () {
+    config(['tenancy.seeder_parameters' => [
+        '--class' => TestSeeder::class,
+    ]]);
 
-        $tenant = Tenant::create();
+    Event::listen(TenantCreated::class, JobPipeline::make([
+        CreateDatabase::class,
+        MigrateDatabase::class,
+        SeedDatabase::class,
+        CreateSuperuser::class,
+    ])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
 
-        $tenant->run(function () {
-            $this->assertSame('Foo', User::all()[1]->name);
-        });
-    }
-}
+    $tenant = Tenant::create();
 
-class User extends Authenticable
-{
-    protected $guarded = [];
-}
+    $tenant->run(function () {
+        $this->assertSame('Foo', User::all()[1]->name);
+    });
+});
 
-class TestSeeder extends Seeder
-{
-    /**
+// Helpers
+/**
      * Run the database seeds.
      *
      * @return void
      */
-    public function run()
-    {
-        DB::table('users')->insert([
-            'name' => 'Seeded User',
-            'email' => 'seeded@user',
-            'password' => bcrypt('password'),
-        ]);
-    }
+function run()
+{
+    DB::table('users')->insert([
+        'name' => 'Seeded User',
+        'email' => 'seeded@user',
+        'password' => bcrypt('password'),
+    ]);
 }
 
-class CreateSuperuser
+function __construct(Tenant $tenant)
 {
-    protected $tenant;
+    test()->tenant = $tenant;
+}
 
-    public function __construct(Tenant $tenant)
-    {
-        $this->tenant = $tenant;
-    }
-
-    public function handle()
-    {
-        $this->tenant->run(function () {
-            User::create(['name' => 'Foo', 'email' => 'foo@bar.com', 'password' => 'secret']);
-        });
-    }
+function handle()
+{
+    test()->tenant->run(function () {
+        User::create(['name' => 'Foo', 'email' => 'foo@bar.com', 'password' => 'secret']);
+    });
 }

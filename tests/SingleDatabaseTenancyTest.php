@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests;
-
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
@@ -12,361 +10,304 @@ use Illuminate\Support\Facades\Validator;
 use Stancl\Tenancy\Database\Concerns\BelongsToPrimaryModel;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 use Stancl\Tenancy\Database\Concerns\HasScopedValidationRules;
+
+uses(Stancl\Tenancy\Tests\TestCase::class);
 use Stancl\Tenancy\Tests\Etc\Tenant as TestTenant;
 
-class SingleDatabaseTenancyTest extends TestCase
-{
-    public function setUp(): void
-    {
-        parent::setUp();
+beforeEach(function () {
+    BelongsToTenant::$tenantIdColumn = 'tenant_id';
 
-        BelongsToTenant::$tenantIdColumn = 'tenant_id';
+    Schema::create('posts', function (Blueprint $table) {
+        $table->increments('id');
+        $table->string('text');
 
-        Schema::create('posts', function (Blueprint $table) {
-            $table->increments('id');
-            $table->string('text');
+        $table->string('tenant_id');
 
-            $table->string('tenant_id');
+        $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
+    });
 
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
-        });
+    Schema::create('comments', function (Blueprint $table) {
+        $table->increments('id');
+        $table->string('text');
 
-        Schema::create('comments', function (Blueprint $table) {
-            $table->increments('id');
-            $table->string('text');
+        $table->unsignedInteger('post_id');
 
-            $table->unsignedInteger('post_id');
+        $table->foreign('post_id')->references('id')->on('posts')->onUpdate('cascade')->onDelete('cascade');
+    });
 
-            $table->foreign('post_id')->references('id')->on('posts')->onUpdate('cascade')->onDelete('cascade');
-        });
+    config(['tenancy.tenant_model' => Tenant::class]);
+});
 
-        config(['tenancy.tenant_model' => Tenant::class]);
-    }
+test('primary models are scoped to the current tenant', function () {
+    // acme context
+    tenancy()->initialize($acme = Tenant::create([
+        'id' => 'acme',
+    ]));
 
-    /** @test */
-    public function primary_models_are_scoped_to_the_current_tenant()
-    {
-        // acme context
-        tenancy()->initialize($acme = Tenant::create([
-            'id' => 'acme',
-        ]));
+    $post = Post::create(['text' => 'Foo']);
 
+    $this->assertSame('acme', $post->tenant_id);
+    $this->assertSame('acme', $post->tenant->id);
+
+    $post = Post::first();
+
+    $this->assertSame('acme', $post->tenant_id);
+    $this->assertSame('acme', $post->tenant->id);
+
+    // ======================================
+    // foobar context
+    tenancy()->initialize($foobar = Tenant::create([
+        'id' => 'foobar',
+    ]));
+
+    $post = Post::create(['text' => 'Bar']);
+
+    $this->assertSame('foobar', $post->tenant_id);
+    $this->assertSame('foobar', $post->tenant->id);
+
+    $post = Post::first();
+
+    $this->assertSame('foobar', $post->tenant_id);
+    $this->assertSame('foobar', $post->tenant->id);
+
+    // ======================================
+    // acme context again
+
+    tenancy()->initialize($acme);
+
+    $post = Post::first();
+    $this->assertSame('acme', $post->tenant_id);
+    $this->assertSame('acme', $post->tenant->id);
+
+    // Assert foobar models are inaccessible in acme context
+    $this->assertSame(1, Post::count());
+});
+
+test('primary models are not scoped in the central context', function () {
+    $this->primary_models_are_scoped_to_the_current_tenant();
+
+    tenancy()->end();
+
+    $this->assertSame(2, Post::count());
+});
+
+test('secondary models are scoped to the current tenant when accessed via primary model', function () {
+    // acme context
+    tenancy()->initialize($acme = Tenant::create([
+        'id' => 'acme',
+    ]));
+
+    $post = Post::create(['text' => 'Foo']);
+    $post->comments()->create(['text' => 'Comment text']);
+
+    // ================
+    // foobar context
+    tenancy()->initialize($foobar = Tenant::create([
+        'id' => 'foobar',
+    ]));
+
+    $post = Post::create(['text' => 'Bar']);
+    $post->comments()->create(['text' => 'Comment text 2']);
+
+    // ================
+    // acme context again
+    tenancy()->initialize($acme);
+    $this->assertSame(1, Post::count());
+    $this->assertSame(1, Post::first()->comments->count());
+});
+
+test('secondary models are n o t scoped to the current tenant when accessed directly', function () {
+    $this->secondary_models_are_scoped_to_the_current_tenant_when_accessed_via_primary_model();
+
+    // We're in acme context
+    $this->assertSame('acme', tenant('id'));
+
+    $this->assertSame(2, Comment::count());
+});
+
+test('secondary models a r e scoped to the current tenant when accessed directly a n d p a r e n t r e l a t i o n s h i p t r a i t i s u s e d', function () {
+    $acme = Tenant::create([
+        'id' => 'acme',
+    ]);
+
+    $acme->run(function () {
         $post = Post::create(['text' => 'Foo']);
+        $post->scoped_comments()->create(['text' => 'Comment Text']);
 
-        $this->assertSame('acme', $post->tenant_id);
-        $this->assertSame('acme', $post->tenant->id);
+        $this->assertSame(1, Post::count());
+        $this->assertSame(1, ScopedComment::count());
+    });
 
-        $post = Post::first();
+    $foobar = Tenant::create([
+        'id' => 'foobar',
+    ]);
 
-        $this->assertSame('acme', $post->tenant_id);
-        $this->assertSame('acme', $post->tenant->id);
-
-        // ======================================
-        // foobar context
-        tenancy()->initialize($foobar = Tenant::create([
-            'id' => 'foobar',
-        ]));
+    $foobar->run(function () {
+        $this->assertSame(0, Post::count());
+        $this->assertSame(0, ScopedComment::count());
 
         $post = Post::create(['text' => 'Bar']);
+        $post->scoped_comments()->create(['text' => 'Comment Text 2']);
 
-        $this->assertSame('foobar', $post->tenant_id);
-        $this->assertSame('foobar', $post->tenant->id);
-
-        $post = Post::first();
-
-        $this->assertSame('foobar', $post->tenant_id);
-        $this->assertSame('foobar', $post->tenant->id);
-
-        // ======================================
-        // acme context again
-
-        tenancy()->initialize($acme);
-
-        $post = Post::first();
-        $this->assertSame('acme', $post->tenant_id);
-        $this->assertSame('acme', $post->tenant->id);
-
-        // Assert foobar models are inaccessible in acme context
         $this->assertSame(1, Post::count());
-    }
+        $this->assertSame(1, ScopedComment::count());
+    });
 
-    /** @test */
-    public function primary_models_are_not_scoped_in_the_central_context()
-    {
-        $this->primary_models_are_scoped_to_the_current_tenant();
+    // Global context
+    $this->assertSame(2, ScopedComment::count());
+});
 
-        tenancy()->end();
+test('secondary models are n o t scoped in the central context', function () {
+    $this->secondary_models_are_scoped_to_the_current_tenant_when_accessed_via_primary_model();
 
-        $this->assertSame(2, Post::count());
-    }
+    tenancy()->end();
 
-    /** @test */
-    public function secondary_models_are_scoped_to_the_current_tenant_when_accessed_via_primary_model()
-    {
-        // acme context
-        tenancy()->initialize($acme = Tenant::create([
-            'id' => 'acme',
-        ]));
+    $this->assertSame(2, Comment::count());
+});
 
-        $post = Post::create(['text' => 'Foo']);
-        $post->comments()->create(['text' => 'Comment text']);
+test('global models are not scoped at all', function () {
+    Schema::create('global_resources', function (Blueprint $table) {
+        $table->increments('id');
+        $table->string('text');
+    });
 
-        // ================
-        // foobar context
-        tenancy()->initialize($foobar = Tenant::create([
-            'id' => 'foobar',
-        ]));
+    GlobalResource::create(['text' => 'First']);
+    GlobalResource::create(['text' => 'Second']);
 
-        $post = Post::create(['text' => 'Bar']);
-        $post->comments()->create(['text' => 'Comment text 2']);
+    $acme = Tenant::create([
+        'id' => 'acme',
+    ]);
 
-        // ================
-        // acme context again
-        tenancy()->initialize($acme);
-        $this->assertSame(1, Post::count());
-        $this->assertSame(1, Post::first()->comments->count());
-    }
+    $acme->run(function () {
+        $this->assertSame(2, GlobalResource::count());
 
-    /** @test */
-    public function secondary_models_are_NOT_scoped_to_the_current_tenant_when_accessed_directly()
-    {
-        $this->secondary_models_are_scoped_to_the_current_tenant_when_accessed_via_primary_model();
+        GlobalResource::create(['text' => 'Third']);
+        GlobalResource::create(['text' => 'Fourth']);
+    });
 
-        // We're in acme context
-        $this->assertSame('acme', tenant('id'));
+    $this->assertSame(4, GlobalResource::count());
+});
 
-        $this->assertSame(2, Comment::count());
-    }
+test('tenant id and relationship is auto added when creating primary resources in tenant context', function () {
+    tenancy()->initialize($acme = Tenant::create([
+        'id' => 'acme',
+    ]));
 
-    /** @test */
-    public function secondary_models_ARE_scoped_to_the_current_tenant_when_accessed_directly_AND_PARENT_RELATIONSHIP_TRAIT_IS_USED()
-    {
-        $acme = Tenant::create([
-            'id' => 'acme',
-        ]);
+    $post = Post::create(['text' => 'Foo']);
 
-        $acme->run(function () {
-            $post = Post::create(['text' => 'Foo']);
-            $post->scoped_comments()->create(['text' => 'Comment Text']);
+    $this->assertSame('acme', $post->tenant_id);
+    $this->assertTrue($post->relationLoaded('tenant'));
+    $this->assertSame($acme, $post->tenant);
+    $this->assertSame(tenant(), $post->tenant);
+});
 
-            $this->assertSame(1, Post::count());
-            $this->assertSame(1, ScopedComment::count());
-        });
+test('tenant id is not auto added when creating primary resources in central context', function () {
+    $this->expectException(QueryException::class);
 
-        $foobar = Tenant::create([
-            'id' => 'foobar',
-        ]);
+    Post::create(['text' => 'Foo']);
+});
 
-        $foobar->run(function () {
-            $this->assertSame(0, Post::count());
-            $this->assertSame(0, ScopedComment::count());
+test('tenant id column name can be customized', function () {
+    BelongsToTenant::$tenantIdColumn = 'team_id';
 
-            $post = Post::create(['text' => 'Bar']);
-            $post->scoped_comments()->create(['text' => 'Comment Text 2']);
+    Schema::drop('comments');
+    Schema::drop('posts');
+    Schema::create('posts', function (Blueprint $table) {
+        $table->increments('id');
+        $table->string('text');
 
-            $this->assertSame(1, Post::count());
-            $this->assertSame(1, ScopedComment::count());
-        });
+        $table->string('team_id');
 
-        // Global context
-        $this->assertSame(2, ScopedComment::count());
-    }
+        $table->foreign('team_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
+    });
 
-    /** @test */
-    public function secondary_models_are_NOT_scoped_in_the_central_context()
-    {
-        $this->secondary_models_are_scoped_to_the_current_tenant_when_accessed_via_primary_model();
+    tenancy()->initialize($acme = Tenant::create([
+        'id' => 'acme',
+    ]));
 
-        tenancy()->end();
+    $post = Post::create(['text' => 'Foo']);
 
-        $this->assertSame(2, Comment::count());
-    }
+    $this->assertSame('acme', $post->team_id);
 
-    /** @test */
-    public function global_models_are_not_scoped_at_all()
-    {
-        Schema::create('global_resources', function (Blueprint $table) {
-            $table->increments('id');
-            $table->string('text');
-        });
+    // ======================================
+    // foobar context
+    tenancy()->initialize($foobar = Tenant::create([
+        'id' => 'foobar',
+    ]));
 
-        GlobalResource::create(['text' => 'First']);
-        GlobalResource::create(['text' => 'Second']);
+    $post = Post::create(['text' => 'Bar']);
 
-        $acme = Tenant::create([
-            'id' => 'acme',
-        ]);
+    $this->assertSame('foobar', $post->team_id);
 
-        $acme->run(function () {
-            $this->assertSame(2, GlobalResource::count());
+    $post = Post::first();
 
-            GlobalResource::create(['text' => 'Third']);
-            GlobalResource::create(['text' => 'Fourth']);
-        });
+    $this->assertSame('foobar', $post->team_id);
 
-        $this->assertSame(4, GlobalResource::count());
-    }
+    // ======================================
+    // acme context again
 
-    /** @test */
-    public function tenant_id_and_relationship_is_auto_added_when_creating_primary_resources_in_tenant_context()
-    {
-        tenancy()->initialize($acme = Tenant::create([
-            'id' => 'acme',
-        ]));
+    tenancy()->initialize($acme);
 
-        $post = Post::create(['text' => 'Foo']);
+    $post = Post::first();
+    $this->assertSame('acme', $post->team_id);
 
-        $this->assertSame('acme', $post->tenant_id);
-        $this->assertTrue($post->relationLoaded('tenant'));
-        $this->assertSame($acme, $post->tenant);
-        $this->assertSame(tenant(), $post->tenant);
-    }
+    // Assert foobar models are inaccessible in acme context
+    $this->assertSame(1, Post::count());
+});
 
-    /** @test */
-    public function tenant_id_is_not_auto_added_when_creating_primary_resources_in_central_context()
-    {
-        $this->expectException(QueryException::class);
+test('the model returned by the tenant helper has unique and exists validation rules', function () {
+    Schema::table('posts', function (Blueprint $table) {
+        $table->string('slug')->nullable();
+        $table->unique(['tenant_id', 'slug']);
+    });
 
-        Post::create(['text' => 'Foo']);
-    }
+    tenancy()->initialize($acme = Tenant::create([
+        'id' => 'acme',
+    ]));
 
-    /** @test */
-    public function tenant_id_column_name_can_be_customized()
-    {
-        BelongsToTenant::$tenantIdColumn = 'team_id';
+    Post::create(['text' => 'Foo', 'slug' => 'foo']);
+    $data = ['text' => 'Foo 2', 'slug' => 'foo'];
 
-        Schema::drop('comments');
-        Schema::drop('posts');
-        Schema::create('posts', function (Blueprint $table) {
-            $table->increments('id');
-            $table->string('text');
+    $uniqueFails = Validator::make($data, [
+        'slug' => 'unique:posts',
+    ])->fails();
+    $existsFails = Validator::make($data, [
+        'slug' => 'exists:posts',
+    ])->fails();
 
-            $table->string('team_id');
+    // Assert that 'unique' and 'exists' aren't scoped by default
+    // $this->assertFalse($uniqueFails); // todo get these two assertions to pass. for some reason, the validator is passing for both 'unique' and 'exists'
+    // $this->assertTrue($existsFails); // todo get these two assertions to pass. for some reason, the validator is passing for both 'unique' and 'exists'
 
-            $table->foreign('team_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
-        });
+    $uniqueFails = Validator::make($data, [
+        'slug' => tenant()->unique('posts'),
+    ])->fails();
+    $existsFails = Validator::make($data, [
+        'slug' => tenant()->exists('posts'),
+    ])->fails();
 
-        tenancy()->initialize($acme = Tenant::create([
-            'id' => 'acme',
-        ]));
+    // Assert that tenant()->unique() and tenant()->exists() are scoped
+    $this->assertTrue($uniqueFails);
+    $this->assertFalse($existsFails);
+});
 
-        $post = Post::create(['text' => 'Foo']);
-
-        $this->assertSame('acme', $post->team_id);
-
-        // ======================================
-        // foobar context
-        tenancy()->initialize($foobar = Tenant::create([
-            'id' => 'foobar',
-        ]));
-
-        $post = Post::create(['text' => 'Bar']);
-
-        $this->assertSame('foobar', $post->team_id);
-
-        $post = Post::first();
-
-        $this->assertSame('foobar', $post->team_id);
-
-        // ======================================
-        // acme context again
-
-        tenancy()->initialize($acme);
-
-        $post = Post::first();
-        $this->assertSame('acme', $post->team_id);
-
-        // Assert foobar models are inaccessible in acme context
-        $this->assertSame(1, Post::count());
-    }
-
-    /** @test */
-    public function the_model_returned_by_the_tenant_helper_has_unique_and_exists_validation_rules()
-    {
-        Schema::table('posts', function (Blueprint $table) {
-            $table->string('slug')->nullable();
-            $table->unique(['tenant_id', 'slug']);
-        });
-
-        tenancy()->initialize($acme = Tenant::create([
-            'id' => 'acme',
-        ]));
-
-        Post::create(['text' => 'Foo', 'slug' => 'foo']);
-        $data = ['text' => 'Foo 2', 'slug' => 'foo'];
-
-        $uniqueFails = Validator::make($data, [
-            'slug' => 'unique:posts',
-        ])->fails();
-        $existsFails = Validator::make($data, [
-            'slug' => 'exists:posts',
-        ])->fails();
-
-        // Assert that 'unique' and 'exists' aren't scoped by default
-        // $this->assertFalse($uniqueFails); // todo get these two assertions to pass. for some reason, the validator is passing for both 'unique' and 'exists'
-        // $this->assertTrue($existsFails); // todo get these two assertions to pass. for some reason, the validator is passing for both 'unique' and 'exists'
-
-        $uniqueFails = Validator::make($data, [
-            'slug' => tenant()->unique('posts'),
-        ])->fails();
-        $existsFails = Validator::make($data, [
-            'slug' => tenant()->exists('posts'),
-        ])->fails();
-
-        // Assert that tenant()->unique() and tenant()->exists() are scoped
-        $this->assertTrue($uniqueFails);
-        $this->assertFalse($existsFails);
-    }
+// Helpers
+function comments()
+{
+    return test()->hasMany(Comment::class);
 }
 
-class Tenant extends TestTenant
+function scoped_comments()
 {
-    use HasScopedValidationRules;
+    return test()->hasMany(Comment::class);
 }
 
-class Post extends Model
+function post()
 {
-    use BelongsToTenant;
-
-    protected $guarded = [];
-    public $timestamps = false;
-
-    public function comments()
-    {
-        return $this->hasMany(Comment::class);
-    }
-
-    public function scoped_comments()
-    {
-        return $this->hasMany(Comment::class);
-    }
+    return test()->belongsTo(Post::class);
 }
 
-class Comment extends Model
+function getRelationshipToPrimaryModel(): string
 {
-    protected $guarded = [];
-    public $timestamps = false;
-
-    public function post()
-    {
-        return $this->belongsTo(Post::class);
-    }
-}
-
-class ScopedComment extends Comment
-{
-    use BelongsToPrimaryModel;
-
-    protected $table = 'comments';
-
-    public function getRelationshipToPrimaryModel(): string
-    {
-        return 'post';
-    }
-}
-
-class GlobalResource extends Model
-{
-    protected $guarded = [];
-    public $timestamps = false;
+    return 'post';
 }
