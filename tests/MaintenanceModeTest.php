@@ -3,13 +3,10 @@
 declare(strict_types=1);
 
 use Symfony\Component\HttpKernel\Exception\HttpException;
-use Illuminate\Foundation\Http\Exceptions\MaintenanceModeException;
 use Illuminate\Support\Facades\Route;
-use Stancl\Tenancy\Database\Concerns\MaintenanceMode;
 use Stancl\Tenancy\Middleware\CheckTenantForMaintenanceMode;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Tests\Etc\Tenant;
-use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 
 uses(Stancl\Tenancy\Tests\TestCase::class);
 

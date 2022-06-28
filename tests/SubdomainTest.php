@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
-use Stancl\Tenancy\Database\Concerns\HasDomains;
-use Stancl\Tenancy\Database\Models;
 use Stancl\Tenancy\Exceptions\NotASubdomainException;
 use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 

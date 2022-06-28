@@ -17,8 +17,6 @@ use Stancl\Tenancy\Events\UpdatingDomain;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Jobs\MigrateDatabase;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Listeners\QueueableListener;
-use Stancl\Tenancy\Tenancy;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
 uses(Stancl\Tenancy\Tests\TestCase::class);

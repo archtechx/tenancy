@@ -5,7 +5,6 @@ declare(strict_types=1);
 use Carbon\Carbon;
 use Carbon\CarbonInterval;
 use Illuminate\Auth\SessionGuard;
-use Illuminate\Foundation\Auth\User as Authenticable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;

@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
-use Stancl\Tenancy\Database\Concerns\HasDomains;
-use Stancl\Tenancy\Database\Models;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomainOrSubdomain;
 
 uses(Stancl\Tenancy\Tests\TestCase::class);
