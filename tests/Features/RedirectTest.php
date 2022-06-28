@@ -7,7 +7,6 @@ use Stancl\Tenancy\Features\CrossDomainRedirect;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Tests\TestCase;
 
-uses(TestCase::class);
 
 test('tenant redirect macro replaces only the hostname', function () {
     config([

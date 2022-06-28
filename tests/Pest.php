@@ -1,5 +1,7 @@
 <?php
 
+uses(\Stancl\Tenancy\Tests\TestCase::class)->in('Etc', 'Features');
+
 /*
 |--------------------------------------------------------------------------
 | Test Case

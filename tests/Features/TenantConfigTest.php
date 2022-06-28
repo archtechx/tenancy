@@ -11,7 +11,6 @@ use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Tests\TestCase;
 
-uses(TestCase::class);
 
 afterEach(function () {
     TenantConfig::$storageToConfigMap = [];
