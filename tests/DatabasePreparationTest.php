@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Stancl\JobPipeline\JobPipeline;

@@ -49,7 +49,7 @@ beforeEach(function () {
     UpdateSyncedResource::$shouldQueue = false; // global state cleanup
     Event::listen(SyncedResourceSaved::class, UpdateSyncedResource::class);
 
-    $this->artisan('migrate', [
+    test()->artisan('migrate', [
         '--path' => [
             __DIR__ . '/Etc/synced_resource_migrations',
             __DIR__ . '/Etc/synced_resource_migrations/users',
@@ -225,7 +225,7 @@ test('attaching a tenant to the central resource triggers a pull from the tenant
     });
 });
 
-test('attaching users to tenants d o e s n o t d o a n y t h i n g', function () {
+test('attaching users to tenants does not do anything', function () {
     $centralUser = CentralUser::create([
         'global_id' => 'acme',
         'name' => 'John Doe',
@@ -294,7 +294,7 @@ test('resources are synced only to workspaces that have the resource', function 
     });
 });
 
-test('when a resource exists in other tenant dbs but is c r e a t e d in a tenant db the synced columns are updated in the other dbs', function () {
+test('when a resource exists in other tenant dbs but is created in a tenant db the synced columns are updated in the other dbs', function () {
     // create shared resource
     $centralUser = CentralUser::create([
         'global_id' => 'acme',
@@ -570,6 +570,7 @@ function migrateTenantsResource()
         '--realpath' => true,
     ])->assertExitCode(0);
 }
+
 class ResourceTenant extends Tenant
 {
     public function users()

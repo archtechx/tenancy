@@ -96,7 +96,6 @@ test('asset helper tenancy can be disabled', function () {
     expect(asset('foo'))->toBe($original);
 });
 
-// Helpers
 function getEnvironmentSetUp($app)
 {
     // parent::getEnvironmentSetUp($app);

@@ -225,7 +225,6 @@ test('impersonation works with multiple models and guards', function () {
     });
 });
 
-// Helpers
 function migrateTenants()
 {
     test()->artisan('tenants:migrate')->assertExitCode(0);

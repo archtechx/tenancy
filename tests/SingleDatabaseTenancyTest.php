@@ -158,7 +158,7 @@ test('secondary models are scoped to the current tenant when accessed via primar
     expect(Post::first()->comments->count())->toBe(1);
 });
 
-test('secondary models are n o t scoped to the current tenant when accessed directly', function () {
+test('secondary models are not scoped to the current tenant when accessed directly', function () {
     // $this->secondary_models_are_scoped_to_the_current_tenant_when_accessed_via_primary_model();
     // acme context
     tenancy()->initialize($acme = Tenant::create([
@@ -189,7 +189,7 @@ test('secondary models are n o t scoped to the current tenant when accessed dire
     expect(Comment::count())->toBe(2);
 });
 
-test('secondary models a r e scoped to the current tenant when accessed directly a n d p a r e n t r e l a t i o n s h i p t r a i t i s u s e d', function () {
+test('secondary models a r e scoped to the current tenant when accessed directly and parent relationship traitis used', function () {
     $acme = Tenant::create([
         'id' => 'acme',
     ]);
@@ -221,7 +221,7 @@ test('secondary models a r e scoped to the current tenant when accessed directly
     expect(ScopedComment::count())->toBe(2);
 });
 
-test('secondary models are n o t scoped in the central context', function () {
+test('secondary models are not scoped in the central context', function () {
     // $this->secondary_models_are_scoped_to_the_current_tenant_when_accessed_via_primary_model();
     // acme context
     tenancy()->initialize($acme = Tenant::create([
