@@ -7,7 +7,7 @@ on:
   push:
     branches: [ master ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, shift-64622] # todo@1 remove shift-64622 before merge
 
 jobs:
   tests:
