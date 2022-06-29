@@ -133,14 +133,45 @@ test('database connection is switched to default', function () {
     Artisan::call('tenants:rollback');
     expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
 
-    $this->run_commands_works();
+    // $this->run_commands_works();
+    $id = Tenant::create()->getTenantKey();
+
+    Artisan::call('tenants:migrate', ['--tenants' => [$id]]);
+
+    $this->artisan("tenants:run foo --tenants=$id --argument='a=foo' --option='b=bar' --option='c=xyz'")
+        ->expectsOutput("User's name is Test command")
+        ->expectsOutput('foo')
+        ->expectsOutput('xyz');
+
     expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
 });
 
 test('database connection is switched to default when tenancy has been initialized', function () {
     tenancy()->initialize(Tenant::create());
 
-    $this->database_connection_is_switched_to_default();
+    // $this->database_connection_is_switched_to_default();
+    $originalDBName = DB::connection()->getDatabaseName();
+
+    Artisan::call('tenants:migrate');
+    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
+
+    Artisan::call('tenants:seed', ['--class' => ExampleSeeder::class]);
+    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
+
+    Artisan::call('tenants:rollback');
+    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
+
+    // $this->run_commands_works();
+    $id = Tenant::create()->getTenantKey();
+
+    Artisan::call('tenants:migrate', ['--tenants' => [$id]]);
+
+    $this->artisan("tenants:run foo --tenants=$id --argument='a=foo' --option='b=bar' --option='c=xyz'")
+        ->expectsOutput("User's name is Test command")
+        ->expectsOutput('foo')
+        ->expectsOutput('xyz');
+    
+    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
 });
 
 test('run commands works', function () {

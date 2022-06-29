@@ -44,7 +44,30 @@ test('making one route universal doesnt make all routes universal', function () 
         return tenant('id');
     })->middleware(InitializeTenancyByDomain::class);
 
-    $this->a_route_can_work_in_both_central_and_tenant_context();
+    Route::middlewareGroup('universal', []);
+    config(['tenancy.features' => [UniversalRoutes::class]]);
+
+    Route::get('/foo', function () {
+        return tenancy()->initialized
+            ? 'Tenancy is initialized.'
+            : 'Tenancy is not initialized.';
+    })->middleware(['universal', InitializeTenancyByDomain::class]);
+
+    $this->get('http://localhost/foo')
+        ->assertSuccessful()
+        ->assertSee('Tenancy is not initialized.');
+
+    $tenant = Tenant::create([
+        'id' => 'acme',
+    ]);
+    $tenant->domains()->create([
+        'domain' => 'acme.localhost',
+    ]);
+
+    $this->get('http://acme.localhost/foo')
+        ->assertSuccessful()
+        ->assertSee('Tenancy is initialized.');
+    
     tenancy()->end();
 
     $this->get('http://localhost/bar')

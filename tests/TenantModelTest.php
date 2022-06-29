@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
@@ -142,28 +143,38 @@ test('a command can be run on a collection of tenants', function () {
     expect(Tenant::find('t2')->foo)->toBe('xyz');
 });
 
-// Helpers
-function getTenantKeyName(): string
+class MyTenant extends Tenant
 {
-    return 'id';
+    protected $table = 'tenants';
 }
 
-function getTenantKey()
+class AnotherTenant extends Model implements Contracts\Tenant
 {
-    return test()->getAttribute('id');
-}
+    protected $guarded = [];
+    protected $table = 'tenants';
 
-function run(callable $callback)
-{
-    $callback();
-}
+    public function getTenantKeyName(): string
+    {
+        return 'id';
+    }
 
-function getInternal(string $key)
-{
-    return test()->$key;
-}
+    public function getTenantKey()
+    {
+        return $this->getAttribute('id');
+    }
 
-function setInternal(string $key, $value)
-{
-    test()->$key = $value;
+    public function run(callable $callback)
+    {
+        $callback();
+    }
+
+    public function getInternal(string $key)
+    {
+        return $this->$key;
+    }
+
+    public function setInternal(string $key, $value)
+    {
+        $this->$key = $value;
+    }
 }

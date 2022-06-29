@@ -22,6 +22,7 @@ use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use Illuminate\Foundation\Auth\User as Authenticable;
 
 uses(Stancl\Tenancy\Tests\TestCase::class);
 
@@ -252,4 +253,16 @@ function getRoutes($loginRoute = true, $authGuard = 'web'): Closure
             return UserImpersonation::makeResponse($token);
         });
     };
+}
+
+class ImpersonationUser extends Authenticable
+{
+    protected $guarded = [];
+    protected $table = 'users';
+}
+
+class AnotherImpersonationUser extends Authenticable
+{
+    protected $guarded = [];
+    protected $table = 'users';
 }

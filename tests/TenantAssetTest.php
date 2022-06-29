@@ -99,7 +99,7 @@ test('asset helper tenancy can be disabled', function () {
 // Helpers
 function getEnvironmentSetUp($app)
 {
-    parent::getEnvironmentSetUp($app);
+    // parent::getEnvironmentSetUp($app);
 
     $app->booted(function () {
         if (file_exists(base_path('routes/tenant.php'))) {

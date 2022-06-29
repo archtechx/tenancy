@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
@@ -12,6 +13,7 @@ use Stancl\Tenancy\Jobs\MigrateDatabase;
 use Stancl\Tenancy\Jobs\SeedDatabase;
 use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use Illuminate\Foundation\Auth\User as Authenticable;
 
 uses(Stancl\Tenancy\Tests\TestCase::class);
 
@@ -86,29 +88,41 @@ test('custom job can be added to the pipeline', function () {
     });
 });
 
-// Helpers
-/**
+class User extends Authenticable
+{
+    protected $guarded = [];
+}
+
+class TestSeeder extends Seeder
+{
+    /**
      * Run the database seeds.
      *
      * @return void
      */
-function run()
-{
-    DB::table('users')->insert([
-        'name' => 'Seeded User',
-        'email' => 'seeded@user',
-        'password' => bcrypt('password'),
-    ]);
+    public function run()
+    {
+        DB::table('users')->insert([
+            'name' => 'Seeded User',
+            'email' => 'seeded@user',
+            'password' => bcrypt('password'),
+        ]);
+    }
 }
 
-function __construct(Tenant $tenant)
+class CreateSuperuser
 {
-    test()->tenant = $tenant;
-}
+    protected $tenant;
 
-function handle()
-{
-    test()->tenant->run(function () {
-        User::create(['name' => 'Foo', 'email' => 'foo@bar.com', 'password' => 'secret']);
-    });
+    public function __construct(Tenant $tenant)
+    {
+        $this->tenant = $tenant;
+    }
+
+    public function handle()
+    {
+        $this->tenant->run(function () {
+            User::create(['name' => 'Foo', 'email' => 'foo@bar.com', 'password' => 'secret']);
+        });
+    }
 }

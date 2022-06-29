@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Event;
+use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
@@ -31,7 +32,17 @@ test('context is switched when tenancy is initialized', function () {
 });
 
 test('context is reverted when tenancy is ended', function () {
-    $this->context_is_switched_when_tenancy_is_initialized();
+    config(['tenancy.bootstrappers' => [
+        MyBootstrapper::class,
+    ]]);
+
+    $tenant = Tenant::create([
+        'id' => 'acme',
+    ]);
+
+    tenancy()->initialize($tenant);
+
+    expect(app('tenancy_initialized_for_tenant'))->toBe('acme');
 
     tenancy()->end();
 
@@ -100,13 +111,15 @@ test('central helper doesnt change tenancy state when called in central context'
     expect(tenant())->toBeNull();
 });
 
-// Helpers
-function bootstrap(\Stancl\Tenancy\Contracts\Tenant $tenant)
+class MyBootstrapper implements TenancyBootstrapper
 {
-    app()->instance('tenancy_initialized_for_tenant', $tenant->getTenantKey());
-}
+    public function bootstrap(\Stancl\Tenancy\Contracts\Tenant $tenant)
+    {
+        app()->instance('tenancy_initialized_for_tenant', $tenant->getTenantKey());
+    }
 
-function revert()
-{
-    app()->instance('tenancy_ended', true);
+    public function revert()
+    {
+        app()->instance('tenancy_ended', true);
+    }
 }

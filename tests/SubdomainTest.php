@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Exceptions\NotASubdomainException;
 use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
+use Stancl\Tenancy\Database\Models;
 
 uses(Stancl\Tenancy\Tests\TestCase::class);
 
@@ -125,3 +127,8 @@ test('central domain is not a subdomain', function () {
         ->withoutExceptionHandling()
         ->get('http://localhost/foo/abc/xyz');
 });
+
+class SubdomainTenant extends Models\Tenant
+{
+    use HasDomains;
+}

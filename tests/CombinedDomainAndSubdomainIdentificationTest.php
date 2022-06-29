@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomainOrSubdomain;
+use Stancl\Tenancy\Database\Models;
 
 uses(Stancl\Tenancy\Tests\TestCase::class);
 
@@ -60,3 +62,8 @@ test('tenant can be identified by domain', function () {
     expect(tenancy()->initialized)->toBeTrue();
     expect(tenant('id'))->toBe('acme');
 });
+
+class CombinedTenant extends Models\Tenant
+{
+    use HasDomains;
+}
