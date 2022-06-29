@@ -14,6 +14,7 @@ use Stancl\Tenancy\Jobs\SeedDatabase;
 use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Foundation\Auth\User as Authenticable;
+use Stancl\Tenancy\Tests\Etc\TestSeeder;
 
 uses(Stancl\Tenancy\Tests\TestCase::class);
 
@@ -91,23 +92,6 @@ test('custom job can be added to the pipeline', function () {
 class User extends Authenticable
 {
     protected $guarded = [];
-}
-
-class TestSeeder extends Seeder
-{
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
-    public function run()
-    {
-        DB::table('users')->insert([
-            'name' => 'Seeded User',
-            'email' => 'seeded@user',
-            'password' => bcrypt('password'),
-        ]);
-    }
 }
 
 class CreateSuperuser
