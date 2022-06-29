@@ -170,7 +170,7 @@ test('database connection is switched to default when tenancy has been initializ
         ->expectsOutput("User's name is Test command")
         ->expectsOutput('foo')
         ->expectsOutput('xyz');
-    
+
     expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
 });
 
