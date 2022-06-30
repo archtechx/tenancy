@@ -49,3 +49,4 @@ test('global cache manager stores data in global cache', function () {
     tenancy()->initialize($tenant1);
     expect(cache('def'))->toBe('ghi');
 });
+

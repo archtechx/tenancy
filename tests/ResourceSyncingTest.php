@@ -560,7 +560,6 @@ test('an event is fired for all touched resources', function () {
     });
 });
 
-// Helpers
 function migrateTenantsResource()
 {
     test()->artisan('tenants:migrate', [

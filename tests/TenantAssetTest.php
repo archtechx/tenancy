@@ -96,8 +96,6 @@ test('asset helper tenancy can be disabled', function () {
 
 function getEnvironmentSetUp($app)
 {
-    // parent::getEnvironmentSetUp($app);
-
     $app->booted(function () {
         if (file_exists(base_path('routes/tenant.php'))) {
             Route::middleware(['web'])
