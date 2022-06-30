@@ -37,94 +37,11 @@ beforeEach(function () {
 });
 
 test('primary models are scoped to the current tenant', function () {
-    // acme context
-    tenancy()->initialize($acme = Tenant::create([
-        'id' => 'acme',
-    ]));
-
-    $post = Post::create(['text' => 'Foo']);
-
-    expect($post->tenant_id)->toBe('acme');
-    expect($post->tenant->id)->toBe('acme');
-
-    $post = Post::first();
-
-    expect($post->tenant_id)->toBe('acme');
-    expect($post->tenant->id)->toBe('acme');
-
-    // ======================================
-    // foobar context
-    tenancy()->initialize($foobar = Tenant::create([
-        'id' => 'foobar',
-    ]));
-
-    $post = Post::create(['text' => 'Bar']);
-
-    expect($post->tenant_id)->toBe('foobar');
-    expect($post->tenant->id)->toBe('foobar');
-
-    $post = Post::first();
-
-    expect($post->tenant_id)->toBe('foobar');
-    expect($post->tenant->id)->toBe('foobar');
-
-    // ======================================
-    // acme context again
-
-    tenancy()->initialize($acme);
-
-    $post = Post::first();
-    expect($post->tenant_id)->toBe('acme');
-    expect($post->tenant->id)->toBe('acme');
-
-    // Assert foobar models are inaccessible in acme context
-    expect(Post::count())->toBe(1);
+    primaryModelsScopedToCurrentTenant();
 });
 
 test('primary models are not scoped in the central context', function () {
-    // $this->primary_models_are_scoped_to_the_current_tenant();
-    // acme context
-    tenancy()->initialize($acme = Tenant::create([
-        'id' => 'acme',
-    ]));
-
-    $post = Post::create(['text' => 'Foo']);
-
-    expect($post->tenant_id)->toBe('acme');
-    expect($post->tenant->id)->toBe('acme');
-
-    $post = Post::first();
-
-    expect($post->tenant_id)->toBe('acme');
-    expect($post->tenant->id)->toBe('acme');
-
-    // ======================================
-    // foobar context
-    tenancy()->initialize($foobar = Tenant::create([
-        'id' => 'foobar',
-    ]));
-
-    $post = Post::create(['text' => 'Bar']);
-
-    expect($post->tenant_id)->toBe('foobar');
-    expect($post->tenant->id)->toBe('foobar');
-
-    $post = Post::first();
-
-    expect($post->tenant_id)->toBe('foobar');
-    expect($post->tenant->id)->toBe('foobar');
-
-    // ======================================
-    // acme context again
-
-    tenancy()->initialize($acme);
-
-    $post = Post::first();
-    expect($post->tenant_id)->toBe('acme');
-    expect($post->tenant->id)->toBe('acme');
-
-    // Assert foobar models are inaccessible in acme context
-    expect(Post::count())->toBe(1);
+    primaryModelsScopedToCurrentTenant();
 
     tenancy()->end();
 
@@ -132,54 +49,11 @@ test('primary models are not scoped in the central context', function () {
 });
 
 test('secondary models are scoped to the current tenant when accessed via primary model', function () {
-    // acme context
-    tenancy()->initialize($acme = Tenant::create([
-        'id' => 'acme',
-    ]));
-
-    $post = Post::create(['text' => 'Foo']);
-    $post->comments()->create(['text' => 'Comment text']);
-
-    // ================
-    // foobar context
-    tenancy()->initialize($foobar = Tenant::create([
-        'id' => 'foobar',
-    ]));
-
-    $post = Post::create(['text' => 'Bar']);
-    $post->comments()->create(['text' => 'Comment text 2']);
-
-    // ================
-    // acme context again
-    tenancy()->initialize($acme);
-    expect(Post::count())->toBe(1);
-    expect(Post::first()->comments->count())->toBe(1);
+    secondaryModelsAreScopedToCurrentTenant();
 });
 
 test('secondary models are not scoped to the current tenant when accessed directly', function () {
-    // $this->secondary_models_are_scoped_to_the_current_tenant_when_accessed_via_primary_model();
-    // acme context
-    tenancy()->initialize($acme = Tenant::create([
-        'id' => 'acme',
-    ]));
-
-    $post = Post::create(['text' => 'Foo']);
-    $post->comments()->create(['text' => 'Comment text']);
-
-    // ================
-    // foobar context
-    tenancy()->initialize($foobar = Tenant::create([
-        'id' => 'foobar',
-    ]));
-
-    $post = Post::create(['text' => 'Bar']);
-    $post->comments()->create(['text' => 'Comment text 2']);
-
-    // ================
-    // acme context again
-    tenancy()->initialize($acme);
-    expect(Post::count())->toBe(1);
-    expect(Post::first()->comments->count())->toBe(1);
+    secondaryModelsAreScopedToCurrentTenant();
 
     // We're in acme context
     expect(tenant('id'))->toBe('acme');
@@ -220,29 +94,7 @@ test('secondary models a r e scoped to the current tenant when accessed directly
 });
 
 test('secondary models are not scoped in the central context', function () {
-    // $this->secondary_models_are_scoped_to_the_current_tenant_when_accessed_via_primary_model();
-    // acme context
-    tenancy()->initialize($acme = Tenant::create([
-        'id' => 'acme',
-    ]));
-
-    $post = Post::create(['text' => 'Foo']);
-    $post->comments()->create(['text' => 'Comment text']);
-
-    // ================
-    // foobar context
-    tenancy()->initialize($foobar = Tenant::create([
-        'id' => 'foobar',
-    ]));
-
-    $post = Post::create(['text' => 'Bar']);
-    $post->comments()->create(['text' => 'Comment text 2']);
-
-    // ================
-    // acme context again
-    tenancy()->initialize($acme);
-    expect(Post::count())->toBe(1);
-    expect(Post::first()->comments->count())->toBe(1);
+    secondaryModelsAreScopedToCurrentTenant();
 
     tenancy()->end();
 
@@ -374,6 +226,78 @@ test('the model returned by the tenant helper has unique and exists validation r
     expect($uniqueFails)->toBeTrue();
     expect($existsFails)->toBeFalse();
 });
+
+function primaryModelsScopedToCurrentTenant()
+{
+    // acme context
+    tenancy()->initialize($acme = Tenant::create([
+        'id' => 'acme',
+    ]));
+
+    $post = Post::create(['text' => 'Foo']);
+
+    expect($post->tenant_id)->toBe('acme');
+    expect($post->tenant->id)->toBe('acme');
+
+    $post = Post::first();
+
+    expect($post->tenant_id)->toBe('acme');
+    expect($post->tenant->id)->toBe('acme');
+
+    // ======================================
+    // foobar context
+    tenancy()->initialize($foobar = Tenant::create([
+        'id' => 'foobar',
+    ]));
+
+    $post = Post::create(['text' => 'Bar']);
+
+    expect($post->tenant_id)->toBe('foobar');
+    expect($post->tenant->id)->toBe('foobar');
+
+    $post = Post::first();
+
+    expect($post->tenant_id)->toBe('foobar');
+    expect($post->tenant->id)->toBe('foobar');
+
+    // ======================================
+    // acme context again
+
+    tenancy()->initialize($acme);
+
+    $post = Post::first();
+    expect($post->tenant_id)->toBe('acme');
+    expect($post->tenant->id)->toBe('acme');
+
+    // Assert foobar models are inaccessible in acme context
+    expect(Post::count())->toBe(1);
+}
+
+function secondaryModelsAreScopedToCurrentTenant()
+{
+    // acme context
+    tenancy()->initialize($acme = Tenant::create([
+        'id' => 'acme',
+    ]));
+
+    $post = Post::create(['text' => 'Foo']);
+    $post->comments()->create(['text' => 'Comment text']);
+
+    // ================
+    // foobar context
+    tenancy()->initialize($foobar = Tenant::create([
+        'id' => 'foobar',
+    ]));
+
+    $post = Post::create(['text' => 'Bar']);
+    $post->comments()->create(['text' => 'Comment text 2']);
+
+    // ================
+    // acme context again
+    tenancy()->initialize($acme);
+    expect(Post::count())->toBe(1);
+    expect(Post::first()->comments->count())->toBe(1);
+}
 
 class Tenant extends TestTenant
 {
