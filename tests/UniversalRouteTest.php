@@ -7,8 +7,6 @@ use Stancl\Tenancy\Features\UniversalRoutes;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
-uses(Stancl\Tenancy\Tests\TestCase::class);
-
 afterEach(function () {
     InitializeTenancyByDomain::$onFail = null;
 });
@@ -67,7 +65,7 @@ test('making one route universal doesnt make all routes universal', function () 
     $this->get('http://acme.localhost/foo')
         ->assertSuccessful()
         ->assertSee('Tenancy is initialized.');
-    
+
     tenancy()->end();
 
     $this->get('http://localhost/bar')

@@ -14,8 +14,6 @@ use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Foundation\Auth\User as Authenticable;
 use Stancl\Tenancy\Tests\Etc\TestSeeder;
 
-uses(Stancl\Tenancy\Tests\TestCase::class);
-
 test('database can be created after tenant creation', function () {
     config(['tenancy.database.template_tenant_connection' => 'mysql']);
 

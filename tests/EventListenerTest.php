@@ -20,8 +20,6 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\QueueableListener;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
-uses(Stancl\Tenancy\Tests\TestCase::class);
-
 test('listeners can be synchronous', function () {
     Queue::fake();
     Event::listen(TenantCreated::class, FooListener::class);

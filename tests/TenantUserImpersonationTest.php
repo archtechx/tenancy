@@ -24,8 +24,6 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Foundation\Auth\User as Authenticable;
 
-uses(Stancl\Tenancy\Tests\TestCase::class);
-
 beforeEach(function () {
     $this->artisan('migrate', [
         '--path' => __DIR__ . '/../assets/impersonation-migrations',

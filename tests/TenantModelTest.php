@@ -19,8 +19,6 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\UUIDGenerator;
 
-uses(Stancl\Tenancy\Tests\TestCase::class);
-
 test('created event is dispatched', function () {
     Event::fake([TenantCreated::class]);
 

@@ -8,8 +8,6 @@ use Stancl\Tenancy\Exceptions\NotASubdomainException;
 use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Database\Models;
 
-uses(Stancl\Tenancy\Tests\TestCase::class);
-
 beforeEach(function () {
     // Global state cleanup after some tests
     InitializeTenancyBySubdomain::$onFail = null;

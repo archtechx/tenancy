@@ -12,8 +12,6 @@ use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 use Stancl\Tenancy\Database\Concerns\HasScopedValidationRules;
 use Stancl\Tenancy\Tests\Etc\Tenant as TestTenant;
 
-uses(Stancl\Tenancy\Tests\TestCase::class);
-
 beforeEach(function () {
     BelongsToTenant::$tenantIdColumn = 'tenant_id';
 

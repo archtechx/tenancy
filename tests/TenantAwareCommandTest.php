@@ -6,8 +6,6 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
-uses(Stancl\Tenancy\Tests\TestCase::class);
-
 test('commands run globally are tenant aware and return valid exit code', function () {
     $tenant1 = Tenant::create();
     $tenant2 = Tenant::create();

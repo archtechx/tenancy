@@ -6,8 +6,6 @@ use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
-uses(Stancl\Tenancy\Tests\TestCase::class);
-
 afterEach(function () {
     DomainTenantResolver::$shouldCache = false;
 });

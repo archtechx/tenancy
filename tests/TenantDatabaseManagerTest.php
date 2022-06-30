@@ -24,8 +24,6 @@ use Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLSchemaManager;
 use Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
-uses(Stancl\Tenancy\Tests\TestCase::class);
-
 test('databases can be created and deleted', function ($driver, $databaseManager) {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;

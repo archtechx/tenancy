@@ -11,8 +11,6 @@ use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Middleware\ScopeSessions;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
-uses(Stancl\Tenancy\Tests\TestCase::class);
-
 beforeEach(function () {
     Route::group([
         'middleware' => [StartSession::class, InitializeTenancyBySubdomain::class, ScopeSessions::class],
