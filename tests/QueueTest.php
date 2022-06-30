@@ -81,12 +81,7 @@ test('tenant id is not passed to central queues', function () {
     });
 });
 
-/**
- *
- * @testWith [true]
- *           [false]
- */
-test('tenancy is initialized inside queues', function () {
+test('tenancy is initialized inside queues', function (bool $shouldEndTenancy) {
     withTenantDatabases();
     withFailedJobs();
 
@@ -104,7 +99,7 @@ test('tenancy is initialized inside queues', function () {
 
     expect($this->valuestore->has('tenant_id'))->toBeFalse();
 
-    if (true) {
+    if ($shouldEndTenancy) {
         tenancy()->end();
     }
 
@@ -117,14 +112,9 @@ test('tenancy is initialized inside queues', function () {
     $tenant->run(function () use ($user) {
         expect($user->fresh()->name)->toBe('Bar');
     });
-});
+})->with([true, false]);;
 
-/**
- *
- * @testWith [true]
- *           [false]
- */
-test('tenancy is initialized when retrying jobs', function () {
+test('tenancy is initialized when retrying jobs', function (bool $shouldEndTenancy) {
     if (! Str::startsWith(app()->version(), '8')) {
         $this->markTestSkipped('queue:retry tenancy is only supported in Laravel 8');
     }
@@ -147,7 +137,7 @@ test('tenancy is initialized when retrying jobs', function () {
 
     expect($this->valuestore->has('tenant_id'))->toBeFalse();
 
-    if (true) {
+    if ($shouldEndTenancy) {
         tenancy()->end();
     }
 
@@ -166,7 +156,7 @@ test('tenancy is initialized when retrying jobs', function () {
     $tenant->run(function () use ($user) {
         expect($user->fresh()->name)->toBe('Bar');
     });
-})->skip();
+})->with([true, false]);
 
 test('the tenant used by the job doesnt change when the current tenant changes', function () {
     $tenant1 = Tenant::create([
@@ -189,7 +179,6 @@ test('the tenant used by the job doesnt change when the current tenant changes',
     expect($this->valuestore->get('tenant_id'))->toBe('The current tenant id is: acme');
 });
 
-// Helpers
 function createValueStore(): void
 {
     $valueStorePath = __DIR__ . '/Etc/tmp/queuetest.json';
