@@ -15,7 +15,8 @@ beforeEach(function () {
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
-test('context is switched when tenancy is initialized', function () {
+function contextISSwitchedWhenTenancyInitialized()
+{
     config(['tenancy.bootstrappers' => [
         MyBootstrapper::class,
     ]]);
@@ -27,20 +28,14 @@ test('context is switched when tenancy is initialized', function () {
     tenancy()->initialize($tenant);
 
     expect(app('tenancy_initialized_for_tenant'))->toBe('acme');
+}
+
+test('context is switched when tenancy is initialized', function () {
+    contextISSwitchedWhenTenancyInitialized();
 });
 
 test('context is reverted when tenancy is ended', function () {
-    config(['tenancy.bootstrappers' => [
-        MyBootstrapper::class,
-    ]]);
-
-    $tenant = Tenant::create([
-        'id' => 'acme',
-    ]);
-
-    tenancy()->initialize($tenant);
-
-    expect(app('tenancy_initialized_for_tenant'))->toBe('acme');
+    contextISSwitchedWhenTenancyInitialized();
 
     tenancy()->end();
 
