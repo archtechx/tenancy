@@ -15,27 +15,12 @@ beforeEach(function () {
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
-function contextISSwitchedWhenTenancyInitialized()
-{
-    config(['tenancy.bootstrappers' => [
-        MyBootstrapper::class,
-    ]]);
-
-    $tenant = Tenant::create([
-        'id' => 'acme',
-    ]);
-
-    tenancy()->initialize($tenant);
-
-    expect(app('tenancy_initialized_for_tenant'))->toBe('acme');
-}
-
 test('context is switched when tenancy is initialized', function () {
-    contextISSwitchedWhenTenancyInitialized();
+    contextIsSwitchedWhenTenancyInitialized();
 });
 
 test('context is reverted when tenancy is ended', function () {
-    contextISSwitchedWhenTenancyInitialized();
+    contextIsSwitchedWhenTenancyInitialized();
 
     tenancy()->end();
 
@@ -103,6 +88,21 @@ test('central helper doesnt change tenancy state when called in central context'
     expect(tenancy()->initialized)->toBeFalse();
     expect(tenant())->toBeNull();
 });
+
+function contextIsSwitchedWhenTenancyInitialized()
+{
+    config(['tenancy.bootstrappers' => [
+        MyBootstrapper::class,
+    ]]);
+
+    $tenant = Tenant::create([
+        'id' => 'acme',
+    ]);
+
+    tenancy()->initialize($tenant);
+
+    expect(app('tenancy_initialized_for_tenant'))->toBe('acme');
+}
 
 class MyBootstrapper implements TenancyBootstrapper
 {

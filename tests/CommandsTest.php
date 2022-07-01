@@ -128,7 +128,7 @@ test('database connection is switched to default when tenancy has been initializ
     databaseConnectionSwitchedToDefault();
 });
 
-test('run commands works', function () {
+test('run command works', function () {
     runCommandWorks();
 });
 

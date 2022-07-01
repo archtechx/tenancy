@@ -127,69 +127,11 @@ test('only the synced columns are updated in the central db', function () {
 });
 
 test('creating the resource in tenant database creates it in central database and creates the mapping', function () {
-    // Assert no user in central DB
-    expect(ResourceUser::all())->toHaveCount(0);
-
-    $tenant = ResourceTenant::create();
-    migrateTenantsResource();
-
-    tenancy()->initialize($tenant);
-
-    // Create the same user in tenant DB
-    ResourceUser::create([
-        'global_id' => 'acme',
-        'name' => 'John Doe',
-        'email' => 'john@localhost',
-        'password' => 'secret',
-        'role' => 'commenter', // unsynced
-    ]);
-
-    tenancy()->end();
-
-    // Asset user was created
-    expect(CentralUser::first()->global_id)->toBe('acme');
-    expect(CentralUser::first()->role)->toBe('commenter');
-
-    // Assert mapping was created
-    expect(CentralUser::first()->tenants)->toHaveCount(1);
-
-    // Assert role change doesn't cascade
-    CentralUser::first()->update(['role' => 'central superadmin']);
-    tenancy()->initialize($tenant);
-    expect(ResourceUser::first()->role)->toBe('commenter');
+    creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase();
 });
 
 test('trying to update synced resources from central context using tenant models results in an exception', function () {
-    // Assert no user in central DB
-    expect(ResourceUser::all())->toHaveCount(0);
-
-    $tenant = ResourceTenant::create();
-    migrateTenantsResource();
-
-    tenancy()->initialize($tenant);
-
-    // Create the same user in tenant DB
-    ResourceUser::create([
-        'global_id' => 'acme',
-        'name' => 'John Doe',
-        'email' => 'john@localhost',
-        'password' => 'secret',
-        'role' => 'commenter', // unsynced
-    ]);
-
-    tenancy()->end();
-
-    // Asset user was created
-    expect(CentralUser::first()->global_id)->toBe('acme');
-    expect(CentralUser::first()->role)->toBe('commenter');
-
-    // Assert mapping was created
-    expect(CentralUser::first()->tenants)->toHaveCount(1);
-
-    // Assert role change doesn't cascade
-    CentralUser::first()->update(['role' => 'central superadmin']);
-    tenancy()->initialize($tenant);
-    expect(ResourceUser::first()->role)->toBe('commenter');
+    creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase();
 
     tenancy()->end();
     expect(tenancy()->initialized)->toBeFalse();
@@ -559,6 +501,40 @@ test('an event is fired for all touched resources', function () {
         return $event->tenant === null;
     });
 });
+
+function creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase()
+{
+    // Assert no user in central DB
+    expect(ResourceUser::all())->toHaveCount(0);
+
+    $tenant = ResourceTenant::create();
+    migrateTenantsResource();
+
+    tenancy()->initialize($tenant);
+
+    // Create the same user in tenant DB
+    ResourceUser::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter', // unsynced
+    ]);
+
+    tenancy()->end();
+
+    // Asset user was created
+    expect(CentralUser::first()->global_id)->toBe('acme');
+    expect(CentralUser::first()->role)->toBe('commenter');
+
+    // Assert mapping was created
+    expect(CentralUser::first()->tenants)->toHaveCount(1);
+
+    // Assert role change doesn't cascade
+    CentralUser::first()->update(['role' => 'central superadmin']);
+    tenancy()->initialize($tenant);
+    expect(ResourceUser::first()->role)->toBe('commenter');
+}
 
 function migrateTenantsResource()
 {
