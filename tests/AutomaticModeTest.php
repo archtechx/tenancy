@@ -89,6 +89,7 @@ test('central helper doesnt change tenancy state when called in central context'
     expect(tenant())->toBeNull();
 });
 
+// todo@tests
 function contextIsSwitchedWhenTenancyInitialized()
 {
     config(['tenancy.bootstrappers' => [

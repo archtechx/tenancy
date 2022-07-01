@@ -227,6 +227,7 @@ test('the model returned by the tenant helper has unique and exists validation r
     expect($existsFails)->toBeFalse();
 });
 
+// todo@tests
 function primaryModelsScopedToCurrentTenant()
 {
     // acme context
@@ -273,6 +274,7 @@ function primaryModelsScopedToCurrentTenant()
     expect(Post::count())->toBe(1);
 }
 
+// todo@tests
 function secondaryModelsAreScopedToCurrentTenant()
 {
     // acme context

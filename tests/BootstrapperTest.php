@@ -182,7 +182,6 @@ test('filesystem data is separated', function () {
     expect($new_storage_path)->toEqual($expected_storage_path);
 });
 
-// Helpers
 function getDiskPrefix(string $disk): string
 {
     /** @var FilesystemAdapter $disk */

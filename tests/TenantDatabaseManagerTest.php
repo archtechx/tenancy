@@ -238,7 +238,6 @@ dataset('database_manager_provider', [
     ['sqlsrv', MicrosoftSQLDatabaseManager::class]
 ]);
 
-// Helpers
 function createUsersTable()
 {
     Schema::create('users', function (Blueprint $table) {

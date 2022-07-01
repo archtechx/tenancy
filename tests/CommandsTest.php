@@ -179,6 +179,7 @@ test('run command with array of tenants works', function () {
         ->expectsOutput('Tenant: ' . $tenantId2);
 });
 
+// todo@tests
 function runCommandWorks(): void
 {
     $id = Tenant::create()->getTenantKey();
@@ -191,6 +192,7 @@ function runCommandWorks(): void
         ->expectsOutput('xyz');
 }
 
+// todo@tests
 function databaseConnectionSwitchedToDefault()
 {
     $originalDBName = DB::connection()->getDatabaseName();
