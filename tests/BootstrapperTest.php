@@ -22,8 +22,6 @@ use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 
-uses(Stancl\Tenancy\Tests\TestCase::class);
-
 beforeEach(function () {
     Event::listen(
         TenantCreated::class,
@@ -184,7 +182,6 @@ test('filesystem data is separated', function () {
     expect($new_storage_path)->toEqual($expected_storage_path);
 });
 
-// Helpers
 function getDiskPrefix(string $disk): string
 {
     /** @var FilesystemAdapter $disk */

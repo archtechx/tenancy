@@ -18,8 +18,6 @@ use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
-uses(Stancl\Tenancy\Tests\TestCase::class);
-
 beforeEach(function () {
     config([
         'tenancy.database.managers.mysql' => PermissionControlledMySQLDatabaseManager::class,

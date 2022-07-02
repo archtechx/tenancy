@@ -22,8 +22,7 @@ use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Tests\Etc\Tenant;
-
-uses(Stancl\Tenancy\Tests\TestCase::class);
+use Illuminate\Foundation\Auth\User as Authenticable;
 
 beforeEach(function () {
     $this->artisan('migrate', [
@@ -224,7 +223,6 @@ test('impersonation works with multiple models and guards', function () {
     });
 });
 
-// Helpers
 function migrateTenants()
 {
     test()->artisan('tenants:migrate')->assertExitCode(0);
@@ -252,4 +250,16 @@ function getRoutes($loginRoute = true, $authGuard = 'web'): Closure
             return UserImpersonation::makeResponse($token);
         });
     };
+}
+
+class ImpersonationUser extends Authenticable
+{
+    protected $guarded = [];
+    protected $table = 'users';
+}
+
+class AnotherImpersonationUser extends Authenticable
+{
+    protected $guarded = [];
+    protected $table = 'users';
 }

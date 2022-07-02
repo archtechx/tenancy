@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Contracts\Syncable;
+use Stancl\Tenancy\Contracts\SyncMaster;
+use Stancl\Tenancy\Database\Concerns\CentralConnection;
+use Stancl\Tenancy\Database\Concerns\ResourceSyncing;
 use Stancl\Tenancy\Database\Models\TenantPivot;
 use Stancl\Tenancy\DatabaseConfig;
 use Stancl\Tenancy\Events\SyncedResourceChangedInForeignDatabase;
@@ -23,8 +27,6 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Listeners\UpdateSyncedResource;
 use Stancl\Tenancy\Tests\Etc\Tenant;
-
-uses(Stancl\Tenancy\Tests\TestCase::class);
 
 beforeEach(function () {
     config(['tenancy.bootstrappers' => [
@@ -45,7 +47,7 @@ beforeEach(function () {
     UpdateSyncedResource::$shouldQueue = false; // global state cleanup
     Event::listen(SyncedResourceSaved::class, UpdateSyncedResource::class);
 
-    $this->artisan('migrate', [
+    test()->artisan('migrate', [
         '--path' => [
             __DIR__ . '/Etc/synced_resource_migrations',
             __DIR__ . '/Etc/synced_resource_migrations/users',
@@ -81,7 +83,7 @@ test('only the synced columns are updated in the central db', function () {
     ]);
 
     $tenant = ResourceTenant::create();
-    migrateTenants();
+    migrateTenantsResource();
 
     tenancy()->initialize($tenant);
 
@@ -125,40 +127,11 @@ test('only the synced columns are updated in the central db', function () {
 });
 
 test('creating the resource in tenant database creates it in central database and creates the mapping', function () {
-    // Assert no user in central DB
-    expect(ResourceUser::all())->toHaveCount(0);
-
-    $tenant = ResourceTenant::create();
-    migrateTenants();
-
-    tenancy()->initialize($tenant);
-
-    // Create the same user in tenant DB
-    ResourceUser::create([
-        'global_id' => 'acme',
-        'name' => 'John Doe',
-        'email' => 'john@localhost',
-        'password' => 'secret',
-        'role' => 'commenter', // unsynced
-    ]);
-
-    tenancy()->end();
-
-    // Asset user was created
-    expect(CentralUser::first()->global_id)->toBe('acme');
-    expect(CentralUser::first()->role)->toBe('commenter');
-
-    // Assert mapping was created
-    expect(CentralUser::first()->tenants)->toHaveCount(1);
-
-    // Assert role change doesn't cascade
-    CentralUser::first()->update(['role' => 'central superadmin']);
-    tenancy()->initialize($tenant);
-    expect(ResourceUser::first()->role)->toBe('commenter');
+    creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase();
 });
 
 test('trying to update synced resources from central context using tenant models results in an exception', function () {
-    $this->creating_the_resource_in_tenant_database_creates_it_in_central_database_and_creates_the_mapping();
+    creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase();
 
     tenancy()->end();
     expect(tenancy()->initialized)->toBeFalse();
@@ -179,7 +152,7 @@ test('attaching a tenant to the central resource triggers a pull from the tenant
     $tenant = ResourceTenant::create([
         'id' => 't1',
     ]);
-    migrateTenants();
+    migrateTenantsResource();
 
     $tenant->run(function () {
         expect(ResourceUser::all())->toHaveCount(0);
@@ -192,7 +165,7 @@ test('attaching a tenant to the central resource triggers a pull from the tenant
     });
 });
 
-test('attaching users to tenants d o e s n o t d o a n y t h i n g', function () {
+test('attaching users to tenants does not do anything', function () {
     $centralUser = CentralUser::create([
         'global_id' => 'acme',
         'name' => 'John Doe',
@@ -204,7 +177,7 @@ test('attaching users to tenants d o e s n o t d o a n y t h i n g', function ()
     $tenant = ResourceTenant::create([
         'id' => 't1',
     ]);
-    migrateTenants();
+    migrateTenantsResource();
 
     $tenant->run(function () {
         expect(ResourceUser::all())->toHaveCount(0);
@@ -239,7 +212,7 @@ test('resources are synced only to workspaces that have the resource', function 
     $t3 = ResourceTenant::create([
         'id' => 't3',
     ]);
-    migrateTenants();
+    migrateTenantsResource();
 
     $centralUser->tenants()->attach('t1');
     $centralUser->tenants()->attach('t2');
@@ -261,7 +234,7 @@ test('resources are synced only to workspaces that have the resource', function 
     });
 });
 
-test('when a resource exists in other tenant dbs but is c r e a t e d in a tenant db the synced columns are updated in the other dbs', function () {
+test('when a resource exists in other tenant dbs but is created in a tenant db the synced columns are updated in the other dbs', function () {
     // create shared resource
     $centralUser = CentralUser::create([
         'global_id' => 'acme',
@@ -277,7 +250,7 @@ test('when a resource exists in other tenant dbs but is c r e a t e d in a tenan
     $t2 = ResourceTenant::create([
         'id' => 't2',
     ]);
-    migrateTenants();
+    migrateTenantsResource();
 
     // Copy (cascade) user to t1 DB
     $centralUser->tenants()->attach('t1');
@@ -325,7 +298,7 @@ test('the synced columns are updated in other tenant dbs where the resource exis
     $t3 = ResourceTenant::create([
         'id' => 't3',
     ]);
-    migrateTenants();
+    migrateTenantsResource();
 
     // Copy (cascade) user to t1 DB
     $centralUser->tenants()->attach('t1');
@@ -380,7 +353,7 @@ test('when the resource doesnt exist in the tenant db non synced columns will ca
         'id' => 't1',
     ]);
 
-    migrateTenants();
+    migrateTenantsResource();
 
     $centralUser->tenants()->attach('t1');
 
@@ -394,7 +367,7 @@ test('when the resource doesnt exist in the central db non synced columns will b
         'id' => 't1',
     ]);
 
-    migrateTenants();
+    migrateTenantsResource();
 
     $t1->run(function () {
         ResourceUser::create([
@@ -416,7 +389,7 @@ test('the listener can be queued', function () {
         'id' => 't1',
     ]);
 
-    migrateTenants();
+    migrateTenantsResource();
 
     Queue::assertNothingPushed();
 
@@ -455,7 +428,7 @@ test('an event is fired for all touched resources', function () {
     $t3 = ResourceTenant::create([
         'id' => 't3',
     ]);
-    migrateTenants();
+    migrateTenantsResource();
 
     // Copy (cascade) user to t1 DB
     $centralUser->tenants()->attach('t1');
@@ -529,8 +502,42 @@ test('an event is fired for all touched resources', function () {
     });
 });
 
-// Helpers
-function migrateTenants()
+// todo@tests
+function creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase()
+{
+    // Assert no user in central DB
+    expect(ResourceUser::all())->toHaveCount(0);
+
+    $tenant = ResourceTenant::create();
+    migrateTenantsResource();
+
+    tenancy()->initialize($tenant);
+
+    // Create the same user in tenant DB
+    ResourceUser::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter', // unsynced
+    ]);
+
+    tenancy()->end();
+
+    // Asset user was created
+    expect(CentralUser::first()->global_id)->toBe('acme');
+    expect(CentralUser::first()->role)->toBe('commenter');
+
+    // Assert mapping was created
+    expect(CentralUser::first()->tenants)->toHaveCount(1);
+
+    // Assert role change doesn't cascade
+    CentralUser::first()->update(['role' => 'central superadmin']);
+    tenancy()->initialize($tenant);
+    expect(ResourceUser::first()->role)->toBe('commenter');
+}
+
+function migrateTenantsResource()
 {
     test()->artisan('tenants:migrate', [
         '--path' => __DIR__ . '/Etc/synced_resource_migrations/users',
@@ -538,43 +545,88 @@ function migrateTenants()
     ])->assertExitCode(0);
 }
 
-function users()
+class ResourceTenant extends Tenant
 {
-    return test()->belongsToMany(CentralUser::class, 'tenant_users', 'tenant_id', 'global_user_id', 'id', 'global_id')
-        ->using(TenantPivot::class);
+    public function users()
+    {
+        return $this->belongsToMany(CentralUser::class, 'tenant_users', 'tenant_id', 'global_user_id', 'id', 'global_id')
+            ->using(TenantPivot::class);
+    }
 }
 
-function tenants(): BelongsToMany
+class CentralUser extends Model implements SyncMaster
 {
-    return test()->belongsToMany(ResourceTenant::class, 'tenant_users', 'global_user_id', 'tenant_id', 'global_id')
-        ->using(TenantPivot::class);
+    use ResourceSyncing, CentralConnection;
+
+    protected $guarded = [];
+    public $timestamps = false;
+    public $table = 'users';
+
+    public function tenants(): BelongsToMany
+    {
+        return $this->belongsToMany(ResourceTenant::class, 'tenant_users', 'global_user_id', 'tenant_id', 'global_id')
+            ->using(TenantPivot::class);
+    }
+
+    public function getTenantModelName(): string
+    {
+        return ResourceUser::class;
+    }
+
+    public function getGlobalIdentifierKey()
+    {
+        return $this->getAttribute($this->getGlobalIdentifierKeyName());
+    }
+
+    public function getGlobalIdentifierKeyName(): string
+    {
+        return 'global_id';
+    }
+
+    public function getCentralModelName(): string
+    {
+        return static::class;
+    }
+
+    public function getSyncedAttributeNames(): array
+    {
+        return [
+            'name',
+            'password',
+            'email',
+        ];
+    }
 }
 
-function getTenantModelName(): string
+class ResourceUser extends Model implements Syncable
 {
-    return ResourceUser::class;
-}
+    use ResourceSyncing;
 
-function getGlobalIdentifierKey()
-{
-    return test()->getAttribute(test()->getGlobalIdentifierKeyName());
-}
+    protected $table = 'users';
+    protected $guarded = [];
+    public $timestamps = false;
 
-function getGlobalIdentifierKeyName(): string
-{
-    return 'global_id';
-}
+    public function getGlobalIdentifierKey()
+    {
+        return $this->getAttribute($this->getGlobalIdentifierKeyName());
+    }
 
-function getCentralModelName(): string
-{
-    return CentralUser::class;
-}
+    public function getGlobalIdentifierKeyName(): string
+    {
+        return 'global_id';
+    }
 
-function getSyncedAttributeNames(): array
-{
-    return [
-        'name',
-        'password',
-        'email',
-    ];
+    public function getCentralModelName(): string
+    {
+        return CentralUser::class;
+    }
+
+    public function getSyncedAttributeNames(): array
+    {
+        return [
+            'name',
+            'password',
+            'email',
+        ];
+    }
 }

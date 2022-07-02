@@ -17,9 +17,8 @@ use Stancl\Tenancy\Events\UpdatingDomain;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Jobs\MigrateDatabase;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Listeners\QueueableListener;
 use Stancl\Tenancy\Tests\Etc\Tenant;
-
-uses(Stancl\Tenancy\Tests\TestCase::class);
 
 test('listeners can be synchronous', function () {
     Queue::fake();
@@ -180,8 +179,12 @@ test('database is not migrated if creation is disabled', function () {
     expect($this->hasFailed())->toBeFalse();
 });
 
-// Helpers
-function handle()
+class FooListener extends QueueableListener
 {
-    app()->instance('foo', 'bar');
+    public static $shouldQueue = false;
+
+    public function handle()
+    {
+        app()->instance('foo', 'bar');
+    }
 }

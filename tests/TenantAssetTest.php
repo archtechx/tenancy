@@ -13,8 +13,6 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
-uses(Stancl\Tenancy\Tests\TestCase::class);
-
 beforeEach(function () {
     config(['tenancy.bootstrappers' => [
         FilesystemTenancyBootstrapper::class,
@@ -96,11 +94,8 @@ test('asset helper tenancy can be disabled', function () {
     expect(asset('foo'))->toBe($original);
 });
 
-// Helpers
 function getEnvironmentSetUp($app)
 {
-    parent::getEnvironmentSetUp($app);
-
     $app->booted(function () {
         if (file_exists(base_path('routes/tenant.php'))) {
             Route::middleware(['web'])

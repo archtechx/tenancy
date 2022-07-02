@@ -17,8 +17,6 @@ use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
-uses(Stancl\Tenancy\Tests\TestCase::class);
-
 beforeEach(function () {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
@@ -117,41 +115,21 @@ test('rollback command works', function () {
     expect(Schema::hasTable('users'))->toBeFalse();
 });
 
-test('seed command works', function () {
-    $this->markTestIncomplete();
-});
+// Incomplete test
+test('seed command works');
 
 test('database connection is switched to default', function () {
-    $originalDBName = DB::connection()->getDatabaseName();
-
-    Artisan::call('tenants:migrate');
-    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
-
-    Artisan::call('tenants:seed', ['--class' => ExampleSeeder::class]);
-    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
-
-    Artisan::call('tenants:rollback');
-    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
-
-    $this->run_commands_works();
-    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
+    databaseConnectionSwitchedToDefault();
 });
 
 test('database connection is switched to default when tenancy has been initialized', function () {
     tenancy()->initialize(Tenant::create());
 
-    $this->database_connection_is_switched_to_default();
+    databaseConnectionSwitchedToDefault();
 });
 
-test('run commands works', function () {
-    $id = Tenant::create()->getTenantKey();
-
-    Artisan::call('tenants:migrate', ['--tenants' => [$id]]);
-
-    $this->artisan("tenants:run foo --tenants=$id --argument='a=foo' --option='b=bar' --option='c=xyz'")
-        ->expectsOutput("User's name is Test command")
-        ->expectsOutput('foo')
-        ->expectsOutput('xyz');
+test('run command works', function () {
+    runCommandWorks();
 });
 
 test('install command works', function () {
@@ -200,3 +178,35 @@ test('run command with array of tenants works', function () {
         ->expectsOutput('Tenant: ' . $tenantId1)
         ->expectsOutput('Tenant: ' . $tenantId2);
 });
+
+// todo@tests
+function runCommandWorks(): void
+{
+    $id = Tenant::create()->getTenantKey();
+
+    Artisan::call('tenants:migrate', ['--tenants' => [$id]]);
+
+    test()->artisan("tenants:run foo --tenants=$id --argument='a=foo' --option='b=bar' --option='c=xyz'")
+        ->expectsOutput("User's name is Test command")
+        ->expectsOutput('foo')
+        ->expectsOutput('xyz');
+}
+
+// todo@tests
+function databaseConnectionSwitchedToDefault()
+{
+    $originalDBName = DB::connection()->getDatabaseName();
+
+    Artisan::call('tenants:migrate');
+    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
+
+    Artisan::call('tenants:seed', ['--class' => ExampleSeeder::class]);
+    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
+
+    Artisan::call('tenants:rollback');
+    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
+
+    runCommandWorks();
+
+    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
+}

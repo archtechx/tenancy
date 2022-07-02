@@ -6,8 +6,6 @@ use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
-uses(Stancl\Tenancy\Tests\TestCase::class);
-
 beforeEach(function () {
     config([
         'tenancy.central_domains' => [

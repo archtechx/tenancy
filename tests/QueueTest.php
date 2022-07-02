@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Str;
 use Spatie\Valuestore\Valuestore;
 use Illuminate\Support\Facades\DB;
@@ -21,8 +26,6 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
-
-uses(Stancl\Tenancy\Tests\TestCase::class);
 
 beforeEach(function () {
     config([
@@ -78,11 +81,6 @@ test('tenant id is not passed to central queues', function () {
     });
 });
 
-/**
- *
- * @testWith [true]
- *           [false]
- */
 test('tenancy is initialized inside queues', function (bool $shouldEndTenancy) {
     withTenantDatabases();
     withFailedJobs();
@@ -114,13 +112,8 @@ test('tenancy is initialized inside queues', function (bool $shouldEndTenancy) {
     $tenant->run(function () use ($user) {
         expect($user->fresh()->name)->toBe('Bar');
     });
-});
+})->with([true, false]);;
 
-/**
- *
- * @testWith [true]
- *           [false]
- */
 test('tenancy is initialized when retrying jobs', function (bool $shouldEndTenancy) {
     if (! Str::startsWith(app()->version(), '8')) {
         $this->markTestSkipped('queue:retry tenancy is only supported in Laravel 8');
@@ -163,7 +156,7 @@ test('tenancy is initialized when retrying jobs', function (bool $shouldEndTenan
     $tenant->run(function () use ($user) {
         expect($user->fresh()->name)->toBe('Bar');
     });
-});
+})->with([true, false]);
 
 test('the tenant used by the job doesnt change when the current tenant changes', function () {
     $tenant1 = Tenant::create([
@@ -186,7 +179,6 @@ test('the tenant used by the job doesnt change when the current tenant changes',
     expect($this->valuestore->get('tenant_id'))->toBe('The current tenant id is: acme');
 });
 
-// Helpers
 function createValueStore(): void
 {
     $valueStorePath = __DIR__ . '/Etc/tmp/queuetest.json';
@@ -235,27 +227,39 @@ function withTenantDatabases()
     })->toListener());
 }
 
-function __construct(Valuestore $valuestore, User $user = null)
+class TestJob implements ShouldQueue
 {
-    test()->valuestore = $valuestore;
-    test()->user = $user;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    /** @var Valuestore */
+    protected $valuestore;
+
+    /** @var User|null */
+    protected $user;
+
+    public function __construct(Valuestore $valuestore, User $user = null)
+    {
+        $this->valuestore = $valuestore;
+        $this->user = $user;
+    }
+
+    public function handle()
+    {
+        if ($this->valuestore->get('shouldFail')) {
+            $this->valuestore->put('shouldFail', false);
+
+            throw new Exception('failing');
+        }
+
+        if ($this->user) {
+            assert($this->user->getConnectionName() === 'tenant');
+        }
+
+        $this->valuestore->put('tenant_id', 'The current tenant id is: ' . tenant('id'));
+
+        if ($userName = $this->valuestore->get('userName')) {
+            $this->user->update(['name' => $userName]);
+        }
+    }
 }
 
-function handle()
-{
-    if (test()->valuestore->get('shouldFail')) {
-        test()->valuestore->put('shouldFail', false);
-
-        throw new Exception('failing');
-    }
-
-    if (test()->user) {
-        assert(test()->user->getConnectionName() === 'tenant');
-    }
-
-    test()->valuestore->put('tenant_id', 'The current tenant id is: ' . tenant('id'));
-
-    if ($userName = test()->valuestore->get('userName')) {
-        test()->user->update(['name' => $userName]);
-    }
-}

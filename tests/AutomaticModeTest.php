@@ -3,13 +3,12 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Event;
+use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\Etc\Tenant;
-
-uses(Stancl\Tenancy\Tests\TestCase::class);
 
 beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
@@ -17,21 +16,11 @@ beforeEach(function () {
 });
 
 test('context is switched when tenancy is initialized', function () {
-    config(['tenancy.bootstrappers' => [
-        MyBootstrapper::class,
-    ]]);
-
-    $tenant = Tenant::create([
-        'id' => 'acme',
-    ]);
-
-    tenancy()->initialize($tenant);
-
-    expect(app('tenancy_initialized_for_tenant'))->toBe('acme');
+    contextIsSwitchedWhenTenancyInitialized();
 });
 
 test('context is reverted when tenancy is ended', function () {
-    $this->context_is_switched_when_tenancy_is_initialized();
+    contextIsSwitchedWhenTenancyInitialized();
 
     tenancy()->end();
 
@@ -100,13 +89,31 @@ test('central helper doesnt change tenancy state when called in central context'
     expect(tenant())->toBeNull();
 });
 
-// Helpers
-function bootstrap(\Stancl\Tenancy\Contracts\Tenant $tenant)
+// todo@tests
+function contextIsSwitchedWhenTenancyInitialized()
 {
-    app()->instance('tenancy_initialized_for_tenant', $tenant->getTenantKey());
+    config(['tenancy.bootstrappers' => [
+        MyBootstrapper::class,
+    ]]);
+
+    $tenant = Tenant::create([
+        'id' => 'acme',
+    ]);
+
+    tenancy()->initialize($tenant);
+
+    expect(app('tenancy_initialized_for_tenant'))->toBe('acme');
 }
 
-function revert()
+class MyBootstrapper implements TenancyBootstrapper
 {
-    app()->instance('tenancy_ended', true);
+    public function bootstrap(\Stancl\Tenancy\Contracts\Tenant $tenant)
+    {
+        app()->instance('tenancy_initialized_for_tenant', $tenant->getTenantKey());
+    }
+
+    public function revert()
+    {
+        app()->instance('tenancy_ended', true);
+    }
 }
