@@ -45,7 +45,7 @@ class TenancyServiceProvider extends ServiceProvider
                     Jobs\DeleteDomain::class,
                 ])->send(function (Events\TenantDeleted $event) {
                     return $event->tenant;
-                })->shouldBeQueued(false), // `false` by default, but you probably want to make this `true` for production.
+                })->shouldBeQueued(false),
             ],
             Events\TenantDeleted::class => [
                 JobPipeline::make([
