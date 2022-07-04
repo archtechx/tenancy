@@ -14,15 +14,16 @@ trait ResourceSyncing
     {
         static::saved(function (Syncable $model) {
             /** @var ResourceSyncing $model */
-            $model->triggerSyncEvent();
+            if ($model->isSyncEnabled()) {
+                $model->triggerSyncEvent();
+            }
         });
 
         static::creating(function (self $model) {
-            if (! $model->getAttribute($model->getGlobalIdentifierKeyName()) && app()->bound(UniqueIdentifierGenerator::class)) {
-                $model->setAttribute(
-                    $model->getGlobalIdentifierKeyName(),
-                    app(UniqueIdentifierGenerator::class)->generate($model)
-                );
+            $key = $model->getGlobalIdentifierKeyName();
+
+            if (! $model->getAttribute($key) && app()->bound(UniqueIdentifierGenerator::class) && $model->isSyncEnabled()) {
+                $model->setAttribute($key, app(UniqueIdentifierGenerator::class)->generate($model));
             }
         });
     }
@@ -31,5 +32,10 @@ trait ResourceSyncing
     {
         /** @var Syncable $this */
         event(new SyncedResourceSaved($this, tenant()));
+    }
+
+    public function isSyncEnabled()
+    {
+        return true;
     }
 }
