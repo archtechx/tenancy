@@ -30,12 +30,6 @@ class DeleteDomains implements ShouldQueue
 
     public function handle()
     {
-        $this->tenant->domains->each(function (Domain $domain){
-            event(new DeletingDomain($domain));
-
-            $domain->delete();
-
-            event(new DomainDeleted($domain));
-        });
+        $this->tenant->domains()->delete();
     }
 }
