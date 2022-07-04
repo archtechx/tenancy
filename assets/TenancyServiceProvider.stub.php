@@ -42,7 +42,7 @@ class TenancyServiceProvider extends ServiceProvider
             Events\TenantUpdated::class => [],
             Events\DeletingTenant::class => [
                 JobPipeline::make([
-                    Jobs\DeleteDomain::class,
+                    Jobs\DeleteDomains::class,
                 ])->send(function (Events\TenantDeleted $event) {
                     return $event->tenant;
                 })->shouldBeQueued(false),
