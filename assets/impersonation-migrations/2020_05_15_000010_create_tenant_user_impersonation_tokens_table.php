@@ -23,7 +23,7 @@ class CreateTenantUserImpersonationTokensTable extends Migration
             $table->string('redirect_url');
             $table->timestamp('created_at');
 
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade');
+            $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
         });
     }
 
