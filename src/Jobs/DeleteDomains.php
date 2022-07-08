@@ -16,7 +16,7 @@ use Stancl\Tenancy\Events\DeletingDatabase;
 use Stancl\Tenancy\Events\DeletingDomain;
 use Stancl\Tenancy\Events\DomainDeleted;
 
-class DeleteDomains implements ShouldQueue
+class DeleteDomains
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
