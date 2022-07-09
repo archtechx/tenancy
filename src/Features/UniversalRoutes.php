@@ -18,6 +18,7 @@ class UniversalRoutes implements Feature
     public static $identificationMiddlewares = [
         Middleware\InitializeTenancyByDomain::class,
         Middleware\InitializeTenancyBySubdomain::class,
+        Middleware\InitializeTenancyByRequestData::class
     ];
 
     public function bootstrap(Tenancy $tenancy): void
