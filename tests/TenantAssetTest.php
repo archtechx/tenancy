@@ -35,8 +35,8 @@ class TenantAssetTest extends TestCase
         parent::setUp();
 
         config(['tenancy.bootstrappers' => [
-                FilesystemTenancyBootstrapper::class,
-            ]]);
+            FilesystemTenancyBootstrapper::class,
+        ]]);
 
         Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     }
