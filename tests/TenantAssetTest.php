@@ -34,9 +34,11 @@ class TenantAssetTest extends TestCase
     {
         parent::setUp();
 
-        config(['tenancy.bootstrappers' => [
-            FilesystemTenancyBootstrapper::class,
-        ]]);
+        config([
+            'tenancy.bootstrappers' => [
+                FilesystemTenancyBootstrapper::class,
+            ]
+        ]);
 
         Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     }
@@ -126,4 +128,19 @@ class TenantAssetTest extends TestCase
 
         $this->assertSame($original, asset('foo'));
     }
+
+    public function test_asset_controller_returns_a_404_when_no_path_is_provided()
+    {
+        TenantAssetsController::$tenancyMiddleware = InitializeTenancyByRequestData::class;
+
+        $tenant = Tenant::create();
+
+        tenancy()->initialize($tenant);
+        $response = $this->get(tenant_asset(null), [
+            'X-Tenant' => $tenant->id,
+        ]);
+
+        $response->assertNotFound();
+    }
+
 }

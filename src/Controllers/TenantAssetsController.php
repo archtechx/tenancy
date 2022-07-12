@@ -15,7 +15,7 @@ class TenantAssetsController extends Controller
         $this->middleware(static::$tenancyMiddleware);
     }
 
-    public function asset($path)
+    public function asset($path = null)
     {
         try {
             return response()->file(storage_path("app/public/$path"));
