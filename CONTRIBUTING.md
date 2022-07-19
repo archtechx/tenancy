@@ -21,4 +21,4 @@ services:
     platform: linux/amd64
 ```
 
-to `docker-compose.override.yml` to make `docker-compose up-d` work on M1.
+to `docker-compose.override.yml` to make `docker-compose up -d` work on M1.
