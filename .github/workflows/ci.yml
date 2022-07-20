@@ -42,5 +42,5 @@ jobs:
         uses: EndBug/add-and-commit@v5
         with:
           author_name: "PHP CS Fixer"
-          author_email: "samuel@archte.ch"
+          author_email: "phpcsfixer@example.com"
           message: Fix code style (php-cs-fixer)
