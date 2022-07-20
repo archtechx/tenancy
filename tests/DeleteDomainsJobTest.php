@@ -2,41 +2,31 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests;
-
 use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Jobs\DeleteDomains;
 
-class DeleteDomainsJobTest extends TestCase
-{
-    public function setUp(): void
-    {
-        parent::setUp();
+beforeEach(function () {
+    config(['tenancy.tenant_model' => DatabaseAndDomainTenant::class]);
+});
 
-        config(['tenancy.tenant_model' => DatabaseAndDomainTenant::class]);
-    }
+test('job delete domains successfully', function (){
+    $tenant = DatabaseAndDomainTenant::create();
 
-    /** @test */
-    public function job_delete_domains_successfully()
-    {
-        $tenant = DatabaseAndDomainTenant::create();
+    $tenant->domains()->create([
+        'domain' => 'foo.localhost',
+    ]);
+    $tenant->domains()->create([
+        'domain' => 'bar.localhost',
+    ]);
 
-        $tenant->domains()->create([
-            'domain' => 'foo.localhost',
-        ]);
-        $tenant->domains()->create([
-            'domain' => 'bar.localhost',
-        ]);
+    $this->assertSame($tenant->domains()->count(), 2);
 
-        $this->assertSame($tenant->domains()->count(), 2);
+    (new DeleteDomains($tenant))->handle();
 
-        (new DeleteDomains($tenant))->handle();
+    $this->assertSame($tenant->refresh()->domains()->count(), 0);
+});
 
-        $this->assertSame($tenant->refresh()->domains()->count(), 0);
-    }
-}
-
-class DatabaseAndDomainTenant extends Etc\Tenant
+class DatabaseAndDomainTenant extends \Stancl\Tenancy\Tests\Etc\Tenant
 {
     use HasDomains;
 }
