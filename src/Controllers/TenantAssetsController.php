@@ -18,7 +18,7 @@ class TenantAssetsController extends Controller
 
     public function asset($path = null)
     {
-        abort_if(is_null($path), 404);
+        abort_if($path === null, 404);
 
         try {
             return response()->file(storage_path("app/public/$path"));
