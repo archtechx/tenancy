@@ -21,10 +21,9 @@ class TenantDump extends DumpCommand
         $this->specifyParameters();
     }
 
-
     public function handle(ConnectionResolverInterface $connections, Dispatcher $dispatcher): int
     {
-        $this->tenant()->run(fn() => parent::handle($connections, $dispatcher));
+        $this->tenant()->run(fn () => parent::handle($connections, $dispatcher));
 
         return Command::SUCCESS;
     }

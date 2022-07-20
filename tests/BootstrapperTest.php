@@ -5,26 +5,26 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Filesystem\FilesystemAdapter;
-use ReflectionObject;
-use ReflectionProperty;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
-use Stancl\JobPipeline\JobPipeline;
-use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
-use Stancl\Tenancy\Events\TenancyEnded;
-use Stancl\Tenancy\Jobs\CreateDatabase;
-use Stancl\Tenancy\Events\TenantCreated;
-use Stancl\Tenancy\Events\TenancyInitialized;
-use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Illuminate\Support\Str;
+use ReflectionObject;
+use ReflectionProperty;
+use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
-use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
+use Stancl\Tenancy\Events\TenancyEnded;
+use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 
 class BootstrapperTest extends TestCase
 {
