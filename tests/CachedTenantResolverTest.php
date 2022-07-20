@@ -16,8 +16,7 @@ test('tenants can be resolved using the cached resolver', function () {
         'domain' => 'acme',
     ]);
 
-    expect($tenant->is(app(DomainTenantResolver::class)->resolve('acme')))->toBeTrue();
-    expect($tenant->is(app(DomainTenantResolver::class)->resolve('acme')))->toBeTrue();
+    expect($tenant->is(app(DomainTenantResolver::class)->resolve('acme')))->toBeTrue()->toBeTrue();
 });
 
 test('the underlying resolver is not touched when using the cached resolver', function () {

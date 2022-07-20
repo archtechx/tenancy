@@ -19,11 +19,11 @@ test('job delete domains successfully', function (){
         'domain' => 'bar.localhost',
     ]);
 
-    $this->assertSame($tenant->domains()->count(), 2);
+    expect($tenant->domains()->count())->toBe(2);
 
     (new DeleteDomains($tenant))->handle();
 
-    $this->assertSame($tenant->refresh()->domains()->count(), 0);
+    expect($tenant->refresh()->domains()->count())->toBe(0);
 });
 
 class DatabaseAndDomainTenant extends \Stancl\Tenancy\Tests\Etc\Tenant
