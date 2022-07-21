@@ -559,7 +559,9 @@ class CentralUser extends Model implements SyncMaster
     use ResourceSyncing, CentralConnection;
 
     protected $guarded = [];
+
     public $timestamps = false;
+
     public $table = 'users';
 
     public function tenants(): BelongsToMany
@@ -603,7 +605,9 @@ class ResourceUser extends Model implements Syncable
     use ResourceSyncing;
 
     protected $table = 'users';
+
     protected $guarded = [];
+
     public $timestamps = false;
 
     public function getGlobalIdentifierKey()

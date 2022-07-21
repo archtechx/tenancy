@@ -255,11 +255,13 @@ function getRoutes($loginRoute = true, $authGuard = 'web'): Closure
 class ImpersonationUser extends Authenticable
 {
     protected $guarded = [];
+
     protected $table = 'users';
 }
 
 class AnotherImpersonationUser extends Authenticable
 {
     protected $guarded = [];
+
     protected $table = 'users';
 }
