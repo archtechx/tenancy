@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
+use Closure;
 use Exception;
 use Illuminate\Support\Str;
 use Illuminate\Bus\Queueable;
@@ -24,6 +25,7 @@ use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use PDO;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
@@ -52,7 +54,28 @@ class QueueTest extends TestCase
         Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
         Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
-        $this->valuestore = Valuestore::make(__DIR__ . '/Etc/tmp/queuetest.json')->flush();
+        $this->createValueStore();
+    }
+
+    public function tearDown(): void
+    {
+        $this->valuestore->flush();
+    }
+
+    protected function createValueStore(): void
+    {
+        $valueStorePath = __DIR__ . '/Etc/tmp/queuetest.json';
+
+        if (! file_exists($valueStorePath)) {
+            // The directory sometimes goes missing as well when the file is deleted in git
+            if (! is_dir(__DIR__ . '/Etc/tmp')) {
+                mkdir(__DIR__ . '/Etc/tmp');
+            }
+
+            file_put_contents($valueStorePath, '');
+        }
+
+        $this->valuestore = Valuestore::make($valueStorePath)->flush();
     }
 
     protected function withFailedJobs()

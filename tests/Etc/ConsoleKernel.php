@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests\Etc;
 
-use Orchestra\Testbench\Console\Kernel;
+use Orchestra\Testbench\Foundation\Console\Kernel;
 
 class ConsoleKernel extends Kernel
 {

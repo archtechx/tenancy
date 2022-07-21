@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Illuminate\Foundation\Http\Exceptions\MaintenanceModeException;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Database\Concerns\MaintenanceMode;
 use Stancl\Tenancy\Middleware\CheckTenantForMaintenanceMode;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 
 class MaintenanceModeTest extends TestCase
 {
@@ -32,7 +34,7 @@ class MaintenanceModeTest extends TestCase
 
         $tenant->putDownForMaintenance();
 
-        $this->expectException(MaintenanceModeException::class);
+        $this->expectException(HttpException::class);
         $this->withoutExceptionHandling()
             ->get('http://acme.localhost/foo');
     }

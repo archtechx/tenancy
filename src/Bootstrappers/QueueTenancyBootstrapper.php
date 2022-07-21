@@ -26,6 +26,16 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
     protected $queue;
 
     /**
+     * Don't persist the same tenant across multiple jobs even if they have the same tenant ID.
+     *
+     * This is useful when you're changing the tenant's state (e.g. properties in the `data` column) and want the next job to initialize tenancy again
+     * with the new data. Features like the Tenant Config are only executed when tenancy is initialized, so the re-initialization is needed in some cases.
+     *
+     * @var bool
+     */
+    public static $forceRefresh = false;
+
+    /**
      * The normal constructor is only executed after tenancy is bootstrapped.
      * However, we're registering a hook to initialize tenancy. Therefore,
      * we need to register the hook at service provider execution time.
@@ -53,8 +63,8 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             static::initializeTenancyForQueue($event->job->payload()['tenant_id'] ?? null);
         });
 
-        if (Str::startsWith(app()->version(), '8')) {
-            // JobRetryRequested only exists since Laravel 8
+        if (version_compare(app()->version(), '8.64', '>=')) {
+            // JobRetryRequested only exists since Laravel 8.64
             $dispatcher->listen(JobRetryRequested::class, function ($event) use (&$previousTenant) {
                 $previousTenant = tenant();
 
@@ -75,14 +85,31 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
 
     protected static function initializeTenancyForQueue($tenantId)
     {
-        // The job is not tenant-aware
         if (! $tenantId) {
+            // The job is not tenant-aware
+            if (tenancy()->initialized) {
+                // Tenancy was initialized, so we revert back to the central context
+                tenancy()->end();
+            }
+
+            return;
+        }
+
+        if (static::$forceRefresh) {
+            // Re-initialize tenancy between all jobs
+            if (tenancy()->initialized) {
+                tenancy()->end();
+            }
+
+            tenancy()->initialize(tenancy()->find($tenantId));
+
             return;
         }
 
         if (tenancy()->initialized) {
+            // Tenancy is already initialized
             if (tenant()->getTenantKey() === $tenantId) {
-                // Tenancy is already initialized for the tenant (e.g. dispatchNow was used)
+                // It's initialized for the same tenant (e.g. dispatchNow was used, or the previous job also ran for this tenant)
                 return;
             }
         }

@@ -126,4 +126,19 @@ class TenantAssetTest extends TestCase
 
         $this->assertSame($original, asset('foo'));
     }
+
+    public function test_asset_controller_returns_a_404_when_no_path_is_provided()
+    {
+        TenantAssetsController::$tenancyMiddleware = InitializeTenancyByRequestData::class;
+
+        $tenant = Tenant::create();
+
+        tenancy()->initialize($tenant);
+        $response = $this->get(tenant_asset(null), [
+            'X-Tenant' => $tenant->id,
+        ]);
+
+        $response->assertNotFound();
+    }
+
 }
