@@ -11,3 +11,4 @@ clover.xml
 tenant-schema-test.dump
 tests/Etc/tmp/queuetest.json
 docker-compose.override.yml
+.php-cs-fixer.cache

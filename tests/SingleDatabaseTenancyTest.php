@@ -311,6 +311,7 @@ class Post extends Model
     use BelongsToTenant;
 
     protected $guarded = [];
+
     public $timestamps = false;
 
     public function comments()
@@ -327,6 +328,7 @@ class Post extends Model
 class Comment extends Model
 {
     protected $guarded = [];
+
     public $timestamps = false;
 
     public function post()
@@ -350,5 +352,6 @@ class ScopedComment extends Comment
 class GlobalResource extends Model
 {
     protected $guarded = [];
+
     public $timestamps = false;
 }
