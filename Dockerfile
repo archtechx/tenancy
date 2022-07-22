@@ -1,7 +1,7 @@
-ARG PHP_VERSION=8.1
-
 # add amd64 platform to support Mac M1
 FROM --platform=linux/amd64 shivammathur/node:latest-amd64
+
+ARG PHP_VERSION=8.1
 
 WORKDIR /var/www/html
 
@@ -27,10 +27,10 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends libhiredis0.14 libjemalloc2 liblua5.1-0 lua-bitop lua-cjson redis redis-server redis-tools
 
 RUN pecl install redis-5.3.7 sqlsrv pdo_sqlsrv \
-    && printf "; priority=20\nextension=redis.so\n" > /etc/php/8.1/mods-available/redis.ini \
-    && printf "; priority=20\nextension=sqlsrv.so\n" > /etc/php/8.1/mods-available/sqlsrv.ini \
-    && printf "; priority=30\nextension=pdo_sqlsrv.so\n" > /etc/php/8.1/mods-available/pdo_sqlsrv.ini \
-    && phpenmod -v 8.1 redis sqlsrv pdo_sqlsrv
+    && printf "; priority=20\nextension=redis.so\n" > /etc/php/$PHP_VERSION/mods-available/redis.ini \
+    && printf "; priority=20\nextension=sqlsrv.so\n" > /etc/php/$PHP_VERSION/mods-available/sqlsrv.ini \
+    && printf "; priority=30\nextension=pdo_sqlsrv.so\n" > /etc/php/$PHP_VERSION/mods-available/pdo_sqlsrv.ini \
+    && phpenmod -v $PHP_VERSION redis sqlsrv pdo_sqlsrv
 
 # set the system timezone
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
