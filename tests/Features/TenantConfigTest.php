@@ -37,7 +37,7 @@ test('config is merged and removed', function () {
     expect(config('services.paypal'))->toBe(['public' => 'foo', 'private' => 'bar']);
 
     tenancy()->end();
-    $this->assertSame([
+    pest()->assertSame([
         'public' => null,
         'private' => null,
     ], config('services.paypal'));
@@ -66,14 +66,14 @@ test('the value can be set to multiple config keys', function () {
     ]);
 
     tenancy()->initialize($tenant);
-    $this->assertSame([
+    pest()->assertSame([
         'public1' => 'foo',
         'public2' => 'foo',
         'private' => 'bar',
     ], config('services.paypal'));
 
     tenancy()->end();
-    $this->assertSame([
+    pest()->assertSame([
         'public1' => null,
         'public2' => null,
         'private' => null,

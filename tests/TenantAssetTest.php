@@ -32,14 +32,14 @@ test('asset can be accessed using the url returned by the tenant asset helper', 
     $tenant = Tenant::create();
     tenancy()->initialize($tenant);
 
-    $filename = 'testfile' . $this->randomString(10);
+    $filename = 'testfile' . pest()->randomString(10);
     Storage::disk('public')->put($filename, 'bar');
     $path = storage_path("app/public/$filename");
 
     // response()->file() returns BinaryFileResponse whose content is
     // inaccessible via getContent, so ->assertSee() can't be used
     expect($path)->toBeFile();
-    $response = $this->get(tenant_asset($filename), [
+    $response = pest()->get(tenant_asset($filename), [
         'X-Tenant' => $tenant->id,
     ]);
 
@@ -99,7 +99,7 @@ function getEnvironmentSetUp($app)
     $app->booted(function () {
         if (file_exists(base_path('routes/tenant.php'))) {
             Route::middleware(['web'])
-                ->namespace(test()->app['config']['tenancy.tenant_route_namespace'] ?? 'App\Http\Controllers')
+                ->namespace(pest()->app['config']['tenancy.tenant_route_namespace'] ?? 'App\Http\Controllers')
                 ->group(base_path('routes/tenant.php'));
         }
     });

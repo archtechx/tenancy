@@ -34,7 +34,7 @@ test('tenant can be identified by path', function () {
 
     expect(tenancy()->initialized)->toBeFalse();
 
-    $this->get('/acme/foo/abc/xyz');
+    pest()->get('/acme/foo/abc/xyz');
 
     expect(tenancy()->initialized)->toBeTrue();
     expect(tenant('id'))->toBe('acme');
@@ -47,7 +47,7 @@ test('route actions dont get the tenant id', function () {
 
     expect(tenancy()->initialized)->toBeFalse();
 
-    $this
+    pest()
         ->get('/acme/foo/abc/xyz')
         ->assertContent('abc + xyz');
 
@@ -56,7 +56,7 @@ test('route actions dont get the tenant id', function () {
 });
 
 test('exception is thrown when tenant cannot be identified by path', function () {
-    $this->expectException(TenantCouldNotBeIdentifiedByPathException::class);
+    pest()->expectException(TenantCouldNotBeIdentifiedByPathException::class);
 
     $this
         ->withoutExceptionHandling()
@@ -70,7 +70,7 @@ test('onfail logic can be customized', function () {
         return 'foo';
     };
 
-    $this
+    pest()
         ->get('/acme/foo/abc/xyz')
         ->assertContent('foo');
 });
@@ -89,7 +89,7 @@ test('an exception is thrown when the routes first parameter is not tenant', fun
         'id' => 'acme',
     ]);
 
-    $this->expectException(RouteIsMissingTenantParameterException::class);
+    pest()->expectException(RouteIsMissingTenantParameterException::class);
 
     $this
         ->withoutExceptionHandling()
@@ -112,12 +112,12 @@ test('tenant parameter name can be customized', function () {
         'id' => 'acme',
     ]);
 
-    $this
+    pest()
         ->get('/acme/bar/abc/xyz')
         ->assertContent('abc + xyz');
 
     // Parameter for resolver is changed, so the /{tenant}/foo route will no longer work.
-    $this->expectException(RouteIsMissingTenantParameterException::class);
+    pest()->expectException(RouteIsMissingTenantParameterException::class);
 
     $this
         ->withoutExceptionHandling()

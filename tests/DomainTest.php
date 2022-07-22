@@ -47,14 +47,14 @@ test('a domain can belong to only one tenant', function () {
 
     $tenant2 = DomainTenant::create();
 
-    $this->expectException(DomainOccupiedByOtherTenantException::class);
+    pest()->expectException(DomainOccupiedByOtherTenantException::class);
     $tenant2->domains()->create([
         'domain' => 'foo.localhost',
     ]);
 });
 
 test('an exception is thrown if tenant cannot be identified', function () {
-    $this->expectException(TenantCouldNotBeIdentifiedOnDomainException::class);
+    pest()->expectException(TenantCouldNotBeIdentifiedOnDomainException::class);
 
     app(DomainTenantResolver::class)->resolve('foo.localhost');
 });
@@ -70,7 +70,7 @@ test('tenant can be identified by domain', function () {
 
     expect(tenancy()->initialized)->toBeFalse();
 
-    $this
+    pest()
         ->get('http://foo.localhost/foo/abc/xyz')
         ->assertSee('abc + xyz');
 
@@ -83,7 +83,7 @@ test('onfail logic can be customized', function () {
         return 'foo';
     };
 
-    $this
+    pest()
         ->get('http://foo.localhost/foo/abc/xyz')
         ->assertSee('foo');
 });

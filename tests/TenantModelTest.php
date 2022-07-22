@@ -50,7 +50,7 @@ test('id is generated when no id is supplied', function () {
 
     $tenant = Tenant::create();
 
-    $this->assertNotNull($tenant->id);
+    pest()->assertNotNull($tenant->id);
 });
 
 test('autoincrement ids are supported', function () {

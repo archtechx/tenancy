@@ -1,3 +1,10 @@
 <?php
 
-uses(Stancl\Tenancy\Tests\TestCase::class)->in(__DIR__);
+use Stancl\Tenancy\Tests\TestCase;
+
+uses(TestCase::class)->in(__DIR__);
+
+function pest(): TestCase
+{
+    return Pest\TestSuite::getInstance()->test;
+}

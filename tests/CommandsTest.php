@@ -46,7 +46,7 @@ test('migrate command doesnt change the db connection', function () {
 
     expect(Schema::hasTable('users'))->toBeFalse();
     expect($new_connection_name)->toEqual($old_connection_name);
-    $this->assertNotEquals('tenant', $new_connection_name);
+    pest()->assertNotEquals('tenant', $new_connection_name);
 });
 
 test('migrate command works without options', function () {
@@ -140,7 +140,7 @@ test('install command works', function () {
         mkdir($dir, 0777, true);
     }
 
-    $this->artisan('tenancy:install');
+    pest()->artisan('tenancy:install');
     expect(base_path('routes/tenant.php'))->toBeFile();
     expect(base_path('config/tenancy.php'))->toBeFile();
     expect(app_path('Providers/TenancyServiceProvider.php'))->toBeFile();
@@ -174,7 +174,7 @@ test('run command with array of tenants works', function () {
     $tenantId2 = Tenant::create()->getTenantKey();
     Artisan::call('tenants:migrate-fresh');
 
-    $this->artisan("tenants:run foo --tenants=$tenantId1 --tenants=$tenantId2 --argument='a=foo' --option='b=bar' --option='c=xyz'")
+    pest()->artisan("tenants:run foo --tenants=$tenantId1 --tenants=$tenantId2 --argument='a=foo' --option='b=bar' --option='c=xyz'")
         ->expectsOutput('Tenant: ' . $tenantId1)
         ->expectsOutput('Tenant: ' . $tenantId2);
 });
@@ -186,7 +186,7 @@ function runCommandWorks(): void
 
     Artisan::call('tenants:migrate', ['--tenants' => [$id]]);
 
-    test()->artisan("tenants:run foo --tenants=$id --argument='a=foo' --option='b=bar' --option='c=xyz'")
+    pest()->artisan("tenants:run foo --tenants=$id --argument='a=foo' --option='b=bar' --option='c=xyz'")
         ->expectsOutput("User's name is Test command")
         ->expectsOutput('foo')
         ->expectsOutput('xyz');

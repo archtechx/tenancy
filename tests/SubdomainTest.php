@@ -34,7 +34,7 @@ test('tenant can be identified by subdomain', function () {
 
     expect(tenancy()->initialized)->toBeFalse();
 
-    $this
+    pest()
         ->get('http://foo.localhost/foo/abc/xyz')
         ->assertSee('abc + xyz');
 
@@ -47,13 +47,13 @@ test('onfail logic can be customized', function () {
         return 'foo';
     };
 
-    $this
+    pest()
         ->get('http://foo.localhost/foo/abc/xyz')
         ->assertSee('foo');
 });
 
 test('localhost is not a valid subdomain', function () {
-    $this->expectException(NotASubdomainException::class);
+    pest()->expectException(NotASubdomainException::class);
 
     $this
         ->withoutExceptionHandling()
@@ -61,7 +61,7 @@ test('localhost is not a valid subdomain', function () {
 });
 
 test('ip address is not a valid subdomain', function () {
-    $this->expectException(NotASubdomainException::class);
+    pest()->expectException(NotASubdomainException::class);
 
     $this
         ->withoutExceptionHandling()
@@ -99,7 +99,7 @@ test('we cant use a subdomain that doesnt belong to our central domains', functi
         'domain' => 'foo',
     ]);
 
-    $this->expectException(NotASubdomainException::class);
+    pest()->expectException(NotASubdomainException::class);
 
     $this
         ->withoutExceptionHandling()
@@ -119,7 +119,7 @@ test('central domain is not a subdomain', function () {
         'domain' => 'acme',
     ]);
 
-    $this->expectException(NotASubdomainException::class);
+    pest()->expectException(NotASubdomainException::class);
 
     $this
         ->withoutExceptionHandling()

@@ -22,7 +22,7 @@ test('tenant redirect macro replaces only the hostname', function () {
     $tenant = Tenant::create();
     tenancy()->initialize($tenant);
 
-    $this->get('/redirect')
+    pest()->get('/redirect')
         ->assertRedirect('http://abcd/foobar');
 });
 

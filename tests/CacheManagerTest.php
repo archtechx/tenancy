@@ -19,7 +19,7 @@ beforeEach(function () {
 test('default tag is automatically applied', function () {
     tenancy()->initialize(Tenant::create());
 
-    $this->assertArrayIsSubset([config('tenancy.cache.tag_base') . tenant('id')], cache()->tags('foo')->getTags()->getNames());
+    pest()->assertArrayIsSubset([config('tenancy.cache.tag_base') . tenant('id')], cache()->tags('foo')->getTags()->getNames());
 });
 
 test('tags are merged when array is passed', function () {
@@ -39,14 +39,14 @@ test('tags are merged when string is passed', function () {
 test('exception is thrown when zero arguments are passed to tags method', function () {
     tenancy()->initialize(Tenant::create());
 
-    $this->expectException(\Exception::class);
+    pest()->expectException(\Exception::class);
     cache()->tags();
 });
 
 test('exception is thrown when more than one argument is passed to tags method', function () {
     tenancy()->initialize(Tenant::create());
 
-    $this->expectException(\Exception::class);
+    pest()->expectException(\Exception::class);
     cache()->tags(1, 2);
 });
 
@@ -60,7 +60,7 @@ test('tags separate cache well enough', function () {
     $tenant2 = Tenant::create();
     tenancy()->initialize($tenant2);
 
-    $this->assertNotSame('bar', cache()->get('foo'));
+    pest()->assertNotSame('bar', cache()->get('foo'));
 
     cache()->put('foo', 'xyz', 1);
     expect(cache()->get('foo'))->toBe('xyz');
@@ -76,7 +76,7 @@ test('invoking the cache helper works', function () {
     $tenant2 = Tenant::create();
     tenancy()->initialize($tenant2);
 
-    $this->assertNotSame('bar', cache('foo'));
+    pest()->assertNotSame('bar', cache('foo'));
 
     cache(['foo' => 'xyz'], 1);
     expect(cache('foo'))->toBe('xyz');

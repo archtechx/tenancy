@@ -47,7 +47,7 @@ beforeEach(function () {
     UpdateSyncedResource::$shouldQueue = false; // global state cleanup
     Event::listen(SyncedResourceSaved::class, UpdateSyncedResource::class);
 
-    test()->artisan('migrate', [
+    pest()->artisan('migrate', [
         '--path' => [
             __DIR__ . '/Etc/synced_resource_migrations',
             __DIR__ . '/Etc/synced_resource_migrations/users',
@@ -104,7 +104,7 @@ test('only the synced columns are updated in the central db', function () {
     ]);
 
     // Assert new values
-    $this->assertEquals([
+    pest()->assertEquals([
         'id' => 1,
         'global_id' => 'acme',
         'name' => 'John Foo',
@@ -116,7 +116,7 @@ test('only the synced columns are updated in the central db', function () {
     tenancy()->end();
 
     // Assert changes bubbled up
-    $this->assertEquals([
+    pest()->assertEquals([
         'id' => 1,
         'global_id' => 'acme',
         'name' => 'John Foo', // synced
@@ -136,7 +136,7 @@ test('trying to update synced resources from central context using tenant models
     tenancy()->end();
     expect(tenancy()->initialized)->toBeFalse();
 
-    $this->expectException(ModelNotSyncMasterException::class);
+    pest()->expectException(ModelNotSyncMasterException::class);
     ResourceUser::first()->update(['role' => 'foobar']);
 });
 
@@ -338,7 +338,7 @@ test('global id is generated using id generator when its not supplied', function
         'role' => 'employee',
     ]);
 
-    $this->assertNotNull($user->global_id);
+    pest()->assertNotNull($user->global_id);
 });
 
 test('when the resource doesnt exist in the tenant db non synced columns will cascade too', function () {
@@ -539,7 +539,7 @@ function creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase()
 
 function migrateTenantsResource()
 {
-    test()->artisan('tenants:migrate', [
+    pest()->artisan('tenants:migrate', [
         '--path' => __DIR__ . '/Etc/synced_resource_migrations/users',
         '--realpath' => true,
     ])->assertExitCode(0);

@@ -32,7 +32,7 @@ test('the underlying resolver is not touched when using the cached resolver', fu
     expect($tenant->is(app(DomainTenantResolver::class)->resolve('acme')))->toBeTrue();
     DB::flushQueryLog();
     expect($tenant->is(app(DomainTenantResolver::class)->resolve('acme')))->toBeTrue();
-    $this->assertNotEmpty(DB::getQueryLog()); // not empty
+    pest()->assertNotEmpty(DB::getQueryLog()); // not empty
 
     DomainTenantResolver::$shouldCache = true;
 
@@ -63,7 +63,7 @@ test('cache is invalidated when the tenant is updated', function () {
 
     DB::flushQueryLog();
     expect($tenant->is(app(DomainTenantResolver::class)->resolve('acme')))->toBeTrue();
-    $this->assertNotEmpty(DB::getQueryLog()); // not empty
+    pest()->assertNotEmpty(DB::getQueryLog()); // not empty
 });
 
 test('cache is invalidated when a tenants domain is changed', function () {
@@ -87,9 +87,9 @@ test('cache is invalidated when a tenants domain is changed', function () {
 
     DB::flushQueryLog();
     expect($tenant->is(app(DomainTenantResolver::class)->resolve('acme')))->toBeTrue();
-    $this->assertNotEmpty(DB::getQueryLog()); // not empty
+    pest()->assertNotEmpty(DB::getQueryLog()); // not empty
 
     DB::flushQueryLog();
     expect($tenant->is(app(DomainTenantResolver::class)->resolve('bar')))->toBeTrue();
-    $this->assertNotEmpty(DB::getQueryLog()); // not empty
+    pest()->assertNotEmpty(DB::getQueryLog()); // not empty
 });

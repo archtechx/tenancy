@@ -62,7 +62,7 @@ test('central helper runs callbacks in the central state', function () {
 test('central helper returns the value from the callback', function () {
     tenancy()->initialize(Tenant::create());
 
-    $this->assertSame('foo', tenancy()->central(function () {
+    pest()->assertSame('foo', tenancy()->central(function () {
         return 'foo';
     }));
 });

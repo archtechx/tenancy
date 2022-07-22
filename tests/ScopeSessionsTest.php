@@ -35,7 +35,7 @@ test('tenant id is auto added to session if its missing', function () {
         'id' => 'acme',
     ]);
 
-    $this->get('http://acme.localhost/foo')
+    pest()->get('http://acme.localhost/foo')
         ->assertSessionHas(ScopeSessions::$tenantIdKey, 'acme');
 });
 
@@ -44,12 +44,12 @@ test('changing tenant id in session will abort the request', function () {
         'id' => 'acme',
     ]);
 
-    $this->get('http://acme.localhost/foo')
+    pest()->get('http://acme.localhost/foo')
         ->assertSuccessful();
 
     session()->put(ScopeSessions::$tenantIdKey, 'foobar');
 
-    $this->get('http://acme.localhost/foo')
+    pest()->get('http://acme.localhost/foo')
         ->assertStatus(403);
 });
 
@@ -62,6 +62,6 @@ test('an exception is thrown when the middleware is executed before tenancy is i
         'id' => 'acme',
     ]);
 
-    $this->expectException(TenancyNotInitializedException::class);
-    $this->withoutExceptionHandling()->get('http://acme.localhost/bar');
+    pest()->expectException(TenancyNotInitializedException::class);
+    pest()->withoutExceptionHandling()->get('http://acme.localhost/bar');
 });

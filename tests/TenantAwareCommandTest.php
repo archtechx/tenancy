@@ -13,14 +13,14 @@ test('commands run globally are tenant aware and return valid exit code', functi
         '--tenants' => [$tenant1['id'], $tenant2['id']],
     ]);
 
-    $this->artisan('user:add')
+    pest()->artisan('user:add')
         ->assertExitCode(0);
 
     tenancy()->initialize($tenant1);
-    $this->assertNotEmpty(DB::table('users')->get());
+    pest()->assertNotEmpty(DB::table('users')->get());
     tenancy()->end();
 
     tenancy()->initialize($tenant2);
-    $this->assertNotEmpty(DB::table('users')->get());
+    pest()->assertNotEmpty(DB::table('users')->get());
     tenancy()->end();
 });

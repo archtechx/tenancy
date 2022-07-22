@@ -81,7 +81,7 @@ test('ing events can be used to cancel db creation', function () {
     $tenant = Tenant::create();
     dispatch_now(new CreateDatabase($tenant));
 
-    $this->assertFalse($tenant->database()->manager()->databaseExists(
+    pest()->assertFalse($tenant->database()->manager()->databaseExists(
         $tenant->database()->getName()
     ));
 });
@@ -149,7 +149,7 @@ test('individual job pipelines can terminate while leaving others running', func
 
     Tenant::create();
 
-    $this->assertSame([
+    pest()->assertSame([
         'P1J1',
         'P1J2',
         'P2J1', // termminated after this
@@ -163,7 +163,7 @@ test('database is not migrated if creation is disabled', function () {
         JobPipeline::make([
             CreateDatabase::class,
             function () {
-                $this->fail("The job pipeline didn't exit.");
+                pest()->fail("The job pipeline didn't exit.");
             },
             MigrateDatabase::class,
         ])->send(function (TenantCreated $event) {
@@ -176,7 +176,7 @@ test('database is not migrated if creation is disabled', function () {
         'tenancy_db_name' => 'already_created',
     ]);
 
-    expect($this->hasFailed())->toBeFalse();
+    expect(pest()->hasFailed())->toBeFalse();
 });
 
 class FooListener extends QueueableListener

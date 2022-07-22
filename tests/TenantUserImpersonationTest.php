@@ -25,7 +25,7 @@ use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Foundation\Auth\User as Authenticable;
 
 beforeEach(function () {
-    $this->artisan('migrate', [
+    pest()->artisan('migrate', [
         '--path' => __DIR__ . '/../assets/impersonation-migrations',
         '--realpath' => true,
     ])->assertExitCode(0);
@@ -69,16 +69,16 @@ test('tenant user can be impersonated on a tenant domain', function () {
     });
 
     // We try to visit the dashboard directly, before impersonating the user.
-    $this->get('http://foo.localhost/dashboard')
+    pest()->get('http://foo.localhost/dashboard')
         ->assertRedirect('http://foo.localhost/login');
 
     // We impersonate the user
     $token = tenancy()->impersonate($tenant, $user->id, '/dashboard');
-    $this->get('http://foo.localhost/impersonate/' . $token->token)
+    pest()->get('http://foo.localhost/impersonate/' . $token->token)
         ->assertRedirect('http://foo.localhost/dashboard');
 
     // Now we try to visit the dashboard directly, after impersonating the user.
-    $this->get('http://foo.localhost/dashboard')
+    pest()->get('http://foo.localhost/dashboard')
         ->assertSuccessful()
         ->assertSee('You are logged in as Joe');
 });
@@ -102,16 +102,16 @@ test('tenant user can be impersonated on a tenant path', function () {
     });
 
     // We try to visit the dashboard directly, before impersonating the user.
-    $this->get('/acme/dashboard')
+    pest()->get('/acme/dashboard')
         ->assertRedirect('/login');
 
     // We impersonate the user
     $token = tenancy()->impersonate($tenant, $user->id, '/acme/dashboard');
-    $this->get('/acme/impersonate/' . $token->token)
+    pest()->get('/acme/impersonate/' . $token->token)
         ->assertRedirect('/acme/dashboard');
 
     // Now we try to visit the dashboard directly, after impersonating the user.
-    $this->get('/acme/dashboard')
+    pest()->get('/acme/dashboard')
         ->assertSuccessful()
         ->assertSee('You are logged in as Joe');
 });
@@ -138,7 +138,7 @@ test('tokens have a limited ttl', function () {
         'created_at' => Carbon::now()->subtract(CarbonInterval::make('100s')),
     ]);
 
-    $this->followingRedirects()
+    pest()->followingRedirects()
         ->get('http://foo.localhost/impersonate/' . $token->token)
         ->assertStatus(403);
 });
@@ -162,9 +162,9 @@ test('tokens are deleted after use', function () {
     // We impersonate the user
     $token = tenancy()->impersonate($tenant, $user->id, '/dashboard');
 
-    $this->assertNotNull(ImpersonationToken::find($token->token));
+    pest()->assertNotNull(ImpersonationToken::find($token->token));
 
-    $this->followingRedirects()
+    pest()->followingRedirects()
         ->get('http://foo.localhost/impersonate/' . $token->token)
         ->assertSuccessful()
         ->assertSee('You are logged in as Joe');
@@ -204,16 +204,16 @@ test('impersonation works with multiple models and guards', function () {
     });
 
     // We try to visit the dashboard directly, before impersonating the user.
-    $this->get('http://foo.localhost/dashboard')
+    pest()->get('http://foo.localhost/dashboard')
         ->assertRedirect('http://foo.localhost/login');
 
     // We impersonate the user
     $token = tenancy()->impersonate($tenant, $user->id, '/dashboard', 'another');
-    $this->get('http://foo.localhost/impersonate/' . $token->token)
+    pest()->get('http://foo.localhost/impersonate/' . $token->token)
         ->assertRedirect('http://foo.localhost/dashboard');
 
     // Now we try to visit the dashboard directly, after impersonating the user.
-    $this->get('http://foo.localhost/dashboard')
+    pest()->get('http://foo.localhost/dashboard')
         ->assertSuccessful()
         ->assertSee('You are logged in as Joe');
 
@@ -225,7 +225,7 @@ test('impersonation works with multiple models and guards', function () {
 
 function migrateTenants()
 {
-    test()->artisan('tenants:migrate')->assertExitCode(0);
+    pest()->artisan('tenants:migrate')->assertExitCode(0);
 }
 
 function makeLoginRoute()
@@ -239,7 +239,7 @@ function getRoutes($loginRoute = true, $authGuard = 'web'): Closure
 {
     return function () use ($loginRoute, $authGuard) {
         if ($loginRoute) {
-            test()->makeLoginRoute();
+            makeLoginRoute();
         }
 
         Route::get('/dashboard', function () use ($authGuard) {

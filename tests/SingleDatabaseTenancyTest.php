@@ -138,7 +138,7 @@ test('tenant id and relationship is auto added when creating primary resources i
 });
 
 test('tenant id is not auto added when creating primary resources in central context', function () {
-    $this->expectException(QueryException::class);
+    pest()->expectException(QueryException::class);
 
     Post::create(['text' => 'Foo']);
 });
@@ -212,8 +212,8 @@ test('the model returned by the tenant helper has unique and exists validation r
     ])->fails();
 
     // Assert that 'unique' and 'exists' aren't scoped by default
-    // $this->assertFalse($uniqueFails); // todo get these two assertions to pass. for some reason, the validator is passing for both 'unique' and 'exists'
-    // $this->assertTrue($existsFails); // todo get these two assertions to pass. for some reason, the validator is passing for both 'unique' and 'exists'
+    // pest()->assertFalse($uniqueFails); // todo get these two assertions to pass. for some reason, the validator is passing for both 'unique' and 'exists'
+    // pest()->assertTrue($existsFails); // todo get these two assertions to pass. for some reason, the validator is passing for both 'unique' and 'exists'
 
     $uniqueFails = Validator::make($data, [
         'slug' => tenant()->unique('posts'),

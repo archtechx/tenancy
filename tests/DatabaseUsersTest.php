@@ -56,7 +56,7 @@ test('a tenants database cannot be created when the user already exists', functi
     expect($manager->userExists($tenant->database()->getUsername()))->toBeTrue();
     expect($manager->databaseExists($tenant->database()->getName()))->toBeTrue();
 
-    $this->expectException(TenantDatabaseUserAlreadyExistsException::class);
+    pest()->expectException(TenantDatabaseUserAlreadyExistsException::class);
     Event::fake([DatabaseCreated::class]);
 
     $tenant2 = Tenant::create([

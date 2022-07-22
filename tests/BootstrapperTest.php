@@ -42,7 +42,7 @@ test('database data is separated', function () {
     $tenant1 = Tenant::create();
     $tenant2 = Tenant::create();
 
-    $this->artisan('tenants:migrate');
+    pest()->artisan('tenants:migrate');
 
     tenancy()->initialize($tenant1);
 
@@ -175,7 +175,7 @@ test('filesystem data is separated', function () {
     // Check that disk prefixes respect the root_override logic
     expect(getDiskPrefix('local'))->toBe($expected_storage_path . '/app/');
     expect(getDiskPrefix('public'))->toBe($expected_storage_path . '/app/public/');
-    $this->assertSame('tenant' . tenant('id') . '/', getDiskPrefix('s3'), '/');
+    pest()->assertSame('tenant' . tenant('id') . '/', getDiskPrefix('s3'), '/');
 
     // Check suffixing logic
     $new_storage_path = storage_path();

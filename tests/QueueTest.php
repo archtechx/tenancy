@@ -7,7 +7,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Str;
 use Spatie\Valuestore\Valuestore;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Tests\Etc\User;
@@ -43,7 +42,7 @@ beforeEach(function () {
 });
 
 afterEach(function () {
-    $this->valuestore->flush();
+    pest()->valuestore->flush();
 });
 
 test('tenant id is passed to tenant queues', function () {
@@ -55,7 +54,7 @@ test('tenant id is passed to tenant queues', function () {
 
     Event::fake([JobProcessing::class, JobProcessed::class]);
 
-    dispatch(new TestJob($this->valuestore));
+    dispatch(new TestJob(pest()->valuestore));
 
     Event::assertDispatched(JobProcessing::class, function ($event) {
         return $event->job->payload()['tenant_id'] === tenant('id');
@@ -74,7 +73,7 @@ test('tenant id is not passed to central queues', function () {
         'central' => true,
     ]]);
 
-    dispatch(new TestJob($this->valuestore))->onConnection('central');
+    dispatch(new TestJob(pest()->valuestore))->onConnection('central');
 
     Event::assertDispatched(JobProcessing::class, function ($event) {
         return ! isset($event->job->payload()['tenant_id']);
@@ -93,21 +92,21 @@ test('tenancy is initialized inside queues', function (bool $shouldEndTenancy) {
 
     $user = User::create(['name' => 'Foo', 'email' => 'foo@bar.com', 'password' => 'secret']);
 
-    $this->valuestore->put('userName', 'Bar');
+    pest()->valuestore->put('userName', 'Bar');
 
-    dispatch(new TestJob($this->valuestore, $user));
+    dispatch(new TestJob(pest()->valuestore, $user));
 
-    expect($this->valuestore->has('tenant_id'))->toBeFalse();
+    expect(pest()->valuestore->has('tenant_id'))->toBeFalse();
 
     if ($shouldEndTenancy) {
         tenancy()->end();
     }
 
-    $this->artisan('queue:work --once');
+    pest()->artisan('queue:work --once');
 
     expect(DB::connection('central')->table('failed_jobs')->count())->toBe(0);
 
-    expect($this->valuestore->get('tenant_id'))->toBe('The current tenant id is: ' . $tenant->id);
+    expect(pest()->valuestore->get('tenant_id'))->toBe('The current tenant id is: ' . $tenant->id);
 
     $tenant->run(function () use ($user) {
         expect($user->fresh()->name)->toBe('Bar');
@@ -115,10 +114,6 @@ test('tenancy is initialized inside queues', function (bool $shouldEndTenancy) {
 })->with([true, false]);;
 
 test('tenancy is initialized when retrying jobs', function (bool $shouldEndTenancy) {
-    if (! Str::startsWith(app()->version(), '8')) {
-        $this->markTestSkipped('queue:retry tenancy is only supported in Laravel 8');
-    }
-
     withFailedJobs();
     withTenantDatabases();
 
@@ -130,28 +125,28 @@ test('tenancy is initialized when retrying jobs', function (bool $shouldEndTenan
 
     $user = User::create(['name' => 'Foo', 'email' => 'foo@bar.com', 'password' => 'secret']);
 
-    $this->valuestore->put('userName', 'Bar');
-    $this->valuestore->put('shouldFail', true);
+    pest()->valuestore->put('userName', 'Bar');
+    pest()->valuestore->put('shouldFail', true);
 
-    dispatch(new TestJob($this->valuestore, $user));
+    dispatch(new TestJob(pest()->valuestore, $user));
 
-    expect($this->valuestore->has('tenant_id'))->toBeFalse();
+    expect(pest()->valuestore->has('tenant_id'))->toBeFalse();
 
     if ($shouldEndTenancy) {
         tenancy()->end();
     }
 
-    $this->artisan('queue:work --once');
+    pest()->artisan('queue:work --once');
 
     expect(DB::connection('central')->table('failed_jobs')->count())->toBe(1);
-    expect($this->valuestore->get('tenant_id'))->toBeNull(); // job failed
+    expect(pest()->valuestore->get('tenant_id'))->toBeNull(); // job failed
 
-    $this->artisan('queue:retry all');
-    $this->artisan('queue:work --once');
+    pest()->artisan('queue:retry all');
+    pest()->artisan('queue:work --once');
 
     expect(DB::connection('central')->table('failed_jobs')->count())->toBe(0);
 
-    expect($this->valuestore->get('tenant_id'))->toBe('The current tenant id is: ' . $tenant->id); // job succeeded
+    expect(pest()->valuestore->get('tenant_id'))->toBe('The current tenant id is: ' . $tenant->id); // job succeeded
 
     $tenant->run(function () use ($user) {
         expect($user->fresh()->name)->toBe('Bar');
@@ -165,7 +160,7 @@ test('the tenant used by the job doesnt change when the current tenant changes',
 
     tenancy()->initialize($tenant1);
 
-    dispatch(new TestJob($this->valuestore));
+    dispatch(new TestJob(pest()->valuestore));
 
     $tenant2 = Tenant::create([
         'id' => 'foobar',
@@ -173,10 +168,10 @@ test('the tenant used by the job doesnt change when the current tenant changes',
 
     tenancy()->initialize($tenant2);
 
-    expect($this->valuestore->has('tenant_id'))->toBeFalse();
-    $this->artisan('queue:work --once');
+    expect(pest()->valuestore->has('tenant_id'))->toBeFalse();
+    pest()->artisan('queue:work --once');
 
-    expect($this->valuestore->get('tenant_id'))->toBe('The current tenant id is: acme');
+    expect(pest()->valuestore->get('tenant_id'))->toBe('The current tenant id is: acme');
 });
 
 function createValueStore(): void
@@ -192,7 +187,7 @@ function createValueStore(): void
         file_put_contents($valueStorePath, '');
     }
 
-    test()->valuestore = Valuestore::make($valueStorePath)->flush();
+    pest()->valuestore = Valuestore::make($valueStorePath)->flush();
 }
 
 function withFailedJobs()
@@ -262,4 +257,3 @@ class TestJob implements ShouldQueue
         }
     }
 }
-

@@ -21,7 +21,7 @@ test('a route can work in both central and tenant context', function () {
             : 'Tenancy is not initialized.';
     })->middleware(['universal', InitializeTenancyByDomain::class]);
 
-    $this->get('http://localhost/foo')
+    pest()->get('http://localhost/foo')
         ->assertSuccessful()
         ->assertSee('Tenancy is not initialized.');
 
@@ -32,7 +32,7 @@ test('a route can work in both central and tenant context', function () {
         'domain' => 'acme.localhost',
     ]);
 
-    $this->get('http://acme.localhost/foo')
+    pest()->get('http://acme.localhost/foo')
         ->assertSuccessful()
         ->assertSee('Tenancy is initialized.');
 });
@@ -51,7 +51,7 @@ test('making one route universal doesnt make all routes universal', function () 
             : 'Tenancy is not initialized.';
     })->middleware(['universal', InitializeTenancyByDomain::class]);
 
-    $this->get('http://localhost/foo')
+    pest()->get('http://localhost/foo')
         ->assertSuccessful()
         ->assertSee('Tenancy is not initialized.');
 
@@ -62,16 +62,16 @@ test('making one route universal doesnt make all routes universal', function () 
         'domain' => 'acme.localhost',
     ]);
 
-    $this->get('http://acme.localhost/foo')
+    pest()->get('http://acme.localhost/foo')
         ->assertSuccessful()
         ->assertSee('Tenancy is initialized.');
 
     tenancy()->end();
 
-    $this->get('http://localhost/bar')
+    pest()->get('http://localhost/bar')
         ->assertStatus(500);
 
-    $this->get('http://acme.localhost/bar')
+    pest()->get('http://acme.localhost/bar')
         ->assertSuccessful()
         ->assertSee('acme');
 });

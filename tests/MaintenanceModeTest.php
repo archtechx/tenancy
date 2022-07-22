@@ -19,15 +19,15 @@ test('tenant can be in maintenance mode', function () {
         'domain' => 'acme.localhost',
     ]);
 
-    $this->get('http://acme.localhost/foo')
+    pest()->get('http://acme.localhost/foo')
         ->assertSuccessful();
 
     tenancy()->end(); // flush stored tenant instance
 
     $tenant->putDownForMaintenance();
 
-    $this->expectException(HttpException::class);
-    $this->withoutExceptionHandling()
+    pest()->expectException(HttpException::class);
+    pest()->withoutExceptionHandling()
         ->get('http://acme.localhost/foo');
 });
 

@@ -23,7 +23,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         Redis::connection('cache')->flushdb();
 
         file_put_contents(database_path('central.sqlite'), '');
-        $this->artisan('migrate:fresh', [
+        pest()->artisan('migrate:fresh', [
             '--force' => true,
             '--path' => __DIR__ . '/../assets/migrations',
             '--realpath' => true,

@@ -32,7 +32,7 @@ test('tenant can be identified by subdomain', function () {
 
     expect(tenancy()->initialized)->toBeFalse();
 
-    $this
+    pest()
         ->get('http://foo.localhost/foo/abc/xyz')
         ->assertSee('abc + xyz');
 
@@ -53,7 +53,7 @@ test('tenant can be identified by domain', function () {
 
     expect(tenancy()->initialized)->toBeFalse();
 
-    $this
+    pest()
         ->get('http://foobar.localhost/foo/abc/xyz')
         ->assertSee('abc + xyz');
 
