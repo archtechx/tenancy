@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Scope;
 
 class PendingScope implements Scope
 {
-
     /**
      * All of the extensions to be added to the builder.
      *
@@ -21,13 +20,11 @@ class PendingScope implements Scope
     /**
      * Apply the scope to a given Eloquent query builder.
      *
-     * @param  Builder  $builder
-     * @param  Model  $model
      * @return void
      */
     public function apply(Builder $builder, Model $model)
     {
-        $builder->when(! config('tenancy.pending.include_in_queries'), function (Builder $builder){
+        $builder->when(! config('tenancy.pending.include_in_queries'), function (Builder $builder) {
             $builder->whereNull('data->pending_since');
         });
     }
@@ -35,7 +32,6 @@ class PendingScope implements Scope
     /**
      * Extend the query builder with the needed functions.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $builder
      * @return void
      */
     public function extend(Builder $builder)
@@ -47,7 +43,6 @@ class PendingScope implements Scope
     /**
      * Add the with-pending extension to the builder.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $builder
      * @return void
      */
     protected function addWithPending(Builder $builder)
@@ -64,13 +59,11 @@ class PendingScope implements Scope
     /**
      * Add the without-pending extension to the builder.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $builder
      * @return void
      */
     protected function addWithoutPending(Builder $builder)
     {
         $builder->macro('withoutPending', function (Builder $builder) {
-
             $builder->withoutGlobalScope($this)
                 ->whereNull('data->pending_since')
                 ->orWhereNull('data');
@@ -82,7 +75,6 @@ class PendingScope implements Scope
     /**
      * Add the only-pending extension to the builder.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $builder
      * @return void
      */
     protected function addOnlyPending(Builder $builder)

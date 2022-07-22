@@ -28,8 +28,6 @@ class ClearPendingTenants extends Command
 
     /**
      * Execute the console command.
-     *
-     * @return mixed
      */
     public function handle()
     {
@@ -49,7 +47,6 @@ class ClearPendingTenants extends Command
                 $expireDate->subHours($olderThanHours);
             }
         }
-
 
         $deletedPendingCount = tenancy()
             ->query()

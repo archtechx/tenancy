@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Database\Concerns;
 
 use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\Events\PullingPendingTenant;
-use Stancl\Tenancy\Events\PendingTenantPulled;
 use Stancl\Tenancy\Events\CreatingPendingTenant;
 use Stancl\Tenancy\Events\PendingTenantCreated;
+use Stancl\Tenancy\Events\PendingTenantPulled;
+use Stancl\Tenancy\Events\PullingPendingTenant;
 
 /**
  * @property $pending_since
@@ -39,7 +39,6 @@ trait HasPending
         $this->casts['pending_since'] = 'timestamp';
     }
 
-
     /**
      * Determine if the model instance is in a pending state.
      *
@@ -59,7 +58,7 @@ trait HasPending
         // Add the pending value only after creating the model
         // To ensure it's not marked as pending until finishing running the migrations, seeders, etc.
         $tenant->update([
-            'pending_since' => now()->timestamp
+            'pending_since' => now()->timestamp,
         ]);
 
         event(new PendingTenantCreated($tenant));
@@ -80,7 +79,7 @@ trait HasPending
         event(new PullingPendingTenant($tenant));
 
         $tenant->update([
-            'pending_since' => null
+            'pending_since' => null,
         ]);
 
         event(new PendingTenantPulled($tenant));

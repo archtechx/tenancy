@@ -10,7 +10,6 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Artisan;
-use Stancl\Tenancy\Contracts\TenantWithDatabase;
 
 class CreatePendingTenants implements ShouldQueue
 {

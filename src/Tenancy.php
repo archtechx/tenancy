@@ -135,7 +135,7 @@ class Tenancy
     {
         $query = $this->model()->newQuery();
 
-        if (is_bool($withPending) && $this->model()::hasGlobalScope(PendingScope::class)){
+        if (is_bool($withPending) && $this->model()::hasGlobalScope(PendingScope::class)) {
             $query->withPending($withPending);
         }
         // Convert null to all tenants

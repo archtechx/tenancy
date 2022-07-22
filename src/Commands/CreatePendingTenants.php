@@ -24,8 +24,6 @@ class CreatePendingTenants extends Command
 
     /**
      * Execute the console command.
-     *
-     * @return mixed
      */
     public function handle()
     {
@@ -53,8 +51,6 @@ class CreatePendingTenants extends Command
 
     /**
      * Calculate the number of currently deployed pending tenants.
-     *
-     * @return int
      */
     private function getPendingTenantCount(): int
     {
