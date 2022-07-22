@@ -28,7 +28,6 @@ class Tenancy
     /**
      * Initializes the tenant.
      * @param Tenant|int|string $tenant
-     * @return void
      */
     public function initialize($tenant): void
     {
@@ -107,9 +106,6 @@ class Tenancy
     /**
      * Run a callback in the central context.
      * Atomic, safely reverts to previous context.
-     *
-     * @param callable $callback
-     * @return mixed
      */
     public function central(callable $callback)
     {
@@ -133,7 +129,6 @@ class Tenancy
      * More performant than running $tenant->run() one by one.
      *
      * @param Tenant[]|\Traversable|string[]|null $tenants
-     * @param callable $callback
      * @return void
      */
     public function runForMultiple($tenants, callable $callback, bool $withPending = null)

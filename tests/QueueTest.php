@@ -4,33 +4,31 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
-use Closure;
 use Exception;
-use Illuminate\Support\Str;
 use Illuminate\Bus\Queueable;
-use Spatie\Valuestore\Valuestore;
-use Illuminate\Support\Facades\DB;
-use Stancl\Tenancy\Tests\Etc\User;
-use Stancl\JobPipeline\JobPipeline;
-use Stancl\Tenancy\Tests\Etc\Tenant;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Schema;
-use Stancl\Tenancy\Events\TenancyEnded;
-use Stancl\Tenancy\Jobs\CreateDatabase;
-use Illuminate\Queue\InteractsWithQueue;
-use Stancl\Tenancy\Events\TenantCreated;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use PDO;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use Spatie\Valuestore\Valuestore;
+use Stancl\JobPipeline\JobPipeline;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper;
+use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper;
-use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Tests\Etc\Tenant;
+use Stancl\Tenancy\Tests\Etc\User;
 
 class QueueTest extends TestCase
 {
