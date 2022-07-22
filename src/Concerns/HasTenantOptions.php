@@ -7,7 +7,10 @@ namespace Stancl\Tenancy\Concerns;
 use Illuminate\Support\LazyCollection;
 use Symfony\Component\Console\Input\InputOption;
 
-trait HasATenantsOption
+/**
+ * Adds 'tenants' and 'with-pending' options.
+ */
+trait HasTenantOptions
 {
     protected function getOptions()
     {
@@ -24,12 +27,10 @@ trait HasATenantsOption
             ->when($this->option('tenants'), function ($query) {
                 $query->whereIn(tenancy()->model()->getTenantKeyName(), $this->option('tenants'));
             })
+            ->when(tenancy()->model()::hasGlobalScope(PendingScope::class), function($query) {
+                $query->withPending($this->option('with-pending'));
+            })
             ->cursor();
-    }
-
-    protected function withPending(): ?bool
-    {
-        return $this->option('with-pending') ? true : null;
     }
 
     public function __construct()
