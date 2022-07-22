@@ -29,22 +29,22 @@ class CreatePendingTenants extends Command
     {
         $this->info('Deploying pending tenants.');
 
-        $pendingObjectifCount = (int) ($this->option('count') ?? config('tenancy.pending.count'));
+        $maxPendingTenantCount = (int) ($this->option('count') ?? config('tenancy.pending.count'));
 
-        $pendingCurrentCount = $this->getPendingTenantCount();
+        $pendingTenantCount = $this->getPendingTenantCount();
 
         $deployedCount = 0;
-        while ($pendingCurrentCount < $pendingObjectifCount) {
+        while ($pendingTenantCount < $maxPendingTenantCount) {
             tenancy()->model()::createPending();
             // Update the number of pending tenants every time with a query to get a live count
             // To prevent deploying too many tenants if pending tenants are being created simultaneously somewhere else
             // While running this command
-            $pendingCurrentCount = $this->getPendingTenantCount();
+            $pendingTenantCount = $this->getPendingTenantCount();
             $deployedCount++;
         }
 
         $this->info($deployedCount . ' ' . str('tenant')->plural($deployedCount) . ' deployed.');
-        $this->info($pendingObjecifCount . ' ' . str('tenant')->plural($pendingObjectifCount) . ' ready to be used.');
+        $this->info($maxPendingTenantCount . ' ' . str('tenant')->plural($maxPendingTenantCount) . ' ready to be used.');
 
         return 1;
     }
