@@ -13,6 +13,7 @@ use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 use Stancl\Tenancy\Features\UniversalRoutes;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
+use function Symfony\Component\String\s;
 
 class DomainTest extends TestCase
 {
@@ -109,11 +110,15 @@ class DomainTest extends TestCase
     /** @test */
     public function not_defining_onfail_customized_logic_throw_correct_exception_when_universal_route_feature_enabled()
     {
+        $this->expectException(TenantCouldNotBeIdentifiedOnDomainException::class);
+
+        // un-define onFail logic
+        InitializeTenancyByDomain::$onFail = null;
+
         // Enable UniversalRoute feature
         Route::middlewareGroup('universal', []);
         config(['tenancy.features' => [UniversalRoutes::class]]);
 
-        $this->expectException(TenantCouldNotBeIdentifiedOnDomainException::class);
         $this->withoutExceptionHandling()->get('http://foo.localhost/foo/abc/xyz');
     }
 
