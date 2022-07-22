@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
-use Stancl\Tenancy\Concerns\HasATenantsOption;
+use Stancl\Tenancy\Concerns\HasTenantOptions;
 
 class Run extends Command
 {
-    use HasATenantsOption;
+    use HasTenantOptions;
     /**
      * The console command description.
      *
@@ -31,7 +31,7 @@ class Run extends Command
      */
     public function handle()
     {
-        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
+        tenancy()->runForMultiple($this->getTenants(), function ($tenant) {
             $this->line("Tenant: {$tenant->getTenantKey()}");
 
             $callback = function ($prefix = '') {
@@ -51,6 +51,6 @@ class Run extends Command
 
             // Run command
             $this->call($this->argument('commandname'), array_merge($arguments, $options));
-        }, $this->withPending());
+        });
     }
 }

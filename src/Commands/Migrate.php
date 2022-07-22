@@ -9,13 +9,13 @@ use Illuminate\Database\Console\Migrations\MigrateCommand;
 use Illuminate\Database\Migrations\Migrator;
 use Stancl\Tenancy\Concerns\DealsWithMigrations;
 use Stancl\Tenancy\Concerns\ExtendsLaravelCommand;
-use Stancl\Tenancy\Concerns\HasATenantsOption;
+use Stancl\Tenancy\Concerns\HasTenantOptions;
 use Stancl\Tenancy\Events\DatabaseMigrated;
 use Stancl\Tenancy\Events\MigratingDatabase;
 
 class Migrate extends MigrateCommand
 {
-    use HasATenantsOption, DealsWithMigrations, ExtendsLaravelCommand;
+    use HasTenantOptions, DealsWithMigrations, ExtendsLaravelCommand;
 
     protected $description = 'Run migrations for tenant(s)';
 
@@ -46,7 +46,7 @@ class Migrate extends MigrateCommand
             return;
         }
 
-        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
+        tenancy()->runForMultiple($this->getTenants(), function ($tenant) {
             $this->line("Tenant: {$tenant->getTenantKey()}");
 
             event(new MigratingDatabase($tenant));
@@ -55,6 +55,6 @@ class Migrate extends MigrateCommand
             parent::handle();
 
             event(new DatabaseMigrated($tenant));
-        }, $this->withPending());
+        });
     }
 }

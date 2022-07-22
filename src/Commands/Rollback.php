@@ -8,13 +8,13 @@ use Illuminate\Database\Console\Migrations\RollbackCommand;
 use Illuminate\Database\Migrations\Migrator;
 use Stancl\Tenancy\Concerns\DealsWithMigrations;
 use Stancl\Tenancy\Concerns\ExtendsLaravelCommand;
-use Stancl\Tenancy\Concerns\HasATenantsOption;
+use Stancl\Tenancy\Concerns\HasTenantOptions;
 use Stancl\Tenancy\Events\DatabaseRolledBack;
 use Stancl\Tenancy\Events\RollingBackDatabase;
 
 class Rollback extends RollbackCommand
 {
-    use HasATenantsOption, DealsWithMigrations, ExtendsLaravelCommand;
+    use HasTenantOptions, DealsWithMigrations, ExtendsLaravelCommand;
 
     protected static function getTenantCommandName(): string
     {
@@ -55,7 +55,7 @@ class Rollback extends RollbackCommand
             return;
         }
 
-        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
+        tenancy()->runForMultiple($this->getTenants(), function ($tenant) {
             $this->line("Tenant: {$tenant->getTenantKey()}");
 
             event(new RollingBackDatabase($tenant));
@@ -64,6 +64,6 @@ class Rollback extends RollbackCommand
             parent::handle();
 
             event(new DatabaseRolledBack($tenant));
-        }, $this->withPending());
+        });
     }
 }

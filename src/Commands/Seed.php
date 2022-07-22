@@ -6,13 +6,13 @@ namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Database\Console\Seeds\SeedCommand;
-use Stancl\Tenancy\Concerns\HasATenantsOption;
+use Stancl\Tenancy\Concerns\HasTenantOptions;
 use Stancl\Tenancy\Events\DatabaseSeeded;
 use Stancl\Tenancy\Events\SeedingDatabase;
 
 class Seed extends SeedCommand
 {
-    use HasATenantsOption;
+    use HasTenantOptions;
 
     /**
      * The console command description.
@@ -48,7 +48,7 @@ class Seed extends SeedCommand
             return;
         }
 
-        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
+        tenancy()->runForMultiple($this->getTenants(), function ($tenant) {
             $this->line("Tenant: {$tenant->getTenantKey()}");
 
             event(new SeedingDatabase($tenant));
@@ -57,6 +57,6 @@ class Seed extends SeedCommand
             parent::handle();
 
             event(new DatabaseSeeded($tenant));
-        }, $this->withPending());
+        });
     }
 }
