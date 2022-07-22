@@ -10,6 +10,7 @@ use Stancl\Tenancy\Database\Models;
 use Stancl\Tenancy\Database\Models\Domain;
 use Stancl\Tenancy\Exceptions\DomainOccupiedByOtherTenantException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
+use Stancl\Tenancy\Features\UniversalRoutes;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 
@@ -103,6 +104,17 @@ class DomainTest extends TestCase
         $this
             ->get('http://foo.localhost/foo/abc/xyz')
             ->assertSee('foo');
+    }
+
+    /** @test */
+    public function not_defining_onfail_customized_logic_throw_correct_exception_when_universal_route_feature_enabled()
+    {
+        // Enable UniversalRoute feature
+        Route::middlewareGroup('universal', []);
+        config(['tenancy.features' => [UniversalRoutes::class]]);
+
+        $this->expectException(TenantCouldNotBeIdentifiedOnDomainException::class);
+        $this->withoutExceptionHandling()->get('http://foo.localhost/foo/abc/xyz');
     }
 
     /** @test */

@@ -30,7 +30,11 @@ class UniversalRoutes implements Feature
                     return $next($request);
                 }
 
-                return $originalOnFail($exception, $request, $next);
+                if ($originalOnFail) {
+                    return $originalOnFail($exception, $request, $next);
+                }
+
+                throw $exception;
             };
         }
     }
