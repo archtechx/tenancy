@@ -58,10 +58,10 @@ class ClearPendingTenants extends Command
                 $query->where('data->pending_since', '<', $expireDate->timestamp);
             })
             ->get()
-            ->each // This makes sure the events or triggered on the model
+            ->each // Make sure the model events are triggered by deleting the tenants one by one
             ->delete()
             ->count();
 
-        $this->info("$deletedPendingCount pending tenant(s) deleted.");
+        $this->info($deletedPendingCount . ' pending ' . str('tenant')->plural($deletedPendingCount) . ' deleted.');
     }
 }

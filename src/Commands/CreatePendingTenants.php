@@ -38,20 +38,22 @@ class CreatePendingTenants extends Command
         $deployedCount = 0;
         while ($pendingCurrentCount < $pendingObjectifCount) {
             tenancy()->model()::createPending();
-            // We update the number of pending tenants every time with a query to get a live count.
-            // this prevents to deploy too many tenants if pending tenants are being created simultaneous somewhere else
-            // during the runtime of this command.
+            // Update the number of pending tenants every time with a query to get a live count
+            // To prevent deploying too many tenants if pending tenants are being created simultaneously somewhere else
+            // While running this command
             $pendingCurrentCount = $this->getPendingTenantCount();
             $deployedCount++;
         }
 
-        $this->info("$deployedCount tenants deployed, $pendingObjectifCount tenant(s) are ready to be used.");
+        $this->info($deployedCount . ' ' . str('tenant')->plural($deployedCount) . ' deployed.');
+        $this->info($pendingObjecifCount . ' ' . str('tenant')->plural($pendingObjectifCount) . ' ready to be used.');
 
         return 1;
     }
 
     /**
-     * Calculates the number of pending tenants currently deployed
+     * Calculate the number of currently deployed pending tenants.
+     *
      * @return int
      */
     private function getPendingTenantCount(): int

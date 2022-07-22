@@ -152,7 +152,7 @@ class Tenancy
         // Wrap string in array
         $tenants = is_string($tenants) ? [$tenants] : $tenants;
 
-        // Use all tenants if $tenants is false
+        // Use all tenants if $tenants is falsy
         $tenants = $tenants ?: $query->cursor();
 
         $originalTenant = $this->tenant;

@@ -27,7 +27,7 @@ class PendingScope implements Scope
      */
     public function apply(Builder $builder, Model $model)
     {
-        $builder->when(!config('tenancy.pending.include_in_queries'), function (Builder $builder){
+        $builder->when(! config('tenancy.pending.include_in_queries'), function (Builder $builder){
             $builder->whereNull('data->pending_since');
         });
     }
@@ -71,10 +71,8 @@ class PendingScope implements Scope
     {
         $builder->macro('withoutPending', function (Builder $builder) {
 
-            // Only use whereNull('data->pending_since') when Laravel 6 support is dropped
-            // Issue fixed in Laravel 7 https://github.com/laravel/framework/pull/32417
             $builder->withoutGlobalScope($this)
-                ->where('data->pending_since', 'like', 'null')
+                ->whereNull('data->pending_since')
                 ->orWhereNull('data');
 
             return $builder;
@@ -90,10 +88,7 @@ class PendingScope implements Scope
     protected function addOnlyPending(Builder $builder)
     {
         $builder->macro('onlyPending', function (Builder $builder) {
-
-            // Use whereNotNull when Laravel 6 is dropped
-            // Issue fixed in Laravel 7 https://github.com/laravel/framework/pull/32417
-            $builder->withoutGlobalScope($this)->where('data->pending_since', 'not like', 'null');
+            $builder->withoutGlobalScope($this)->whereNotNull('data->pending_since');
 
             return $builder;
         });
