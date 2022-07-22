@@ -13,7 +13,7 @@ class CreatePendingTenants extends Command
      *
      * @var string
      */
-    protected $signature = 'tenants:pending {--count= : The number of tenant to be in a pending state}';
+    protected $signature = 'tenants:pending {--count= : The number of tenants to be in a pending state}';
 
     /**
      * The console command description.
