@@ -27,7 +27,7 @@ trait HasTenantOptions
             ->when($this->option('tenants'), function ($query) {
                 $query->whereIn(tenancy()->model()->getTenantKeyName(), $this->option('tenants'));
             })
-            ->when(tenancy()->model()::hasGlobalScope(PendingScope::class), function($query) {
+            ->when(tenancy()->model()::hasGlobalScope(PendingScope::class), function ($query) {
                 $query->withPending($this->option('with-pending'));
             })
             ->cursor();
