@@ -8,6 +8,7 @@ use Stancl\Tenancy\Database\Models;
 use Stancl\Tenancy\Database\Models\Domain;
 use Stancl\Tenancy\Exceptions\DomainOccupiedByOtherTenantException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
+use Stancl\Tenancy\Features\UniversalRoutes;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 
@@ -87,6 +88,17 @@ test('onfail logic can be customized', function () {
         ->get('http://foo.localhost/foo/abc/xyz')
         ->assertSee('foo');
 });
+
+test('throw correct exception when onFail is null and universal route is enabled', function () {
+    // un-define onFail logic
+    InitializeTenancyByDomain::$onFail = null;
+
+    // Enable UniversalRoute feature
+    Route::middlewareGroup('universal', []);
+    config(['tenancy.features' => [UniversalRoutes::class]]);
+
+    $this->withoutExceptionHandling()->get('http://foo.localhost/foo/abc/xyz');
+})->throws(TenantCouldNotBeIdentifiedOnDomainException::class);;
 
 test('domains are always lowercase', function () {
     $tenant = DomainTenant::create();
