@@ -44,7 +44,7 @@ return [
         /**
          * If disabled, pending tenants will be excluded from all tenant queries.
          * You can still use ::withPending(), ::withoutPending() and ::onlyPending() to include or exclude the pending tenants regardless of this setting.
-         * Note: when disabled, this will also ignore pending tenants when running any tenant commands (migration, seed, etc.)
+         * Note: when disabled, this will also ignore pending tenants when running the tenant commands (migration, seed, etc.)
          */
         'include_in_queries' => true,
         /**
