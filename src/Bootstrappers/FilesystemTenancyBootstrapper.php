@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Bootstrappers;
 
-use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Support\Facades\Storage;
-use League\Flysystem\Adapter\Local as LocalAdapter;
-use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Contracts\Foundation\Application;
+use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 
 class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -57,9 +56,9 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         Storage::forgetDisk($this->app['config']['tenancy.filesystem.disks']);
 
         foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
-            // todo@v4 \League\Flysystem\PathPrefixer is making this a lot more painful in flysystem v2
+            /** @var string|null $originalRoot */
+            $originalRoot = $this->getDiskConfig($disk)['root'] ?? null;
 
-            $originalRoot = $this->app['config']["filesystems.disks.{$disk}.root"];
             $this->originalPaths['disks']['path'][$disk] = $originalRoot;
 
             $finalPrefix = str_replace(
@@ -74,21 +73,18 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
                     : $suffix;
             }
 
-            $this->app['config']["filesystems.disks.{$disk}.root"] = $finalPrefix;
+            $this->updateDiskConfig($disk, 'root', $finalPrefix);
 
             // Storage Url
-            if ($filesystemDisk->getAdapter() instanceof LocalAdapter) {
-                $config = $filesystemDisk->getDriver()->getConfig();
-                $this->originalPaths['disks']['url'][$disk] = $config->has('url')
-                    ? $config->get('url')
-                    : null;
+            if ($this->getDiskConfig($disk)['driver'] === 'local') {
+                $this->originalPaths['disks']['url'][$disk] = $this->getDiskConfig($disk)['url'] ?? null;
 
                 if ($url = str_replace(
                     '%tenant_id%',
                     $tenant->getTenantKey(),
                     $this->app['config']["tenancy.filesystem.url_override.{$disk}"] ?? ''
                 )) {
-                    $config->set('url', url($url));
+                    $this->updateDiskConfig($disk, 'url', url($url));
                 }
             }
         }
@@ -106,19 +102,25 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         // Storage facade
         Storage::forgetDisk($this->app['config']['tenancy.filesystem.disks']);
         foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
-            /** @var FilesystemAdapter $filesystemDisk */
-            $filesystemDisk = Storage::disk($disk);
-
-            $root = $this->originalPaths['disks']['path'][$disk];
-
-            $filesystemDisk->getAdapter()->setPathPrefix($root);
-            $this->app['config']["filesystems.disks.{$disk}.root"] = $root;
+            $this->updateDiskConfig($disk, 'root', $this->originalPaths['disks']['path'][$disk]);
 
             // Storage Url
-            if ($filesystemDisk->getAdapter() instanceof LocalAdapter && ! is_null($this->originalPaths['disks']['url'])) {
-                $config = $filesystemDisk->getDriver()->getConfig();
-                $config->set('url', $this->originalPaths['disks']['url']);
+            $url = $this->originalPaths['disks.url.' . $disk] ?? null;
+
+            if ($this->getDiskConfig($disk)['driver'] === 'local' && ! is_null($url)) {
+                $this->updateDiskConfig($disk, 'url', $url);
             }
         }
+    }
+
+    /** @return array|null */
+    protected function getDiskConfig(string $diskName)
+    {
+        return $this->app['config']['filesystems.disks.' . $diskName] ?? null;
+    }
+
+    protected function updateDiskConfig(string $diskName, string $updateProperty, $value)
+    {
+        $this->app['config']["filesystems.disks.$diskName.$updateProperty"] = $value;
     }
 }
