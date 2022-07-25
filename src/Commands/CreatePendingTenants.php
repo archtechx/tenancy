@@ -36,8 +36,8 @@ class CreatePendingTenants extends Command
         while ($pendingTenantCount < $maxPendingTenantCount) {
             tenancy()->model()::createPending();
 
-            // Fetch the count each time to prevent creating too many tenants if pending tenants
-            // Are being created somewhere else while running this command
+            // Fetch the count each time to prevent creating too many tenants
+            // If pending tenants are being created somewhere else while running this command
             $pendingTenantCount = $this->getPendingTenantCount();
 
             $createdCount++;

@@ -34,10 +34,10 @@ class ClearPendingTenants extends Command
         $this->info('Cleaning pending tenants.');
 
         $expirationDate = now();
-        // We compare the original and the new expiration date to check if the new one is different later
+        // We compare the original expiration date to the new one to check if the new one is different later
         $originalExpirationDate = $expirationDate->copy()->toImmutable();
 
-        // If the all option is given, skip the expiry date configuration
+        // If the 'all' option is given, skip the expiry date configuration
         if (! $this->option('all')) {
             if ($olderThanDays = $this->option('older-days') ?? config('tenancy.pending.older_than_days')) {
                 $expirationDate->subDays($olderThanDays);
