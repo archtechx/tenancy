@@ -89,7 +89,7 @@ test('onfail logic can be customized', function () {
         ->assertSee('foo');
 });
 
-test('throw correct exception when onFail is null and universal route is enabled', function () {
+test('throw correct exception when onFail is null and universal routes are enabled', function () {
     // un-define onFail logic
     InitializeTenancyByDomain::$onFail = null;
 
