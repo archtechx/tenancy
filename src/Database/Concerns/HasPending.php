@@ -55,8 +55,8 @@ trait HasPending
 
         event(new CreatingPendingTenant($tenant));
 
-        // Add the pending value only after creating the model
-        // To ensure it's not marked as pending until finishing running the migrations, seeders, etc.
+        // Update the pending_since value only after the model is created to ensure that
+        // It's not marked as pending until finishing running the migrations, seeders, etc.
         $tenant->update([
             'pending_since' => now()->timestamp,
         ]);
@@ -73,7 +73,7 @@ trait HasPending
             static::createPending();
         }
 
-        // At this point, we can guarantee a pending tenant is free and can be called
+        // At this point, we can guarantee a pending tenant is available
         $tenant = static::onlyPending()->first();
 
         event(new PullingPendingTenant($tenant));

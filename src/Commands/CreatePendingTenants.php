@@ -20,37 +20,37 @@ class CreatePendingTenants extends Command
      *
      * @var string
      */
-    protected $description = 'Deploy tenants until the pending count is achieved.';
+    protected $description = 'Create tenants until the pending count is achieved.';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $this->info('Deploying pending tenants.');
+        $this->info('Creating pending tenants.');
 
         $maxPendingTenantCount = (int) ($this->option('count') ?? config('tenancy.pending.count'));
-
         $pendingTenantCount = $this->getPendingTenantCount();
+        $createdCount = 0;
 
-        $deployedCount = 0;
         while ($pendingTenantCount < $maxPendingTenantCount) {
             tenancy()->model()::createPending();
-            // Update the number of pending tenants every time with a query to get a live count
-            // To prevent deploying too many tenants if pending tenants are being created simultaneously somewhere else
-            // While running this command
+
+            // Fetch the count each time to prevent creating too many tenants if pending tenants
+            // Are being created somewhere else while running this command
             $pendingTenantCount = $this->getPendingTenantCount();
-            $deployedCount++;
+
+            $createdCount++;
         }
 
-        $this->info($deployedCount . ' ' . str('tenant')->plural($deployedCount) . ' deployed.');
+        $this->info($createdCount . ' ' . str('tenant')->plural($createdCount) . ' created.');
         $this->info($maxPendingTenantCount . ' ' . str('tenant')->plural($maxPendingTenantCount) . ' ready to be used.');
 
         return 1;
     }
 
     /**
-     * Calculate the number of currently deployed pending tenants.
+     * Calculate the number of currently available pending tenants.
      */
     private function getPendingTenantCount(): int
     {

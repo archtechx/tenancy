@@ -55,7 +55,7 @@ class TenancyServiceProvider extends ServiceProvider
                 })->shouldBeQueued(false), // `false` by default, but you probably want to make this `true` for production.
             ],
 
-            // Pending events
+            // Pending tenant events
             Events\CreatingPendingTenant::class => [],
             Events\PendingTenantCreated::class => [],
             Events\PullingPendingTenant::class => [],

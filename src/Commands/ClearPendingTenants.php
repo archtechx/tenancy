@@ -16,15 +16,15 @@ class ClearPendingTenants extends Command
      */
     protected $signature = 'tenants:pending-clear
                             {--all : Override the default settings and deletes all pending tenants}
-                            {--older-days= : Deletes all pending older than the amount of days}
-                            {--older-hours= : Deletes all pending older than the amount of hours}';
+                            {--older-days= : Deletes all pending tenants older than the amount of days}
+                            {--older-hours= : Deletes all pending tenants older than the amount of hours}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Removes any pending tenants';
+    protected $description = 'Remove pending tenants.';
 
     /**
      * Execute the console command.
@@ -33,29 +33,29 @@ class ClearPendingTenants extends Command
     {
         $this->info('Cleaning pending tenants.');
 
-        $expireDate = now();
-        // At the end, we will check if the value has been changed by comparing the two dates
-        $savedExpiredDate = $expireDate->copy()->toImmutable();
+        $expirationDate = now();
+        // We compare the original and the new expiration date to check if the new one is different later
+        $originalExpirationDate = $expirationDate->copy()->toImmutable();
 
         // If the all option is given, skip the expiry date configuration
         if (! $this->option('all')) {
             if ($olderThanDays = $this->option('older-days') ?? config('tenancy.pending.older_than_days')) {
-                $expireDate->subDays($olderThanDays);
+                $expirationDate->subDays($olderThanDays);
             }
 
             if ($olderThanHours = $this->option('older-hours') ?? config('tenancy.pending.older_than_hours')) {
-                $expireDate->subHours($olderThanHours);
+                $expirationDate->subHours($olderThanHours);
             }
         }
 
         $deletedPendingCount = tenancy()
             ->query()
             ->onlyPending()
-            ->when($savedExpiredDate->notEqualTo($expireDate), function (Builder $query) use ($expireDate) {
-                $query->where('data->pending_since', '<', $expireDate->timestamp);
+            ->when($originalExpirationDate->notEqualTo($expirationDate), function (Builder $query) use ($expirationDate) {
+                $query->where('data->pending_since', '<', $expirationDate->timestamp);
             })
             ->get()
-            ->each // Make sure the model events are triggered by deleting the tenants one by one
+            ->each // Trigger the model events by deleting the tenants one by one
             ->delete()
             ->count();
 
