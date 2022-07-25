@@ -48,7 +48,7 @@ return [
          */
         'include_in_queries' => true,
         /**
-         * Defines how many tenants you want to be in a pending state.
+         * Defines how many pending tenants you want to have ready in the pending tenant pool.
          * This depends on the volume of tenants you're creating.
          */
         'count' => env('TENANCY_PENDING_COUNT', 5),
@@ -57,7 +57,7 @@ return [
          * You can define time constraints for automatically deleting unused
          * pending tenants (schedule the `tenancy:pending-clear` command to make this work automatically).
          *
-         * If both values are set to null, the time limit won't be set and all pending tenants will be deleted.
+         * If both values are set to null, the time constraints won't be set and all pending tenants will be deleted.
          */
         'older_than_days' => env('TENANCY_PENDING_OLDER_THAN_DAYS', null),
 
