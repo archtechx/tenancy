@@ -11,17 +11,17 @@
     ],
     "require": {
         "ext-json": "*",
-        "illuminate/support": "^6.0|^7.0|^8.0",
+        "illuminate/support": "^6.0|^7.0|^8.0|^9.0",
         "facade/ignition-contracts": "^1.0",
         "ramsey/uuid": "^3.7|^4.0",
-        "stancl/jobpipeline": "^1.0",
-        "stancl/virtualcolumn": "^1.0"
+        "stancl/jobpipeline": "dev-master",
+        "stancl/virtualcolumn": "dev-master"
     },
     "require-dev": {
-        "vlucas/phpdotenv": "^3.3|^4.0|^5.0",
-        "laravel/framework": "^6.0|^7.0|^8.0",
-        "orchestra/testbench-browser-kit": "^4.0|^5.0|^6.0",
-        "league/flysystem-aws-s3-v3": "~1.0",
+        "laravel/framework": "^6.0|^7.0|^8.0|^9.0",
+        "orchestra/testbench": "^4.0|^5.0|^6.0|^7.0",
+        "phpunit/phpunit": "*",
+        "league/flysystem-aws-s3-v3": "^1.0|^3.0",
         "doctrine/dbal": "^2.10",
         "spatie/valuestore": "^1.2.5"
     },
@@ -48,6 +48,12 @@
                 "GlobalCache": "Stancl\\Tenancy\\Facades\\GlobalCache"
             }
         }
+    },
+    "scripts": {
+        "docker-up": "PHP_VERSION=8.0.11 docker-compose up -d",
+        "docker-down": "PHP_VERSION=8.0.11 docker-compose down",
+        "docker-rebuild": "PHP_VERSION=8.0.11 docker-compose up -d --no-deps --build",
+        "test": "PHP_VERSION=8.0.11 ./test"
     },
     "minimum-stability": "dev",
     "prefer-stable": true

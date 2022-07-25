@@ -1,7 +1,7 @@
 ARG PHP_VERSION=7.4
 ARG PHP_TARGET=php:${PHP_VERSION}-cli
 
-FROM ${PHP_TARGET}
+FROM --platform=linux/amd64 ${PHP_TARGET}
 
 ARG COMPOSER_TARGET=2.0.3
 
@@ -22,20 +22,29 @@ ENV LANG=en_GB.UTF-8
 #       Dockerfile _and pin the versions_! Eg:
 #       RUN pecl install memcached-2.2.0 && docker-php-ext-enable memcached
 
-# install some OS packages we need
-RUN apt-get update
-RUN apt-get install -y --no-install-recommends libfreetype6-dev libjpeg62-turbo-dev libpng-dev libgmp-dev libldap2-dev netcat curl sqlite3 libsqlite3-dev libpq-dev libzip-dev unzip vim-tiny gosu git
-    # install php extensions
+
+RUN apt-get update \
+    && apt-get install -y gnupg2 \
+    && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+    && curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y unixodbc-dev msodbcsql17
+
+RUN apt-get install -y --no-install-recommends locales apt-transport-https libfreetype6-dev libjpeg62-turbo-dev libpng-dev libgmp-dev libldap2-dev netcat curl mariadb-client sqlite3 libsqlite3-dev libpq-dev libzip-dev unzip vim-tiny gosu git
+
 RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
     # && if [ "${PHP_VERSION}" = "7.4" ]; then docker-php-ext-configure gd --with-freetype --with-jpeg; else docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/; fi \
     && docker-php-ext-install -j$(nproc) gd pdo pdo_mysql pdo_pgsql pdo_sqlite pgsql zip gmp bcmath pcntl ldap sysvmsg exif \
     # install the redis php extension
-    && pecl install redis-5.3.2 \
+    && pecl install redis-5.3.7 \
     && docker-php-ext-enable redis \
     # install the pcov extention
     && pecl install pcov \
     && docker-php-ext-enable pcov \
-    && echo "pcov.enabled = 1" > /usr/local/etc/php/conf.d/pcov.ini
+    && echo "pcov.enabled = 1" > /usr/local/etc/php/conf.d/pcov.ini \
+    # install sqlsrv
+    && pecl install sqlsrv pdo_sqlsrv \
+    && docker-php-ext-enable sqlsrv pdo_sqlsrv
 # clear the apt cache
 RUN rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/lib/apt/lists/* \

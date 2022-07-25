@@ -35,8 +35,6 @@ class Seed extends SeedCommand
 
     /**
      * Execute the console command.
-     *
-     * @return mixed
      */
     public function handle()
     {
@@ -51,7 +49,7 @@ class Seed extends SeedCommand
         }
 
         tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
-            $this->line("Tenant: {$tenant['id']}");
+            $this->line("Tenant: {$tenant->getTenantKey()}");
 
             event(new SeedingDatabase($tenant));
 

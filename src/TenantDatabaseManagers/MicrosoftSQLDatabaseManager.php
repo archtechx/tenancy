@@ -10,7 +10,7 @@ use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Exceptions\NoConnectionSetException;
 
-class PostgreSQLSchemaManager implements TenantDatabaseManager
+class MicrosoftSQLDatabaseManager implements TenantDatabaseManager
 {
     /** @var string */
     protected $connection;
@@ -31,26 +31,26 @@ class PostgreSQLSchemaManager implements TenantDatabaseManager
 
     public function createDatabase(TenantWithDatabase $tenant): bool
     {
-        return $this->database()->statement("CREATE SCHEMA \"{$tenant->database()->getName()}\"");
+        $database = $tenant->database()->getName();
+        $charset = $this->database()->getConfig('charset');
+        $collation = $this->database()->getConfig('collation');
+
+        return $this->database()->statement("CREATE DATABASE [{$database}]");
     }
 
     public function deleteDatabase(TenantWithDatabase $tenant): bool
     {
-        return $this->database()->statement("DROP SCHEMA \"{$tenant->database()->getName()}\" CASCADE");
+        return $this->database()->statement("DROP DATABASE [{$tenant->database()->getName()}]");
     }
 
     public function databaseExists(string $name): bool
     {
-        return (bool) $this->database()->select("SELECT schema_name FROM information_schema.schemata WHERE schema_name = '$name'");
+        return (bool) $this->database()->select("SELECT name FROM master.sys.databases WHERE name = '$name'");
     }
 
     public function makeConnectionConfig(array $baseConfig, string $databaseName): array
     {
-        if (version_compare(app()->version(), '9.0', '>=')) {
-            $baseConfig['search_path'] = $databaseName;
-        } else {
-            $baseConfig['schema'] = $databaseName;
-        }
+        $baseConfig['database'] = $databaseName;
 
         return $baseConfig;
     }

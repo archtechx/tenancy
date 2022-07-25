@@ -36,8 +36,8 @@ class CreateDatabase implements ShouldQueue
             return false;
         }
 
-        $databaseManager->ensureTenantCanBeCreated($this->tenant);
         $this->tenant->database()->makeCredentials();
+        $databaseManager->ensureTenantCanBeCreated($this->tenant);
         $this->tenant->database()->manager()->createDatabase($this->tenant);
 
         event(new DatabaseCreated($this->tenant));

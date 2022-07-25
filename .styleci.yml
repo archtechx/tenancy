@@ -1,7 +1,0 @@
-risky: true
-preset: laravel
-enabled:
-- declare_strict_types
-disabled:
-- concat_without_spaces
-- ternary_operator_spaces

@@ -25,8 +25,6 @@ class TenantList extends Command
 
     /**
      * Execute the console command.
-     *
-     * @return mixed
      */
     public function handle()
     {
@@ -36,9 +34,9 @@ class TenantList extends Command
             ->cursor()
             ->each(function (Tenant $tenant) {
                 if ($tenant->domains) {
-                    $this->line("[Tenant] id: {$tenant['id']} @ " . implode('; ', $tenant->domains->pluck('domain')->toArray() ?? []));
+                    $this->line("[Tenant] {$tenant->getTenantKeyName()}: {$tenant->getTenantKey()} @ " . implode('; ', $tenant->domains->pluck('domain')->toArray() ?? []));
                 } else {
-                    $this->line("[Tenant] id: {$tenant['id']}");
+                    $this->line("[Tenant] {$tenant->getTenantKeyName()}: {$tenant->getTenantKey()}");
                 }
             });
     }

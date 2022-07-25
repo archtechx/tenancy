@@ -48,7 +48,11 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     protected function getEnvironmentSetUp($app)
     {
         if (file_exists(__DIR__ . '/../.env')) {
-            \Dotenv\Dotenv::create(__DIR__ . '/..')->load();
+            if (method_exists(\Dotenv\Dotenv::class, 'createImmutable')) {
+                \Dotenv\Dotenv::createImmutable(__DIR__ . '/..')->load();
+            } else {
+                \Dotenv\Dotenv::create(__DIR__ . '/..')->load();
+            }
         }
 
         $app['config']->set([
@@ -77,12 +81,17 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             ],
             'database.connections.sqlite.database' => ':memory:',
             'database.connections.mysql.host' => env('TENANCY_TEST_MYSQL_HOST', '127.0.0.1'),
+            'database.connections.sqlsrv.username' => env('TENANCY_TEST_SQLSRV_USERNAME', 'sa'),
+            'database.connections.sqlsrv.password' => env('TENANCY_TEST_SQLSRV_PASSWORD', 'P@ssword'),
+            'database.connections.sqlsrv.host' => env('TENANCY_TEST_SQLSRV_HOST', '127.0.0.1'),
+            'database.connections.sqlsrv.database' => null,
             'database.connections.pgsql.host' => env('TENANCY_TEST_PGSQL_HOST', '127.0.0.1'),
             'tenancy.filesystem.disks' => [
                 'local',
                 'public',
                 's3',
             ],
+            'filesystems.disks.s3.bucket' => 'foo',
             'tenancy.redis.tenancy' => env('TENANCY_TEST_REDIS_TENANCY', true),
             'database.redis.client' => env('TENANCY_TEST_REDIS_CLIENT', 'phpredis'),
             'tenancy.redis.prefixed_connections' => ['default'],

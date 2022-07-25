@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
@@ -54,20 +53,24 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         }
 
         // Storage facade
-        foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
-            /** @var FilesystemAdapter $filesystemDisk */
-            $filesystemDisk = Storage::disk($disk);
-            $this->originalPaths['disks'][$disk] = $filesystemDisk->getAdapter()->getPathPrefix();
+        Storage::forgetDisk($this->app['config']['tenancy.filesystem.disks']);
 
-            if ($root = str_replace(
-                '%storage_path%',
-                storage_path(),
-                $this->app['config']["tenancy.filesystem.root_override.{$disk}"] ?? ''
-            )) {
-                $filesystemDisk->getAdapter()->setPathPrefix($finalPrefix = $root);
-            } else {
-                $root = $this->app['config']["filesystems.disks.{$disk}.root"];
-                $filesystemDisk->getAdapter()->setPathPrefix($finalPrefix = $root . "/{$suffix}");
+        foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
+            // todo@v4 \League\Flysystem\PathPrefixer is making this a lot more painful in flysystem v2
+
+            $originalRoot = $this->app['config']["filesystems.disks.{$disk}.root"];
+            $this->originalPaths['disks'][$disk] = $originalRoot;
+
+            $finalPrefix = str_replace(
+                ['%storage_path%', '%tenant%'],
+                [storage_path(), $tenant->getTenantKey()],
+                $this->app['config']["tenancy.filesystem.root_override.{$disk}"] ?? '',
+            );
+
+            if (! $finalPrefix) {
+                $finalPrefix = $originalRoot
+                    ? rtrim($originalRoot, '/') . '/' . $suffix
+                    : $suffix;
             }
 
             $this->app['config']["filesystems.disks.{$disk}.root"] = $finalPrefix;
@@ -84,14 +87,9 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         $this->app['url']->setAssetRoot($this->app['config']['app.asset_url']);
 
         // Storage facade
+        Storage::forgetDisk($this->app['config']['tenancy.filesystem.disks']);
         foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
-            /** @var FilesystemAdapter $filesystemDisk */
-            $filesystemDisk = Storage::disk($disk);
-
-            $root = $this->originalPaths['disks'][$disk];
-
-            $filesystemDisk->getAdapter()->setPathPrefix($root);
-            $this->app['config']["filesystems.disks.{$disk}.root"] = $root;
+            $this->app['config']["filesystems.disks.{$disk}.root"] = $this->originalPaths['disks'][$disk];
         }
     }
 }

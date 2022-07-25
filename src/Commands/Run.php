@@ -27,14 +27,11 @@ class Run extends Command
 
     /**
      * Execute the console command.
-     *
-     * @return mixed
      */
     public function handle()
     {
         tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
-            $this->line("Tenant: {$tenant['id']}");
-            tenancy()->initialize($tenant);
+            $this->line("Tenant: {$tenant->getTenantKey()}");
 
             $callback = function ($prefix = '') {
                 return function ($arguments, $argument) use ($prefix) {
