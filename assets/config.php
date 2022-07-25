@@ -42,24 +42,22 @@ return [
      */
     'pending' => [
         /**
-         * If disabled, pending tenants will be excluded from all tenant queries. Unless if
-         * told otherwise with ::withPending() or ::onlyPending().
-         * Note: when disabled, this will also ignore tenants when runnings any tenants commands (migration, seed, etc.)
+         * If disabled, pending tenants will be excluded from all tenant queries.
+         * You can still use ::withPending(), ::withoutPending() and ::onlyPending() to include or exclude the pending tenants regardless of this setting.
+         * Note: when disabled, this will also ignore pending tenants when running any tenant commands (migration, seed, etc.)
          */
         'include_in_queries' => true,
         /**
          * Defines how many tenants you want to be in a pending state.
-         * This value should be changed depending on how often a new tenant is created
-         * and how often you run the `tenancy:pending` command via the scheduler.
+         * This depends on the volume of tenants you're creating.
          */
         'count' => env('TENANCY_PENDING_COUNT', 5),
 
         /**
-         * If needed, you can define a time limite after when an unused pending tenant
-         * will automatically be deleted.
-         * For this to work automatically, make sure to call the `tenancy:pending-clear` command in the scheduler.
+         * You can define time constraints for automatically deleting unused
+         * pending tenants (schedule the `tenancy:pending-clear` command to make this work automatically).
          *
-         * If both values are set to null, not time limit will be set and all pending tenants will be deleted.
+         * If both values are set to null, the time limit won't be set and all pending tenants will be deleted.
          */
         'older_than_days' => env('TENANCY_PENDING_OLDER_THAN_DAYS', null),
 
