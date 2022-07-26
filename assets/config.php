@@ -37,7 +37,7 @@ return [
 
 
     /**
-     * Pending tenancy config.
+     * Pending tenants config.
      * This is useful if you're looking for a way to always have a tenant ready to be used.
      */
     'pending' => [

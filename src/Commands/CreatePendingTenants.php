@@ -13,14 +13,14 @@ class CreatePendingTenants extends Command
      *
      * @var string
      */
-    protected $signature = 'tenants:pending {--count= : The number of tenants to be in a pending state}';
+    protected $signature = 'tenants:pending-create {--count= : The number of pending tenants to be created}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Create tenants until the pending count is achieved.';
+    protected $description = 'Create pending tenants.';
 
     /**
      * Execute the console command.
@@ -36,7 +36,7 @@ class CreatePendingTenants extends Command
         while ($pendingTenantCount < $maxPendingTenantCount) {
             tenancy()->model()::createPending();
 
-            // Fetch the count each time to prevent creating too many tenants
+            // Fetching the pending tenant count in each iteration prevents creating too many tenants
             // If pending tenants are being created somewhere else while running this command
             $pendingTenantCount = $this->getPendingTenantCount();
 

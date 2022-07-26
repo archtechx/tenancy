@@ -37,7 +37,7 @@ class ClearPendingTenants extends Command
         // We compare the original expiration date to the new one to check if the new one is different later
         $originalExpirationDate = $expirationDate->copy()->toImmutable();
 
-        // If the 'all' option is given, skip the expiry date configuration
+        // Skip the time constraints if the 'all' option is given
         if (! $this->option('all')) {
             if ($olderThanDays = $this->option('older-days') ?? config('tenancy.pending.older_than_days')) {
                 $expirationDate->subDays($olderThanDays);
@@ -48,7 +48,7 @@ class ClearPendingTenants extends Command
             }
         }
 
-        $deletedPendingCount = tenancy()
+        $deletedTenantCount = tenancy()
             ->query()
             ->onlyPending()
             ->when($originalExpirationDate->notEqualTo($expirationDate), function (Builder $query) use ($expirationDate) {
@@ -59,6 +59,6 @@ class ClearPendingTenants extends Command
             ->delete()
             ->count();
 
-        $this->info($deletedPendingCount . ' pending ' . str('tenant')->plural($deletedPendingCount) . ' deleted.');
+        $this->info($deletedTenantCount . ' pending ' . str('tenant')->plural($deletedTenantCount) . ' deleted.');
     }
 }
