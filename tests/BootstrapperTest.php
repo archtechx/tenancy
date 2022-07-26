@@ -23,6 +23,8 @@ use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 
 beforeEach(function () {
+    $this->mockConsoleOutput = false;
+
     Event::listen(
         TenantCreated::class,
         JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
