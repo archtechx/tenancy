@@ -27,6 +27,8 @@ use Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 
 beforeEach(function () {
+    $this->mockConsoleOutput = false;
+
     config([
         'tenancy.bootstrappers' => [
             QueueTenancyBootstrapper::class,
