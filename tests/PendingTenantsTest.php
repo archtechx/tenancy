@@ -72,13 +72,11 @@ class PendingTenantsTest extends TestCase
 
         Artisan::call(CreatePendingTenants::class);
 
-        config(['tenancy.pending.older_than_days' => 2]);
-
         tenancy()->model()->query()->onlyPending()->first()->update([
             'pending_since' => now()->subDays(5)->timestamp
         ]);
 
-        Artisan::call(ClearPendingTenants::class);
+        Artisan::call('tenants:pending-clear --older-than-days=2');
 
         $this->assertCount(1, Tenant::onlyPending()->get());
     }

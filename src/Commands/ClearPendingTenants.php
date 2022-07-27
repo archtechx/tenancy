@@ -16,8 +16,8 @@ class ClearPendingTenants extends Command
      */
     protected $signature = 'tenants:pending-clear
                             {--all : Override the default settings and deletes all pending tenants}
-                            {--older-days= : Deletes all pending tenants older than the amount of days}
-                            {--older-hours= : Deletes all pending tenants older than the amount of hours}';
+                            {--older-than-days= : Deletes all pending tenants older than the amount of days}
+                            {--older-than-hours= : Deletes all pending tenants older than the amount of hours}';
 
     /**
      * The console command description.
@@ -39,11 +39,11 @@ class ClearPendingTenants extends Command
 
         // Skip the time constraints if the 'all' option is given
         if (! $this->option('all')) {
-            if ($olderThanDays = $this->option('older-days') ?? config('tenancy.pending.older_than_days')) {
+            if ($olderThanDays = $this->option('older-than-days')) {
                 $expirationDate->subDays($olderThanDays);
             }
 
-            if ($olderThanHours = $this->option('older-hours') ?? config('tenancy.pending.older_than_hours')) {
+            if ($olderThanHours = $this->option('older-than-hours')) {
                 $expirationDate->subHours($olderThanHours);
             }
         }

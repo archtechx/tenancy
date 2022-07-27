@@ -52,16 +52,6 @@ return [
          * This depends on the volume of tenants you're creating.
          */
         'count' => env('TENANCY_PENDING_COUNT', 5),
-
-        /**
-         * You can define time constraints for automatically deleting unused
-         * pending tenants (schedule the `tenancy:pending-clear` command to make this work automatically).
-         *
-         * If both values are set to null, the time constraints won't be set and all pending tenants will be deleted.
-         */
-        'older_than_days' => env('TENANCY_PENDING_OLDER_THAN_DAYS', null),
-
-        'older_than_hours' => env('TENANCY_PENDING_OLDER_THAN_HOURS', null),
     ],
 
     /**
