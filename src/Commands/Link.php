@@ -88,11 +88,12 @@ class Link extends Command
 
         $tenants = $this->option('remove') && filled($this->option('tenants'))
             ? collect($this->option('tenants'))
-            : $this->getTenants()->map(function(Tenant $tenant) { return $tenant->getTenantKey(); });
+            : $this->getTenants()->map(function (Tenant $tenant) {
+                return $tenant->getTenantKey();
+            });
 
         return $tenants
             ->map(function ($tenant_key) use ($suffix_base, $disk_urls, $disks) {
-
                 $map = [];
 
                 foreach ($disk_urls as $disk => $public_path) {
@@ -111,18 +112,15 @@ class Link extends Command
                 }
 
                 return $map;
-
             })->flatten(1)
-            ->mapWithKeys(function ($item) {return $item; })
+            ->mapWithKeys(function ($item) {
+                return $item;
+            })
             ->all();
     }
 
     /**
      * Determine if the provided path is a symlink that can be removed.
-     *
-     * @param  string  $link
-     * @param  bool  $force
-     * @return bool
      */
     protected function isRemovableSymlink(string $link, bool $force): bool
     {

@@ -6,7 +6,6 @@ namespace Stancl\Tenancy\Bootstrappers;
 
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\Storage;
-use League\Flysystem\Adapter\Local as LocalAdapter;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
