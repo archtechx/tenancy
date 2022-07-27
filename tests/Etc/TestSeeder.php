@@ -1,14 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Stancl\Tenancy\Tests\Etc;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
-class ExampleSeeder extends Seeder
+class TestSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -18,8 +15,8 @@ class ExampleSeeder extends Seeder
     public function run()
     {
         DB::table('users')->insert([
-            'name' => Str::random(10),
-            'email' => Str::random(10) . '@gmail.com',
+            'name' => 'Seeded User',
+            'email' => 'seeded@user',
             'password' => bcrypt('password'),
         ]);
     }

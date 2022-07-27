@@ -75,7 +75,6 @@ abstract class CachedTenantResolver implements TenantResolver
     /**
      * Get all the arg combinations for resolve() that can be used to find this tenant.
      *
-     * @param Tenant $tenant
      * @return array[]
      */
     abstract public function getArgsForTenant(Tenant $tenant): array;

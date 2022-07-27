@@ -2,151 +2,129 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests;
-
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
-use Stancl\Tenancy\Database\Models;
 use Stancl\Tenancy\Exceptions\NotASubdomainException;
 use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
+use Stancl\Tenancy\Database\Models;
 
-class SubdomainTest extends TestCase
-{
-    public function setUp(): void
-    {
-        parent::setUp();
+beforeEach(function () {
+    // Global state cleanup after some tests
+    InitializeTenancyBySubdomain::$onFail = null;
 
-        // Global state cleanup after some tests
-        InitializeTenancyBySubdomain::$onFail = null;
-
-        Route::group([
-            'middleware' => InitializeTenancyBySubdomain::class,
-        ], function () {
-            Route::get('/foo/{a}/{b}', function ($a, $b) {
-                return "$a + $b";
-            });
+    Route::group([
+        'middleware' => InitializeTenancyBySubdomain::class,
+    ], function () {
+        Route::get('/foo/{a}/{b}', function ($a, $b) {
+            return "$a + $b";
         });
+    });
 
-        config(['tenancy.tenant_model' => SubdomainTenant::class]);
-    }
+    config(['tenancy.tenant_model' => SubdomainTenant::class]);
+});
 
-    /** @test */
-    public function tenant_can_be_identified_by_subdomain()
-    {
-        $tenant = SubdomainTenant::create([
-            'id' => 'acme',
-        ]);
+test('tenant can be identified by subdomain', function () {
+    $tenant = SubdomainTenant::create([
+        'id' => 'acme',
+    ]);
 
-        $tenant->domains()->create([
-            'domain' => 'foo',
-        ]);
+    $tenant->domains()->create([
+        'domain' => 'foo',
+    ]);
 
-        $this->assertFalse(tenancy()->initialized);
+    expect(tenancy()->initialized)->toBeFalse();
 
-        $this
-            ->get('http://foo.localhost/foo/abc/xyz')
-            ->assertSee('abc + xyz');
+    pest()
+        ->get('http://foo.localhost/foo/abc/xyz')
+        ->assertSee('abc + xyz');
 
-        $this->assertTrue(tenancy()->initialized);
-        $this->assertSame('acme', tenant('id'));
-    }
+    expect(tenancy()->initialized)->toBeTrue();
+    expect(tenant('id'))->toBe('acme');
+});
 
-    /** @test */
-    public function onfail_logic_can_be_customized()
-    {
-        InitializeTenancyBySubdomain::$onFail = function () {
-            return 'foo';
-        };
+test('onfail logic can be customized', function () {
+    InitializeTenancyBySubdomain::$onFail = function () {
+        return 'foo';
+    };
 
-        $this
-            ->get('http://foo.localhost/foo/abc/xyz')
-            ->assertSee('foo');
-    }
+    pest()
+        ->get('http://foo.localhost/foo/abc/xyz')
+        ->assertSee('foo');
+});
 
-    /** @test */
-    public function localhost_is_not_a_valid_subdomain()
-    {
-        $this->expectException(NotASubdomainException::class);
+test('localhost is not a valid subdomain', function () {
+    pest()->expectException(NotASubdomainException::class);
 
-        $this
-            ->withoutExceptionHandling()
-            ->get('http://localhost/foo/abc/xyz');
-    }
+    $this
+        ->withoutExceptionHandling()
+        ->get('http://localhost/foo/abc/xyz');
+});
 
-    /** @test */
-    public function ip_address_is_not_a_valid_subdomain()
-    {
-        $this->expectException(NotASubdomainException::class);
+test('ip address is not a valid subdomain', function () {
+    pest()->expectException(NotASubdomainException::class);
 
-        $this
-            ->withoutExceptionHandling()
-            ->get('http://127.0.0.1/foo/abc/xyz');
-    }
+    $this
+        ->withoutExceptionHandling()
+        ->get('http://127.0.0.1/foo/abc/xyz');
+});
 
-    /** @test */
-    public function oninvalidsubdomain_logic_can_be_customized()
-    {
-        // in this case, we need to return a response instance
-        // since a string would be treated as the subdomain
-        InitializeTenancyBySubdomain::$onFail = function ($e) {
-            if ($e instanceof NotASubdomainException) {
-                return response('foo custom invalid subdomain handler');
-            }
+test('oninvalidsubdomain logic can be customized', function () {
+    // in this case, we need to return a response instance
+    // since a string would be treated as the subdomain
+    InitializeTenancyBySubdomain::$onFail = function ($e) {
+        if ($e instanceof NotASubdomainException) {
+            return response('foo custom invalid subdomain handler');
+        }
 
-            throw $e;
-        };
+        throw $e;
+    };
 
-        $this
-            ->withoutExceptionHandling()
-            ->get('http://127.0.0.1/foo/abc/xyz')
-            ->assertSee('foo custom invalid subdomain handler');
-    }
+    $this
+        ->withoutExceptionHandling()
+        ->get('http://127.0.0.1/foo/abc/xyz')
+        ->assertSee('foo custom invalid subdomain handler');
+});
 
-    /** @test */
-    public function we_cant_use_a_subdomain_that_doesnt_belong_to_our_central_domains()
-    {
-        config(['tenancy.central_domains' => [
-            '127.0.0.1',
-            // not 'localhost'
-        ]]);
+test('we cant use a subdomain that doesnt belong to our central domains', function () {
+    config(['tenancy.central_domains' => [
+        '127.0.0.1',
+        // not 'localhost'
+    ]]);
 
-        $tenant = SubdomainTenant::create([
-            'id' => 'acme',
-        ]);
+    $tenant = SubdomainTenant::create([
+        'id' => 'acme',
+    ]);
 
-        $tenant->domains()->create([
-            'domain' => 'foo',
-        ]);
+    $tenant->domains()->create([
+        'domain' => 'foo',
+    ]);
 
-        $this->expectException(NotASubdomainException::class);
+    pest()->expectException(NotASubdomainException::class);
 
-        $this
-            ->withoutExceptionHandling()
-            ->get('http://foo.localhost/foo/abc/xyz');
-    }
+    $this
+        ->withoutExceptionHandling()
+        ->get('http://foo.localhost/foo/abc/xyz');
+});
 
-    /** @test */
-    public function central_domain_is_not_a_subdomain()
-    {
-        config(['tenancy.central_domains' => [
-            'localhost',
-        ]]);
+test('central domain is not a subdomain', function () {
+    config(['tenancy.central_domains' => [
+        'localhost',
+    ]]);
 
-        $tenant = SubdomainTenant::create([
-            'id' => 'acme',
-        ]);
+    $tenant = SubdomainTenant::create([
+        'id' => 'acme',
+    ]);
 
-        $tenant->domains()->create([
-            'domain' => 'acme',
-        ]);
+    $tenant->domains()->create([
+        'domain' => 'acme',
+    ]);
 
-        $this->expectException(NotASubdomainException::class);
+    pest()->expectException(NotASubdomainException::class);
 
-        $this
-            ->withoutExceptionHandling()
-            ->get('http://localhost/foo/abc/xyz');
-    }
-}
+    $this
+        ->withoutExceptionHandling()
+        ->get('http://localhost/foo/abc/xyz');
+});
 
 class SubdomainTenant extends Models\Tenant
 {

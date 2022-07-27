@@ -80,8 +80,6 @@ class DatabaseConfig
 
     /**
      * Generate DB name, username & password and write them to the tenant model.
-     *
-     * @return void
      */
     public function makeCredentials(): void
     {
@@ -113,7 +111,8 @@ class DatabaseConfig
         $templateConnection = config("database.connections.{$template}");
 
         return $this->manager()->makeConnectionConfig(
-            array_merge($templateConnection, $this->tenantConfig()), $this->getName()
+            array_merge($templateConnection, $this->tenantConfig()),
+            $this->getName()
         );
     }
 

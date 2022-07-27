@@ -2,18 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests;
-
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Stancl\JobPipeline\JobPipeline;
+use Stancl\Tenancy\Tests\Etc\Tenant;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
-use Stancl\JobPipeline\JobPipeline;
-use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
-use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
-use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
-use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Events\TenantCreated;
@@ -23,263 +20,255 @@ use Stancl\Tenancy\Jobs\CreateStorageSymlinks;
 use Stancl\Tenancy\Jobs\RemoveStorageSymlinks;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Tests\Etc\Tenant;
+use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 
-class BootstrapperTest extends TestCase
-{
-    public $mockConsoleOutput = false;
+beforeEach(function () {
+    $this->mockConsoleOutput = false;
 
-    public function setUp(): void
-    {
-        parent::setUp();
+    Event::listen(
+        TenantCreated::class,
+        JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+            return $event->tenant;
+        })->toListener()
+    );
 
-        Event::listen(
-            TenantCreated::class,
-            JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
-                return $event->tenant;
-            })->toListener()
-        );
+    Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+});
 
-        Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
-        Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+test('database data is separated', function () {
+    config(['tenancy.bootstrappers' => [
+        DatabaseTenancyBootstrapper::class,
+    ]]);
+
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    pest()->artisan('tenants:migrate');
+
+    tenancy()->initialize($tenant1);
+
+    // Create Foo user
+    DB::table('users')->insert(['name' => 'Foo', 'email' => 'foo@bar.com', 'password' => 'secret']);
+    expect(DB::table('users')->get())->toHaveCount(1);
+
+    tenancy()->initialize($tenant2);
+
+    // Assert Foo user is not in this DB
+    expect(DB::table('users')->get())->toHaveCount(0);
+    // Create Bar user
+    DB::table('users')->insert(['name' => 'Bar', 'email' => 'bar@bar.com', 'password' => 'secret']);
+    expect(DB::table('users')->get())->toHaveCount(1);
+
+    tenancy()->initialize($tenant1);
+
+    // Assert Bar user is not in this DB
+    expect(DB::table('users')->get())->toHaveCount(1);
+    expect(DB::table('users')->first()->name)->toBe('Foo');
+});
+
+test('cache data is separated', function () {
+    config([
+        'tenancy.bootstrappers' => [
+            CacheTenancyBootstrapper::class,
+        ],
+        'cache.default' => 'redis',
+    ]);
+
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    cache()->set('foo', 'central');
+    expect(Cache::get('foo'))->toBe('central');
+
+    tenancy()->initialize($tenant1);
+
+    // Assert central cache doesn't leak to tenant context
+    expect(Cache::has('foo'))->toBeFalse();
+
+    cache()->set('foo', 'bar');
+    expect(Cache::get('foo'))->toBe('bar');
+
+    tenancy()->initialize($tenant2);
+
+    // Assert one tenant's data doesn't leak to another tenant
+    expect(Cache::has('foo'))->toBeFalse();
+
+    cache()->set('foo', 'xyz');
+    expect(Cache::get('foo'))->toBe('xyz');
+
+    tenancy()->initialize($tenant1);
+
+    // Asset data didn't leak to original tenant
+    expect(Cache::get('foo'))->toBe('bar');
+
+    tenancy()->end();
+
+    // Asset central is still the same
+    expect(Cache::get('foo'))->toBe('central');
+});
+
+test('redis data is separated', function () {
+    config(['tenancy.bootstrappers' => [
+        RedisTenancyBootstrapper::class,
+    ]]);
+
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    tenancy()->initialize($tenant1);
+    Redis::set('foo', 'bar');
+    expect(Redis::get('foo'))->toBe('bar');
+
+    tenancy()->initialize($tenant2);
+    expect(Redis::get('foo'))->toBe(null);
+    Redis::set('foo', 'xyz');
+    Redis::set('abc', 'def');
+    expect(Redis::get('foo'))->toBe('xyz');
+    expect(Redis::get('abc'))->toBe('def');
+
+    tenancy()->initialize($tenant1);
+    expect(Redis::get('foo'))->toBe('bar');
+    expect(Redis::get('abc'))->toBe(null);
+
+    $tenant3 = Tenant::create();
+    tenancy()->initialize($tenant3);
+    expect(Redis::get('foo'))->toBe(null);
+    expect(Redis::get('abc'))->toBe(null);
+});
+
+test('filesystem data is separated', function () {
+    config(['tenancy.bootstrappers' => [
+        FilesystemTenancyBootstrapper::class,
+    ]]);
+
+    $old_storage_path = storage_path();
+    $old_storage_facade_roots = [];
+    foreach (config('tenancy.filesystem.disks') as $disk) {
+        $old_storage_facade_roots[$disk] = config("filesystems.disks.{$disk}.root");
     }
 
-    /** @test */
-    public function database_data_is_separated()
-    {
-        config(['tenancy.bootstrappers' => [
-            DatabaseTenancyBootstrapper::class,
-        ]]);
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
 
-        $tenant1 = Tenant::create();
-        $tenant2 = Tenant::create();
+    tenancy()->initialize($tenant1);
 
-        $this->artisan('tenants:migrate');
+    Storage::disk('public')->put('foo', 'bar');
+    expect(Storage::disk('public')->get('foo'))->toBe('bar');
 
-        tenancy()->initialize($tenant1);
+    tenancy()->initialize($tenant2);
+    expect(Storage::disk('public')->exists('foo'))->toBeFalse();
+    Storage::disk('public')->put('foo', 'xyz');
+    Storage::disk('public')->put('abc', 'def');
+    expect(Storage::disk('public')->get('foo'))->toBe('xyz');
+    expect(Storage::disk('public')->get('abc'))->toBe('def');
 
-        // Create Foo user
-        DB::table('users')->insert(['name' => 'Foo', 'email' => 'foo@bar.com', 'password' => 'secret']);
-        $this->assertCount(1, DB::table('users')->get());
+    tenancy()->initialize($tenant1);
+    expect(Storage::disk('public')->get('foo'))->toBe('bar');
+    expect(Storage::disk('public')->exists('abc'))->toBeFalse();
 
-        tenancy()->initialize($tenant2);
+    $tenant3 = Tenant::create();
+    tenancy()->initialize($tenant3);
+    expect(Storage::disk('public')->exists('foo'))->toBeFalse();
+    expect(Storage::disk('public')->exists('abc'))->toBeFalse();
 
-        // Assert Foo user is not in this DB
-        $this->assertCount(0, DB::table('users')->get());
-        // Create Bar user
-        DB::table('users')->insert(['name' => 'Bar', 'email' => 'bar@bar.com', 'password' => 'secret']);
-        $this->assertCount(1, DB::table('users')->get());
+    $expected_storage_path = $old_storage_path . '/tenant' . tenant('id'); // /tenant = suffix base
 
-        tenancy()->initialize($tenant1);
+    // Check that disk prefixes respect the root_override logic
+    expect(getDiskPrefix('local'))->toBe($expected_storage_path . '/app/');
+    expect(getDiskPrefix('public'))->toBe($expected_storage_path . '/app/public/');
+    pest()->assertSame('tenant' . tenant('id') . '/', getDiskPrefix('s3'), '/');
 
-        // Assert Bar user is not in this DB
-        $this->assertCount(1, DB::table('users')->get());
-        $this->assertSame('Foo', DB::table('users')->first()->name);
-    }
+    // Check suffixing logic
+    $new_storage_path = storage_path();
+    expect($new_storage_path)->toEqual($expected_storage_path);
+});
 
-    /** @test */
-    public function cache_data_is_separated()
-    {
-        config([
-            'tenancy.bootstrappers' => [
-                CacheTenancyBootstrapper::class,
-            ],
-            'cache.default' => 'redis',
-        ]);
-
-        $tenant1 = Tenant::create();
-        $tenant2 = Tenant::create();
-
-        cache()->set('foo', 'central');
-        $this->assertSame('central', Cache::get('foo'));
-
-        tenancy()->initialize($tenant1);
-
-        // Assert central cache doesn't leak to tenant context
-        $this->assertFalse(Cache::has('foo'));
-
-        cache()->set('foo', 'bar');
-        $this->assertSame('bar', Cache::get('foo'));
-
-        tenancy()->initialize($tenant2);
-
-        // Assert one tenant's data doesn't leak to another tenant
-        $this->assertFalse(Cache::has('foo'));
-
-        cache()->set('foo', 'xyz');
-        $this->assertSame('xyz', Cache::get('foo'));
-
-        tenancy()->initialize($tenant1);
-
-        // Asset data didn't leak to original tenant
-        $this->assertSame('bar', Cache::get('foo'));
-
-        tenancy()->end();
-
-        // Asset central is still the same
-        $this->assertSame('central', Cache::get('foo'));
-    }
-
-    /** @test */
-    public function redis_data_is_separated()
-    {
-        config(['tenancy.bootstrappers' => [
-            RedisTenancyBootstrapper::class,
-        ]]);
-
-        $tenant1 = Tenant::create();
-        $tenant2 = Tenant::create();
-
-        tenancy()->initialize($tenant1);
-        Redis::set('foo', 'bar');
-        $this->assertSame('bar', Redis::get('foo'));
-
-        tenancy()->initialize($tenant2);
-        $this->assertSame(null, Redis::get('foo'));
-        Redis::set('foo', 'xyz');
-        Redis::set('abc', 'def');
-        $this->assertSame('xyz', Redis::get('foo'));
-        $this->assertSame('def', Redis::get('abc'));
-
-        tenancy()->initialize($tenant1);
-        $this->assertSame('bar', Redis::get('foo'));
-        $this->assertSame(null, Redis::get('abc'));
-
-        $tenant3 = Tenant::create();
-        tenancy()->initialize($tenant3);
-        $this->assertSame(null, Redis::get('foo'));
-        $this->assertSame(null, Redis::get('abc'));
-    }
-
-    /** @test */
-    public function filesystem_data_is_separated()
-    {
-        config(['tenancy.bootstrappers' => [
+test('filesystem local storage has own public url', function() {
+    config([
+        'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
-        ]]);
+        ],
+        'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
+        'tenancy.filesystem.url_override.public' => 'public-%tenant_id%'
+    ]);
 
-        $old_storage_path = storage_path();
-        $old_storage_facade_roots = [];
-        foreach (config('tenancy.filesystem.disks') as $disk) {
-            $old_storage_facade_roots[$disk] = config("filesystems.disks.{$disk}.root");
-        }
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
 
-        $tenant1 = Tenant::create();
-        $tenant2 = Tenant::create();
+    tenancy()->initialize($tenant1);
+    $this->assertEquals(
+        'http://localhost/public-'.$tenant1->getTenantKey().'/',
+        Storage::disk('public')->url('')
+    );
 
-        tenancy()->initialize($tenant1);
-        Storage::disk('public')->put('foo', 'bar');
-        $this->assertSame('bar', Storage::disk('public')->get('foo'));
+    tenancy()->initialize($tenant2);
+    $this->assertEquals(
+        'http://localhost/public-'.$tenant2->getTenantKey().'/',
+        Storage::disk('public')->url('')
+    );
+});
 
-        tenancy()->initialize($tenant2);
-        $this->assertFalse(Storage::disk('public')->exists('foo'));
-        Storage::disk('public')->put('foo', 'xyz');
-        Storage::disk('public')->put('abc', 'def');
-        $this->assertSame('xyz', Storage::disk('public')->get('foo'));
-        $this->assertSame('def', Storage::disk('public')->get('abc'));
+test('create and delete storage symlinks jobs works', function() {
+    Event::listen(
+        TenantCreated::class,
+        JobPipeline::make([CreateStorageSymlinks::class])->send(function (TenantCreated $event) {
+            return $event->tenant;
+        })->toListener()
+    );
 
-        tenancy()->initialize($tenant1);
-        $this->assertSame('bar', Storage::disk('public')->get('foo'));
-        $this->assertFalse(Storage::disk('public')->exists('abc'));
+    Event::listen(
+        TenantDeleted::class,
+        JobPipeline::make([RemoveStorageSymlinks::class])->send(function (TenantDeleted $event) {
+            return $event->tenant;
+        })->toListener()
+    );
 
-        $tenant3 = Tenant::create();
-        tenancy()->initialize($tenant3);
-        $this->assertFalse(Storage::disk('public')->exists('foo'));
-        $this->assertFalse(Storage::disk('public')->exists('abc'));
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.filesystem.suffix_base' => 'tenant-',
+        'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
+        'tenancy.filesystem.url_override.public' => 'public-%tenant_id%'
+    ]);
 
-        // Check suffixing logic
-        $new_storage_path = storage_path();
-        $this->assertEquals($old_storage_path . '/' . config('tenancy.filesystem.suffix_base') . tenant('id'), $new_storage_path);
+    /** @var \Stancl\Tenancy\Database\Models\Tenant $tenant */
+    $tenant = Tenant::create();
 
-        foreach (config('tenancy.filesystem.disks') as $disk) {
-            $suffix = config('tenancy.filesystem.suffix_base') . tenant('id');
+    tenancy()->initialize($tenant);
 
-            /** @var FilesystemAdapter $filesystemDisk */
-            $filesystemDisk = Storage::disk($disk);
+    $tenant_key = $tenant->getTenantKey();
 
-            $current_path_prefix = $filesystemDisk->getAdapter()->getPathPrefix();
+    $this->assertDirectoryExists(storage_path("app/public"));
+    $this->assertEquals(storage_path("app/public/"), readlink(public_path("public-$tenant_key")));
 
-            if ($override = config("tenancy.filesystem.root_override.{$disk}")) {
-                $correct_path_prefix = str_replace('%storage_path%', storage_path(), $override);
-            } else {
-                if ($base = $old_storage_facade_roots[$disk]) {
-                    $correct_path_prefix = $base . "/$suffix/";
-                } else {
-                    $correct_path_prefix = "$suffix/";
-                }
-            }
+    $tenant->delete();
 
-            $this->assertSame($correct_path_prefix, $current_path_prefix);
-        }
+    $this->assertDirectoryDoesNotExist(public_path("public-$tenant_key"));
+});
+
+function getDiskPrefix(string $disk): string
+{
+    /** @var FilesystemAdapter $disk */
+    $disk = Storage::disk($disk);
+    $adapter = $disk->getAdapter();
+
+    if (! Str::startsWith(app()->version(), '9.')) {
+        return $adapter->getPathPrefix();
     }
 
-    /** @test */
-    public function filesystem_local_storage_has_own_public_url()
-    {
-        config([
-            'tenancy.bootstrappers' => [
-                FilesystemTenancyBootstrapper::class,
-            ],
-            'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
-            'tenancy.filesystem.url_override.public' => 'public-%tenant_id%'
-        ]);
+     $prefixer = (new ReflectionObject($adapter))->getProperty('prefixer');
+     $prefixer->setAccessible(true);
 
-        $tenant1 = Tenant::create();
-        $tenant2 = Tenant::create();
+     // reflection -> instance
+     $prefixer = $prefixer->getValue($adapter);
 
-        tenancy()->initialize($tenant1);
-        $this->assertEquals(
-            'http://localhost/public-'.$tenant1->getTenantKey().'/',
-            Storage::disk('public')->url('')
-        );
+     $prefix = (new ReflectionProperty($prefixer, 'prefix'));
+     $prefix->setAccessible(true);
 
-        tenancy()->initialize($tenant2);
-        $this->assertEquals(
-            'http://localhost/public-'.$tenant2->getTenantKey().'/',
-            Storage::disk('public')->url('')
-        );
-    }
-
-    /** @test */
-    public function create_and_delete_storage_symlinks_jobs_works()
-    {
-        Event::listen(
-            TenantCreated::class,
-            JobPipeline::make([CreateStorageSymlinks::class])->send(function (TenantCreated $event) {
-                return $event->tenant;
-            })->toListener()
-        );
-
-        Event::listen(
-            TenantDeleted::class,
-            JobPipeline::make([RemoveStorageSymlinks::class])->send(function (TenantDeleted $event) {
-                return $event->tenant;
-            })->toListener()
-        );
-
-        config([
-            'tenancy.bootstrappers' => [
-                FilesystemTenancyBootstrapper::class,
-            ],
-            'tenancy.filesystem.suffix_base' => 'tenant-',
-            'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
-            'tenancy.filesystem.url_override.public' => 'public-%tenant_id%'
-        ]);
-
-        /** @var \Stancl\Tenancy\Database\Models\Tenant $tenant */
-        $tenant = Tenant::create();
-
-        tenancy()->initialize($tenant);
-
-        $tenant_key = $tenant->getTenantKey();
-
-        $this->assertDirectoryExists(storage_path("app/public"));
-        $this->assertEquals(storage_path("app/public/"), readlink(public_path("public-$tenant_key")));
-
-        $tenant->delete();
-
-        $this->assertDirectoryDoesNotExist(public_path("public-$tenant_key"));
-    }
-
-    // for queues see QueueTest
+     return $prefix->getValue($prefixer);
 }

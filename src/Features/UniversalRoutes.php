@@ -23,9 +23,15 @@ class UniversalRoutes implements Feature
     public function bootstrap(Tenancy $tenancy): void
     {
         foreach (static::$identificationMiddlewares as $middleware) {
-            $middleware::$onFail = function ($exception, $request, $next) {
+            $originalOnFail = $middleware::$onFail;
+
+            $middleware::$onFail = function ($exception, $request, $next) use ($originalOnFail) {
                 if (static::routeHasMiddleware($request->route(), static::$middlewareGroup)) {
                     return $next($request);
+                }
+
+                if ($originalOnFail) {
+                    return $originalOnFail($exception, $request, $next);
                 }
 
                 throw $exception;
@@ -40,7 +46,7 @@ class UniversalRoutes implements Feature
         }
 
         // Loop one level deep and check if the route's middleware
-        // groups have the searhced middleware group inside them
+        // groups have the searched middleware group inside them
         $middlewareGroups = Router::getMiddlewareGroups();
         foreach ($route->gatherMiddleware() as $inner) {
             if (! $inner instanceof Closure && isset($middlewareGroups[$inner]) && in_array($middleware, $middlewareGroups[$inner], true)) {

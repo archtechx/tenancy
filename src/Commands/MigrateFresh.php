@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Commands;
 use Illuminate\Console\Command;
 use Stancl\Tenancy\Concerns\DealsWithMigrations;
 use Stancl\Tenancy\Concerns\HasATenantsOption;
+use Symfony\Component\Console\Input\InputOption;
 
 final class MigrateFresh extends Command
 {
@@ -23,13 +24,13 @@ final class MigrateFresh extends Command
     {
         parent::__construct();
 
+        $this->addOption('--drop-views', null, InputOption::VALUE_NONE, 'Drop views along with tenant tables.', null);
+
         $this->setName('tenants:migrate-fresh');
     }
 
     /**
      * Execute the console command.
-     *
-     * @return mixed
      */
     public function handle()
     {
@@ -37,6 +38,7 @@ final class MigrateFresh extends Command
             $this->info('Dropping tables.');
             $this->call('db:wipe', array_filter([
                 '--database' => 'tenant',
+                '--drop-views' => $this->option('drop-views'),
                 '--force' => true,
             ]));
 
