@@ -28,7 +28,7 @@ class Link extends Command
      *
      * @var string
      */
-    protected $description = 'Create the symbolic links configured for the tenancy applications';
+    protected $description = 'Create symbolic links for tenants.';
 
     /**
      * Execute the console command.
@@ -76,15 +76,15 @@ class Link extends Command
     }
 
     /**
-     * Get the symbolic links that are configured for the application.
+     * Create symbolic links using the tenancy.filesystem config.
      *
      * @return array
      */
     protected function links()
     {
-        $disk_urls = config('tenancy.filesystem.url_override');
+        $diskUrls = config('tenancy.filesystem.url_override');
         $disks = config('tenancy.filesystem.root_override');
-        $suffix_base = config('tenancy.filesystem.suffix_base');
+        $suffixBase = config('tenancy.filesystem.suffix_base');
 
         $tenants = $this->option('remove') && filled($this->option('tenants'))
             ? collect($this->option('tenants'))
@@ -92,35 +92,32 @@ class Link extends Command
                 return $tenant->getTenantKey();
             });
 
-        return $tenants
-            ->map(function ($tenant_key) use ($suffix_base, $disk_urls, $disks) {
-                $map = [];
+        return $tenants->map(function ($tenantKey) use ($suffixBase, $diskUrls, $disks) {
+            $symLinks = [];
 
-                foreach ($disk_urls as $disk => $public_path) {
-                    $storage_path = str_replace('%storage_path%', $suffix_base . $tenant_key, $disks[$disk]);
-                    $storage_path = storage_path($storage_path);
+            foreach ($diskUrls as $disk => $publicPath) {
+                $storagePath = str_replace('%storage_path%', $suffixBase . $tenantKey, $disks[$disk]);
+                $storagePath = storage_path($storagePath);
 
-                    $public_path = str_replace('%tenant_id%', $tenant_key, $public_path);
-                    $public_path = public_path($public_path);
+                $publicPath = str_replace('%tenant_id%', $tenantKey, $publicPath);
+                $publicPath = public_path($publicPath);
 
-                    // make sure storage path exist before we create symlink
-                    if (! is_dir($storage_path)) {
-                        mkdir($storage_path, 0777, true);
-                    }
-
-                    $map[] = [$public_path => $storage_path];
+                // Make sure the storage path exists before we create a symlink
+                if (! is_dir($storagePath)) {
+                    mkdir($storagePath, 0777, true);
                 }
 
-                return $map;
-            })->flatten(1)
-            ->mapWithKeys(function ($item) {
-                return $item;
-            })
-            ->all();
+                $symLinks[] = [$publicPath => $storagePath];
+            }
+
+            return $symLinks;
+        })->flatten(1)
+        ->mapWithKeys(fn ($item) => $item)
+        ->all();
     }
 
     /**
-     * Determine if the provided path is a symlink that can be removed.
+     * Determine if the provided path is a removable symlink.
      */
     protected function isRemovableSymlink(string $link, bool $force): bool
     {
