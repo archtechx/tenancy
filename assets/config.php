@@ -119,12 +119,12 @@ return [
         ],
 
         /*
-         * Use this to support Storage url method on local driver disks.
-         * You should create a symbolic link which points to the public directory using command: artisan tenants:link
-         * Then you can use tenant aware Storage url: Storage::disk('public')->url('file.jpg')
+         * This makes local driver disks support tenant-aware Storage::disk()->url().
+         * Use `php artisan tenants:link` to create a symbolic link from the tenant's storage to his public directory.
          */
         'url_override' => [
-            // The array key is local disk (must exist in root_override) and value is public directory (%tenant_id% will be replaced with actual tenant id).
+            // 'local disk' => 'public directory' (%tenant_id% will be replaced with actual tenant id)
+            // The local disk must exist in the tenancy.filesystem.root_override config
             'public' => 'public-%tenant_id%',
         ],
 
