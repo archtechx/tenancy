@@ -31,7 +31,7 @@ class ClearPendingTenants extends Command
      */
     public function handle()
     {
-        $this->info('Cleaning pending tenants.');
+        $this->info('Removing pending tenants.');
 
         $expirationDate = now();
         // We compare the original expiration date to the new one to check if the new one is different later
@@ -39,11 +39,21 @@ class ClearPendingTenants extends Command
 
         // Skip the time constraints if the 'all' option is given
         if (! $this->option('all')) {
-            if ($olderThanDays = $this->option('older-than-days')) {
+            $olderThanDays = $this->option('older-than-days');
+            $olderThanHours = $this->option('older-than-hours');
+
+            if ($olderThanDays && $olderThanHours) {
+                $this->line("<options=bold,reverse;fg=red> Cannot use '--older-than-days' and '--older-than-hours' together \n");
+                $this->line('Please, choose only one of these options.');
+
+                return 1; // Exit code for failure
+            }
+
+            if ($olderThanDays) {
                 $expirationDate->subDays($olderThanDays);
             }
 
-            if ($olderThanHours = $this->option('older-than-hours')) {
+            if ($olderThanHours) {
                 $expirationDate->subHours($olderThanHours);
             }
         }

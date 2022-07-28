@@ -82,6 +82,13 @@ class PendingTenantsTest extends TestCase
     }
 
     /** @test */
+    public function clear_pending_tenants_command_cannot_run_with_both_time_constraints()
+    {
+        $this->artisan('tenants:pending-clear --older-than-days=2 --older-than-hours=2')
+            ->assertFailed();
+    }
+
+    /** @test */
     public function clear_pending_tenants_command_all_option_overrides_config()
     {
         Tenant::createPending();
