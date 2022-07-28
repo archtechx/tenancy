@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Jobs;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -19,9 +18,6 @@ class CreateStorageSymlinks implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /**
-     * @var \Stancl\Tenancy\Contracts\Tenant
-     */
     public Tenant $tenant;
 
     /**
