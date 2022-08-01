@@ -27,8 +27,7 @@ test('tenant can be in maintenance mode', function () {
 
     $tenant->putDownForMaintenance();
 
-    pest()->expectException(HttpException::class);
-    pest()->get('http://acme.localhost/foo');
+    pest()->get('http://acme.localhost/foo')->assertStatus(503);
 
     tenancy()->end();
 
@@ -58,8 +57,7 @@ test('tenant can be in maintenance mode from command', function() {
 
     Artisan::call('tenancy:down');
 
-    pest()->expectException(HttpException::class);
-    pest()->get('http://acme.localhost/foo');
+    pest()->get('http://acme.localhost/foo')->assertStatus(503);
 
     tenancy()->end();
 
