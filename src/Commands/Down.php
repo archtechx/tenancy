@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Foundation\Console\DownCommand;
 use Stancl\Tenancy\Concerns\HasATenantsOption;
+use Symfony\Component\Console\Input\InputOption;
 
-class Down extends Command
+class Down extends DownCommand
 {
     use HasATenantsOption;
 
@@ -37,17 +39,34 @@ class Down extends Command
      */
     public function handle()
     {
-        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
+        // The base down command is heavily used. Instead of saving the data inside a file,
+        // the data is stored the tenant database, which means some Laravel features
+        // are not available with tenants.
+
+        $payload = $this->getDownDatabasePayload();
+        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) use ($payload){
             $this->line("Tenant: {$tenant['id']}");
-            $tenant->putDownForMaintenance([
-                'redirect' => $this->option('redirect'),
-                'retry' => $this->option('retry'),
-                'refresh' => $this->option('refresh'),
-                'secret' => $this->option('secret'),
-                'status' => $this->option('status'),
-            ]);
+            $tenant->putDownForMaintenance($payload);
         });
 
         $this->comment('Tenants are now in maintenance mode.');
+    }
+
+
+    /**
+     * Get the payload to be placed in the "down" file.
+     *
+     * @return array
+     */
+    protected function getDownDatabasePayload()
+    {
+        return [
+            'except' => $this->excludedPaths(),
+            'redirect' => $this->redirectPath(),
+            'retry' => $this->getRetryTime(),
+            'refresh' => $this->option('refresh'),
+            'secret' => $this->option('secret'),
+            'status' => (int) $this->option('status', 503),
+        ];
     }
 }

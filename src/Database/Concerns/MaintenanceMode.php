@@ -10,6 +10,7 @@ trait MaintenanceMode
     {
         $this->update([
             'maintenance_mode' => [
+                'except' => $data['except'] ?? null,
                 'redirect' => $data['redirect'] ?? null,
                 'retry' => $data['retry'] ?? null,
                 'refresh' => $data['refresh'] ?? null,
