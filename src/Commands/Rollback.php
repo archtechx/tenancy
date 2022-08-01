@@ -7,13 +7,19 @@ namespace Stancl\Tenancy\Commands;
 use Illuminate\Database\Console\Migrations\RollbackCommand;
 use Illuminate\Database\Migrations\Migrator;
 use Stancl\Tenancy\Concerns\DealsWithMigrations;
+use Stancl\Tenancy\Concerns\ExtendsLaravelCommand;
 use Stancl\Tenancy\Concerns\HasATenantsOption;
 use Stancl\Tenancy\Events\DatabaseRolledBack;
 use Stancl\Tenancy\Events\RollingBackDatabase;
 
 class Rollback extends RollbackCommand
 {
-    use HasATenantsOption, DealsWithMigrations;
+    use HasATenantsOption, DealsWithMigrations, ExtendsLaravelCommand;
+
+    protected static function getTenantCommandName(): string
+    {
+        return 'tenants:rollback';
+    }
 
     /**
      * The console command description.
@@ -31,14 +37,11 @@ class Rollback extends RollbackCommand
     {
         parent::__construct($migrator);
 
-        $this->setName('tenants:rollback');
-        $this->specifyParameters();
+        $this->specifyTenantSignature();
     }
 
     /**
      * Execute the console command.
-     *
-     * @return mixed
      */
     public function handle()
     {

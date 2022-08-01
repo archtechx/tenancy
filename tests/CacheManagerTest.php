@@ -2,136 +2,110 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests;
-
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
-class CacheManagerTest extends TestCase
-{
-    public function setUp(): void
-    {
-        parent::setUp();
+beforeEach(function () {
+    config(['tenancy.bootstrappers' => [
+        CacheTenancyBootstrapper::class,
+    ]]);
 
-        config(['tenancy.bootstrappers' => [
-            CacheTenancyBootstrapper::class,
-        ]]);
+    Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+});
 
-        Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
-    }
+test('default tag is automatically applied', function () {
+    tenancy()->initialize(Tenant::create());
 
-    /** @test */
-    public function default_tag_is_automatically_applied()
-    {
-        tenancy()->initialize(Tenant::create());
+    pest()->assertArrayIsSubset([config('tenancy.cache.tag_base') . tenant('id')], cache()->tags('foo')->getTags()->getNames());
+});
 
-        $this->assertArrayIsSubset([config('tenancy.cache.tag_base') . tenant('id')], cache()->tags('foo')->getTags()->getNames());
-    }
+test('tags are merged when array is passed', function () {
+    tenancy()->initialize(Tenant::create());
 
-    /** @test */
-    public function tags_are_merged_when_array_is_passed()
-    {
-        tenancy()->initialize(Tenant::create());
+    $expected = [config('tenancy.cache.tag_base') . tenant('id'), 'foo', 'bar'];
+    expect(cache()->tags(['foo', 'bar'])->getTags()->getNames())->toEqual($expected);
+});
 
-        $expected = [config('tenancy.cache.tag_base') . tenant('id'), 'foo', 'bar'];
-        $this->assertEquals($expected, cache()->tags(['foo', 'bar'])->getTags()->getNames());
-    }
+test('tags are merged when string is passed', function () {
+    tenancy()->initialize(Tenant::create());
 
-    /** @test */
-    public function tags_are_merged_when_string_is_passed()
-    {
-        tenancy()->initialize(Tenant::create());
+    $expected = [config('tenancy.cache.tag_base') . tenant('id'), 'foo'];
+    expect(cache()->tags('foo')->getTags()->getNames())->toEqual($expected);
+});
 
-        $expected = [config('tenancy.cache.tag_base') . tenant('id'), 'foo'];
-        $this->assertEquals($expected, cache()->tags('foo')->getTags()->getNames());
-    }
+test('exception is thrown when zero arguments are passed to tags method', function () {
+    tenancy()->initialize(Tenant::create());
 
-    /** @test */
-    public function exception_is_thrown_when_zero_arguments_are_passed_to_tags_method()
-    {
-        tenancy()->initialize(Tenant::create());
+    pest()->expectException(\Exception::class);
+    cache()->tags();
+});
 
-        $this->expectException(\Exception::class);
-        cache()->tags();
-    }
+test('exception is thrown when more than one argument is passed to tags method', function () {
+    tenancy()->initialize(Tenant::create());
 
-    /** @test */
-    public function exception_is_thrown_when_more_than_one_argument_is_passed_to_tags_method()
-    {
-        tenancy()->initialize(Tenant::create());
+    pest()->expectException(\Exception::class);
+    cache()->tags(1, 2);
+});
 
-        $this->expectException(\Exception::class);
-        cache()->tags(1, 2);
-    }
+test('tags separate cache well enough', function () {
+    $tenant1 = Tenant::create();
+    tenancy()->initialize($tenant1);
 
-    /** @test */
-    public function tags_separate_cache_well_enough()
-    {
-        $tenant1 = Tenant::create();
-        tenancy()->initialize($tenant1);
+    cache()->put('foo', 'bar', 1);
+    expect(cache()->get('foo'))->toBe('bar');
 
-        cache()->put('foo', 'bar', 1);
-        $this->assertSame('bar', cache()->get('foo'));
+    $tenant2 = Tenant::create();
+    tenancy()->initialize($tenant2);
 
-        $tenant2 = Tenant::create();
-        tenancy()->initialize($tenant2);
+    pest()->assertNotSame('bar', cache()->get('foo'));
 
-        $this->assertNotSame('bar', cache()->get('foo'));
+    cache()->put('foo', 'xyz', 1);
+    expect(cache()->get('foo'))->toBe('xyz');
+});
 
-        cache()->put('foo', 'xyz', 1);
-        $this->assertSame('xyz', cache()->get('foo'));
-    }
+test('invoking the cache helper works', function () {
+    $tenant1 = Tenant::create();
+    tenancy()->initialize($tenant1);
 
-    /** @test */
-    public function invoking_the_cache_helper_works()
-    {
-        $tenant1 = Tenant::create();
-        tenancy()->initialize($tenant1);
+    cache(['foo' => 'bar'], 1);
+    expect(cache('foo'))->toBe('bar');
 
-        cache(['foo' => 'bar'], 1);
-        $this->assertSame('bar', cache('foo'));
+    $tenant2 = Tenant::create();
+    tenancy()->initialize($tenant2);
 
-        $tenant2 = Tenant::create();
-        tenancy()->initialize($tenant2);
+    pest()->assertNotSame('bar', cache('foo'));
 
-        $this->assertNotSame('bar', cache('foo'));
+    cache(['foo' => 'xyz'], 1);
+    expect(cache('foo'))->toBe('xyz');
+});
 
-        cache(['foo' => 'xyz'], 1);
-        $this->assertSame('xyz', cache('foo'));
-    }
+test('cache is persisted', function () {
+    $tenant1 = Tenant::create();
+    tenancy()->initialize($tenant1);
 
-    /** @test */
-    public function cache_is_persisted()
-    {
-        $tenant1 = Tenant::create();
-        tenancy()->initialize($tenant1);
+    cache(['foo' => 'bar'], 10);
+    expect(cache('foo'))->toBe('bar');
 
-        cache(['foo' => 'bar'], 10);
-        $this->assertSame('bar', cache('foo'));
+    tenancy()->end();
 
-        tenancy()->end();
+    tenancy()->initialize($tenant1);
+    expect(cache('foo'))->toBe('bar');
+});
 
-        tenancy()->initialize($tenant1);
-        $this->assertSame('bar', cache('foo'));
-    }
+test('cache is persisted when reidentification is used', function () {
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+    tenancy()->initialize($tenant1);
 
-    /** @test */
-    public function cache_is_persisted_when_reidentification_is_used()
-    {
-        $tenant1 = Tenant::create();
-        $tenant2 = Tenant::create();
-        tenancy()->initialize($tenant1);
+    cache(['foo' => 'bar'], 10);
+    expect(cache('foo'))->toBe('bar');
 
-        cache(['foo' => 'bar'], 10);
-        $this->assertSame('bar', cache('foo'));
+    tenancy()->initialize($tenant2);
+    tenancy()->end();
 
-        tenancy()->initialize($tenant2);
-        tenancy()->end();
-
-        tenancy()->initialize($tenant1);
-        $this->assertSame('bar', cache('foo'));
-    }
-}
+    tenancy()->initialize($tenant1);
+    expect(cache('foo'))->toBe('bar');
+});

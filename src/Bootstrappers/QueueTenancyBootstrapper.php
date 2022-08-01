@@ -4,18 +4,17 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Bootstrappers;
 
-use Illuminate\Support\Str;
 use Illuminate\Config\Repository;
-use Illuminate\Queue\QueueManager;
-use Stancl\Tenancy\Contracts\Tenant;
+use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
-use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Queue\Events\JobRetryRequested;
+use Illuminate\Queue\QueueManager;
 use Illuminate\Support\Testing\Fakes\QueueFake;
-use Illuminate\Contracts\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
+use Stancl\Tenancy\Contracts\Tenant;
 
 class QueueTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -30,8 +29,10 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
      *
      * This is useful when you're changing the tenant's state (e.g. properties in the `data` column) and want the next job to initialize tenancy again
      * with the new data. Features like the Tenant Config are only executed when tenancy is initialized, so the re-initialization is needed in some cases.
+     *
+     * @var bool
      */
-    public static bool $forceRefresh = false;
+    public static $forceRefresh = false;
 
     /**
      * The normal constructor is only executed after tenancy is bootstrapped.
@@ -61,8 +62,8 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             static::initializeTenancyForQueue($event->job->payload()['tenant_id'] ?? null);
         });
 
-        if (Str::startsWith(app()->version(), '8')) {
-            // JobRetryRequested only exists since Laravel 8
+        if (version_compare(app()->version(), '8.64', '>=')) {
+            // JobRetryRequested only exists since Laravel 8.64
             $dispatcher->listen(JobRetryRequested::class, function ($event) use (&$previousTenant) {
                 $previousTenant = tenant();
 

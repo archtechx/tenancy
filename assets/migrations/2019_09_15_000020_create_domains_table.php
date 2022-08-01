@@ -21,7 +21,7 @@ class CreateDomainsTable extends Migration
             $table->string('tenant_id');
 
             $table->timestamps();
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade');
         });
     }
 
