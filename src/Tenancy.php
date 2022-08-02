@@ -17,8 +17,12 @@ class Tenancy
 {
     use Macroable, Debuggable;
 
-    /** The current tenant. */
-    public Tenant&Model $tenant;
+    /**
+     * The current tenant.
+     *
+     * @var (Tenant&Model)|null
+     */
+    public ?Tenant $tenant;
 
     // todo docblock
     public ?Closure $getBootstrappersUsing = null;
