@@ -33,6 +33,7 @@ class Up extends Command
      */
     public function handle()
     {
+        // This runs for all tenants if no --tenants are specified
         tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
             $this->line("Tenant: {$tenant['id']}");
             $tenant->bringUpFromMaintenance();

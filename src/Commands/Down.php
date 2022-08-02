@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Commands;
 
-use Illuminate\Console\Command;
 use Illuminate\Foundation\Console\DownCommand;
 use Stancl\Tenancy\Concerns\HasATenantsOption;
-use Symfony\Component\Console\Input\InputOption;
 
 class Down extends DownCommand
 {
@@ -44,6 +42,8 @@ class Down extends DownCommand
         // are not available with tenants.
 
         $payload = $this->getDownDatabasePayload();
+
+        // This runs for all tenants if no --tenants are specified
         tenancy()->runForMultiple($this->option('tenants'), function ($tenant) use ($payload){
             $this->line("Tenant: {$tenant['id']}");
             $tenant->putDownForMaintenance($payload);
