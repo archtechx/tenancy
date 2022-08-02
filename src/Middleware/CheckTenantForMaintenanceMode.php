@@ -42,13 +42,13 @@ class CheckTenantForMaintenanceMode extends CheckForMaintenanceMode
             if (isset($data['template'])) {
                 return response(
                     $data['template'],
-                    (int) $data['status'] ?? 503,
+                    (int) ($data['status'] ?? 503),
                     $this->getHeaders($data)
                 );
             }
 
             throw new HttpException(
-                (int) $data['status'] ?? 503,
+                (int) ($data['status'] ?? 503),
                 'Service Unavailable',
                 null,
                 $this->getHeaders($data)
