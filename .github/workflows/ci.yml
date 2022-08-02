@@ -85,10 +85,10 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
-          restore-keys: ${{ runner.os }}-composer-
+          key: ${{ runner.os }}-${{ matrix.php }}-${{ matrix.laravel }}--${{ hashFiles('**/composer.lock') }}
 
-      - name: Install Composer dependencies
+      -if: steps.composer-cache.outputs.cache-hit != 'true'
+        name: Install Composer dependencies
         run: |
           composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
           composer update --prefer-dist --no-interaction
