@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
+use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Traits\Macroable;
@@ -16,20 +17,17 @@ class Tenancy
 {
     use Macroable, Debuggable;
 
-    /** @var Tenant|Model|null */
-    public $tenant;
+    /** The current tenant. */
+    public Tenant&Model $tenant;
 
-    /** @var callable|null */
-    public $getBootstrappersUsing = null;
+    // todo docblock
+    public ?Closure $getBootstrappersUsing = null;
 
-    /** @var bool */
-    public $initialized = false;
+    /** Is tenancy fully initialized? */
+    public $initialized = false; // todo document the difference between $tenant being set and $initialized being true (e.g. end of initialize() method)
 
-    /**
-     * Initializes the tenant.
-     * @param Tenant|int|string $tenant
-     */
-    public function initialize($tenant): void
+    /** Initialize tenancy for the passed tenant. */
+    public function initialize(Tenant|int|string $tenant): void
     {
         if (! is_object($tenant)) {
             $tenantId = $tenant;
@@ -85,29 +83,28 @@ class Tenancy
         return array_map('app', $resolve($this->tenant));
     }
 
-    public function query(): Builder
+    public static function query(): Builder
     {
-        return $this->model()->query();
+        return static::model()->query();
     }
 
-    /** @return Tenant|Model */
-    public function model()
+    public static function model(): Tenant&Model
     {
         $class = config('tenancy.tenant_model');
 
         return new $class;
     }
 
-    public function find($id): ?Tenant
+    public static function find(int|string $id): Tenant|null
     {
-        return $this->model()->where($this->model()->getTenantKeyName(), $id)->first();
+        return static::model()->where(static::model()->getTenantKeyName(), $id)->first();
     }
 
     /**
      * Run a callback in the central context.
      * Atomic, safely reverts to previous context.
      */
-    public function central(callable $callback)
+    public function central(Closure $callback)
     {
         $previousTenant = $this->tenant;
 
@@ -129,9 +126,8 @@ class Tenancy
      * More performant than running $tenant->run() one by one.
      *
      * @param Tenant[]|\Traversable|string[]|null $tenants
-     * @return void
      */
-    public function runForMultiple($tenants, callable $callback)
+    public function runForMultiple($tenants, callable $callback): void
     {
         // Convert null to all tenants
         $tenants = is_null($tenants) ? $this->model()->cursor() : $tenants;
