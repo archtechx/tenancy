@@ -22,7 +22,7 @@ class Tenancy
      *
      * @var (Tenant&Model)|null
      */
-    public ?Tenant $tenant;
+    public ?Tenant $tenant = null;
 
     // todo docblock
     public ?Closure $getBootstrappersUsing = null;
