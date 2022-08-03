@@ -7,13 +7,14 @@ namespace Stancl\Tenancy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Traits\Macroable;
+use Stancl\Tenancy\Concerns\Debuggable;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedById;
 
 class Tenancy
 {
-    use Macroable;
+    use Macroable, Debuggable;
 
     /** @var Tenant|Model|null */
     public $tenant;
