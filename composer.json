@@ -15,6 +15,7 @@
         }
     ],
     "require": {
+        "php": "^7.4|^8.0|^8.1",
         "ext-json": "*",
         "illuminate/support": "^6.0|^8.0|^9.0",
         "facade/ignition-contracts": "^1.0",
