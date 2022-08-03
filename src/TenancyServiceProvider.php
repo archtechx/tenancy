@@ -84,9 +84,15 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\Migrate::class,
             Commands\Rollback::class,
             Commands\TenantList::class,
-            Commands\TenantDump::class,
             Commands\MigrateFresh::class,
         ]);
+
+        if (version_compare(app()->version(), '8.0', '>=')) {
+            // DumpCommand only exists since Laravel 8.0 or above
+            $this->commands([
+                Commands\TenantDump::class,
+            ]);
+        }
 
         $this->publishes([
             __DIR__ . '/../assets/config.php' => config_path('tenancy.php'),
