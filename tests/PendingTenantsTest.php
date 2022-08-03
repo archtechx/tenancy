@@ -2,176 +2,142 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests;
-
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Commands\ClearPendingTenants;
 use Stancl\Tenancy\Commands\CreatePendingTenants;
-use Stancl\Tenancy\Events\PullingPendingTenant;
-use Stancl\Tenancy\Events\PendingTenantPulled;
 use Stancl\Tenancy\Events\CreatingPendingTenant;
 use Stancl\Tenancy\Events\PendingTenantCreated;
+use Stancl\Tenancy\Events\PendingTenantPulled;
+use Stancl\Tenancy\Events\PullingPendingTenant;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
-class PendingTenantsTest extends TestCase
-{
-    public function setUp(): void
-    {
-        parent::setUp();
-    }
+test('a tenant is correctly identified as pending', function (){
+    Tenant::createPending();
 
-    /** @test */
-    public function a_tenant_is_correctly_identified_as_pending()
-    {
-        Tenant::createPending();
+    expect(Tenant::onlyPending()->count())->toBe(1);
 
-        $this->assertCount(1, Tenant::onlyPending()->get());
+    Tenant::onlyPending()->first()->update([
+        'pending_since' => null
+    ]);
 
-        Tenant::onlyPending()->first()->update([
-            'pending_since' => null
-        ]);
+    expect(Tenant::onlyPending()->count())->toBe(0);
+});
 
-        $this->assertCount(0, Tenant::onlyPending()->get());
-    }
+test('pending trait imports query scopes', function () {
+    Tenant::createPending();
+    Tenant::create();
+    Tenant::create();
 
-    /** @test */
-    public function pending_trait_imports_query_scopes()
-    {
-        Tenant::createPending();
-        Tenant::create();
-        Tenant::create();
+    expect(Tenant::onlyPending()->count())->toBe(1)
+        ->and(Tenant::withPending(true)->count())->toBe(3)
+        ->and(Tenant::withPending(false)->count())->toBe(2)
+        ->and(Tenant::withoutPending()->count())->toBe(2);
 
-        $this->assertCount(1, Tenant::onlyPending()->get());
+});
 
-        $this->assertCount(3, Tenant::withPending(true)->get());
+test('pending tenants are created and deleted from the commands', function () {
+    config(['tenancy.pending.count' => 4]);
 
-        $this->assertCount(2, Tenant::withPending(false)->get());
+    Artisan::call(CreatePendingTenants::class);
 
-        $this->assertCount(2, Tenant::withoutPending()->get());
-    }
+    expect(Tenant::onlyPending()->count())->toBe(4);
 
-    /** @test */
-    public function pending_tenants_are_created_and_deleted_from_the_commands()
-    {
-        config(['tenancy.pending.count' => 4]);
+    Artisan::call(ClearPendingTenants::class);
 
-        Artisan::call(CreatePendingTenants::class);
+    expect(Tenant::onlyPending()->count())->toBe(0);
+});
 
-        $this->assertCount(4, Tenant::onlyPending()->get());
+test('clear pending tenants command only delete pending tenants older than', function () {
+    config(['tenancy.pending.count' => 2]);
 
-        Artisan::call(ClearPendingTenants::class);
+    Artisan::call(CreatePendingTenants::class);
 
-        $this->assertCount(0, Tenant::onlyPending()->get());
-    }
+    tenancy()->model()->query()->onlyPending()->first()->update([
+        'pending_since' => now()->subDays(5)->timestamp
+    ]);
 
-    /** @test */
-    public function clear_pending_tenants_command_only_delete_pending_tenants_older_than()
-    {
-        config(['tenancy.pending.count' => 2]);
+    Artisan::call('tenants:pending-clear --older-than-days=2');
 
-        Artisan::call(CreatePendingTenants::class);
+    expect(Tenant::onlyPending()->count())->toBe(1);
+});
 
-        tenancy()->model()->query()->onlyPending()->first()->update([
-            'pending_since' => now()->subDays(5)->timestamp
-        ]);
+test('clear pending tenants command cannot run with both time constraints', function () {
+    pest()->artisan('tenants:pending-clear --older-than-days=2 --older-than-hours=2')
+        ->assertFailed();
+});
 
-        Artisan::call('tenants:pending-clear --older-than-days=2');
+test('clear pending tenants command all option overrides config', function () {
+    Tenant::createPending();
+    Tenant::createPending();
 
-        $this->assertCount(1, Tenant::onlyPending()->get());
-    }
+    tenancy()->model()->query()->onlyPending()->first()->update([
+        'pending_since' => now()->subDays(10)
+    ]);
 
-    /** @test */
-    public function clear_pending_tenants_command_cannot_run_with_both_time_constraints()
-    {
-        $this->artisan('tenants:pending-clear --older-than-days=2 --older-than-hours=2')
-            ->assertFailed();
-    }
+    config(['tenancy.pending.older_than_days' => 4]);
 
-    /** @test */
-    public function clear_pending_tenants_command_all_option_overrides_config()
-    {
-        Tenant::createPending();
-        Tenant::createPending();
+    Artisan::call(ClearPendingTenants::class, [
+        '--all' => true
+    ]);
 
-        tenancy()->model()->query()->onlyPending()->first()->update([
-            'pending_since' => now()->subDays(10)
-        ]);
+    expect(Tenant::onlyPending()->count())->toBe(0);
+});
 
-        config(['tenancy.pending.older_than_days' => 4]);
+test('tenancy can check for rpending tenants', function () {
+    Tenant::query()->delete();
 
-        Artisan::call(ClearPendingTenants::class, [
-            '--all' => true
-        ]);
+    expect(Tenant::onlyPending()->exists())->toBeFalse();
 
-        $this->assertCount(0, Tenant::onlyPending()->get());
-    }
+    Tenant::createPending();
 
-    /** @test */
-    public function tenancy_can_check_for_rpending_tenants()
-    {
-        Tenant::query()->delete();
+    expect(Tenant::onlyPending()->exists())->toBeTrue();
+});
 
-        $this->assertFalse(Tenant::onlyPending()->exists());
+test('tenancy can pull a pending tenant', function () {
+    expect(Tenant::pullPendingTenant())->toBeNull();
 
-        Tenant::createPending();
+    Tenant::createPending();
 
-        $this->assertTrue(Tenant::onlyPending()->exists());
-    }
+    expect(Tenant::pullPendingTenant(true))->toBeInstanceOf(Tenant::class);
+});
 
-    /** @test */
-    public function tenancy_can_pull_a_pending_tenant()
-    {
-        $this->assertNull(Tenant::pullPendingTenant());
+test('tenancy can create if none are pending', function () {
+    expect(Tenant::all()->count())->toBe(0);
 
-        Tenant::createPending();
+    Tenant::pullPendingTenant(true);
 
-        $this->assertInstanceOf(Tenant::class, Tenant::pullPendingTenant(true));
-    }
+    expect(Tenant::all()->count())->toBe(1);
+});
 
-    /** @test */
-    public function tenancy_can_create_if_none_are_pending()
-    {
-        $this->assertCount(0, Tenant::all());
+test('pending tenants global scope config can include or exclude', function () {
+    Tenant::createPending();
 
-        Tenant::pullPendingTenant(true);
+    config(['tenancy.pending.include_in_queries' => false]);
 
-        $this->assertCount(1, Tenant::all());
-    }
+    expect(Tenant::all()->count())->toBe(0);
 
-    /** @test */
-    public function pending_tenants_global_scope_config_can_include_or_exclude()
-    {
-        Tenant::createPending();
+    config(['tenancy.pending.include_in_queries' => true]);
 
-        config(['tenancy.pending.include_in_queries' => false]);
+    expect(Tenant::all()->count())->toBe(1);
+    Tenant::all();
+});
 
-        $this->assertCount(0, Tenant::all());
+test('pending events are triggerred', function () {
+    Event::fake([
+        CreatingPendingTenant::class,
+        PendingTenantCreated::class,
+        PullingPendingTenant::class,
+        PendingTenantPulled::class,
+    ]);
 
-        config(['tenancy.pending.include_in_queries' => true]);
+    Tenant::createPending();
 
-        $this->assertCount(1, Tenant::all());
-        Tenant::all();
-    }
+    Event::assertDispatched(CreatingPendingTenant::class);
+    Event::assertDispatched(PendingTenantCreated::class);
 
-    /** @test */
-    public function pending_events_are_triggerred()
-    {
-        Event::fake([
-            CreatingPendingTenant::class,
-            PendingTenantCreated::class,
-            PullingPendingTenant::class,
-            PendingTenantPulled::class,
-        ]);
+    Tenant::pullPendingTenant();
 
-        Tenant::createPending();
-
-        Event::assertDispatched(CreatingPendingTenant::class);
-        Event::assertDispatched(PendingTenantCreated::class);
-
-        Tenant::pullPendingTenant();
-
-        Event::assertDispatched(PullingPendingTenant::class);
-        Event::assertDispatched(PendingTenantPulled::class);
-    }
-}
+    Event::assertDispatched(PullingPendingTenant::class);
+    Event::assertDispatched(PendingTenantPulled::class);
+});
