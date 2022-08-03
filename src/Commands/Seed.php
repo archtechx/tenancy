@@ -35,8 +35,6 @@ class Seed extends SeedCommand
 
     /**
      * Execute the console command.
-     *
-     * @return mixed
      */
     public function handle()
     {

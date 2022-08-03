@@ -15,8 +15,6 @@ class TenancyServiceProvider extends ServiceProvider
 {
     /**
      * Register services.
-     *
-     * @return void
      */
     public function register(): void
     {
@@ -76,8 +74,6 @@ class TenancyServiceProvider extends ServiceProvider
 
     /**
      * Bootstrap services.
-     *
-     * @return void
      */
     public function boot(): void
     {
@@ -88,6 +84,7 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\Migrate::class,
             Commands\Rollback::class,
             Commands\TenantList::class,
+            Commands\TenantDump::class,
             Commands\MigrateFresh::class,
         ]);
 
