@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
-use Stancl\Tenancy\Concerns\HasTenantOptions;
 use Illuminate\Support\Facades\Artisan;
+use Stancl\Tenancy\Concerns\HasTenantOptions;
 
 class Run extends Command
 {
