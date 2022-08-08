@@ -629,7 +629,13 @@ class CentralUser extends Model implements SyncMaster
 
     public function getCreateAttributeNames(): array
     {
-        return [];
+        return [
+            'global_id',
+            'name',
+            'password',
+            'email',
+            'role'
+        ];
     }
 }
 
@@ -669,7 +675,7 @@ class ResourceUser extends Model implements Syncable
 
     public function getCreateAttributeNames(): array
     {
-        // attributes should be used when syncing resource from DB
+        // attributes should be used when syncing resources from DB
         return [
             'global_id',
             'name',
