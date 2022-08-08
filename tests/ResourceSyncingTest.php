@@ -126,6 +126,34 @@ test('only the synced columns are updated in the central db', function () {
     ], ResourceUser::first()->getAttributes());
 });
 
+test('creating the resource in tenant database creates it in central database and used custom attributes', function () {
+    // Assert no user in central DB
+    expect(ResourceUser::all())->toHaveCount(0);
+
+    $tenant = ResourceTenant::create();
+    pest()->artisan('tenants:migrate', [
+        '--path' => __DIR__ . '/Etc/synced_resource_migrations/custom',
+        '--realpath' => true,
+    ])->assertExitCode(0);
+
+    tenancy()->initialize($tenant);
+
+    // Create the same user in tenant DB
+    ResourceUser::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter', // unsynced
+        'code' => 'bar' // extra column which does not exist in central users table
+    ]);
+
+    tenancy()->end();
+
+    // Asset user was created
+    expect(CentralUser::first()->global_id)->toBe('acme');
+});
+
 test('creating the resource in tenant database creates it in central database and creates the mapping', function () {
     creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase();
 });
@@ -598,6 +626,11 @@ class CentralUser extends Model implements SyncMaster
             'email',
         ];
     }
+
+    public function getCreateAttributeNames(): array
+    {
+        return [];
+    }
 }
 
 class ResourceUser extends Model implements Syncable
@@ -631,6 +664,18 @@ class ResourceUser extends Model implements Syncable
             'name',
             'password',
             'email',
+        ];
+    }
+
+    public function getCreateAttributeNames(): array
+    {
+        // attributes should be used when syncing resource from DB
+        return [
+            'global_id',
+            'name',
+            'password',
+            'email',
+            'role'
         ];
     }
 }
