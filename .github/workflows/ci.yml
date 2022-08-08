@@ -39,7 +39,7 @@ jobs:
       - name: Run php-cs-fixer
         run: $HOME/.composer/vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php
       - name: Commit changes from php-cs-fixer
-        uses: EndBug/add-and-commit@v5
+        uses: EndBug/add-and-commit@v9
         with:
           author_name: "PHP CS Fixer"
           author_email: "phpcsfixer@example.com"
