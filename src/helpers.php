@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Resolvers\PathTenantResolver;
 use Stancl\Tenancy\Tenancy;
 
 if (! function_exists('tenancy')) {
@@ -59,11 +60,23 @@ if (! function_exists('global_cache')) {
 if (! function_exists('tenant_route')) {
     function tenant_route(string $domain, $route, $parameters = [], $absolute = true)
     {
-        // replace first occurance of hostname fragment with $domain
+        // replace first occurrence of hostname fragment with $domain
         $url = route($route, $parameters, $absolute);
         $hostname = parse_url($url, PHP_URL_HOST);
         $position = strpos($url, $hostname);
 
         return substr_replace($url, $domain, $position, strlen($hostname));
+    }
+}
+
+if (! function_exists('tenant_path_route')) {
+    function tenant_path_route($route, $parameters = [])
+    {
+        if (! array_key_exists(PathTenantResolver::$tenantParameterName, $parameters)) {
+            $parameters[PathTenantResolver::$tenantParameterName] = optional(tenant())->getTenantKey();
+        }
+        dd($parameters);
+
+        return route($route, $parameters);
     }
 }

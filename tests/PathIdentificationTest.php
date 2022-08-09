@@ -18,7 +18,7 @@ beforeEach(function () {
     ], function () {
         Route::get('/foo/{a}/{b}', function ($a, $b) {
             return "$a + $b";
-        });
+        })->name('foo');
     });
 });
 
@@ -122,4 +122,15 @@ test('tenant parameter name can be customized', function () {
     $this
         ->withoutExceptionHandling()
         ->get('/acme/foo/abc/xyz');
+});
+
+test('tenant path route helper function test', function () {
+    Tenant::create([
+        'id' => 'acme',
+    ]);
+
+    pest()->get( tenant_path_route('foo', ['a' => 'a', 'b' => 'b']));
+
+    expect(tenancy()->initialized)->toBeTrue();
+    expect(tenant('id'))->toBe('acme');
 });
