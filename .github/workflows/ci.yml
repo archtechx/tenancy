@@ -14,7 +14,6 @@ jobs:
 
     strategy:
       matrix:
-        php: ['8.1']
         laravel: ['^8.0', '^9.0']
 
     services:
@@ -70,8 +69,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php }}
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, sqlsrv, pdo_sqlsrv, redis, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
+          php-version: 8.1
           coverage: pcov
 
       - name: Get composer cache directory
@@ -82,13 +80,12 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-${{ matrix.php }}-${{ matrix.laravel }}-${{ hashFiles('**/composer.lock') }}
+          key: ${{ runner.os }}-${{ matrix.laravel }}-${{ hashFiles('**/composer.lock') }}
 
       - name: Install Composer dependencies
         run: |
           composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
           composer update --prefer-dist --no-interaction
-
       - name: Run tests
         run: ./vendor/bin/pest
         env:
