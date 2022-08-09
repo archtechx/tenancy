@@ -61,7 +61,7 @@ test('secondary models are not scoped to the current tenant when accessed direct
     expect(Comment::count())->toBe(2);
 });
 
-test('secondary models ARE scoped to the current tenant when accessed directly and parent relationship traits used', function () {
+test('secondary models ARE scoped to the current tenant when accessed directly and parent relationship trait is used', function () {
     $acme = Tenant::create([
         'id' => 'acme',
     ]);
