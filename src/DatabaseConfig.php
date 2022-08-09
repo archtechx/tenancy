@@ -159,7 +159,6 @@ class DatabaseConfig
         $databaseManager = app($databaseManagers[$driver]);
 
         $databaseManager->setConnection($this->getTemplateConnectionName());
-
         return $databaseManager;
     }
 }
