@@ -93,7 +93,7 @@ class Link extends Command
             });
 
         return $tenants->map(function ($tenantKey) use ($suffixBase, $diskUrls, $disks) {
-            $symLinks = [];
+            $symlinks = [];
 
             foreach ($diskUrls as $disk => $publicPath) {
                 $storagePath = str_replace('%storage_path%', $suffixBase . $tenantKey, $disks[$disk]);
@@ -107,10 +107,10 @@ class Link extends Command
                     mkdir($storagePath, 0777, true);
                 }
 
-                $symLinks[] = [$publicPath => $storagePath];
+                $symlinks[] = [$publicPath => $storagePath];
             }
 
-            return $symLinks;
+            return $symlinks;
         })->flatten(1)
         ->mapWithKeys(fn ($item) => $item)
         ->all();
