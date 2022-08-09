@@ -124,13 +124,22 @@ test('tenant parameter name can be customized', function () {
         ->get('/acme/foo/abc/xyz');
 });
 
-test('tenant path route helper function test', function () {
-    Tenant::create([
+test('tenant path route helper adds the tenant parameter', function () {
+    $tenant = Tenant::create([
         'id' => 'acme',
     ]);
 
-    pest()->get( tenant_path_route('foo', ['a' => 'a', 'b' => 'b']));
+    tenancy()->initialize($tenant);
 
-    expect(tenancy()->initialized)->toBeTrue();
-    expect(tenant('id'))->toBe('acme');
+    expect(tenant_path_route('foo', ['a' => 'bar', 'b' => 'boo']))->toBe('http://localhost/acme/foo/bar/boo');
+});
+
+test('tenant path route helper does not override the parameter if passed by developer', function () {
+    $tenant = Tenant::create([
+        'id' => 'acme',
+    ]);
+
+    tenancy()->initialize($tenant);
+
+    expect(tenant_path_route('foo', ['tenant' => $tenant->getTenantKey(), 'a' => 'bar', 'b' => 'boo']))->toBe('http://localhost/acme/foo/bar/boo');
 });

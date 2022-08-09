@@ -70,13 +70,12 @@ if (! function_exists('tenant_route')) {
 }
 
 if (! function_exists('tenant_path_route')) {
-    function tenant_path_route($route, $parameters = [])
+    function tenant_path_route(string $route, array $parameters = [], bool $absolute = true): string
     {
         if (! array_key_exists(PathTenantResolver::$tenantParameterName, $parameters)) {
             $parameters[PathTenantResolver::$tenantParameterName] = optional(tenant())->getTenantKey();
         }
-        dd($parameters);
 
-        return route($route, $parameters);
+        return route($route, $parameters, $absolute);
     }
 }
