@@ -2,7 +2,6 @@ name: CI
 
 env:
   COMPOSE_INTERACTIVE_NO_CLI: 1
-  PHP_CS_FIXER_IGNORE_ENV: 1
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 on:
@@ -39,7 +38,7 @@ jobs:
       - name: Run php-cs-fixer
         run: $HOME/.composer/vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php
       - name: Commit changes from php-cs-fixer
-        uses: EndBug/add-and-commit@v9
+        uses: EndBug/add-and-commit@v5
         with:
           author_name: "PHP CS Fixer"
           author_email: "phpcsfixer@example.com"

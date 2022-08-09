@@ -150,7 +150,7 @@ test('creating the resource in tenant database creates it in central database an
 
     tenancy()->end();
 
-    // Asset user was created
+    // assert user was created
     expect(CentralUser::first()->global_id)->toBe('acme');
 });
 
@@ -552,7 +552,7 @@ function creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase()
 
     tenancy()->end();
 
-    // Asset user was created
+    // Assert user was created
     expect(CentralUser::first()->global_id)->toBe('acme');
     expect(CentralUser::first()->role)->toBe('commenter');
 
