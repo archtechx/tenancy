@@ -15,4 +15,6 @@ interface SyncMaster extends Syncable
     public function tenants(): BelongsToMany;
 
     public function getTenantModelName(): string;
+
+    public function getCreateAttributeNames(): array;
 }

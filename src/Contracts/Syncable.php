@@ -15,6 +15,4 @@ interface Syncable
     public function getSyncedAttributeNames(): array;
 
     public function triggerSyncEvent();
-
-    public function getCreateAttributeNames(): array;
 }
