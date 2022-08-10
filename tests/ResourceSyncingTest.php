@@ -629,14 +629,7 @@ class CentralUser extends Model implements SyncMaster
 
     public function getCreateAttributeNames(): array
     {
-        // attributes should be used when syncing resources from central to tenant DB
-        return [
-            'global_id',
-            'name',
-            'password',
-            'email',
-            'role'
-        ];
+        return [];
     }
 }
 
