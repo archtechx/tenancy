@@ -127,7 +127,7 @@ test('only the synced columns are updated in the central db', function () {
 });
 
 test('creating the resource in tenant database creates it in central database and used custom attributes', function () {
-    // Assert no user in central DB
+    // Assert no user exists in central DB
     expect(ResourceUser::all())->toHaveCount(0);
 
     $tenant = ResourceTenant::create();
