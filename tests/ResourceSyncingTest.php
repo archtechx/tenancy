@@ -669,7 +669,7 @@ class ResourceUser extends Model implements Syncable
 
     public function getCreateAttributeNames(): array
     {
-        // attributes should be used when syncing resources from tenant to central DB
+        // attributes should be used when creating resources from tenant to central DB
         return [
             'global_id',
             'name',
