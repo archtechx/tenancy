@@ -126,7 +126,7 @@ test('only the synced columns are updated in the central db', function () {
     ], ResourceUser::first()->getAttributes());
 });
 
-test('creating the resource in tenant database creates it in central database and used custom attributes', function () {
+test('creating the resource in tenant database creates it in central database with provided attribute', function () {
     // Assert no user exists in central DB
     expect(ResourceUser::all())->toHaveCount(0);
 
@@ -138,7 +138,7 @@ test('creating the resource in tenant database creates it in central database an
 
     tenancy()->initialize($tenant);
 
-    // Create the same user in tenant DB
+    // Create the user in tenant DB
     ResourceUser::create([
         'global_id' => 'acme',
         'name' => 'John Doe',
@@ -150,8 +150,9 @@ test('creating the resource in tenant database creates it in central database an
 
     tenancy()->end();
 
-    // assert user was created
+    // Assert central user was created without `code` property
     expect(CentralUser::first()->global_id)->toBe('acme');
+    expect(CentralUser::first()->code)->toBeNull();
 });
 
 test('creating the resource in tenant database creates it in central database and creates the mapping', function () {
