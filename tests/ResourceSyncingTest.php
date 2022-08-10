@@ -150,9 +150,8 @@ test('creating the resource in tenant database creates it in central database an
 
     tenancy()->end();
 
-    // Assert central user was created without `code` property
+    // assert user was created
     expect(CentralUser::first()->global_id)->toBe('acme');
-    expect(CentralUser::first()->code)->toBeNull();
 });
 
 test('creating the resource in tenant database creates it in central database and creates the mapping', function () {
@@ -630,7 +629,7 @@ class CentralUser extends Model implements SyncMaster
 
     public function getCreateAttributeNames(): array
     {
-        // Attributes used when creating resources from central to tenant DB
+        // attributes should be used when syncing resources from central to tenant DB
         return [
             'global_id',
             'name',
@@ -672,6 +671,18 @@ class ResourceUser extends Model implements Syncable
             'name',
             'password',
             'email',
+        ];
+    }
+
+    public function getCreateAttributeNames(): array
+    {
+        // attributes should be used when syncing resources from tenant to central DB
+        return [
+            'global_id',
+            'name',
+            'password',
+            'email',
+            'role'
         ];
     }
 }
