@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
-use Illuminate\Filesystem\FilesystemAdapter;
+namespace Stancl\Tenancy\Tests;
+
+use ReflectionObject;
+use ReflectionProperty;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Stancl\JobPipeline\JobPipeline;
@@ -12,10 +15,11 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Events\TenancyEnded;
-use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Events\TenantDeleted;
-use Stancl\Tenancy\Jobs\CreateDatabase;
+use Illuminate\Filesystem\FilesystemAdapter;
+use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Jobs\CreateStorageSymlinks;
 use Stancl\Tenancy\Jobs\RemoveStorageSymlinks;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
@@ -187,7 +191,7 @@ test('filesystem data is separated', function () {
     expect($new_storage_path)->toEqual($expected_storage_path);
 });
 
-test('filesystem local storage has own public url', function() {
+test('filesystem local storage has own public url and files can get fetched using the url', function() {
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
@@ -198,18 +202,33 @@ test('filesystem local storage has own public url', function() {
 
     $tenant1 = Tenant::create();
     $tenant2 = Tenant::create();
+    $tenant1StorageUrl = 'http://localhost/public-'.$tenant1->getKey().'/';
+    $tenant2StorageUrl = 'http://localhost/public-'.$tenant2->getKey().'/';
+    $tenant1FileName = 'tenant1.txt';
+    $tenant2FileName = 'tenant2.txt';
 
     tenancy()->initialize($tenant1);
+    Storage::disk('public')->put($tenant1FileName, tenant()->getKey());
+
     $this->assertEquals(
-        'http://localhost/public-'.$tenant1->getTenantKey().'/',
+        $tenant1StorageUrl,
         Storage::disk('public')->url('')
     );
 
     tenancy()->initialize($tenant2);
+    Storage::disk('public')->put($tenant2FileName, tenant()->getKey());
+
     $this->assertEquals(
-        'http://localhost/public-'.$tenant2->getTenantKey().'/',
+        $tenant2StorageUrl,
         Storage::disk('public')->url('')
     );
+
+    $this->assertEquals(
+        $tenant2StorageUrl . $tenant2FileName,
+        Storage::disk('public')->url($tenant2FileName)
+    );
+
+    $this->get(Storage::disk('public')->url($tenant2FileName))->assertSee($tenant2->getTenantKey());
 });
 
 test('create and delete storage symlinks jobs works', function() {
