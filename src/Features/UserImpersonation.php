@@ -52,6 +52,10 @@ class UserImpersonation implements Feature
         Auth::guard($token->auth_guard)->loginUsingId($token->user_id);
 
         $token->delete();
+        
+        session()->put(
+            'tenancy_impersonated_by', Auth::user()?->getAuthIdentifier()
+        );
 
         return redirect($token->redirect_url);
     }
