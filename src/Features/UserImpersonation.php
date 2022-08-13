@@ -54,7 +54,7 @@ class UserImpersonation implements Feature
         $token->delete();
         
         session()->put(
-            'tenancy_impersonated_by', Auth::user()?->getAuthIdentifier()
+            'tenancy_impersonated_by', optional(Auth::user())->getAuthIdentifier()
         );
 
         return redirect($token->redirect_url);
