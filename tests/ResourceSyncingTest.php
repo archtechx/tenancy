@@ -147,12 +147,12 @@ test('creating the resource in tenant database creates it in central database as
 
     tenancy()->end();
 
-    // Assert central user was created without `code` property
+    // Assert central user and Resource user has exact same attributes and values
     expect(CentralUser::first()->toArray())->toEqual(ResourceUser::first()->toArray());
 });
 
 test('creating the resource in tenant database creates it in central database with default attributes values', function () {
-    // override method in ResourceUser class to return attribute values
+    // override method in ResourceUser class to return attribute default values
     class ResourceUserWithDefaultValues extends ResourceUser {
         public function getResourceCreationAttributes(): array
         {
@@ -200,8 +200,8 @@ test('creating the resource in tenant database creates it in central database wi
         public function getResourceCreationAttributes(): array
         {
             // Attributes used when creating resources from tenant to central DB
-            // Notice here we are not adding "code" filed because it does
-            // not exist in central model
+            // Notice here we are not adding "code" filed because it doesn't
+            // exist in central model
             return
                 [
                     'global_id',
@@ -262,14 +262,15 @@ test('creating the resource in central database creates it in tenant database as
 
     $centralUser->tenants()->attach('t1');
 
-    $tenant->run(function () {
+    $centralUser = CentralUser::first();
+    $tenant->run(function () use ($centralUser) {
         expect(ResourceUser::all())->toHaveCount(1);
-        expect(ResourceUser::first()->global_id)->toBe('acme');
+        expect(ResourceUser::first()->toArray())->toEqual($centralUser->toArray());
     });
 });
 
 test('creating the resource in central database creates it in tenant database with default attributes values', function () {
-    // override method in ResourceUser class to return attribute values
+    // override method in CentralUser class to return attribute default values
     class CentralUserWithDefaultValues extends CentralUser {
         public function getResourceCreationAttributes(): array
         {
@@ -315,7 +316,7 @@ test('creating the resource in central database creates it in tenant database wi
 });
 
 test('creating the resource in central database creates it in tenant database with attributes names', function () {
-    // override method in ResourceUser class to return attribute values
+    // override method in CentralUser class to return attribute names
     class CentralUserWithAttributeNames extends CentralUser {
         public function getResourceCreationAttributes(): array
         {
@@ -331,7 +332,7 @@ test('creating the resource in central database creates it in tenant database wi
         }
     }
 
-    // migrate extra column in central DB
+    // migrate extra column "foo" in central DB
     pest()->artisan('migrate', [
         '--path' => __DIR__ . '/Etc/synced_resource_migrations/users_extra',
         '--realpath' => true,
@@ -343,7 +344,7 @@ test('creating the resource in central database creates it in tenant database wi
         'email' => 'john@localhost',
         'password' => 'secret',
         'role' => 'commenter',
-        'foo' => 'bar', // foo does not exist in resource
+        'foo' => 'bar', // foo does not exist in resource model
     ]);
 
     $tenant = ResourceTenant::create([
