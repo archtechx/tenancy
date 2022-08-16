@@ -127,7 +127,7 @@ test('only the synced columns are updated in the central db', function () {
     ], ResourceUser::first()->getAttributes());
 });
 
-test('creating the resource in tenant database creates it in central database ad 1:1 copy when create attributes are null', function () {
+test('creating the resource in tenant database creates it in central database as 1:1 copy when creation attributes are not specified', function () {
     // Assert no user exists in central DB
     expect(ResourceUser::all())->toHaveCount(0);
 
@@ -151,7 +151,7 @@ test('creating the resource in tenant database creates it in central database ad
     expect(CentralUser::first()->toArray())->toEqual(ResourceUser::first()->toArray());
 });
 
-test('creating the resource in tenant database creates it in central database with provided default attributes values', function () {
+test('creating the resource in tenant database creates it in central database with default attributes values', function () {
     // override method in ResourceUser class to return attribute values
     class ResourceUserWithDefaultValues extends ResourceUser {
         public function getResourceCreationAttributes(): array
@@ -194,7 +194,7 @@ test('creating the resource in tenant database creates it in central database wi
     expect(CentralUser::first()->role)->toBe('admin');
 });
 
-test('creating the resource in tenant database creates it in central database with provided attributes names', function () {
+test('creating the resource in tenant database creates it in central database with attributes names', function () {
     // override method in ResourceUser class to return attribute names
     class ResourceUserWithAttributeNames extends ResourceUser {
         public function getResourceCreationAttributes(): array
@@ -242,7 +242,7 @@ test('creating the resource in tenant database creates it in central database wi
     expect(CentralUser::first()->code)->toBeNull();
 });
 
-test('creating the resource in central database creates it in tenant database with 1:1 copy when create attributes are null', function () {
+test('creating the resource in central database creates it in tenant database as 1:1 copy when creation attributes are not specified', function () {
     $centralUser = CentralUser::create([
         'global_id' => 'acme',
         'name' => 'John Doe',
@@ -268,7 +268,7 @@ test('creating the resource in central database creates it in tenant database wi
     });
 });
 
-test('creating the resource in central database creates it in tenant database with provided default attributes values', function () {
+test('creating the resource in central database creates it in tenant database with default attributes values', function () {
     // override method in ResourceUser class to return attribute values
     class CentralUserWithDefaultValues extends CentralUser {
         public function getResourceCreationAttributes(): array
@@ -314,7 +314,7 @@ test('creating the resource in central database creates it in tenant database wi
     });
 });
 
-test('creating the resource in central database creates it in tenant database with provided attributes names', function () {
+test('creating the resource in central database creates it in tenant database with attributes names', function () {
     // override method in ResourceUser class to return attribute values
     class CentralUserWithAttributeNames extends CentralUser {
         public function getResourceCreationAttributes(): array

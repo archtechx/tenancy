@@ -121,12 +121,12 @@ class UpdateSyncedResource extends QueueableListener
         });
     }
 
-    function getResourceCreationAttributes(Syncable $model): array
+    protected function getResourceCreationAttributes(Syncable $model): array
     {
         $attributes = $model->getAttributes();
 
         if ($model->getResourceCreationAttributes()) {
-            // If array is key-value, We assume default values are provided
+            // If function returned array is key-value, We assume default values are provided
             // if array is plain values, fetch attributes from model
             $attributes = Arr::isAssoc($model->getResourceCreationAttributes()) ? $model->getResourceCreationAttributes() : $model->only($model->getResourceCreationAttributes());
         }
