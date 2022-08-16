@@ -6,6 +6,8 @@ namespace Stancl\Tenancy\Listeners;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Support\Arr;
+use Stancl\Tenancy\Contracts\Syncable;
 use Stancl\Tenancy\Contracts\SyncMaster;
 use Stancl\Tenancy\Events\SyncedResourceChangedInForeignDatabase;
 use Stancl\Tenancy\Events\SyncedResourceSaved;
@@ -58,7 +60,7 @@ class UpdateSyncedResource extends QueueableListener
                 event(new SyncedResourceChangedInForeignDatabase($event->model, null));
             } else {
                 // If the resource doesn't exist at all in the central DB,we create
-                $centralModel = $event->model->getCentralModelName()::create($event->model->only($event->model->getCreateAttributeNames()));
+                $centralModel = $event->model->getCentralModelName()::create($this->getResourceCreationAttributes($event->model));
                 event(new SyncedResourceChangedInForeignDatabase($event->model, null));
             }
         });
@@ -111,11 +113,24 @@ class UpdateSyncedResource extends QueueableListener
                     $localModel->update($syncedAttributes);
                 } else {
                     // When creating, we use all columns, not just the synced ones.
-                    $localModel = $localModelClass::create($eventModel->getAttributes());
+                    $localModel = $localModelClass::create($this->getResourceCreationAttributes($eventModel));
                 }
 
                 event(new SyncedResourceChangedInForeignDatabase($localModel, $tenant));
             });
         });
+    }
+
+    function getResourceCreationAttributes(Syncable $model): array
+    {
+        $attributes = $model->getAttributes();
+
+        if ($model->getResourceCreationAttributes()) {
+            // If array is key-value, We assume default values are provided
+            // if array is plain values, fetch attributes from model
+            $attributes = Arr::isAssoc($model->getResourceCreationAttributes()) ? $model->getResourceCreationAttributes() : $model->only($model->getResourceCreationAttributes());
+        }
+
+        return $attributes;
     }
 }

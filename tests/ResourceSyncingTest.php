@@ -47,6 +47,7 @@ beforeEach(function () {
     UpdateSyncedResource::$shouldQueue = false; // global state cleanup
     Event::listen(SyncedResourceSaved::class, UpdateSyncedResource::class);
 
+    // run migrations on central connection
     pest()->artisan('migrate', [
         '--path' => [
             __DIR__ . '/Etc/synced_resource_migrations',
@@ -126,9 +127,95 @@ test('only the synced columns are updated in the central db', function () {
     ], ResourceUser::first()->getAttributes());
 });
 
-test('creating the resource in tenant database creates it in central database with provided attribute', function () {
+test('creating the resource in tenant database creates it in central database ad 1:1 copy when create attributes are null', function () {
     // Assert no user exists in central DB
     expect(ResourceUser::all())->toHaveCount(0);
+
+    $tenant = ResourceTenant::create();
+    migrateTenantsResource();
+
+    tenancy()->initialize($tenant);
+
+    // Create the user in tenant DB
+    ResourceUser::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter', // unsynced
+    ]);
+
+    tenancy()->end();
+
+    // Assert central user was created without `code` property
+    expect(CentralUser::first()->toArray())->toEqual(ResourceUser::first()->toArray());
+});
+
+test('creating the resource in tenant database creates it in central database with provided default attributes values', function () {
+    // override method in ResourceUser class to return attribute values
+    class ResourceUserWithDefaultValues extends ResourceUser {
+        public function getResourceCreationAttributes(): array
+        {
+            // Attributes default values when creating resources from tenant to central DB
+            return
+                [
+                    'global_id' => 'abc-123',
+                    'name' => 'John',
+                    'password' => 'password',
+                    'email' => 'john@demo',
+                    'role' => 'admin',
+                ];
+        }
+    }
+
+    // Assert no user exists in central DB
+    expect(ResourceUserWithDefaultValues::all())->toHaveCount(0);
+
+    $tenant = ResourceTenant::create();
+    migrateTenantsResource();
+
+    tenancy()->initialize($tenant);
+
+    // Create the user in tenant DB
+    ResourceUserWithDefaultValues::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter', // unsynced
+    ]);
+
+    tenancy()->end();
+
+    expect(CentralUser::first()->global_id)->toBe('abc-123');
+    expect(CentralUser::first()->name)->toBe('John');
+    expect(CentralUser::first()->password)->toBe('password');
+    expect(CentralUser::first()->email)->toBe('john@demo');
+    expect(CentralUser::first()->role)->toBe('admin');
+});
+
+test('creating the resource in tenant database creates it in central database with provided attributes names', function () {
+    // override method in ResourceUser class to return attribute names
+    class ResourceUserWithAttributeNames extends ResourceUser {
+        public function getResourceCreationAttributes(): array
+        {
+            // Attributes used when creating resources from tenant to central DB
+            // Notice here we are not adding "code" filed because it does
+            // not exist in central model
+            return
+                [
+                    'global_id',
+                    'name',
+                    'password',
+                    'email',
+                    'role'
+                ];
+        }
+
+    }
+
+    // Assert no user exists in central DB
+    expect(ResourceUserWithAttributeNames::all())->toHaveCount(0);
 
     $tenant = ResourceTenant::create();
     pest()->artisan('tenants:migrate', [
@@ -139,7 +226,7 @@ test('creating the resource in tenant database creates it in central database wi
     tenancy()->initialize($tenant);
 
     // Create the user in tenant DB
-    ResourceUser::create([
+    ResourceUserWithAttributeNames::create([
         'global_id' => 'acme',
         'name' => 'John Doe',
         'email' => 'john@localhost',
@@ -153,6 +240,128 @@ test('creating the resource in tenant database creates it in central database wi
     // Assert central user was created without `code` property
     expect(CentralUser::first()->global_id)->toBe('acme');
     expect(CentralUser::first()->code)->toBeNull();
+});
+
+test('creating the resource in central database creates it in tenant database with 1:1 copy when create attributes are null', function () {
+    $centralUser = CentralUser::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter', // unsynced
+    ]);
+
+    $tenant = ResourceTenant::create([
+        'id' => 't1',
+    ]);
+    migrateTenantsResource();
+
+    $tenant->run(function () {
+        expect(ResourceUser::all())->toHaveCount(0);
+    });
+
+    $centralUser->tenants()->attach('t1');
+
+    $tenant->run(function () {
+        expect(ResourceUser::all())->toHaveCount(1);
+        expect(ResourceUser::first()->global_id)->toBe('acme');
+    });
+});
+
+test('creating the resource in central database creates it in tenant database with provided default attributes values', function () {
+    // override method in ResourceUser class to return attribute values
+    class CentralUserWithDefaultValues extends CentralUser {
+        public function getResourceCreationAttributes(): array
+        {
+            // Attributes default values when creating resources from central to tenant model
+            return
+                [
+                    'global_id' => 'abc-123',
+                    'name' => 'John',
+                    'password' => 'password',
+                    'email' => 'john@demo',
+                    'role' => 'admin',
+                ];
+        }
+    }
+
+    $centralUser = CentralUserWithDefaultValues::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter', // unsynced
+    ]);
+
+    $tenant = ResourceTenant::create([
+        'id' => 't1',
+    ]);
+    migrateTenantsResource();
+
+    $tenant->run(function () {
+        expect(ResourceUser::all())->toHaveCount(0);
+    });
+
+    $centralUser->tenants()->attach('t1');
+
+    $tenant->run(function () {
+        expect(ResourceUser::all())->toHaveCount(1);
+        expect(ResourceUser::first()->global_id)->toBe('abc-123');
+        expect(ResourceUser::first()->name)->toBe('John');
+        expect(ResourceUser::first()->password)->toBe('password');
+        expect(ResourceUser::first()->email)->toBe('john@demo');
+        expect(ResourceUser::first()->role)->toBe('admin');
+    });
+});
+
+test('creating the resource in central database creates it in tenant database with provided attributes names', function () {
+    // override method in ResourceUser class to return attribute values
+    class CentralUserWithAttributeNames extends CentralUser {
+        public function getResourceCreationAttributes(): array
+        {
+            // Attributes used when creating resources from central to tenant DB
+            return
+                [
+                    'global_id',
+                    'name',
+                    'password',
+                    'email',
+                    'role',
+                ];
+        }
+    }
+
+    // migrate extra column in central DB
+    pest()->artisan('migrate', [
+        '--path' => __DIR__ . '/Etc/synced_resource_migrations/users_extra',
+        '--realpath' => true,
+    ])->assertExitCode(0);
+
+    $centralUser = CentralUserWithAttributeNames::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter',
+        'foo' => 'bar', // foo does not exist in resource
+    ]);
+
+    $tenant = ResourceTenant::create([
+        'id' => 't1',
+    ]);
+    migrateTenantsResource();
+
+    $tenant->run(function () {
+        expect(ResourceUser::all())->toHaveCount(0);
+    });
+
+    $centralUser->tenants()->attach('t1');
+
+    $tenant->run(function () {
+        expect(ResourceUser::all())->toHaveCount(1);
+        expect(ResourceUser::first()->global_id)->toBe('acme');
+        expect(ResourceUser::first()->foo)->toBeNull(); // assert foo is not copied from the central to tenant model
+    });
 });
 
 test('creating the resource in tenant database creates it in central database and creates the mapping', function () {
@@ -627,11 +836,6 @@ class CentralUser extends Model implements SyncMaster
             'email',
         ];
     }
-
-    public function getCreateAttributeNames(): array
-    {
-        return [];
-    }
 }
 
 class ResourceUser extends Model implements Syncable
@@ -665,18 +869,6 @@ class ResourceUser extends Model implements Syncable
             'name',
             'password',
             'email',
-        ];
-    }
-
-    public function getCreateAttributeNames(): array
-    {
-        // Attributes used when creating resources from tenant to central DB
-        return [
-            'global_id',
-            'name',
-            'password',
-            'email',
-            'role'
         ];
     }
 }
