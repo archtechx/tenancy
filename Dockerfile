@@ -26,11 +26,12 @@ RUN apt-get update \
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libhiredis0.14 libjemalloc2 liblua5.1-0 lua-bitop lua-cjson redis redis-server redis-tools
 
-RUN pecl install redis-5.3.7 sqlsrv pdo_sqlsrv \
+RUN pecl install redis-5.3.7 sqlsrv pdo_sqlsrv pcov \
     && printf "; priority=20\nextension=redis.so\n" > /etc/php/$PHP_VERSION/mods-available/redis.ini \
     && printf "; priority=20\nextension=sqlsrv.so\n" > /etc/php/$PHP_VERSION/mods-available/sqlsrv.ini \
     && printf "; priority=30\nextension=pdo_sqlsrv.so\n" > /etc/php/$PHP_VERSION/mods-available/pdo_sqlsrv.ini \
-    && phpenmod -v $PHP_VERSION redis sqlsrv pdo_sqlsrv
+    && printf "; priority=40\nextension=pcov.so\n" > /etc/php/$PHP_VERSION/mods-available/pcov.ini \
+    && phpenmod -v $PHP_VERSION redis sqlsrv pdo_sqlsrv pcov
 
 # install composer
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
