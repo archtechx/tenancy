@@ -23,6 +23,30 @@ class TenantConfigTest extends TestCase
     }
 
     /** @test */
+    public function nested_tenant_values_are_merged()
+    {
+        $this->assertSame(null, config('whitelabel.theme'));
+        config([
+            'tenancy.features' => [TenantConfig::class],
+            'tenancy.bootstrappers' => [],
+        ]);
+        Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+        Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+
+        TenantConfig::$storageToConfigMap =  [
+            'whitelabel.config.theme' => 'whitelabel.theme',
+        ];
+
+        $tenant = Tenant::create([
+            'whitelabel' => ['config' => ['theme' => 'dark']],
+        ]);
+
+        tenancy()->initialize($tenant);
+        $this->assertSame('dark', config('whitelabel.theme'));
+        tenancy()->end();
+    }
+
+    /** @test */
     public function config_is_merged_and_removed()
     {
         $this->assertSame(null, config('services.paypal'));
