@@ -32,6 +32,9 @@ RUN pecl install redis-5.3.7 sqlsrv pdo_sqlsrv \
     && printf "; priority=30\nextension=pdo_sqlsrv.so\n" > /etc/php/$PHP_VERSION/mods-available/pdo_sqlsrv.ini \
     && phpenmod -v $PHP_VERSION redis sqlsrv pdo_sqlsrv
 
+# install composer
+COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
+
 # set the system timezone
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
     && echo $TZ > /etc/timezone
