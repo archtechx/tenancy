@@ -1,11 +1,12 @@
 name: CI
 
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 on:
   push:
   pull_request:
-    branches: [ 3.x, 2.x, master ]
-env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    branches: [ master ]
 
 jobs:
   tests:
