@@ -33,7 +33,6 @@ class UserImpersonation implements Feature
      *
      * @param string|ImpersonationToken $token
      * @param int $ttl
-     * @return RedirectResponse
      */
     public static function makeResponse($token, int $ttl = null): RedirectResponse
     {

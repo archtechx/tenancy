@@ -56,6 +56,8 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         Storage::forgetDisk($this->app['config']['tenancy.filesystem.disks']);
 
         foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
+            // todo@v4 \League\Flysystem\PathPrefixer is making this a lot more painful in flysystem v2
+
             $originalRoot = $this->app['config']["filesystems.disks.{$disk}.root"];
             $this->originalPaths['disks'][$disk] = $originalRoot;
 
@@ -67,7 +69,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
             if (! $finalPrefix) {
                 $finalPrefix = $originalRoot
-                    ? rtrim($originalRoot, '/') . '/'. $suffix
+                    ? rtrim($originalRoot, '/') . '/' . $suffix
                     : $suffix;
             }
 

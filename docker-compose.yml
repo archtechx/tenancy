@@ -22,6 +22,9 @@ services:
             TENANCY_TEST_REDIS_HOST: redis
             TENANCY_TEST_MYSQL_HOST: mysql
             TENANCY_TEST_PGSQL_HOST: postgres
+            TENANCY_TEST_SQLSRV_HOST: mssql
+            TENANCY_TEST_SQLSRV_USERNAME: sa
+            TENANCY_TEST_SQLSRV_PASSWORD: P@ssword
         stdin_open: true
         tty: true
     mysql:
@@ -64,3 +67,11 @@ services:
             interval: 1s
             timeout: 3s
             retries: 30
+    mssql:
+        image: mcr.microsoft.com/mssql/server:2019-latest
+        ports:
+            - 1433:1433
+        environment:
+          - ACCEPT_EULA=Y
+          - SA_PASSWORD=P@ssword # todo reuse values from env above
+        # todo missing health check

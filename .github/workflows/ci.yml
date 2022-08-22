@@ -2,12 +2,13 @@ name: CI
 
 env:
   COMPOSE_INTERACTIVE_NO_CLI: 1
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 on:
   push:
-    branches: [ 3.x, 2.x ]
+    branches: [ master ]
   pull_request:
-    branches: [ 3.x, 2.x ]
+    branches: [ master ]
 
 jobs:
   tests:
@@ -15,11 +16,8 @@ jobs:
 
     strategy:
       matrix:
-        php: ["7.3", "8.0"]
-        laravel: ["^6.0", "^8.0", "^9.0"]
-        exclude:
-          - laravel: "^9.0"
-            php: "7.3"
+        php: ["8.1"]
+        laravel: ["^9.0"]
 
     steps:
     - uses: actions/checkout@v2
@@ -29,3 +27,19 @@ jobs:
       run: docker-compose exec -T test composer require --no-interaction "laravel/framework:${{ matrix.laravel }}"
     - name: Run tests
       run: ./test
+
+  php-cs-fixer:
+    name: Code style (php-cs-fixer)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install php-cs-fixer
+        run: composer global require friendsofphp/php-cs-fixer
+      - name: Run php-cs-fixer
+        run: $HOME/.composer/vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php
+      - name: Commit changes from php-cs-fixer
+        uses: EndBug/add-and-commit@v5
+        with:
+          author_name: "PHP CS Fixer"
+          author_email: "phpcsfixer@example.com"
+          message: Fix code style (php-cs-fixer)
