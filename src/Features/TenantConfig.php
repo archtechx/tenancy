@@ -6,6 +6,7 @@ namespace Stancl\Tenancy\Features;
 
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Contracts\Feature;
 use Stancl\Tenancy\Contracts\Tenant;
@@ -45,7 +46,7 @@ class TenantConfig implements Feature
     {
         /** @var Tenant|Model $tenant */
         foreach (static::$storageToConfigMap as $storageKey => $configKey) {
-            $override = $tenant->getAttribute($storageKey);
+            $override = Arr::get($tenant, $storageKey);
 
             if (! is_null($override)) {
                 if (is_array($configKey)) {

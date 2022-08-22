@@ -94,6 +94,18 @@ test('asset helper tenancy can be disabled', function () {
     expect(asset('foo'))->toBe($original);
 });
 
+test('test asset controller returns a 404 when no path is provided', function () {
+    TenantAssetsController::$tenancyMiddleware = InitializeTenancyByRequestData::class;
+
+    $tenant = Tenant::create();
+
+    tenancy()->initialize($tenant);
+
+    pest()->get(tenant_asset(null), [
+        'X-Tenant' => $tenant->id,
+    ])->assertNotFound();
+});
+
 function getEnvironmentSetUp($app)
 {
     $app->booted(function () {
