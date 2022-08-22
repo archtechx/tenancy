@@ -76,11 +76,6 @@ test('migrate command works with tenants option', function () {
 });
 
 test('migrate command loads schema state', function () {
-    if (! isVersion8()) {
-        $this->markTestSkipped('DumpCommand only exists since Laravel 8.0 or above');
-    }
-
-
     $tenant = Tenant::create();
 
     expect(Schema::hasTable('schema_users'))->toBeFalse();
@@ -99,10 +94,6 @@ test('migrate command loads schema state', function () {
 });
 
 test('dump command works', function () {
-    if (! isVersion8()) {
-        $this->markTestSkipped('DumpCommand only exists since Laravel 8.0 or above');
-    }
-
     $tenant = Tenant::create();
     Artisan::call('tenants:migrate');
 
@@ -218,9 +209,4 @@ function databaseConnectionSwitchedToDefault()
     runCommandWorks();
 
     expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
-}
-
-function isVersion8(): bool
-{
-    return version_compare(app()->version(), '8.0', '>=');
 }
