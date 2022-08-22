@@ -82,7 +82,7 @@ jobs:
           composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
           composer update --prefer-dist --no-interaction
       - name: Run tests
-        run: ./vendor/bin/pest
+        run: composer test
         env:
           DB_PASSWORD: password
           DB_USERNAME: root
