@@ -14,8 +14,7 @@ afterEach(function () {
     TenantConfig::$storageToConfigMap = [];
 });
 
-/** @test */
-test('nested_tenant_values_are_merged', function () {
+test('nested tenant values are merged', function () {
     expect(config('whitelabel.theme'))->toBeNull();
     config([
         'tenancy.features' => [TenantConfig::class],
