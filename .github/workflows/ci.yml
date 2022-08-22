@@ -17,6 +17,40 @@ jobs:
       matrix:
         laravel: ['^8.0', '^9.0']
 
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-${{ matrix.laravel }}-${{ hashFiles('**/composer.lock') }}
+
+      - name: Install Composer dependencies
+        run: |
+          composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
+          composer update --prefer-dist --no-interaction
+      - name: Run tests
+        run: composer test
+        env:
+          DB_PASSWORD: password
+          DB_USERNAME: root
+          DB_DATABASE: main
+          TENANCY_TEST_MYSQL_HOST: mysql
+          TENANCY_TEST_PGSQL_HOST: postgres
+          TENANCY_TEST_REDIS_HOST: redis
+          TENANCY_TEST_SQLSRV_HOST: mssql
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          token: 24382d15-84e7-4a55-bea4-c4df96a24a9b
+
     services:
       postgres:
         image: postgres:latest
@@ -62,40 +96,6 @@ jobs:
         ports:
           - 6379/tcp
         options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Get composer cache directory
-        id: composer-cache
-        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
-
-      - name: Cache composer dependencies
-        uses: actions/cache@v2
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-${{ matrix.laravel }}-${{ hashFiles('**/composer.lock') }}
-
-      - name: Install Composer dependencies
-        run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
-          composer update --prefer-dist --no-interaction
-      - name: Run tests
-        run: composer test
-        env:
-          DB_PASSWORD: password
-          DB_USERNAME: root
-          DB_DATABASE: main
-          TENANCY_TEST_MYSQL_HOST: mysql
-          TENANCY_TEST_PGSQL_HOST: postgres
-          TENANCY_TEST_REDIS_HOST: redis
-          TENANCY_TEST_SQLSRV_HOST: mssql
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v2
-        with:
-          token: 24382d15-84e7-4a55-bea4-c4df96a24a9b
 
   php-cs-fixer:
     name: Code style (php-cs-fixer)
