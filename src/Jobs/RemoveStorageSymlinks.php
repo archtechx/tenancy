@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Jobs;
 
 use Illuminate\Bus\Queueable;
-use Stancl\Tenancy\Contracts\Tenant;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\RemoveStorageSymlinksAction;
 
 class RemoveStorageSymlinks implements ShouldQueue

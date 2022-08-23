@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Concerns;
 
 use Illuminate\Support\Collection;
@@ -30,7 +32,7 @@ trait DealsWithTenantSymlinks
             $symlinks[] = [$publicPath => $storagePath];
         }
 
-        return collect($symlinks)->mapWithKeys(fn($item) => $item);
+        return collect($symlinks)->mapWithKeys(fn ($item) => $item);
     }
 
     /**

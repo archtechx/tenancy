@@ -63,7 +63,7 @@ class Link extends Command
     {
         RemoveStorageSymlinksAction::handle(
             $tenants,
-            afterLinkRemoval: fn($publicPath) => $this->info("The [$publicPath] link has been removed.")
+            afterLinkRemoval: fn ($publicPath) => $this->info("The [$publicPath] link has been removed.")
         );
 
         $this->info('The links have been removed.');
@@ -79,7 +79,7 @@ class Link extends Command
             $tenants,
             $this->option('relative') ?? false,
             $this->option('force') ?? false,
-            afterLinkCreation: fn($publicPath, $storagePath) => $this->info("The [$publicPath] link has been connected to [$storagePath].")
+            afterLinkCreation: fn ($publicPath, $storagePath) => $this->info("The [$publicPath] link has been connected to [$storagePath].")
         );
 
         $this->info('The links have been created.');

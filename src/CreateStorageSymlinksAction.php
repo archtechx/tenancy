@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy;
 
 use Closure;
 use Exception;
-use Stancl\Tenancy\Database\Models\Tenant;
-use Stancl\Tenancy\Events\StorageSymlinkCreated;
-use Stancl\Tenancy\Events\CreatingStorageSymlink;
 use Stancl\Tenancy\Concerns\DealsWithTenantSymlinks;
+use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Events\CreatingStorageSymlink;
+use Stancl\Tenancy\Events\StorageSymlinkCreated;
 
 class CreateStorageSymlinksAction
 {
@@ -19,7 +21,7 @@ class CreateStorageSymlinksAction
 
         /** @var Tenant $tenant */
         foreach ($tenants as $tenant) {
-            foreach(static::possibleTenantSymlinks($tenant) as $publicPath => $storagePath) {
+            foreach (static::possibleTenantSymlinks($tenant) as $publicPath => $storagePath) {
                 static::createLink($publicPath, $storagePath, $tenant, $relativeLink, $force, $afterLinkCreation);
             }
         }
