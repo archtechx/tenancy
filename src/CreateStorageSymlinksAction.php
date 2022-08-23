@@ -32,7 +32,7 @@ class CreateStorageSymlinksAction
         event(new CreatingStorageSymlink($tenant));
 
         if (static::symlinkExists($publicPath)) {
-            // If the 'force' option isn't passed, don't overwrite the existing symlink
+            // If $force isn't passed, don't overwrite the existing symlink
             throw_if(! $force, new Exception("The [$publicPath] link already exists."));
 
             app()->make('files')->delete($publicPath);
