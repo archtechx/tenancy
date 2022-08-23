@@ -51,6 +51,8 @@ class CreateStorageSymlinksAction
 
         event((new StorageSymlinkCreated($tenant)));
 
-        $afterLinkCreation($publicPath, $storagePath);
+        if ($afterLinkCreation) {
+            $afterLinkCreation($publicPath, $storagePath);
+        }
     }
 }
