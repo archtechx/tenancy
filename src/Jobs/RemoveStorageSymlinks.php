@@ -5,14 +5,12 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Jobs;
 
 use Illuminate\Bus\Queueable;
+use Stancl\Tenancy\Contracts\Tenant;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Artisan;
-use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\Events\RemovingStorageSymlink;
-use Stancl\Tenancy\Events\StorageSymlinkRemoved;
+use Stancl\Tenancy\RemoveStorageSymlinksAction;
 
 class RemoveStorageSymlinks implements ShouldQueue
 {
@@ -37,13 +35,6 @@ class RemoveStorageSymlinks implements ShouldQueue
      */
     public function handle()
     {
-        event(new RemovingStorageSymlink($this->tenant));
-
-        Artisan::call('tenants:link', [
-            '--remove' => true,
-            '--tenants' => [$this->tenant->getTenantKey()],
-        ]);
-
-        event(new StorageSymlinkRemoved($this->tenant));
+        RemoveStorageSymlinksAction::handle($this->tenant);
     }
 }

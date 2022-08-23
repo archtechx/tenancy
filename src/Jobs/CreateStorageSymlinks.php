@@ -9,10 +9,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Artisan;
 use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\Events\CreatingStorageSymlink;
-use Stancl\Tenancy\Events\StorageSymlinkCreated;
+use Stancl\Tenancy\CreateStorageSymlinksAction;
 
 class CreateStorageSymlinks implements ShouldQueue
 {
@@ -37,12 +35,6 @@ class CreateStorageSymlinks implements ShouldQueue
      */
     public function handle()
     {
-        event(new CreatingStorageSymlink($this->tenant));
-
-        Artisan::call('tenants:link', [
-            '--tenants' => [$this->tenant->getTenantKey()],
-        ]);
-
-        event(new StorageSymlinkCreated($this->tenant));
+        CreateStorageSymlinksAction::handle($this->tenant);
     }
 }
