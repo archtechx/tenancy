@@ -191,7 +191,7 @@ test('filesystem data is separated', function () {
     expect($new_storage_path)->toEqual($expected_storage_path);
 });
 
-test('filesystem local storage has own public url and files can get fetched using the url', function() {
+test('local storage public urls are generated correctly', function() {
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
@@ -202,34 +202,57 @@ test('filesystem local storage has own public url and files can get fetched usin
 
     $tenant1 = Tenant::create();
     $tenant2 = Tenant::create();
-    $tenant1StorageUrl = 'http://localhost/public-'.$tenant1->getKey().'/';
-    $tenant2StorageUrl = 'http://localhost/public-'.$tenant2->getKey().'/';
-    $tenant1FileName = 'tenant1.txt';
-    $tenant2FileName = 'tenant2.txt';
+    $tenant1StorageUrl = 'http://localhost/public-' . $tenant1->getKey().'/';
+    $tenant2StorageUrl = 'http://localhost/public-' . $tenant2->getKey().'/';
 
     tenancy()->initialize($tenant1);
-    Storage::disk('public')->put($tenant1FileName, tenant()->getKey());
 
     $this->assertEquals(
         $tenant1StorageUrl,
         Storage::disk('public')->url('')
     );
 
+    Storage::disk('public')->put($tenant1FileName = 'tenant1.txt', 'text');
+
+    $this->assertEquals(
+        $tenant1StorageUrl . $tenant1FileName,
+        Storage::disk('public')->url($tenant1FileName)
+    );
+
     tenancy()->initialize($tenant2);
-    Storage::disk('public')->put($tenant2FileName, tenant()->getKey());
 
     $this->assertEquals(
         $tenant2StorageUrl,
         Storage::disk('public')->url('')
     );
 
+    Storage::disk('public')->put($tenant2FileName = 'tenant2.txt', 'text');
+
     $this->assertEquals(
         $tenant2StorageUrl . $tenant2FileName,
         Storage::disk('public')->url($tenant2FileName)
     );
-
-    $this->get(Storage::disk('public')->url($tenant2FileName))->assertSee($tenant2->getTenantKey());
 });
+
+test('files can get fetched using the storage url', function() {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
+        'tenancy.filesystem.url_override.public' => 'public-%tenant_id%'
+    ]);
+
+    tenancy()->initialize($tenant1 = Tenant::create());
+    Storage::disk('public')->put($tenant1FileName = 'tenant1.txt', $tenantKey = $tenant1->getTenantKey());
+
+    $this->get(Storage::disk('public')->url($tenant1FileName))->assertSee($tenantKey);
+
+    tenancy()->initialize($tenant2 = Tenant::create());
+    Storage::disk('public')->put($tenant2FileName = 'tenant2.txt', $tenantKey = $tenant2->getTenantKey());
+
+    $this->get(Storage::disk('public')->url($tenant2FileName))->assertSee($tenantKey);
+})->group('links');
 
 test('create and delete storage symlinks jobs works', function() {
     Event::listen(
