@@ -9,8 +9,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Actions\RemoveStorageSymlinksAction;
+use Stancl\Tenancy\Contracts\Tenant;
 
 class RemoveStorageSymlinks implements ShouldQueue
 {

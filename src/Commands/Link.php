@@ -7,9 +7,9 @@ namespace Stancl\Tenancy\Commands;
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\LazyCollection;
-use Stancl\Tenancy\Concerns\HasATenantsOption;
 use Stancl\Tenancy\Actions\CreateStorageSymlinksAction;
 use Stancl\Tenancy\Actions\RemoveStorageSymlinksAction;
+use Stancl\Tenancy\Concerns\HasATenantsOption;
 
 class Link extends Command
 {
