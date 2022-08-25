@@ -1,32 +1,91 @@
 name: CI
 
 env:
-  COMPOSE_INTERACTIVE_NO_CLI: 1
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 on:
   push:
-    branches: [ master ]
   pull_request:
     branches: [ master ]
 
 jobs:
   tests:
     runs-on: ubuntu-latest
+    container: abrardev/tenancy:latest
 
     strategy:
       matrix:
-        php: ["8.1"]
-        laravel: ["^9.0"]
+        laravel: ['^8.0', '^9.0']
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Start docker containers
-      run: PHP_VERSION=${{ matrix.php }} docker-compose up -d
-    - name: Install dependencies
-      run: docker-compose exec -T test composer require --no-interaction "laravel/framework:${{ matrix.laravel }}"
-    - name: Run tests
-      run: ./test
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install Composer dependencies
+        run: |
+          composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
+          composer update --prefer-dist --no-interaction
+      - name: Run tests
+        run: ./vendor/bin/pest
+        env:
+          DB_PASSWORD: password
+          DB_USERNAME: root
+          DB_DATABASE: main
+          TENANCY_TEST_MYSQL_HOST: mysql
+          TENANCY_TEST_PGSQL_HOST: postgres
+          TENANCY_TEST_REDIS_HOST: redis
+          TENANCY_TEST_SQLSRV_HOST: mssql
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          token: 24382d15-84e7-4a55-bea4-c4df96a24a9b
+
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_PASSWORD: password
+          POSTGRES_USER: root
+          POSTGRES_DB: main
+        ports:
+          - 5432/tcp
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3
+
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: false
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: main
+        ports:
+          - 3306/tcp
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+      mysql2:
+        image: mysql:5.7
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: false
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: main
+        ports:
+          - 3306/tcp
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2019-latest
+        ports:
+          - 1433/tcp
+        env:
+          ACCEPT_EULA: Y
+          SA_PASSWORD: P@ssword
+        options: --health-cmd "echo quit | /opt/mssql-tools/bin/sqlcmd -S 127.0.0.1 -l 1 -U sa -P P@ssword"
+
+      redis:
+        image: redis
+        ports:
+          - 6379/tcp
+        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
   php-cs-fixer:
     name: Code style (php-cs-fixer)
