@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy;
+namespace Stancl\Tenancy\Actions;
 
-use Closure;
 use Stancl\Tenancy\Concerns\DealsWithTenantSymlinks;
 use Stancl\Tenancy\Database\Models\Tenant;
 use Stancl\Tenancy\Events\RemovingStorageSymlink;
@@ -14,19 +13,19 @@ class RemoveStorageSymlinksAction
 {
     use DealsWithTenantSymlinks;
 
-    public static function handle($tenants, Closure|null $afterLinkRemoval = null)
+    public static function handle($tenants): void
     {
         $tenants = $tenants instanceof Tenant ? collect([$tenants]) : $tenants;
 
         /** @var Tenant $tenant */
         foreach ($tenants as $tenant) {
             foreach (static::possibleTenantSymlinks($tenant) as $publicPath => $storagePath) {
-                static::removeLink($publicPath, $tenant, $afterLinkRemoval);
+                static::removeLink($publicPath, $tenant);
             }
         }
     }
 
-    protected static function removeLink(string $publicPath, Tenant $tenant, Closure|null $afterLinkRemoval)
+    protected static function removeLink(string $publicPath, Tenant $tenant): void
     {
         if (static::symlinkExists($publicPath)) {
             event(new RemovingStorageSymlink($tenant));
@@ -34,10 +33,6 @@ class RemoveStorageSymlinksAction
             app()->make('files')->delete($publicPath);
 
             event(new StorageSymlinkRemoved($tenant));
-
-            if ($afterLinkRemoval) {
-                $afterLinkRemoval($publicPath);
-            }
         }
     }
 }

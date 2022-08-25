@@ -10,7 +10,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\CreateStorageSymlinksAction;
+use Stancl\Tenancy\Actions\CreateStorageSymlinksAction;
 
 class CreateStorageSymlinks implements ShouldQueue
 {

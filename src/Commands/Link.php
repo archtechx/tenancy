@@ -8,8 +8,8 @@ use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\LazyCollection;
 use Stancl\Tenancy\Concerns\HasATenantsOption;
-use Stancl\Tenancy\CreateStorageSymlinksAction;
-use Stancl\Tenancy\RemoveStorageSymlinksAction;
+use Stancl\Tenancy\Actions\CreateStorageSymlinksAction;
+use Stancl\Tenancy\Actions\RemoveStorageSymlinksAction;
 
 class Link extends Command
 {
@@ -55,31 +55,19 @@ class Link extends Command
         }
     }
 
-    /**
-     * @param LazyCollection $tenants
-     * @return void
-     */
-    protected function removeLinks($tenants)
+    protected function removeLinks(LazyCollection $tenants): void
     {
-        RemoveStorageSymlinksAction::handle(
-            $tenants,
-            afterLinkRemoval: fn ($publicPath) => $this->info("The [$publicPath] link has been removed.")
-        );
+        RemoveStorageSymlinksAction::handle($tenants);
 
         $this->info('The links have been removed.');
     }
 
-    /**
-     * @param LazyCollection $tenants
-     * @return void
-     */
-    protected function createLinks($tenants)
+    protected function createLinks(LazyCollection $tenants): void
     {
         CreateStorageSymlinksAction::handle(
             $tenants,
             $this->option('relative') ?? false,
             $this->option('force') ?? false,
-            afterLinkCreation: fn ($publicPath, $storagePath) => $this->info("The [$publicPath] link has been connected to [$storagePath].")
         );
 
         $this->info('The links have been created.');

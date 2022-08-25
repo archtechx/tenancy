@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy;
+namespace Stancl\Tenancy\Actions;
 
-use Closure;
 use Exception;
 use Stancl\Tenancy\Concerns\DealsWithTenantSymlinks;
 use Stancl\Tenancy\Database\Models\Tenant;
@@ -15,19 +14,19 @@ class CreateStorageSymlinksAction
 {
     use DealsWithTenantSymlinks;
 
-    public static function handle($tenants, bool $relativeLink = false, bool $force = false, Closure|null $afterLinkCreation = null)
+    public static function handle($tenants, bool $relativeLink = false, bool $force = false): void
     {
         $tenants = $tenants instanceof Tenant ? collect([$tenants]) : $tenants;
 
         /** @var Tenant $tenant */
         foreach ($tenants as $tenant) {
             foreach (static::possibleTenantSymlinks($tenant) as $publicPath => $storagePath) {
-                static::createLink($publicPath, $storagePath, $tenant, $relativeLink, $force, $afterLinkCreation);
+                static::createLink($publicPath, $storagePath, $tenant, $relativeLink, $force);
             }
         }
     }
 
-    protected static function createLink(string $publicPath, string $storagePath, Tenant $tenant, bool $relativeLink, bool $force, Closure|null $afterLinkCreation)
+    protected static function createLink(string $publicPath, string $storagePath, Tenant $tenant, bool $relativeLink, bool $force): void
     {
         event(new CreatingStorageSymlink($tenant));
 
@@ -50,9 +49,5 @@ class CreateStorageSymlinksAction
         }
 
         event((new StorageSymlinkCreated($tenant)));
-
-        if ($afterLinkCreation) {
-            $afterLinkCreation($publicPath, $storagePath);
-        }
     }
 }

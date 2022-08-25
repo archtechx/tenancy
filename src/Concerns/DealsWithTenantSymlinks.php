@@ -11,6 +11,7 @@ trait DealsWithTenantSymlinks
 {
     /**
      * Get all possible tenant symlinks, existing or not (array of ['public path' => 'storage path']).
+     * This is used for creating all possible tenant symlinks and removing all existing tenant symlinks.
      *
      * @return array
      */
@@ -19,20 +20,17 @@ trait DealsWithTenantSymlinks
         $diskUrls = config('tenancy.filesystem.url_override');
         $disks = config('tenancy.filesystem.root_override');
         $suffixBase = config('tenancy.filesystem.suffix_base');
-        $symlinks = [];
+        $symlinks = collect();
         $tenantKey = $tenant->getTenantKey();
 
         foreach ($diskUrls as $disk => $publicPath) {
             $storagePath = str_replace('%storage_path%', $suffixBase . $tenantKey, $disks[$disk]);
-            $storagePath = storage_path($storagePath);
-
             $publicPath = str_replace('%tenant_id%', $tenantKey, $publicPath);
-            $publicPath = public_path($publicPath);
 
-            $symlinks[] = [$publicPath => $storagePath];
+            $symlinks->push([public_path($publicPath) => storage_path($storagePath)]);
         }
 
-        return collect($symlinks)->mapWithKeys(fn ($item) => $item);
+        return $symlinks->mapWithKeys(fn ($item) => $item);
     }
 
     /**
