@@ -20,10 +20,10 @@ trait ResourceSyncing
         });
 
         static::creating(function (self $model) {
-            $key = $model->getGlobalIdentifierKeyName();
+            $keyName = $model->getGlobalIdentifierKeyName();
 
-            if (! $model->getAttribute($key) && app()->bound(UniqueIdentifierGenerator::class) && $model->isSyncEnabled()) {
-                $model->setAttribute($key, app(UniqueIdentifierGenerator::class)->generate($model));
+            if (! $model->getAttribute($keyName) && app()->bound(UniqueIdentifierGenerator::class)) {
+                $model->setAttribute($keyName, app(UniqueIdentifierGenerator::class)->generate($model));
             }
         });
     }
