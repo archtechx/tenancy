@@ -11,7 +11,12 @@ use Stancl\Tenancy\Contracts\Tenant;
 
 class BatchTenancyBootstrapper implements TenancyBootstrapper
 {
-    private $previousConnection = null;
+    /**
+     * The database previous connection instance.
+     *
+     * @var \Illuminate\Database\Connection
+     */
+    protected $previousConnection = null;
 
     public function bootstrap(Tenant $tenant)
     {
