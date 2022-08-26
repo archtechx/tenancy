@@ -23,6 +23,13 @@ RUN apt-get update \
     && apt-get update \
     && ACCEPT_EULA=Y apt-get install -y unixodbc-dev msodbcsql17
 
+# set PHP version
+RUN update-alternatives --set php /usr/bin/php$PHP_VERSION \
+    && update-alternatives --set phar /usr/bin/phar$PHP_VERSION \
+    && update-alternatives --set phar.phar /usr/bin/phar.phar$PHP_VERSION \
+    && update-alternatives --set phpize /usr/bin/phpize$PHP_VERSION \
+    && update-alternatives --set php-config /usr/bin/php-config$PHP_VERSION
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libhiredis0.14 libjemalloc2 liblua5.1-0 lua-bitop lua-cjson redis redis-server redis-tools
 
