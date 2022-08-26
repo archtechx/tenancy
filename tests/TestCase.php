@@ -146,7 +146,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
      */
     protected function resolveApplicationConsoleKernel($app)
     {
-        $app->singleton('Illuminate\Contracts\Console\Kernel', Etc\ConsoleKernel::class);
+        $app->singleton('Illuminate\Contracts\Console\Kernel', Etc\Console\ConsoleKernel::class);
     }
 
     public function randomString(int $length = 10)
