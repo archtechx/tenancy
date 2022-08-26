@@ -243,16 +243,33 @@ test('files can get fetched using the storage url', function() {
         'tenancy.filesystem.url_override.public' => 'public-%tenant_id%'
     ]);
 
-    tenancy()->initialize($tenant1 = Tenant::create());
-    Storage::disk('public')->put($tenant1FileName = 'tenant1.txt', $tenantKey = $tenant1->getTenantKey());
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
 
-    $this->get(Storage::disk('public')->url($tenant1FileName))->assertSee($tenantKey);
+    pest()->artisan('tenants:link');
 
-    tenancy()->initialize($tenant2 = Tenant::create());
-    Storage::disk('public')->put($tenant2FileName = 'tenant2.txt', $tenantKey = $tenant2->getTenantKey());
+    // First tenant
+    tenancy()->initialize($tenant1);
+    Storage::disk('public')->put($tenantFileName = 'tenant1.txt', $tenantKey = $tenant1->getTenantKey());
 
-    $this->get(Storage::disk('public')->url($tenant2FileName))->assertSee($tenantKey);
-})->group('links');
+    $url = Storage::disk('public')->url($tenantFileName);
+    $tenantDiskName = str(config('tenancy.filesystem.url_override.public'))->replace('%tenant_id%', $tenantKey);
+    $hostname = str($url)->before($tenantDiskName);
+    $parsedUrl = str($url)->after($hostname);
+
+    expect(file_get_contents(public_path($parsedUrl)))->toBe($tenantKey);
+
+    // Second tenant
+    tenancy()->initialize($tenant2);
+    Storage::disk('public')->put($tenantFileName = 'tenant2.txt', $tenantKey = $tenant2->getTenantKey());
+
+    $url = Storage::disk('public')->url($tenantFileName);
+    $tenantDiskName = str(config('tenancy.filesystem.url_override.public'))->replace('%tenant_id%', $tenantKey);
+    $hostname = str($url)->before($tenantDiskName);
+    $parsedUrl = str($url)->after($hostname);
+
+    expect(file_get_contents(public_path($parsedUrl)))->toBe($tenantKey);
+});
 
 test('create and delete storage symlinks jobs works', function() {
     Event::listen(
