@@ -11,14 +11,11 @@ use Stancl\Tenancy\Contracts\TenantResolver;
 
 abstract class CachedTenantResolver implements TenantResolver
 {
-    /** @var bool */
-    public static $shouldCache = false;
+    public static bool $shouldCache = false; // todo docblocks for these
 
-    /** @var int */
-    public static $cacheTTL = 3600; // seconds
+    public static int $cacheTTL = 3600; // seconds
 
-    /** @var string|null */
-    public static $cacheStore = null; // default
+    public static string|null $cacheStore = null; // default
 
     /** @var Repository */
     protected $cache;

@@ -11,7 +11,7 @@ use Illuminate\Support\Traits\Macroable;
 use Stancl\Tenancy\Concerns\Debuggable;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedById;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByIdException;
 
 class Tenancy
 {
@@ -38,7 +38,7 @@ class Tenancy
             $tenant = $this->find($tenantId);
 
             if (! $tenant) {
-                throw new TenantCouldNotBeIdentifiedById($tenantId);
+                throw new TenantCouldNotBeIdentifiedByIdException($tenantId);
             }
         }
 
@@ -62,17 +62,17 @@ class Tenancy
 
     public function end(): void
     {
-        event(new Events\EndingTenancy($this));
-
         if (! $this->initialized) {
             return;
         }
 
-        event(new Events\TenancyEnded($this));
+        event(new Events\EndingTenancy($this));
+
+        $this->tenant = null;
 
         $this->initialized = false;
 
-        $this->tenant = null;
+        event(new Events\TenancyEnded($this));
     }
 
     /** @return TenancyBootstrapper[] */
@@ -131,7 +131,7 @@ class Tenancy
      *
      * @param Tenant[]|\Traversable|string[]|null $tenants
      */
-    public function runForMultiple($tenants, callable $callback): void
+    public function runForMultiple($tenants, Closure $callback): void
     {
         // Convert null to all tenants
         $tenants = is_null($tenants) ? $this->model()->cursor() : $tenants;

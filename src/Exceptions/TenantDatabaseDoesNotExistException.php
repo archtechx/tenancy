@@ -8,7 +8,7 @@ use Exception;
 
 class TenantDatabaseDoesNotExistException extends Exception
 {
-    public function __construct($database)
+    public function __construct(string $database)
     {
         parent::__construct("Database $database does not exist.");
     }

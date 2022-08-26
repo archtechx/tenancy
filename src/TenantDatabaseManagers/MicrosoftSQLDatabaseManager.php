@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+// todo likely move all of these classes to Database\
+
 namespace Stancl\Tenancy\TenantDatabaseManagers;
 
 use Illuminate\Database\Connection;
@@ -12,10 +14,9 @@ use Stancl\Tenancy\Exceptions\NoConnectionSetException;
 
 class MicrosoftSQLDatabaseManager implements TenantDatabaseManager
 {
-    /** @var string */
-    protected $connection;
+    protected string $connection; // todo docblock, in all of these classes
 
-    protected function database(): Connection
+    protected function database(): Connection // todo consider abstracting this method & setConnection() into a base class
     {
         if ($this->connection === null) {
             throw new NoConnectionSetException(static::class);
@@ -33,7 +34,7 @@ class MicrosoftSQLDatabaseManager implements TenantDatabaseManager
     {
         $database = $tenant->database()->getName();
         $charset = $this->database()->getConfig('charset');
-        $collation = $this->database()->getConfig('collation');
+        $collation = $this->database()->getConfig('collation'); // todo check why these are not used
 
         return $this->database()->statement("CREATE DATABASE [{$database}]");
     }

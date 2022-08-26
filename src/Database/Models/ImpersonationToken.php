@@ -35,10 +35,8 @@ class ImpersonationToken extends Model
         'created_at',
     ];
 
-    public static function boot()
+    public static function booted()
     {
-        parent::boot();
-
         static::creating(function ($model) {
             $model->created_at = $model->created_at ?? $model->freshTimestamp();
             $model->token = $model->token ?? Str::random(128);

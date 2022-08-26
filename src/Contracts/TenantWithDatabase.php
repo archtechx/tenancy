@@ -11,5 +11,5 @@ interface TenantWithDatabase extends Tenant
     public function database(): DatabaseConfig;
 
     /** Get an internal key. */
-    public function getInternal(string $key);
+    public function getInternal(string $key): mixed;
 }

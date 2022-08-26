@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
+use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -48,17 +49,17 @@ class DatabaseConfig
         $this->tenant = $tenant;
     }
 
-    public static function generateDatabaseNamesUsing(callable $databaseNameGenerator): void
+    public static function generateDatabaseNamesUsing(Closure $databaseNameGenerator): void
     {
         static::$databaseNameGenerator = $databaseNameGenerator;
     }
 
-    public static function generateUsernamesUsing(callable $usernameGenerator): void
+    public static function generateUsernamesUsing(Closure $usernameGenerator): void
     {
         static::$usernameGenerator = $usernameGenerator;
     }
 
-    public static function generatePasswordsUsing(callable $passwordGenerator): void
+    public static function generatePasswordsUsing(Closure $passwordGenerator): void
     {
         static::$passwordGenerator = $passwordGenerator;
     }

@@ -14,6 +14,8 @@ use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
 use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
 use Stancl\Tenancy\Exceptions\TenantDatabaseUserAlreadyExistsException;
 
+// todo move to Database namespace
+
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
  */
