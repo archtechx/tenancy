@@ -42,9 +42,7 @@ class Run extends Command
     }
 
     /**
-     * Get command as ArgvInput instance
-     *
-     * @return ArgvInput
+     * Get command as ArgvInput instance.
      */
     protected function ArgvInput(): ArgvInput
     {
@@ -52,7 +50,7 @@ class Run extends Command
         $subCommand = explode(' ', $this->argument('commandname'));
 
         // Add "artisan" as first parameter because ArgvInput expect "artisan" as first parameter and later remove it
-        array_unshift($subCommand , 'artisan');
+        array_unshift($subCommand, 'artisan');
 
         return new ArgvInput($subCommand);
     }
