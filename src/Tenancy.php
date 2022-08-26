@@ -68,11 +68,13 @@ class Tenancy
 
         event(new Events\EndingTenancy($this));
 
+        // todo find a way to refactor these two methods
+
+        event(new Events\TenancyEnded($this));
+
         $this->tenant = null;
 
         $this->initialized = false;
-
-        event(new Events\TenancyEnded($this));
     }
 
     /** @return TenancyBootstrapper[] */
