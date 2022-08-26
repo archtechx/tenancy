@@ -253,9 +253,9 @@ test('files can get fetched using the storage url', function() {
     Storage::disk('public')->put($tenantFileName = 'tenant1.txt', $tenantKey = $tenant1->getTenantKey());
 
     $url = Storage::disk('public')->url($tenantFileName);
-    $tenantDiskName = str(config('tenancy.filesystem.url_override.public'))->replace('%tenant_id%', $tenantKey);
-    $hostname = str($url)->before($tenantDiskName);
-    $parsedUrl = str($url)->after($hostname);
+    $tenantDiskName = Str::of(config('tenancy.filesystem.url_override.public'))->replace('%tenant_id%', $tenantKey);
+    $hostname = Str::of($url)->before($tenantDiskName);
+    $parsedUrl = Str::of($url)->after($hostname);
 
     expect(file_get_contents(public_path($parsedUrl)))->toBe($tenantKey);
 
@@ -264,9 +264,9 @@ test('files can get fetched using the storage url', function() {
     Storage::disk('public')->put($tenantFileName = 'tenant2.txt', $tenantKey = $tenant2->getTenantKey());
 
     $url = Storage::disk('public')->url($tenantFileName);
-    $tenantDiskName = str(config('tenancy.filesystem.url_override.public'))->replace('%tenant_id%', $tenantKey);
-    $hostname = str($url)->before($tenantDiskName);
-    $parsedUrl = str($url)->after($hostname);
+    $tenantDiskName = Str::of(config('tenancy.filesystem.url_override.public'))->replace('%tenant_id%', $tenantKey);
+    $hostname = Str::of($url)->before($tenantDiskName);
+    $parsedUrl = Str::of($url)->after($hostname);
 
     expect(file_get_contents(public_path($parsedUrl)))->toBe($tenantKey);
 });
