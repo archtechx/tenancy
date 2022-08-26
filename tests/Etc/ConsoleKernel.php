@@ -10,6 +10,7 @@ class ConsoleKernel extends Kernel
 {
     protected $commands = [
         ExampleCommand::class,
+        ExampleQuestionCommand::class,
         AddUserCommand::class,
     ];
 }

@@ -179,6 +179,17 @@ test('run command with array of tenants works', function () {
         ->expectsOutput('Tenant: ' . $tenantId2);
 });
 
+test('run command works when sub command asks question and accepts argument', function () {
+    $id = Tenant::create()->getTenantKey();
+
+    Artisan::call('tenants:migrate', ['--tenants' => [$id]]);
+
+    pest()->artisan("tenants:run --tenants=$id 'age:ask Abrar' ")
+        ->expectsQuestion('What is your age?', 22)
+        ->expectsOutput("Tenant: $id")
+        ->expectsOutput("Abrar's age is 22.");
+});
+
 // todo@tests
 function runCommandWorks(): void
 {
