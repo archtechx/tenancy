@@ -20,7 +20,7 @@ abstract class TenantCouldNotBeIdentifiedException extends Exception implements 
     /** Set the message. */
     protected function tenantCouldNotBeIdentified(string $how): static
     {
-        $this->message = "Tenant could not be identified " . $how;
+        $this->message = 'Tenant could not be identified ' . $how;
 
         return $this;
     }
