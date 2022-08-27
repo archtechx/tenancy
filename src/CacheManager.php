@@ -6,6 +6,8 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Cache\CacheManager as BaseCacheManager;
 
+// todo move to Cache namespace?
+
 class CacheManager extends BaseCacheManager
 {
     /**

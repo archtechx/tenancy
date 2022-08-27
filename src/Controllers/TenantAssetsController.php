@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Controllers;
 
+use Closure;
 use Illuminate\Routing\Controller;
 use Throwable;
 
 class TenantAssetsController extends Controller
 {
-    public static $tenancyMiddleware = 'Stancl\Tenancy\Middleware\InitializeTenancyByDomain';
+    public static string|array|Closure $tenancyMiddleware = Stancl\Tenancy\Middleware\InitializeTenancyByDomain::class;
 
     public function __construct()
     {
@@ -22,7 +23,7 @@ class TenantAssetsController extends Controller
 
         try {
             return response()->file(storage_path("app/public/$path"));
-        } catch (Throwable $th) {
+        } catch (Throwable) {
             abort(404);
         }
     }

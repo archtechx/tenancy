@@ -6,7 +6,7 @@ namespace Stancl\Tenancy\Events;
 
 use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\Contracts\Syncable;
-use Stancl\Tenancy\Contracts\TenantWithDatabase;
+use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
 class SyncedResourceSaved
 {

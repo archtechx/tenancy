@@ -7,14 +7,8 @@ namespace Stancl\Tenancy\Database;
 use Illuminate\Config\Repository;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
-use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
-use Stancl\Tenancy\Contracts\TenantWithDatabase;
-use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
-use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
-use Stancl\Tenancy\Exceptions\TenantDatabaseUserAlreadyExistsException;
-
-// todo move to Database namespace
+use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
@@ -97,11 +91,11 @@ class DatabaseManager
         $manager = $tenant->database()->manager();
 
         if ($manager->databaseExists($database = $tenant->database()->getName())) {
-            throw new TenantDatabaseAlreadyExistsException($database);
+            throw new Exceptions\TenantDatabaseAlreadyExistsException($database);
         }
 
-        if ($manager instanceof ManagesDatabaseUsers && $manager->userExists($username = $tenant->database()->getUsername())) {
-            throw new TenantDatabaseUserAlreadyExistsException($username);
+        if ($manager instanceof Contracts\ManagesDatabaseUsers && $manager->userExists($username = $tenant->database()->getUsername())) {
+            throw new Exceptions\TenantDatabaseUserAlreadyExistsException($username);
         }
     }
 }

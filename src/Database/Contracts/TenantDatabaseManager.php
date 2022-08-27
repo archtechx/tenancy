@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Contracts;
+namespace Stancl\Tenancy\Database\Contracts;
 
-use Stancl\Tenancy\Exceptions\NoConnectionSetException;
+use Stancl\Tenancy\Database\Exceptions\NoConnectionSetException;
 
 interface TenantDatabaseManager
 {

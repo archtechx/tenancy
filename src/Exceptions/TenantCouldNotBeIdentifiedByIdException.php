@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+// todo perhaps create Identification namespace
+
 namespace Stancl\Tenancy\Exceptions;
 
 use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;

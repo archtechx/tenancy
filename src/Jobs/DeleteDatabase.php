@@ -9,7 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Stancl\Tenancy\Contracts\TenantWithDatabase;
+use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Events\DatabaseDeleted;
 use Stancl\Tenancy\Events\DeletingDatabase;
 

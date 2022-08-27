@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+// todo not sure if this should be in Database\
 namespace Stancl\Tenancy\Database\Concerns;
 
 use Stancl\Tenancy\Contracts\Domain;

@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Stancl\Tenancy\Contracts\TenantWithDatabase;
+use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\DatabaseManager;
 use Stancl\Tenancy\Events\CreatingDatabase;
 use Stancl\Tenancy\Events\DatabaseCreated;

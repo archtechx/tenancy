@@ -2,11 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Contracts;
+namespace Stancl\Tenancy\Database\Contracts;
 
-use Stancl\Tenancy\DatabaseConfig;
-
-// todo possibly move to Database namespace, along with other classes
+use Stancl\Tenancy\Database\DatabaseConfig;
 
 interface ManagesDatabaseUsers extends TenantDatabaseManager
 {

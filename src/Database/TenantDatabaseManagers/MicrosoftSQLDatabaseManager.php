@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 // todo likely move all of these classes to Database\
 
-namespace Stancl\Tenancy\TenantDatabaseManagers;
+namespace Stancl\Tenancy\Database\TenantDatabaseManagers;
 
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
-use Stancl\Tenancy\Contracts\TenantDatabaseManager;
-use Stancl\Tenancy\Contracts\TenantWithDatabase;
-use Stancl\Tenancy\Exceptions\NoConnectionSetException;
+use Stancl\Tenancy\Database\Contracts\TenantDatabaseManager;
+use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
+use Stancl\Tenancy\Database\Exceptions\NoConnectionSetException;
 
 class MicrosoftSQLDatabaseManager implements TenantDatabaseManager
 {

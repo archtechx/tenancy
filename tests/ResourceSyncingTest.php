@@ -15,7 +15,7 @@ use Stancl\Tenancy\Contracts\SyncMaster;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
 use Stancl\Tenancy\Database\Concerns\ResourceSyncing;
 use Stancl\Tenancy\Database\Models\TenantPivot;
-use Stancl\Tenancy\DatabaseConfig;
+use Stancl\Tenancy\Database\DatabaseConfig;
 use Stancl\Tenancy\Events\SyncedResourceChangedInForeignDatabase;
 use Stancl\Tenancy\Events\SyncedResourceSaved;
 use Stancl\Tenancy\Events\TenancyEnded;

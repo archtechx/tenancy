@@ -61,7 +61,8 @@
         "docker-rebuild": "PHP_VERSION=8.1 docker-compose up -d --no-deps --build",
         "docker-m1": "ln -s docker-compose-m1.override.yml docker-compose.override.yml",
         "coverage": "open coverage/phpunit/html/index.html",
-        "test": "PHP_VERSION=8.1 ./test"
+        "test": "PHP_VERSION=8.1 ./test --no-coverage",
+        "test-full": "PHP_VERSION=8.1 ./test"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,

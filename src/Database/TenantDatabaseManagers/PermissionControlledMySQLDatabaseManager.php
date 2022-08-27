@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\TenantDatabaseManagers;
+namespace Stancl\Tenancy\Database\TenantDatabaseManagers;
 
-use Stancl\Tenancy\Concerns\CreatesDatabaseUsers;
-use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
-use Stancl\Tenancy\DatabaseConfig;
+use Stancl\Tenancy\Database\Concerns\CreatesDatabaseUsers;
+use Stancl\Tenancy\Database\Contracts\ManagesDatabaseUsers;
+use Stancl\Tenancy\Database\DatabaseConfig;
 
 class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager implements ManagesDatabaseUsers
 {
