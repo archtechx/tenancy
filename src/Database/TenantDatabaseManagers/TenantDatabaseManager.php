@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Database\TenantDatabaseManagers;
 
 use Illuminate\Database\Connection;
