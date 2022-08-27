@@ -54,11 +54,4 @@ class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager impl
     {
         return (bool) $this->database()->select("SELECT count(*) FROM mysql.user WHERE user = '$username'")[0]->{'count(*)'};
     }
-
-    public function makeConnectionConfig(array $baseConfig, string $databaseName): array
-    {
-        $baseConfig['database'] = $databaseName;
-
-        return $baseConfig;
-    }
 }

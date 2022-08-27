@@ -26,9 +26,7 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
 
         /** @var Tenant|null $tenant */
         $tenant = config('tenancy.tenant_model')::query()
-            ->whereHas('domains', function (Builder $query) use ($domain) {
-                $query->where('domain', $domain);
-            })
+            ->whereHas('domains', fn (Builder $query) => $query->where('domain', $domain))
             ->with('domains')
             ->first();
 

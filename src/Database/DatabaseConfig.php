@@ -12,14 +12,17 @@ use Stancl\Tenancy\Database\Contracts\TenantWithDatabase as Tenant;
 
 class DatabaseConfig
 {
-    // todo docblocks
+    /** The tenant whose database we're dealing with. */
     public Tenant&Model $tenant;
 
-    public static Closure $usernameGenerator;
+    /** Database username generator (can be set by the developer.) */
+    public static Closure|null $usernameGenerator = null;
 
-    public static Closure $passwordGenerator;
+    /** Database password generator (can be set by the developer.) */
+    public static Closure|null $passwordGenerator = null;
 
-    public static Closure $databaseNameGenerator;
+    /** Database name generator (can be set by the developer.) */
+    public static Closure|null $databaseNameGenerator = null;
 
     public static function __constructStatic(): void
     {
