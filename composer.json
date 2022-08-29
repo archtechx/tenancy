@@ -29,7 +29,8 @@
         "league/flysystem-aws-s3-v3": "^3.0",
         "doctrine/dbal": "^2.10",
         "spatie/valuestore": "^1.2.5",
-        "pestphp/pest": "^1.21"
+        "pestphp/pest": "^1.21",
+        "nunomaduro/larastan": "^1.0"
     },
     "autoload": {
         "psr-4": {
