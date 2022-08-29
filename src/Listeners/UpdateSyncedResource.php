@@ -60,7 +60,7 @@ class UpdateSyncedResource extends QueueableListener
                 event(new SyncedResourceChangedInForeignDatabase($event->model, null));
             } else {
                 // If the resource doesn't exist at all in the central DB,we create
-                $centralModel = $event->model->getCentralModelName()::create($this->getResourceCreationAttributes($event->model));
+                $centralModel = $event->model->getCentralModelName()::create($this->getAttributesForCreation($event->model));
                 event(new SyncedResourceChangedInForeignDatabase($event->model, null));
             }
         });
@@ -113,7 +113,7 @@ class UpdateSyncedResource extends QueueableListener
                     $localModel->update($syncedAttributes);
                 } else {
                     // When creating, we use all columns, not just the synced ones.
-                    $localModel = $localModelClass::create($this->getResourceCreationAttributes($eventModel));
+                    $localModel = $localModelClass::create($this->getAttributesForCreation($eventModel));
                 }
 
                 event(new SyncedResourceChangedInForeignDatabase($localModel, $tenant));
@@ -121,13 +121,11 @@ class UpdateSyncedResource extends QueueableListener
         });
     }
 
-    protected function getResourceCreationAttributes(Syncable $model): array
+    protected function getAttributesForCreation(Syncable $model): array
     {
         $attributes = $model->getAttributes();
 
         if ($model->getResourceCreationAttributes()) {
-            // If function returned array is key-value, We assume default values are provided
-            // if array is plain values, fetch attributes from model
             $attributes = Arr::isAssoc($model->getResourceCreationAttributes()) ? $model->getResourceCreationAttributes() : $model->only($model->getResourceCreationAttributes());
         }
 
