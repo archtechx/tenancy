@@ -137,7 +137,7 @@ test('creating the resource in tenant database creates it in central database as
     tenancy()->initialize($tenant);
 
     // Create the user in tenant DB
-    ResourceUser::create([
+    $resourceUser = ResourceUser::create([
         'global_id' => 'acme',
         'name' => 'John Doe',
         'email' => 'john@localhost',
@@ -148,6 +148,7 @@ test('creating the resource in tenant database creates it in central database as
     tenancy()->end();
 
     // Assert central user and Resource user has exact same attributes and values
+    expect($resourceUser->getResourceCreationAttributes())->toBeNull();
     expect(CentralUser::first()->toArray())->toEqual(ResourceUser::first()->toArray());
 });
 
