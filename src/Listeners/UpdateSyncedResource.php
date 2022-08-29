@@ -112,7 +112,6 @@ class UpdateSyncedResource extends QueueableListener
                 if ($localModel) {
                     $localModel->update($syncedAttributes);
                 } else {
-                    // When creating, we use all columns, not just the synced ones.
                     $localModel = $localModelClass::create($this->getAttributesForCreation($eventModel));
                 }
 
@@ -126,6 +125,8 @@ class UpdateSyncedResource extends QueueableListener
         $attributes = $model->getAttributes();
 
         if ($model->getResourceCreationAttributes()) {
+            // If developer provided key-value array, we'll use them as it
+            // If developer provided plain array, we'll use them to pick model attributes
             $attributes = Arr::isAssoc($model->getResourceCreationAttributes()) ? $model->getResourceCreationAttributes() : $model->only($model->getResourceCreationAttributes());
         }
 
