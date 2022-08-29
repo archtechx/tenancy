@@ -49,7 +49,7 @@ class Run extends Command
         // Convert string command to array
         $subCommand = explode(' ', $this->argument('commandname'));
 
-        // Add "artisan" as first parameter because ArgvInput expect "artisan" as first parameter and later remove it
+        // Add "artisan" as first parameter because ArgvInput expects "artisan" as first parameter and later removes it
         array_unshift($subCommand, 'artisan');
 
         return new ArgvInput($subCommand);
