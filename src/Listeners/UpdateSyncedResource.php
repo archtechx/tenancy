@@ -125,8 +125,8 @@ class UpdateSyncedResource extends QueueableListener
         $attributes = $model->getAttributes();
 
         if ($model->getResourceCreationAttributes()) {
-            // If developer provided key-value array, we'll use them as it
-            // If developer provided plain array, we'll use them to pick model attributes
+            // If the developer provided a key-value array, we'd use them as it
+            // If the developer provided a plain array, we'd use them to pick model attributes
             $attributes = Arr::isAssoc($model->getResourceCreationAttributes()) ? $model->getResourceCreationAttributes() : $model->only($model->getResourceCreationAttributes());
         }
 
