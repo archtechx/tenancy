@@ -153,22 +153,6 @@ test('creating the resource in tenant database creates it in central database as
 });
 
 test('creating the resource in tenant database creates it in central database with default attributes values', function () {
-    // override method in ResourceUser class to return attribute default values
-    class ResourceUserWithDefaultValues extends ResourceUser {
-        public function getResourceCreationAttributes(): array
-        {
-            // Attributes default values when creating resources from tenant to central DB
-            return
-                [
-                    'global_id' => 'abc-123',
-                    'name' => 'John',
-                    'password' => 'password',
-                    'email' => 'john@demo',
-                    'role' => 'admin',
-                ];
-        }
-    }
-
     // Assert no user exists in central DB
     expect(ResourceUserWithDefaultValues::all())->toHaveCount(0);
 
@@ -196,25 +180,6 @@ test('creating the resource in tenant database creates it in central database wi
 });
 
 test('creating the resource in tenant database creates it in central database with attributes names', function () {
-    // override method in ResourceUser class to return attribute names
-    class ResourceUserWithAttributeNames extends ResourceUser {
-        public function getResourceCreationAttributes(): array
-        {
-            // Attributes used when creating resources from tenant to central DB
-            // Notice here we are not adding "code" filed because it doesn't
-            // exist in central model
-            return
-                [
-                    'global_id',
-                    'name',
-                    'password',
-                    'email',
-                    'role'
-                ];
-        }
-
-    }
-
     // Assert no user exists in central DB
     expect(ResourceUserWithAttributeNames::all())->toHaveCount(0);
 
@@ -874,3 +839,39 @@ class ResourceUser extends Model implements Syncable
         ];
     }
 }
+
+// override method in ResourceUser class to return attribute default values
+class ResourceUserWithDefaultValues extends ResourceUser {
+    public function getResourceCreationAttributes(): array
+    {
+        // Attributes default values when creating resources from tenant to central DB
+        return
+            [
+                'global_id' => 'abc-123',
+                'name' => 'John',
+                'password' => 'password',
+                'email' => 'john@demo',
+                'role' => 'admin',
+            ];
+    }
+}
+
+// override method in ResourceUser class to return attribute names
+class ResourceUserWithAttributeNames extends ResourceUser {
+    public function getResourceCreationAttributes(): array
+    {
+        // Attributes used when creating resources from tenant to central DB
+        // Notice here we are not adding "code" filed because it doesn't
+        // exist in central model
+        return
+            [
+                'global_id',
+                'name',
+                'password',
+                'email',
+                'role'
+            ];
+    }
+
+}
+
