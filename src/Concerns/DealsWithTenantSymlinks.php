@@ -33,9 +33,7 @@ trait DealsWithTenantSymlinks
         return $symlinks->mapWithKeys(fn ($item) => $item);
     }
 
-    /**
-     * Determine if the provided path is an existing symlink.
-     */
+    /** Determine if the provided path is an existing symlink. */
     protected static function symlinkExists(string $link): bool
     {
         return file_exists($link) && is_link($link);
