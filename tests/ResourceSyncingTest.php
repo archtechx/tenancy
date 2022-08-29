@@ -236,22 +236,6 @@ test('creating the resource in central database creates it in tenant database as
 });
 
 test('creating the resource in central database creates it in tenant database with default attributes values', function () {
-    // override method in CentralUser class to return attribute default values
-    class CentralUserWithDefaultValues extends CentralUser {
-        public function getResourceCreationAttributes(): array
-        {
-            // Attributes default values when creating resources from central to tenant model
-            return
-                [
-                    'global_id' => 'abc-123',
-                    'name' => 'John',
-                    'password' => 'password',
-                    'email' => 'john@demo',
-                    'role' => 'admin',
-                ];
-        }
-    }
-
     $centralUser = CentralUserWithDefaultValues::create([
         'global_id' => 'acme',
         'name' => 'John Doe',
@@ -282,22 +266,6 @@ test('creating the resource in central database creates it in tenant database wi
 });
 
 test('creating the resource in central database creates it in tenant database with attributes names', function () {
-    // override method in CentralUser class to return attribute names
-    class CentralUserWithAttributeNames extends CentralUser {
-        public function getResourceCreationAttributes(): array
-        {
-            // Attributes used when creating resources from central to tenant DB
-            return
-                [
-                    'global_id',
-                    'name',
-                    'password',
-                    'email',
-                    'role',
-                ];
-        }
-    }
-
     // migrate extra column "foo" in central DB
     pest()->artisan('migrate', [
         '--path' => __DIR__ . '/Etc/synced_resource_migrations/users_extra',
@@ -874,4 +842,37 @@ class ResourceUserWithAttributeNames extends ResourceUser {
     }
 
 }
+
+// override method in CentralUser class to return attribute default values
+class CentralUserWithDefaultValues extends CentralUser {
+    public function getResourceCreationAttributes(): array
+    {
+        // Attributes default values when creating resources from central to tenant model
+        return
+            [
+                'global_id' => 'abc-123',
+                'name' => 'John',
+                'password' => 'password',
+                'email' => 'john@demo',
+                'role' => 'admin',
+            ];
+    }
+}
+
+// override method in CentralUser class to return attribute names
+class CentralUserWithAttributeNames extends CentralUser {
+    public function getResourceCreationAttributes(): array
+    {
+        // Attributes used when creating resources from central to tenant DB
+        return
+            [
+                'global_id',
+                'name',
+                'password',
+                'email',
+                'role',
+            ];
+    }
+}
+
 
