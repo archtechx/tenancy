@@ -179,13 +179,29 @@ test('run command with array of tenants works', function () {
         ->expectsOutput('Tenant: ' . $tenantId2);
 });
 
-test('run command works when sub command asks question and accepts argument', function () {
-    $id = Tenant::create()->getTenantKey();
+test('run command works when sub command asks question and accepts argument', closure: function () {
+    $tenant = Tenant::create();
+    $id = $tenant->getTenantKey();
 
-    pest()->artisan("tenants:run --tenants=$id 'age:ask Abrar' ")
-        ->expectsQuestion('What is your age?', 22)
+    // Run tenant migrations so we have users table
+    Artisan::call('tenants:migrate');
+
+    pest()->artisan("tenants:run --tenants=$id 'user:addwithname Abrar' ")
+        ->expectsQuestion('What is your email?', 'email@localhost')
         ->expectsOutput("Tenant: $id")
-        ->expectsOutput("Abrar's age is 22.");
+        ->expectsOutput("User created: Abrar(email@localhost)");
+
+    // Assert users table does not exist in the central context
+    expect(Schema::hasTable('users'))->toBeFalse();
+
+    // Assert user created in tenant context
+    tenancy()->initialize($tenant);
+    expect(Schema::hasTable('users'))->toBeTrue();
+    $user = \Stancl\Tenancy\Tests\Etc\User::first();
+
+    // Assert user is same as provided using command
+    expect($user->name)->toBe('Abrar');
+    expect($user->email)->toBe('email@localhost');
 });
 
 // todo@tests

@@ -3,6 +3,8 @@
 namespace Stancl\Tenancy\Tests\Etc\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Str;
+use Stancl\Tenancy\Tests\Etc\User;
 
 class ExampleQuestionCommand extends Command
 {
@@ -11,7 +13,7 @@ class ExampleQuestionCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'age:ask {name}';
+    protected $signature = 'user:addwithname {name}';
 
     /**
      * The console command description.
@@ -27,8 +29,18 @@ class ExampleQuestionCommand extends Command
      */
     public function handle()
     {
-        $age = $this->ask('What is your age?');
+        $email = $this->ask('What is your email?');
 
-        $this->line($this->argument('name') . "'s age is $age.");
+        User::create([
+            'name' => $this->argument('name'),
+            'email' => $email,
+            'email_verified_at' => now(),
+            'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
+            'remember_token' => Str::random(10),
+        ]);
+
+        $this->line("User created: ". $this->argument('name') . "($email)");
+
+        return 0;
     }
 }
