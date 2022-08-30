@@ -172,10 +172,13 @@ test('creating the resource in tenant database creates it in central database wi
 
     tenancy()->end();
 
-    expect(CentralUser::first()->global_id)->toBe('abc-123');
-    expect(CentralUser::first()->name)->toBe('John');
-    expect(CentralUser::first()->password)->toBe('password');
-    expect(CentralUser::first()->email)->toBe('john@demo');
+    // Assert model attributes are synced
+    expect(CentralUser::first()->global_id)->toBe('acme');
+    expect(CentralUser::first()->name)->toBe('John Doe');
+    expect(CentralUser::first()->password)->toBe('secret');
+    expect(CentralUser::first()->email)->toBe('john@localhost');
+
+    // Assert the "role" attribute is unsynced and we are using the default values
     expect(CentralUser::first()->role)->toBe('admin');
 });
 
@@ -229,6 +232,7 @@ test('creating the resource in central database creates it in tenant database as
     $centralUser->tenants()->attach('t1');
 
     $centralUser = CentralUser::first();
+    expect($centralUser->getResourceCreationAttributes())->toBeNull();
     $tenant->run(function () use ($centralUser) {
         expect(ResourceUser::all())->toHaveCount(1);
         expect(ResourceUser::first()->toArray())->toEqual($centralUser->toArray());
@@ -257,10 +261,14 @@ test('creating the resource in central database creates it in tenant database wi
 
     $tenant->run(function () {
         expect(ResourceUser::all())->toHaveCount(1);
-        expect(ResourceUser::first()->global_id)->toBe('abc-123');
-        expect(ResourceUser::first()->name)->toBe('John');
-        expect(ResourceUser::first()->password)->toBe('password');
-        expect(ResourceUser::first()->email)->toBe('john@demo');
+
+        // Assert model attributes are synced
+        expect(ResourceUser::first()->global_id)->toBe('acme');
+        expect(ResourceUser::first()->name)->toBe('John Doe');
+        expect(ResourceUser::first()->password)->toBe('secret');
+        expect(ResourceUser::first()->email)->toBe('john@localhost');
+
+        // Assert the "role" attribute is unsynced and we are using the default values
         expect(ResourceUser::first()->role)->toBe('admin');
     });
 });
@@ -766,6 +774,7 @@ class CentralUser extends Model implements SyncMaster
     public function getSyncedAttributeNames(): array
     {
         return [
+            'global_id',
             'name',
             'password',
             'email',
@@ -801,6 +810,7 @@ class ResourceUser extends Model implements Syncable
     public function getSyncedAttributeNames(): array
     {
         return [
+            'global_id',
             'name',
             'password',
             'email',
@@ -815,11 +825,7 @@ class ResourceUserWithDefaultValues extends ResourceUser {
         // Attributes default values when creating resources from tenant to central DB
         return
             [
-                'global_id' => 'abc-123',
-                'name' => 'John',
-                'password' => 'password',
-                'email' => 'john@demo',
-                'role' => 'admin',
+                'role' => 'admin', // Provide "role" default value because it is unsynced or does not exist in Resource model
             ];
     }
 }
@@ -850,11 +856,7 @@ class CentralUserWithDefaultValues extends CentralUser {
         // Attributes default values when creating resources from central to tenant model
         return
             [
-                'global_id' => 'abc-123',
-                'name' => 'John',
-                'password' => 'password',
-                'email' => 'john@demo',
-                'role' => 'admin',
+                'role' => 'admin', // Provide "role" default value because it is unsynced or does not exist in Central model
             ];
     }
 }
