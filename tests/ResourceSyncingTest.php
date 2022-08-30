@@ -178,7 +178,7 @@ test('creating the resource in tenant database creates it in central database wi
     expect(CentralUser::first()->password)->toBe('secret');
     expect(CentralUser::first()->email)->toBe('john@localhost');
 
-    // Assert the "role" attribute is unsynced and we are using the default values
+    // Assert the "role" attribute is unsynced and we are using the default value
     expect(CentralUser::first()->role)->toBe('admin');
 });
 
@@ -268,7 +268,7 @@ test('creating the resource in central database creates it in tenant database wi
         expect(ResourceUser::first()->password)->toBe('secret');
         expect(ResourceUser::first()->email)->toBe('john@localhost');
 
-        // Assert the "role" attribute is unsynced and we are using the default values
+        // Assert the "role" attribute is unsynced and we are using the default value
         expect(ResourceUser::first()->role)->toBe('admin');
     });
 });
