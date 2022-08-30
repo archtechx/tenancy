@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Contracts;
 
 use Exception;
-use Facade\IgnitionContracts\BaseSolution;
-use Facade\IgnitionContracts\ProvidesSolution;
-use Facade\IgnitionContracts\Solution;
+use Spatie\Ignition\Contracts\BaseSolution;
+use Spatie\Ignition\Contracts\ProvidesSolution;
 
 abstract class TenantCouldNotBeIdentifiedException extends Exception implements ProvidesSolution
 {
@@ -42,7 +41,7 @@ abstract class TenantCouldNotBeIdentifiedException extends Exception implements 
     }
 
     /** Get the Ignition description. */
-    public function getSolution(): Solution
+    public function getSolution(): BaseSolution
     {
         return BaseSolution::create($this->solutionTitle)
             ->setSolutionDescription($this->solutionDescription)
