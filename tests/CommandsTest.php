@@ -16,6 +16,7 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use Stancl\Tenancy\Tests\Etc\User;
 
 beforeEach(function () {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
@@ -179,7 +180,7 @@ test('run command with array of tenants works', function () {
         ->expectsOutput('Tenant: ' . $tenantId2);
 });
 
-test('run command works when sub command asks question and accepts argument', closure: function () {
+test('run command works when sub command asks question and accepts argument', function () {
     $tenant = Tenant::create();
     $id = $tenant->getTenantKey();
 
@@ -191,13 +192,16 @@ test('run command works when sub command asks question and accepts argument', cl
         ->expectsOutput("Tenant: $id")
         ->expectsOutput("User created: Abrar(email@localhost)");
 
+    // Assert we are in central context
+    expect(tenancy()->initialized)->toBeFalse();
+
     // Assert users table does not exist in the central context
     expect(Schema::hasTable('users'))->toBeFalse();
 
     // Assert user created in tenant context
     tenancy()->initialize($tenant);
     expect(Schema::hasTable('users'))->toBeTrue();
-    $user = \Stancl\Tenancy\Tests\Etc\User::first();
+    $user = User::first();
 
     // Assert user is same as provided using command
     expect($user->name)->toBe('Abrar');
