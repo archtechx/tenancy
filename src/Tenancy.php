@@ -28,7 +28,7 @@ class Tenancy
     public ?Closure $getBootstrappersUsing = null;
 
     /** Is tenancy fully initialized? */
-    public $initialized = false; // todo document the difference between $tenant being set and $initialized being true (e.g. end of initialize() method)
+    public bool $initialized = false; // todo document the difference between $tenant being set and $initialized being true (e.g. end of initialize() method)
 
     /** Initialize tenancy for the passed tenant. */
     public function initialize(Tenant|int|string $tenant): void
@@ -42,6 +42,7 @@ class Tenancy
             }
         }
 
+        // todo0 for phpstan this should be $this->tenant?, but first I want to clean up the $initialized logic and explore removing the property
         if ($this->initialized && $this->tenant->getTenantKey() === $tenant->getTenantKey()) {
             return;
         }

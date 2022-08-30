@@ -15,7 +15,7 @@ class RequestDataTenantResolver extends Contracts\CachedTenantResolver
 
     public static string|null $cacheStore = null; // default
 
-    public function resolveWithoutCache(...$args): Tenant
+    public function resolveWithoutCache(mixed ...$args): Tenant
     {
         $payload = $args[0];
 

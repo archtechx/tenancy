@@ -18,7 +18,7 @@ class PathTenantResolver extends Contracts\CachedTenantResolver
 
     public static string|null $cacheStore = null; // default
 
-    public function resolveWithoutCache(...$args): Tenant
+    public function resolveWithoutCache(mixed ...$args): Tenant
     {
         /** @var Route $route */
         $route = $args[0];

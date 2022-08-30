@@ -25,7 +25,7 @@ abstract class CachedTenantResolver implements TenantResolver
         $this->cache = $cache->store(static::$cacheStore);
     }
 
-    public function resolve(...$args): Tenant
+    public function resolve(mixed ...$args): Tenant
     {
         if (! static::$shouldCache) {
             return $this->resolveWithoutCache(...$args);
@@ -58,12 +58,12 @@ abstract class CachedTenantResolver implements TenantResolver
         }
     }
 
-    public function getCacheKey(...$args): string
+    public function getCacheKey(mixed ...$args): string
     {
         return '_tenancy_resolver:' . static::class . ':' . json_encode($args);
     }
 
-    abstract public function resolveWithoutCache(...$args): Tenant;
+    abstract public function resolveWithoutCache(mixed ...$args): Tenant;
 
     public function resolved(Tenant $tenant, ...$args): void
     {

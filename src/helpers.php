@@ -15,15 +15,14 @@ if (! function_exists('tenancy')) {
 
 if (! function_exists('tenant')) {
     /**
-     * Get a key from the current tenant's storage.
+     * Get the current tenant or a key from the current tenant's properties.
      *
-     * @param string|null $key
      * @return Tenant|null|mixed
      */
-    function tenant($key = null)
+    function tenant(string $key = null): mixed
     {
         if (! app()->bound(Tenant::class)) {
-            return;
+            return null;
         }
 
         if (is_null($key)) {
@@ -35,15 +34,15 @@ if (! function_exists('tenant')) {
 }
 
 if (! function_exists('tenant_asset')) {
-    /** @return string */
-    function tenant_asset($asset)
+    // todo docblock
+    function tenant_asset(string|null $asset): string
     {
         return route('stancl.tenancy.asset', ['path' => $asset]);
     }
 }
 
 if (! function_exists('global_asset')) {
-    function global_asset($asset)
+    function global_asset(string $asset) // todo types, also inside the globalUrl implementation
     {
         return app('globalUrl')->asset($asset);
     }
@@ -57,9 +56,9 @@ if (! function_exists('global_cache')) {
 }
 
 if (! function_exists('tenant_route')) {
-    function tenant_route(string $domain, $route, $parameters = [], $absolute = true)
+    function tenant_route(string $domain, string $route, array $parameters = [], bool $absolute = true): string
     {
-        // replace first occurance of hostname fragment with $domain
+        // replace the first occurrence of the hostname fragment with $domain
         $url = route($route, $parameters, $absolute);
         $hostname = parse_url($url, PHP_URL_HOST);
         $position = strpos($url, $hostname);

@@ -17,7 +17,7 @@ class TenantAssetsController extends Controller
         $this->middleware(static::$tenancyMiddleware);
     }
 
-    public function asset($path = null)
+    public function asset(string $path = null)
     {
         abort_if($path === null, 404);
 

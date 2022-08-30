@@ -20,7 +20,7 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
 
     public static string|null $cacheStore = null; // default
 
-    public function resolveWithoutCache(...$args): Tenant
+    public function resolveWithoutCache(mixed ...$args): Tenant
     {
         $domain = $args[0];
 

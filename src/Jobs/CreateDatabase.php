@@ -19,13 +19,9 @@ class CreateDatabase implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /** @var TenantWithDatabase|Model */
-    protected $tenant;
-
-    public function __construct(TenantWithDatabase $tenant)
-    {
-        $this->tenant = $tenant;
-    }
+    public function __construct(
+        protected TenantWithDatabase&Model $tenant,
+    ) {}
 
     public function handle(DatabaseManager $databaseManager)
     {

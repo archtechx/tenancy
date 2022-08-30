@@ -12,7 +12,14 @@ parameters:
         - Illuminate\Routing\Route
 
     ignoreErrors:
+        -
+            message: '#Cannot access offset (.*?) on Illuminate\\Contracts\\Foundation\\Application#'
+            paths:
+                - src/TenancyServiceProvider.php
+        -
+            message: '#invalid type Laravel\\Telescope\\IncomingEntry#'
+            paths:
+                - src/Features/TelescopeTags.php
 
     checkMissingIterableValueType: false
     treatPhpDocTypesAsCertain: false
-
