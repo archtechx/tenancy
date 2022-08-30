@@ -128,7 +128,7 @@ test('tenant parameter name can be customized', function () {
         ->get('/acme/foo/abc/xyz');
 });
 
-test('tenant set as a default parameter for the URLs', function () {
+test('tenant parameter is set for all routes as the default parameter once the tenancy initialized', function () {
     Tenant::create([
         'id' => 'acme',
     ]);
