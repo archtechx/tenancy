@@ -137,7 +137,8 @@ test('tenant set as a default parameter for the URLs', function () {
 
     pest()->get(route('foo', ['tenant' => 'acme', 'a' => 1, 'b' => 2]));
 
-    expect(tenancy()->initialized)->toBeTrue();
-    expect(tenant('id'))->toBe('acme');
+    expect(tenancy()->initialized)->toBeTrue()
+        ->and(tenant('id'))->toBe('acme')
+        ->and(route('baz', ['a' => 1, 'b' => 2]))->toBe('http://localhost/acme/baz/1/2');
     pest()->get(route('baz', ['a' => 1, 'b' => 2]))->assertOk(); // Assert route don't need tenant parameter
 });
