@@ -15,7 +15,7 @@ class CrossDomainRedirect implements Feature
         RedirectResponse::macro('domain', function (string $domain) {
             /** @var RedirectResponse $this */
 
-            // replace first occurance of hostname fragment with $domain
+            // Replace first occurrence of the hostname fragment with $domain
             $url = $this->getTargetUrl();
             $hostname = parse_url($url, PHP_URL_HOST);
             $position = strpos($url, $hostname);

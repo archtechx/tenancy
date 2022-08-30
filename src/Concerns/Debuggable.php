@@ -9,6 +9,8 @@ use Stancl\Tenancy\Enums\LogMode;
 use Stancl\Tenancy\Events\Contracts\TenancyEvent;
 use Stancl\Tenancy\Tenancy;
 
+// todo finish this feature
+
 /**
  * @mixin Tenancy
  */

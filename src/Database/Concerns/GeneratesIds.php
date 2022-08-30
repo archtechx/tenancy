@@ -8,7 +8,7 @@ use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 
 trait GeneratesIds
 {
-    public static function bootGeneratesIds()
+    public static function bootGeneratesIds(): void
     {
         static::creating(function (self $model) {
             if (! $model->getKey() && $model->shouldGenerateId()) {

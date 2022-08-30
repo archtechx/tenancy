@@ -6,7 +6,7 @@ namespace Stancl\Tenancy\Database\Concerns;
 
 trait ConvertsDomainsToLowercase
 {
-    public static function bootConvertsDomainsToLowercase()
+    public static function bootConvertsDomainsToLowercase(): void
     {
         static::saving(function ($model) {
             $model->domain = strtolower($model->domain);

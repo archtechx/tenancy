@@ -10,7 +10,7 @@ use Stancl\Tenancy\Events\TenancyEnded;
 
 class RevertToCentralContext
 {
-    public function handle(TenancyEnded $event)
+    public function handle(TenancyEnded $event): void
     {
         event(new RevertingToCentralContext($event->tenancy));
 
