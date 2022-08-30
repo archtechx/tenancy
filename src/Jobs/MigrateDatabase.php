@@ -19,7 +19,8 @@ class MigrateDatabase implements ShouldQueue
 
     public function __construct(
         protected TenantWithDatabase&Model $tenant,
-    ) {}
+    ) {
+    }
 
     public function handle(): void
     {
