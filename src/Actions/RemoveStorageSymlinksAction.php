@@ -6,10 +6,10 @@ namespace Stancl\Tenancy\Actions;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\LazyCollection;
-use Stancl\Tenancy\Database\Models\Tenant;
-use Stancl\Tenancy\Events\StorageSymlinkRemoved;
-use Stancl\Tenancy\Events\RemovingStorageSymlink;
 use Stancl\Tenancy\Concerns\DealsWithTenantSymlinks;
+use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Events\RemovingStorageSymlink;
+use Stancl\Tenancy\Events\StorageSymlinkRemoved;
 
 class RemoveStorageSymlinksAction
 {
