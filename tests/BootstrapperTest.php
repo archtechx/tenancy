@@ -271,7 +271,7 @@ test('files can get fetched using the storage url', function() {
     expect(file_get_contents(public_path($parsedUrl)))->toBe($tenantKey);
 });
 
-test('create and delete storage symlinks jobs works', function() {
+test('create and delete storage symlinks jobs work', function() {
     Event::listen(
         TenantCreated::class,
         JobPipeline::make([CreateStorageSymlinks::class])->send(function (TenantCreated $event) {
@@ -300,14 +300,14 @@ test('create and delete storage symlinks jobs works', function() {
 
     tenancy()->initialize($tenant);
 
-    $tenant_key = $tenant->getTenantKey();
+    $tenantKey = $tenant->getTenantKey();
 
     $this->assertDirectoryExists(storage_path("app/public"));
-    $this->assertEquals(storage_path("app/public/"), readlink(public_path("public-$tenant_key")));
+    $this->assertEquals(storage_path("app/public/"), readlink(public_path("public-$tenantKey")));
 
     $tenant->delete();
 
-    $this->assertDirectoryDoesNotExist(public_path("public-$tenant_key"));
+    $this->assertDirectoryDoesNotExist(public_path("public-$tenantKey"));
 });
 
 function getDiskPrefix(string $disk): string
