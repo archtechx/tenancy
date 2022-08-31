@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
@@ -33,15 +32,12 @@ test('create storage symlinks action works', function() {
 
     tenancy()->initialize($tenant);
 
-    Storage::disk('public')->put('test.txt', 'test');
-
-    $this->assertDirectoryDoesNotExist(public_path("public-$tenantKey"));
+    $this->assertDirectoryDoesNotExist($publicPath = public_path("public-$tenantKey"));
 
     CreateStorageSymlinksAction::handle($tenant);
 
-    $this->assertDirectoryExists(storage_path("app/public"));
-    $this->assertDirectoryExists(public_path("public-$tenantKey"));
-    $this->assertEquals(storage_path("app/public/"), readlink(public_path("public-$tenantKey")));
+    $this->assertDirectoryExists($publicPath);
+    $this->assertEquals(storage_path("app/public/"), readlink($publicPath));
 });
 
 test('remove storage symlinks action works', function() {
@@ -62,7 +58,9 @@ test('remove storage symlinks action works', function() {
 
     CreateStorageSymlinksAction::handle($tenant);
 
+    $this->assertDirectoryExists($publicPath = public_path("public-$tenantKey"));
+
     RemoveStorageSymlinksAction::handle($tenant);
 
-    $this->assertDirectoryDoesNotExist(public_path("public-$tenantKey"));
+    $this->assertDirectoryDoesNotExist($publicPath);
 });
