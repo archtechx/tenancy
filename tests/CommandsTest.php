@@ -16,6 +16,7 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use Stancl\Tenancy\Tests\Etc\User;
 
 beforeEach(function () {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
@@ -197,7 +198,7 @@ test('run command works when sub command asks question and accepts argument', cl
     // Assert user created in tenant context
     tenancy()->initialize($tenant);
     expect(Schema::hasTable('users'))->toBeTrue();
-    $user = \Stancl\Tenancy\Tests\Etc\User::first();
+    $user = User::first();
 
     // Assert user is same as provided using command
     expect($user->name)->toBe('Abrar');
