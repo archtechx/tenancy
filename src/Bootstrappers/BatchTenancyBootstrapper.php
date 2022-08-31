@@ -1,11 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Illuminate\Bus\BatchRepository;
 use Illuminate\Bus\DatabaseBatchRepository;
 use Illuminate\Support\Facades\DB;
-use ReflectionClass;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
@@ -32,7 +33,7 @@ class BatchTenancyBootstrapper implements TenancyBootstrapper
     public function revert()
     {
         if ($this->previousConnection) {
-             // Access the resolved batch repository instance and replace its connection with the previously replaced one
+            // Access the resolved batch repository instance and replace its connection with the previously replaced one
             $batchRepository = app(BatchRepository::class);
             $batchRepository->setConnection($this->previousConnection);
             $this->previousConnection = null;
