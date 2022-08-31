@@ -38,7 +38,9 @@ class InitializeTenancyByPath extends IdentificationMiddleware
         // simply injected into some route controller action.
         if ($route->parameterNames()[0] === PathTenantResolver::$tenantParameterName) {
             return $this->initializeTenancy(
-                $request, $next, $route
+                $request,
+                $next,
+                $route
             );
         } else {
             throw new RouteIsMissingTenantParameterException;

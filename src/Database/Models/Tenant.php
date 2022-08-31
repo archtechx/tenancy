@@ -29,7 +29,9 @@ class Tenant extends Model implements Contracts\Tenant
         Concerns\InvalidatesResolverCache;
 
     protected $table = 'tenants';
+
     protected $primaryKey = 'id';
+
     protected $guarded = [];
 
     public function getTenantKeyName(): string
@@ -37,7 +39,7 @@ class Tenant extends Model implements Contracts\Tenant
         return 'id';
     }
 
-    public function getTenantKey()
+    public function getTenantKey(): int|string
     {
         return $this->getAttribute($this->getTenantKeyName());
     }

@@ -6,6 +6,8 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Cache\CacheManager as BaseCacheManager;
 
+// todo move to Cache namespace?
+
 class CacheManager extends BaseCacheManager
 {
     /**
@@ -13,7 +15,6 @@ class CacheManager extends BaseCacheManager
      *
      * @param string $method
      * @param array $parameters
-     * @return mixed
      */
     public function __call($method, $parameters)
     {
@@ -21,13 +22,13 @@ class CacheManager extends BaseCacheManager
 
         if ($method === 'tags') {
             $count = count($parameters);
-            
+
             if ($count !== 1) {
                 throw new \Exception("Method tags() takes exactly 1 argument. $count passed.");
             }
 
             $names = $parameters[0];
-            $names = (array) $names; // cache()->tags('foo') https://laravel.com/docs/5.7/cache#removing-tagged-cache-items
+            $names = (array) $names; // cache()->tags('foo') https://laravel.com/docs/9.x/cache#removing-tagged-cache-items
 
             return $this->store()->tags(array_merge($tags, $names));
         }

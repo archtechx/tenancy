@@ -1,0 +1,25 @@
+includes:
+    - ./vendor/nunomaduro/larastan/extension.neon
+
+parameters:
+    paths:
+        - src
+        # - tests
+
+    level: 8
+
+    universalObjectCratesClasses:
+        - Illuminate\Routing\Route
+
+    ignoreErrors:
+        -
+            message: '#Cannot access offset (.*?) on Illuminate\\Contracts\\Foundation\\Application#'
+            paths:
+                - src/TenancyServiceProvider.php
+        -
+            message: '#invalid type Laravel\\Telescope\\IncomingEntry#'
+            paths:
+                - src/Features/TelescopeTags.php
+
+    checkMissingIterableValueType: false
+    treatPhpDocTypesAsCertain: false

@@ -10,7 +10,7 @@ use Stancl\Tenancy\Events\SyncedResourceSaved;
 
 trait ResourceSyncing
 {
-    public static function bootResourceSyncing()
+    public static function bootResourceSyncing(): void
     {
         static::saved(function (Syncable $model) {
             /** @var ResourceSyncing $model */
@@ -27,7 +27,7 @@ trait ResourceSyncing
         });
     }
 
-    public function triggerSyncEvent()
+    public function triggerSyncEvent(): void
     {
         /** @var Syncable $this */
         event(new SyncedResourceSaved($this, tenant()));

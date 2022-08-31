@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Features;
 
-use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Stancl\Tenancy\Contracts\Feature;
@@ -14,7 +13,8 @@ use Stancl\Tenancy\Tenancy;
 
 class UserImpersonation implements Feature
 {
-    public static $ttl = 60; // seconds
+    /** The lifespan of impersonation tokens (in seconds). */
+    public static int $ttl = 60;
 
     public function bootstrap(Tenancy $tenancy): void
     {
@@ -28,26 +28,21 @@ class UserImpersonation implements Feature
         });
     }
 
-    /**
-     * Impersonate a user and get an HTTP redirect response.
-     *
-     * @param string|ImpersonationToken $token
-     * @param int $ttl
-     * @return RedirectResponse
-     */
-    public static function makeResponse($token, int $ttl = null): RedirectResponse
+    /** Impersonate a user and get an HTTP redirect response. */
+    public static function makeResponse(string|ImpersonationToken $token, int $ttl = null): RedirectResponse
     {
+        /** @var ImpersonationToken $token */
         $token = $token instanceof ImpersonationToken ? $token : ImpersonationToken::findOrFail($token);
+        $ttl ??= static::$ttl;
 
-        if (((string) $token->tenant_id) !== ((string) tenant()->getTenantKey())) {
-            abort(403);
-        }
+        $tokenExpired = $token->created_at->diffInSeconds(now()) > $ttl;
 
-        $ttl = $ttl ?? static::$ttl;
+        abort_if($tokenExpired, 403);
 
-        if ($token->created_at->diffInSeconds(Carbon::now()) > $ttl) {
-            abort(403);
-        }
+        $tokenTenantId = (string) $token->tenant_id;
+        $currentTenantId = (string) tenant()->getTenantKey();
+
+        abort_unless($tokenTenantId === $currentTenantId, 403);
 
         Auth::guard($token->auth_guard)->loginUsingId($token->user_id);
 

@@ -23,7 +23,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         Redis::connection('cache')->flushdb();
 
         file_put_contents(database_path('central.sqlite'), '');
-        $this->artisan('migrate:fresh', [
+        pest()->artisan('migrate:fresh', [
             '--force' => true,
             '--path' => __DIR__ . '/../assets/migrations',
             '--realpath' => true,
@@ -48,11 +48,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     protected function getEnvironmentSetUp($app)
     {
         if (file_exists(__DIR__ . '/../.env')) {
-            if (method_exists(\Dotenv\Dotenv::class, 'createImmutable')) {
-                \Dotenv\Dotenv::createImmutable(__DIR__ . '/..')->load();
-            } else {
-                \Dotenv\Dotenv::create(__DIR__ . '/..')->load();
-            }
+            \Dotenv\Dotenv::createImmutable(__DIR__ . '/..')->load();
         }
 
         $app['config']->set([
@@ -81,6 +77,10 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             ],
             'database.connections.sqlite.database' => ':memory:',
             'database.connections.mysql.host' => env('TENANCY_TEST_MYSQL_HOST', '127.0.0.1'),
+            'database.connections.sqlsrv.username' => env('TENANCY_TEST_SQLSRV_USERNAME', 'sa'),
+            'database.connections.sqlsrv.password' => env('TENANCY_TEST_SQLSRV_PASSWORD', 'P@ssword'),
+            'database.connections.sqlsrv.host' => env('TENANCY_TEST_SQLSRV_HOST', '127.0.0.1'),
+            'database.connections.sqlsrv.database' => null,
             'database.connections.pgsql.host' => env('TENANCY_TEST_PGSQL_HOST', '127.0.0.1'),
             'tenancy.filesystem.disks' => [
                 'local',

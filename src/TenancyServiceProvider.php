@@ -5,19 +5,18 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Illuminate\Cache\CacheManager;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Domain;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Enums\LogMode;
+use Stancl\Tenancy\Events\Contracts\TenancyEvent;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 
 class TenancyServiceProvider extends ServiceProvider
 {
-    /**
-     * Register services.
-     *
-     * @return void
-     */
+    /* Register services. */
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../assets/config.php', 'tenancy');
@@ -74,11 +73,7 @@ class TenancyServiceProvider extends ServiceProvider
         });
     }
 
-    /**
-     * Bootstrap services.
-     *
-     * @return void
-     */
+    /* Bootstrap services. */
     public function boot(): void
     {
         $this->commands([
@@ -88,6 +83,7 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\Migrate::class,
             Commands\Rollback::class,
             Commands\TenantList::class,
+            Commands\TenantDump::class,
             Commands\MigrateFresh::class,
         ]);
 
@@ -114,6 +110,18 @@ class TenancyServiceProvider extends ServiceProvider
         if (config('tenancy.routes', true)) {
             $this->loadRoutesFrom(__DIR__ . '/../assets/routes.php');
         }
+
+        Event::listen('Stancl\\Tenancy\\Events\\*', function (string $name, array $data) {
+            $event = $data[0];
+
+            if ($event instanceof TenancyEvent) {
+                match (tenancy()->logMode()) {
+                    LogMode::SILENT => tenancy()->logEvent($event),
+                    LogMode::INSTANT => dump($event), // todo0 perhaps still log
+                    default => null,
+                };
+            }
+        });
 
         $this->app->singleton('globalUrl', function ($app) {
             if ($app->bound(FilesystemTenancyBootstrapper::class)) {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Listeners;
 
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Stancl\Tenancy\Contracts\SyncMaster;
@@ -13,9 +14,9 @@ use Stancl\Tenancy\Exceptions\ModelNotSyncMasterException;
 
 class UpdateSyncedResource extends QueueableListener
 {
-    public static $shouldQueue = false;
+    public static bool $shouldQueue = false;
 
-    public function handle(SyncedResourceSaved $event)
+    public function handle(SyncedResourceSaved $event): void
     {
         $syncedAttributes = $event->model->only($event->model->getSyncedAttributeNames());
 
@@ -29,7 +30,7 @@ class UpdateSyncedResource extends QueueableListener
         $this->updateResourceInTenantDatabases($tenants, $event, $syncedAttributes);
     }
 
-    protected function getTenantsForCentralModel($centralModel)
+    protected function getTenantsForCentralModel($centralModel): EloquentCollection
     {
         if (! $centralModel instanceof SyncMaster) {
             // If we're trying to use a tenant User model instead of the central User model, for example.
@@ -45,11 +46,10 @@ class UpdateSyncedResource extends QueueableListener
         return $centralModel->tenants;
     }
 
-    protected function updateResourceInCentralDatabaseAndGetTenants($event, $syncedAttributes)
+    protected function updateResourceInCentralDatabaseAndGetTenants($event, $syncedAttributes): EloquentCollection
     {
         /** @var Model|SyncMaster $centralModel */
-        $centralModel = $event->model->getCentralModelName()
-            ::where($event->model->getGlobalIdentifierKeyName(), $event->model->getGlobalIdentifierKey())
+        $centralModel = $event->model->getCentralModelName()::where($event->model->getGlobalIdentifierKeyName(), $event->model->getGlobalIdentifierKey())
             ->first();
 
         // We disable events for this call, to avoid triggering this event & listener again.
@@ -86,7 +86,7 @@ class UpdateSyncedResource extends QueueableListener
         });
     }
 
-    protected function updateResourceInTenantDatabases($tenants, $event, $syncedAttributes)
+    protected function updateResourceInTenantDatabases($tenants, $event, $syncedAttributes): void
     {
         tenancy()->runForMultiple($tenants, function ($tenant) use ($event, $syncedAttributes) {
             // Forget instance state and find the model,

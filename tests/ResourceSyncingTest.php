@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests;
-
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Events\CallQueuedListener;
@@ -17,7 +15,7 @@ use Stancl\Tenancy\Contracts\SyncMaster;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
 use Stancl\Tenancy\Database\Concerns\ResourceSyncing;
 use Stancl\Tenancy\Database\Models\TenantPivot;
-use Stancl\Tenancy\DatabaseConfig;
+use Stancl\Tenancy\Database\DatabaseConfig;
 use Stancl\Tenancy\Events\SyncedResourceChangedInForeignDatabase;
 use Stancl\Tenancy\Events\SyncedResourceSaved;
 use Stancl\Tenancy\Events\TenancyEnded;
@@ -30,549 +28,521 @@ use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Listeners\UpdateSyncedResource;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
-class ResourceSyncingTest extends TestCase
-{
-    public function setUp(): void
-    {
-        parent::setUp();
+beforeEach(function () {
+    config(['tenancy.bootstrappers' => [
+        DatabaseTenancyBootstrapper::class,
+    ]]);
 
-        config(['tenancy.bootstrappers' => [
-            DatabaseTenancyBootstrapper::class,
-        ]]);
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
 
-        Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
-            return $event->tenant;
-        })->toListener());
+    DatabaseConfig::generateDatabaseNamesUsing(function () {
+        return 'db' . Str::random(16);
+    });
 
-        DatabaseConfig::generateDatabaseNamesUsing(function () {
-            return 'db' . Str::random(16);
-        });
+    Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
-        Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
-        Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+    UpdateSyncedResource::$shouldQueue = false; // global state cleanup
+    Event::listen(SyncedResourceSaved::class, UpdateSyncedResource::class);
 
-        UpdateSyncedResource::$shouldQueue = false; // global state cleanup
-        Event::listen(SyncedResourceSaved::class, UpdateSyncedResource::class);
+    pest()->artisan('migrate', [
+        '--path' => [
+            __DIR__ . '/Etc/synced_resource_migrations',
+            __DIR__ . '/Etc/synced_resource_migrations/users',
+        ],
+        '--realpath' => true,
+    ])->assertExitCode(0);
+});
 
-        $this->artisan('migrate', [
-            '--path' => [
-                __DIR__ . '/Etc/synced_resource_migrations',
-                __DIR__ . '/Etc/synced_resource_migrations/users',
-            ],
-            '--realpath' => true,
-        ])->assertExitCode(0);
-    }
+test('an event is triggered when a synced resource is changed', function () {
+    Event::fake([SyncedResourceSaved::class]);
 
-    protected function migrateTenants()
-    {
-        $this->artisan('tenants:migrate', [
-            '--path' => __DIR__ . '/Etc/synced_resource_migrations/users',
-            '--realpath' => true,
-        ])->assertExitCode(0);
-    }
+    $user = ResourceUser::create([
+        'name' => 'Foo',
+        'email' => 'foo@email.com',
+        'password' => 'secret',
+        'global_id' => 'foo',
+        'role' => 'foo',
+    ]);
 
-    /** @test */
-    public function an_event_is_triggered_when_a_synced_resource_is_changed()
-    {
-        Event::fake([SyncedResourceSaved::class]);
+    Event::assertDispatched(SyncedResourceSaved::class, function (SyncedResourceSaved $event) use ($user) {
+        return $event->model === $user;
+    });
+});
 
-        $user = ResourceUser::create([
-            'name' => 'Foo',
-            'email' => 'foo@email.com',
-            'password' => 'secret',
-            'global_id' => 'foo',
-            'role' => 'foo',
-        ]);
+test('only the synced columns are updated in the central db', function () {
+    // Create user in central DB
+    $user = CentralUser::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'superadmin', // unsynced
+    ]);
 
-        Event::assertDispatched(SyncedResourceSaved::class, function (SyncedResourceSaved $event) use ($user) {
-            return $event->model === $user;
-        });
-    }
+    $tenant = ResourceTenant::create();
+    migrateTenantsResource();
 
-    /** @test */
-    public function only_the_synced_columns_are_updated_in_the_central_db()
-    {
-        // Create user in central DB
-        $user = CentralUser::create([
-            'global_id' => 'acme',
-            'name' => 'John Doe',
-            'email' => 'john@localhost',
-            'password' => 'secret',
-            'role' => 'superadmin', // unsynced
-        ]);
+    tenancy()->initialize($tenant);
 
-        $tenant = ResourceTenant::create();
-        $this->migrateTenants();
+    // Create the same user in tenant DB
+    $user = ResourceUser::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter', // unsynced
+    ]);
 
-        tenancy()->initialize($tenant);
+    // Update user in tenant DB
+    $user->update([
+        'name' => 'John Foo', // synced
+        'email' => 'john@foreignhost', // synced
+        'role' => 'admin', // unsynced
+    ]);
 
-        // Create the same user in tenant DB
-        $user = ResourceUser::create([
-            'global_id' => 'acme',
-            'name' => 'John Doe',
-            'email' => 'john@localhost',
-            'password' => 'secret',
-            'role' => 'commenter', // unsynced
-        ]);
+    // Assert new values
+    pest()->assertEquals([
+        'id' => 1,
+        'global_id' => 'acme',
+        'name' => 'John Foo',
+        'email' => 'john@foreignhost',
+        'password' => 'secret',
+        'role' => 'admin',
+    ], $user->getAttributes());
 
-        // Update user in tenant DB
-        $user->update([
-            'name' => 'John Foo', // synced
-            'email' => 'john@foreignhost', // synced
-            'role' => 'admin', // unsynced
-        ]);
+    tenancy()->end();
 
-        // Assert new values
-        $this->assertEquals([
-            'id' => 1,
-            'global_id' => 'acme',
-            'name' => 'John Foo',
-            'email' => 'john@foreignhost',
-            'password' => 'secret',
-            'role' => 'admin',
-        ], $user->getAttributes());
+    // Assert changes bubbled up
+    pest()->assertEquals([
+        'id' => 1,
+        'global_id' => 'acme',
+        'name' => 'John Foo', // synced
+        'email' => 'john@foreignhost', // synced
+        'password' => 'secret', // no changes
+        'role' => 'superadmin', // unsynced
+    ], ResourceUser::first()->getAttributes());
+});
 
-        tenancy()->end();
+test('creating the resource in tenant database creates it in central database and creates the mapping', function () {
+    creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase();
+});
 
-        // Assert changes bubbled up
-        $this->assertEquals([
-            'id' => 1,
-            'global_id' => 'acme',
-            'name' => 'John Foo', // synced
-            'email' => 'john@foreignhost', // synced
-            'password' => 'secret', // no changes
-            'role' => 'superadmin', // unsynced
-        ], ResourceUser::first()->getAttributes());
-    }
+test('trying to update synced resources from central context using tenant models results in an exception', function () {
+    creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase();
 
-    /** @test */
-    public function creating_the_resource_in_tenant_database_creates_it_in_central_database_and_creates_the_mapping()
-    {
-        // Assert no user in central DB
-        $this->assertCount(0, ResourceUser::all());
+    tenancy()->end();
+    expect(tenancy()->initialized)->toBeFalse();
 
-        $tenant = ResourceTenant::create();
-        $this->migrateTenants();
+    pest()->expectException(ModelNotSyncMasterException::class);
+    ResourceUser::first()->update(['role' => 'foobar']);
+});
 
-        tenancy()->initialize($tenant);
+test('attaching a tenant to the central resource triggers a pull from the tenant db', function () {
+    $centralUser = CentralUser::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter', // unsynced
+    ]);
 
-        // Create the same user in tenant DB
+    $tenant = ResourceTenant::create([
+        'id' => 't1',
+    ]);
+    migrateTenantsResource();
+
+    $tenant->run(function () {
+        expect(ResourceUser::all())->toHaveCount(0);
+    });
+
+    $centralUser->tenants()->attach('t1');
+
+    $tenant->run(function () {
+        expect(ResourceUser::all())->toHaveCount(1);
+    });
+});
+
+test('attaching users to tenants does not do anything', function () {
+    $centralUser = CentralUser::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter', // unsynced
+    ]);
+
+    $tenant = ResourceTenant::create([
+        'id' => 't1',
+    ]);
+    migrateTenantsResource();
+
+    $tenant->run(function () {
+        expect(ResourceUser::all())->toHaveCount(0);
+    });
+
+    // The child model is inaccessible in the Pivot Model, so we can't fire any events.
+    $tenant->users()->attach($centralUser);
+
+    $tenant->run(function () {
+        // Still zero
+        expect(ResourceUser::all())->toHaveCount(0);
+    });
+});
+
+test('resources are synced only to workspaces that have the resource', function () {
+    $centralUser = CentralUser::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter', // unsynced
+    ]);
+
+    $t1 = ResourceTenant::create([
+        'id' => 't1',
+    ]);
+
+    $t2 = ResourceTenant::create([
+        'id' => 't2',
+    ]);
+
+    $t3 = ResourceTenant::create([
+        'id' => 't3',
+    ]);
+    migrateTenantsResource();
+
+    $centralUser->tenants()->attach('t1');
+    $centralUser->tenants()->attach('t2');
+    // t3 is not attached
+
+    $t1->run(function () {
+        // assert user exists
+        expect(ResourceUser::all())->toHaveCount(1);
+    });
+
+    $t2->run(function () {
+        // assert user exists
+        expect(ResourceUser::all())->toHaveCount(1);
+    });
+
+    $t3->run(function () {
+        // assert user does NOT exist
+        expect(ResourceUser::all())->toHaveCount(0);
+    });
+});
+
+test('when a resource exists in other tenant dbs but is created in a tenant db the synced columns are updated in the other dbs', function () {
+    // create shared resource
+    $centralUser = CentralUser::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter', // unsynced
+    ]);
+
+    $t1 = ResourceTenant::create([
+        'id' => 't1',
+    ]);
+    $t2 = ResourceTenant::create([
+        'id' => 't2',
+    ]);
+    migrateTenantsResource();
+
+    // Copy (cascade) user to t1 DB
+    $centralUser->tenants()->attach('t1');
+
+    $t2->run(function () {
+        // Create user with the same global ID in t2 database
         ResourceUser::create([
             'global_id' => 'acme',
-            'name' => 'John Doe',
-            'email' => 'john@localhost',
+            'name' => 'John Foo', // changed
+            'email' => 'john@foo', // changed
             'password' => 'secret',
-            'role' => 'commenter', // unsynced
+            'role' => 'superadmin', // unsynced
+        ]);
+    });
+
+    $centralUser = CentralUser::first();
+    expect($centralUser->name)->toBe('John Foo'); // name changed
+    expect($centralUser->email)->toBe('john@foo'); // email changed
+    expect($centralUser->role)->toBe('commenter'); // role didn't change
+
+    $t1->run(function () {
+        $user = ResourceUser::first();
+        expect($user->name)->toBe('John Foo'); // name changed
+        expect($user->email)->toBe('john@foo'); // email changed
+        expect($user->role)->toBe('commenter'); // role didn't change, i.e. is the same as from the original copy from central
+    });
+});
+
+test('the synced columns are updated in other tenant dbs where the resource exists', function () {
+    // create shared resource
+    $centralUser = CentralUser::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter', // unsynced
+    ]);
+
+    $t1 = ResourceTenant::create([
+        'id' => 't1',
+    ]);
+    $t2 = ResourceTenant::create([
+        'id' => 't2',
+    ]);
+    $t3 = ResourceTenant::create([
+        'id' => 't3',
+    ]);
+    migrateTenantsResource();
+
+    // Copy (cascade) user to t1 DB
+    $centralUser->tenants()->attach('t1');
+    $centralUser->tenants()->attach('t2');
+    $centralUser->tenants()->attach('t3');
+
+    $t3->run(function () {
+        ResourceUser::first()->update([
+            'name' => 'John 3',
+            'role' => 'employee', // unsynced
         ]);
 
-        tenancy()->end();
+        expect(ResourceUser::first()->role)->toBe('employee');
+    });
 
-        // Asset user was created
-        $this->assertSame('acme', CentralUser::first()->global_id);
-        $this->assertSame('commenter', CentralUser::first()->role);
+    // Check that change was cascaded to other tenants
+    $t1->run($check = function () {
+        $user = ResourceUser::first();
 
-        // Assert mapping was created
-        $this->assertCount(1, CentralUser::first()->tenants);
+        expect($user->name)->toBe('John 3'); // synced
+        expect($user->role)->toBe('commenter'); // unsynced
+    });
+    $t2->run($check);
 
-        // Assert role change doesn't cascade
-        CentralUser::first()->update(['role' => 'central superadmin']);
-        tenancy()->initialize($tenant);
-        $this->assertSame('commenter', ResourceUser::first()->role);
-    }
+    // Check that change bubbled up to central DB
+    expect(CentralUser::count())->toBe(1);
+    $centralUser = CentralUser::first();
+    expect($centralUser->name)->toBe('John 3'); // synced
+    expect($centralUser->role)->toBe('commenter'); // unsynced
+});
 
-    /** @test */
-    public function trying_to_update_synced_resources_from_central_context_using_tenant_models_results_in_an_exception()
-    {
-        $this->creating_the_resource_in_tenant_database_creates_it_in_central_database_and_creates_the_mapping();
+test('global id is generated using id generator when its not supplied', function () {
+    $user = CentralUser::create([
+        'name' => 'John Doe',
+        'email' => 'john@doe',
+        'password' => 'secret',
+        'role' => 'employee',
+    ]);
 
-        tenancy()->end();
-        $this->assertFalse(tenancy()->initialized);
+    pest()->assertNotNull($user->global_id);
+});
 
-        $this->expectException(ModelNotSyncMasterException::class);
-        ResourceUser::first()->update(['role' => 'foobar']);
-    }
+test('when the resource doesnt exist in the tenant db non synced columns will cascade too', function () {
+    $centralUser = CentralUser::create([
+        'name' => 'John Doe',
+        'email' => 'john@doe',
+        'password' => 'secret',
+        'role' => 'employee',
+    ]);
 
-    /** @test */
-    public function attaching_a_tenant_to_the_central_resource_triggers_a_pull_from_the_tenant_db()
-    {
-        $centralUser = CentralUser::create([
-            'global_id' => 'acme',
-            'name' => 'John Doe',
-            'email' => 'john@localhost',
-            'password' => 'secret',
-            'role' => 'commenter', // unsynced
-        ]);
+    $t1 = ResourceTenant::create([
+        'id' => 't1',
+    ]);
 
-        $tenant = ResourceTenant::create([
-            'id' => 't1',
-        ]);
-        $this->migrateTenants();
+    migrateTenantsResource();
 
-        $tenant->run(function () {
-            $this->assertCount(0, ResourceUser::all());
-        });
+    $centralUser->tenants()->attach('t1');
 
-        $centralUser->tenants()->attach('t1');
+    $t1->run(function () {
+        expect(ResourceUser::first()->role)->toBe('employee');
+    });
+});
 
-        $tenant->run(function () {
-            $this->assertCount(1, ResourceUser::all());
-        });
-    }
+test('when the resource doesnt exist in the central db non synced columns will bubble up too', function () {
+    $t1 = ResourceTenant::create([
+        'id' => 't1',
+    ]);
 
-    /** @test */
-    public function attaching_users_to_tenants_DOES_NOT_DO_ANYTHING()
-    {
-        $centralUser = CentralUser::create([
-            'global_id' => 'acme',
-            'name' => 'John Doe',
-            'email' => 'john@localhost',
-            'password' => 'secret',
-            'role' => 'commenter', // unsynced
-        ]);
+    migrateTenantsResource();
 
-        $tenant = ResourceTenant::create([
-            'id' => 't1',
-        ]);
-        $this->migrateTenants();
-
-        $tenant->run(function () {
-            $this->assertCount(0, ResourceUser::all());
-        });
-
-        // The child model is inaccessible in the Pivot Model, so we can't fire any events.
-        $tenant->users()->attach($centralUser);
-
-        $tenant->run(function () {
-            // Still zero
-            $this->assertCount(0, ResourceUser::all());
-        });
-    }
-
-    /** @test */
-    public function resources_are_synced_only_to_workspaces_that_have_the_resource()
-    {
-        $centralUser = CentralUser::create([
-            'global_id' => 'acme',
-            'name' => 'John Doe',
-            'email' => 'john@localhost',
-            'password' => 'secret',
-            'role' => 'commenter', // unsynced
-        ]);
-
-        $t1 = ResourceTenant::create([
-            'id' => 't1',
-        ]);
-
-        $t2 = ResourceTenant::create([
-            'id' => 't2',
-        ]);
-
-        $t3 = ResourceTenant::create([
-            'id' => 't3',
-        ]);
-        $this->migrateTenants();
-
-        $centralUser->tenants()->attach('t1');
-        $centralUser->tenants()->attach('t2');
-        // t3 is not attached
-
-        $t1->run(function () {
-            // assert user exists
-            $this->assertCount(1, ResourceUser::all());
-        });
-
-        $t2->run(function () {
-            // assert user exists
-            $this->assertCount(1, ResourceUser::all());
-        });
-
-        $t3->run(function () {
-            // assert user does NOT exist
-            $this->assertCount(0, ResourceUser::all());
-        });
-    }
-
-    /** @test */
-    public function when_a_resource_exists_in_other_tenant_dbs_but_is_CREATED_in_a_tenant_db_the_synced_columns_are_updated_in_the_other_dbs()
-    {
-        // create shared resource
-        $centralUser = CentralUser::create([
-            'global_id' => 'acme',
-            'name' => 'John Doe',
-            'email' => 'john@localhost',
-            'password' => 'secret',
-            'role' => 'commenter', // unsynced
-        ]);
-
-        $t1 = ResourceTenant::create([
-            'id' => 't1',
-        ]);
-        $t2 = ResourceTenant::create([
-            'id' => 't2',
-        ]);
-        $this->migrateTenants();
-
-        // Copy (cascade) user to t1 DB
-        $centralUser->tenants()->attach('t1');
-
-        $t2->run(function () {
-            // Create user with the same global ID in t2 database
-            ResourceUser::create([
-                'global_id' => 'acme',
-                'name' => 'John Foo', // changed
-                'email' => 'john@foo', // changed
-                'password' => 'secret',
-                'role' => 'superadmin', // unsynced
-            ]);
-        });
-
-        $centralUser = CentralUser::first();
-        $this->assertSame('John Foo', $centralUser->name); // name changed
-        $this->assertSame('john@foo', $centralUser->email); // email changed
-        $this->assertSame('commenter', $centralUser->role); // role didn't change
-
-        $t1->run(function () {
-            $user = ResourceUser::first();
-            $this->assertSame('John Foo', $user->name); // name changed
-            $this->assertSame('john@foo', $user->email); // email changed
-            $this->assertSame('commenter', $user->role); // role didn't change, i.e. is the same as from the original copy from central
-        });
-    }
-
-    /** @test */
-    public function the_synced_columns_are_updated_in_other_tenant_dbs_where_the_resource_exists()
-    {
-        // create shared resource
-        $centralUser = CentralUser::create([
-            'global_id' => 'acme',
-            'name' => 'John Doe',
-            'email' => 'john@localhost',
-            'password' => 'secret',
-            'role' => 'commenter', // unsynced
-        ]);
-
-        $t1 = ResourceTenant::create([
-            'id' => 't1',
-        ]);
-        $t2 = ResourceTenant::create([
-            'id' => 't2',
-        ]);
-        $t3 = ResourceTenant::create([
-            'id' => 't3',
-        ]);
-        $this->migrateTenants();
-
-        // Copy (cascade) user to t1 DB
-        $centralUser->tenants()->attach('t1');
-        $centralUser->tenants()->attach('t2');
-        $centralUser->tenants()->attach('t3');
-
-        $t3->run(function () {
-            ResourceUser::first()->update([
-                'name' => 'John 3',
-                'role' => 'employee', // unsynced
-            ]);
-
-            $this->assertSame('employee', ResourceUser::first()->role);
-        });
-
-        // Check that change was cascaded to other tenants
-        $t1->run($check = function () {
-            $user = ResourceUser::first();
-
-            $this->assertSame('John 3', $user->name); // synced
-            $this->assertSame('commenter', $user->role); // unsynced
-        });
-        $t2->run($check);
-
-        // Check that change bubbled up to central DB
-        $this->assertSame(1, CentralUser::count());
-        $centralUser = CentralUser::first();
-        $this->assertSame('John 3', $centralUser->name); // synced
-        $this->assertSame('commenter', $centralUser->role); // unsynced
-    }
-
-    /** @test */
-    public function global_id_is_generated_using_id_generator_when_its_not_supplied()
-    {
-        $user = CentralUser::create([
+    $t1->run(function () {
+        ResourceUser::create([
             'name' => 'John Doe',
             'email' => 'john@doe',
             'password' => 'secret',
             'role' => 'employee',
         ]);
+    });
 
-        $this->assertNotNull($user->global_id);
-    }
+    expect(CentralUser::first()->role)->toBe('employee');
+});
 
-    /** @test */
-    public function when_the_resource_doesnt_exist_in_the_tenant_db_non_synced_columns_will_cascade_too()
-    {
-        $centralUser = CentralUser::create([
+test('the listener can be queued', function () {
+    Queue::fake();
+    UpdateSyncedResource::$shouldQueue = true;
+
+    $t1 = ResourceTenant::create([
+        'id' => 't1',
+    ]);
+
+    migrateTenantsResource();
+
+    Queue::assertNothingPushed();
+
+    $t1->run(function () {
+        ResourceUser::create([
             'name' => 'John Doe',
             'email' => 'john@doe',
             'password' => 'secret',
             'role' => 'employee',
         ]);
+    });
 
-        $t1 = ResourceTenant::create([
-            'id' => 't1',
+    Queue::assertPushed(CallQueuedListener::class, function (CallQueuedListener $job) {
+        return $job->class === UpdateSyncedResource::class;
+    });
+});
+
+test('an event is fired for all touched resources', function () {
+    Event::fake([SyncedResourceChangedInForeignDatabase::class]);
+
+    // create shared resource
+    $centralUser = CentralUser::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter', // unsynced
+    ]);
+
+    $t1 = ResourceTenant::create([
+        'id' => 't1',
+    ]);
+    $t2 = ResourceTenant::create([
+        'id' => 't2',
+    ]);
+    $t3 = ResourceTenant::create([
+        'id' => 't3',
+    ]);
+    migrateTenantsResource();
+
+    // Copy (cascade) user to t1 DB
+    $centralUser->tenants()->attach('t1');
+    Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+        return $event->tenant->getTenantKey() === 't1';
+    });
+
+    $centralUser->tenants()->attach('t2');
+    Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+        return $event->tenant->getTenantKey() === 't2';
+    });
+
+    $centralUser->tenants()->attach('t3');
+    Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+        return $event->tenant->getTenantKey() === 't3';
+    });
+
+    // Assert no event for central
+    Event::assertNotDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+        return $event->tenant === null;
+    });
+
+    // Flush
+    Event::fake([SyncedResourceChangedInForeignDatabase::class]);
+
+    $t3->run(function () {
+        ResourceUser::first()->update([
+            'name' => 'John 3',
+            'role' => 'employee', // unsynced
         ]);
 
-        $this->migrateTenants();
+        expect(ResourceUser::first()->role)->toBe('employee');
+    });
 
-        $centralUser->tenants()->attach('t1');
+    Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+        return optional($event->tenant)->getTenantKey() === 't1';
+    });
+    Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+        return optional($event->tenant)->getTenantKey() === 't2';
+    });
 
-        $t1->run(function () {
-            $this->assertSame('employee', ResourceUser::first()->role);
-        });
-    }
+    // Assert NOT dispatched in t3
+    Event::assertNotDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+        return optional($event->tenant)->getTenantKey() === 't3';
+    });
 
-    /** @test */
-    public function when_the_resource_doesnt_exist_in_the_central_db_non_synced_columns_will_bubble_up_too()
-    {
-        $t1 = ResourceTenant::create([
-            'id' => 't1',
-        ]);
+    // Assert dispatched in central
+    Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+        return $event->tenant === null;
+    });
 
-        $this->migrateTenants();
+    // Flush
+    Event::fake([SyncedResourceChangedInForeignDatabase::class]);
 
-        $t1->run(function () {
-            ResourceUser::create([
-                'name' => 'John Doe',
-                'email' => 'john@doe',
-                'password' => 'secret',
-                'role' => 'employee',
-            ]);
-        });
+    $centralUser->update([
+        'name' => 'John Central',
+    ]);
 
-        $this->assertSame('employee', CentralUser::first()->role);
-    }
+    Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+        return optional($event->tenant)->getTenantKey() === 't1';
+    });
+    Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+        return optional($event->tenant)->getTenantKey() === 't2';
+    });
+    Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+        return optional($event->tenant)->getTenantKey() === 't3';
+    });
+    // Assert NOT dispatched in central
+    Event::assertNotDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
+        return $event->tenant === null;
+    });
+});
 
-    /** @test */
-    public function the_listener_can_be_queued()
-    {
-        Queue::fake();
-        UpdateSyncedResource::$shouldQueue = true;
+// todo@tests
+function creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase()
+{
+    // Assert no user in central DB
+    expect(ResourceUser::all())->toHaveCount(0);
 
-        $t1 = ResourceTenant::create([
-            'id' => 't1',
-        ]);
+    $tenant = ResourceTenant::create();
+    migrateTenantsResource();
 
-        $this->migrateTenants();
+    tenancy()->initialize($tenant);
 
-        Queue::assertNothingPushed();
+    // Create the same user in tenant DB
+    ResourceUser::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter', // unsynced
+    ]);
 
-        $t1->run(function () {
-            ResourceUser::create([
-                'name' => 'John Doe',
-                'email' => 'john@doe',
-                'password' => 'secret',
-                'role' => 'employee',
-            ]);
-        });
+    tenancy()->end();
 
-        Queue::assertPushed(CallQueuedListener::class, function (CallQueuedListener $job) {
-            return $job->class === UpdateSyncedResource::class;
-        });
-    }
+    // Asset user was created
+    expect(CentralUser::first()->global_id)->toBe('acme');
+    expect(CentralUser::first()->role)->toBe('commenter');
 
-    /** @test */
-    public function an_event_is_fired_for_all_touched_resources()
-    {
-        Event::fake([SyncedResourceChangedInForeignDatabase::class]);
+    // Assert mapping was created
+    expect(CentralUser::first()->tenants)->toHaveCount(1);
 
-        // create shared resource
-        $centralUser = CentralUser::create([
-            'global_id' => 'acme',
-            'name' => 'John Doe',
-            'email' => 'john@localhost',
-            'password' => 'secret',
-            'role' => 'commenter', // unsynced
-        ]);
+    // Assert role change doesn't cascade
+    CentralUser::first()->update(['role' => 'central superadmin']);
+    tenancy()->initialize($tenant);
+    expect(ResourceUser::first()->role)->toBe('commenter');
+}
 
-        $t1 = ResourceTenant::create([
-            'id' => 't1',
-        ]);
-        $t2 = ResourceTenant::create([
-            'id' => 't2',
-        ]);
-        $t3 = ResourceTenant::create([
-            'id' => 't3',
-        ]);
-        $this->migrateTenants();
-
-        // Copy (cascade) user to t1 DB
-        $centralUser->tenants()->attach('t1');
-        Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
-            return $event->tenant->getTenantKey() === 't1';
-        });
-
-        $centralUser->tenants()->attach('t2');
-        Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
-            return $event->tenant->getTenantKey() === 't2';
-        });
-
-        $centralUser->tenants()->attach('t3');
-        Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
-            return $event->tenant->getTenantKey() === 't3';
-        });
-
-        // Assert no event for central
-        Event::assertNotDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
-            return $event->tenant === null;
-        });
-
-        // Flush
-        Event::fake([SyncedResourceChangedInForeignDatabase::class]);
-
-        $t3->run(function () {
-            ResourceUser::first()->update([
-                'name' => 'John 3',
-                'role' => 'employee', // unsynced
-            ]);
-
-            $this->assertSame('employee', ResourceUser::first()->role);
-        });
-
-        Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
-            return optional($event->tenant)->getTenantKey() === 't1';
-        });
-        Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
-            return optional($event->tenant)->getTenantKey() === 't2';
-        });
-
-        // Assert NOT dispatched in t3
-        Event::assertNotDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
-            return optional($event->tenant)->getTenantKey() === 't3';
-        });
-
-        // Assert dispatched in central
-        Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
-            return $event->tenant === null;
-        });
-
-        // Flush
-        Event::fake([SyncedResourceChangedInForeignDatabase::class]);
-
-        $centralUser->update([
-            'name' => 'John Central',
-        ]);
-
-        Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
-            return optional($event->tenant)->getTenantKey() === 't1';
-        });
-        Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
-            return optional($event->tenant)->getTenantKey() === 't2';
-        });
-        Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
-            return optional($event->tenant)->getTenantKey() === 't3';
-        });
-        // Assert NOT dispatched in central
-        Event::assertNotDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
-            return $event->tenant === null;
-        });
-    }
+function migrateTenantsResource()
+{
+    pest()->artisan('tenants:migrate', [
+        '--path' => __DIR__ . '/Etc/synced_resource_migrations/users',
+        '--realpath' => true,
+    ])->assertExitCode(0);
 }
 
 class ResourceTenant extends Tenant
@@ -589,7 +559,9 @@ class CentralUser extends Model implements SyncMaster
     use ResourceSyncing, CentralConnection;
 
     protected $guarded = [];
+
     public $timestamps = false;
+
     public $table = 'users';
 
     public function tenants(): BelongsToMany
@@ -603,7 +575,7 @@ class CentralUser extends Model implements SyncMaster
         return ResourceUser::class;
     }
 
-    public function getGlobalIdentifierKey()
+    public function getGlobalIdentifierKey(): string|int
     {
         return $this->getAttribute($this->getGlobalIdentifierKeyName());
     }
@@ -633,10 +605,12 @@ class ResourceUser extends Model implements Syncable
     use ResourceSyncing;
 
     protected $table = 'users';
+
     protected $guarded = [];
+
     public $timestamps = false;
 
-    public function getGlobalIdentifierKey()
+    public function getGlobalIdentifierKey(): string|int
     {
         return $this->getAttribute($this->getGlobalIdentifierKeyName());
     }

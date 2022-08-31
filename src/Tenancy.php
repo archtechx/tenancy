@@ -4,42 +4,45 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
+use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Traits\Macroable;
+use Stancl\Tenancy\Concerns\Debuggable;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedById;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByIdException;
 
 class Tenancy
 {
-    use Macroable;
-
-    /** @var Tenant|Model|null */
-    public $tenant;
-
-    /** @var callable|null */
-    public $getBootstrappersUsing = null;
-
-    /** @var bool */
-    public $initialized = false;
+    use Macroable, Debuggable;
 
     /**
-     * Initializes the tenant.
-     * @param Tenant|int|string $tenant
-     * @return void
+     * The current tenant.
+     *
+     * @var (Tenant&Model)|null
      */
-    public function initialize($tenant): void
+    public ?Tenant $tenant = null;
+
+    // todo docblock
+    public ?Closure $getBootstrappersUsing = null;
+
+    /** Is tenancy fully initialized? */
+    public bool $initialized = false; // todo document the difference between $tenant being set and $initialized being true (e.g. end of initialize() method)
+
+    /** Initialize tenancy for the passed tenant. */
+    public function initialize(Tenant|int|string $tenant): void
     {
         if (! is_object($tenant)) {
             $tenantId = $tenant;
             $tenant = $this->find($tenantId);
 
             if (! $tenant) {
-                throw new TenantCouldNotBeIdentifiedById($tenantId);
+                throw new TenantCouldNotBeIdentifiedByIdException($tenantId);
             }
         }
 
+        // todo0 for phpstan this should be $this->tenant?, but first I want to clean up the $initialized logic and explore removing the property
         if ($this->initialized && $this->tenant->getTenantKey() === $tenant->getTenantKey()) {
             return;
         }
@@ -60,17 +63,19 @@ class Tenancy
 
     public function end(): void
     {
-        event(new Events\EndingTenancy($this));
-
         if (! $this->initialized) {
             return;
         }
 
+        event(new Events\EndingTenancy($this));
+
+        // todo find a way to refactor these two methods
+
         event(new Events\TenancyEnded($this));
 
-        $this->initialized = false;
-
         $this->tenant = null;
+
+        $this->initialized = false;
     }
 
     /** @return TenancyBootstrapper[] */
@@ -85,32 +90,28 @@ class Tenancy
         return array_map('app', $resolve($this->tenant));
     }
 
-    public function query(): Builder
+    public static function query(): Builder
     {
-        return $this->model()->query();
+        return static::model()->query();
     }
 
-    /** @return Tenant|Model */
-    public function model()
+    public static function model(): Tenant&Model
     {
         $class = config('tenancy.tenant_model');
 
         return new $class;
     }
 
-    public function find($id): ?Tenant
+    public static function find(int|string $id): Tenant|null
     {
-        return $this->model()->where($this->model()->getTenantKeyName(), $id)->first();
+        return static::model()->where(static::model()->getTenantKeyName(), $id)->first();
     }
 
     /**
      * Run a callback in the central context.
      * Atomic, safely reverts to previous context.
-     *
-     * @param callable $callback
-     * @return mixed
      */
-    public function central(callable $callback)
+    public function central(Closure $callback)
     {
         $previousTenant = $this->tenant;
 
@@ -132,10 +133,8 @@ class Tenancy
      * More performant than running $tenant->run() one by one.
      *
      * @param Tenant[]|\Traversable|string[]|null $tenants
-     * @param callable $callback
-     * @return void
      */
-    public function runForMultiple($tenants, callable $callback)
+    public function runForMultiple($tenants, Closure $callback): void
     {
         // Convert null to all tenants
         $tenants = is_null($tenants) ? $this->model()->cursor() : $tenants;

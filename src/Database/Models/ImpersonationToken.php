@@ -10,30 +10,33 @@ use Illuminate\Support\Str;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
 
 /**
- * @param string $token
- * @param string $tenant_id
- * @param string $user_id
- * @param string $auth_guard
- * @param string $redirect_url
- * @param Carbon $created_at
+ * @property string $token
+ * @property string $tenant_id
+ * @property string $user_id
+ * @property string $auth_guard
+ * @property string $redirect_url
+ * @property Carbon $created_at
  */
 class ImpersonationToken extends Model
 {
     use CentralConnection;
 
     protected $guarded = [];
+
     public $timestamps = false;
+
     protected $primaryKey = 'token';
+
     public $incrementing = false;
+
     protected $table = 'tenant_user_impersonation_tokens';
+
     protected $dates = [
         'created_at',
     ];
 
-    public static function boot()
+    public static function booted(): void
     {
-        parent::boot();
-
         static::creating(function ($model) {
             $model->created_at = $model->created_at ?? $model->freshTimestamp();
             $model->token = $model->token ?? Str::random(128);

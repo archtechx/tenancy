@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests;
-
 use Illuminate\Events\CallQueuedListener;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
@@ -20,190 +18,170 @@ use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Jobs\MigrateDatabase;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\QueueableListener;
-use Stancl\Tenancy\Tenancy;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
-class EventListenerTest extends TestCase
-{
-    /** @test */
-    public function listeners_can_be_synchronous()
-    {
-        Queue::fake();
-        Event::listen(TenantCreated::class, FooListener::class);
+test('listeners can be synchronous', function () {
+    Queue::fake();
+    Event::listen(TenantCreated::class, FooListener::class);
 
-        Tenant::create();
+    Tenant::create();
 
-        Queue::assertNothingPushed();
+    Queue::assertNothingPushed();
 
-        $this->assertSame('bar', app('foo'));
-    }
+    expect(app('foo'))->toBe('bar');
+});
 
-    /** @test */
-    public function listeners_can_be_queued_by_setting_a_static_property()
-    {
-        Queue::fake();
+test('listeners can be queued by setting a static property', function () {
+    Queue::fake();
 
-        Event::listen(TenantCreated::class, FooListener::class);
-        FooListener::$shouldQueue = true;
+    Event::listen(TenantCreated::class, FooListener::class);
+    FooListener::$shouldQueue = true;
 
-        Tenant::create();
+    Tenant::create();
 
-        Queue::assertPushed(CallQueuedListener::class, function (CallQueuedListener $job) {
-            return $job->class === FooListener::class;
-        });
+    Queue::assertPushed(CallQueuedListener::class, function (CallQueuedListener $job) {
+        return $job->class === FooListener::class;
+    });
 
-        $this->assertFalse(app()->bound('foo'));
-    }
+    expect(app()->bound('foo'))->toBeFalse();
+});
 
-    /** @test */
-    public function ing_events_can_be_used_to_cancel_tenant_model_actions()
-    {
-        Event::listen(CreatingTenant::class, function () {
-            return false;
-        });
+test('ing events can be used to cancel tenant model actions', function () {
+    Event::listen(CreatingTenant::class, function () {
+        return false;
+    });
 
-        $this->assertSame(false, Tenant::create()->exists);
-        $this->assertSame(0, Tenant::count());
-    }
+    expect(Tenant::create()->exists)->toBe(false);
+    expect(Tenant::count())->toBe(0);
+});
 
-    /** @test */
-    public function ing_events_can_be_used_to_cancel_domain_model_actions()
-    {
-        $tenant = Tenant::create();
+test('ing events can be used to cancel domain model actions', function () {
+    $tenant = Tenant::create();
 
-        Event::listen(UpdatingDomain::class, function () {
-            return false;
-        });
+    Event::listen(UpdatingDomain::class, function () {
+        return false;
+    });
 
-        $domain = $tenant->domains()->create([
-            'domain' => 'acme',
-        ]);
+    $domain = $tenant->domains()->create([
+        'domain' => 'acme',
+    ]);
 
-        $domain->update([
-            'domain' => 'foo',
-        ]);
+    $domain->update([
+        'domain' => 'foo',
+    ]);
 
-        $this->assertSame('acme', $domain->refresh()->domain);
-    }
+    expect($domain->refresh()->domain)->toBe('acme');
+});
 
-    /** @test */
-    public function ing_events_can_be_used_to_cancel_db_creation()
-    {
-        Event::listen(CreatingDatabase::class, function (CreatingDatabase $event) {
-            $event->tenant->setInternal('create_database', false);
-        });
+test('ing events can be used to cancel db creation', function () {
+    Event::listen(CreatingDatabase::class, function (CreatingDatabase $event) {
+        $event->tenant->setInternal('create_database', false);
+    });
 
-        $tenant = Tenant::create();
-        dispatch_now(new CreateDatabase($tenant));
+    $tenant = Tenant::create();
+    dispatch_now(new CreateDatabase($tenant));
 
-        $this->assertFalse($tenant->database()->manager()->databaseExists(
-            $tenant->database()->getName()
-        ));
-    }
+    pest()->assertFalse($tenant->database()->manager()->databaseExists(
+        $tenant->database()->getName()
+    ));
+});
 
-    /** @test */
-    public function ing_events_can_be_used_to_cancel_tenancy_bootstrapping()
-    {
-        config(['tenancy.bootstrappers' => [
-            DatabaseTenancyBootstrapper::class,
-            RedisTenancyBootstrapper::class,
-        ]]);
+test('ing events can be used to cancel tenancy bootstrapping', function () {
+    config(['tenancy.bootstrappers' => [
+        DatabaseTenancyBootstrapper::class,
+        RedisTenancyBootstrapper::class,
+    ]]);
 
-        Event::listen(
-            TenantCreated::class,
-            JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
-                return $event->tenant;
-            })->toListener()
-        );
+    Event::listen(
+        TenantCreated::class,
+        JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+            return $event->tenant;
+        })->toListener()
+    );
 
-        Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
 
-        Event::listen(BootstrappingTenancy::class, function (BootstrappingTenancy $event) {
-            $event->tenancy->getBootstrappersUsing = function () {
-                return [DatabaseTenancyBootstrapper::class];
-            };
-        });
+    Event::listen(BootstrappingTenancy::class, function (BootstrappingTenancy $event) {
+        $event->tenancy->getBootstrappersUsing = function () {
+            return [DatabaseTenancyBootstrapper::class];
+        };
+    });
 
-        tenancy()->initialize(Tenant::create());
+    tenancy()->initialize(Tenant::create());
 
-        $this->assertSame([DatabaseTenancyBootstrapper::class], array_map('get_class', tenancy()->getBootstrappers()));
-    }
+    expect(array_map('get_class', tenancy()->getBootstrappers()))->toBe([DatabaseTenancyBootstrapper::class]);
+});
 
-    /** @test */
-    public function individual_job_pipelines_can_terminate_while_leaving_others_running()
-    {
-        $executed = [];
+test('individual job pipelines can terminate while leaving others running', function () {
+    $executed = [];
 
-        Event::listen(
-            TenantCreated::class,
-            JobPipeline::make([
-                function () use (&$executed) {
-                    $executed[] = 'P1J1';
-                },
+    Event::listen(
+        TenantCreated::class,
+        JobPipeline::make([
+            function () use (&$executed) {
+                $executed[] = 'P1J1';
+            },
 
-                function () use (&$executed) {
-                    $executed[] = 'P1J2';
-                },
-            ])->send(function (TenantCreated $event) {
-                return $event->tenant;
-            })->toListener()
-        );
+            function () use (&$executed) {
+                $executed[] = 'P1J2';
+            },
+        ])->send(function (TenantCreated $event) {
+            return $event->tenant;
+        })->toListener()
+    );
 
-        Event::listen(
-            TenantCreated::class,
-            JobPipeline::make([
-                function () use (&$executed) {
-                    $executed[] = 'P2J1';
+    Event::listen(
+        TenantCreated::class,
+        JobPipeline::make([
+            function () use (&$executed) {
+                $executed[] = 'P2J1';
 
-                    return false;
-                },
+                return false;
+            },
 
-                function () use (&$executed) {
-                    $executed[] = 'P2J2';
-                },
-            ])->send(function (TenantCreated $event) {
-                return $event->tenant;
-            })->toListener()
-        );
+            function () use (&$executed) {
+                $executed[] = 'P2J2';
+            },
+        ])->send(function (TenantCreated $event) {
+            return $event->tenant;
+        })->toListener()
+    );
 
-        Tenant::create();
+    Tenant::create();
 
-        $this->assertSame([
-            'P1J1',
-            'P1J2',
-            'P2J1', // termminated after this
-            // P2J2 was not reached
-        ], $executed);
-    }
+    pest()->assertSame([
+        'P1J1',
+        'P1J2',
+        'P2J1', // termminated after this
+        // P2J2 was not reached
+    ], $executed);
+});
 
-    /** @test */
-    public function database_is_not_migrated_if_creation_is_disabled()
-    {
-        Event::listen(
-            TenantCreated::class,
-            JobPipeline::make([
-                CreateDatabase::class,
-                function () {
-                    $this->fail("The job pipeline didn't exit.");
-                },
-                MigrateDatabase::class,
-            ])->send(function (TenantCreated $event) {
-                return $event->tenant;
-            })->toListener()
-        );
+test('database is not migrated if creation is disabled', function () {
+    Event::listen(
+        TenantCreated::class,
+        JobPipeline::make([
+            CreateDatabase::class,
+            function () {
+                pest()->fail("The job pipeline didn't exit.");
+            },
+            MigrateDatabase::class,
+        ])->send(function (TenantCreated $event) {
+            return $event->tenant;
+        })->toListener()
+    );
 
-        Tenant::create([
-            'tenancy_create_database' => false,
-            'tenancy_db_name' => 'already_created',
-        ]);
+    Tenant::create([
+        'tenancy_create_database' => false,
+        'tenancy_db_name' => 'already_created',
+    ]);
 
-        $this->assertFalse($this->hasFailed());
-    }
-}
+    expect(pest()->hasFailed())->toBeFalse();
+});
 
 class FooListener extends QueueableListener
 {
-    public static $shouldQueue = false;
+    public static bool $shouldQueue = false;
 
     public function handle()
     {

@@ -2,29 +2,27 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy;
+namespace Stancl\Tenancy\Database;
 
+use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
-use Stancl\Tenancy\Contracts\TenantDatabaseManager;
-use Stancl\Tenancy\Contracts\TenantWithDatabase as Tenant;
-use Stancl\Tenancy\Exceptions\DatabaseManagerNotRegisteredException;
+use Stancl\Tenancy\Database\Contracts\TenantWithDatabase as Tenant;
 
 class DatabaseConfig
 {
-    /** @var Tenant|Model */
-    public $tenant;
+    /** The tenant whose database we're dealing with. */
+    public Tenant&Model $tenant;
 
-    /** @var callable */
-    public static $usernameGenerator;
+    /** Database username generator (can be set by the developer.) */
+    public static Closure|null $usernameGenerator = null;
 
-    /** @var callable */
-    public static $passwordGenerator;
+    /** Database password generator (can be set by the developer.) */
+    public static Closure|null $passwordGenerator = null;
 
-    /** @var callable */
-    public static $databaseNameGenerator;
+    /** Database name generator (can be set by the developer.) */
+    public static Closure|null $databaseNameGenerator = null;
 
     public static function __constructStatic(): void
     {
@@ -48,17 +46,17 @@ class DatabaseConfig
         $this->tenant = $tenant;
     }
 
-    public static function generateDatabaseNamesUsing(callable $databaseNameGenerator): void
+    public static function generateDatabaseNamesUsing(Closure $databaseNameGenerator): void
     {
         static::$databaseNameGenerator = $databaseNameGenerator;
     }
 
-    public static function generateUsernamesUsing(callable $usernameGenerator): void
+    public static function generateUsernamesUsing(Closure $usernameGenerator): void
     {
         static::$usernameGenerator = $usernameGenerator;
     }
 
-    public static function generatePasswordsUsing(callable $passwordGenerator): void
+    public static function generatePasswordsUsing(Closure $passwordGenerator): void
     {
         static::$passwordGenerator = $passwordGenerator;
     }
@@ -80,14 +78,12 @@ class DatabaseConfig
 
     /**
      * Generate DB name, username & password and write them to the tenant model.
-     *
-     * @return void
      */
     public function makeCredentials(): void
     {
         $this->tenant->setInternal('db_name', $this->getName() ?? (static::$databaseNameGenerator)($this->tenant));
 
-        if ($this->manager() instanceof ManagesDatabaseUsers) {
+        if ($this->manager() instanceof Contracts\ManagesDatabaseUsers) {
             $this->tenant->setInternal('db_username', $this->getUsername() ?? (static::$usernameGenerator)($this->tenant));
             $this->tenant->setInternal('db_password', $this->getPassword() ?? (static::$passwordGenerator)($this->tenant));
         }
@@ -113,7 +109,8 @@ class DatabaseConfig
         $templateConnection = config("database.connections.{$template}");
 
         return $this->manager()->makeConnectionConfig(
-            array_merge($templateConnection, $this->tenantConfig()), $this->getName()
+            array_merge($templateConnection, $this->tenantConfig()),
+            $this->getName()
         );
     }
 
@@ -143,20 +140,18 @@ class DatabaseConfig
         }, []);
     }
 
-    /**
-     * Get the TenantDatabaseManager for this tenant's connection.
-     */
-    public function manager(): TenantDatabaseManager
+    /** Get the TenantDatabaseManager for this tenant's connection. */
+    public function manager(): Contracts\TenantDatabaseManager
     {
         $driver = config("database.connections.{$this->getTemplateConnectionName()}.driver");
 
         $databaseManagers = config('tenancy.database.managers');
 
         if (! array_key_exists($driver, $databaseManagers)) {
-            throw new DatabaseManagerNotRegisteredException($driver);
+            throw new Exceptions\DatabaseManagerNotRegisteredException($driver);
         }
 
-        /** @var TenantDatabaseManager $databaseManager */
+        /** @var Contracts\TenantDatabaseManager $databaseManager */
         $databaseManager = app($databaseManagers[$driver]);
 
         $databaseManager->setConnection($this->getTemplateConnectionName());

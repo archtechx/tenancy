@@ -2,11 +2,6 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests;
-
-use Illuminate\Database\Seeder;
-use Illuminate\Foundation\Auth\User as Authenticable;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Stancl\JobPipeline\JobPipeline;
@@ -14,111 +9,85 @@ use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Jobs\MigrateDatabase;
 use Stancl\Tenancy\Jobs\SeedDatabase;
-use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use Illuminate\Foundation\Auth\User as Authenticable;
+use Stancl\Tenancy\Tests\Etc\TestSeeder;
 
-class DatabasePreparationTest extends TestCase
-{
-    /** @test */
-    public function database_can_be_created_after_tenant_creation()
-    {
-        config(['tenancy.database.template_tenant_connection' => 'mysql']);
+test('database can be created after tenant creation', function () {
+    config(['tenancy.database.template_tenant_connection' => 'mysql']);
 
-        Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
-            return $event->tenant;
-        })->toListener());
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
 
-        $tenant = Tenant::create();
+    $tenant = Tenant::create();
 
-        $manager = app(MySQLDatabaseManager::class);
-        $manager->setConnection('mysql');
+    $manager = app(MySQLDatabaseManager::class);
+    $manager->setConnection('mysql');
 
-        $this->assertTrue($manager->databaseExists($tenant->database()->getName()));
-    }
+    expect($manager->databaseExists($tenant->database()->getName()))->toBeTrue();
+});
 
-    /** @test */
-    public function database_can_be_migrated_after_tenant_creation()
-    {
-        Event::listen(TenantCreated::class, JobPipeline::make([
-            CreateDatabase::class,
-            MigrateDatabase::class,
-        ])->send(function (TenantCreated $event) {
-            return $event->tenant;
-        })->toListener());
+test('database can be migrated after tenant creation', function () {
+    Event::listen(TenantCreated::class, JobPipeline::make([
+        CreateDatabase::class,
+        MigrateDatabase::class,
+    ])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
 
-        $tenant = Tenant::create();
+    $tenant = Tenant::create();
 
-        $tenant->run(function () {
-            $this->assertTrue(Schema::hasTable('users'));
-        });
-    }
+    $tenant->run(function () {
+        expect(Schema::hasTable('users'))->toBeTrue();
+    });
+});
 
-    /** @test */
-    public function database_can_be_seeded_after_tenant_creation()
-    {
-        config(['tenancy.seeder_parameters' => [
-            '--class' => TestSeeder::class,
-        ]]);
+test('database can be seeded after tenant creation', function () {
+    config(['tenancy.seeder_parameters' => [
+        '--class' => TestSeeder::class,
+    ]]);
 
-        Event::listen(TenantCreated::class, JobPipeline::make([
-            CreateDatabase::class,
-            MigrateDatabase::class,
-            SeedDatabase::class,
-        ])->send(function (TenantCreated $event) {
-            return $event->tenant;
-        })->toListener());
+    Event::listen(TenantCreated::class, JobPipeline::make([
+        CreateDatabase::class,
+        MigrateDatabase::class,
+        SeedDatabase::class,
+    ])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
 
-        $tenant = Tenant::create();
+    $tenant = Tenant::create();
 
-        $tenant->run(function () {
-            $this->assertSame('Seeded User', User::first()->name);
-        });
-    }
+    $tenant->run(function () {
+        expect(User::first()->name)->toBe('Seeded User');
+    });
+});
 
-    /** @test */
-    public function custom_job_can_be_added_to_the_pipeline()
-    {
-        config(['tenancy.seeder_parameters' => [
-            '--class' => TestSeeder::class,
-        ]]);
+test('custom job can be added to the pipeline', function () {
+    config(['tenancy.seeder_parameters' => [
+        '--class' => TestSeeder::class,
+    ]]);
 
-        Event::listen(TenantCreated::class, JobPipeline::make([
-            CreateDatabase::class,
-            MigrateDatabase::class,
-            SeedDatabase::class,
-            CreateSuperuser::class,
-        ])->send(function (TenantCreated $event) {
-            return $event->tenant;
-        })->toListener());
+    Event::listen(TenantCreated::class, JobPipeline::make([
+        CreateDatabase::class,
+        MigrateDatabase::class,
+        SeedDatabase::class,
+        CreateSuperuser::class,
+    ])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
 
-        $tenant = Tenant::create();
+    $tenant = Tenant::create();
 
-        $tenant->run(function () {
-            $this->assertSame('Foo', User::all()[1]->name);
-        });
-    }
-}
+    $tenant->run(function () {
+        expect(User::all()[1]->name)->toBe('Foo');
+    });
+});
 
 class User extends Authenticable
 {
     protected $guarded = [];
-}
-
-class TestSeeder extends Seeder
-{
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
-    public function run()
-    {
-        DB::table('users')->insert([
-            'name' => 'Seeded User',
-            'email' => 'seeded@user',
-            'password' => bcrypt('password'),
-        ]);
-    }
 }
 
 class CreateSuperuser

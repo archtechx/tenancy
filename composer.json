@@ -1,28 +1,36 @@
 {
     "name": "stancl/tenancy",
     "description": "Automatic multi-tenancy for your Laravel application.",
-    "keywords": ["laravel", "multi-tenancy", "multi-database", "tenancy"],
+    "keywords": [
+        "laravel",
+        "multi-tenancy",
+        "multi-database",
+        "tenancy"
+    ],
     "license": "MIT",
     "authors": [
         {
             "name": "Samuel Štancl",
-            "email": "samuel.stancl@gmail.com"
+            "email": "samuel@archte.ch"
         }
     ],
     "require": {
+        "php": "^8.1",
         "ext-json": "*",
-        "illuminate/support": "^6.0|^7.0|^8.0|^9.0",
-        "facade/ignition-contracts": "^1.0",
-        "ramsey/uuid": "^3.7|^4.0",
+        "illuminate/support": "^9.0",
+        "spatie/ignition": "^1.4",
+        "ramsey/uuid": "^4.0",
         "stancl/jobpipeline": "^1.0",
         "stancl/virtualcolumn": "^1.0"
     },
     "require-dev": {
-        "laravel/framework": "^6.0|^7.0|^8.0|^9.0",
-        "orchestra/testbench": "^4.0|^5.0|^6.0|^7.0",
-        "league/flysystem-aws-s3-v3": "^1.0|^3.0",
+        "laravel/framework": "^9.0",
+        "orchestra/testbench": "^7.0",
+        "league/flysystem-aws-s3-v3": "^3.0",
         "doctrine/dbal": "^2.10",
-        "spatie/valuestore": "^1.2.5"
+        "spatie/valuestore": "^1.2.5",
+        "pestphp/pest": "^1.21",
+        "nunomaduro/larastan": "^1.0"
     },
     "autoload": {
         "psr-4": {
@@ -48,6 +56,21 @@
             }
         }
     },
+    "scripts": {
+        "docker-up": "PHP_VERSION=8.1 docker-compose up -d",
+        "docker-down": "PHP_VERSION=8.1 docker-compose down",
+        "docker-rebuild": "PHP_VERSION=8.1 docker-compose up -d --no-deps --build",
+        "docker-m1": "ln -s docker-compose-m1.override.yml docker-compose.override.yml",
+        "coverage": "open coverage/phpunit/html/index.html",
+        "phpstan": "vendor/bin/phpstan",
+        "test": "PHP_VERSION=8.1 ./test --no-coverage",
+        "test-full": "PHP_VERSION=8.1 ./test"
+    },
     "minimum-stability": "dev",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
 }
