@@ -180,7 +180,7 @@ test('run command with array of tenants works', function () {
         ->expectsOutput('Tenant: ' . $tenantId2);
 });
 
-test('run command works when sub command asks question and accepts argument', function () {
+test('run command works when sub command asks questions and accepts arguments', function () {
     $tenant = Tenant::create();
     $id = $tenant->getTenantKey();
 
