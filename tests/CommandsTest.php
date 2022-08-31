@@ -180,7 +180,7 @@ test('run command with array of tenants works', function () {
         ->expectsOutput('Tenant: ' . $tenantId2);
 });
 
-test('run command works when sub command asks question and accepts argument', closure: function () {
+test('run command works when sub command asks question and accepts argument', function () {
     $tenant = Tenant::create();
     $id = $tenant->getTenantKey();
 
@@ -191,6 +191,9 @@ test('run command works when sub command asks question and accepts argument', cl
         ->expectsQuestion('What is your email?', 'email@localhost')
         ->expectsOutput("Tenant: $id")
         ->expectsOutput("User created: Abrar(email@localhost)");
+
+    // Assert we are in central context
+    expect(tenancy()->initialized)->toBeFalse();
 
     // Assert users table does not exist in the central context
     expect(Schema::hasTable('users'))->toBeFalse();
