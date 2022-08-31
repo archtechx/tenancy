@@ -184,7 +184,6 @@ test('run command works when sub command asks questions and accepts arguments', 
     $tenant = Tenant::create();
     $id = $tenant->getTenantKey();
 
-    // Run tenant migrations so we have users table
     Artisan::call('tenants:migrate');
 
     pest()->artisan("tenants:run --tenants=$id 'user:addwithname Abrar' ")
@@ -195,15 +194,11 @@ test('run command works when sub command asks questions and accepts arguments', 
     // Assert we are in central context
     expect(tenancy()->initialized)->toBeFalse();
 
-    // Assert users table does not exist in the central context
-    expect(Schema::hasTable('users'))->toBeFalse();
-
-    // Assert user created in tenant context
+    // Assert user was created in tenant context
     tenancy()->initialize($tenant);
-    expect(Schema::hasTable('users'))->toBeTrue();
     $user = User::first();
 
-    // Assert user is same as provided using command
+    // Assert user is same as provided using the command
     expect($user->name)->toBe('Abrar');
     expect($user->email)->toBe('email@localhost');
 });
