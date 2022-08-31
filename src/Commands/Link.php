@@ -50,8 +50,6 @@ class Link extends Command
             }
         } catch (Exception $exception) {
             $this->error($exception->getMessage());
-
-            return 1;
         }
     }
 

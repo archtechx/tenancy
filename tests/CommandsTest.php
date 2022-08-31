@@ -188,6 +188,43 @@ test('run command with array of tenants works', function () {
         ->expectsOutput('Tenant: ' . $tenantId2);
 });
 
+test('link command works', function() {
+    $tenantId1 = Tenant::create()->getTenantKey();
+    $tenantId2 = Tenant::create()->getTenantKey();
+    pest()->artisan('tenants:link');
+
+    $this->assertDirectoryExists(storage_path("tenant-$tenantId1/app/public"));
+    $this->assertEquals(storage_path("tenant-$tenantId1/app/public/"), readlink(public_path("public-$tenantId1")));
+
+    $this->assertDirectoryExists(storage_path("tenant-$tenantId2/app/public"));
+    $this->assertEquals(storage_path("tenant-$tenantId2/app/public/"), readlink(public_path("public-$tenantId2")));
+
+    pest()->artisan('tenants:link', [
+        '--remove' => true,
+    ]);
+
+    $this->assertDirectoryDoesNotExist(public_path("public-$tenantId1"));
+    $this->assertDirectoryDoesNotExist(public_path("public-$tenantId2"));
+});
+
+test('link command works with a specified tenant', function() {
+    $tenantKey = Tenant::create()->getTenantKey();
+
+    pest()->artisan('tenants:link', [
+        '--tenants' => [$tenantKey],
+    ]);
+
+    $this->assertDirectoryExists(storage_path("tenant-$tenantKey/app/public"));
+    $this->assertEquals(storage_path("tenant-$tenantKey/app/public/"), readlink(public_path("public-$tenantKey")));
+
+    pest()->artisan('tenants:link', [
+        '--remove' => true,
+        '--tenants' => [$tenantKey],
+    ]);
+
+    $this->assertDirectoryDoesNotExist(public_path("public-$tenantKey"));
+});
+
 // todo@tests
 function runCommandWorks(): void
 {
