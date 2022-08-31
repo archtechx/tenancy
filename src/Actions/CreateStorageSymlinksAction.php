@@ -5,16 +5,18 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Actions;
 
 use Exception;
-use Stancl\Tenancy\Concerns\DealsWithTenantSymlinks;
+use Illuminate\Support\Collection;
+use Illuminate\Support\LazyCollection;
 use Stancl\Tenancy\Database\Models\Tenant;
-use Stancl\Tenancy\Events\CreatingStorageSymlink;
 use Stancl\Tenancy\Events\StorageSymlinkCreated;
+use Stancl\Tenancy\Events\CreatingStorageSymlink;
+use Stancl\Tenancy\Concerns\DealsWithTenantSymlinks;
 
 class CreateStorageSymlinksAction
 {
     use DealsWithTenantSymlinks;
 
-    public static function handle($tenants, bool $relativeLink = false, bool $force = false): void
+    public static function handle(Tenant|Collection|LazyCollection $tenants, bool $relativeLink = false, bool $force = false): void
     {
         $tenants = $tenants instanceof Tenant ? collect([$tenants]) : $tenants;
 

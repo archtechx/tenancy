@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Actions;
 
-use Stancl\Tenancy\Concerns\DealsWithTenantSymlinks;
+use Illuminate\Support\Collection;
+use Illuminate\Support\LazyCollection;
 use Stancl\Tenancy\Database\Models\Tenant;
-use Stancl\Tenancy\Events\RemovingStorageSymlink;
 use Stancl\Tenancy\Events\StorageSymlinkRemoved;
+use Stancl\Tenancy\Events\RemovingStorageSymlink;
+use Stancl\Tenancy\Concerns\DealsWithTenantSymlinks;
 
 class RemoveStorageSymlinksAction
 {
     use DealsWithTenantSymlinks;
 
-    public static function handle($tenants): void
+    public static function handle(Tenant|Collection|LazyCollection $tenants): void
     {
         $tenants = $tenants instanceof Tenant ? collect([$tenants]) : $tenants;
 
