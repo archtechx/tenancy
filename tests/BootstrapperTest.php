@@ -295,7 +295,7 @@ test('create and delete storage symlinks jobs work', function() {
         'tenancy.filesystem.url_override.public' => 'public-%tenant_id%'
     ]);
 
-    /** @var \Stancl\Tenancy\Database\Models\Tenant $tenant */
+    /** @var Tenant $tenant */
     $tenant = Tenant::create();
 
     tenancy()->initialize($tenant);
