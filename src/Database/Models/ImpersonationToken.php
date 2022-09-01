@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Database\Models;
 
 use Carbon\Carbon;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\Auth\StatefulGuard;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
 use Stancl\Tenancy\Exceptions\ImpersonationTokenCouldNotBeCreatedWithNonStatefulGuard;
 
