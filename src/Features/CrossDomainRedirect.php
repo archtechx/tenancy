@@ -14,7 +14,6 @@ class CrossDomainRedirect implements Feature
     {
         RedirectResponse::macro('domain', function (string $domain) {
             /** @var RedirectResponse $this */
-
             $url = $this->getTargetUrl();
 
             /**
