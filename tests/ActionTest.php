@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Events\TenancyEnded;
+use Stancl\Tenancy\Database\Models\Tenant;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
@@ -26,7 +27,7 @@ test('create storage symlinks action works', function() {
         'tenancy.filesystem.url_override.public' => 'public-%tenant_id%'
     ]);
 
-    /** @var \Stancl\Tenancy\Database\Models\Tenant $tenant */
+    /** @var Tenant $tenant */
     $tenant = Tenant::create();
     $tenantKey = $tenant->getTenantKey();
 
@@ -50,7 +51,7 @@ test('remove storage symlinks action works', function() {
         'tenancy.filesystem.url_override.public' => 'public-%tenant_id%'
     ]);
 
-    /** @var \Stancl\Tenancy\Database\Models\Tenant $tenant */
+    /** @var Tenant $tenant */
     $tenant = Tenant::create();
     $tenantKey = $tenant->getTenantKey();
 
