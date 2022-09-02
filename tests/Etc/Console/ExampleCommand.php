@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests\Etc;
+namespace Stancl\Tenancy\Tests\Etc\Console;
 
 use Illuminate\Console\Command;
 
