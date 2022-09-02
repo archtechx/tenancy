@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Bootstrappers\Integrations;
 
-use Stancl\Tenancy\Contracts\Tenant;
 use Illuminate\Contracts\Config\Repository;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
+use Stancl\Tenancy\Contracts\Tenant;
 
 class ScoutTenancyBootstrapper implements TenancyBootstrapper
 {
