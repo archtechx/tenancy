@@ -148,7 +148,7 @@ test('creating the resource in tenant database creates it in central database as
     tenancy()->end();
 
     // Assert central user and Resource user has exact same attributes and values
-    expect($resourceUser->getResourceCreationAttributes())->toBeNull();
+    expect($resourceUser->getCreationAttributes())->toBeNull();
     expect(CentralUser::first()->toArray())->toEqual(ResourceUser::first()->toArray());
 });
 
@@ -232,7 +232,7 @@ test('creating the resource in central database creates it in tenant database as
     $centralUser->tenants()->attach('t1');
 
     $centralUser = CentralUser::first();
-    expect($centralUser->getResourceCreationAttributes())->toBeNull();
+    expect($centralUser->getCreationAttributes())->toBeNull();
     $tenant->run(function () use ($centralUser) {
         expect(ResourceUser::all())->toHaveCount(1);
         expect(ResourceUser::first()->toArray())->toEqual($centralUser->toArray());
@@ -820,7 +820,7 @@ class ResourceUser extends Model implements Syncable
 
 // override method in ResourceUser class to return attribute default values
 class ResourceUserWithDefaultValues extends ResourceUser {
-    public function getResourceCreationAttributes(): array
+    public function getCreationAttributes(): array
     {
         // Attributes default values when creating resources from tenant to central DB
         return
@@ -832,7 +832,7 @@ class ResourceUserWithDefaultValues extends ResourceUser {
 
 // override method in ResourceUser class to return attribute names
 class ResourceUserWithAttributeNames extends ResourceUser {
-    public function getResourceCreationAttributes(): array
+    public function getCreationAttributes(): array
     {
         // Attributes used when creating resources from tenant to central DB
         // Notice here we are not adding "code" filed because it doesn't
@@ -851,7 +851,7 @@ class ResourceUserWithAttributeNames extends ResourceUser {
 
 // override method in CentralUser class to return attribute default values
 class CentralUserWithDefaultValues extends CentralUser {
-    public function getResourceCreationAttributes(): array
+    public function getCreationAttributes(): array
     {
         // Attributes default values when creating resources from central to tenant model
         return
@@ -863,7 +863,7 @@ class CentralUserWithDefaultValues extends CentralUser {
 
 // override method in CentralUser class to return attribute names
 class CentralUserWithAttributeNames extends CentralUser {
-    public function getResourceCreationAttributes(): array
+    public function getCreationAttributes(): array
     {
         // Attributes used when creating resources from central to tenant DB
         return

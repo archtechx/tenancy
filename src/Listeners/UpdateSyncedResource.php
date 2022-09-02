@@ -123,18 +123,18 @@ class UpdateSyncedResource extends QueueableListener
 
     protected function getAttributesForCreation(Syncable $model): array
     {
-        if (! $model->getResourceCreationAttributes()) {
+        if (! $model->getCreationAttributes()) {
             // Creation attributes are not specified so create the model as 1:1 copy
             return $model->getAttributes();
         }
 
-        if (Arr::isAssoc($model->getResourceCreationAttributes())) {
+        if (Arr::isAssoc($model->getCreationAttributes())) {
             // Developer provided the default values
             // We will merge the default values with sync attributes
-            return array_merge($model->getResourceCreationAttributes(), $model->only($model->getSyncedAttributeNames()));
+            return array_merge($model->getCreationAttributes(), $model->only($model->getSyncedAttributeNames()));
         }
 
         // Developer provided the attribute names, so we'd use them to pick model attributes
-        return $model->only($model->getResourceCreationAttributes());
+        return $model->only($model->getCreationAttributes());
     }
 }

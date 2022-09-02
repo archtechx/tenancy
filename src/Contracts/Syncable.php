@@ -16,5 +16,5 @@ interface Syncable
 
     public function triggerSyncEvent(): void;
 
-    public function getResourceCreationAttributes(): array|null; // todo come up with a better name
+    public function getCreationAttributes(): array|null; // todo come up with a better name
 }

@@ -33,7 +33,7 @@ trait ResourceSyncing
         event(new SyncedResourceSaved($this, tenant()));
     }
 
-    public function getResourceCreationAttributes(): array|null
+    public function getCreationAttributes(): array|null
     {
         return null;
     }
