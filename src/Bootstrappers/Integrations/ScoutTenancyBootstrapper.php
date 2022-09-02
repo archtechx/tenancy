@@ -27,11 +27,16 @@ class ScoutTenancyBootstrapper implements TenancyBootstrapper
             $this->originalScoutPrefix = $this->config->get('scout.prefix');
         }
 
-        $this->config->set('scout.prefix', $tenant->getTenantKey());
+        $this->config->set('scout.prefix', $this->getTenantPrefix($tenant));
     }
 
     public function revert()
     {
         $this->config->set('scout.prefix', $this->originalScoutPrefix);
+    }
+    
+    protected function getTenantPrefix(Tenant $tenant): string
+    {
+        return (string) $tenant->getTenantKey();
     }
 }
