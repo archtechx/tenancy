@@ -135,10 +135,15 @@ test('tenant parameter is set for all routes as the default parameter once the t
 
     expect(tenancy()->initialized)->toBeFalse();
 
+    // make a request that will initialize tenancy
     pest()->get(route('foo', ['tenant' => 'acme', 'a' => 1, 'b' => 2]));
 
-    expect(tenancy()->initialized)->toBeTrue()
-        ->and(tenant('id'))->toBe('acme')
-        ->and(route('baz', ['a' => 1, 'b' => 2]))->toBe('http://localhost/acme/baz/1/2');
+    expect(tenancy()->initialized)->toBeTrue();
+    expect(tenant('id'))->toBe('acme');
+
+    // assert that the route WITHOUT the tenant parameter matches the route WITH the tenant parameter
+    expect(route('baz', ['a' => 1, 'b' => 2]))->toBe(route('baz', ['tenant' => acme, 'a' => 1, 'b' => 2]));
+
+    expect(route('baz', ['a' => 1, 'b' => 2]))->toBe('http://localhost/acme/baz/1/2'); // assert the full route string
     pest()->get(route('baz', ['a' => 1, 'b' => 2]))->assertOk(); // Assert route don't need tenant parameter
 });
