@@ -24,7 +24,7 @@ use Stancl\Tenancy\Database\Models\ImpersonationToken;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
-use Stancl\Tenancy\Exceptions\ImpersonationTokenCouldNotBeCreatedWithNonStatefulGuard;
+use Stancl\Tenancy\Exceptions\StatefulGuardRequiredException;
 
 beforeEach(function () {
     pest()->artisan('migrate', [
@@ -257,7 +257,7 @@ test('impersonation tokens can be created only with stateful guards', function (
     Auth::extend('nonstateful', fn($app, $name, array $config) => new TokenGuard(Auth::createUserProvider($config['provider']), request()));
 
     expect(fn() => tenancy()->impersonate($tenant, $user->id, '/dashboard', 'nonstateful'))
-        ->toThrow(ImpersonationTokenCouldNotBeCreatedWithNonStatefulGuard::class);
+        ->toThrow(StatefulGuardRequiredException::class);
 
     Auth::extend('stateful', fn ($app, $name, array $config) => new SessionGuard($name, Auth::createUserProvider($config['provider']), session()));
 

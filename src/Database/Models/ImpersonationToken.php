@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
-use Stancl\Tenancy\Exceptions\ImpersonationTokenCouldNotBeCreatedWithNonStatefulGuard;
+use Stancl\Tenancy\Exceptions\StatefulGuardRequiredException;
 
 /**
  * @param string $token
@@ -44,7 +44,7 @@ class ImpersonationToken extends Model
             $authGuard = $model->auth_guard ?? config('auth.defaults.guard');
 
             if (! Auth::guard($authGuard) instanceof StatefulGuard) {
-                throw new ImpersonationTokenCouldNotBeCreatedWithNonStatefulGuard($authGuard);
+                throw new StatefulGuardRequiredException($authGuard);
             }
 
             $model->created_at = $model->created_at ?? $model->freshTimestamp();
