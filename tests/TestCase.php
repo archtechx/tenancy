@@ -4,8 +4,15 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
+use Dotenv\Dotenv;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Redis;
 use PDO;
+use Stancl\Tenancy\Bootstrappers\BatchTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
+use Stancl\Tenancy\Facades\GlobalCache;
+use Stancl\Tenancy\Facades\Tenancy;
+use Stancl\Tenancy\TenancyServiceProvider;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
@@ -42,13 +49,13 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     /**
      * Define environment setup.
      *
-     * @param  \Illuminate\Foundation\Application  $app
+     * @param  Application  $app
      * @return void
      */
     protected function getEnvironmentSetUp($app)
     {
         if (file_exists(__DIR__ . '/../.env')) {
-            \Dotenv\Dotenv::createImmutable(__DIR__ . '/..')->load();
+            Dotenv::createImmutable(__DIR__ . '/..')->load();
         }
 
         $app['config']->set([
@@ -96,7 +103,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 '--realpath' => true,
                 '--force' => true,
             ],
-            'tenancy.bootstrappers.redis' => \Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class,
+            'tenancy.bootstrappers.redis' => RedisTenancyBootstrapper::class,
             'queue.connections.central' => [
                 'driver' => 'sync',
                 'central' => true,
@@ -105,28 +112,29 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'tenancy.tenant_model' => Tenant::class, // Use test tenant w/ DBs & domains
         ]);
 
-        $app->singleton(\Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class);
+        $app->singleton(RedisTenancyBootstrapper::class);
+        $app->singleton(BatchTenancyBootstrapper::class); // todo (Samuel) use proper approach eg config for singleton registration
     }
 
     protected function getPackageProviders($app)
     {
         return [
-            \Stancl\Tenancy\TenancyServiceProvider::class,
+            TenancyServiceProvider::class,
         ];
     }
 
     protected function getPackageAliases($app)
     {
         return [
-            'Tenancy' => \Stancl\Tenancy\Facades\Tenancy::class,
-            'GlobalCache' => \Stancl\Tenancy\Facades\GlobalCache::class,
+            'Tenancy' => Tenancy::class,
+            'GlobalCache' => GlobalCache::class,
         ];
     }
 
     /**
      * Resolve application HTTP Kernel implementation.
      *
-     * @param  \Illuminate\Foundation\Application  $app
+     * @param  Application  $app
      * @return void
      */
     protected function resolveApplicationHttpKernel($app)
@@ -137,7 +145,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     /**
      * Resolve application Console Kernel implementation.
      *
-     * @param  \Illuminate\Foundation\Application  $app
+     * @param  Application  $app
      * @return void
      */
     protected function resolveApplicationConsoleKernel($app)

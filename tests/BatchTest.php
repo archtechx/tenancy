@@ -11,8 +11,6 @@ use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
 beforeEach(function () {
-    $this->app->singleton(BatchTenancyBootstrapper::class);
-
     config([
         'tenancy.bootstrappers' => [
             DatabaseTenancyBootstrapper::class,
