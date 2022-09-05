@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Database\Models;
 
 use Carbon\Carbon;
+use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
+use Stancl\Tenancy\Exceptions\StatefulGuardRequiredException;
 
 /**
  * @property string $token
@@ -38,9 +41,15 @@ class ImpersonationToken extends Model
     public static function booted(): void
     {
         static::creating(function ($model) {
+            $authGuard = $model->auth_guard ?? config('auth.defaults.guard');
+
+            if (! Auth::guard($authGuard) instanceof StatefulGuard) {
+                throw new StatefulGuardRequiredException($authGuard);
+            }
+
             $model->created_at = $model->created_at ?? $model->freshTimestamp();
             $model->token = $model->token ?? Str::random(128);
-            $model->auth_guard = $model->auth_guard ?? config('auth.defaults.guard');
+            $model->auth_guard = $authGuard;
         });
     }
 }

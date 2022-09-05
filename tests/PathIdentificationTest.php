@@ -18,7 +18,11 @@ beforeEach(function () {
     ], function () {
         Route::get('/foo/{a}/{b}', function ($a, $b) {
             return "$a + $b";
-        });
+        })->name('foo');
+
+        Route::get('/baz/{a}/{b}', function ($a, $b) {
+            return "$a - $b";
+        })->name('baz');
     });
 });
 
@@ -122,4 +126,24 @@ test('tenant parameter name can be customized', function () {
     $this
         ->withoutExceptionHandling()
         ->get('/acme/foo/abc/xyz');
+});
+
+test('tenant parameter is set for all routes as the default parameter once the tenancy initialized', function () {
+    Tenant::create([
+        'id' => 'acme',
+    ]);
+
+    expect(tenancy()->initialized)->toBeFalse();
+
+    // make a request that will initialize tenancy
+    pest()->get(route('foo', ['tenant' => 'acme', 'a' => 1, 'b' => 2]));
+
+    expect(tenancy()->initialized)->toBeTrue();
+    expect(tenant('id'))->toBe('acme');
+
+    // assert that the route WITHOUT the tenant parameter matches the route WITH the tenant parameter
+    expect(route('baz', ['a' => 1, 'b' => 2]))->toBe(route('baz', ['tenant' => 'acme', 'a' => 1, 'b' => 2]));
+
+    expect(route('baz', ['a' => 1, 'b' => 2]))->toBe('http://localhost/acme/baz/1/2'); // assert the full route string
+    pest()->get(route('baz', ['a' => 1, 'b' => 2]))->assertOk(); // Assert route don't need tenant parameter
 });

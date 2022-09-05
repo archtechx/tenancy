@@ -103,7 +103,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 '--realpath' => true,
                 '--force' => true,
             ],
-            'tenancy.bootstrappers.redis' => RedisTenancyBootstrapper::class,
+            'tenancy.bootstrappers.redis' => RedisTenancyBootstrapper::class, // todo0 change this to []? two tests in TenantDatabaseManagerTest are failing with that
             'queue.connections.central' => [
                 'driver' => 'sync',
                 'central' => true,
@@ -150,7 +150,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
      */
     protected function resolveApplicationConsoleKernel($app)
     {
-        $app->singleton('Illuminate\Contracts\Console\Kernel', Etc\ConsoleKernel::class);
+        $app->singleton('Illuminate\Contracts\Console\Kernel', Etc\Console\ConsoleKernel::class);
     }
 
     public function randomString(int $length = 10)
