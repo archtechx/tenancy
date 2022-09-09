@@ -201,16 +201,17 @@ test('tenant storage gets deleted after the tenant if filesystem.delete_storage_
     });
 
     tenancy()->initialize(Tenant::create());
+    $tenantStoragePath = storage_path();
 
     Storage::fake('test');
 
-    expect(File::isDirectory(storage_path()))->toBeTrue();
+    expect(File::isDirectory($tenantStoragePath))->toBeTrue();
 
     Storage::put('test.txt', 'testing file');
 
     tenant()->delete();
 
-    expect(File::isDirectory(storage_path()))->toBeFalse();
+    expect(File::isDirectory($tenantStoragePath))->toBeFalse();
 });
 
 function getDiskPrefix(string $disk): string
