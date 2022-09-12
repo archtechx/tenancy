@@ -53,6 +53,7 @@ class TenancyServiceProvider extends ServiceProvider
                 ])->send(function (Events\TenantDeleted $event) {
                     return $event->tenant;
                 })->shouldBeQueued(false), // `false` by default, but you probably want to make this `true` for production.
+                // Listeners\DeleteTenantStorage::class,
             ],
 
             // Domain events
