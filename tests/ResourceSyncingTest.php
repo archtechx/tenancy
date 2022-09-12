@@ -148,7 +148,7 @@ test('creating the resource in tenant database creates it in central database as
     tenancy()->end();
 
     // Assert central user and Resource user has exact same attributes and values
-    expect($resourceUser->getCreationAttributes())->toBeNull();
+    expect($resourceUser->getSyncedCreationAttributes())->toBeNull();
     expect(CentralUser::first()->toArray())->toEqual(ResourceUser::first()->toArray());
 });
 
@@ -232,7 +232,7 @@ test('creating the resource in central database creates it in tenant database as
     $centralUser->tenants()->attach('t1');
 
     $centralUser = CentralUser::first();
-    expect($centralUser->getCreationAttributes())->toBeNull();
+    expect($centralUser->getSyncedCreationAttributes())->toBeNull();
     $tenant->run(function () use ($centralUser) {
         expect(ResourceUser::all())->toHaveCount(1);
         expect(ResourceUser::first()->toArray())->toEqual($centralUser->toArray());
