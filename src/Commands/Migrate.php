@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Commands;
 
+use Exception;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Console\Migrations\MigrateCommand;
 use Illuminate\Database\Migrations\Migrator;
@@ -28,6 +29,8 @@ class Migrate extends MigrateCommand
     {
         parent::__construct($migrator, $dispatcher);
 
+        $this->addOption('skip-failing');
+
         $this->specifyParameters();
     }
 
@@ -51,8 +54,14 @@ class Migrate extends MigrateCommand
 
             event(new MigratingDatabase($tenant));
 
-            // Migrate
-            parent::handle();
+            try {
+                // Migrate
+                parent::handle();
+            } catch (Exception $th) {
+                if (! $this->option('skip-failing')) {
+                    throw $th;
+                }
+            }
 
             event(new DatabaseMigrated($tenant));
         });

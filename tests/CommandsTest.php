@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Stancl\Tenancy\Tests\Etc\User;
+use Stancl\JobPipeline\JobPipeline;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
-use Stancl\JobPipeline\JobPipeline;
-use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Illuminate\Support\Facades\Artisan;
 use Stancl\Tenancy\Events\TenancyEnded;
-use Stancl\Tenancy\Events\TenancyInitialized;
-use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
+use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
-use Stancl\Tenancy\Tests\Etc\Tenant;
-use Stancl\Tenancy\Tests\Etc\User;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 
 beforeEach(function () {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
@@ -93,6 +93,23 @@ test('migrate command loads schema state', function () {
     expect(Schema::hasTable('schema_users'))->toBeTrue();
     expect(Schema::hasTable('users'))->toBeTrue();
 });
+
+test('migrate command doesnt throw error if skip-failing is passed', function() {
+    Tenant::create();
+
+    Event::forget(TenantCreated::class);
+
+    Tenant::create(['id' => 'withoutdb']);
+
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    Tenant::create();
+
+    expect(fn() => pest()->artisan('tenants:migrate --schema-path="tests/Etc/tenant-schema.dump"'))->toThrow(Exception::class);
+    expect(fn() => pest()->artisan('tenants:migrate --schema-path="tests/Etc/tenant-schema.dump" --skip-failing'))->not()->toThrow(Exception::class);
+})->group('migrate');
 
 test('dump command works', function () {
     $tenant = Tenant::create();
