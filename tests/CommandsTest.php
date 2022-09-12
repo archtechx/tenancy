@@ -94,7 +94,7 @@ test('migrate command loads schema state', function () {
     expect(Schema::hasTable('users'))->toBeTrue();
 });
 
-test('migrate command doesnt throw error if skip-failing is passed', function() {
+test('migrate command does not throw exception if tenant does not have a database and skip-failing is passed', function() {
     Tenant::create();
 
     Event::forget(TenantCreated::class);
@@ -109,7 +109,7 @@ test('migrate command doesnt throw error if skip-failing is passed', function() 
 
     expect(fn() => pest()->artisan('tenants:migrate --schema-path="tests/Etc/tenant-schema.dump"'))->toThrow(Exception::class);
     expect(fn() => pest()->artisan('tenants:migrate --schema-path="tests/Etc/tenant-schema.dump" --skip-failing'))->not()->toThrow(Exception::class);
-})->group('migrate');
+});
 
 test('dump command works', function () {
     $tenant = Tenant::create();
