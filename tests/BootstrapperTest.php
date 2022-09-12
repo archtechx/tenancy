@@ -187,7 +187,7 @@ test('filesystem data is separated', function () {
     expect($new_storage_path)->toEqual($expected_storage_path);
 });
 
-test('tenant storage gets deleted after the tenant', function () {
+test('tenant storage can get deleted after the tenant when TenantDeleted listens to DeleteTenantStorage', function () {
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
