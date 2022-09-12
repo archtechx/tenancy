@@ -137,8 +137,6 @@ return [
          * where you want to use tenant-specific assets (product images, avatars, etc).
          */
         'asset_helper_tenancy' => true,
-
-        'delete_storage_after_tenant_deletion' => false,
     ],
 
     /**
