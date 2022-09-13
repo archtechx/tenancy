@@ -13,7 +13,7 @@ use Stancl\Tenancy\Contracts\Tenant;
 class BatchTenancyBootstrapper implements TenancyBootstrapper
 {
     /**
-     * The database previous connection instance.
+     * The previous database connection instance.
      *
      * @var \Illuminate\Database\Connection
      */
