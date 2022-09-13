@@ -137,8 +137,8 @@ class DatabaseConfig
             unset($config['password']);
         }
 
-        if (empty($config)) {
-            $config = $templateConnection;
+        if (! $config) {
+            return $templateConnection;
         }
 
         return array_replace($templateConnection, $config);

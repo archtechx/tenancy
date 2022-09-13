@@ -112,7 +112,9 @@ test('the tenant connection is fully removed', function () {
 
     tenancy()->end();
 
-    expect(array_keys(app('db')->getConnections()))->not()->toContain('tenant')
+    expect(array_keys(app('db')->getConnections()))
+        ->toContain('central')
+        ->not()->toContain('tenant')
         ->and(config('database.connections.tenant'))->toBeNull();
 });
 
