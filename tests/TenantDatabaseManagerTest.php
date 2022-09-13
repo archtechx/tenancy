@@ -100,8 +100,6 @@ test('the tenant connection is fully removed', function () {
 
     $tenant = Tenant::create();
 
-    // Connections array can contain other connections built runtime like 'tenant_host_connection'
-    // So check if tenant connection does not exist in connections
     expect(array_keys(app('db')->getConnections()))->not()->toContain('tenant');
     pest()->assertArrayNotHasKey('tenant', config('database.connections'));
 
@@ -227,6 +225,29 @@ test('tenant database can be created and deleted on a foreign server', function 
 
     $manager->deleteDatabase($tenant);
     expect($manager->databaseExists($name))->toBeFalse();
+});
+
+test('using permission controller MySQL manager creates the database user', function () {
+    config([
+        'tenancy.database.managers.mysql' => PermissionControlledMySQLDatabaseManager::class,
+    ]);
+
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    $name = 'foo' . Str::random(8);
+
+    $tenant = Tenant::create([
+        'tenancy_db_name' => $name,
+    ]);
+    $dbUser = $tenant->tenancy_db_username;
+
+    /** @var PermissionControlledMySQLDatabaseManager $manager */
+    $manager = $tenant->database()->manager();
+    $manager->setConnection('mysql');
+
+    expect($manager->userExists($dbUser))->toBeTrue();
 });
 
 test('tenant database can be created on template tenant connection', function () {

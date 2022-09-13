@@ -6,6 +6,7 @@ namespace Stancl\Tenancy\Database;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase as Tenant;
@@ -129,6 +130,9 @@ class DatabaseConfig
         $templateConnection = config("database.connections.{$template}");
 
         if ($this->manager() instanceof Contracts\ManagesDatabaseUsers) {
+            // We don't need username and password for database creation/deletion
+            // Username and password will be saved in Tenant's config
+            // and used for connecting to tenant Database
             unset($config['username']);
             unset($config['password']);
         }
@@ -138,6 +142,19 @@ class DatabaseConfig
         }
 
         return array_replace($templateConnection, $config);
+    }
+
+    /**
+     * Purge host database connection.
+     */
+    public function purgeHostConnection(): void
+    {
+        $tenantHostConnectionName = $this->getTenantHostConnectionName();
+        if (array_key_exists($tenantHostConnectionName, config('database.connections'))) {
+            DB::purge($tenantHostConnectionName);
+        }
+
+        config(["database.connections.{$tenantHostConnectionName}" => null]);
     }
 
     /**
@@ -188,10 +205,12 @@ class DatabaseConfig
     /** Get the TenantDatabaseManager for this tenant's connection. */
     public function hostManager(): Contracts\TenantDatabaseManager
     {
-        $tenantHostConnection = $this->getTenantHostConnectionName();
-        config(["database.connections.{$tenantHostConnection}" => $this->hostConnection()]);
+        $this->purgeHostConnection();
 
-        $driver = config("database.connections.{$tenantHostConnection}.driver");
+        $tenantHostConnectionName = $this->getTenantHostConnectionName();
+        config(["database.connections.{$tenantHostConnectionName}" => $this->hostConnection()]);
+
+        $driver = config("database.connections.{$tenantHostConnectionName}.driver");
         $databaseManagers = config('tenancy.database.managers');
 
         if (! array_key_exists($driver, $databaseManagers)) {
@@ -201,7 +220,7 @@ class DatabaseConfig
         /** @var Contracts\TenantDatabaseManager $databaseManager */
         $databaseManager = app($databaseManagers[$driver]);
 
-        $databaseManager->setConnection($tenantHostConnection);
+        $databaseManager->setConnection($tenantHostConnectionName);
 
         return $databaseManager;
     }
