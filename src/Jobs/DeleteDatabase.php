@@ -27,7 +27,7 @@ class DeleteDatabase implements ShouldQueue
     {
         event(new DeletingDatabase($this->tenant));
 
-        $this->tenant->database()->manager()->deleteDatabase($this->tenant);
+        $this->tenant->database()->hostManager()->deleteDatabase($this->tenant);
 
         event(new DatabaseDeleted($this->tenant));
     }

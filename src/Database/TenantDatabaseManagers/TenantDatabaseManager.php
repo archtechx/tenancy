@@ -20,6 +20,10 @@ abstract class TenantDatabaseManager implements Contract // todo better naming?
             throw new NoConnectionSetException(static::class);
         }
 
+        if (config("database.connections.{$this->getTenantHostConnectionName()}")) {
+            // DB::purge($this->getTenantHostConnectionName());
+        }
+
         return DB::connection($this->connection);
     }
 
@@ -33,5 +37,10 @@ abstract class TenantDatabaseManager implements Contract // todo better naming?
         $baseConfig['database'] = $databaseName;
 
         return $baseConfig;
+    }
+
+    public function getTenantHostConnectionName(): ?string
+    {
+        return config('tenancy.database.tenant_host_connection_name');
     }
 }

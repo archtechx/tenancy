@@ -100,6 +100,11 @@ class DatabaseConfig
             ?? config('tenancy.database.central_connection');
     }
 
+    public function getTenantHostConnectionName(): ?string
+    {
+        return config('tenancy.database.tenant_host_connection_name');
+    }
+
     /**
      * Tenant's own database connection config.
      */
@@ -112,6 +117,27 @@ class DatabaseConfig
             array_merge($templateConnection, $this->tenantConfig()),
             $this->getName()
         );
+    }
+
+    /**
+     * Tenant's host database connection config.
+     */
+    public function hostConnection(): array
+    {
+        $config = $this->tenantConfig();
+        $template = $this->getTemplateConnectionName();
+        $templateConnection = config("database.connections.{$template}");
+
+        if ($this->manager() instanceof Contracts\ManagesDatabaseUsers) {
+            unset($config['username']);
+            unset($config['password']);
+        }
+
+        if (empty($config)) {
+            $config = $templateConnection;
+        }
+
+        return array_replace($templateConnection, $config);
     }
 
     /**
@@ -155,6 +181,27 @@ class DatabaseConfig
         $databaseManager = app($databaseManagers[$driver]);
 
         $databaseManager->setConnection($this->getTemplateConnectionName());
+
+        return $databaseManager;
+    }
+
+    /** Get the TenantDatabaseManager for this tenant's connection. */
+    public function hostManager(): Contracts\TenantDatabaseManager
+    {
+        $tenantHostConnection = $this->getTenantHostConnectionName();
+        config(["database.connections.{$tenantHostConnection}" => $this->hostConnection()]);
+
+        $driver = config("database.connections.{$tenantHostConnection}.driver");
+        $databaseManagers = config('tenancy.database.managers');
+
+        if (! array_key_exists($driver, $databaseManagers)) {
+            throw new Exceptions\DatabaseManagerNotRegisteredException($driver);
+        }
+
+        /** @var Contracts\TenantDatabaseManager $databaseManager */
+        $databaseManager = app($databaseManagers[$driver]);
+
+        $databaseManager->setConnection($tenantHostConnection);
 
         return $databaseManager;
     }
