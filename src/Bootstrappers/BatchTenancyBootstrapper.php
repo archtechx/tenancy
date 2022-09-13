@@ -19,23 +19,24 @@ class BatchTenancyBootstrapper implements TenancyBootstrapper
      */
     protected $previousConnection = null;
 
+    public function __construct(protected BatchRepository $batchRepository)
+    {
+    }
+
     public function bootstrap(Tenant $tenant)
     {
-        $batchRepository = app(BatchRepository::class);
-
-        if ($batchRepository instanceof DatabaseBatchRepository) {
-            // Access the resolved batch repository instance and update its connection to use the tenant connection
-            $this->previousConnection = $batchRepository->getConnection();
-            $batchRepository->setConnection(DB::connection('tenant'));
+        if ($this->batchRepository instanceof DatabaseBatchRepository) {
+            // Update batch repository connection to use the tenant connection
+            $this->previousConnection = $this->batchRepository->getConnection();
+            $this->batchRepository->setConnection(DB::connection('tenant'));
         }
     }
 
     public function revert()
     {
         if ($this->previousConnection) {
-            // Access the resolved batch repository instance and replace its connection with the previously replaced one
-            $batchRepository = app(BatchRepository::class);
-            $batchRepository->setConnection($this->previousConnection);
+            // Replace batch repository connection with the previously replaced one
+            $this->batchRepository->setConnection($this->previousConnection);
             $this->previousConnection = null;
         }
     }
