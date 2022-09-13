@@ -34,9 +34,4 @@ abstract class TenantDatabaseManager implements Contract // todo better naming?
 
         return $baseConfig;
     }
-
-    public function getTenantHostConnectionName(): ?string
-    {
-        return config('tenancy.database.tenant_host_connection_name');
-    }
 }
