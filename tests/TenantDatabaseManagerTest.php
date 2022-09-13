@@ -229,7 +229,7 @@ test('tenant database can be created and deleted on a foreign server', function 
     expect($manager->databaseExists($name))->toBeFalse();
 });
 
-test('using permission controller MySQL manager creates the database user', function () {
+test('tenant database user can be created when using the permission controller MySQL manager', function () {
     config([
         'tenancy.database.managers.mysql' => PermissionControlledMySQLDatabaseManager::class,
     ]);
