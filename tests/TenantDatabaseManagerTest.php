@@ -225,7 +225,21 @@ test('tenant database can be created on a foreign server', function () {
 });
 
 test('path used by sqlite manager can be customized', function () {
-    pest()->markTestIncomplete();
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    // Set custom path for SQLite file
+    SQLiteDatabaseManager::$path = $customPath = storage_path();
+
+    $name = Str::random(8). '.sqlite';
+    Tenant::create([
+        'tenancy_db_name' => $name,
+        'tenancy_db_connection' => 'sqlite',
+    ]);
+
+    expect(file_exists( $customPath . '/' . $name))->toBeTrue();
+    unlink($customPath . '/' . $name); // clean up
 });
 
 // Datasets

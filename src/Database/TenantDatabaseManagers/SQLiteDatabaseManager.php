@@ -10,10 +10,12 @@ use Throwable;
 
 class SQLiteDatabaseManager implements TenantDatabaseManager
 {
+    public static string|null $path = null;
+
     public function createDatabase(TenantWithDatabase $tenant): bool
     {
         try {
-            return file_put_contents(database_path($tenant->database()->getName()), '');
+            return (bool) file_put_contents($this->getPath($tenant->database()->getName()), '');
         } catch (Throwable) {
             return false;
         }
@@ -22,7 +24,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
     public function deleteDatabase(TenantWithDatabase $tenant): bool
     {
         try {
-            return unlink(database_path($tenant->database()->getName()));
+            return unlink($this->getPath($tenant->database()->getName()));
         } catch (Throwable) {
             return false;
         }
@@ -30,7 +32,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
 
     public function databaseExists(string $name): bool
     {
-        return file_exists(database_path($name));
+        return file_exists($this->getPath($name));
     }
 
     public function makeConnectionConfig(array $baseConfig, string $databaseName): array
@@ -43,5 +45,10 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
     public function setConnection(string $connection): void
     {
         //
+    }
+
+    public function getPath(string $name): string
+    {
+        return static::$path ? static::$path . '/' . $name : database_path($name);
     }
 }
