@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -16,6 +17,7 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use Stancl\Tenancy\Tests\Etc\TestSeeder;
 use Stancl\Tenancy\Tests\Etc\User;
 
 beforeEach(function () {
@@ -41,9 +43,9 @@ afterEach(function () {
 test('migrate command doesnt change the db connection', function () {
     expect(Schema::hasTable('users'))->toBeFalse();
 
-    $old_connection_name = app(\Illuminate\Database\DatabaseManager::class)->connection()->getName();
+    $old_connection_name = app(DatabaseManager::class)->connection()->getName();
     Artisan::call('tenants:migrate');
-    $new_connection_name = app(\Illuminate\Database\DatabaseManager::class)->connection()->getName();
+    $new_connection_name = app(DatabaseManager::class)->connection()->getName();
 
     expect(Schema::hasTable('users'))->toBeFalse();
     expect($new_connection_name)->toEqual($old_connection_name);
@@ -116,8 +118,19 @@ test('rollback command works', function () {
     expect(Schema::hasTable('users'))->toBeFalse();
 });
 
-// Incomplete test
-test('seed command works');
+test('seed command works', function (){
+    $tenant = Tenant::create();
+    Artisan::call('tenants:migrate');
+    expect(Schema::hasTable('users'))->toBeFalse();
+
+    Artisan::call('tenants:seed', ['--class' => TestSeeder::class]);
+
+    $tenant->run(function (){
+        $user = DB::table('users')->first();
+        expect($user)->not()->toBeNull()
+            ->and($user->email)->toBe('seeded@user');
+    });
+});
 
 test('database connection is switched to default', function () {
     databaseConnectionSwitchedToDefault();
