@@ -204,16 +204,16 @@ test('the model returned by the tenant helper has unique and exists validation r
     Post::create(['text' => 'Foo', 'slug' => 'foo']);
     $data = ['text' => 'Foo 2', 'slug' => 'foo'];
 
-    $uniqueFails = Validator::make($data, [
+    $uniqueValidator = Validator::make($data, [
         'slug' => 'unique:posts',
-    ])->fails();
-    $existsFails = Validator::make($data, [
+    ]);
+    $existsValidator= Validator::make($data, [
         'slug' => 'exists:posts',
-    ])->fails();
+    ]);
 
     // Assert that 'unique' and 'exists' aren't scoped by default
-    // pest()->assertFalse($uniqueFails); // todo get these two assertions to pass. for some reason, the validator is passing for both 'unique' and 'exists'
-    // pest()->assertTrue($existsFails); // todo get these two assertions to pass. for some reason, the validator is passing for both 'unique' and 'exists'
+    expect($uniqueValidator->fails())->toBeTrue() // Expect unique rule failed to pass because slug 'foo' already exists
+        ->and($existsValidator->passes())->toBeTrue(); // Expect exists rule pass because slug 'foo' exists
 
     $uniqueFails = Validator::make($data, [
         'slug' => tenant()->unique('posts'),
@@ -223,9 +223,9 @@ test('the model returned by the tenant helper has unique and exists validation r
     ])->fails();
 
     // Assert that tenant()->unique() and tenant()->exists() are scoped
-    expect($uniqueFails)->toBeTrue();
-    expect($existsFails)->toBeFalse();
-});
+    expect($uniqueFails)->toBeTrue()
+        ->and($existsFails)->toBeFalse();
+})->group('roles');
 
 // todo@tests
 function primaryModelsScopedToCurrentTenant()
