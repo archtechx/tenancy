@@ -132,7 +132,7 @@ class DatabaseConfig
         if ($this->manager() instanceof Contracts\ManagesDatabaseUsers) {
             // We don't need username and password for database creation/deletion
             // Username and password will be saved in Tenant's config
-            // and used for connecting to tenant Database
+            // and will be used for tenancy db connection
             unset($config['username']);
             unset($config['password']);
         }
