@@ -225,7 +225,7 @@ test('the model returned by the tenant helper has unique and exists validation r
     // Assert that tenant()->unique() and tenant()->exists() are scoped
     expect($uniqueFails)->toBeTrue()
         ->and($existsFails)->toBeFalse();
-})->group('roles');
+});
 
 // todo@tests
 function primaryModelsScopedToCurrentTenant()
