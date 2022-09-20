@@ -22,7 +22,7 @@ use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
-use Stancl\Tenancy\Events\TenantDeleted;
+use Stancl\Tenancy\Events\DeletingTenant;
 use Stancl\Tenancy\Listeners\DeleteTenantStorage;
 
 beforeEach(function () {
@@ -187,14 +187,14 @@ test('filesystem data is separated', function () {
     expect($new_storage_path)->toEqual($expected_storage_path);
 });
 
-test('tenant storage can get deleted after the tenant when TenantDeleted listens to DeleteTenantStorage', function () {
+test('tenant storage can get deleted after the tenant when DeletingTenant listens to DeleteTenantStorage', function () {
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
         ],
     ]);
 
-    Event::listen(TenantDeleted::class, DeleteTenantStorage::class);
+    Event::listen(DeletingTenant::class, DeleteTenantStorage::class);
 
     tenancy()->initialize(Tenant::create());
     $tenantStoragePath = storage_path();
