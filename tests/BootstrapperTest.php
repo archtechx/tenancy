@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Stancl\JobPipeline\JobPipeline;
+use Illuminate\Support\Facades\File;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Events\TenantCreated;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
@@ -21,6 +22,8 @@ use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
+use Stancl\Tenancy\Events\DeletingTenant;
+use Stancl\Tenancy\Listeners\DeleteTenantStorage;
 
 beforeEach(function () {
     $this->mockConsoleOutput = false;
@@ -182,6 +185,29 @@ test('filesystem data is separated', function () {
     // Check suffixing logic
     $new_storage_path = storage_path();
     expect($new_storage_path)->toEqual($expected_storage_path);
+});
+
+test('tenant storage can get deleted after the tenant when DeletingTenant listens to DeleteTenantStorage', function () {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+    ]);
+
+    Event::listen(DeletingTenant::class, DeleteTenantStorage::class);
+
+    tenancy()->initialize(Tenant::create());
+    $tenantStoragePath = storage_path();
+
+    Storage::fake('test');
+
+    expect(File::isDirectory($tenantStoragePath))->toBeTrue();
+
+    Storage::put('test.txt', 'testing file');
+
+    tenant()->delete();
+
+    expect(File::isDirectory($tenantStoragePath))->toBeFalse();
 });
 
 function getDiskPrefix(string $disk): string
