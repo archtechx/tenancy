@@ -94,7 +94,7 @@ test('migrate command loads schema state', function () {
     expect(Schema::hasTable('users'))->toBeTrue();
 });
 
-test('migrate command does not throw exception if tenant does not have a database and skip-failing is passed', function() {
+test('migrate command only throws exceptions if skip-failing is not passed', function() {
     Tenant::create();
 
     Event::forget(TenantCreated::class);
