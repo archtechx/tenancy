@@ -10,6 +10,9 @@ use Throwable;
 
 class SQLiteDatabaseManager implements TenantDatabaseManager
 {
+    /**
+     * SQLite Database path without ending slash.
+     */
     public static string|null $path = null;
 
     public function createDatabase(TenantWithDatabase $tenant): bool
@@ -49,6 +52,12 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
 
     public function getPath(string $name): string
     {
-        return static::$path ? static::$path . '/' . $name : database_path($name);
+        if (static::$path) {
+            // The path is set, so return the full path with the database name
+            return str(static::$path)->append(DIRECTORY_SEPARATOR)->append($name)->toString();
+        }
+
+        // The path is not set so return the default path
+        return database_path($name);
     }
 }
