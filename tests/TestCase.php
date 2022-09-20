@@ -112,8 +112,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'tenancy.tenant_model' => Tenant::class, // Use test tenant w/ DBs & domains
         ]);
 
-        $app->singleton(RedisTenancyBootstrapper::class);
-        $app->singleton(BatchTenancyBootstrapper::class); // todo (Samuel) use proper approach eg config for singleton registration
+        $app->singleton(RedisTenancyBootstrapper::class); // todo (Samuel) use proper approach eg config for singleton registration
     }
 
     protected function getPackageProviders($app)
