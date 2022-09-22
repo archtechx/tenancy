@@ -2,13 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests;
-
-use ReflectionObject;
-use ReflectionProperty;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Stancl\JobPipeline\JobPipeline;
+use Illuminate\Support\Facades\File;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
@@ -18,11 +15,13 @@ use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Events\TenantDeleted;
+use Stancl\Tenancy\Events\DeletingTenant;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Jobs\CreateStorageSymlinks;
 use Stancl\Tenancy\Jobs\RemoveStorageSymlinks;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Listeners\DeleteTenantStorage;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
@@ -191,7 +190,7 @@ test('filesystem data is separated', function () {
     expect($new_storage_path)->toEqual($expected_storage_path);
 });
 
-test('local storage public urls are generated correctly', function() {
+test('tenant storage can get deleted after the tenant when DeletingTenant listens to DeleteTenantStorage', function () {
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
@@ -308,6 +307,23 @@ test('create and delete storage symlinks jobs work', function() {
     $tenant->delete();
 
     $this->assertDirectoryDoesNotExist(public_path("public-$tenantKey"));
+});
+
+test('local storage public urls are generated correctly', function() {
+    Event::listen(DeletingTenant::class, DeleteTenantStorage::class);
+
+    tenancy()->initialize(Tenant::create());
+    $tenantStoragePath = storage_path();
+
+    Storage::fake('test');
+
+    expect(File::isDirectory($tenantStoragePath))->toBeTrue();
+
+    Storage::put('test.txt', 'testing file');
+
+    tenant()->delete();
+
+    expect(File::isDirectory($tenantStoragePath))->toBeFalse();
 });
 
 function getDiskPrefix(string $disk): string
