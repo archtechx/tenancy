@@ -140,7 +140,7 @@ return [
     ],
 
     /**
-     * Redis tenancy config. Used by RedisTenancyBoostrapper.
+     * Redis tenancy config. Used by RedisTenancyBootstrapper.
      *
      * Note: You need phpredis to use Redis tenancy.
      *
