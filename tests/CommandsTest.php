@@ -16,6 +16,7 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use Stancl\Tenancy\Tests\Etc\User;
 
 beforeEach(function () {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
@@ -183,7 +184,7 @@ test('run command with array of tenants works', function () {
     $tenantId2 = Tenant::create()->getTenantKey();
     Artisan::call('tenants:migrate-fresh');
 
-    pest()->artisan("tenants:run foo --tenants=$tenantId1 --tenants=$tenantId2 --argument='a=foo' --option='b=bar' --option='c=xyz'")
+    pest()->artisan("tenants:run --tenants=$tenantId1 --tenants=$tenantId2 'foo foo --b=bar --c=xyz'")
         ->expectsOutput('Tenant: ' . $tenantId1)
         ->expectsOutput('Tenant: ' . $tenantId2);
 });
@@ -225,6 +226,29 @@ test('link command works with a specified tenant', function() {
     $this->assertDirectoryDoesNotExist(public_path("public-$tenantKey"));
 });
 
+test('run command works when sub command asks questions and accepts arguments', function () {
+    $tenant = Tenant::create();
+    $id = $tenant->getTenantKey();
+
+    Artisan::call('tenants:migrate');
+
+    pest()->artisan("tenants:run --tenants=$id 'user:addwithname Abrar' ")
+        ->expectsQuestion('What is your email?', 'email@localhost')
+        ->expectsOutput("Tenant: $id")
+        ->expectsOutput("User created: Abrar(email@localhost)");
+
+    // Assert we are in central context
+    expect(tenancy()->initialized)->toBeFalse();
+
+    // Assert user was created in tenant context
+    tenancy()->initialize($tenant);
+    $user = User::first();
+
+    // Assert user is same as provided using the command
+    expect($user->name)->toBe('Abrar');
+    expect($user->email)->toBe('email@localhost');
+});
+
 // todo@tests
 function runCommandWorks(): void
 {
@@ -232,7 +256,7 @@ function runCommandWorks(): void
 
     Artisan::call('tenants:migrate', ['--tenants' => [$id]]);
 
-    pest()->artisan("tenants:run foo --tenants=$id --argument='a=foo' --option='b=bar' --option='c=xyz'")
+    pest()->artisan("tenants:run --tenants=$id 'foo foo --b=bar --c=xyz' ")
         ->expectsOutput("User's name is Test command")
         ->expectsOutput('foo')
         ->expectsOutput('xyz');

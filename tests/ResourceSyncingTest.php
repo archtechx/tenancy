@@ -15,7 +15,7 @@ use Stancl\Tenancy\Contracts\SyncMaster;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
 use Stancl\Tenancy\Database\Concerns\ResourceSyncing;
 use Stancl\Tenancy\Database\Models\TenantPivot;
-use Stancl\Tenancy\DatabaseConfig;
+use Stancl\Tenancy\Database\DatabaseConfig;
 use Stancl\Tenancy\Events\SyncedResourceChangedInForeignDatabase;
 use Stancl\Tenancy\Events\SyncedResourceSaved;
 use Stancl\Tenancy\Events\TenancyEnded;
@@ -575,7 +575,7 @@ class CentralUser extends Model implements SyncMaster
         return ResourceUser::class;
     }
 
-    public function getGlobalIdentifierKey()
+    public function getGlobalIdentifierKey(): string|int
     {
         return $this->getAttribute($this->getGlobalIdentifierKeyName());
     }
@@ -610,7 +610,7 @@ class ResourceUser extends Model implements Syncable
 
     public $timestamps = false;
 
-    public function getGlobalIdentifierKey()
+    public function getGlobalIdentifierKey(): string|int
     {
         return $this->getAttribute($this->getGlobalIdentifierKeyName());
     }

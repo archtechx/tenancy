@@ -181,7 +181,7 @@ test('database is not migrated if creation is disabled', function () {
 
 class FooListener extends QueueableListener
 {
-    public static $shouldQueue = false;
+    public static bool $shouldQueue = false;
 
     public function handle()
     {

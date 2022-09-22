@@ -7,6 +7,8 @@ namespace Stancl\Tenancy;
 use Ramsey\Uuid\Uuid;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 
+// todo move to separate namespace
+
 class UUIDGenerator implements UniqueIdentifierGenerator
 {
     public static function generate($resource): string

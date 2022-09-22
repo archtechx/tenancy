@@ -13,9 +13,10 @@ use Stancl\Tenancy\Tenancy;
 
 class UniversalRoutes implements Feature
 {
-    public static $middlewareGroup = 'universal';
+    public static string $middlewareGroup = 'universal';
 
-    public static $identificationMiddlewares = [
+    // todo docblock
+    public static array $identificationMiddlewares = [
         Middleware\InitializeTenancyByDomain::class,
         Middleware\InitializeTenancyBySubdomain::class,
     ];
@@ -39,7 +40,7 @@ class UniversalRoutes implements Feature
         }
     }
 
-    public static function routeHasMiddleware(Route $route, $middleware): bool
+    public static function routeHasMiddleware(Route $route, string $middleware): bool
     {
         if (in_array($middleware, $route->middleware(), true)) {
             return true;

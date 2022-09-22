@@ -9,10 +9,8 @@ use Stancl\Tenancy\Contracts\Syncable;
 
 class TenantPivot extends Pivot
 {
-    public static function boot()
+    public static function booted(): void
     {
-        parent::boot();
-
         static::saved(function (self $pivot) {
             $parent = $pivot->pivotParent;
 
