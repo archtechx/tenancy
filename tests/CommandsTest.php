@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Tests\Etc\User;
 use Stancl\JobPipeline\JobPipeline;
@@ -104,9 +105,9 @@ test('migrate command only throws exceptions if skip-failing is not passed', fun
 
     Tenant::create();
 
-    expect(fn() => pest()->artisan('tenants:migrate --schema-path="tests/Etc/tenant-schema.dump"'))->toThrow(Exception::class);
-    expect(fn() => pest()->artisan('tenants:migrate --schema-path="tests/Etc/tenant-schema.dump" --skip-failing'))->not()->toThrow(Exception::class);
-})->group('skipfailing');
+    expect(fn() => pest()->artisan('tenants:migrate --schema-path="tests/Etc/tenant-schema.dump"'))->toThrow(QueryException::class);
+    expect(fn() => pest()->artisan('tenants:migrate --schema-path="tests/Etc/tenant-schema.dump" --skip-failing'))->not()->toThrow(QueryException::class);
+});
 
 test('dump command works', function () {
     $tenant = Tenant::create();

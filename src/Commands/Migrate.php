@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Commands;
 
-use Exception;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Console\Migrations\MigrateCommand;
 use Illuminate\Database\Migrations\Migrator;
+use Illuminate\Database\QueryException;
 use Stancl\Tenancy\Concerns\DealsWithMigrations;
 use Stancl\Tenancy\Concerns\ExtendsLaravelCommand;
 use Stancl\Tenancy\Concerns\HasATenantsOption;
@@ -58,7 +58,7 @@ class Migrate extends MigrateCommand
                 parent::handle();
 
                 event(new DatabaseMigrated($tenant));
-            } catch (Exception $th) {
+            } catch (QueryException $th) {
                 if (! $this->option('skip-failing')) {
                     throw $th;
                 }
