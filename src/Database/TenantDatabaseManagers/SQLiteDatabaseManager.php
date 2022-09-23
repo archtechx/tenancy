@@ -53,11 +53,9 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
     public function getPath(string $name): string
     {
         if (static::$path) {
-            // The path is set, so return the full path with the database name
-            return str(static::$path)->append(DIRECTORY_SEPARATOR)->append($name)->toString();
+            return static::$path . DIRECTORY_SEPARATOR . $name;
         }
 
-        // The path is not set so return the default path
         return database_path($name);
     }
 }
