@@ -12,29 +12,33 @@ use Stancl\Tenancy\Database\Models\Tenant;
 use Stancl\Tenancy\Events\CreatingStorageSymlink;
 use Stancl\Tenancy\Events\StorageSymlinkCreated;
 
-class CreateStorageSymlinksAction
+class CreateStorageSymlinks
 {
     use DealsWithTenantSymlinks;
 
-    public static function handle(Tenant|Collection|LazyCollection $tenants, bool $relativeLink = false, bool $force = false): void
+    public function __construct(protected Tenant|Collection|LazyCollection $tenants, protected bool $relativeLink = false, protected bool $force = false)
     {
-        $tenants = $tenants instanceof Tenant ? collect([$tenants]) : $tenants;
+    }
+
+    public function handle(): void
+    {
+        $tenants = $this->tenants instanceof Tenant ? collect([$this->tenants]) : $this->tenants;
 
         /** @var Tenant $tenant */
         foreach ($tenants as $tenant) {
-            foreach (static::possibleTenantSymlinks($tenant) as $publicPath => $storagePath) {
-                static::createLink($publicPath, $storagePath, $tenant, $relativeLink, $force);
+            foreach ($this->possibleTenantSymlinks($tenant) as $publicPath => $storagePath) {
+                $this->createLink((string) $publicPath, (string) $storagePath, $tenant);
             }
         }
     }
 
-    protected static function createLink(string $publicPath, string $storagePath, Tenant $tenant, bool $relativeLink, bool $force): void
+    protected function createLink(string $publicPath, string $storagePath, Tenant $tenant): void
     {
         event(new CreatingStorageSymlink($tenant));
 
-        if (static::symlinkExists($publicPath)) {
+        if ($this->symlinkExists($publicPath)) {
             // If $force isn't passed, don't overwrite the existing symlink
-            throw_if(! $force, new Exception("The [$publicPath] link already exists."));
+            throw_if(! $this->force, new Exception("The [$publicPath] link already exists."));
 
             app()->make('files')->delete($publicPath);
         }
@@ -44,7 +48,7 @@ class CreateStorageSymlinksAction
             mkdir($storagePath, 0777, true);
         }
 
-        if ($relativeLink) {
+        if ($this->relativeLink) {
             app()->make('files')->relativeLink($storagePath, $publicPath);
         } else {
             app()->make('files')->link($storagePath, $publicPath);

@@ -8,8 +8,8 @@ use Stancl\Tenancy\Database\Models\Tenant;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Actions\CreateStorageSymlinksAction;
-use Stancl\Tenancy\Actions\RemoveStorageSymlinksAction;
+use Stancl\Tenancy\Actions\CreateStorageSymlinks;
+use Stancl\Tenancy\Actions\RemoveStorageSymlinks;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 
 beforeEach(function () {
@@ -35,7 +35,7 @@ test('create storage symlinks action works', function() {
 
     $this->assertDirectoryDoesNotExist($publicPath = public_path("public-$tenantKey"));
 
-    CreateStorageSymlinksAction::handle($tenant);
+    (new CreateStorageSymlinks($tenant))->handle();
 
     $this->assertDirectoryExists($publicPath);
     $this->assertEquals(storage_path("app/public/"), readlink($publicPath));
@@ -57,11 +57,11 @@ test('remove storage symlinks action works', function() {
 
     tenancy()->initialize($tenant);
 
-    CreateStorageSymlinksAction::handle($tenant);
+    (new CreateStorageSymlinks($tenant))->handle();
 
     $this->assertDirectoryExists($publicPath = public_path("public-$tenantKey"));
 
-    RemoveStorageSymlinksAction::handle($tenant);
+    (new RemoveStorageSymlinks($tenant))->handle();
 
     $this->assertDirectoryDoesNotExist($publicPath);
 });
