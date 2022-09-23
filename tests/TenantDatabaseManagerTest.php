@@ -99,8 +99,7 @@ test('the tenant connection is fully removed', function () {
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
     $tenant = Tenant::create();
-
-    dd(array_keys(app('db')->getConnections()));
+    
     expect(array_keys(app('db')->getConnections()))->not()->toContain('tenant');
     pest()->assertArrayNotHasKey('tenant', config('database.connections'));
 
