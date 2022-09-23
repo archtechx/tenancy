@@ -48,7 +48,7 @@ return [
         'template_tenant_connection' => null,
 
         /**
-         * Tenant host connection name used to create a temporary connection for creating, deleting database
+         * The name of the temporary connection used for creating and deleting tenant databases.
          */
         'tenant_host_connection_name' => 'tenant_host_connection',
 
