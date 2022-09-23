@@ -121,14 +121,17 @@ test('rollback command works', function () {
 test('seed command works', function (){
     $tenant = Tenant::create();
     Artisan::call('tenants:migrate');
-    expect(Schema::hasTable('users'))->toBeFalse();
+
+    $tenant->run(function (){
+        expect(DB::table('users')->count())->toBe(0);
+    });
 
     Artisan::call('tenants:seed', ['--class' => TestSeeder::class]);
 
     $tenant->run(function (){
-        $user = DB::table('users')->first();
-        expect($user)->not()->toBeNull()
-            ->and($user->email)->toBe('seeded@user');
+        $user = DB::table('users');
+        expect($user->count())->toBe(1)
+            ->and($user->first()->email)->toBe('seeded@user');
     });
 });
 
