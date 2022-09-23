@@ -32,7 +32,7 @@ class RemoveStorageSymlinksAction
         if (static::symlinkExists($publicPath)) {
             event(new RemovingStorageSymlink($tenant));
 
-            app()->make('files')->delete($publicPath); // todo change this to use DI
+            app()->make('files')->delete($publicPath);
 
             event(new StorageSymlinkRemoved($tenant));
         }
