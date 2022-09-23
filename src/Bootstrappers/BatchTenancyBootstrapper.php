@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Illuminate\Bus\DatabaseBatchRepository;
+use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
@@ -18,22 +19,22 @@ class BatchTenancyBootstrapper implements TenancyBootstrapper
      */
     protected $previousConnection = null;
 
-    public function __construct(protected DatabaseBatchRepository $databaseBatchRepository)
+    public function __construct(protected DatabaseBatchRepository $batchRepository)
     {
     }
 
     public function bootstrap(Tenant $tenant)
     {
         // Update batch repository connection to use the tenant connection
-        $this->previousConnection = $this->databaseBatchRepository->getConnection();
-        $this->databaseBatchRepository->setConnection(DB::connection('tenant'));
+        $this->previousConnection = $this->batchRepository->getConnection();
+        $this->batchRepository->setConnection(DB::connection('tenant'));
     }
 
     public function revert()
     {
         if ($this->previousConnection) {
             // Replace batch repository connection with the previously replaced one
-            $this->databaseBatchRepository->setConnection($this->previousConnection);
+            $this->batchRepository->setConnection($this->previousConnection);
             $this->previousConnection = null;
         }
     }
