@@ -205,7 +205,9 @@ class DatabaseConfig
     /** Get the TenantDatabaseManager for this tenant's connection. */
     public function hostManager(): Contracts\TenantDatabaseManager
     {
-        $this->purgeHostConnection();
+        // DB cache the previous connection configurations and changing the connection configuration does not work
+        // So we purge the previous host connection before changing it
+        $this->purgeHostConnection(); // todo come up with a better name
 
         $tenantHostConnectionName = $this->getTenantHostConnectionName();
         config(["database.connections.{$tenantHostConnectionName}" => $this->hostConnection()]);

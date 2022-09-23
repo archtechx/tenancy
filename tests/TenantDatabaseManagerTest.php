@@ -100,6 +100,7 @@ test('the tenant connection is fully removed', function () {
 
     $tenant = Tenant::create();
 
+    dd(array_keys(app('db')->getConnections()));
     expect(array_keys(app('db')->getConnections()))->not()->toContain('tenant');
     pest()->assertArrayNotHasKey('tenant', config('database.connections'));
 
