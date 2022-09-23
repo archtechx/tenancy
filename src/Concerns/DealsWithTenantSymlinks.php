@@ -12,8 +12,6 @@ trait DealsWithTenantSymlinks
     /**
      * Get all possible tenant symlinks, existing or not (array of ['public path' => 'storage path']).
      * This is used for creating all possible tenant symlinks and removing all existing tenant symlinks.
-     *
-     * @return array
      */
     protected static function possibleTenantSymlinks(Tenant $tenant): Collection
     {
