@@ -28,17 +28,11 @@ class IlluminateTenantRepository implements TenantRepository
             ->first();
     }
 
-    /**
-     * @inheritDoc
-     */
     public function all(): iterable
     {
         return $this->query()->cursor();
     }
 
-    /**
-     * @inheritDoc
-     */
     public function whereKeyIn(string|int ...$ids): iterable
     {
         return $this->query()->whereKey($ids)->cursor();
