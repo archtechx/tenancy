@@ -230,7 +230,7 @@ test('path used by sqlite manager can be customized', function () {
     })->toListener());
 
     // Set custom path for SQLite file
-    SQLiteDatabaseManager::$path = $customPath = database_path(Str::random(8));
+    SQLiteDatabaseManager::$path = $customPath = database_path('custom_' . Str::random(8));
 
     if (! is_dir($customPath)) {
         // Create custom directory
