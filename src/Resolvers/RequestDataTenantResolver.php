@@ -5,31 +5,25 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Resolvers;
 
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Contracts\TenantResolver;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByRequestDataException;
+use Stancl\Tenancy\Repository\TenantRepository;
 
-class RequestDataTenantResolver extends Contracts\CachedTenantResolver
+class RequestDataTenantResolver implements TenantResolver
 {
-    public static bool $shouldCache = false;
+    public function __construct(
+        private readonly TenantRepository $tenantRepository,
+    ) {
+    }
 
-    public static int $cacheTTL = 3600; // seconds
-
-    public static string|null $cacheStore = null; // default
-
-    public function resolveWithoutCache(mixed ...$args): Tenant
+    public function resolve(mixed ...$args): Tenant
     {
         $payload = $args[0];
 
-        if ($payload && $tenant = tenancy()->find($payload)) {
+        if ($payload && $tenant = $this->tenantRepository->find($payload)) {
             return $tenant;
         }
 
         throw new TenantCouldNotBeIdentifiedByRequestDataException($payload);
-    }
-
-    public function getArgsForTenant(Tenant $tenant): array
-    {
-        return [
-            [$tenant->id],
-        ];
     }
 }

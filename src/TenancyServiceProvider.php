@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Illuminate\Cache\CacheManager;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
@@ -12,7 +13,12 @@ use Stancl\Tenancy\Contracts\Domain;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Enums\LogMode;
 use Stancl\Tenancy\Events\Contracts\TenancyEvent;
+use Stancl\Tenancy\Repository\IlluminateTenantRepository;
+use Stancl\Tenancy\Repository\TenantRepository;
+use Stancl\Tenancy\Resolvers\CachedTenantResolver;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
+use Stancl\Tenancy\Resolvers\PathTenantResolver;
+use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
 
 class TenancyServiceProvider extends ServiceProvider
 {
@@ -38,6 +44,63 @@ class TenancyServiceProvider extends ServiceProvider
         // Make it possible to inject the current tenant by typehinting the Tenant contract.
         $this->app->bind(Tenant::class, function ($app) {
             return $app[Tenancy::class]->tenant;
+        });
+
+        $this->app->bind(TenantRepository::class, function () {
+            return new IlluminateTenantRepository(config('tenancy.tenant_model'));
+        });
+
+        $this->app->singleton(DomainTenantResolver::class, function () {
+            $tenantResolver = new DomainTenantResolver(
+                tenantRepository: $this->app->make(TenantRepository::class),
+            );
+
+            if (($config = config('tenancy.tenant_resolvers.' . DomainTenantResolver::class)) && ($config['cache'] ?? false)) {
+                return new CachedTenantResolver(
+                    tenantResolver: $tenantResolver,
+                    cache: Cache::store(config('tenancy.tenant_resolvers')),
+                    prefix: '_tenancy_resolver:domain:',
+                    ttl: $config['ttl'] ?? 3600,
+                );
+            } else {
+                return $tenantResolver;
+            }
+        });
+
+        $this->app->singleton(PathTenantResolver::class, function () {
+            $config = config('tenancy.tenant_resolvers.' . PathTenantResolver::class);
+            $tenantResolver = new PathTenantResolver(
+                tenantRepository: $this->app->make(TenantRepository::class),
+                tenantParameterName: $config['parameter_name'] ?? 'tenant',
+            );
+
+            if ($config['cache'] ?? false) {
+                return new CachedTenantResolver(
+                    tenantResolver: $tenantResolver,
+                    cache: Cache::store(config('tenancy.tenant_resolvers')),
+                    prefix: '_tenancy_resolver:path:',
+                    ttl: $config['ttl'] ?? 3600,
+                );
+            } else {
+                return $tenantResolver;
+            }
+        });
+
+        $this->app->singleton(RequestDataTenantResolver::class, function () {
+            $tenantResolver = new RequestDataTenantResolver(
+                tenantRepository: $this->app->make(TenantRepository::class),
+            );
+
+            if (($config = config('tenancy.tenant_resolvers.' . RequestDataTenantResolver::class)) && ($config['cache'] ?? false)) {
+                return new CachedTenantResolver(
+                    tenantResolver: $tenantResolver,
+                    cache: Cache::store(config('tenancy.tenant_resolvers')),
+                    prefix: '_tenancy_resolver:request_data:',
+                    ttl: $config['ttl'] ?? 3600,
+                );
+            } else {
+                return $tenantResolver;
+            }
         });
 
         $this->app->bind(Domain::class, function () {

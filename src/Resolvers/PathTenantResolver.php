@@ -6,38 +6,31 @@ namespace Stancl\Tenancy\Resolvers;
 
 use Illuminate\Routing\Route;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Contracts\TenantResolver;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByPathException;
+use Stancl\Tenancy\Repository\TenantRepository;
 
-class PathTenantResolver extends Contracts\CachedTenantResolver
+class PathTenantResolver implements TenantResolver
 {
-    public static string $tenantParameterName = 'tenant';
+    public function __construct(
+        private readonly TenantRepository $tenantRepository,
+        private readonly string $tenantParameterName = 'tenant',
+    ) {
+    }
 
-    public static bool $shouldCache = false;
-
-    public static int $cacheTTL = 3600; // seconds
-
-    public static string|null $cacheStore = null; // default
-
-    public function resolveWithoutCache(mixed ...$args): Tenant
+    public function resolve(mixed ...$args): Tenant
     {
         /** @var Route $route */
-        $route = $args[0];
+        [$route] = $args;
 
-        if ($id = $route->parameter(static::$tenantParameterName)) {
-            $route->forgetParameter(static::$tenantParameterName);
+        if ($id = $route->parameter($this->tenantParameterName)) {
+            $route->forgetParameter($this->tenantParameterName);
 
-            if ($tenant = tenancy()->find($id)) {
+            if ($tenant = $this->tenantRepository->find($id)) {
                 return $tenant;
             }
         }
 
         throw new TenantCouldNotBeIdentifiedByPathException($id);
-    }
-
-    public function getArgsForTenant(Tenant $tenant): array
-    {
-        return [
-            [$tenant->id],
-        ];
     }
 }

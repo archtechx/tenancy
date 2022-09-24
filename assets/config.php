@@ -196,4 +196,28 @@ return [
         '--class' => 'DatabaseSeeder', // root seeder class
         // '--force' => true,
     ],
+
+    /**
+     *
+     */
+    'tenant_resolvers' => [
+        \Stancl\Tenancy\Resolvers\DomainTenantResolver::class => [
+            'cache' => false,
+            'cache_ttl' => 3600,
+            'cache_store' => null,
+        ],
+
+        \Stancl\Tenancy\Resolvers\PathTenantResolver::class => [
+            'parameter_name' => 'tenant',
+            'cache' => false,
+            'cache_ttl' => 3600,
+            'cache_store' => null,
+        ],
+
+        \Stancl\Tenancy\Resolvers\RequestDataTenantResolver::class => [
+            'cache' => false,
+            'cache_ttl' => 3600,
+            'cache_store' => null,
+        ]
+    ]
 ];
