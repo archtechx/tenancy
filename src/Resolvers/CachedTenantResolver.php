@@ -23,7 +23,7 @@ class CachedTenantResolver implements TenantResolver
         return $this->cache->remember(
             key: $this->getCacheKey(...$args),
             ttl: $this->ttl,
-            callback: fn() => $this->tenantResolver->resolve(...$args)
+            callback: fn () => $this->tenantResolver->resolve(...$args)
         );
     }
 
