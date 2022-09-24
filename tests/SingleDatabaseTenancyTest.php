@@ -207,13 +207,13 @@ test('the model returned by the tenant helper has unique and exists validation r
     $uniqueFails = Validator::make($data, [
         'slug' => 'unique:posts',
     ])->fails();
-    $existsFails = Validator::make($data, [
+    $existsPass = Validator::make($data, [
         'slug' => 'exists:posts',
-    ])->fails();
+    ])->passes();
 
     // Assert that 'unique' and 'exists' aren't scoped by default
-    // pest()->assertFalse($uniqueFails); // todo get these two assertions to pass. for some reason, the validator is passing for both 'unique' and 'exists'
-    // pest()->assertTrue($existsFails); // todo get these two assertions to pass. for some reason, the validator is passing for both 'unique' and 'exists'
+    expect($uniqueFails)->toBeTrue(); // Expect unique rule failed to pass because slug 'foo' already exists
+    expect($existsPass)->toBeTrue(); // Expect exists rule pass because slug 'foo' exists
 
     $uniqueFails = Validator::make($data, [
         'slug' => tenant()->unique('posts'),
