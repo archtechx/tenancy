@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Illuminate\Cache\CacheManager;
-use Illuminate\Foundation\Vite as BaseVite;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
@@ -69,8 +68,6 @@ class TenancyServiceProvider extends ServiceProvider
         $this->app->singleton(Commands\Seed::class, function ($app) {
             return new Commands\Seed($app['db']);
         });
-
-        $this->app->singleton(BaseVite::class, Vite::class);
 
         $this->app->bind('globalCache', function ($app) {
             return new CacheManager($app);
