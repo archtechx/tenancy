@@ -33,6 +33,7 @@ class MigrateDatabase implements ShouldQueue
     {
         Artisan::call('tenants:migrate', [
             '--tenants' => [$this->tenant->getTenantKey()],
+            '--force' => true,
         ]);
     }
 }
