@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Features;
 
-use Illuminate\Foundation\Vite as BaseVite;
+use Illuminate\Foundation\Vite as FoundationVite;
 use Illuminate\Support\Facades\App;
 use Stancl\Tenancy\Contracts\Feature;
 use Stancl\Tenancy\Tenancy;
@@ -14,6 +14,6 @@ class ViteBundler implements Feature
 {
     public function bootstrap(Tenancy $tenancy): void
     {
-        App::singleton(BaseVite::class, Vite::class);
+        App::singleton(FoundationVite::class, Vite::class);
     }
 }
