@@ -209,6 +209,7 @@ class DatabaseConfig
         // So we purge the previous host connection before changing it
         $this->purgeHostConnection(); // todo come up with a better name
 
+        // Set the host connection configuration array fetched from the tenant's config and manipulated to form a connection
         $tenantHostConnectionName = $this->getTenantHostConnectionName();
         config(["database.connections.{$tenantHostConnectionName}" => $this->hostConnection()]);
 
