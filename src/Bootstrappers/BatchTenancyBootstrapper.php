@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Illuminate\Bus\DatabaseBatchRepository;
+use Illuminate\Database\Connection;
 use Illuminate\Database\DatabaseManager;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
@@ -13,10 +14,8 @@ class BatchTenancyBootstrapper implements TenancyBootstrapper
 {
     /**
      * The previous database connection instance.
-     *
-     * @var \Illuminate\Database\Connection
      */
-    protected $previousConnection = null;
+    protected ?Connection $previousConnection = null;
 
     public function __construct(
         protected DatabaseBatchRepository $batchRepository,
