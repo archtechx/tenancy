@@ -10,13 +10,11 @@ use Stancl\Tenancy\Vite as StanclVite;
 
 
 test('replaces the vite helper instance with custom class', function () {
-    $concreteBindings = App::getBindings()[FoundationVite::class]['concrete'];
+    $vite = app(\Illuminate\Foundation\Vite::class);
 
-    expect($concreteBindings(App::getInstance()))
-        ->toBeInstanceOf(FoundationVite::class);
+    expect($vite)->toBeInstanceOf(FoundationVite::class);
 
-    expect($concreteBindings(App::getInstance()))
-        ->not->toBeInstanceOf(StanclVite::class);
+    expect($vite)->not->toBeInstanceOf(StanclVite::class);
 
     config([
         'tenancy.features' => [ViteBundler::class],
@@ -26,16 +24,11 @@ test('replaces the vite helper instance with custom class', function () {
 
     tenancy()->initialize($tenant);
 
-    $concreteBindings = App::getBindings()[FoundationVite::class]['concrete'];
+    app()->forgetInstance(\Illuminate\Foundation\Vite::class);
 
-    expect($concreteBindings)
-        ->toBeCallable();
+    $vite = app(\Illuminate\Foundation\Vite::class);
 
-    expect($concreteBindings(App::getInstance()))
-        ->toBeInstanceOf(FoundationVite::class);
-
-    expect($concreteBindings(App::getInstance()))
-        ->toBeInstanceOf(StanclVite::class);
+    expect($vite)->toBeInstanceOf(StanclVite::class);
 
     tenancy()->end();
 });
