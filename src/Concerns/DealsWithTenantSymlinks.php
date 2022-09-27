@@ -13,7 +13,7 @@ trait DealsWithTenantSymlinks
      * Get all possible tenant symlinks, existing or not (array of ['public path' => 'storage path']).
      * This is used for creating all possible tenant symlinks and removing all existing tenant symlinks.
      */
-    protected function possibleTenantSymlinks(Tenant $tenant): Collection
+    protected static function possibleTenantSymlinks(Tenant $tenant): Collection
     {
         $diskUrls = config('tenancy.filesystem.url_override');
         $disks = config('tenancy.filesystem.root_override');
@@ -34,7 +34,7 @@ trait DealsWithTenantSymlinks
     }
 
     /** Determine if the provided path is an existing symlink. */
-    protected function symlinkExists(string $link): bool
+    protected static function symlinkExists(string $link): bool
     {
         return file_exists($link) && is_link($link);
     }

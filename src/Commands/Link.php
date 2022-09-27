@@ -7,8 +7,8 @@ namespace Stancl\Tenancy\Commands;
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\LazyCollection;
-use Stancl\Tenancy\Actions\CreateStorageSymlinks;
-use Stancl\Tenancy\Actions\RemoveStorageSymlinks;
+use Stancl\Tenancy\Actions\CreateStorageSymlinksAction;
+use Stancl\Tenancy\Actions\RemoveStorageSymlinksAction;
 use Stancl\Tenancy\Concerns\HasATenantsOption;
 
 class Link extends Command
@@ -55,18 +55,18 @@ class Link extends Command
 
     protected function removeLinks(LazyCollection $tenants): void
     {
-        (new RemoveStorageSymlinks($tenants))->handle();
+        RemoveStorageSymlinksAction::handle($tenants);
 
         $this->info('The links have been removed.');
     }
 
     protected function createLinks(LazyCollection $tenants): void
     {
-        (new CreateStorageSymlinks(
+        CreateStorageSymlinksAction::handle(
             $tenants,
             $this->option('relative') ?? false,
             $this->option('force') ?? false,
-        ))->handle();
+        );
 
         $this->info('The links have been created.');
     }
