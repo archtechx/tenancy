@@ -99,23 +99,22 @@ test('the tenant connection is fully removed', function () {
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
     $tenant = Tenant::create();
-    
-    expect(array_keys(app('db')->getConnections()))->not()->toContain('tenant');
+    $tenantHostConnectionName = config('tenancy.database.tenant_host_connection_name');
+
+    expect(array_keys(app('db')->getConnections()))->toBe(['central', $tenantHostConnectionName]);
     pest()->assertArrayNotHasKey('tenant', config('database.connections'));
 
     tenancy()->initialize($tenant);
 
     createUsersTable();
 
-    expect(array_keys(app('db')->getConnections()))->toContain('central', 'tenant');
+    expect(array_keys(app('db')->getConnections()))->toBe(['central', $tenantHostConnectionName, 'tenant']);
     pest()->assertArrayHasKey('tenant', config('database.connections'));
 
     tenancy()->end();
 
-    expect(array_keys(app('db')->getConnections()))
-        ->toContain('central')
-        ->not()->toContain('tenant')
-        ->and(config('database.connections.tenant'))->toBeNull();
+    expect(array_keys(app('db')->getConnections()))->toBe(['central', $tenantHostConnectionName]);
+    expect(config('database.connections.tenant'))->toBeNull();
 });
 
 test('db name is prefixed with db path when sqlite is used', function () {
