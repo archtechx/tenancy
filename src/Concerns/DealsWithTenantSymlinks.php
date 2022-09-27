@@ -11,6 +11,9 @@ trait DealsWithTenantSymlinks
 {
     /**
      * Get all possible tenant symlinks, existing or not (array of ['public path' => 'storage path']).
+     *
+     * Tenants can have a symlink for each disk registered in the tenancy.filesystem.url_override config.
+     *
      * This is used for creating all possible tenant symlinks and removing all existing tenant symlinks.
      */
     protected static function possibleTenantSymlinks(Tenant $tenant): Collection
