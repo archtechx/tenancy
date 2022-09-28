@@ -5,17 +5,20 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Database\Models;
 
 use Carbon\Carbon;
+use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
+use Stancl\Tenancy\Exceptions\StatefulGuardRequiredException;
 
 /**
- * @param string $token
- * @param string $tenant_id
- * @param string $user_id
- * @param string $auth_guard
- * @param string $redirect_url
- * @param Carbon $created_at
+ * @property string $token
+ * @property string $tenant_id
+ * @property string $user_id
+ * @property string $auth_guard
+ * @property string $redirect_url
+ * @property Carbon $created_at
  */
 class ImpersonationToken extends Model
 {
@@ -35,14 +38,18 @@ class ImpersonationToken extends Model
         'created_at',
     ];
 
-    public static function boot()
+    public static function booted(): void
     {
-        parent::boot();
-
         static::creating(function ($model) {
+            $authGuard = $model->auth_guard ?? config('auth.defaults.guard');
+
+            if (! Auth::guard($authGuard) instanceof StatefulGuard) {
+                throw new StatefulGuardRequiredException($authGuard);
+            }
+
             $model->created_at = $model->created_at ?? $model->freshTimestamp();
             $model->token = $model->token ?? Str::random(128);
-            $model->auth_guard = $model->auth_guard ?? config('auth.defaults.guard');
+            $model->auth_guard = $authGuard;
         });
     }
 }

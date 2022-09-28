@@ -157,23 +157,25 @@ class AnotherTenant extends Model implements Contracts\Tenant
         return 'id';
     }
 
-    public function getTenantKey()
+    public function getTenantKey(): int|string
     {
         return $this->getAttribute('id');
     }
 
-    public function run(callable $callback)
+    public function run(Closure $callback): mixed
     {
         $callback();
     }
 
-    public function getInternal(string $key)
+    public function getInternal(string $key): mixed
     {
         return $this->$key;
     }
 
-    public function setInternal(string $key, $value)
+    public function setInternal(string $key, mixed $value): static
     {
         $this->$key = $value;
+
+        return $this;
     }
 }

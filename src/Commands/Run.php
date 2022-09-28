@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Artisan;
 use Stancl\Tenancy\Concerns\HasTenantOptions;
+use Illuminate\Contracts\Console\Kernel;
+use Symfony\Component\Console\Input\ArgvInput;
+use Symfony\Component\Console\Output\ConsoleOutput;
 
 class Run extends Command
 {
@@ -31,12 +33,27 @@ class Run extends Command
      */
     public function handle()
     {
-        tenancy()->runForMultiple($this->getTenants(), function ($tenant) {
+        $argvInput = $this->ArgvInput();
+        tenancy()->runForMultiple($this->getTenants(), function ($tenant) use ($argvInput) {
             $this->line("Tenant: {$tenant->getTenantKey()}");
 
-            Artisan::call($this->argument('commandname'));
-            $this->comment('Command output:');
-            $this->info(Artisan::output());
+            $this->getLaravel()
+                ->make(Kernel::class)
+                ->handle($argvInput, new ConsoleOutput);
         });
+    }
+
+    /**
+     * Get command as ArgvInput instance.
+     */
+    protected function ArgvInput(): ArgvInput
+    {
+        // Convert string command to array
+        $subCommand = explode(' ', $this->argument('commandname'));
+
+        // Add "artisan" as first parameter because ArgvInput expects "artisan" as first parameter and later removes it
+        array_unshift($subCommand, 'artisan');
+
+        return new ArgvInput($subCommand);
     }
 }

@@ -6,6 +6,7 @@ namespace Stancl\Tenancy\Features;
 
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Contracts\Feature;
 use Stancl\Tenancy\Contracts\Tenant;
@@ -18,8 +19,7 @@ class TenantConfig implements Feature
     /** @var Repository */
     protected $config;
 
-    /** @var array */
-    public $originalConfig = [];
+    public array $originalConfig = [];
 
     public static $storageToConfigMap = [
         // 'paypal_api_key' => 'services.paypal.api_key',
@@ -45,19 +45,19 @@ class TenantConfig implements Feature
     {
         /** @var Tenant|Model $tenant */
         foreach (static::$storageToConfigMap as $storageKey => $configKey) {
-            $override = $tenant->getAttribute($storageKey);
+            $override = Arr::get($tenant, $storageKey);
 
             if (! is_null($override)) {
                 if (is_array($configKey)) {
                     foreach ($configKey as $key) {
-                        $this->originalConfig[$key] = $this->originalConfig[$key] ?? $this->config[$key];
+                        $this->originalConfig[$key] = $this->originalConfig[$key] ?? $this->config->get($key);
 
-                        $this->config[$key] = $override;
+                        $this->config->set($key, $override);
                     }
                 } else {
-                    $this->originalConfig[$configKey] = $this->originalConfig[$configKey] ?? $this->config[$configKey];
+                    $this->originalConfig[$configKey] = $this->originalConfig[$configKey] ?? $this->config->get($configKey);
 
-                    $this->config[$configKey] = $override;
+                    $this->config->set($configKey, $override);
                 }
             }
         }
@@ -66,7 +66,7 @@ class TenantConfig implements Feature
     public function unsetTenantConfig(): void
     {
         foreach ($this->originalConfig as $key => $value) {
-            $this->config[$key] = $value;
+            $this->config->set($key, $value);
         }
     }
 }

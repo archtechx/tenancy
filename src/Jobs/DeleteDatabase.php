@@ -6,10 +6,11 @@ namespace Stancl\Tenancy\Jobs;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Stancl\Tenancy\Contracts\TenantWithDatabase;
+use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Events\DatabaseDeleted;
 use Stancl\Tenancy\Events\DeletingDatabase;
 
@@ -17,15 +18,12 @@ class DeleteDatabase implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /** @var TenantWithDatabase */
-    protected $tenant;
-
-    public function __construct(TenantWithDatabase $tenant)
-    {
-        $this->tenant = $tenant;
+    public function __construct(
+        protected TenantWithDatabase&Model $tenant,
+    ) {
     }
 
-    public function handle()
+    public function handle(): void
     {
         event(new DeletingDatabase($this->tenant));
 

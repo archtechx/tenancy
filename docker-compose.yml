@@ -12,6 +12,8 @@ services:
                 condition: service_healthy
             redis:
                 condition: service_healthy
+            # mssql:
+            #    condition: service_healthy
         volumes:
             - .:/var/www/html:delegated
         environment:
@@ -74,4 +76,8 @@ services:
         environment:
           - ACCEPT_EULA=Y
           - SA_PASSWORD=P@ssword # todo reuse values from env above
-        # todo missing health check
+        healthcheck:
+            test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P P@ssword -Q "SELECT 1" -b -o /dev/null
+            interval: 10s
+            timeout: 10s
+            retries: 10

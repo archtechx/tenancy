@@ -48,11 +48,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     protected function getEnvironmentSetUp($app)
     {
         if (file_exists(__DIR__ . '/../.env')) {
-            if (method_exists(\Dotenv\Dotenv::class, 'createImmutable')) {
-                \Dotenv\Dotenv::createImmutable(__DIR__ . '/..')->load();
-            } else {
-                \Dotenv\Dotenv::create(__DIR__ . '/..')->load();
-            }
+            \Dotenv\Dotenv::createImmutable(__DIR__ . '/..')->load();
         }
 
         $app['config']->set([
@@ -100,7 +96,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 '--realpath' => true,
                 '--force' => true,
             ],
-            'tenancy.bootstrappers.redis' => \Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class,
+            'tenancy.bootstrappers.redis' => \Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class, // todo0 change this to []? two tests in TenantDatabaseManagerTest are failing with that
             'queue.connections.central' => [
                 'driver' => 'sync',
                 'central' => true,
@@ -146,7 +142,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
      */
     protected function resolveApplicationConsoleKernel($app)
     {
-        $app->singleton('Illuminate\Contracts\Console\Kernel', Etc\ConsoleKernel::class);
+        $app->singleton('Illuminate\Contracts\Console\Kernel', Etc\Console\ConsoleKernel::class);
     }
 
     public function randomString(int $length = 10)

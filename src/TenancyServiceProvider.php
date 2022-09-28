@@ -16,9 +16,7 @@ use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 
 class TenancyServiceProvider extends ServiceProvider
 {
-    /**
-     * Register services.
-     */
+    /* Register services. */
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../assets/config.php', 'tenancy');
@@ -75,9 +73,7 @@ class TenancyServiceProvider extends ServiceProvider
         });
     }
 
-    /**
-     * Bootstrap services.
-     */
+    /* Bootstrap services. */
     public function boot(): void
     {
         $this->commands([
