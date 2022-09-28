@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Illuminate\Foundation\Vite as FoundationVite;
 use Stancl\Tenancy\Features\ViteBundler;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Tests\TestCase;
@@ -19,7 +18,7 @@ class ViteBundlerTest extends TestCase
 
         $vite = app(\Illuminate\Foundation\Vite::class);
 
-        $this->assertInstanceOf(FoundationVite::class, $vite);
+        $this->assertInstanceOf(\Illuminate\Foundation\Vite::class, $vite);
         $this->assertNotInstanceOf(StanclVite::class, $vite);
 
         config([
