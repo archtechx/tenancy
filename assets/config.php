@@ -138,6 +138,24 @@ return [
             'public' => '%storage_path%/app/public/',
         ],
 
+        /*
+         * Tenant-aware Storage::disk()->url() can be enabled for specific local disks here
+         * by mapping the disk's name to a name with '%tenant_id%' (this will be used as the public name of the disk).
+         * Doing that will override the disk's default URL with a URL containing the current tenant's key.
+         *
+         * For example, Storage::disk('public')->url('') will return https://your-app.test/storage/ by default.
+         * After adding 'public' => 'public-%tenant_id%' to 'url_override',
+         * the returned URL will be https://your-app.test/public-1/ (%tenant_id% gets substitued by the current tenant's ID).
+         *
+         * Use `php artisan tenants:link` to create a symbolic link from the tenant's storage to its public directory.
+         */
+        'url_override' => [
+            // Note that the local disk you add must exist in the tenancy.filesystem.root_override config
+            // todo@v4 Rename %tenant_id% to %tenant_key%
+            // todo@v4 Rename url_override to something that describes the config key better
+            'public' => 'public-%tenant_id%',
+        ],
+
         /**
          * Should storage_path() be suffixed.
          *
