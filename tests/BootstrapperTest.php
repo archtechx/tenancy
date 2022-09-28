@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Stancl\JobPipeline\JobPipeline;
+use Illuminate\Support\Facades\File;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
@@ -14,8 +14,14 @@ use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Events\TenantDeleted;
+use Stancl\Tenancy\Events\DeletingTenant;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Jobs\CreateStorageSymlinks;
+use Stancl\Tenancy\Jobs\RemoveStorageSymlinks;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Listeners\DeleteTenantStorage;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
@@ -184,6 +190,142 @@ test('filesystem data is separated', function () {
     expect($new_storage_path)->toEqual($expected_storage_path);
 });
 
+test('tenant storage can get deleted after the tenant when DeletingTenant listens to DeleteTenantStorage', function () {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
+        'tenancy.filesystem.url_override.public' => 'public-%tenant_id%'
+    ]);
+
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+    $tenant1StorageUrl = 'http://localhost/public-' . $tenant1->getKey().'/';
+    $tenant2StorageUrl = 'http://localhost/public-' . $tenant2->getKey().'/';
+
+    tenancy()->initialize($tenant1);
+
+    $this->assertEquals(
+        $tenant1StorageUrl,
+        Storage::disk('public')->url('')
+    );
+
+    Storage::disk('public')->put($tenant1FileName = 'tenant1.txt', 'text');
+
+    $this->assertEquals(
+        $tenant1StorageUrl . $tenant1FileName,
+        Storage::disk('public')->url($tenant1FileName)
+    );
+
+    tenancy()->initialize($tenant2);
+
+    $this->assertEquals(
+        $tenant2StorageUrl,
+        Storage::disk('public')->url('')
+    );
+
+    Storage::disk('public')->put($tenant2FileName = 'tenant2.txt', 'text');
+
+    $this->assertEquals(
+        $tenant2StorageUrl . $tenant2FileName,
+        Storage::disk('public')->url($tenant2FileName)
+    );
+});
+
+test('files can get fetched using the storage url', function() {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
+        'tenancy.filesystem.url_override.public' => 'public-%tenant_id%'
+    ]);
+
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    pest()->artisan('tenants:link');
+
+    // First tenant
+    tenancy()->initialize($tenant1);
+    Storage::disk('public')->put($tenantFileName = 'tenant1.txt', $tenantKey = $tenant1->getTenantKey());
+
+    $url = Storage::disk('public')->url($tenantFileName);
+    $tenantDiskName = Str::of(config('tenancy.filesystem.url_override.public'))->replace('%tenant_id%', $tenantKey);
+    $hostname = Str::of($url)->before($tenantDiskName);
+    $parsedUrl = Str::of($url)->after($hostname);
+
+    expect(file_get_contents(public_path($parsedUrl)))->toBe($tenantKey);
+
+    // Second tenant
+    tenancy()->initialize($tenant2);
+    Storage::disk('public')->put($tenantFileName = 'tenant2.txt', $tenantKey = $tenant2->getTenantKey());
+
+    $url = Storage::disk('public')->url($tenantFileName);
+    $tenantDiskName = Str::of(config('tenancy.filesystem.url_override.public'))->replace('%tenant_id%', $tenantKey);
+    $hostname = Str::of($url)->before($tenantDiskName);
+    $parsedUrl = Str::of($url)->after($hostname);
+
+    expect(file_get_contents(public_path($parsedUrl)))->toBe($tenantKey);
+});
+
+test('create and delete storage symlinks jobs work', function() {
+    Event::listen(
+        TenantCreated::class,
+        JobPipeline::make([CreateStorageSymlinks::class])->send(function (TenantCreated $event) {
+            return $event->tenant;
+        })->toListener()
+    );
+
+    Event::listen(
+        TenantDeleted::class,
+        JobPipeline::make([RemoveStorageSymlinks::class])->send(function (TenantDeleted $event) {
+            return $event->tenant;
+        })->toListener()
+    );
+
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.filesystem.suffix_base' => 'tenant-',
+        'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
+        'tenancy.filesystem.url_override.public' => 'public-%tenant_id%'
+    ]);
+
+    /** @var Tenant $tenant */
+    $tenant = Tenant::create();
+
+    tenancy()->initialize($tenant);
+
+    $tenantKey = $tenant->getTenantKey();
+
+    $this->assertDirectoryExists(storage_path("app/public"));
+    $this->assertEquals(storage_path("app/public/"), readlink(public_path("public-$tenantKey")));
+
+    $tenant->delete();
+
+    $this->assertDirectoryDoesNotExist(public_path("public-$tenantKey"));
+});
+
+test('local storage public urls are generated correctly', function() {
+    Event::listen(DeletingTenant::class, DeleteTenantStorage::class);
+
+    tenancy()->initialize(Tenant::create());
+    $tenantStoragePath = storage_path();
+
+    Storage::fake('test');
+
+    expect(File::isDirectory($tenantStoragePath))->toBeTrue();
+
+    Storage::put('test.txt', 'testing file');
+
+    tenant()->delete();
+
+    expect(File::isDirectory($tenantStoragePath))->toBeFalse();
+});
+
 function getDiskPrefix(string $disk): string
 {
     /** @var FilesystemAdapter $disk */
@@ -194,14 +336,14 @@ function getDiskPrefix(string $disk): string
         return $adapter->getPathPrefix();
     }
 
-    $prefixer = (new ReflectionObject($adapter))->getProperty('prefixer');
-    $prefixer->setAccessible(true);
+     $prefixer = (new ReflectionObject($adapter))->getProperty('prefixer');
+     $prefixer->setAccessible(true);
 
-    // reflection -> instance
-    $prefixer = $prefixer->getValue($adapter);
+     // reflection -> instance
+     $prefixer = $prefixer->getValue($adapter);
 
-    $prefix = (new ReflectionProperty($prefixer, 'prefix'));
-    $prefix->setAccessible(true);
+     $prefix = (new ReflectionProperty($prefixer, 'prefix'));
+     $prefix->setAccessible(true);
 
-    return $prefix->getValue($prefixer);
+     return $prefix->getValue($prefixer);
 }
