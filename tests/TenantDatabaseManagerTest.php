@@ -99,21 +99,20 @@ test('the tenant connection is fully removed', function () {
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
     $tenant = Tenant::create();
-    $tenantHostConnectionName = config('tenancy.database.tenant_host_connection_name');
 
-    expect(array_keys(app('db')->getConnections()))->toBe(['central', $tenantHostConnectionName]);
+    expect(array_keys(app('db')->getConnections()))->toBe(['central', 'tenant_host_connection']);
     pest()->assertArrayNotHasKey('tenant', config('database.connections'));
 
     tenancy()->initialize($tenant);
 
     createUsersTable();
 
-    expect(array_keys(app('db')->getConnections()))->toBe(['central', $tenantHostConnectionName, 'tenant']);
+    expect(array_keys(app('db')->getConnections()))->toBe(['central', 'tenant_host_connection', 'tenant']);
     pest()->assertArrayHasKey('tenant', config('database.connections'));
 
     tenancy()->end();
 
-    expect(array_keys(app('db')->getConnections()))->toBe(['central', $tenantHostConnectionName]);
+    expect(array_keys(app('db')->getConnections()))->toBe(['central', 'tenant_host_connection']);
     expect(config('database.connections.tenant'))->toBeNull();
 });
 
