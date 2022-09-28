@@ -224,12 +224,12 @@ test('creating the resource in tenant database creates it in central database wi
     tenancy()->initialize($tenant);
 
     // Create the user in tenant DB
-    ResourceUserWithAttributeNames::create([
+    ResourceUserWithAttributeNamesAndDefaultValues::create([
         'global_id' => 'acme',
         'name' => 'John Doe',
         'email' => 'john@localhost',
         'password' => 'secret',
-        'role' => 'commenter',
+        'role' => 'commenter', // this will not be synced because we are providing default value
         'code' => 'bar' // extra column which does not exist in central users table
     ]);
 
@@ -242,7 +242,7 @@ test('creating the resource in tenant database creates it in central database wi
     expect(CentralUser::first()->password)->toBe('secret');
     expect(CentralUser::first()->code)->toBeNull();
     expect(CentralUser::first()->role)->toBe('admin'); // unsynced so it should be default value
-})->skip('mixing attribute names and values is not possible with current implementation');
+})  ;
 
 test('creating the resource in central database creates it in tenant database as 1:1 copy when creation attributes are not specified', function () {
     $centralUser = CentralUser::create([
@@ -337,6 +337,36 @@ test('creating the resource in central database creates it in tenant database wi
         expect(ResourceUser::all())->toHaveCount(1);
         expect(ResourceUser::first()->global_id)->toBe('acme');
         expect(ResourceUser::first()->foo)->toBeNull(); // assert foo is not copied from the central to tenant model
+    });
+});
+
+test('creating the resource in central database creates it in tenant database with a mix of attributes names and default values', function () {
+    $centralUser = CentralUserWithAttributeNamesAndDefaultValues::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter', // this will not be synced because we are providing default value
+    ]);
+
+    $tenant = ResourceTenant::create([
+        'id' => 't1',
+    ]);
+    migrateTenantsResource();
+
+    $tenant->run(function () {
+        expect(ResourceUser::all())->toHaveCount(0);
+    });
+
+    $centralUser->tenants()->attach('t1');
+
+    $tenant->run(function () {
+        expect(ResourceUser::all())->toHaveCount(1);
+        expect(ResourceUser::first()->global_id)->toBe('acme');
+        expect(CentralUser::first()->name)->toBe('John Doe');
+        expect(CentralUser::first()->email)->toBe('john@localhost');
+        expect(CentralUser::first()->password)->toBe('secret');
+        expect(ResourceUser::first()->role)->toBe('admin'); // default value
     });
 });
 
@@ -882,7 +912,7 @@ class ResourceUserWithAttributeNames extends ResourceUser {
 
 }
 
-// override method in ResourceUser class to return attribute names + default values
+// override method in ResourceUser class to return attribute names and default values
 class ResourceUserWithAttributeNamesAndDefaultValues extends ResourceUser {
     public function getSyncedCreationAttributes(): array
     {
@@ -923,6 +953,22 @@ class CentralUserWithAttributeNames extends CentralUser {
                 'password',
                 'email',
                 'role',
+            ];
+    }
+}
+
+// override method in CentralUser class to return attribute names and default values
+class CentralUserWithAttributeNamesAndDefaultValues extends CentralUser {
+    public function getSyncedCreationAttributes(): array
+    {
+        // Sync name, email and password but provide default value for role
+        return
+            [
+                'global_id',
+                'name',
+                'password',
+                'email',
+                'role' => 'admin',
             ];
     }
 }

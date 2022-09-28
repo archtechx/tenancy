@@ -129,12 +129,32 @@ class UpdateSyncedResource extends QueueableListener
         }
 
         if (Arr::isAssoc($model->getSyncedCreationAttributes())) {
-            // Developer provided the default values
+            // Developer provided the default values (key => value) or mix of default values and attribute names (values only)
             // We will merge the default values with sync attributes
-            return array_merge($model->getSyncedCreationAttributes(), $model->only($model->getSyncedAttributeNames()));
+            [$attributes, $defaultValues] = $this->getAttributeNamesAndDefaultValues($model);
+
+            return array_merge($defaultValues, $model->only(array_merge($model->getSyncedAttributeNames(), $attributes)));
         }
 
         // Developer provided the attribute names, so we'd use them to pick model attributes
         return $model->only($model->getSyncedCreationAttributes());
+    }
+
+    /**
+     * Split the attribute names (sequential index items) and default values (key => values).
+     */
+    protected function getAttributeNamesAndDefaultValues(Syncable $model): array
+    {
+        $syncedCreationAttributes = $model->getSyncedCreationAttributes();
+
+        $attributes = Arr::where($syncedCreationAttributes, function ($value, $key) {
+            return is_numeric($key);
+        });
+
+        $defaultValues = Arr::where($syncedCreationAttributes, function ($value, $key) {
+            return is_string($key);
+        });
+
+        return [$attributes, $defaultValues];
     }
 }
