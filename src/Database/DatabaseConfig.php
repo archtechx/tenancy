@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Database;
 
 use Closure;
+use Illuminate\Database;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -149,12 +150,12 @@ class DatabaseConfig
      */
     public function purgeHostConnection(): void
     {
+        $databaseManager = app(Database\DatabaseManager::class);
         $tenantHostConnectionName = $this->getTenantHostConnectionName();
+        $databaseManager->purge($tenantHostConnectionName);
+//        if (array_key_exists($tenantHostConnectionName, $databaseManager->getConnections())) {
 
-        if (config("database.connections.{$tenantHostConnectionName}")) {
-            DB::purge($tenantHostConnectionName);
-            config(["database.connections.{$tenantHostConnectionName}" => null]);
-        }
+//        }
     }
 
     /**
