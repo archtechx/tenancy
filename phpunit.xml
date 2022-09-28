@@ -18,6 +18,7 @@
             <directory suffix=".php">./src</directory>
             <exclude>
                 <file>./src/routes.php</file>
+                <file>./src/Vite.php</file>
             </exclude>
         </whitelist>
     </filter>

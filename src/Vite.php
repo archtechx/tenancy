@@ -4,7 +4,7 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Foundation\Vite as BaseVite;
 
-class Vite extends BaseVite
+class Vite extends BaseVite // todo move to a different directory in v4
 {
     /**
      * Generate an asset path for the application.
