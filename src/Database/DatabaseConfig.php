@@ -152,10 +152,9 @@ class DatabaseConfig
     {
         $databaseManager = app(Database\DatabaseManager::class);
         $tenantHostConnectionName = $this->getTenantHostConnectionName();
-        $databaseManager->purge($tenantHostConnectionName);
 
-        if (array_key_exists($tenantHostConnectionName, $databaseManager->getConnections())) {
-            $databaseManager->purge($tenantHostConnectionName);
+        if (array_key_exists($tenantHostConnectionName, DB::getConnections())) {
+            DB::purge($tenantHostConnectionName);
         }
     }
 
