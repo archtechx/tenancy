@@ -205,8 +205,7 @@ class DatabaseConfig
     /** Get the TenantDatabaseManager for this tenant's connection. */
     public function hostManager(): Contracts\TenantDatabaseManager
     {
-        // DB cache the previous connection configurations and changing the connection configuration does not work
-        // So we purge the previous host connection before changing it
+        // Laravel caches the previous PDO connection, so we purge it to be able to change the connection details
         $this->purgeHostConnection(); // todo come up with a better name
 
         // Set the host connection configuration array fetched from the tenant's config and manipulated to form a connection
