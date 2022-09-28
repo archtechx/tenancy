@@ -29,6 +29,4 @@ test('replaces the vite helper instance with custom class', function () {
     $vite = app(\Illuminate\Foundation\Vite::class);
 
     expect($vite)->toBeInstanceOf(StanclVite::class);
-
-    tenancy()->end();
 });
