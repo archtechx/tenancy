@@ -16,24 +16,12 @@ class CreateStorageSymlinks implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public Tenant $tenant;
-
-    /**
-     * Create a new job instance.
-     *
-     * @return void
-     */
-    public function __construct(Tenant $tenant)
-    {
-        $this->tenant = $tenant;
+    public function __construct(
+        public Tenant $tenant,
+    ) {
     }
 
-    /**
-     * Execute the job.
-     *
-     * @return void
-     */
-    public function handle()
+    public function handle(): void
     {
         CreateStorageSymlinksAction::handle($this->tenant);
     }

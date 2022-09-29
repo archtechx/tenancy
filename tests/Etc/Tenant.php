@@ -8,6 +8,7 @@ use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Database\Concerns\HasPending;
+use Stancl\Tenancy\Database\Concerns\MaintenanceMode;
 use Stancl\Tenancy\Database\Models;
 
 /**
@@ -15,5 +16,5 @@ use Stancl\Tenancy\Database\Models;
  */
 class Tenant extends Models\Tenant implements TenantWithDatabase
 {
-    use HasDatabase, HasDomains, HasPending;
+    use HasDatabase, HasDomains, HasPending, MaintenanceMode;
 }

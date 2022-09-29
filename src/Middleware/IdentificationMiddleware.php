@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Middleware;
 
 use Closure;
+use Illuminate\Http\Request;
 use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Contracts\TenantResolver;
 use Stancl\Tenancy\Tenancy;
@@ -17,7 +18,8 @@ abstract class IdentificationMiddleware
 {
     public static ?Closure $onFail = null;
 
-    public function initializeTenancy($request, $next, ...$resolverArguments)
+    /** @return \Illuminate\Http\Response|mixed */
+    public function initializeTenancy(Request $request, Closure $next, mixed ...$resolverArguments): mixed
     {
         try {
             $this->tenancy->initialize(
