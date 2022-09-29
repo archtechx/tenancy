@@ -13,7 +13,7 @@ class Up extends Command
 
     protected $signature = 'tenants:up';
 
-    protected $description = 'Put tenants out of maintenance';
+    protected $description = 'Put tenants out of maintenance mode.';
 
     public function handle(): void
     {
