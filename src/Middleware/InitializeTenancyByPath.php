@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
+use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Events\InitializingTenancy;
 use Stancl\Tenancy\Exceptions\RouteIsMissingTenantParameterException;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
@@ -36,7 +37,10 @@ class InitializeTenancyByPath extends IdentificationMiddleware
         if ($route->parameterNames()[0] === PathTenantResolver::$tenantParameterName) {
             // Set tenant as a default parameter for the URLs in the current request
             Event::listen(InitializingTenancy::class, function (InitializingTenancy $event) {
-                URL::defaults([PathTenantResolver::$tenantParameterName => $event->tenancy->tenant->getTenantKey()]);
+                /** @var Tenant $tenant */
+                $tenant = $event->tenancy->tenant;
+
+                URL::defaults([PathTenantResolver::$tenantParameterName => $tenant->getTenantKey()]);
             });
 
             return $this->initializeTenancy(

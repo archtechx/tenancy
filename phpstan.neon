@@ -13,14 +13,16 @@ parameters:
         - Illuminate\Database\Eloquent\Model
 
     ignoreErrors:
-        -
-            message: '#Cannot access offset (.*?) on Illuminate\\Contracts\\Foundation\\Application#'
-            paths:
-                - src/TenancyServiceProvider.php
+        - '#Cannot access offset (.*?) on Illuminate\\Contracts\\Foundation\\Application#'
+        - '#Cannot access offset (.*?) on Illuminate\\Contracts\\Config\\Repository#'
         -
             message: '#invalid type Laravel\\Telescope\\IncomingEntry#'
             paths:
                 - src/Features/TelescopeTags.php
+        -
+            message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::getRelationshipToPrimaryModel\(\)#'
+            paths:
+                - src/Database/ParentModelScope.php
         -
             message: '#Parameter \#1 \$key of method Illuminate\\Contracts\\Cache\\Repository::put\(\) expects string#'
             paths:

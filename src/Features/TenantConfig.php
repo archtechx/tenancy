@@ -16,19 +16,16 @@ use Stancl\Tenancy\Tenancy;
 
 class TenantConfig implements Feature
 {
-    /** @var Repository */
-    protected $config;
-
     public array $originalConfig = [];
 
-    public static $storageToConfigMap = [
+    /** @var array<string, string> */
+    public static array $storageToConfigMap = [
         // 'paypal_api_key' => 'services.paypal.api_key',
     ];
 
-    public function __construct(Repository $config)
-    {
-        $this->config = $config;
-    }
+    public function __construct(
+        protected Repository $config,
+    ) {}
 
     public function bootstrap(Tenancy $tenancy): void
     {

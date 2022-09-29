@@ -13,7 +13,7 @@ abstract class QueueableListener implements ShouldQueue
 {
     public static bool $shouldQueue = false;
 
-    public function shouldQueue($event): bool
+    public function shouldQueue(object $event): bool
     {
         if (static::$shouldQueue) {
             return true;

@@ -132,7 +132,7 @@ class Tenancy
      * Run a callback for multiple tenants.
      * More performant than running $tenant->run() one by one.
      *
-     * @param Tenant[]|\Traversable|string[]|null $tenants
+     * @param array<Tenant>|array<string>|\Traversable|null $tenants
      */
     public function runForMultiple($tenants, Closure $callback): void
     {

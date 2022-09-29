@@ -10,27 +10,22 @@ use Stancl\Tenancy\Contracts\Tenant;
 
 class ScoutTenancyBootstrapper implements TenancyBootstrapper
 {
-    /** @var Repository */
-    protected $config;
+    protected ?string $originalScoutPrefix = null;
 
-    /** @var string */
-    protected $originalScoutPrefix;
+    public function __construct(
+        protected Repository $config,
+    ) {}
 
-    public function __construct(Repository $config)
+    public function bootstrap(Tenant $tenant): void
     {
-        $this->config = $config;
-    }
-
-    public function bootstrap(Tenant $tenant)
-    {
-        if (! isset($this->originalScoutPrefix)) {
+        if ($this->originalScoutPrefix !== null) {
             $this->originalScoutPrefix = $this->config->get('scout.prefix');
         }
 
         $this->config->set('scout.prefix', $this->getTenantPrefix($tenant));
     }
 
-    public function revert()
+    public function revert(): void
     {
         $this->config->set('scout.prefix', $this->originalScoutPrefix);
     }

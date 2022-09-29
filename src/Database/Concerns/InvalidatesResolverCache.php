@@ -10,6 +10,7 @@ use Stancl\Tenancy\Resolvers\Contracts\CachedTenantResolver;
 
 trait InvalidatesResolverCache
 {
+    /** @var array<class-string<CachedTenantResolver>> */
     public static $resolvers = [
         Resolvers\DomainTenantResolver::class,
         Resolvers\PathTenantResolver::class,

@@ -20,7 +20,7 @@ class TenantScope implements Scope
         $builder->where($model->qualifyColumn(BelongsToTenant::$tenantIdColumn), tenant()->getTenantKey());
     }
 
-    public function extend(Builder $builder)
+    public function extend(Builder $builder): void
     {
         $builder->macro('withoutTenancy', function (Builder $builder) {
             return $builder->withoutGlobalScope($this);

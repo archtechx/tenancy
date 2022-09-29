@@ -13,18 +13,13 @@ use Stancl\Tenancy\Contracts\Tenant;
 
 class CacheTenancyBootstrapper implements TenancyBootstrapper
 {
-    /** @var CacheManager */
-    protected $originalCache;
+    protected ?CacheManager $originalCache = null;
 
-    /** @var Application */
-    protected $app;
+    public function __construct(
+        protected Application $app
+    ) {}
 
-    public function __construct(Application $app)
-    {
-        $this->app = $app;
-    }
-
-    public function bootstrap(Tenant $tenant)
+    public function bootstrap(Tenant $tenant): void
     {
         $this->resetFacadeCache();
 
@@ -34,7 +29,7 @@ class CacheTenancyBootstrapper implements TenancyBootstrapper
         });
     }
 
-    public function revert()
+    public function revert(): void
     {
         $this->resetFacadeCache();
 
@@ -50,7 +45,7 @@ class CacheTenancyBootstrapper implements TenancyBootstrapper
      * facade has been made prior to bootstrapping tenancy. The
      * facade has its own cache, separate from the container.
      */
-    public function resetFacadeCache()
+    public function resetFacadeCache(): void
     {
         Cache::clearResolvedInstances();
     }

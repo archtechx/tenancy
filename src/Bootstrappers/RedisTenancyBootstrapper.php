@@ -22,18 +22,21 @@ class RedisTenancyBootstrapper implements TenancyBootstrapper
         $this->config = $config;
     }
 
-    public function bootstrap(Tenant $tenant)
+    public function bootstrap(Tenant $tenant): void
     {
         foreach ($this->prefixedConnections() as $connection) {
             $prefix = $this->config['tenancy.redis.prefix_base'] . $tenant->getTenantKey();
             $client = Redis::connection($connection)->client();
 
-            $this->originalPrefixes[$connection] = $client->getOption($client::OPT_PREFIX);
+            /** @var string $originalPrefix */
+            $originalPrefix = $client->getOption($client::OPT_PREFIX);
+
+            $this->originalPrefixes[$connection] = $originalPrefix;
             $client->setOption($client::OPT_PREFIX, $prefix);
         }
     }
 
-    public function revert()
+    public function revert(): void
     {
         foreach ($this->prefixedConnections() as $connection) {
             $client = Redis::connection($connection)->client();
@@ -44,7 +47,8 @@ class RedisTenancyBootstrapper implements TenancyBootstrapper
         $this->originalPrefixes = [];
     }
 
-    protected function prefixedConnections()
+    /** @return string[] */
+    protected function prefixedConnections(): array
     {
         return $this->config['tenancy.redis.prefixed_connections'];
     }
