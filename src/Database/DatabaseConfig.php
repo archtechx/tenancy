@@ -13,7 +13,7 @@ use Stancl\Tenancy\Database\Contracts\TenantWithDatabase as Tenant;
 class DatabaseConfig
 {
     /** The tenant whose database we're dealing with. */
-    public Tenant & Model $tenant;
+    public Tenant&Model $tenant;
 
     /** Database username generator (can be set by the developer.) */
     public static Closure|null $usernameGenerator = null;

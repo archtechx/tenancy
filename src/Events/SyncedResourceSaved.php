@@ -10,7 +10,7 @@ use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
 class SyncedResourceSaved
 {
-    public Syncable & Model $model;
+    public Syncable&Model $model;
 
     /** @var (TenantWithDatabase&Model)|null */
     public TenantWithDatabase|null $tenant;
