@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Contracts\Events\Dispatcher;
-use Stancl\Tenancy\Events\DatabaseMigrated;
+use Illuminate\Database\Console\Migrations\MigrateCommand;
 use Illuminate\Database\Migrations\Migrator;
-use Stancl\Tenancy\Events\MigratingDatabase;
-use Stancl\Tenancy\Concerns\HasTenantOptions;
 use Stancl\Tenancy\Concerns\DealsWithMigrations;
 use Stancl\Tenancy\Concerns\ExtendsLaravelCommand;
-use Illuminate\Database\Console\Migrations\MigrateCommand;
+use Stancl\Tenancy\Concerns\HasTenantOptions;
+use Stancl\Tenancy\Events\DatabaseMigrated;
+use Stancl\Tenancy\Events\MigratingDatabase;
 
 class Migrate extends MigrateCommand
 {

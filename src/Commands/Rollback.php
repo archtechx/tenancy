@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Commands;
 
+use Illuminate\Database\Console\Migrations\RollbackCommand;
 use Illuminate\Database\Migrations\Migrator;
+use Stancl\Tenancy\Concerns\DealsWithMigrations;
+use Stancl\Tenancy\Concerns\ExtendsLaravelCommand;
 use Stancl\Tenancy\Concerns\HasTenantOptions;
 use Stancl\Tenancy\Events\DatabaseRolledBack;
 use Stancl\Tenancy\Events\RollingBackDatabase;
-use Stancl\Tenancy\Concerns\DealsWithMigrations;
-use Stancl\Tenancy\Concerns\ExtendsLaravelCommand;
-use Illuminate\Database\Console\Migrations\RollbackCommand;
 
 class Rollback extends RollbackCommand
 {
