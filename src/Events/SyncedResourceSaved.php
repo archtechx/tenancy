@@ -13,5 +13,6 @@ class SyncedResourceSaved
     public function __construct(
         public Syncable&Model $model,
         public TenantWithDatabase|null $tenant,
-    ) {}
+    ) {
+    }
 }
