@@ -8,7 +8,7 @@ use Closure;
 use Illuminate\Routing\Controller;
 use Throwable;
 
-class TenantAssetsController extends Controller
+class TenantAssetsController extends Controller // todo rename this to TenantAssetController & update references in docs
 {
     public static string|array|Closure $tenancyMiddleware = Stancl\Tenancy\Middleware\InitializeTenancyByDomain::class;
 

@@ -15,30 +15,15 @@ class Link extends Command
 {
     use HasTenantOptions;
 
-    /**
-     * The console command signature.
-     *
-     * @var string
-     */
     protected $signature = 'tenants:link
                 {--tenants=* : The tenant(s) to run the command for. Default: all}
                 {--relative : Create the symbolic link using relative paths}
                 {--force : Recreate existing symbolic links}
                 {--remove : Remove symbolic links}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Create or remove tenant symbolic links.';
 
-    /**
-     * Execute the console command.
-     *
-     * @return void
-     */
-    public function handle()
+    public function handle(): void
     {
         $tenants = $this->getTenants();
 

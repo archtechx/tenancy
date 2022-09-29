@@ -7,7 +7,6 @@ namespace Stancl\Tenancy\Commands;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Console\Migrations\MigrateCommand;
 use Illuminate\Database\Migrations\Migrator;
-use Stancl\Tenancy\Concerns\DealsWithMigrations;
 use Stancl\Tenancy\Concerns\ExtendsLaravelCommand;
 use Stancl\Tenancy\Concerns\HasTenantOptions;
 use Stancl\Tenancy\Events\DatabaseMigrated;
@@ -31,10 +30,7 @@ class Migrate extends MigrateCommand
         $this->specifyParameters();
     }
 
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function handle(): int
     {
         foreach (config('tenancy.migration_parameters') as $parameter => $value) {
             if (! $this->input->hasParameterOption($parameter)) {
@@ -43,7 +39,7 @@ class Migrate extends MigrateCommand
         }
 
         if (! $this->confirmToProceed()) {
-            return;
+            return 1;
         }
 
         tenancy()->runForMultiple($this->getTenants(), function ($tenant) {
@@ -56,5 +52,7 @@ class Migrate extends MigrateCommand
 
             event(new DatabaseMigrated($tenant));
         });
+
+        return 0;
     }
 }

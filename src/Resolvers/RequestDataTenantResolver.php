@@ -17,7 +17,7 @@ class RequestDataTenantResolver extends Contracts\CachedTenantResolver
 
     public function resolveWithoutCache(mixed ...$args): Tenant
     {
-        $payload = $args[0];
+        $payload = (string) $args[0];
 
         if ($payload && $tenant = tenancy()->find($payload)) {
             return $tenant;
@@ -29,7 +29,7 @@ class RequestDataTenantResolver extends Contracts\CachedTenantResolver
     public function getArgsForTenant(Tenant $tenant): array
     {
         return [
-            [$tenant->id],
+            [$tenant->getTenantKey()],
         ];
     }
 }

@@ -10,6 +10,9 @@ use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Database\Concerns\HasPending;
 use Stancl\Tenancy\Database\Models;
 
+/**
+ * @method static static create(array $attributes = [])
+ */
 class Tenant extends Models\Tenant implements TenantWithDatabase
 {
     use HasDatabase, HasDomains, HasPending;

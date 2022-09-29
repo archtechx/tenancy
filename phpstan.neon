@@ -10,6 +10,7 @@ parameters:
 
     universalObjectCratesClasses:
         - Illuminate\Routing\Route
+        - Illuminate\Database\Eloquent\Model
 
     ignoreErrors:
         -
@@ -20,6 +21,14 @@ parameters:
             message: '#invalid type Laravel\\Telescope\\IncomingEntry#'
             paths:
                 - src/Features/TelescopeTags.php
+        -
+            message: '#Parameter \#1 \$key of method Illuminate\\Contracts\\Cache\\Repository::put\(\) expects string#'
+            paths:
+                - src/helpers.php
+        -
+            message: '#PHPDoc tag \@param has invalid value \(dynamic#'
+            paths:
+                - src/helpers.php
 
     checkMissingIterableValueType: false
     treatPhpDocTypesAsCertain: false

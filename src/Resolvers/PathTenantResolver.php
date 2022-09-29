@@ -23,7 +23,7 @@ class PathTenantResolver extends Contracts\CachedTenantResolver
         /** @var Route $route */
         $route = $args[0];
 
-        if ($id = $route->parameter(static::$tenantParameterName)) {
+        if ($id = (string) $route->parameter(static::$tenantParameterName)) {
             $route->forgetParameter(static::$tenantParameterName);
 
             if ($tenant = tenancy()->find($id)) {
@@ -37,7 +37,7 @@ class PathTenantResolver extends Contracts\CachedTenantResolver
     public function getArgsForTenant(Tenant $tenant): array
     {
         return [
-            [$tenant->id],
+            [$tenant->getTenantKey()],
         ];
     }
 }

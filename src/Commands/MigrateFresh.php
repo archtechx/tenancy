@@ -13,11 +13,6 @@ final class MigrateFresh extends Command
 {
     use HasTenantOptions, DealsWithMigrations;
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Drop all tables and re-run all migrations for tenant(s)';
 
     public function __construct()
@@ -29,10 +24,7 @@ final class MigrateFresh extends Command
         $this->setName('tenants:migrate-fresh');
     }
 
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function handle(): void
     {
         tenancy()->runForMultiple($this->getTenants(), function ($tenant) {
             $this->info('Dropping tables.');

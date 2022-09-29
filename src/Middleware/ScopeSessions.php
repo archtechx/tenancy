@@ -12,7 +12,8 @@ class ScopeSessions
 {
     public static $tenantIdKey = '_tenant_id';
 
-    public function handle(Request $request, Closure $next)
+    /** @return \Illuminate\Http\Response|mixed */
+    public function handle(Request $request, Closure $next): mixed
     {
         if (! tenancy()->initialized) {
             throw new TenancyNotInitializedException('Tenancy needs to be initialized before the session scoping middleware is executed');
