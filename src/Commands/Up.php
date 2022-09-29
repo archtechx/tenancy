@@ -11,30 +11,13 @@ class Up extends Command
 {
     use HasATenantsOption;
 
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
+    protected $signature = 'tenants:up';
 
-    protected $signature = 'tenancy:up';
-
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Put tenants out of maintenance';
 
-    /**
-     * Execute the console command.
-     *
-     * @return mixed
-     */
-    public function handle()
+    public function handle(): void
     {
-        // This runs for all tenants if no --tenants are specified
-        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
+        tenancy()->runForMultiple($this->getTenants(), function ($tenant) {
             $this->line("Tenant: {$tenant['id']}");
             $tenant->bringUpFromMaintenance();
         });

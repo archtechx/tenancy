@@ -55,13 +55,13 @@ test('tenant can be in maintenance mode from command', function() {
 
     tenancy()->end(); // Flush stored tenant instance
 
-    Artisan::call('tenancy:down');
+    Artisan::call('tenants:down');
 
     pest()->get('http://acme.localhost/foo')->assertStatus(503);
 
     tenancy()->end();
 
-    Artisan::call('tenancy:up');
+    Artisan::call('tenants:up');
 
     tenancy()->end();
 

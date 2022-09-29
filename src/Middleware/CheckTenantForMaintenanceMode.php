@@ -24,7 +24,7 @@ class CheckTenantForMaintenanceMode extends CheckForMaintenanceMode
                 return $this->bypassResponse($data['secret']);
             }
 
-            if (version_compare($this->app->version(), '8.0.0') >= 0 && $this->hasValidBypassCookie($request, $data) ||
+            if (version_compare($this->app->version(), '8.0.0', '>=') && $this->hasValidBypassCookie($request, $data) ||
                 $this->inExceptArray($request)) {
                 return $next($request);
             }

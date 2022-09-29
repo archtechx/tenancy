@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Database\Concerns;
 
+/**
+ * @mixin \Illuminate\Database\Eloquent\Model
+ */
 trait MaintenanceMode
 {
-    public function putDownForMaintenance($data = [])
+    public function putDownForMaintenance($data = []): void
     {
         $this->update([
             'maintenance_mode' => [
@@ -20,7 +23,7 @@ trait MaintenanceMode
         ]);
     }
 
-    public function bringUpFromMaintenance()
+    public function bringUpFromMaintenance(): void
     {
         $this->update(['maintenance_mode' => null]);
     }

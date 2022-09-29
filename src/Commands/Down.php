@@ -11,31 +11,16 @@ class Down extends DownCommand
 {
     use HasATenantsOption;
 
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-     protected $signature = 'tenancy:down
+     protected $signature = 'tenants:down
          {--redirect= : The path that users should be redirected to}
          {--retry= : The number of seconds after which the request may be retried}
          {--refresh= : The number of seconds after which the browser may refresh}
          {--secret= : The secret phrase that may be used to bypass maintenance mode}
          {--status=503 : The status code that should be used when returning the maintenance mode response}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Put tenants into maintenance';
+    protected $description = 'Put tenants into maintenance mode.';
 
-    /**
-     * Execute the console command.
-     *
-     * @return mixed
-     */
-    public function handle()
+    public function handle(): void
     {
         // The base down command is heavily used. Instead of saving the data inside a file,
         // the data is stored the tenant database, which means some Laravel features
@@ -52,12 +37,7 @@ class Down extends DownCommand
         $this->comment('Tenants are now in maintenance mode.');
     }
 
-
-    /**
-     * Get the payload to be placed in the "down" file.
-     *
-     * @return array
-     */
+    /** Get the payload to be placed in the "down" file. */
     protected function getDownDatabasePayload()
     {
         return [
