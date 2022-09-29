@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Events\CallQueuedListener;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
@@ -368,6 +370,67 @@ test('creating the resource in central database creates it in tenant database wi
         expect(CentralUser::first()->password)->toBe('secret');
         expect(ResourceUser::first()->role)->toBe('admin'); // default value
     });
+});
+
+test('sync resources work when the central model creation method returns attribute names and the resource model creation method returns default values ', function (){
+    // migrate central_users table and tenant_central_users pivot table
+    pest()->artisan('migrate', [
+        '--path' => __DIR__ . '/Etc/synced_resource_migrations/custom/central',
+        '--realpath' => true,
+    ])->assertExitCode(0);
+
+    $tenant1 = ResourceTenantWithCustomPivot::create(['id' => 't1']);
+
+    // migrate resource_users tenant table
+    migrateTenantsResource(__DIR__ . '/Etc/synced_resource_migrations/custom/tenant');
+
+    $centralUser = CentralUserWithExtraAttributes::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'password',
+        'role' => 'admin',
+        'code' => 'foo',
+    ]);
+
+    $tenant1->run(function () {
+        expect(ResourceUserWithNoExtraAttributes::all())->toHaveCount(0);
+    });
+
+    $centralUser->tenants()->attach('t1');
+
+    $tenant1->run(function () {
+        $resourceUserWithNoExtraAttributes = ResourceUserWithNoExtraAttributes::first();
+        expect(ResourceUserWithNoExtraAttributes::all())->toHaveCount(1);
+        expect($resourceUserWithNoExtraAttributes->global_id)->toBe('acme');
+
+        // role and code does not exist in resource_users table
+        expect($resourceUserWithNoExtraAttributes->role)->toBeNull();
+        expect($resourceUserWithNoExtraAttributes->code)->toBeNull();
+    });
+
+    $tenant2 = ResourceTenantWithCustomPivot::create();
+    // migrate resource_users tenant table
+    migrateTenantsResource(__DIR__ . '/Etc/synced_resource_migrations/custom/tenant');
+    tenancy()->initialize($tenant2);
+
+    // Create the user in tenant DB
+    ResourceUserWithNoExtraAttributes::create([
+        'global_id' => 'acmey',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'password',
+    ]);
+
+    tenancy()->end();
+
+    $centralUserWithExtraAttributes = CentralUserWithExtraAttributes::latest('id')->first(); // get the last user because first one already created
+    expect($centralUserWithExtraAttributes->global_id)->toBe('acmey');
+
+    // CentralUserWithExtraAttributes are providing these default value
+    expect($centralUserWithExtraAttributes->password)->toBe('secret');
+    expect($centralUserWithExtraAttributes->code)->toBe('foo');
+    expect($centralUserWithExtraAttributes->role)->toBe('admin');
 });
 
 test('creating the resource in tenant database creates it in central database and creates the mapping', function () {
@@ -781,10 +844,10 @@ function creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase()
     expect(ResourceUser::first()->role)->toBe('commenter');
 }
 
-function migrateTenantsResource()
+function migrateTenantsResource(?string $path = null)
 {
     pest()->artisan('tenants:migrate', [
-        '--path' => __DIR__ . '/Etc/synced_resource_migrations/users',
+        '--path' => $path ?? __DIR__ . '/Etc/synced_resource_migrations/users',
         '--realpath' => true,
     ])->assertExitCode(0);
 }
@@ -973,4 +1036,67 @@ class CentralUserWithAttributeNamesAndDefaultValues extends CentralUser {
     }
 }
 
+class ResourceTenantWithCustomPivot extends Tenant
+{
+    public function users()
+    {
+        return $this->belongsToMany(CentralUserWithExtraAttributes::class, 'tenant_central_users', 'tenant_id', 'global_user_id', 'id', 'global_id')
+            ->using(TenantPivot::class);
+    }
+}
 
+class CentralUserWithExtraAttributes extends CentralUser {
+    public $table = 'central_users';
+
+    public function tenants(): BelongsToMany
+    {
+        return $this->belongsToMany(ResourceTenantWithCustomPivot::class, 'tenant_central_users', 'global_user_id', 'tenant_id', 'global_id')
+            ->using(TenantPivot::class);
+    }
+
+    public function getTenantModelName(): string
+    {
+        return ResourceUserWithNoExtraAttributes::class;
+    }
+
+    public function getSyncedCreationAttributes(): array
+    {
+        return [
+            'global_id',
+            'name',
+            'password',
+            'email',
+        ];
+    }
+}
+
+class ResourceUserWithNoExtraAttributes extends ResourceUser {
+    protected $table = 'resource_users';
+
+    public function getCentralModelName(): string
+    {
+        return CentralUserWithExtraAttributes::class;
+    }
+
+    public function getSyncedAttributeNames(): array
+    {
+        return [
+            'global_id',
+            'name',
+            'email',
+        ];
+    }
+
+    public function getSyncedCreationAttributes(): array
+    {
+        return [
+            'global_id',
+            'name',
+            'email',
+            // Provide default values
+            'password' => 'secret',
+            'role' => 'admin',
+            'code' => 'foo',
+        ];
+    }
+}
