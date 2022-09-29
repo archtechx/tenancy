@@ -12,7 +12,8 @@ class CreateTenantConnection
 {
     public function __construct(
         protected DatabaseManager $database,
-    ) {}
+    ) {
+    }
 
     public function handle(TenantEvent $event): void
     {
