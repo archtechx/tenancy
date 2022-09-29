@@ -10,7 +10,7 @@ use Stancl\Tenancy\Exceptions\TenancyNotInitializedException;
 
 class ScopeSessions
 {
-    public static $tenantIdKey = '_tenant_id';
+    public static string $tenantIdKey = '_tenant_id';
 
     /** @return \Illuminate\Http\Response|mixed */
     public function handle(Request $request, Closure $next): mixed

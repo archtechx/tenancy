@@ -15,6 +15,8 @@ trait DealsWithTenantSymlinks
      * Tenants can have a symlink for each disk registered in the tenancy.filesystem.url_override config.
      *
      * This is used for creating all possible tenant symlinks and removing all existing tenant symlinks.
+     *
+     * @return Collection<string, string>
      */
     protected static function possibleTenantSymlinks(Tenant $tenant): Collection
     {
@@ -33,7 +35,7 @@ trait DealsWithTenantSymlinks
             });
         }
 
-        return $symlinks->mapWithKeys(fn ($item) => $item);
+        return $symlinks->mapWithKeys(fn ($item) => $item); // [[a => b], [c => d]] -> [a => b, c => d]
     }
 
     /** Determine if the provided path is an existing symlink. */
