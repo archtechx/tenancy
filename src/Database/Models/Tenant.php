@@ -26,7 +26,7 @@ class Tenant extends Model implements Contracts\Tenant
         Concerns\HasDataColumn,
         Concerns\HasInternalKeys,
         Concerns\TenantRun,
-        Concerns\HasPending;
+        Concerns\HasPending,
         Concerns\InitializationHelpers,
         Concerns\InvalidatesResolverCache;
 
