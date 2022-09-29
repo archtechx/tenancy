@@ -86,6 +86,8 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\TenantList::class,
             Commands\TenantDump::class,
             Commands\MigrateFresh::class,
+            Commands\Down::class,
+            Commands\Up::class,
         ]);
 
         $this->publishes([
