@@ -16,7 +16,8 @@ class InitializeTenancyByDomain extends IdentificationMiddleware
     public function __construct(
         protected Tenancy $tenancy,
         protected DomainTenantResolver $resolver,
-    ) {}
+    ) {
+    }
 
     /** @return \Illuminate\Http\Response|mixed */
     public function handle(Request $request, Closure $next): mixed

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Stancl\Tenancy\CacheManager;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Tenancy;
 
@@ -73,7 +72,7 @@ if (! function_exists('global_cache')) {
             return app('globalCache')->get(...$arguments);
         }
 
-        if (!is_array($arguments[0])) {
+        if (! is_array($arguments[0])) {
             throw new InvalidArgumentException(
                 'When setting a value in the cache, you must pass an array of key / value pairs.'
             );
