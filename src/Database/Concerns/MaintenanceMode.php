@@ -19,7 +19,7 @@ trait MaintenanceMode
                 'refresh' => $data['refresh'] ?? null,
                 'secret' => $data['secret'] ?? null,
                 'status' => $data['status'] ?? 503,
-            ]
+            ],
         ]);
     }
 

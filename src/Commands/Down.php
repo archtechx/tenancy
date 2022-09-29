@@ -11,7 +11,7 @@ class Down extends DownCommand
 {
     use HasATenantsOption;
 
-     protected $signature = 'tenants:down
+    protected $signature = 'tenants:down
          {--redirect= : The path that users should be redirected to}
          {--retry= : The number of seconds after which the request may be retried}
          {--refresh= : The number of seconds after which the browser may refresh}
@@ -29,7 +29,7 @@ class Down extends DownCommand
         $payload = $this->getDownDatabasePayload();
 
         // This runs for all tenants if no --tenants are specified
-        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) use ($payload){
+        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) use ($payload) {
             $this->line("Tenant: {$tenant['id']}");
             $tenant->putDownForMaintenance($payload);
         });
