@@ -5,16 +5,13 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Middleware;
 
 use Closure;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class InitializeTenancyByDomainOrSubdomain
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     */
-    public function handle($request, Closure $next)
+    /** @return \Illuminate\Http\Response|mixed */
+    public function handle(Request $request, Closure $next): mixed
     {
         if ($this->isSubdomain($request->getHost())) {
             return app(InitializeTenancyBySubdomain::class)->handle($request, $next);

@@ -11,27 +11,14 @@ use Symfony\Component\Console\Output\ConsoleOutput;
 
 class Run extends Command
 {
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Run a command for tenant(s)';
 
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'tenants:run {commandname : The artisan command.}
                             {--tenants=* : The tenant(s) to run the command for. Default: all}';
 
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function handle(): void
     {
-        $argvInput = $this->ArgvInput();
+        $argvInput = $this->argvInput();
         tenancy()->runForMultiple($this->option('tenants'), function ($tenant) use ($argvInput) {
             $this->line("Tenant: {$tenant->getTenantKey()}");
 
@@ -41,10 +28,7 @@ class Run extends Command
         });
     }
 
-    /**
-     * Get command as ArgvInput instance.
-     */
-    protected function ArgvInput(): ArgvInput
+    protected function argvInput(): ArgvInput
     {
         // Convert string command to array
         $subCommand = explode(' ', $this->argument('commandname'));

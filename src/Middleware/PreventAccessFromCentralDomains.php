@@ -11,12 +11,11 @@ class PreventAccessFromCentralDomains
 {
     /**
      * Set this property if you want to customize the on-fail behavior.
-     *
-     * @var callable|null
      */
-    public static $abortRequest;
+    public static ?Closure $abortRequest;
 
-    public function handle(Request $request, Closure $next)
+    /** @return \Illuminate\Http\Response|mixed */
+    public function handle(Request $request, Closure $next): mixed
     {
         if (in_array($request->getHost(), config('tenancy.central_domains'))) {
             $abortRequest = static::$abortRequest ?? function () {

@@ -81,7 +81,7 @@ test('tenant can be identified by domain', function () {
 
 test('onfail logic can be customized', function () {
     InitializeTenancyByDomain::$onFail = function () {
-        return 'foo';
+        return response('foo');
     };
 
     pest()

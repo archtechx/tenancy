@@ -16,22 +16,15 @@ use Stancl\Tenancy\Tenancy;
 
 class InitializeTenancyByPath extends IdentificationMiddleware
 {
-    /** @var callable|null */
-    public static $onFail;
+    public static ?Closure $onFail = null;
 
-    /** @var Tenancy */
-    protected $tenancy;
+    public function __construct(
+        protected Tenancy $tenancy,
+        protected PathTenantResolver $resolver,
+    ) {}
 
-    /** @var PathTenantResolver */
-    protected $resolver;
-
-    public function __construct(Tenancy $tenancy, PathTenantResolver $resolver)
-    {
-        $this->tenancy = $tenancy;
-        $this->resolver = $resolver;
-    }
-
-    public function handle(Request $request, Closure $next)
+    /** @return \Illuminate\Http\Response|mixed */
+    public function handle(Request $request, Closure $next): mixed
     {
         /** @var Route $route */
         $route = $request->route();

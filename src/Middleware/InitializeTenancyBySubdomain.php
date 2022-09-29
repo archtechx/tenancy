@@ -6,6 +6,7 @@ namespace Stancl\Tenancy\Middleware;
 
 use Closure;
 use Exception;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Exceptions\NotASubdomainException;
@@ -21,15 +22,10 @@ class InitializeTenancyBySubdomain extends InitializeTenancyByDomain
      */
     public static $subdomainIndex = 0;
 
-    /** @var callable|null */
-    public static $onFail;
+    public static ?Closure $onFail = null;
 
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     */
-    public function handle($request, Closure $next)
+    /** @return Response|mixed */
+    public function handle(Request $request, Closure $next): mixed
     {
         $subdomain = $this->makeSubdomain($request->getHost());
 

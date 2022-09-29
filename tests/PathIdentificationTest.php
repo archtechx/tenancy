@@ -71,7 +71,7 @@ test('exception is thrown when tenant cannot be identified by path', function ()
 
 test('onfail logic can be customized', function () {
     InitializeTenancyByPath::$onFail = function () {
-        return 'foo';
+        return response('foo');
     };
 
     pest()

@@ -9,24 +9,11 @@ use Stancl\Tenancy\Contracts\Tenant;
 
 class TenantList extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'tenants:list';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'List tenants.';
 
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function handle(): void
     {
         $this->info('Listing all tenants.');
         tenancy()

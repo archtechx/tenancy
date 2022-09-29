@@ -8,11 +8,7 @@ use Stancl\Tenancy\Tenancy;
 
 abstract class TenancyEvent
 {
-    /** @var Tenancy */
-    public $tenancy;
-
-    public function __construct(Tenancy $tenancy)
-    {
-        $this->tenancy = $tenancy;
-    }
+    public function __construct(
+        public Tenancy $tenancy,
+    ) {}
 }
