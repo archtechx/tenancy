@@ -17,7 +17,8 @@ class CacheTenancyBootstrapper implements TenancyBootstrapper
 
     public function __construct(
         protected Application $app
-    ) {}
+    ) {
+    }
 
     public function bootstrap(Tenant $tenant): void
     {
