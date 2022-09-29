@@ -31,6 +31,18 @@ parameters:
             message: '#PHPDoc tag \@param has invalid value \(dynamic#'
             paths:
                 - src/helpers.php
+        -
+            message: '#Illuminate\\Routing\\UrlGenerator#'
+            paths:
+                - src/Bootstrappers/FilesystemTenancyBootstrapper.php
+        -
+            message: '#select\(\) expects string, Illuminate\\Database\\Query\\Expression given#'
+            paths:
+                - src/Database/TenantDatabaseManagers/PermissionControlledMySQLDatabaseManager.php
+        -
+            message: '#Trying to invoke Closure\|null but it might not be a callable#'
+            paths:
+                - src/Database/DatabaseConfig.php
 
     checkMissingIterableValueType: false
     treatPhpDocTypesAsCertain: false

@@ -81,7 +81,7 @@ class DatabaseConfig
      */
     public function makeCredentials(): void
     {
-        $this->tenant->setInternal('db_name', $this->getName() ?? (static::$databaseNameGenerator)($this->tenant));
+        $this->tenant->setInternal('db_name', $this->getName());
 
         if ($this->manager() instanceof Contracts\ManagesDatabaseUsers) {
             $this->tenant->setInternal('db_username', $this->getUsername() ?? (static::$usernameGenerator)($this->tenant));

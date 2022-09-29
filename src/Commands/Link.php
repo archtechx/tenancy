@@ -49,8 +49,8 @@ class Link extends Command
     {
         CreateStorageSymlinksAction::handle(
             $tenants,
-            $this->option('relative') ?? false,
-            $this->option('force') ?? false,
+            (bool) ($this->option('relative') ?? false),
+            (bool) ($this->option('force') ?? false),
         );
 
         $this->info('The links have been created.');

@@ -120,7 +120,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         tenancy()->initialize($tenant);
     }
 
-    protected static function revertToPreviousState($event, ?Tenant &$previousTenant): void
+    protected static function revertToPreviousState(JobProcessed|JobFailed $event, ?Tenant &$previousTenant): void
     {
         $tenantId = $event->job->payload()['tenant_id'] ?? null;
 

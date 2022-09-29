@@ -20,7 +20,7 @@ class Down extends DownCommand
 
     protected $description = 'Put tenants into maintenance mode.';
 
-    public function handle(): void
+    public function handle(): int
     {
         // The base down command is heavily used. Instead of saving the data inside a file,
         // the data is stored the tenant database, which means some Laravel features
@@ -29,16 +29,18 @@ class Down extends DownCommand
         $payload = $this->getDownDatabasePayload();
 
         // This runs for all tenants if no --tenants are specified
-        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) use ($payload) {
+        tenancy()->runForMultiple($this->getTenants(), function ($tenant) use ($payload) {
             $this->line("Tenant: {$tenant['id']}");
             $tenant->putDownForMaintenance($payload);
         });
 
         $this->comment('Tenants are now in maintenance mode.');
+
+        return 0;
     }
 
     /** Get the payload to be placed in the "down" file. */
-    protected function getDownDatabasePayload()
+    protected function getDownDatabasePayload(): array
     {
         return [
             'except' => $this->excludedPaths(),
@@ -46,7 +48,7 @@ class Down extends DownCommand
             'retry' => $this->getRetryTime(),
             'refresh' => $this->option('refresh'),
             'secret' => $this->option('secret'),
-            'status' => (int) $this->option('status', 503),
+            'status' => (int) ($this->option('status') ?? 503),
         ];
     }
 }

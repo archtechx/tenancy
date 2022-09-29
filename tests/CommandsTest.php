@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -201,8 +202,9 @@ test('run command with array of tenants works', function () {
     Artisan::call('tenants:migrate-fresh');
 
     pest()->artisan("tenants:run --tenants=$tenantId1 --tenants=$tenantId2 'foo foo --b=bar --c=xyz'")
-        ->expectsOutput('Tenant: ' . $tenantId1)
-        ->expectsOutput('Tenant: ' . $tenantId2);
+        ->expectsOutputToContain('Tenant: ' . $tenantId1)
+        ->expectsOutputToContain('Tenant: ' . $tenantId2)
+        ->assertExitCode(0);
 });
 
 test('link command works', function() {

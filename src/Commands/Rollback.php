@@ -36,7 +36,7 @@ class Rollback extends RollbackCommand
             return 1;
         }
 
-        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
+        tenancy()->runForMultiple($this->getTenants(), function ($tenant) {
             $this->line("Tenant: {$tenant->getTenantKey()}");
 
             event(new RollingBackDatabase($tenant));
