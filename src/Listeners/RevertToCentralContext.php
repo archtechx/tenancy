@@ -10,11 +10,11 @@ use Stancl\Tenancy\Events\TenancyEnded;
 
 class RevertToCentralContext
 {
-    public function handle(TenancyEnded $event)
+    public function handle(TenancyEnded $event): void
     {
         event(new RevertingToCentralContext($event->tenancy));
 
-        foreach ($event->tenancy->getBootstrappers() as $bootstrapper) {
+        foreach (array_reverse($event->tenancy->getBootstrappers()) as $bootstrapper) {
             $bootstrapper->revert();
         }
 

@@ -10,23 +10,20 @@ use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByPathException;
 
 class PathTenantResolver extends Contracts\CachedTenantResolver
 {
-    public static $tenantParameterName = 'tenant';
+    public static string $tenantParameterName = 'tenant';
 
-    /** @var bool */
-    public static $shouldCache = false;
+    public static bool $shouldCache = false;
 
-    /** @var int */
-    public static $cacheTTL = 3600; // seconds
+    public static int $cacheTTL = 3600; // seconds
 
-    /** @var string|null */
-    public static $cacheStore = null; // default
+    public static string|null $cacheStore = null; // default
 
-    public function resolveWithoutCache(...$args): Tenant
+    public function resolveWithoutCache(mixed ...$args): Tenant
     {
         /** @var Route $route */
         $route = $args[0];
 
-        if ($id = $route->parameter(static::$tenantParameterName)) {
+        if ($id = (string) $route->parameter(static::$tenantParameterName)) {
             $route->forgetParameter(static::$tenantParameterName);
 
             if ($tenant = tenancy()->find($id)) {
@@ -40,7 +37,7 @@ class PathTenantResolver extends Contracts\CachedTenantResolver
     public function getArgsForTenant(Tenant $tenant): array
     {
         return [
-            [$tenant->id],
+            [$tenant->getTenantKey()],
         ];
     }
 }

@@ -4,25 +4,27 @@ declare(strict_types=1);
 
 use Carbon\Carbon;
 use Carbon\CarbonInterval;
+use Illuminate\Support\Str;
+use Illuminate\Auth\TokenGuard;
 use Illuminate\Auth\SessionGuard;
+use Stancl\JobPipeline\JobPipeline;
 use Illuminate\Support\Facades\Auth;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Str;
-use Stancl\JobPipeline\JobPipeline;
-use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
-use Stancl\Tenancy\Database\Models\ImpersonationToken;
 use Stancl\Tenancy\Events\TenancyEnded;
-use Stancl\Tenancy\Events\TenancyInitialized;
-use Stancl\Tenancy\Events\TenantCreated;
-use Stancl\Tenancy\Features\UserImpersonation;
 use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Features\UserImpersonation;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
-use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
-use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Foundation\Auth\User as Authenticable;
+use Stancl\Tenancy\Database\Models\ImpersonationToken;
+use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
+use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Exceptions\StatefulGuardRequiredException;
 
 beforeEach(function () {
     pest()->artisan('migrate', [
@@ -221,6 +223,46 @@ test('impersonation works with multiple models and guards', function () {
         expect(auth()->guard('another')->user()->name)->toBe('Joe');
         expect(auth()->guard('web')->user())->toBe(null);
     });
+});
+
+test('impersonation tokens can be created only with stateful guards', function () {
+    config([
+        'auth.guards' => [
+            'nonstateful' => [
+                'driver' => 'nonstateful',
+                'provider' => 'provider',
+            ],
+            'stateful' => [
+                'driver' => 'session',
+                'provider' => 'provider',
+            ],
+        ],
+        'auth.providers.provider' => [
+            'driver' => 'eloquent',
+            'model' => ImpersonationUser::class,
+        ],
+    ]);
+
+    $tenant = Tenant::create();
+    migrateTenants();
+
+    $user = $tenant->run(function () {
+        return ImpersonationUser::create([
+            'name' => 'Joe',
+            'email' => 'joe@local',
+            'password' => bcrypt('secret'),
+        ]);
+    });
+
+    Auth::extend('nonstateful', fn($app, $name, array $config) => new TokenGuard(Auth::createUserProvider($config['provider']), request()));
+
+    expect(fn() => tenancy()->impersonate($tenant, $user->id, '/dashboard', 'nonstateful'))
+        ->toThrow(StatefulGuardRequiredException::class);
+
+    Auth::extend('stateful', fn ($app, $name, array $config) => new SessionGuard($name, Auth::createUserProvider($config['provider']), session()));
+
+    expect(tenancy()->impersonate($tenant, $user->id, '/dashboard', 'stateful'))
+        ->toBeInstanceOf(ImpersonationToken::class);
 });
 
 function migrateTenants()

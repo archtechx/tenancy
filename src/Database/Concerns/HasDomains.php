@@ -2,12 +2,16 @@
 
 declare(strict_types=1);
 
+// todo not sure if this should be in Database\
+
 namespace Stancl\Tenancy\Database\Concerns;
 
 use Stancl\Tenancy\Contracts\Domain;
 
 /**
  * @property-read Domain[]|\Illuminate\Database\Eloquent\Collection $domains
+ * @mixin \Illuminate\Database\Eloquent\Model
+ * @mixin \Stancl\Tenancy\Contracts\Tenant
  */
 trait HasDomains
 {

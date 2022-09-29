@@ -8,7 +8,7 @@ use Stancl\Tenancy\Exceptions\DomainOccupiedByOtherTenantException;
 
 trait EnsuresDomainIsNotOccupied
 {
-    public static function bootEnsuresDomainIsNotOccupied()
+    public static function bootEnsuresDomainIsNotOccupied(): void
     {
         static::saving(function ($self) {
             if ($domain = $self->newQuery()->where('domain', $self->domain)->first()) {

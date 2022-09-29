@@ -1,0 +1,34 @@
+includes:
+    - ./vendor/nunomaduro/larastan/extension.neon
+
+parameters:
+    paths:
+        - src
+        # - tests
+
+    level: 8
+
+    universalObjectCratesClasses:
+        - Illuminate\Routing\Route
+        - Illuminate\Database\Eloquent\Model
+
+    ignoreErrors:
+        -
+            message: '#Cannot access offset (.*?) on Illuminate\\Contracts\\Foundation\\Application#'
+            paths:
+                - src/TenancyServiceProvider.php
+        -
+            message: '#invalid type Laravel\\Telescope\\IncomingEntry#'
+            paths:
+                - src/Features/TelescopeTags.php
+        -
+            message: '#Parameter \#1 \$key of method Illuminate\\Contracts\\Cache\\Repository::put\(\) expects string#'
+            paths:
+                - src/helpers.php
+        -
+            message: '#PHPDoc tag \@param has invalid value \(dynamic#'
+            paths:
+                - src/helpers.php
+
+    checkMissingIterableValueType: false
+    treatPhpDocTypesAsCertain: false

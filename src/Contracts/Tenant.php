@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Contracts;
 
+use Closure;
+
 /**
  * @see \Stancl\Tenancy\Database\Models\Tenant
  *
- * @method __call(string $method, array $parameters) IDE support. This will be a model.
- * @method static __callStatic(string $method, array $parameters) IDE support. This will be a model.
  * @mixin \Illuminate\Database\Eloquent\Model
  */
 interface Tenant
@@ -17,14 +17,14 @@ interface Tenant
     public function getTenantKeyName(): string;
 
     /** Get the value of the key used for identifying the tenant. */
-    public function getTenantKey();
+    public function getTenantKey(): int|string;
 
     /** Get the value of an internal key. */
-    public function getInternal(string $key);
+    public function getInternal(string $key): mixed;
 
     /** Set the value of an internal key. */
-    public function setInternal(string $key, $value);
+    public function setInternal(string $key, mixed $value): static;
 
     /** Run a callback in this tenant's environment. */
-    public function run(callable $callback);
+    public function run(Closure $callback): mixed;
 }

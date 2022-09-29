@@ -50,3 +50,17 @@ test('global cache manager stores data in global cache', function () {
     expect(cache('def'))->toBe('ghi');
 });
 
+test('the global_cache helper supports the same syntax as the cache helper', function () {
+    $tenant = Tenant::create();
+    $tenant->enter();
+
+    expect(cache('foo'))->toBe(null); // tenant cache is empty
+
+    global_cache(['foo' => 'bar']);
+    expect(global_cache('foo'))->toBe('bar');
+
+    global_cache()->set('foo', 'baz');
+    expect(global_cache()->get('foo'))->toBe('baz');
+
+    expect(cache('foo'))->toBe(null); // tenant cache is not affected
+});

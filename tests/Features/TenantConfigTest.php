@@ -14,6 +14,28 @@ afterEach(function () {
     TenantConfig::$storageToConfigMap = [];
 });
 
+test('nested tenant values are merged', function () {
+    expect(config('whitelabel.theme'))->toBeNull();
+    config([
+        'tenancy.features' => [TenantConfig::class],
+        'tenancy.bootstrappers' => [],
+    ]);
+    Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+
+    TenantConfig::$storageToConfigMap =  [
+        'whitelabel.config.theme' => 'whitelabel.theme',
+    ];
+
+    $tenant = Tenant::create([
+        'whitelabel' => ['config' => ['theme' => 'dark']],
+    ]);
+
+    tenancy()->initialize($tenant);
+    expect(config('whitelabel.theme'))->toBe('dark');
+    tenancy()->end();
+});
+
 test('config is merged and removed', function () {
     expect(config('services.paypal'))->toBe(null);
     config([

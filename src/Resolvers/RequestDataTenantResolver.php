@@ -9,18 +9,15 @@ use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByRequestDataException;
 
 class RequestDataTenantResolver extends Contracts\CachedTenantResolver
 {
-    /** @var bool */
-    public static $shouldCache = false;
+    public static bool $shouldCache = false;
 
-    /** @var int */
-    public static $cacheTTL = 3600; // seconds
+    public static int $cacheTTL = 3600; // seconds
 
-    /** @var string|null */
-    public static $cacheStore = null; // default
+    public static string|null $cacheStore = null; // default
 
-    public function resolveWithoutCache(...$args): Tenant
+    public function resolveWithoutCache(mixed ...$args): Tenant
     {
-        $payload = $args[0];
+        $payload = (string) $args[0];
 
         if ($payload && $tenant = tenancy()->find($payload)) {
             return $tenant;
@@ -32,7 +29,7 @@ class RequestDataTenantResolver extends Contracts\CachedTenantResolver
     public function getArgsForTenant(Tenant $tenant): array
     {
         return [
-            [$tenant->id],
+            [$tenant->getTenantKey()],
         ];
     }
 }

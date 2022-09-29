@@ -12,16 +12,16 @@ use Stancl\Tenancy\Database\DatabaseManager;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Events\TenantCreated;
-use Stancl\Tenancy\Exceptions\TenantDatabaseAlreadyExistsException;
+use Stancl\Tenancy\Database\Exceptions\TenantDatabaseAlreadyExistsException;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\TenantDatabaseManagers\MicrosoftSQLDatabaseManager;
-use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
-use Stancl\Tenancy\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager;
-use Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager;
-use Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLSchemaManager;
-use Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\MicrosoftSQLDatabaseManager;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\MySQLDatabaseManager;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLDatabaseManager;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLSchemaManager;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\SQLiteDatabaseManager;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
 test('databases can be created and deleted', function ($driver, $databaseManager) {
@@ -135,7 +135,7 @@ test('db name is prefixed with db path when sqlite is used', function () {
 
 test('schema manager uses schema to separate tenant dbs', function () {
     config([
-        'tenancy.database.managers.pgsql' => \Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLSchemaManager::class,
+        'tenancy.database.managers.pgsql' => \Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLSchemaManager::class,
         'tenancy.boostrappers' => [
             DatabaseTenancyBootstrapper::class,
         ],
@@ -225,7 +225,25 @@ test('tenant database can be created on a foreign server', function () {
 });
 
 test('path used by sqlite manager can be customized', function () {
-    pest()->markTestIncomplete();
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    // Set custom path for SQLite file
+    SQLiteDatabaseManager::$path = $customPath = database_path('custom_' . Str::random(8));
+
+    if (! is_dir($customPath)) {
+        // Create custom directory
+        mkdir($customPath);
+    }
+
+    $name = Str::random(8). '.sqlite';
+    Tenant::create([
+        'tenancy_db_name' => $name,
+        'tenancy_db_connection' => 'sqlite',
+    ]);
+
+    expect(file_exists( $customPath . '/' . $name))->toBeTrue();
 });
 
 // Datasets

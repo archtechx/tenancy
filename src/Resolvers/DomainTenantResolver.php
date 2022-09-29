@@ -11,31 +11,21 @@ use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 
 class DomainTenantResolver extends Contracts\CachedTenantResolver
 {
-    /**
-     * The model representing the domain that the tenant was identified on.
-     *
-     * @var Domain
-     */
-    public static $currentDomain;
+    /** The model representing the domain that the tenant was identified on. */
+    public static Domain $currentDomain; // todo |null?
 
-    /** @var bool */
-    public static $shouldCache = false;
+    public static bool $shouldCache = false;
 
-    /** @var int */
-    public static $cacheTTL = 3600; // seconds
+    public static int $cacheTTL = 3600; // seconds
 
-    /** @var string|null */
-    public static $cacheStore = null; // default
+    public static string|null $cacheStore = null; // default
 
-    public function resolveWithoutCache(...$args): Tenant
+    public function resolveWithoutCache(mixed ...$args): Tenant
     {
         $domain = $args[0];
 
-        /** @var Tenant|null $tenant */
         $tenant = config('tenancy.tenant_model')::query()
-            ->whereHas('domains', function (Builder $query) use ($domain) {
-                $query->where('domain', $domain);
-            })
+            ->whereHas('domains', fn (Builder $query) => $query->where('domain', $domain))
             ->with('domains')
             ->first();
 
@@ -48,7 +38,7 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
         throw new TenantCouldNotBeIdentifiedOnDomainException($args[0]);
     }
 
-    public function resolved(Tenant $tenant, ...$args): void
+    public function resolved(Tenant $tenant, mixed ...$args): void
     {
         $this->setCurrentDomain($tenant, $args[0]);
     }

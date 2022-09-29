@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\TenantDatabaseManagers;
+namespace Stancl\Tenancy\Database\TenantDatabaseManagers;
 
-use Stancl\Tenancy\Concerns\CreatesDatabaseUsers;
-use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
-use Stancl\Tenancy\DatabaseConfig;
+use Stancl\Tenancy\Database\Concerns\CreatesDatabaseUsers;
+use Stancl\Tenancy\Database\Contracts\ManagesDatabaseUsers;
+use Stancl\Tenancy\Database\DatabaseConfig;
 
 class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager implements ManagesDatabaseUsers
 {
@@ -53,12 +53,5 @@ class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager impl
     public function userExists(string $username): bool
     {
         return (bool) $this->database()->select("SELECT count(*) FROM mysql.user WHERE user = '$username'")[0]->{'count(*)'};
-    }
-
-    public function makeConnectionConfig(array $baseConfig, string $databaseName): array
-    {
-        $baseConfig['database'] = $databaseName;
-
-        return $baseConfig;
     }
 }

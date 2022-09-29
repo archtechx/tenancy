@@ -4,8 +4,15 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
+use Dotenv\Dotenv;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Redis;
 use PDO;
+use Stancl\Tenancy\Bootstrappers\BatchTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
+use Stancl\Tenancy\Facades\GlobalCache;
+use Stancl\Tenancy\Facades\Tenancy;
+use Stancl\Tenancy\TenancyServiceProvider;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
@@ -42,17 +49,13 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     /**
      * Define environment setup.
      *
-     * @param  \Illuminate\Foundation\Application  $app
+     * @param  Application  $app
      * @return void
      */
     protected function getEnvironmentSetUp($app)
     {
         if (file_exists(__DIR__ . '/../.env')) {
-            if (method_exists(\Dotenv\Dotenv::class, 'createImmutable')) {
-                \Dotenv\Dotenv::createImmutable(__DIR__ . '/..')->load();
-            } else {
-                \Dotenv\Dotenv::create(__DIR__ . '/..')->load();
-            }
+            Dotenv::createImmutable(__DIR__ . '/..')->load();
         }
 
         $app['config']->set([
@@ -100,7 +103,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 '--realpath' => true,
                 '--force' => true,
             ],
-            'tenancy.bootstrappers.redis' => \Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class,
+            'tenancy.bootstrappers.redis' => RedisTenancyBootstrapper::class, // todo0 change this to []? two tests in TenantDatabaseManagerTest are failing with that
             'queue.connections.central' => [
                 'driver' => 'sync',
                 'central' => true,
@@ -109,28 +112,28 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'tenancy.tenant_model' => Tenant::class, // Use test tenant w/ DBs & domains
         ]);
 
-        $app->singleton(\Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class);
+        $app->singleton(RedisTenancyBootstrapper::class); // todo (Samuel) use proper approach eg config for singleton registration
     }
 
     protected function getPackageProviders($app)
     {
         return [
-            \Stancl\Tenancy\TenancyServiceProvider::class,
+            TenancyServiceProvider::class,
         ];
     }
 
     protected function getPackageAliases($app)
     {
         return [
-            'Tenancy' => \Stancl\Tenancy\Facades\Tenancy::class,
-            'GlobalCache' => \Stancl\Tenancy\Facades\GlobalCache::class,
+            'Tenancy' => Tenancy::class,
+            'GlobalCache' => GlobalCache::class,
         ];
     }
 
     /**
      * Resolve application HTTP Kernel implementation.
      *
-     * @param  \Illuminate\Foundation\Application  $app
+     * @param  Application  $app
      * @return void
      */
     protected function resolveApplicationHttpKernel($app)
@@ -141,12 +144,12 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     /**
      * Resolve application Console Kernel implementation.
      *
-     * @param  \Illuminate\Foundation\Application  $app
+     * @param  Application  $app
      * @return void
      */
     protected function resolveApplicationConsoleKernel($app)
     {
-        $app->singleton('Illuminate\Contracts\Console\Kernel', Etc\ConsoleKernel::class);
+        $app->singleton('Illuminate\Contracts\Console\Kernel', Etc\Console\ConsoleKernel::class);
     }
 
     public function randomString(int $length = 10)

@@ -11,9 +11,9 @@ use Illuminate\Contracts\Queue\ShouldQueue;
  */
 abstract class QueueableListener implements ShouldQueue
 {
-    public static $shouldQueue = false;
+    public static bool $shouldQueue = false;
 
-    public function shouldQueue($event)
+    public function shouldQueue($event): bool
     {
         if (static::$shouldQueue) {
             return true;

@@ -26,6 +26,7 @@ class Tenant extends Model implements Contracts\Tenant
         Concerns\HasDataColumn,
         Concerns\HasInternalKeys,
         Concerns\TenantRun,
+        Concerns\InitializationHelpers,
         Concerns\InvalidatesResolverCache;
 
     protected $table = 'tenants';
@@ -39,7 +40,7 @@ class Tenant extends Model implements Contracts\Tenant
         return 'id';
     }
 
-    public function getTenantKey()
+    public function getTenantKey(): int|string
     {
         return $this->getAttribute($this->getTenantKeyName());
     }
