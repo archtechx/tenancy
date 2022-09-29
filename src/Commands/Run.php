@@ -6,8 +6,8 @@ namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\Kernel;
-use Stancl\Tenancy\Database\Models\Tenant;
 use Stancl\Tenancy\Concerns\HasTenantOptions;
+use Stancl\Tenancy\Database\Models\Tenant;
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
@@ -41,7 +41,7 @@ class Run extends Command
             // $this->getTenants() doesn't return tenants in the same order as the tenants passed in the tenants option
             // Map the passed tenant keys to the fetched tenant models to correct the order
             $tenants = array_map(function (string $tenantKey) use ($tenants) {
-                return $tenants->filter(fn(Tenant $tenant) => $tenant->getTenantKey() === $tenantKey)->first();
+                return $tenants->filter(fn (Tenant $tenant) => $tenant->getTenantKey() === $tenantKey)->first();
             }, $this->option('tenants'));
         }
 
