@@ -10,6 +10,7 @@ use Illuminate\Support\Arr;
 use Stancl\Tenancy\Contracts\Syncable;
 use Stancl\Tenancy\Contracts\SyncMaster;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\TenantCollection;
 use Stancl\Tenancy\Events\SyncedResourceChangedInForeignDatabase;
 use Stancl\Tenancy\Events\SyncedResourceSaved;
@@ -33,7 +34,7 @@ class UpdateSyncedResource extends QueueableListener
         $this->updateResourceInTenantDatabases($tenants, $event, $syncedAttributes);
     }
 
-    protected function getTenantsForCentralModel($centralModel): TenantCollection
+    protected function getTenantsForCentralModel(Syncable $centralModel): TenantCollection
     {
         if (! $centralModel instanceof SyncMaster) {
             // If we're trying to use a tenant User model instead of the central User model, for example.
@@ -46,12 +47,15 @@ class UpdateSyncedResource extends QueueableListener
         // relationship already loaded and cached. For this reason, we refresh the relationship.
         $centralModel->load('tenants');
 
-        return $centralModel->tenants;
+        /** @var TenantCollection $tenants */
+        $tenants = $centralModel->tenants;
+
+        return $tenants;
     }
 
-    protected function updateResourceInCentralDatabaseAndGetTenants($event, array $syncedAttributes): TenantCollection
+    protected function updateResourceInCentralDatabaseAndGetTenants(SyncedResourceSaved $event, array $syncedAttributes): TenantCollection
     {
-        /** @var Model|SyncMaster $centralModel */
+        /** @var (Model&SyncMaster)|null $centralModel */
         $centralModel = $event->model->getCentralModelName()::where($event->model->getGlobalIdentifierKeyName(), $event->model->getGlobalIdentifierKey())
             ->first();
 
@@ -69,7 +73,10 @@ class UpdateSyncedResource extends QueueableListener
 
         // If the model was just created, the mapping of the tenant to the user likely doesn't exist, so we create it.
         $currentTenantMapping = function ($model) use ($event) {
-            return ((string) $model->pivot->tenant_id) === ((string) $event->tenant->getTenantKey());
+            /** @var Tenant */
+            $tenant = $event->tenant;
+
+            return ((string) $model->pivot->tenant_id) === ((string) $tenant->getTenantKey());
         };
 
         $mappingExists = $centralModel->tenants->contains($currentTenantMapping);
@@ -78,17 +85,23 @@ class UpdateSyncedResource extends QueueableListener
             // Here we should call TenantPivot, but we call general Pivot, so that this works
             // even if people use their own pivot model that is not based on our TenantPivot
             Pivot::withoutEvents(function () use ($centralModel, $event) {
-                $centralModel->tenants()->attach($event->tenant->getTenantKey());
+                /** @var Tenant */
+                $tenant = $event->tenant;
+
+                $centralModel->tenants()->attach($tenant->getTenantKey());
             });
         }
 
-        return $centralModel->tenants->filter(function ($model) use ($currentTenantMapping) {
+        /** @var TenantCollection $tenants */
+        $tenants = $centralModel->tenants->filter(function ($model) use ($currentTenantMapping) {
             // Remove the mapping for the current tenant.
             return ! $currentTenantMapping($model);
         });
+
+        return $tenants;
     }
 
-    protected function updateResourceInTenantDatabases($tenants, $event, array $syncedAttributes): void
+    protected function updateResourceInTenantDatabases(TenantCollection $tenants, SyncedResourceSaved $event, array $syncedAttributes): void
     {
         tenancy()->runForMultiple($tenants, function ($tenant) use ($event, $syncedAttributes) {
             // Forget instance state and find the model,
@@ -147,7 +160,7 @@ class UpdateSyncedResource extends QueueableListener
      */
     protected function getAttributeNamesAndDefaultValues(Model&Syncable $model): array
     {
-        $syncedCreationAttributes = $model->getSyncedCreationAttributes();
+        $syncedCreationAttributes = $model->getSyncedCreationAttributes() ?? [];
 
         $attributes = Arr::where($syncedCreationAttributes, function ($value, $key) {
             return is_numeric($key);
