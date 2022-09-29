@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Events\CallQueuedListener;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
@@ -46,10 +44,10 @@ beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
-    UpdateSyncedResource::$shouldQueue = false; // global state cleanup
+    UpdateSyncedResource::$shouldQueue = false; // Global state cleanup
     Event::listen(SyncedResourceSaved::class, UpdateSyncedResource::class);
 
-    // run migrations on central connection
+    // Run migrations on central connection
     pest()->artisan('migrate', [
         '--path' => [
             __DIR__ . '/Etc/synced_resource_migrations',
@@ -129,7 +127,7 @@ test('only the synced columns are updated in the central db', function () {
     ], ResourceUser::first()->getAttributes());
 });
 
-test('creating the resource in tenant database creates it in central database as 1:1 copy when creation attributes are not specified', function () {
+test('creating the resource in tenant database creates it in central database as a direct copy when creation attributes are not specified', function () {
     // Assert no user exists in central DB
     expect(ResourceUser::all())->toHaveCount(0);
 
@@ -154,7 +152,7 @@ test('creating the resource in tenant database creates it in central database as
     expect(CentralUser::first()->toArray())->toEqual(ResourceUser::first()->toArray());
 });
 
-test('creating the resource in tenant database creates it in central database with default attributes values', function () {
+test('creating the resource in tenant database creates it in central database with default attribute values', function () {
     // Assert no user exists in central DB
     expect(ResourceUserWithDefaultValues::all())->toHaveCount(0);
 
@@ -244,9 +242,9 @@ test('creating the resource in tenant database creates it in central database wi
     expect(CentralUser::first()->password)->toBe('secret');
     expect(CentralUser::first()->code)->toBeNull();
     expect(CentralUser::first()->role)->toBe('admin'); // unsynced so it should be default value
-})  ;
+});
 
-test('creating the resource in central database creates it in tenant database as 1:1 copy when creation attributes are not specified', function () {
+test('creating the resource in central database creates it in tenant database as direct copy when creation attributes are not specified', function () {
     $centralUser = CentralUser::create([
         'global_id' => 'acme',
         'name' => 'John Doe',

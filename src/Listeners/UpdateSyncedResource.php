@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Arr;
 use Stancl\Tenancy\Contracts\Syncable;
 use Stancl\Tenancy\Contracts\SyncMaster;
+use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Database\TenantCollection;
 use Stancl\Tenancy\Events\SyncedResourceChangedInForeignDatabase;
 use Stancl\Tenancy\Events\SyncedResourceSaved;
 use Stancl\Tenancy\Exceptions\ModelNotSyncMasterException;
@@ -32,14 +34,14 @@ class UpdateSyncedResource extends QueueableListener
         $this->updateResourceInTenantDatabases($tenants, $event, $syncedAttributes);
     }
 
-    protected function getTenantsForCentralModel($centralModel): EloquentCollection
+    protected function getTenantsForCentralModel($centralModel): TenantCollection
     {
         if (! $centralModel instanceof SyncMaster) {
             // If we're trying to use a tenant User model instead of the central User model, for example.
             throw new ModelNotSyncMasterException(get_class($centralModel));
         }
 
-        /** @var SyncMaster|Model $centralModel */
+        /** @var Tenant&Model&SyncMaster $centralModel */
 
         // Since this model is "dirty" (taken by reference from the event), it might have the tenants
         // relationship already loaded and cached. For this reason, we refresh the relationship.
@@ -48,7 +50,7 @@ class UpdateSyncedResource extends QueueableListener
         return $centralModel->tenants;
     }
 
-    protected function updateResourceInCentralDatabaseAndGetTenants($event, $syncedAttributes): EloquentCollection
+    protected function updateResourceInCentralDatabaseAndGetTenants($event, array $syncedAttributes): TenantCollection
     {
         /** @var Model|SyncMaster $centralModel */
         $centralModel = $event->model->getCentralModelName()::where($event->model->getGlobalIdentifierKeyName(), $event->model->getGlobalIdentifierKey())
@@ -87,12 +89,13 @@ class UpdateSyncedResource extends QueueableListener
         });
     }
 
-    protected function updateResourceInTenantDatabases($tenants, $event, $syncedAttributes): void
+    protected function updateResourceInTenantDatabases($tenants, $event, array $syncedAttributes): void
     {
         tenancy()->runForMultiple($tenants, function ($tenant) use ($event, $syncedAttributes) {
             // Forget instance state and find the model,
             // again in the current tenant's context.
 
+            /** @var Model&Syncable $eventModel */
             $eventModel = $event->model;
 
             if ($eventModel instanceof SyncMaster) {
@@ -121,7 +124,7 @@ class UpdateSyncedResource extends QueueableListener
         });
     }
 
-    protected function getAttributesForCreation(Syncable $model): array
+    protected function getAttributesForCreation(Model&Syncable $model): array
     {
         if (! $model->getSyncedCreationAttributes()) {
             // Creation attributes are not specified so create the model as 1:1 copy
@@ -143,7 +146,7 @@ class UpdateSyncedResource extends QueueableListener
     /**
      * Split the attribute names (sequential index items) and default values (key => values).
      */
-    protected function getAttributeNamesAndDefaultValues(Syncable $model): array
+    protected function getAttributeNamesAndDefaultValues(Model&Syncable $model): array
     {
         $syncedCreationAttributes = $model->getSyncedCreationAttributes();
 
