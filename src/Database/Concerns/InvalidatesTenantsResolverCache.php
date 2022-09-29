@@ -13,7 +13,8 @@ use Stancl\Tenancy\Resolvers\Contracts\CachedTenantResolver;
  */
 trait InvalidatesTenantsResolverCache
 {
-    public static $resolvers = [
+    /** @var array<class-string<CachedTenantResolver>> */
+    public static array $resolvers = [ // todo single source of truth for this here and in InvalidatesResolverCache
         Resolvers\DomainTenantResolver::class,
         Resolvers\PathTenantResolver::class,
         Resolvers\RequestDataTenantResolver::class,

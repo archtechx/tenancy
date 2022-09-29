@@ -65,7 +65,7 @@ abstract class CachedTenantResolver implements TenantResolver
 
     abstract public function resolveWithoutCache(mixed ...$args): Tenant;
 
-    public function resolved(Tenant $tenant, ...$args): void
+    public function resolved(Tenant $tenant, mixed ...$args): void
     {
     }
 

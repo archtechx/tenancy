@@ -78,6 +78,7 @@ class TenancyServiceProvider extends ServiceProvider
     {
         $this->commands([
             Commands\Run::class,
+            Commands\Link::class,
             Commands\Seed::class,
             Commands\Install::class,
             Commands\Migrate::class,
@@ -85,6 +86,8 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\TenantList::class,
             Commands\TenantDump::class,
             Commands\MigrateFresh::class,
+            Commands\Down::class,
+            Commands\Up::class,
         ]);
 
         $this->publishes([

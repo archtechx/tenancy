@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Illuminate\Database\DatabaseManager;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -16,6 +18,8 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use Stancl\Tenancy\Tests\Etc\TestSeeder;
+use Stancl\Tenancy\Tests\Etc\User;
 
 beforeEach(function () {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
@@ -25,6 +29,15 @@ beforeEach(function () {
     config(['tenancy.bootstrappers' => [
         DatabaseTenancyBootstrapper::class,
     ]]);
+
+    config([
+        'tenancy.bootstrappers' => [
+            DatabaseTenancyBootstrapper::class,
+        ],
+        'tenancy.filesystem.suffix_base' => 'tenant-',
+        'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
+        'tenancy.filesystem.url_override.public' => 'public-%tenant_id%'
+    ]);
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
@@ -40,9 +53,9 @@ afterEach(function () {
 test('migrate command doesnt change the db connection', function () {
     expect(Schema::hasTable('users'))->toBeFalse();
 
-    $old_connection_name = app(\Illuminate\Database\DatabaseManager::class)->connection()->getName();
+    $old_connection_name = app(DatabaseManager::class)->connection()->getName();
     Artisan::call('tenants:migrate');
-    $new_connection_name = app(\Illuminate\Database\DatabaseManager::class)->connection()->getName();
+    $new_connection_name = app(DatabaseManager::class)->connection()->getName();
 
     expect(Schema::hasTable('users'))->toBeFalse();
     expect($new_connection_name)->toEqual($old_connection_name);
@@ -115,8 +128,22 @@ test('rollback command works', function () {
     expect(Schema::hasTable('users'))->toBeFalse();
 });
 
-// Incomplete test
-test('seed command works');
+test('seed command works', function (){
+    $tenant = Tenant::create();
+    Artisan::call('tenants:migrate');
+
+    $tenant->run(function (){
+        expect(DB::table('users')->count())->toBe(0);
+    });
+
+    Artisan::call('tenants:seed', ['--class' => TestSeeder::class]);
+
+    $tenant->run(function (){
+        $user = DB::table('users');
+        expect($user->count())->toBe(1)
+            ->and($user->first()->email)->toBe('seeded@user');
+    });
+});
 
 test('database connection is switched to default', function () {
     databaseConnectionSwitchedToDefault();
@@ -175,8 +202,69 @@ test('run command with array of tenants works', function () {
     Artisan::call('tenants:migrate-fresh');
 
     pest()->artisan("tenants:run --tenants=$tenantId1 --tenants=$tenantId2 'foo foo --b=bar --c=xyz'")
-        ->expectsOutput('Tenant: ' . $tenantId1)
-        ->expectsOutput('Tenant: ' . $tenantId2);
+        ->expectsOutputToContain('Tenant: ' . $tenantId1)
+        ->expectsOutputToContain('Tenant: ' . $tenantId2)
+        ->assertExitCode(0);
+});
+
+test('link command works', function() {
+    $tenantId1 = Tenant::create()->getTenantKey();
+    $tenantId2 = Tenant::create()->getTenantKey();
+    pest()->artisan('tenants:link');
+
+    $this->assertDirectoryExists(storage_path("tenant-$tenantId1/app/public"));
+    $this->assertEquals(storage_path("tenant-$tenantId1/app/public/"), readlink(public_path("public-$tenantId1")));
+
+    $this->assertDirectoryExists(storage_path("tenant-$tenantId2/app/public"));
+    $this->assertEquals(storage_path("tenant-$tenantId2/app/public/"), readlink(public_path("public-$tenantId2")));
+
+    pest()->artisan('tenants:link', [
+        '--remove' => true,
+    ]);
+
+    $this->assertDirectoryDoesNotExist(public_path("public-$tenantId1"));
+    $this->assertDirectoryDoesNotExist(public_path("public-$tenantId2"));
+});
+
+test('link command works with a specified tenant', function() {
+    $tenantKey = Tenant::create()->getTenantKey();
+
+    pest()->artisan('tenants:link', [
+        '--tenants' => [$tenantKey],
+    ]);
+
+    $this->assertDirectoryExists(storage_path("tenant-$tenantKey/app/public"));
+    $this->assertEquals(storage_path("tenant-$tenantKey/app/public/"), readlink(public_path("public-$tenantKey")));
+
+    pest()->artisan('tenants:link', [
+        '--remove' => true,
+        '--tenants' => [$tenantKey],
+    ]);
+
+    $this->assertDirectoryDoesNotExist(public_path("public-$tenantKey"));
+});
+
+test('run command works when sub command asks questions and accepts arguments', function () {
+    $tenant = Tenant::create();
+    $id = $tenant->getTenantKey();
+
+    Artisan::call('tenants:migrate');
+
+    pest()->artisan("tenants:run --tenants=$id 'user:addwithname Abrar' ")
+        ->expectsQuestion('What is your email?', 'email@localhost')
+        ->expectsOutput("Tenant: $id")
+        ->expectsOutput("User created: Abrar(email@localhost)");
+
+    // Assert we are in central context
+    expect(tenancy()->initialized)->toBeFalse();
+
+    // Assert user was created in tenant context
+    tenancy()->initialize($tenant);
+    $user = User::first();
+
+    // Assert user is same as provided using the command
+    expect($user->name)->toBe('Abrar');
+    expect($user->email)->toBe('email@localhost');
 });
 
 // todo@tests

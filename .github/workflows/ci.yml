@@ -11,7 +11,7 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
-    container: abrardev/tenancy:latest
+    container: archtechx/tenancy:latest
 
     strategy:
       matrix:

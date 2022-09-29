@@ -6,12 +6,12 @@ namespace Stancl\Tenancy\Concerns;
 
 trait DealsWithMigrations
 {
-    protected function getMigrationPaths()
+    protected function getMigrationPaths(): array
     {
         if ($this->input->hasOption('path') && $this->input->getOption('path')) {
             return parent::getMigrationPaths();
         }
 
-        return database_path('migrations/tenant');
+        return [database_path('migrations/tenant')];
     }
 }

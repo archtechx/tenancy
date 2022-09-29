@@ -10,6 +10,7 @@ $rules = [
         'operators' => [
             '=>' => null,
             '|' => 'no_space',
+            '&' => 'no_space',
         ]
     ],
     'blank_line_after_namespace' => true,

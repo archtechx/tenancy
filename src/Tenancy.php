@@ -99,19 +99,30 @@ class Tenancy
     {
         $class = config('tenancy.tenant_model');
 
-        return new $class;
+        /** @var Tenant&Model $model */
+        $model = new $class;
+
+        return $model;
     }
 
+    /**
+     * Try to find a tenant using an ID.
+     *
+     * @return (Tenant&Model)|null
+     */
     public static function find(int|string $id): Tenant|null
     {
-        return static::model()->where(static::model()->getTenantKeyName(), $id)->first();
+        /** @var (Tenant&Model)|null */
+        $tenant = static::model()->where(static::model()->getTenantKeyName(), $id)->first();
+
+        return $tenant;
     }
 
     /**
      * Run a callback in the central context.
      * Atomic, safely reverts to previous context.
      */
-    public function central(Closure $callback)
+    public function central(Closure $callback): mixed
     {
         $previousTenant = $this->tenant;
 
@@ -132,7 +143,7 @@ class Tenancy
      * Run a callback for multiple tenants.
      * More performant than running $tenant->run() one by one.
      *
-     * @param Tenant[]|\Traversable|string[]|null $tenants
+     * @param array<Tenant>|array<string|int>|\Traversable|string|int|null $tenants
      */
     public function runForMultiple($tenants, Closure $callback): void
     {
@@ -146,7 +157,7 @@ class Tenancy
         $tenants = is_string($tenants) ? [$tenants] : $tenants;
 
         // Use all tenants if $tenants is falsey
-        $tenants = $tenants ?: $this->model()->cursor();
+        $tenants = $tenants ?: $this->model()->cursor(); // todo0 phpstan thinks this isn't needed, but tests fail without it
 
         $originalTenant = $this->tenant;
 
@@ -155,6 +166,7 @@ class Tenancy
                 $tenant = $this->find($tenant);
             }
 
+            /** @var Tenant $tenant */
             $this->initialize($tenant);
             $callback($tenant);
         }

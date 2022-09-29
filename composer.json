@@ -18,7 +18,7 @@
         "php": "^8.1",
         "ext-json": "*",
         "illuminate/support": "^9.0",
-        "facade/ignition-contracts": "^1.0",
+        "spatie/ignition": "^1.4",
         "ramsey/uuid": "^4.0",
         "stancl/jobpipeline": "^1.0",
         "stancl/virtualcolumn": "^1.0"
@@ -63,6 +63,7 @@
         "docker-m1": "ln -s docker-compose-m1.override.yml docker-compose.override.yml",
         "coverage": "open coverage/phpunit/html/index.html",
         "phpstan": "vendor/bin/phpstan",
+        "cs": "php-cs-fixer fix --config=.php-cs-fixer.php",
         "test": "PHP_VERSION=8.1 ./test --no-coverage",
         "test-full": "PHP_VERSION=8.1 ./test"
     },
