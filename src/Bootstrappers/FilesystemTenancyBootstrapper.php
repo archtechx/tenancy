@@ -47,7 +47,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         // asset()
         if ($this->app['config']['tenancy.filesystem.asset_helper_tenancy'] ?? true) {
             if ($this->originalPaths['asset_url']) {
-                $this->app['config']['app.asset_url'] = ($this->originalPaths['asset_url'] ?? $this->app['config']['app.url']) . "/$suffix";
+                $this->app['config']['app.asset_url'] = $this->originalPaths['asset_url'] . "/$suffix";
                 $this->app['url']->setAssetRoot($this->app['config']['app.asset_url']);
             } else {
                 $this->app['url']->setAssetRoot($this->app['url']->route('stancl.tenancy.asset', ['path' => '']));
@@ -84,7 +84,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
                 if ($url = str_replace(
                     '%tenant_id%',
-                    $tenant->getTenantKey(),
+                    (string) $tenant->getTenantKey(),
                     $this->app['config']["tenancy.filesystem.url_override.{$disk}"] ?? ''
                 )) {
                     $this->app['config']["filesystems.disks.{$disk}.url"] = url($url);
