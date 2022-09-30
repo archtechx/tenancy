@@ -11,13 +11,15 @@ use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
 class TenantScope implements Scope
 {
+    use BelongsToTenant;
+
     public function apply(Builder $builder, Model $model)
     {
         if (! tenancy()->initialized) {
             return;
         }
 
-        $builder->where($model->qualifyColumn(BelongsToTenant::$tenantIdColumn), tenant()->getTenantKey());
+        $builder->where($model->qualifyColumn(self::$tenantIdColumn), tenant()->getTenantKey());
     }
 
     public function extend(Builder $builder)

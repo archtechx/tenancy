@@ -9,13 +9,15 @@ use Illuminate\Validation\Rules\Unique;
 
 trait HasScopedValidationRules
 {
+    use BelongsToTenant;
+
     public function unique($table, $column = 'NULL')
     {
-        return (new Unique($table, $column))->where(BelongsToTenant::$tenantIdColumn, $this->getTenantKey());
+        return (new Unique($table, $column))->where(self::$tenantIdColumn, $this->getTenantKey());
     }
 
     public function exists($table, $column = 'NULL')
     {
-        return (new Exists($table, $column))->where(BelongsToTenant::$tenantIdColumn, $this->getTenantKey());
+        return (new Exists($table, $column))->where(self::$tenantIdColumn, $this->getTenantKey());
     }
 }
