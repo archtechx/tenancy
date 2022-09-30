@@ -16,7 +16,7 @@ trait HasTenantOptions
     {
         return array_merge([
             ['tenants', null, InputOption::VALUE_IS_ARRAY|InputOption::VALUE_OPTIONAL, '', null],
-            ['with-pending', null, InputOption::VALUE_NONE, 'include pending tenants in query', null],
+            ['with-pending', null, InputOption::VALUE_OPTIONAL, 'include pending tenants in query', config('tenancy.pending.include_in_queries')],
         ], parent::getOptions());
     }
 
@@ -27,7 +27,7 @@ trait HasTenantOptions
             ->when($this->option('tenants'), function ($query) {
                 $query->whereIn(tenancy()->model()->getTenantKeyName(), $this->option('tenants'));
             })
-            ->when(! is_null($this->option('with-pending')) && tenancy()->model()::hasGlobalScope(PendingScope::class), function ($query) {
+            ->when(tenancy()->model()::hasGlobalScope(PendingScope::class), function ($query) {
                 $query->withPending($this->option('with-pending'));
             })
             ->cursor();
