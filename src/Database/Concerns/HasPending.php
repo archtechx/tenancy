@@ -62,7 +62,7 @@ trait HasPending
         ]);
 
         event(new PendingTenantCreated($tenant));
-        
+
         return $tenant;
     }
 
