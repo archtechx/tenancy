@@ -49,7 +49,7 @@ trait HasPending
         return ! is_null($this->pending_since);
     }
 
-    public static function createPending($attributes = []): void
+    public static function createPending($attributes = []): Tenant
     {
         $tenant = static::create($attributes);
 
@@ -62,6 +62,8 @@ trait HasPending
         ]);
 
         event(new PendingTenantCreated($tenant));
+        
+        return $tenant;
     }
 
     public static function pullPendingTenant(bool $firstOrCreate = false): ?Tenant
