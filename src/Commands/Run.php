@@ -7,7 +7,6 @@ namespace Stancl\Tenancy\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\Kernel;
 use Stancl\Tenancy\Concerns\HasTenantOptions;
-use Stancl\Tenancy\Database\Models\Tenant;
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
