@@ -84,7 +84,7 @@ test('clear pending tenants command all option overrides config', function () {
     expect(Tenant::onlyPending()->count())->toBe(0);
 });
 
-test('tenancy can check for rpending tenants', function () {
+test('tenancy can check for pending tenants', function () {
     Tenant::query()->delete();
 
     expect(Tenant::onlyPending()->exists())->toBeFalse();
