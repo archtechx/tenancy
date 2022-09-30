@@ -2,32 +2,28 @@
 
 declare(strict_types=1);
 
-use Illuminate\Database\DatabaseManager;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Stancl\Tenancy\Tests\Etc\User;
+use Stancl\JobPipeline\JobPipeline;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
-use Stancl\JobPipeline\JobPipeline;
-use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Illuminate\Support\Facades\Artisan;
 use Stancl\Tenancy\Events\TenancyEnded;
-use Stancl\Tenancy\Events\TenancyInitialized;
-use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Jobs\CreateDatabase;
+use Illuminate\Database\DatabaseManager;
+use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Tests\Etc\TestSeeder;
+use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
+use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
-use Stancl\Tenancy\Tests\Etc\Tenant;
-use Stancl\Tenancy\Tests\Etc\TestSeeder;
-use Stancl\Tenancy\Tests\Etc\User;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 
 beforeEach(function () {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
     })->toListener());
-
-    config(['tenancy.bootstrappers' => [
-        DatabaseTenancyBootstrapper::class,
-    ]]);
 
     config([
         'tenancy.bootstrappers' => [
