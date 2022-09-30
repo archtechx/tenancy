@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Concerns;
 
 use Illuminate\Support\LazyCollection;
-use Symfony\Component\Console\Input\InputOption;
 use Stancl\Tenancy\Database\Concerns\PendingScope;
+use Symfony\Component\Console\Input\InputOption;
 
 /**
  * Adds 'tenants' and 'with-pending' options.
