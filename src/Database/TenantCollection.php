@@ -17,9 +17,9 @@ use Stancl\Tenancy\Contracts\Tenant;
  */
 class TenantCollection extends Collection
 {
-    public function runForEach(Closure $callable, bool $withPending = null): self
+    public function runForEach(Closure $callable): self
     {
-        tenancy()->runForMultiple($this->items, $callable, $withPending);
+        tenancy()->runForMultiple($this->items, $callable);
 
         return $this;
     }
