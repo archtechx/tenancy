@@ -147,7 +147,7 @@ class UpdateSyncedResource extends QueueableListener
             // We will merge the default values with sync attributes
             [$attributes, $defaultValues] = $this->getAttributeNamesAndDefaultValues($model);
 
-            return array_merge($defaultValues, $model->only(array_merge($model->getSyncedAttributeNames(), $attributes)));
+            return array_merge($model->only(array_merge($model->getSyncedAttributeNames(), $attributes)), $defaultValues);
         }
 
         // Developer provided the attribute names, so we'd use them to pick model attributes
