@@ -144,7 +144,7 @@ class TenancyServiceProvider extends ServiceProvider
 
     protected function makeTenancyMiddlewareHighestPriority()
     {
-        // Even higher priority than the initialization middleware
+        // PreventAccessFromCentralDomains has even higher priority than the identification middleware
         $tenancyMiddleware = array_merge([Middleware\PreventAccessFromCentralDomains::class], config('tenancy.identification.middleware'));
 
         foreach (array_reverse($tenancyMiddleware) as $middleware) {
