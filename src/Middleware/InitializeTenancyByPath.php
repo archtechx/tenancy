@@ -34,14 +34,8 @@ class InitializeTenancyByPath extends IdentificationMiddleware
         // Only initialize tenancy if tenant is the first parameter
         // We don't want to initialize tenancy if the tenant is
         // simply injected into some route controller action.
-        if ($route->parameterNames()[0] === PathTenantResolver::$tenantParameterName) {
-            // Set tenant as a default parameter for the URLs in the current request
-            Event::listen(InitializingTenancy::class, function (InitializingTenancy $event) {
-                /** @var Tenant $tenant */
-                $tenant = $event->tenancy->tenant;
-
-                URL::defaults([PathTenantResolver::$tenantParameterName => $tenant->getTenantKey()]);
-            });
+        if ($route->parameterNames()[0] === PathTenantResolver::tenantParameterName()) {
+            $this->setDefaultTenantForRouteParametersWhenTenancyIsInitialized();
 
             return $this->initializeTenancy(
                 $request,
@@ -53,5 +47,17 @@ class InitializeTenancyByPath extends IdentificationMiddleware
         }
 
         return $next($request);
+    }
+
+    protected function setDefaultTenantForRouteParametersWhenTenancyIsInitialized(): void
+    {
+        Event::listen(InitializingTenancy::class, function (InitializingTenancy $event) {
+            /** @var Tenant $tenant */
+            $tenant = $event->tenancy->tenant;
+
+            URL::defaults([
+                PathTenantResolver::tenantParameterName() => $tenant->getTenantKey(),
+            ]);
+        });
     }
 }

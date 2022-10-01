@@ -42,7 +42,7 @@ class Tenancy
             }
         }
 
-        // todo0 for phpstan this should be $this->tenant?, but first I want to clean up the $initialized logic and explore removing the property
+        // todo1 for phpstan this should be $this->tenant?, but first I want to clean up the $initialized logic and explore removing the property
         if ($this->initialized && $this->tenant->getTenantKey() === $tenant->getTenantKey()) {
             return;
         }
@@ -157,7 +157,7 @@ class Tenancy
         $tenants = is_string($tenants) ? [$tenants] : $tenants;
 
         // Use all tenants if $tenants is falsey
-        $tenants = $tenants ?: $this->model()->cursor(); // todo0 phpstan thinks this isn't needed, but tests fail without it
+        $tenants = $tenants ?: $this->model()->cursor(); // todo1 phpstan thinks this isn't needed, but tests fail without it
 
         $originalTenant = $this->tenant;
 
@@ -176,5 +176,42 @@ class Tenancy
         } else {
             $this->end();
         }
+    }
+
+    /**
+     * Cached tenant resolvers used by the package.
+     *
+     * @return array<class-string<Resolvers\Contracts\CachedTenantResolver>>
+     */
+    public static function cachedResolvers(): array
+    {
+        $resolvers = config('tenancy.identification.resolvers', []);
+
+        $cachedResolvers = array_filter($resolvers, function (array $options) {
+            // Resolvers based on CachedTenantResolver have the 'cache' option in the resolver config
+            return isset($options['cache']);
+        });
+
+        return array_keys($cachedResolvers);
+    }
+
+    /**
+     * Tenant identification middleware used by the package.
+     *
+     * @return array<class-string<Middleware\IdentificationMiddleware>>
+     */
+    public static function middleware(): array
+    {
+        return config('tenancy.identification.middleware', []);
+    }
+
+    /**
+     * Default tenant identification middleware used by the package.
+     *
+     * @return class-string<Middleware\IdentificationMiddleware>
+     */
+    public static function defaultMiddleware(): string
+    {
+        return config('tenancy.identification.default_middleware', Middleware\InitializeTenancyByDomain::class);
     }
 }

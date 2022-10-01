@@ -103,7 +103,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 '--realpath' => true,
                 '--force' => true,
             ],
-            'tenancy.bootstrappers.redis' => RedisTenancyBootstrapper::class, // todo0 change this to []? two tests in TenantDatabaseManagerTest are failing with that
+            'tenancy.bootstrappers.redis' => RedisTenancyBootstrapper::class, // todo1 change this to []? two tests in TenantDatabaseManagerTest are failing with that
             'queue.connections.central' => [
                 'driver' => 'sync',
                 'central' => true,
