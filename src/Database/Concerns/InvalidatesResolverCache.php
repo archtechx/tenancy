@@ -11,7 +11,7 @@ use Stancl\Tenancy\Resolvers\Contracts\CachedTenantResolver;
 trait InvalidatesResolverCache
 {
     /** @var array<class-string<CachedTenantResolver>> */
-    public static $resolvers = [
+    public static $resolvers = [ // todo@deprecated, move this to a config key? related to a todo in InvalidatesTenantsResolverCache
         Resolvers\DomainTenantResolver::class,
         Resolvers\PathTenantResolver::class,
         Resolvers\RequestDataTenantResolver::class,

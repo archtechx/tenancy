@@ -215,4 +215,12 @@ return [
         '--class' => 'DatabaseSeeder', // root seeder class
         // '--force' => true,
     ],
+
+    /**
+     * Single-database tenancy config.
+     */
+    'single_db' => [
+        /** The name of the column used by models with the BelongsToTenant trait. */
+        'tenant_id_column' => 'tenant_id',
+    ],
 ];
