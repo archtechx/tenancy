@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Database\Console\Migrations\MigrateCommand;
+use Stancl\Tenancy\Events\DatabaseMigrated;
 use Illuminate\Database\Migrations\Migrator;
-use Illuminate\Database\QueryException;
+use Stancl\Tenancy\Events\MigratingDatabase;
+use Stancl\Tenancy\Concerns\HasATenantsOption;
 use Stancl\Tenancy\Concerns\DealsWithMigrations;
 use Stancl\Tenancy\Concerns\ExtendsLaravelCommand;
-use Stancl\Tenancy\Concerns\HasATenantsOption;
-use Stancl\Tenancy\Events\DatabaseMigrated;
-use Stancl\Tenancy\Events\MigratingDatabase;
+use Illuminate\Database\Console\Migrations\MigrateCommand;
+use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
 
 class Migrate extends MigrateCommand
 {
@@ -49,20 +49,20 @@ class Migrate extends MigrateCommand
             return;
         }
 
-        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
-            $this->line("Tenant: {$tenant->getTenantKey()}");
+        try {
+            tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
+                $this->line("Tenant: {$tenant->getTenantKey()}");
 
-            try {
                 event(new MigratingDatabase($tenant));
                 // Migrate
                 parent::handle();
 
                 event(new DatabaseMigrated($tenant));
-            } catch (QueryException $th) {
-                if (! $this->option('skip-failing')) {
-                    throw $th;
-                }
+            });
+        } catch (TenantDatabaseDoesNotExistException $th) {
+            if (! $this->option('skip-failing')) {
+                throw $th;
             }
-        });
+        }
     }
 }
