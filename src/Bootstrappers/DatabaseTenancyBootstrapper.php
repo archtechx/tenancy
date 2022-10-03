@@ -8,7 +8,7 @@ use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\DatabaseManager;
-use Stancl\Tenancy\Exceptions\TenantDatabaseDoesNotExistException;
+use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
 
 class DatabaseTenancyBootstrapper implements TenancyBootstrapper
 {
