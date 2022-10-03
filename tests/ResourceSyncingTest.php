@@ -900,7 +900,6 @@ class ResourceUserWithAttributeNames extends ResourceUser {
         // exist in central model
         return
             [
-                'global_id', // todo@1 remove it
                 'name',
                 'password',
                 'email',
@@ -918,7 +917,6 @@ class CentralUserWithDefaultValues extends CentralUser {
         // Attributes default values when creating resources from central to tenant model
         return
             [
-                'global_id',
                 'name' => 'Default User',
                 'email' => 'default@localhost',
                 'password' => 'password',
@@ -992,11 +990,9 @@ class ResourceUserForDifferentSchema extends ResourceUser {
 
 class CentralUserProvidingMixture extends CentralUserForDifferentSchema {
 
-
     public function getSyncedCreationAttributes(): array
     {
         return [
-            'global_id',
             'name',
             'email',
             // provide default values for password
@@ -1006,27 +1002,9 @@ class CentralUserProvidingMixture extends CentralUserForDifferentSchema {
 }
 
 class ResourceUserProvidingMixture extends ResourceUserForDifferentSchema {
-    protected $table = 'resource_users';
-
-    public function getCentralModelName(): string
-    {
-        return CentralUserProvidingMixture::class;
-    }
-
-    public function getSyncedAttributeNames(): array
-    {
-        return [
-            'global_id',
-            'name',
-            'email',
-            'password',
-        ];
-    }
-
     public function getSyncedCreationAttributes(): array
     {
         return [
-            'global_id',
             'name',
             'email',
             // provide default values for password
