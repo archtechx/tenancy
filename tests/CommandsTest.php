@@ -8,8 +8,8 @@ use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
+use PHPUnit\Framework\ExceptionWrapper;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Illuminate\Database\DatabaseManager;
@@ -20,6 +20,7 @@ use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
 
 beforeEach(function () {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
@@ -109,15 +110,15 @@ test('migrate command loads schema state', function () {
 test('migrate command only throws exceptions if skip-failing is not passed', function() {
     Tenant::create();
 
-    $tenantWithoutDatabase = Tenant::create(['id' => 'withoutdb']);
+    $tenantWithoutDatabase = Tenant::create();
     $databaseToDrop = $tenantWithoutDatabase->run(fn() => DB::connection()->getDatabaseName());
 
-    DB::statement('DROP DATABASE ' . $databaseToDrop);
+    DB::statement("DROP DATABASE `$databaseToDrop`");
 
     Tenant::create();
 
-    expect(fn() => pest()->artisan('tenants:migrate --schema-path="tests/Etc/tenant-schema.dump"'))->toThrow(QueryException::class);
-    expect(fn() => pest()->artisan('tenants:migrate --schema-path="tests/Etc/tenant-schema.dump" --skip-failing'))->not()->toThrow(QueryException::class);
+    expect(fn() => pest()->artisan('tenants:migrate --schema-path="tests/Etc/tenant-schema.dump"'))->toThrow(TenantDatabaseDoesNotExistException::class);
+    expect(fn() => pest()->artisan('tenants:migrate --schema-path="tests/Etc/tenant-schema.dump" --skip-failing'))->not()->toThrow(TenantDatabaseDoesNotExistException::class);
 });
 
 test('dump command works', function () {
