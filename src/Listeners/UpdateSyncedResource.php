@@ -139,9 +139,9 @@ class UpdateSyncedResource extends QueueableListener
     {
         if (! $model->getSyncedCreationAttributes()) {
             // Creation attributes are not specified so create the model as 1:1 copy
-            // exclude the "id" parameter because we want to keep the id to handle by the target model to avoid duplication error
+            // exclude the "primary key" because we want primary key to handle by the target model to avoid duplication errors
             $attributes = $model->getAttributes();
-            unset($attributes['id']);
+            unset($attributes[$model->getKeyName()]);
 
             return $attributes;
         }
