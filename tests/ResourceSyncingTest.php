@@ -127,20 +127,9 @@ test('only the synced columns are updated in the central db', function () {
     ], ResourceUser::first()->getAttributes());
 });
 
-// ====================
 test('sync resource creation works when central model provides attributes and resource model provides default values', function (){
-    /**
-     * when central model provides attributes => resoucre model will be created from the attribute values
-     * when resource model provides default values => central model will be created using the default values
-     */
-    [$tenant1, $tenant2] = [ResourceTenant::create(['id' => 't1']), ResourceTenant::create(['id' => 't2'])];
-
-    // migrate extra column "foo" in central DB
-    pest()->artisan('migrate', [
-        '--path' => __DIR__ . '/Etc/synced_resource_migrations/users_extra',
-        '--realpath' => true,
-    ])->assertExitCode(0);
-    migrateTenantsResource();
+    // when central model provides attributes => resoucre model will be created from the attribute values
+    [$tenant1, $tenant2] = creareTenantsAndRunMigrations();
 
     $centralUser = CentralUserWithAttributeNames::create([
         'global_id' => 'acme',
@@ -167,6 +156,7 @@ test('sync resource creation works when central model provides attributes and re
         expect($resourceUser->first()->foo)->toBeNull();
     });
 
+    // when resource model provides default values => central model will be created using the default values
     tenancy()->initialize($tenant2);
 
     // Create the user in tenant DB
@@ -183,27 +173,16 @@ test('sync resource creation works when central model provides attributes and re
     // Assert central user was created using the default values
     $centralUser = CentralUserWithAttributeNames::whereGlobalId('asdf')->first();
     expect($centralUser)->not()->toBeNull();
-    expect($centralUser->global_id)->toBe('asdf');
     expect($centralUser->name)->toBe('Default Name');
     expect($centralUser->email)->toBe('default@localhost');
     expect($centralUser->password)->toBe('password');
     expect($centralUser->role)->toBe('admin');
     expect($centralUser->foo)->toBe('bar');
-})->group('creation');
+});
 
 test('sync resource creation works when central model provides default values and resource model provides attributes', function (){
-    /**
-     * when central model provides default values => resource model will be created using the default values
-     * when resource model provides attributes => central model will be created from the attribute values
-     */
-    [$tenant1, $tenant2] = [ResourceTenant::create(['id' => 't1']), ResourceTenant::create(['id' => 't2'])];
-
-    // migrate extra column "foo" in central DB
-    pest()->artisan('migrate', [
-        '--path' => __DIR__ . '/Etc/synced_resource_migrations/users_extra',
-        '--realpath' => true,
-    ])->assertExitCode(0);
-    migrateTenantsResource();
+     // when central model provides default values => resource model will be created using the default values
+    [$tenant1, $tenant2] = creareTenantsAndRunMigrations();
 
     $centralUser = CentralUserWithDefaultValues::create([
         'global_id' => 'acme',
@@ -230,6 +209,7 @@ test('sync resource creation works when central model provides default values an
         expect($resourceUser->role)->toBe('admin');
     });
 
+    // when resource model provides attributes => central model will be created from the attribute values
     tenancy()->initialize($tenant2);
 
     // Create the user in tenant DB
@@ -246,177 +226,45 @@ test('sync resource creation works when central model provides default values an
     // Assert central user was created using the provided attributes
     $centralUser = CentralUserWithAttributeNames::whereGlobalId('asdf')->first();
     expect($centralUser)->not()->toBeNull();
-    expect($centralUser->global_id)->toBe('asdf');
     expect($centralUser->email)->toBe('john@localhost');
     expect($centralUser->password)->toBe('secret');
     expect($centralUser->role)->toBe('commenter');
-})->group('creation');
+});
 
-test('sync resource creation works when central model provides mixture and resource model provides nothing', function (){
-    /**
-     * when central model provides mix of attribute and default values => resource model will be created using the mix of attribute values and default values
-     * when resource model provides nothing => central model will be 1:1 copy
-     */
-    [$tenant1, $tenant2] = [ResourceTenant::create(['id' => 't1']), ResourceTenant::create(['id' => 't2'])];
+test('sync resource creation works when central model provides mixture and resource model provides nothing using different schemas', function () {
+    // when central model provides mix of attribute and default values => resource model will be created using the mix of attribute values and default values
+    [$tenant1, $tenant2] = creareTenantsAndRunMigrationsForDifferentSchema();
 
-    pest()->artisan('migrate', [
-        '--path' => __DIR__ . '/Etc/synced_resource_migrations/users_extra',
-        '--realpath' => true,
-    ])->assertExitCode(0);
-    migrateTenantsResource();
-
-    $centralUser = CentralUserWithAttributeNamesAndDefaultValues::create([
-        'global_id' => 'acme',
-        'name' => 'John Doe',
-        'email' => 'john@localhost',
-        'password' => 'secret',
-        'role' => 'commenter',
-        'foo' => 'bar', // foo does not exist in resource model
-    ]);
-
-    $tenant1->run(function () {
-        expect(ResourceUser::all())->toHaveCount(0);
-    });
-
-    $centralUser->tenants()->attach('t1');
-
-    $tenant1->run(function () {
-        $resourceUser = ResourceUser::first();
-        expect($resourceUser)->not()->toBeNull();
-
-        // Provided attributes
-        expect($resourceUser->global_id)->toBe('acme');
-        expect($resourceUser->email)->toBe('john@localhost');
-
-        // Provided default values
-        expect($resourceUser->password)->toBe('password');
-        expect(ResourceUser::first()->role)->toBe('admin');
-    });
-
-
-    // remove foo from the central model so both models has equal attributes to do 1:1 copy
-    \Illuminate\Support\Facades\Schema::table('users', function (\Illuminate\Database\Schema\Blueprint $table) {
-        $table->dropColumn('foo');
-    });
-
-    tenancy()->initialize($tenant2);
-
-    // Create the user in tenant DB
-    $resourceUser = ResourceUser::create([
-        'id' => random_int(10, 100),
-        'global_id' => 'absd',
-        'name' => 'John Doe',
-        'email' => 'john@localhost',
-        'password' => 'secret',
-        'role' => 'commenter',
-    ]);
-
-    tenancy()->end();
-
-    // Assert central user was created without `code` property
-    $centralUser = CentralUser::whereGlobalId('absd')->first();
-    expect($centralUser)->not()->toBeNull();
-    expect($centralUser->toArray())->toBe($resourceUser->toArray());
-})->group('creation');
-
-test('sync resource creation works when central model provides nothing and resource model provides mixture', function (){
-    /**
-     * when central model provides nothing => resoucre model will be 1:1 copy
-     * when resource model provides mix of attribute and default values => central model will be created using the mix of attribute values and default values
-     */
-    [$tenant1, $tenant2] = [ResourceTenant::create(['id' => 't1']), ResourceTenant::create(['id' => 't2'])];
-    migrateTenantsResource();
-
-    $centralUser = CentralUser::create([
-        'global_id' => 'acme',
-        'name' => 'John Doe',
-        'email' => 'john@localhost',
-        'password' => 'secret',
-        'role' => 'commenter',
-    ]);
-
-    $tenant1->run(function () {
-        expect(ResourceUserWithAttributeNamesAndDefaultValues::all())->toHaveCount(0);
-    });
-
-    $centralUser->tenants()->attach('t1');
-
-    expect($centralUser->getSyncedCreationAttributes())->toBeNull();
-    $tenant1->run(function () use ($centralUser) {
-        $resourceUser = ResourceUserWithAttributeNamesAndDefaultValues::first();
-        expect($resourceUser)->not()->toBeNull();
-        expect($resourceUser->toArray())->toEqual($centralUser->withoutRelations()->toArray());
-    });
-
-
-    tenancy()->initialize($tenant2);
-
-    // Create the user in tenant DB
-    ResourceUserWithAttributeNamesAndDefaultValues::create([
-        'global_id' => 'absd',
-        'name' => 'John Doe',
-        'email' => 'john@localhost',
-        'password' => 'secret',
-        'role' => 'commenter', // this will not be synced because we are providing default value
-    ]);
-
-    tenancy()->end();
-
-    // Assert central user was created without `code` property
-    $centralUser = CentralUser::whereGlobalId('absd')->first();
-    expect($centralUser)->not()->toBeNull();
-    expect($centralUser->name)->toBe('John Doe');
-    expect($centralUser->email)->toBe('john@localhost');
-
-    // default values provided by resoucre model
-    expect($centralUser->password)->toBe('password');
-    expect($centralUser->role)->toBe('admin');
-})->group('creation');
-
-test('sync resource creation works when central model provides attributes and resource model provides default values havind different schemas ', function (){
-    // migrate central_users table and tenant_central_users pivot table
-    pest()->artisan('migrate', [
-        '--path' => __DIR__ . '/Etc/synced_resource_migrations/custom/central',
-        '--realpath' => true,
-    ])->assertExitCode(0);
-
-    $tenant1 = ResourceTenantWithCustomPivot::create(['id' => 't1']);
-
-    // migrate resource_users tenant table
-    migrateTenantsResource(__DIR__ . '/Etc/synced_resource_migrations/custom/tenant');
-
-    $centralUser = CentralUserWithExtraAttributes::create([
+    $centralUser = CentralUserProvidingMixture::create([
         'global_id' => 'acme',
         'name' => 'John Doe',
         'email' => 'john@localhost',
         'password' => 'password',
-        'role' => 'admin',
-        'code' => 'foo',
     ]);
 
     $tenant1->run(function () {
-        expect(ResourceUserWithNoExtraAttributes::all())->toHaveCount(0);
+        expect(ResourceUserForDifferentSchema::all())->toHaveCount(0);
     });
 
     $centralUser->tenants()->attach('t1');
 
     $tenant1->run(function () {
-        $resourceUserWithNoExtraAttributes = ResourceUserWithNoExtraAttributes::first();
-        expect(ResourceUserWithNoExtraAttributes::all())->toHaveCount(1);
-        expect($resourceUserWithNoExtraAttributes->global_id)->toBe('acme');
+        $resourceUser = ResourceUserForDifferentSchema::first();
 
-        // role and code does not exist in resource_users table
-        expect($resourceUserWithNoExtraAttributes->role)->toBeNull();
-        expect($resourceUserWithNoExtraAttributes->code)->toBeNull();
+        // Assert resource user was created using the provided attributes and default values
+        expect($resourceUser->global_id)->toBe('acme');
+        expect($resourceUser->name)->toBe('John Doe');
+        expect($resourceUser->email)->toBe('john@localhost');
+
+        // provided default values
+        expect($resourceUser->password)->toBe('secret');
     });
 
-    $tenant2 = ResourceTenantWithCustomPivot::create();
-    // migrate resource_users tenant table
-    migrateTenantsResource(__DIR__ . '/Etc/synced_resource_migrations/custom/tenant');
+    // when central model provides nothing => resoucre model will be 1:1 copy
     tenancy()->initialize($tenant2);
 
     // Create the user in tenant DB
-    ResourceUserWithNoExtraAttributes::create([
+    $resourceUser = ResourceUserForDifferentSchema::create([
         'global_id' => 'acmey',
         'name' => 'John Doe',
         'email' => 'john@localhost',
@@ -425,15 +273,70 @@ test('sync resource creation works when central model provides attributes and re
 
     tenancy()->end();
 
-    $centralUserWithExtraAttributes = CentralUserWithExtraAttributes::latest('id')->first(); // get the last user because first one already created
-    expect($centralUserWithExtraAttributes->global_id)->toBe('acmey');
+    $centralUser = CentralUserProvidingMixture::whereGlobalId('acmey')->first();
+    expect($resourceUser->getSyncedCreationAttributes())->toBeNull();
 
-    // CentralUserWithExtraAttributes are providing these default value
-    expect($centralUserWithExtraAttributes->password)->toBe('secret');
-    expect($centralUserWithExtraAttributes->code)->toBe('foo');
-    expect($centralUserWithExtraAttributes->role)->toBe('admin');
-})->group('creation');
-// ================
+    $centralUser = $centralUser->toArray();
+    $resourceUser = $resourceUser->toArray();
+    unset($centralUser['id']);
+    unset($resourceUser['id']);
+
+    // assert central user created as 1:1 copy of resoucre model except "id"
+    expect($centralUser)->toBe($resourceUser);
+});
+
+test('sync resource creation works when central model provides nothing and resource model provides mixture using different schemas', function (){
+    // when central model provides nothing => resoucre model will be 1:1 copy
+    [$tenant1, $tenant2] = creareTenantsAndRunMigrationsForDifferentSchema();
+
+    $centralUser = CentralUserForDifferentSchema::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'password',
+    ]);
+
+    $tenant1->run(function () {
+        expect(ResourceUserProvidingMixture::all())->toHaveCount(0);
+    });
+
+    $centralUser->tenants()->attach('t1');
+
+    expect($centralUser->getSyncedCreationAttributes())->toBeNull();
+    $tenant1->run(function () use ($centralUser) {
+        $resourceUser = ResourceUserProvidingMixture::first();
+        expect($resourceUser)->not()->toBeNull();
+        $resourceUser = $resourceUser->toArray();
+        $centralUser = $centralUser->withoutRelations()->toArray();
+        unset($resourceUser['id']);
+        unset($centralUser['id']);
+
+        expect($resourceUser)->toBe($centralUser);
+    });
+
+    // when resource model provides mix of attribute and default values => central model will be created using the mix of attribute values and default values
+    tenancy()->initialize($tenant2);
+
+    // Create the user in tenant DB
+    ResourceUserProvidingMixture::create([
+        'global_id' => 'absd',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'password',
+    ]);
+
+    tenancy()->end();
+
+    $centralUser = CentralUserForDifferentSchema::whereGlobalId('absd')->first();
+
+    // Assert central user was created using the provided attributes and default values
+    expect($centralUser->name)->toBe('John Doe');
+    expect($centralUser->email)->toBe('john@localhost');
+
+    // Provided default values
+    expect($centralUser->password)->toBe('secret');
+});
+
 test('creating the resource in tenant database creates it in central database and creates the mapping', function () {
     creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase();
 });
@@ -845,6 +748,33 @@ function creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase()
     expect(ResourceUser::first()->role)->toBe('commenter');
 }
 
+function creareTenantsAndRunMigrations(): array
+{
+    [$tenant1, $tenant2] = [ResourceTenant::create(['id' => 't1']), ResourceTenant::create(['id' => 't2'])];
+
+    // migrate extra column "foo" in central DB
+    pest()->artisan('migrate', [
+        '--path' => __DIR__ . '/Etc/synced_resource_migrations/users_extra',
+        '--realpath' => true,
+    ])->assertExitCode(0);
+    migrateTenantsResource();
+
+    return [$tenant1, $tenant2];
+}
+
+function creareTenantsAndRunMigrationsForDifferentSchema(): array
+{
+    [$tenant1, $tenant2] = [ResourceTenantForDifferentSchema::create(['id' => 't1']), ResourceTenantForDifferentSchema::create(['id' => 't2'])];
+
+    pest()->artisan('migrate', [
+        '--path' => __DIR__ . '/Etc/synced_resource_migrations/custom/central',
+        '--realpath' => true,
+    ])->assertExitCode(0);
+    migrateTenantsResource(__DIR__ . '/Etc/synced_resource_migrations/custom/tenant');
+
+    return [$tenant1, $tenant2];
+}
+
 function migrateTenantsResource(?string $path = null)
 {
     pest()->artisan('tenants:migrate', [
@@ -981,22 +911,6 @@ class ResourceUserWithAttributeNames extends ResourceUser {
 
 }
 
-// override method in ResourceUser class to return attribute names and default values
-class ResourceUserWithAttributeNamesAndDefaultValues extends ResourceUser {
-    public function getSyncedCreationAttributes(): array
-    {
-        // Sync name, email and password but provide default value for role and password
-        return
-            [
-                'global_id',
-                'name',
-                'email',
-                'password' => 'password',
-                'role' => 'admin'
-            ];
-    }
-}
-
 // override method in CentralUser class to return attribute default values
 class CentralUserWithDefaultValues extends CentralUser {
     public function getSyncedCreationAttributes(): array
@@ -1029,62 +943,41 @@ class CentralUserWithAttributeNames extends CentralUser {
     }
 }
 
-// override method in CentralUser class to return attribute names and default values
-class CentralUserWithAttributeNamesAndDefaultValues extends CentralUser {
-    public function getSyncedCreationAttributes(): array
-    {
-        // Sync name, email and password but provide default value for role
-        return
-            [
-                'global_id',
-                'name',
-                'email',
-                'password' => 'password',
-                'role' => 'admin',
-            ];
-    }
-}
-
-class ResourceTenantWithCustomPivot extends Tenant
+/*
+ * Below classes are sync resources setup classes for different schemas
+ *
+ * ResourceTenantForDifferentSchema is tenant model with different pivot table name
+ */
+class ResourceTenantForDifferentSchema extends Tenant
 {
     public function users()
     {
-        return $this->belongsToMany(CentralUserWithExtraAttributes::class, 'tenant_central_users', 'tenant_id', 'global_user_id', 'id', 'global_id')
+        return $this->belongsToMany(CentralUserForDifferentSchema::class, 'tenant_central_users', 'tenant_id', 'global_user_id', 'id', 'global_id')
             ->using(TenantPivot::class);
     }
 }
 
-class CentralUserWithExtraAttributes extends CentralUser {
+class CentralUserForDifferentSchema extends CentralUser {
     public $table = 'central_users';
 
     public function tenants(): BelongsToMany
     {
-        return $this->belongsToMany(ResourceTenantWithCustomPivot::class, 'tenant_central_users', 'global_user_id', 'tenant_id', 'global_id')
+        return $this->belongsToMany(ResourceTenantForDifferentSchema::class, 'tenant_central_users', 'global_user_id', 'tenant_id', 'global_id')
             ->using(TenantPivot::class);
     }
 
     public function getTenantModelName(): string
     {
-        return ResourceUserWithNoExtraAttributes::class;
-    }
-
-    public function getSyncedCreationAttributes(): array
-    {
-        return [
-            'global_id',
-            'name',
-            'password',
-            'email',
-        ];
+        return ResourceUserForDifferentSchema::class;
     }
 }
 
-class ResourceUserWithNoExtraAttributes extends ResourceUser {
+class ResourceUserForDifferentSchema extends ResourceUser {
     protected $table = 'resource_users';
 
     public function getCentralModelName(): string
     {
-        return CentralUserWithExtraAttributes::class;
+        return CentralUserForDifferentSchema::class;
     }
 
     public function getSyncedAttributeNames(): array
@@ -1095,6 +988,10 @@ class ResourceUserWithNoExtraAttributes extends ResourceUser {
             'email',
         ];
     }
+}
+
+class CentralUserProvidingMixture extends CentralUserForDifferentSchema {
+
 
     public function getSyncedCreationAttributes(): array
     {
@@ -1102,10 +999,38 @@ class ResourceUserWithNoExtraAttributes extends ResourceUser {
             'global_id',
             'name',
             'email',
-            // Provide default values
+            // provide default values for password
             'password' => 'secret',
-            'role' => 'admin',
-            'code' => 'foo',
+        ];
+    }
+}
+
+class ResourceUserProvidingMixture extends ResourceUserForDifferentSchema {
+    protected $table = 'resource_users';
+
+    public function getCentralModelName(): string
+    {
+        return CentralUserProvidingMixture::class;
+    }
+
+    public function getSyncedAttributeNames(): array
+    {
+        return [
+            'global_id',
+            'name',
+            'email',
+            'password',
+        ];
+    }
+
+    public function getSyncedCreationAttributes(): array
+    {
+        return [
+            'global_id',
+            'name',
+            'email',
+            // provide default values for password
+            'password' => 'secret',
         ];
     }
 }

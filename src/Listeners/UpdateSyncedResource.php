@@ -139,7 +139,11 @@ class UpdateSyncedResource extends QueueableListener
     {
         if (! $model->getSyncedCreationAttributes()) {
             // Creation attributes are not specified so create the model as 1:1 copy
-            return $model->getAttributes();
+            // exclude the "id" parameter because we want to keep the id to handle by the target model to avoid duplication error
+            $attributes = $model->getAttributes();
+            unset($attributes['id']);
+
+            return $attributes;
         }
 
         if (Arr::isAssoc($model->getSyncedCreationAttributes())) {

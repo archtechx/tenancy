@@ -21,10 +21,6 @@ class TestCreateCentralUsersWithExtraFieldsTable extends Migration
             $table->string('name');
             $table->string('email');
             $table->string('password');
-
-            // extra columns
-            $table->string('role');
-            $table->string('code');
         });
     }
 
