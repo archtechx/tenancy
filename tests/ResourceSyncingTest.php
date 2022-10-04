@@ -127,7 +127,7 @@ test('only the synced columns are updated in the central db', function () {
     ], ResourceUser::first()->getAttributes());
 });
 
-test('sync resource creation works when central model provides attributes and resource model provides default values', function (){
+test('sync resource creation works when central model provides attributes and resource model provides default values', function () {
     // when central model provides attributes => resoucre model will be created from the attribute values
     [$tenant1, $tenant2] = creareTenantsAndRunMigrations();
 
@@ -180,7 +180,7 @@ test('sync resource creation works when central model provides attributes and re
     expect($centralUser->foo)->toBe('bar');
 });
 
-test('sync resource creation works when central model provides default values and resource model provides attributes', function (){
+test('sync resource creation works when central model provides default values and resource model provides attributes', function () {
      // when central model provides default values => resource model will be created using the default values
     [$tenant1, $tenant2] = creareTenantsAndRunMigrations();
 
@@ -285,7 +285,7 @@ test('sync resource creation works when central model provides mixture and resou
     expect($centralUser)->toBe($resourceUser);
 });
 
-test('sync resource creation works when central model provides nothing and resource model provides mixture using different schemas', function (){
+test('sync resource creation works when central model provides nothing and resource model provides mixture using different schemas', function () {
     // when central model provides nothing => resoucre model will be 1:1 copy
     [$tenant1, $tenant2] = creareTenantsAndRunMigrationsForDifferentSchema();
 
