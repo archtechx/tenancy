@@ -13,25 +13,29 @@ use Symfony\Component\Console\Input\InputOption;
  */
 trait HasTenantOptions
 {
+    /** Value indicating an option wasn't passed */
+    protected $optionNotPassedValue = 'not passed';
+
     protected function getOptions()
     {
         return array_merge([
             ['tenants', null, InputOption::VALUE_IS_ARRAY|InputOption::VALUE_OPTIONAL, '', null],
-            ['with-pending', null, InputOption::VALUE_OPTIONAL, 'include pending tenants in query', false],
+            ['with-pending', null, InputOption::VALUE_OPTIONAL, 'include pending tenants in query', $this->optionNotPassedValue],
         ], parent::getOptions());
     }
 
     protected function getWithPendingOption(): bool
     {
         $optionPassedWithoutArgument = is_null($this->option('with-pending'));
-        $optionPassedWithArgument = is_string($this->option('with-pending'));
+        $optionPassedWithArgument = $this->option('with-pending') !== $this->optionNotPassedValue;
 
-        // E.g. tenants:run --with-pending
+        // E.g. 'tenants:run --with-pending'
         if ($optionPassedWithoutArgument) {
             return true;
         }
 
-        // E.g. tenants:run --with-pending=false
+        // E.g. 'tenants:run --with-pending=false'
+        // If the passed value can't get converted to a bool (e.g. --with-pending=foo), default to false
         if ($optionPassedWithArgument) {
             return filter_var($this->option('with-pending'), FILTER_VALIDATE_BOOLEAN);
         }
