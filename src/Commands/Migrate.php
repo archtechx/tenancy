@@ -57,10 +57,14 @@ class Migrate extends MigrateCommand
 
                 event(new DatabaseMigrated($tenant));
             });
+
+            return 0;
         } catch (TenantDatabaseDoesNotExistException|QueryException $th) {
             if (! $this->option('skip-failing')) {
                 throw $th;
             }
+
+            return 1;
         }
     }
 }
