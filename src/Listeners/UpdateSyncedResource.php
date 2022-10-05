@@ -15,6 +15,8 @@ use Stancl\Tenancy\Events\SyncedResourceChangedInForeignDatabase;
 use Stancl\Tenancy\Events\SyncedResourceSaved;
 use Stancl\Tenancy\Exceptions\ModelNotSyncMasterException;
 
+// todo@v4 review all code related to resource syncing
+
 class UpdateSyncedResource extends QueueableListener
 {
     public static bool $shouldQueue = false;
@@ -154,7 +156,7 @@ class UpdateSyncedResource extends QueueableListener
             return array_merge($model->only(array_merge($model->getSyncedAttributeNames(), $attributes)), $defaultValues);
         }
 
-        // Developer provided the attribute names, so we'd use them to pick model attributes
+        // Developer provided the attribute names, so we'll use them to pick model attributes
         return $model->only($model->getSyncedCreationAttributes());
     }
 
