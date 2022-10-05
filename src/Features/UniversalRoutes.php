@@ -16,6 +16,7 @@ class UniversalRoutes implements Feature
     public static string $middlewareGroup = 'universal';
 
     // todo docblock
+    /** @var array<class-string<\Stancl\Tenancy\Middleware\IdentificationMiddleware>> */
     public static array $identificationMiddlewares = [
         Middleware\InitializeTenancyByDomain::class,
         Middleware\InitializeTenancyBySubdomain::class,
@@ -42,7 +43,10 @@ class UniversalRoutes implements Feature
 
     public static function routeHasMiddleware(Route $route, string $middleware): bool
     {
-        if (in_array($middleware, $route->middleware(), true)) {
+        /** @var array $routeMiddleware */
+        $routeMiddleware = $route->middleware();
+
+        if (in_array($middleware, $routeMiddleware, true)) {
             return true;
         }
 

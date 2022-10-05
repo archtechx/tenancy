@@ -122,7 +122,7 @@ class TenancyServiceProvider extends ServiceProvider
             if ($event instanceof TenancyEvent) {
                 match (tenancy()->logMode()) {
                     LogMode::SILENT => tenancy()->logEvent($event),
-                    LogMode::INSTANT => dump($event), // todo0 perhaps still log
+                    LogMode::INSTANT => dump($event), // todo1 perhaps still log
                     default => null,
                 };
             }

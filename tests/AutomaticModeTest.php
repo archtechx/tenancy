@@ -107,12 +107,12 @@ function contextIsSwitchedWhenTenancyInitialized()
 
 class MyBootstrapper implements TenancyBootstrapper
 {
-    public function bootstrap(\Stancl\Tenancy\Contracts\Tenant $tenant)
+    public function bootstrap(\Stancl\Tenancy\Contracts\Tenant $tenant): void
     {
         app()->instance('tenancy_initialized_for_tenant', $tenant->getTenantKey());
     }
 
-    public function revert()
+    public function revert(): void
     {
         app()->instance('tenancy_ended', true);
     }

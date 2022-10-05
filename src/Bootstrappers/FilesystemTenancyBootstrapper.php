@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
@@ -27,13 +28,14 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         ];
 
         $this->app['url']->macro('setAssetRoot', function ($root) {
+            /** @var UrlGenerator $this */
             $this->assetRoot = $root;
 
             return $this;
         });
     }
 
-    public function bootstrap(Tenant $tenant)
+    public function bootstrap(Tenant $tenant): void
     {
         $suffix = $this->app['config']['tenancy.filesystem.suffix_base'] . $tenant->getTenantKey();
 
@@ -45,7 +47,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         // asset()
         if ($this->app['config']['tenancy.filesystem.asset_helper_tenancy'] ?? true) {
             if ($this->originalPaths['asset_url']) {
-                $this->app['config']['app.asset_url'] = ($this->originalPaths['asset_url'] ?? $this->app['config']['app.url']) . "/$suffix";
+                $this->app['config']['app.asset_url'] = $this->originalPaths['asset_url'] . "/$suffix";
                 $this->app['url']->setAssetRoot($this->app['config']['app.asset_url']);
             } else {
                 $this->app['url']->setAssetRoot($this->app['url']->route('stancl.tenancy.asset', ['path' => '']));
@@ -82,7 +84,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
                 if ($url = str_replace(
                     '%tenant_id%',
-                    $tenant->getTenantKey(),
+                    (string) $tenant->getTenantKey(),
                     $this->app['config']["tenancy.filesystem.url_override.{$disk}"] ?? ''
                 )) {
                     $this->app['config']["filesystems.disks.{$disk}.url"] = url($url);
@@ -91,7 +93,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         }
     }
 
-    public function revert()
+    public function revert(): void
     {
         // storage_path()
         $this->app->useStoragePath($this->originalPaths['storage']);

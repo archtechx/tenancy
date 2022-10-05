@@ -332,10 +332,6 @@ function getDiskPrefix(string $disk): string
     $disk = Storage::disk($disk);
     $adapter = $disk->getAdapter();
 
-    if (! Str::startsWith(app()->version(), '9.')) {
-        return $adapter->getPathPrefix();
-    }
-
      $prefixer = (new ReflectionObject($adapter))->getProperty('prefixer');
      $prefixer->setAccessible(true);
 

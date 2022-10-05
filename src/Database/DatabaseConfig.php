@@ -26,20 +26,20 @@ class DatabaseConfig
 
     public static function __constructStatic(): void
     {
-        static::$usernameGenerator = static::$usernameGenerator ?? function (Tenant $tenant) {
+        static::$usernameGenerator = static::$usernameGenerator ?? function (Model&Tenant $tenant) {
             return Str::random(16);
         };
 
-        static::$passwordGenerator = static::$passwordGenerator ?? function (Tenant $tenant) {
+        static::$passwordGenerator = static::$passwordGenerator ?? function (Model&Tenant $tenant) {
             return Hash::make(Str::random(32));
         };
 
-        static::$databaseNameGenerator = static::$databaseNameGenerator ?? function (Tenant $tenant) {
+        static::$databaseNameGenerator = static::$databaseNameGenerator ?? function (Model&Tenant $tenant) {
             return config('tenancy.database.prefix') . $tenant->getTenantKey() . config('tenancy.database.suffix');
         };
     }
 
-    public function __construct(Tenant $tenant)
+    public function __construct(Model&Tenant $tenant)
     {
         static::__constructStatic();
 
@@ -61,7 +61,7 @@ class DatabaseConfig
         static::$passwordGenerator = $passwordGenerator;
     }
 
-    public function getName(): ?string
+    public function getName(): string
     {
         return $this->tenant->getInternal('db_name') ?? (static::$databaseNameGenerator)($this->tenant);
     }
@@ -81,7 +81,7 @@ class DatabaseConfig
      */
     public function makeCredentials(): void
     {
-        $this->tenant->setInternal('db_name', $this->getName() ?? (static::$databaseNameGenerator)($this->tenant));
+        $this->tenant->setInternal('db_name', $this->getName());
 
         if ($this->manager() instanceof Contracts\ManagesDatabaseUsers) {
             $this->tenant->setInternal('db_username', $this->getUsername() ?? (static::$usernameGenerator)($this->tenant));

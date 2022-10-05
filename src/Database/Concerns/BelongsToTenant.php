@@ -12,11 +12,14 @@ use Stancl\Tenancy\Database\TenantScope;
  */
 trait BelongsToTenant
 {
-    public static $tenantIdColumn = 'tenant_id';
-
     public function tenant()
     {
-        return $this->belongsTo(config('tenancy.tenant_model'), BelongsToTenant::$tenantIdColumn);
+        return $this->belongsTo(config('tenancy.tenant_model'), static::tenantIdColumn());
+    }
+
+    public static function tenantIdColumn(): string
+    {
+        return config('tenancy.single_db.tenant_id_column');
     }
 
     public static function bootBelongsToTenant(): void
@@ -24,9 +27,9 @@ trait BelongsToTenant
         static::addGlobalScope(new TenantScope);
 
         static::creating(function ($model) {
-            if (! $model->getAttribute(BelongsToTenant::$tenantIdColumn) && ! $model->relationLoaded('tenant')) {
+            if (! $model->getAttribute(static::tenantIdColumn()) && ! $model->relationLoaded('tenant')) {
                 if (tenancy()->initialized) {
-                    $model->setAttribute(BelongsToTenant::$tenantIdColumn, tenant()->getTenantKey());
+                    $model->setAttribute(static::tenantIdColumn(), tenant()->getTenantKey());
                     $model->setRelation('tenant', tenant());
                 }
             }

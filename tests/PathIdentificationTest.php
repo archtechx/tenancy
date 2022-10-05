@@ -10,8 +10,6 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
 beforeEach(function () {
-    PathTenantResolver::$tenantParameterName = 'tenant';
-
     Route::group([
         'prefix' => '/{tenant}',
         'middleware' => InitializeTenancyByPath::class,
@@ -24,11 +22,6 @@ beforeEach(function () {
             return "$a - $b";
         })->name('baz');
     });
-});
-
-afterEach(function () {
-    // Global state cleanup
-    PathTenantResolver::$tenantParameterName = 'tenant';
 });
 
 test('tenant can be identified by path', function () {
@@ -101,7 +94,7 @@ test('an exception is thrown when the routes first parameter is not tenant', fun
 });
 
 test('tenant parameter name can be customized', function () {
-    PathTenantResolver::$tenantParameterName = 'team';
+    config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_parameter_name' => 'team']);
 
     Route::group([
         'prefix' => '/{team}',

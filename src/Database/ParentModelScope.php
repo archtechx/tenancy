@@ -19,7 +19,7 @@ class ParentModelScope implements Scope
         $builder->whereHas($builder->getModel()->getRelationshipToPrimaryModel());
     }
 
-    public function extend(Builder $builder)
+    public function extend(Builder $builder): void
     {
         $builder->macro('withoutParentModel', function (Builder $builder) {
             return $builder->withoutGlobalScope($this);

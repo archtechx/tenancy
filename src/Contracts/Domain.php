@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Contracts;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 /**
  * @property-read Tenant $tenant
  *
@@ -15,5 +17,5 @@ namespace Stancl\Tenancy\Contracts;
  */
 interface Domain
 {
-    public function tenant();
+    public function tenant(): BelongsTo;
 }

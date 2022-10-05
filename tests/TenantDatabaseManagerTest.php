@@ -154,9 +154,7 @@ test('schema manager uses schema to separate tenant dbs', function () {
     ]);
     tenancy()->initialize($tenant);
 
-    $schemaConfig = version_compare(app()->version(), '9.0', '>=') ?
-        config('database.connections.' . config('database.default') . '.search_path') :
-        config('database.connections.' . config('database.default') . '.schema');
+    $schemaConfig = config('database.connections.' . config('database.default') . '.search_path');
 
     expect($schemaConfig)->toBe($tenant->database()->getName());
     expect(config(['database.connections.pgsql.database']))->toBe($originalDatabaseName);

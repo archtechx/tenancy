@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use Stancl\Tenancy\Database\Models\Domain;
 use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Middleware;
+use Stancl\Tenancy\Resolvers;
 
 return [
     'tenant_model' => Tenant::class,
@@ -19,6 +21,56 @@ return [
     'central_domains' => [
         '127.0.0.1',
         'localhost',
+    ],
+
+    'identification' => [
+        /**
+         * The default middleware used for tenant identification.
+         *
+         * If you use multiple forms of identification, you can set this to the "main" approach you use.
+         */
+        'default_middleware' => Middleware\InitializeTenancyByDomain::class,// todo@identification add this to a 'tenancy' mw group
+
+        /**
+         * All of the identification middleware used by the package.
+         *
+         * If you write your own, make sure to add them to this array.
+         */
+        'middleware' => [
+            Middleware\InitializeTenancyByDomain::class,
+            Middleware\InitializeTenancyBySubdomain::class,
+            Middleware\InitializeTenancyByDomainOrSubdomain::class,
+            Middleware\InitializeTenancyByPath::class,
+            Middleware\InitializeTenancyByRequestData::class,
+        ],
+
+        /**
+         * Tenant resolvers used by the package.
+         *
+         * Resolvers which implement the CachedTenantResolver contract have options for configuring the caching details.
+         * If you add your own resolvers, do not add the 'cache' key unless your resolver is based on CachedTenantResolver.
+         */
+        'resolvers' => [
+            Resolvers\DomainTenantResolver::class => [
+                'cache' => false,
+                'cache_ttl' => 3600, // seconds
+                'cache_store' => null, // default
+            ],
+            Resolvers\PathTenantResolver::class => [
+                'tenant_parameter_name' => 'tenant',
+
+                'cache' => false,
+                'cache_ttl' => 3600, // seconds
+                'cache_store' => null, // default
+            ],
+            Resolvers\RequestDataTenantResolver::class => [
+                'cache' => false,
+                'cache_ttl' => 3600, // seconds
+                'cache_store' => null, // default
+            ],
+        ],
+
+        // todo@docs update integration guides to use Stancl\Tenancy::defaultMiddleware()
     ],
 
     /**
@@ -233,5 +285,13 @@ return [
     'seeder_parameters' => [
         '--class' => 'DatabaseSeeder', // root seeder class
         // '--force' => true,
+    ],
+
+    /**
+     * Single-database tenancy config.
+     */
+    'single_db' => [
+        /** The name of the column used by models with the BelongsToTenant trait. */
+        'tenant_id_column' => 'tenant_id',
     ],
 ];

@@ -13,11 +13,7 @@ use Symfony\Component\Console\Output\ConsoleOutput;
 class Run extends Command
 {
     use HasTenantOptions;
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
+
     protected $description = 'Run a command for tenant(s)';
 
     protected $signature = 'tenants:run {commandname : The artisan command.}
@@ -25,10 +21,9 @@ class Run extends Command
 
     public function handle(): void
     {
-        $argvInput = $this->ArgvInput();
-        $tenants = $this->getTenants();
+        $argvInput = $this->argvInput();
 
-        tenancy()->runForMultiple($tenants, function ($tenant) use ($argvInput) {
+        tenancy()->runForMultiple($this->getTenants(), function ($tenant) use ($argvInput) {
             $this->line("Tenant: {$tenant->getTenantKey()}");
 
             $this->getLaravel()
@@ -39,12 +34,15 @@ class Run extends Command
 
     protected function argvInput(): ArgvInput
     {
+        /** @var string $commandname */
+        $commandname = $this->argument('commandname');
+
         // Convert string command to array
-        $subCommand = explode(' ', $this->argument('commandname'));
+        $subcommand = explode(' ', $commandname);
 
         // Add "artisan" as first parameter because ArgvInput expects "artisan" as first parameter and later removes it
-        array_unshift($subCommand, 'artisan');
+        array_unshift($subcommand, 'artisan');
 
-        return new ArgvInput($subCommand);
+        return new ArgvInput($subcommand);
     }
 }

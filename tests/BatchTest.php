@@ -30,13 +30,13 @@ test('batch repository is set to tenant connection and reverted', function () {
 
     tenancy()->initialize($tenant);
     expect(getBatchRepositoryConnectionName())->toBe('tenant');
-    
+
     tenancy()->initialize($tenant2);
     expect(getBatchRepositoryConnectionName())->toBe('tenant');
 
     tenancy()->end();
     expect(getBatchRepositoryConnectionName())->toBe('central');
-})->skip(fn() => version_compare(app()->version(), '8.0', '<'), 'Job batches are only supported in Laravel 8+');
+});
 
 function getBatchRepositoryConnectionName()
 {
