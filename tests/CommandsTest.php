@@ -239,64 +239,7 @@ test('link command works with a specified tenant', function() {
     $this->assertDirectoryDoesNotExist(public_path("public-$tenantKey"));
 });
 
-test('passing with pending option as false makes tenant commands not include pending tenants', function() {
-    $tenants = collect([
-        Tenant::create(),
-        Tenant::create(),
-        Tenant::createPending(),
-        Tenant::createPending(),
-    ]);
-
-    pest()->artisan('tenants:migrate --with-pending');
-
-    $artisan = pest()->artisan("tenants:run 'foo foo --b=bar --c=xyz' --with-pending=false");
-
-    $pendingTenants = $tenants->filter->pending();
-    $readyTenants = $tenants->reject->pending();
-
-    $pendingTenants->each(fn($tenant) => $artisan->doesntExpectOutputToContain("Tenant: {$tenant->getTenantKey()}"));
-    $readyTenants->each(fn($tenant) => $artisan->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}"));
-
-    $artisan->assertExitCode(0);
-});
-
-test('passing with pending option as true makes tenant commands include pending tenants', function() {
-    $tenants = collect([
-        Tenant::create(),
-        Tenant::create(),
-        Tenant::createPending(),
-        Tenant::createPending(),
-    ]);
-
-    pest()->artisan('tenants:migrate --with-pending');
-
-    $artisan = pest()->artisan("tenants:run 'foo foo --b=bar --c=xyz' --with-pending");
-
-    $tenants->each(fn($tenant) => $artisan->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}"));
-
-    $artisan->assertExitCode(0);
-});
-
-test('not passing the with pending option makes tenant commands include the pending tenants if tenancy.pending.include_in_queries is true', function() {
-    config(['tenancy.pending.include_in_queries' => true]);
-
-    $tenants = collect([
-        Tenant::create(),
-        Tenant::create(),
-        Tenant::createPending(),
-        Tenant::createPending(),
-    ]);
-
-    pest()->artisan('tenants:migrate --with-pending');
-
-    $artisan = pest()->artisan("tenants:run 'foo foo --b=bar --c=xyz'");
-
-    $tenants->each(fn($tenant) => $artisan->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}"));
-
-    $artisan->assertExitCode(0);
-});
-
-test('not passing the with pending option makes tenant commands exclude the pending tenants if tenancy.pending.include_in_queries is false', function() {
+test('commands do not run for pending tenants if tenancy.pending.include_in_queries is false and the with pending option does not get passed', function() {
     config(['tenancy.pending.include_in_queries' => false]);
 
     $tenants = collect([
@@ -315,6 +258,44 @@ test('not passing the with pending option makes tenant commands exclude the pend
 
     $pendingTenants->each(fn($tenant) => $artisan->doesntExpectOutputToContain("Tenant: {$tenant->getTenantKey()}"));
     $readyTenants->each(fn($tenant) => $artisan->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}"));
+
+    $artisan->assertExitCode(0);
+});
+
+test('commands run for pending tenants too if tenancy.pending.include_in_queries is true', function() {
+    config(['tenancy.pending.include_in_queries' => true]);
+
+    $tenants = collect([
+        Tenant::create(),
+        Tenant::create(),
+        Tenant::createPending(),
+        Tenant::createPending(),
+    ]);
+
+    pest()->artisan('tenants:migrate --with-pending');
+
+    $artisan = pest()->artisan("tenants:run 'foo foo --b=bar --c=xyz'");
+
+    $tenants->each(fn($tenant) => $artisan->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}"));
+
+    $artisan->assertExitCode(0);
+});
+
+test('commands run for pending tenants too if the with pending option is passed', function() {
+    config(['tenancy.pending.include_in_queries' => false]);
+
+    $tenants = collect([
+        Tenant::create(),
+        Tenant::create(),
+        Tenant::createPending(),
+        Tenant::createPending(),
+    ]);
+
+    pest()->artisan('tenants:migrate --with-pending');
+
+    $artisan = pest()->artisan("tenants:run 'foo foo --b=bar --c=xyz' --with-pending");
+
+    $tenants->each(fn($tenant) => $artisan->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}"));
 
     $artisan->assertExitCode(0);
 });
