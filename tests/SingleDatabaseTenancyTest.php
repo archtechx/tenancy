@@ -13,8 +13,6 @@ use Stancl\Tenancy\Database\Concerns\HasScopedValidationRules;
 use Stancl\Tenancy\Tests\Etc\Tenant as TestTenant;
 
 beforeEach(function () {
-    BelongsToTenant::$tenantIdColumn = 'tenant_id';
-
     Schema::create('posts', function (Blueprint $table) {
         $table->increments('id');
         $table->string('text');
@@ -144,7 +142,7 @@ test('tenant id is not auto added when creating primary resources in central con
 });
 
 test('tenant id column name can be customized', function () {
-    BelongsToTenant::$tenantIdColumn = 'team_id';
+    config(['tenancy.single_db.tenant_id_column' => 'team_id']);
 
     Schema::drop('comments');
     Schema::drop('posts');

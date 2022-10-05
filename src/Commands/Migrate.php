@@ -17,7 +17,7 @@ use Stancl\Tenancy\Events\MigratingDatabase;
 
 class Migrate extends MigrateCommand
 {
-    use HasATenantsOption, DealsWithMigrations, ExtendsLaravelCommand;
+    use HasATenantsOption, ExtendsLaravelCommand;
 
     protected $description = 'Run migrations for tenant(s)';
 
@@ -35,10 +35,7 @@ class Migrate extends MigrateCommand
         $this->specifyParameters();
     }
 
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function handle(): int
     {
         foreach (config('tenancy.migration_parameters') as $parameter => $value) {
             if (! $this->input->hasParameterOption($parameter)) {
@@ -47,7 +44,7 @@ class Migrate extends MigrateCommand
         }
 
         if (! $this->confirmToProceed()) {
-            return;
+            return 1;
         }
 
         try {

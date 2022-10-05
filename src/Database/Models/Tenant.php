@@ -26,6 +26,7 @@ class Tenant extends Model implements Contracts\Tenant
         Concerns\HasDataColumn,
         Concerns\HasInternalKeys,
         Concerns\TenantRun,
+        Concerns\InitializationHelpers,
         Concerns\InvalidatesResolverCache;
 
     protected $table = 'tenants';

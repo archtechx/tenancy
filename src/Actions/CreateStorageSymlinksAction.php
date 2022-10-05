@@ -8,7 +8,7 @@ use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\LazyCollection;
 use Stancl\Tenancy\Concerns\DealsWithTenantSymlinks;
-use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Events\CreatingStorageSymlink;
 use Stancl\Tenancy\Events\StorageSymlinkCreated;
 

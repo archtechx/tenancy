@@ -23,14 +23,14 @@ class BatchTenancyBootstrapper implements TenancyBootstrapper
     ) {
     }
 
-    public function bootstrap(Tenant $tenant)
+    public function bootstrap(Tenant $tenant): void
     {
         // Update batch repository connection to use the tenant connection
         $this->previousConnection = $this->batchRepository->getConnection();
         $this->batchRepository->setConnection($this->databaseManager->connection('tenant'));
     }
 
-    public function revert()
+    public function revert(): void
     {
         if ($this->previousConnection) {
             // Replace batch repository connection with the previously replaced one

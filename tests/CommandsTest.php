@@ -9,7 +9,6 @@ use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
-use PHPUnit\Framework\ExceptionWrapper;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Illuminate\Database\DatabaseManager;
@@ -217,8 +216,9 @@ test('run command with array of tenants works', function () {
     Artisan::call('tenants:migrate-fresh');
 
     pest()->artisan("tenants:run --tenants=$tenantId1 --tenants=$tenantId2 'foo foo --b=bar --c=xyz'")
-        ->expectsOutput('Tenant: ' . $tenantId1)
-        ->expectsOutput('Tenant: ' . $tenantId2);
+        ->expectsOutputToContain('Tenant: ' . $tenantId1)
+        ->expectsOutputToContain('Tenant: ' . $tenantId2)
+        ->assertExitCode(0);
 });
 
 test('link command works', function() {

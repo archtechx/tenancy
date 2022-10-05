@@ -6,9 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
-afterEach(function () {
-    DomainTenantResolver::$shouldCache = false;
-});
+// todo@v4 test this with other resolvers as well?
 
 test('tenants can be resolved using the cached resolver', function () {
     $tenant = Tenant::create();
@@ -27,14 +25,14 @@ test('the underlying resolver is not touched when using the cached resolver', fu
 
     DB::enableQueryLog();
 
-    DomainTenantResolver::$shouldCache = false;
+    config(['tenancy.identification.resolvers.' . DomainTenantResolver::class . '.cache' => false]);
 
     expect($tenant->is(app(DomainTenantResolver::class)->resolve('acme')))->toBeTrue();
     DB::flushQueryLog();
     expect($tenant->is(app(DomainTenantResolver::class)->resolve('acme')))->toBeTrue();
     pest()->assertNotEmpty(DB::getQueryLog()); // not empty
 
-    DomainTenantResolver::$shouldCache = true;
+    config(['tenancy.identification.resolvers.' . DomainTenantResolver::class . '.cache' => true]);
 
     expect($tenant->is(app(DomainTenantResolver::class)->resolve('acme')))->toBeTrue();
     DB::flushQueryLog();
@@ -50,7 +48,7 @@ test('cache is invalidated when the tenant is updated', function () {
 
     DB::enableQueryLog();
 
-    DomainTenantResolver::$shouldCache = true;
+    config(['tenancy.identification.resolvers.' . DomainTenantResolver::class . '.cache' => true]);
 
     expect($tenant->is(app(DomainTenantResolver::class)->resolve('acme')))->toBeTrue();
     DB::flushQueryLog();
@@ -74,7 +72,7 @@ test('cache is invalidated when a tenants domain is changed', function () {
 
     DB::enableQueryLog();
 
-    DomainTenantResolver::$shouldCache = true;
+    config(['tenancy.identification.resolvers.' . DomainTenantResolver::class . '.cache' => true]);
 
     expect($tenant->is(app(DomainTenantResolver::class)->resolve('acme')))->toBeTrue();
     DB::flushQueryLog();

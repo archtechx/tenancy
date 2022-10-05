@@ -12,7 +12,8 @@ class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager impl
 {
     use CreatesDatabaseUsers;
 
-    public static $grants = [
+    /** @var string[] */
+    public static array $grants = [
         'ALTER', 'ALTER ROUTINE', 'CREATE', 'CREATE ROUTINE', 'CREATE TEMPORARY TABLES', 'CREATE VIEW',
         'DELETE', 'DROP', 'EVENT', 'EXECUTE', 'INDEX', 'INSERT', 'LOCK TABLES', 'REFERENCES', 'SELECT',
         'SHOW VIEW', 'TRIGGER', 'UPDATE',

@@ -15,30 +15,15 @@ class Link extends Command
 {
     use HasATenantsOption;
 
-    /**
-     * The console command signature.
-     *
-     * @var string
-     */
     protected $signature = 'tenants:link
                 {--tenants=* : The tenant(s) to run the command for. Default: all}
                 {--relative : Create the symbolic link using relative paths}
                 {--force : Recreate existing symbolic links}
                 {--remove : Remove symbolic links}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Create or remove tenant symbolic links.';
 
-    /**
-     * Execute the console command.
-     *
-     * @return void
-     */
-    public function handle()
+    public function handle(): void
     {
         $tenants = $this->getTenants();
 
@@ -64,8 +49,8 @@ class Link extends Command
     {
         CreateStorageSymlinksAction::handle(
             $tenants,
-            $this->option('relative') ?? false,
-            $this->option('force') ?? false,
+            (bool) ($this->option('relative') ?? false),
+            (bool) ($this->option('force') ?? false),
         );
 
         $this->info('The links have been created.');

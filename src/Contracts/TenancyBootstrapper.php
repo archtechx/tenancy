@@ -9,7 +9,7 @@ namespace Stancl\Tenancy\Contracts;
  */
 interface TenancyBootstrapper
 {
-    public function bootstrap(Tenant $tenant);
+    public function bootstrap(Tenant $tenant): void;
 
-    public function revert();
+    public function revert(): void;
 }
