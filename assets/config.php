@@ -253,7 +253,7 @@ return [
      *
      */
     'maintenance' => [
-        'driver' => env('TENANCY_DATABASE_DRIVER', 'database'),
+        'driver' => env('TENANCY_MAINTENANCE_DRIVER', 'database'),
         // 'store'  => 'redis',
     ],
 
