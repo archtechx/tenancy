@@ -32,7 +32,6 @@ trait MaintenanceMode
      */
     public function putDownForMaintenance(array $payload = []): void
     {
-        ray('down');
         $this->maintenanceMode()->activate($payload);
     }
 
