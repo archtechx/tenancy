@@ -243,6 +243,21 @@ return [
     ],
 
     /**
+     * Maintenance mode driver
+     *
+     * These configuration options determine the driver used to determine and
+     * manage Tenancy's "maintenance mode" status. The "cache" driver will
+     * allow maintenance mode to be controlled across multiple machines.
+     *
+     * Supported drivers: "database", "cache"
+     *
+     */
+    'maintenance' => [
+        'driver' => env('TENANCY_DATABASE_DRIVER', 'database'),
+        // 'store'  => 'redis',
+    ],
+
+    /**
      * Should tenancy routes be registered.
      *
      * Tenancy routes include tenant asset routes. By default, this route is

@@ -12,6 +12,8 @@ use Stancl\Tenancy\Contracts\Domain;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Enums\LogMode;
 use Stancl\Tenancy\Events\Contracts\TenancyEvent;
+use Stancl\Tenancy\Maintenance\MaintenanceModeManager;
+use Stancl\Tenancy\Maintenance\TenantMaintenanceModeContract;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 
 class TenancyServiceProvider extends ServiceProvider
@@ -43,6 +45,8 @@ class TenancyServiceProvider extends ServiceProvider
         $this->app->bind(Domain::class, function () {
             return DomainTenantResolver::$currentDomain;
         });
+
+        $this->registerMaintenanceModeManager();
 
         // Make sure bootstrappers are stateful (singletons).
         foreach ($this->app['config']['tenancy.bootstrappers'] ?? [] as $bootstrapper) {
@@ -136,5 +140,21 @@ class TenancyServiceProvider extends ServiceProvider
 
             return $instance;
         });
+    }
+
+
+    /**
+     * Register the maintenance mode manager service.
+     *
+     * @return void
+     */
+    public function registerMaintenanceModeManager(): void
+    {
+        $this->app->singleton(MaintenanceModeManager::class);
+
+        $this->app->bind(
+            TenantMaintenanceModeContract::class,
+            fn () => $this->app->make(MaintenanceModeManager::class)->driver()
+        );
     }
 }

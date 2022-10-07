@@ -17,8 +17,8 @@ class CheckTenantForMaintenanceMode extends CheckForMaintenanceMode
             throw new TenancyNotInitializedException;
         }
 
-        if (tenant('maintenance_mode')) {
-            $data = tenant('maintenance_mode');
+        if (tenant()->isDownForMaintenance()) {
+            $data = tenant()->getMaintenanceData();
 
             if (isset($data['secret']) && $request->path() === $data['secret']) {
                 return $this->bypassResponse($data['secret']);
