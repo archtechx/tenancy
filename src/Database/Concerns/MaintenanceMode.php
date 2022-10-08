@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Database\Concerns;
 
 use Illuminate\Contracts\Container\BindingResolutionException;
+use Stancl\Tenancy\Events\TenantMaintenanceModeDisabled;
+use Stancl\Tenancy\Events\TenantMaintenanceModeEnabled;
 use Stancl\Tenancy\Maintenance\TenantMaintenanceModeContract;
 
 /**
@@ -33,6 +35,8 @@ trait MaintenanceMode
     public function putDownForMaintenance(array $payload = []): void
     {
         $this->maintenanceMode()->activate($payload);
+
+        event(new TenantMaintenanceModeEnabled($this));
     }
 
     /**
@@ -44,6 +48,8 @@ trait MaintenanceMode
     public function bringUpFromMaintenance(): void
     {
         $this->maintenanceMode()->deactivate();
+
+        event(new TenantMaintenanceModeDisabled($this));
     }
 
     /**
