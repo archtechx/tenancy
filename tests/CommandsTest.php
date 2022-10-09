@@ -167,7 +167,9 @@ test('install command works', function () {
         mkdir($dir, 0777, true);
     }
 
-    pest()->artisan('tenancy:install');
+    pest()->artisan('tenancy:install')
+        ->expectsConfirmation('Would you like to show your support by starring the project on github ?', 'no')
+        ->assertExitCode(0);
     expect(base_path('routes/tenant.php'))->toBeFile();
     expect(base_path('config/tenancy.php'))->toBeFile();
     expect(app_path('Providers/TenancyServiceProvider.php'))->toBeFile();
@@ -210,7 +212,8 @@ test('run command with array of tenants works', function () {
 test('link command works', function() {
     $tenantId1 = Tenant::create()->getTenantKey();
     $tenantId2 = Tenant::create()->getTenantKey();
-    pest()->artisan('tenants:link');
+    pest()->artisan('tenants:link')
+        ->assertExitCode(0);
 
     $this->assertDirectoryExists(storage_path("tenant-$tenantId1/app/public"));
     $this->assertEquals(storage_path("tenant-$tenantId1/app/public/"), readlink(public_path("public-$tenantId1")));
@@ -220,7 +223,8 @@ test('link command works', function() {
 
     pest()->artisan('tenants:link', [
         '--remove' => true,
-    ]);
+    ])
+        ->assertExitCode(0);
 
     $this->assertDirectoryDoesNotExist(public_path("public-$tenantId1"));
     $this->assertDirectoryDoesNotExist(public_path("public-$tenantId2"));
@@ -252,8 +256,9 @@ test('run command works when sub command asks questions and accepts arguments', 
 
     pest()->artisan("tenants:run --tenants=$id 'user:addwithname Abrar' ")
         ->expectsQuestion('What is your email?', 'email@localhost')
-        ->expectsOutput("Tenant: $id")
-        ->expectsOutput("User created: Abrar(email@localhost)");
+        ->expectsOutputToContain("Tenant: $id.")
+        ->expectsOutput("User created: Abrar(email@localhost)")
+        ->assertExitCode(0);
 
     // Assert we are in central context
     expect(tenancy()->initialized)->toBeFalse();
