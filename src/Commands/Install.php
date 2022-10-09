@@ -12,7 +12,7 @@ class Install extends Command
 
     protected $description = 'Install stancl/tenancy.';
 
-    public function handle(): void
+    public function handle(): int
     {
         $this->newLine();
 
@@ -72,6 +72,8 @@ class Install extends Command
 
         $this->patienceIsKeyToLife();
         $this->askForSupport();
+
+        return 0;
     }
 
     /**

@@ -23,7 +23,7 @@ final class MigrateFresh extends Command
         $this->setName('tenants:migrate-fresh');
     }
 
-    public function handle(): void
+    public function handle(): int
     {
         tenancy()->runForMultiple($this->getTenants(), function ($tenant) {
             $this->components->info("Tenant: {$tenant->getTenantKey()}");
@@ -44,5 +44,6 @@ final class MigrateFresh extends Command
             });
         });
 
+        return 0;
     }
 }

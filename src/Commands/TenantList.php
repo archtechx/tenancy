@@ -14,7 +14,7 @@ class TenantList extends Command
 
     protected $description = 'List tenants.';
 
-    public function handle(): void
+    public function handle(): int
     {
         $tenants = tenancy()->query()->cursor();
 
@@ -24,6 +24,8 @@ class TenantList extends Command
             /** @var Model&Tenant $tenant */
             $this->components->twoColumnDetail($this->tenantCli($tenant), $this->domainsCli($tenant));
         }
+
+        return 0;
     }
 
     /**
