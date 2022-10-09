@@ -42,7 +42,7 @@ class Link extends Command
     {
         RemoveStorageSymlinksAction::handle($tenants);
 
-        $this->info('The links have been removed.');
+        $this->components->info('The links have been removed.');
     }
 
     protected function createLinks(LazyCollection $tenants): void
@@ -53,6 +53,6 @@ class Link extends Command
             (bool) ($this->option('force') ?? false),
         );
 
-        $this->info('The links have been created.');
+        $this->components->info('The links have been created.');
     }
 }

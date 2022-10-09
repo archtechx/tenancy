@@ -22,24 +22,28 @@ class Down extends DownCommand
 
     public function handle(): int
     {
-        // The base down command is heavily used. Instead of saving the data inside a file,
-        // the data is stored the tenant database, which means some Laravel features
-        // are not available with tenants.
-
+        // First we retrieve the compiled payload with all the
+        // parameters given, then for each tenant we will
+        // put down for maintenance and pass the payload.
         $payload = $this->getDownDatabasePayload();
 
-        // This runs for all tenants if no --tenants are specified
         tenancy()->runForMultiple($this->getTenants(), function ($tenant) use ($payload) {
-            $this->line("Tenant: {$tenant['id']}");
+            $this->components->info("Tenant: {$tenant->getTenantKey()}");
             $tenant->putDownForMaintenance($payload);
         });
 
-        $this->comment('Tenants are now in maintenance mode.');
+        $this->components->info('Tenants are now in maintenance mode.');
 
         return 0;
     }
 
-    /** Get the payload to be placed in the "down" file. */
+    /**
+     * Get the payload to be placed in the "down" file. This
+     * payload is the same as the original function
+     * but without the 'template' option
+     *
+     * @return array
+     */
     protected function getDownDatabasePayload(): array
     {
         return [

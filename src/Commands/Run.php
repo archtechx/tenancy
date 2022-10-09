@@ -24,7 +24,7 @@ class Run extends Command
         $argvInput = $this->argvInput();
 
         tenancy()->runForMultiple($this->getTenants(), function ($tenant) use ($argvInput) {
-            $this->line("Tenant: {$tenant->getTenantKey()}");
+            $this->components->info("Tenant: {$tenant->getTenantKey()}");
 
             $this->getLaravel()
                 ->make(Kernel::class)
