@@ -203,7 +203,7 @@ class DatabaseConfig
         // Laravel caches the previous PDO connection, so we purge it to be able to change the connection details
         $this->purgeHostConnection(); // todo come up with a better name
 
-        // Set the host connection configuration array fetched from the tenant's config and manipulated to form a connection
+        // Create the tenant host connection config
         $tenantHostConnectionName = $this->getTenantHostConnectionName();
         config(["database.connections.{$tenantHostConnectionName}" => $this->hostConnection()]);
 
