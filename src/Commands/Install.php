@@ -23,7 +23,6 @@ class Install extends Command
             ]);
         });
 
-        $this->patienceIsKeyToLife();
         $this->newLine();
 
         if (!file_exists(base_path('routes/tenant.php'))) {
@@ -38,7 +37,6 @@ class Install extends Command
             $this->components->warn('File [routes/tenant.php] already existe.');
         }
 
-        $this->patienceIsKeyToLife();
 
         $this->components->task('Publishing providers', function () {
             $this->callSilent('vendor:publish', [
@@ -47,7 +45,6 @@ class Install extends Command
             ]);
         });
 
-        $this->patienceIsKeyToLife();
         $this->newLine();
 
         $this->components->task('Publishing migrations', function () {
@@ -57,7 +54,6 @@ class Install extends Command
             ]);
         });
 
-        $this->patienceIsKeyToLife();
         $this->newLine();
 
         if (!is_dir(database_path('migrations/tenant'))) {
@@ -70,20 +66,9 @@ class Install extends Command
 
         $this->components->info('✨️ stancl/tenancy installed successfully.');
 
-        $this->patienceIsKeyToLife();
         $this->askForSupport();
 
         return 0;
-    }
-
-    /**
-     * Pause the console execution for 1 second, help the user to have time and read the output
-     *
-     * @return void
-     */
-    public function patienceIsKeyToLife(): void
-    {
-        sleep(1);
     }
 
     /**
@@ -93,7 +78,7 @@ class Install extends Command
      */
     public function askForSupport(): void
     {
-        if ($this->components->confirm("Would you like to show your support by starring the project on github ?", true)) {
+        if ($this->components->confirm("Would you like to show your support by starring the project on Github ?", true)) {
             if (PHP_OS_FAMILY === 'Darwin') {
                 exec('open https://github.com/archtechx/tenancy');
             }

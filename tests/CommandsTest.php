@@ -168,7 +168,7 @@ test('install command works', function () {
     }
 
     pest()->artisan('tenancy:install')
-        ->expectsConfirmation('Would you like to show your support by starring the project on github ?', 'no')
+        ->expectsConfirmation('Would you like to show your support by starring the project on Github ?', 'no')
         ->assertExitCode(0);
     expect(base_path('routes/tenant.php'))->toBeFile();
     expect(base_path('config/tenancy.php'))->toBeFile();
@@ -223,8 +223,7 @@ test('link command works', function() {
 
     pest()->artisan('tenants:link', [
         '--remove' => true,
-    ])
-        ->assertExitCode(0);
+    ])->assertExitCode(0);
 
     $this->assertDirectoryDoesNotExist(public_path("public-$tenantId1"));
     $this->assertDirectoryDoesNotExist(public_path("public-$tenantId2"));

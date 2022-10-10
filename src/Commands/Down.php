@@ -22,9 +22,6 @@ class Down extends DownCommand
 
     public function handle(): int
     {
-        // First we retrieve the compiled payload with all the
-        // parameters given, then for each tenant we will
-        // put down for maintenance and pass the payload.
         $payload = $this->getDownDatabasePayload();
 
         tenancy()->runForMultiple($this->getTenants(), function ($tenant) use ($payload) {

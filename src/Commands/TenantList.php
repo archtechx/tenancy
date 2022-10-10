@@ -47,7 +47,7 @@ class TenantList extends Command
      */
     protected function domainsCli(Model $tenant): ?string
     {
-        if (is_null($tenant->domains)){
+        if (! $tenant->domains) {
 
             return null;
         }
