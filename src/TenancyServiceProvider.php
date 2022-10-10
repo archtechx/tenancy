@@ -13,6 +13,9 @@ use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Enums\LogMode;
 use Stancl\Tenancy\Events\Contracts\TenancyEvent;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
+use Illuminate\Console\Events\CommandStarting;
+use Illuminate\Support\Facades\Schema;
+use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
 class TenancyServiceProvider extends ServiceProvider
 {
@@ -123,6 +126,22 @@ class TenancyServiceProvider extends ServiceProvider
                     LogMode::INSTANT => dump($event), // todo1 perhaps still log
                     default => null,
                 };
+            }
+        });
+
+        Event::listen(CommandStarting::class, function (CommandStarting $event) {
+            $tenantModel = tenancy()->model();
+
+            if ($event->command === 'migrate:fresh' && Schema::hasTable($tenantModel->getTable())) {
+                $tenantModel::all()->each(function(Tenant $tenant) {
+                    if (method_exists($tenant, 'domains')) {
+                        $tenant->domains()->delete();
+                    }
+
+                    if ($tenant instanceof TenantWithDatabase) {
+                        $tenant->delete();
+                    }
+                });
             }
         });
 
