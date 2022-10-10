@@ -267,6 +267,25 @@ test('run command works when sub command asks questions and accepts arguments', 
     expect($user->email)->toBe('email@localhost');
 });
 
+test('migrate fresh command deletes tenant databases', function() {
+    /** @var Tenant[] $tenants */
+    $tenants = [
+        Tenant::create(),
+        Tenant::create(),
+        Tenant::create(),
+    ];
+
+    foreach ($tenants as $tenant) {
+        expect($tenant->database()->manager()->databaseExists($tenant->database()->getName()))->toBeTrue();
+    }
+
+    pest()->artisan('migrate:fresh');
+
+    foreach ($tenants as $tenant) {
+        expect($tenant->database()->manager()->databaseExists($tenant->database()->getName()))->toBeFalse();
+    }
+});
+
 // todo@tests
 function runCommandWorks(): void
 {
