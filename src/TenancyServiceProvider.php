@@ -5,17 +5,17 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Illuminate\Cache\CacheManager;
+use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Domain;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Enums\LogMode;
 use Stancl\Tenancy\Events\Contracts\TenancyEvent;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
-use Illuminate\Console\Events\CommandStarting;
-use Illuminate\Support\Facades\Schema;
-use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
 class TenancyServiceProvider extends ServiceProvider
 {
@@ -133,7 +133,7 @@ class TenancyServiceProvider extends ServiceProvider
             $tenantModel = tenancy()->model();
 
             if ($event->command === 'migrate:fresh' && Schema::hasTable($tenantModel->getTable())) {
-                $tenantModel::all()->each(function(Tenant $tenant) {
+                $tenantModel::all()->each(function (Tenant $tenant) {
                     if (method_exists($tenant, 'domains')) {
                         $tenant->domains()->delete();
                     }
