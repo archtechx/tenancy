@@ -24,7 +24,7 @@ class CreateDatabase implements ShouldQueue
     ) {
     }
 
-    public function handle(DatabaseManager $databaseManager)
+    public function handle(DatabaseManager $databaseManager): bool
     {
         event(new CreatingDatabase($this->tenant));
 
@@ -38,5 +38,7 @@ class CreateDatabase implements ShouldQueue
         $this->tenant->database()->hostManager()->createDatabase($this->tenant);
 
         event(new DatabaseCreated($this->tenant));
+
+        return true;
     }
 }

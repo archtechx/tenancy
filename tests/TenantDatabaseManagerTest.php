@@ -144,9 +144,7 @@ test('schema manager uses schema to separate tenant dbs', function () {
     ]);
     tenancy()->initialize($tenant);
 
-    $schemaConfig = version_compare(app()->version(), '9.0', '>=') ?
-        config('database.connections.' . config('database.default') . '.search_path') :
-        config('database.connections.' . config('database.default') . '.schema');
+    $schemaConfig = config('database.connections.' . config('database.default') . '.search_path');
 
     expect($schemaConfig)->toBe($tenant->database()->getName());
     expect(config(['database.connections.pgsql.database']))->toBe($originalDatabaseName);
@@ -284,7 +282,25 @@ test('tenant database can be created on a foreign server by using the username a
 });
 
 test('path used by sqlite manager can be customized', function () {
-    pest()->markTestIncomplete();
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    // Set custom path for SQLite file
+    SQLiteDatabaseManager::$path = $customPath = database_path('custom_' . Str::random(8));
+
+    if (! is_dir($customPath)) {
+        // Create custom directory
+        mkdir($customPath);
+    }
+
+    $name = Str::random(8). '.sqlite';
+    Tenant::create([
+        'tenancy_db_name' => $name,
+        'tenancy_db_connection' => 'sqlite',
+    ]);
+
+    expect(file_exists( $customPath . '/' . $name))->toBeTrue();
 });
 
 // Datasets

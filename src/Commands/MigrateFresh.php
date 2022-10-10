@@ -5,19 +5,13 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
-use Stancl\Tenancy\Concerns\DealsWithMigrations;
 use Stancl\Tenancy\Concerns\HasATenantsOption;
 use Symfony\Component\Console\Input\InputOption;
 
-final class MigrateFresh extends Command
+class MigrateFresh extends Command
 {
-    use HasATenantsOption, DealsWithMigrations;
+    use HasATenantsOption;
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Drop all tables and re-run all migrations for tenant(s)';
 
     public function __construct()
@@ -29,12 +23,9 @@ final class MigrateFresh extends Command
         $this->setName('tenants:migrate-fresh');
     }
 
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function handle(): void
     {
-        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
+        tenancy()->runForMultiple($this->getTenants(), function ($tenant) {
             $this->info('Dropping tables.');
             $this->call('db:wipe', array_filter([
                 '--database' => 'tenant',

@@ -6,10 +6,8 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
-use Stancl\Tenancy\Controllers\TenantAssetsController;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
@@ -21,13 +19,8 @@ beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
 });
 
-afterEach(function () {
-    // Cleanup
-    TenantAssetsController::$tenancyMiddleware = InitializeTenancyByDomain::class;
-});
-
 test('asset can be accessed using the url returned by the tenant asset helper', function () {
-    TenantAssetsController::$tenancyMiddleware = InitializeTenancyByRequestData::class;
+    config(['tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class]);
 
     $tenant = Tenant::create();
     tenancy()->initialize($tenant);
@@ -95,7 +88,7 @@ test('asset helper tenancy can be disabled', function () {
 });
 
 test('test asset controller returns a 404 when no path is provided', function () {
-    TenantAssetsController::$tenancyMiddleware = InitializeTenancyByRequestData::class;
+    config(['tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class]);
 
     $tenant = Tenant::create();
 

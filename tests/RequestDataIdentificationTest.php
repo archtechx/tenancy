@@ -37,7 +37,6 @@ test('header identification works', function () {
 });
 
 test('query parameter identification works', function () {
-    InitializeTenancyByRequestData::$header = null;
     InitializeTenancyByRequestData::$queryParameter = 'tenant';
 
     $tenant = Tenant::create();

@@ -35,6 +35,7 @@ if (! function_exists('tenant')) {
 
 if (! function_exists('tenant_asset')) {
     // todo docblock
+    // todo add an option to generate paths respecting the ASSET_URL
     function tenant_asset(string|null $asset): string
     {
         return route('stancl.tenancy.asset', ['path' => $asset]);
@@ -42,16 +43,42 @@ if (! function_exists('tenant_asset')) {
 }
 
 if (! function_exists('global_asset')) {
-    function global_asset(string $asset) // todo types, also inside the globalUrl implementation
+    function global_asset(string $asset): string
     {
         return app('globalUrl')->asset($asset);
     }
 }
 
 if (! function_exists('global_cache')) {
-    function global_cache()
+    /**
+     * Get / set the specified cache value in the global cache store.
+     *
+     * If an array is passed, we'll assume you want to put to the cache.
+     *
+     * @param  dynamic  key|key,default|data,expiration|null
+     * @return mixed|\Illuminate\Cache\CacheManager
+     *
+     * @throws \InvalidArgumentException
+     */
+    function global_cache(): mixed
     {
-        return app('globalCache');
+        $arguments = func_get_args();
+
+        if (empty($arguments)) {
+            return app('globalCache');
+        }
+
+        if (is_string($arguments[0])) {
+            return app('globalCache')->get(...$arguments);
+        }
+
+        if (! is_array($arguments[0])) {
+            throw new InvalidArgumentException(
+                'When setting a value in the cache, you must pass an array of key / value pairs.'
+            );
+        }
+
+        return app('globalCache')->put(key($arguments[0]), reset($arguments[0]), $arguments[1] ?? null);
     }
 }
 

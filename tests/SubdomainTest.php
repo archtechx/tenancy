@@ -44,7 +44,7 @@ test('tenant can be identified by subdomain', function () {
 
 test('onfail logic can be customized', function () {
     InitializeTenancyBySubdomain::$onFail = function () {
-        return 'foo';
+        return response('foo');
     };
 
     pest()

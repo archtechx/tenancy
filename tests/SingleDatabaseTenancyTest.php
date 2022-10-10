@@ -13,8 +13,6 @@ use Stancl\Tenancy\Database\Concerns\HasScopedValidationRules;
 use Stancl\Tenancy\Tests\Etc\Tenant as TestTenant;
 
 beforeEach(function () {
-    BelongsToTenant::$tenantIdColumn = 'tenant_id';
-
     Schema::create('posts', function (Blueprint $table) {
         $table->increments('id');
         $table->string('text');
@@ -61,7 +59,7 @@ test('secondary models are not scoped to the current tenant when accessed direct
     expect(Comment::count())->toBe(2);
 });
 
-test('secondary models a r e scoped to the current tenant when accessed directly and parent relationship traitis used', function () {
+test('secondary models ARE scoped to the current tenant when accessed directly and parent relationship trait is used', function () {
     $acme = Tenant::create([
         'id' => 'acme',
     ]);
@@ -144,7 +142,7 @@ test('tenant id is not auto added when creating primary resources in central con
 });
 
 test('tenant id column name can be customized', function () {
-    BelongsToTenant::$tenantIdColumn = 'team_id';
+    config(['tenancy.single_db.tenant_id_column' => 'team_id']);
 
     Schema::drop('comments');
     Schema::drop('posts');
@@ -207,13 +205,13 @@ test('the model returned by the tenant helper has unique and exists validation r
     $uniqueFails = Validator::make($data, [
         'slug' => 'unique:posts',
     ])->fails();
-    $existsFails = Validator::make($data, [
+    $existsPass = Validator::make($data, [
         'slug' => 'exists:posts',
-    ])->fails();
+    ])->passes();
 
     // Assert that 'unique' and 'exists' aren't scoped by default
-    // pest()->assertFalse($uniqueFails); // todo get these two assertions to pass. for some reason, the validator is passing for both 'unique' and 'exists'
-    // pest()->assertTrue($existsFails); // todo get these two assertions to pass. for some reason, the validator is passing for both 'unique' and 'exists'
+    expect($uniqueFails)->toBeTrue(); // Expect unique rule failed to pass because slug 'foo' already exists
+    expect($existsPass)->toBeTrue(); // Expect exists rule pass because slug 'foo' exists
 
     $uniqueFails = Validator::make($data, [
         'slug' => tenant()->unique('posts'),
