@@ -24,13 +24,11 @@ use Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLSchemaManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\SQLiteDatabaseManager;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
-beforeEach(function () {
+test('databases can be created and deleted', function ($driver, $databaseManager) {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
     })->toListener());
-});
 
-test('databases can be created and deleted', function ($driver, $databaseManager) {
     config()->set([
         "tenancy.database.managers.$driver" => $databaseManager,
     ]);
@@ -54,6 +52,10 @@ test('databases can be created and deleted', function ($driver, $databaseManager
 
 test('dbs can be created when another driver is used for the central db', function () {
     expect(config('database.default'))->toBe('central');
+
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
 
     $database = 'db' . pest()->randomString();
 
@@ -88,6 +90,10 @@ test('the tenant connection is fully removed', function () {
             DatabaseTenancyBootstrapper::class,
         ],
     ]);
+
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
@@ -135,6 +141,10 @@ test('schema manager uses schema to separate tenant dbs', function () {
         ],
     ]);
 
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
 
     $originalDatabaseName = config(['database.connections.pgsql.database']);
@@ -151,6 +161,10 @@ test('schema manager uses schema to separate tenant dbs', function () {
 });
 
 test('a tenants database cannot be created when the database already exists', function () {
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
     $name = 'foo' . Str::random(8);
     $tenant = Tenant::create([
         'tenancy_db_name' => $name,
@@ -187,6 +201,10 @@ test('tenant database can be created and deleted on a foreign server', function 
             ]) : [],
         ],
     ]);
+
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
 
     $name = 'foo' . Str::random(8);
     $tenant = Tenant::create([
@@ -231,6 +249,10 @@ test('tenant database can be created on a foreign server by using the host from 
         ],
     ]);
 
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
     $name = 'foo' . Str::random(8);
     $tenant = Tenant::create([
         'tenancy_db_name' => $name,
@@ -267,6 +289,10 @@ test('tenant database can be created on a foreign server by using the username a
             ]) : [],
         ],
     ]);
+
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
 
     $name = 'foo' . Str::random(8);
     $tenant = Tenant::create([
