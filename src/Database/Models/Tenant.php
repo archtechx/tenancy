@@ -45,6 +45,11 @@ class Tenant extends Model implements Contracts\Tenant
         return $this->getAttribute($this->getTenantKeyName());
     }
 
+    public static function current(): Tenant|null
+    {
+        return tenant();
+    }
+
     public function newCollection(array $models = []): TenantCollection
     {
         return new TenantCollection($models);

@@ -141,6 +141,18 @@ test('a command can be run on a collection of tenants', function () {
     expect(Tenant::find('t2')->foo)->toBe('xyz');
 });
 
+test('the current method returns the currently initialized tenant', function() {
+    tenancy()->initialize($tenant = Tenant::create());
+
+    expect(Tenant::current())->toBe($tenant);
+});
+
+test('the current method returns null if there is no currently initialized tenant', function() {
+    tenancy()->end();
+
+    expect(Tenant::current())->toBeNull();
+});
+
 class MyTenant extends Tenant
 {
     protected $table = 'tenants';
