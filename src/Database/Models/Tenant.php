@@ -10,6 +10,7 @@ use Stancl\Tenancy\Contracts;
 use Stancl\Tenancy\Database\Concerns;
 use Stancl\Tenancy\Database\TenantCollection;
 use Stancl\Tenancy\Events;
+use Stancl\Tenancy\Exceptions\TenancyNotInitializedException;
 
 /**
  * @property string|int $id
@@ -48,6 +49,11 @@ class Tenant extends Model implements Contracts\Tenant
     public static function current(): Tenant|null
     {
         return tenant();
+    }
+
+    public static function currentOrFail(): Tenant
+    {
+        return static::current() ?? throw new TenancyNotInitializedException;
     }
 
     public function newCollection(array $models = []): TenantCollection
