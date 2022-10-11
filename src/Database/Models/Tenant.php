@@ -51,7 +51,8 @@ class Tenant extends Model implements Contracts\Tenant
         return tenant();
     }
 
-    public static function currentOrFail(): self
+    /** @throws TenancyNotInitializedException */
+    public static function currentOrFail(): static
     {
         return static::current() ?? throw new TenancyNotInitializedException;
     }
