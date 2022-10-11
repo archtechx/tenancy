@@ -46,7 +46,7 @@ class Tenant extends Model implements Contracts\Tenant
         return $this->getAttribute($this->getTenantKeyName());
     }
 
-    public static function current(): self|null
+    public static function current(): static|null
     {
         return tenant();
     }
