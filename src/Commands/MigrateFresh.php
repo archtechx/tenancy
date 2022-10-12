@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 use Stancl\Tenancy\Concerns\HasATenantsOption;
 use Symfony\Component\Console\Input\InputOption;
 
-final class MigrateFresh extends Command
+class MigrateFresh extends Command
 {
     use HasATenantsOption;
 
