@@ -97,10 +97,9 @@ jobs:
       - name: Run php-cs-fixer
         run: $HOME/.composer/vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php
       - name: Commit changes from php-cs-fixer
-        uses: stefanzweifel/git-auto-commit-action@v4
+        uses: EndBug/add-and-commit@v5
         with:
-          branch: ${{ github.head_ref }}
-          commit_author: "PHP CS Fixer"
-          commit_user_email: "phpcsfixer@example.com"
-          commit_message: Fix code style (php-cs-fixer)
+          author_name: "PHP CS Fixer"
+          author_email: "phpcsfixer@example.com"
+          message: Fix code style (php-cs-fixer)
 
