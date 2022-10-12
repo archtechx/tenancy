@@ -99,6 +99,7 @@ jobs:
       - name: Commit changes from php-cs-fixer
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
+          branch: ${{ github.head_ref }}
           commit_author: "PHP CS Fixer"
           commit_user_email: "phpcsfixer@example.com"
           commit_message: Fix code style (php-cs-fixer)
