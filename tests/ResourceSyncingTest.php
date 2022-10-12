@@ -127,6 +127,9 @@ test('only the synced columns are updated in the central db', function () {
     ], ResourceUser::first()->getAttributes());
 });
 
+// This tests attribute list on the central side, and default values on the tenant side
+// Those two don't depend on each other, we're just testing having each option on each side
+// using tests that combine the two, to avoid having an excessively long and complex test suite
 test('sync resource creation works when central model provides attributes and resource model provides default values', function () {
     // when central model provides attributes => resoucre model will be created from the attribute values
     [$tenant1, $tenant2] = creareTenantsAndRunMigrations();
@@ -180,6 +183,9 @@ test('sync resource creation works when central model provides attributes and re
     expect($centralUser->foo)->toBe('bar');
 });
 
+// This tests default values on the central side, and attribute list on the tenant side
+// Those two don't depend on each other, we're just testing having each option on each side
+// using tests that combine the two, to avoid having an excessively long and complex test suite
 test('sync resource creation works when central model provides default values and resource model provides attributes', function () {
      // when central model provides default values => resource model will be created using the default values
     [$tenant1, $tenant2] = creareTenantsAndRunMigrations();
@@ -231,6 +237,10 @@ test('sync resource creation works when central model provides default values an
     expect($centralUser->role)->toBe('commenter');
 });
 
+
+// This tests mixed attribute list/defaults on the central side, and no specified attributes on the tenant side
+// Those two don't depend on each other, we're just testing having each option on each side
+// using tests that combine the two, to avoid having an excessively long and complex test suite
 test('sync resource creation works when central model provides mixture and resource model provides nothing using different schemas', function () {
     // when central model provides mix of attribute and default values => resource model will be created using the mix of attribute values and default values
     [$tenant1, $tenant2] = creareTenantsAndRunMigrationsForDifferentSchema();
@@ -285,6 +295,9 @@ test('sync resource creation works when central model provides mixture and resou
     expect($centralUser)->toBe($resourceUser);
 });
 
+// This tests no specified attributes on the central side, and mixed attribute list/defaults on the tenant side
+// Those two don't depend on each other, we're just testing having each option on each side
+// using tests that combine the two, to avoid having an excessively long and complex test suite
 test('sync resource creation works when central model provides nothing and resource model provides mixture using different schemas', function () {
     // when central model provides nothing => resoucre model will be 1:1 copy
     [$tenant1, $tenant2] = creareTenantsAndRunMigrationsForDifferentSchema();
