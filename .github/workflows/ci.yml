@@ -91,7 +91,7 @@ jobs:
     name: Code style (php-cs-fixer)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v9
         with:
           token: ${{ github.token }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
