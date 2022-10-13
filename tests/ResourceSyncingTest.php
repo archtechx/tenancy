@@ -132,7 +132,7 @@ test('only the synced columns are updated in the central db', function () {
 // using tests that combine the two, to avoid having an excessively long and complex test suite
 test('sync resource creation works when central model provides attributes and resource model provides default values', function () {
     // when central model provides attributes => resoucre model will be created from the attribute values
-    [$tenant1, $tenant2] = creareTenantsAndRunMigrations();
+    [$tenant1, $tenant2] = createTenantsAndRunMigrations();
 
     $centralUser = CentralUserProvidingAttributeNames::create([
         'global_id' => 'acme',
@@ -188,7 +188,7 @@ test('sync resource creation works when central model provides attributes and re
 // using tests that combine the two, to avoid having an excessively long and complex test suite
 test('sync resource creation works when central model provides default values and resource model provides attributes', function () {
      // when central model provides default values => resource model will be created using the default values
-    [$tenant1, $tenant2] = creareTenantsAndRunMigrations();
+    [$tenant1, $tenant2] = createTenantsAndRunMigrations();
 
     $centralUser = CentralUserProvidingDefaultValues::create([
         'global_id' => 'acme',
@@ -243,9 +243,9 @@ test('sync resource creation works when central model provides default values an
 // using tests that combine the two, to avoid having an excessively long and complex test suite
 test('sync resource creation works when central model provides mixture and resource model provides nothing using different schemas', function () {
     // when central model provides mix of attribute and default values => resource model will be created using the mix of attribute values and default values
-    [$tenant1, $tenant2] = creareTenantsAndRunMigrationsForDifferentSchema();
+    [$tenant1, $tenant2] = createTenantsAndRunMigrationsForDifferentSchema();
 
-    $centralUser = CentralUserProvidingMixtureForDifferentSchema::create([
+    $centralUser = CentralUserProvidingMixture::create([
         'global_id' => 'acme',
         'name' => 'John Doe',
         'email' => 'john@localhost',
@@ -283,7 +283,7 @@ test('sync resource creation works when central model provides mixture and resou
 
     tenancy()->end();
 
-    $centralUser = CentralUserProvidingMixtureForDifferentSchema::whereGlobalId('acmey')->first();
+    $centralUser = CentralUserProvidingMixture::whereGlobalId('acmey')->first();
     expect($resourceUser->getSyncedCreationAttributes())->toBeNull();
 
     $centralUser = $centralUser->toArray();
@@ -300,7 +300,7 @@ test('sync resource creation works when central model provides mixture and resou
 // using tests that combine the two, to avoid having an excessively long and complex test suite
 test('sync resource creation works when central model provides nothing and resource model provides mixture using different schemas', function () {
     // when central model provides nothing => resoucre model will be 1:1 copy
-    [$tenant1, $tenant2] = creareTenantsAndRunMigrationsForDifferentSchema();
+    [$tenant1, $tenant2] = createTenantsAndRunMigrationsForDifferentSchema();
 
     $centralUser = CentralUserForDifferentSchema::create([
         'global_id' => 'acme',
@@ -310,14 +310,14 @@ test('sync resource creation works when central model provides nothing and resou
     ]);
 
     $tenant1->run(function () {
-        expect(ResourceUserProvidingMixtureForDifferentSchema::all())->toHaveCount(0);
+        expect(ResourceUserProvidingMixture::all())->toHaveCount(0);
     });
 
     $centralUser->tenants()->attach('t1');
 
     expect($centralUser->getSyncedCreationAttributes())->toBeNull();
     $tenant1->run(function () use ($centralUser) {
-        $resourceUser = ResourceUserProvidingMixtureForDifferentSchema::first();
+        $resourceUser = ResourceUserProvidingMixture::first();
         expect($resourceUser)->not()->toBeNull();
         $resourceUser = $resourceUser->toArray();
         $centralUser = $centralUser->withoutRelations()->toArray();
@@ -331,7 +331,7 @@ test('sync resource creation works when central model provides nothing and resou
     tenancy()->initialize($tenant2);
 
     // Create the user in tenant DB
-    ResourceUserProvidingMixtureForDifferentSchema::create([
+    ResourceUserProvidingMixture::create([
         'global_id' => 'absd',
         'name' => 'John Doe',
         'email' => 'john@localhost',
@@ -761,7 +761,11 @@ function creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase()
     expect(ResourceUser::first()->role)->toBe('commenter');
 }
 
-function creareTenantsAndRunMigrations(): array
+/**
+ * Create two tenants and run migrations for those tenants.
+ * Also, add an extra column "foo" in central DB.
+ */
+function createTenantsAndRunMigrations(): array
 {
     [$tenant1, $tenant2] = [ResourceTenant::create(['id' => 't1']), ResourceTenant::create(['id' => 't2'])];
 
@@ -775,7 +779,11 @@ function creareTenantsAndRunMigrations(): array
     return [$tenant1, $tenant2];
 }
 
-function creareTenantsAndRunMigrationsForDifferentSchema(): array
+/**
+ * Create two tenants and run migrations (different table names and schemas) for those tenants.
+ * Also, migrate central migrations.
+ */
+function createTenantsAndRunMigrationsForDifferentSchema(): array
 {
     [$tenant1, $tenant2] = [ResourceTenantForDifferentSchema::create(['id' => 't1']), ResourceTenantForDifferentSchema::create(['id' => 't2'])];
 
@@ -788,7 +796,10 @@ function creareTenantsAndRunMigrationsForDifferentSchema(): array
     return [$tenant1, $tenant2];
 }
 
-function migrateTenantsResource(?string $path = null)
+/**
+ * Run tenant migrations using the tenants:migrate command.
+ */
+function migrateTenantsResource(?string $path = null): void
 {
     pest()->artisan('tenants:migrate', [
         '--path' => $path ?? __DIR__ . '/Etc/synced_resource_migrations/users',
@@ -1001,7 +1012,7 @@ class ResourceUserForDifferentSchema extends ResourceUser {
     }
 }
 
-class CentralUserProvidingMixtureForDifferentSchema extends CentralUserForDifferentSchema {
+class CentralUserProvidingMixture extends CentralUserForDifferentSchema {
 
     public function getSyncedCreationAttributes(): array
     {
@@ -1014,7 +1025,7 @@ class CentralUserProvidingMixtureForDifferentSchema extends CentralUserForDiffer
     }
 }
 
-class ResourceUserProvidingMixtureForDifferentSchema extends ResourceUserForDifferentSchema {
+class ResourceUserProvidingMixture extends ResourceUserForDifferentSchema {
     public function getSyncedCreationAttributes(): array
     {
         return [
