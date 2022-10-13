@@ -787,6 +787,7 @@ function createTenantsAndRunMigrationsForDifferentSchema(): array
 {
     [$tenant1, $tenant2] = [ResourceTenantForDifferentSchema::create(['id' => 't1']), ResourceTenantForDifferentSchema::create(['id' => 't2'])];
 
+    // run central user migrations
     pest()->artisan('migrate', [
         '--path' => __DIR__ . '/Etc/synced_resource_migrations/custom/central',
         '--realpath' => true,
