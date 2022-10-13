@@ -31,7 +31,6 @@ class TenancyServiceProvider extends ServiceProvider
             foreach ($this->app['config']['tenancy.features'] ?? [] as $feature) {
                 $this->app[$feature]->bootstrap($tenancy);
             }
-
             return $tenancy;
         });
 
@@ -49,7 +48,6 @@ class TenancyServiceProvider extends ServiceProvider
             if (method_exists($bootstrapper, '__constructStatic')) {
                 $bootstrapper::__constructStatic($this->app);
             }
-
             $this->app->singleton($bootstrapper);
         }
 
