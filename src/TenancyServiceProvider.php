@@ -73,7 +73,7 @@ class TenancyServiceProvider extends ServiceProvider
         });
 
         if ($this->app['config']['tenancy.database.drop_tenant_databases_on_migrate_fresh']) {
-            $this->app->extend('command.migrate.fresh', fn() => new Commands\MigrateFreshOverride);
+            $this->app->extend('command.migrate.fresh', fn () => new Commands\MigrateFreshOverride);
         }
     }
 
@@ -149,7 +149,7 @@ class TenancyServiceProvider extends ServiceProvider
     public function provides()
     {
         return [
-            'command.migrate.fresh'
+            'command.migrate.fresh',
         ];
     }
 }
