@@ -5,14 +5,11 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Illuminate\Cache\CacheManager;
-use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Domain;
 use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Enums\LogMode;
 use Stancl\Tenancy\Events\Contracts\TenancyEvent;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
@@ -74,6 +71,10 @@ class TenancyServiceProvider extends ServiceProvider
         $this->app->bind('globalCache', function ($app) {
             return new CacheManager($app);
         });
+
+        if ($this->app['config']['tenancy.database.drop_tenant_databases_on_migrate_fresh']) {
+            $this->app->extend('command.migrate.fresh', fn() => new Commands\MigrateFreshOverride);
+        }
     }
 
     /* Bootstrap services. */
@@ -92,6 +93,10 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\Down::class,
             Commands\Up::class,
         ]);
+
+        if ($this->app['config']['tenancy.database.drop_tenant_databases_on_migrate_fresh']) {
+            $this->commands(Commands\MigrateFreshOverride::class);
+        }
 
         $this->publishes([
             __DIR__ . '/../assets/config.php' => config_path('tenancy.php'),
@@ -129,22 +134,6 @@ class TenancyServiceProvider extends ServiceProvider
             }
         });
 
-        Event::listen(CommandStarting::class, function (CommandStarting $event) {
-            $tenantModel = tenancy()->model();
-
-            if ($event->command === 'migrate:fresh' && Schema::hasTable($tenantModel->getTable())) {
-                $tenantModel::all()->each(function (Tenant $tenant) {
-                    if (method_exists($tenant, 'domains')) {
-                        $tenant->domains()->delete();
-                    }
-
-                    if ($tenant instanceof TenantWithDatabase) {
-                        $tenant->delete();
-                    }
-                });
-            }
-        });
-
         $this->app->singleton('globalUrl', function ($app) {
             if ($app->bound(FilesystemTenancyBootstrapper::class)) {
                 $instance = clone $app['url'];
@@ -155,5 +144,12 @@ class TenancyServiceProvider extends ServiceProvider
 
             return $instance;
         });
+    }
+
+    public function provides()
+    {
+        return [
+            'command.migrate.fresh'
+        ];
     }
 }
