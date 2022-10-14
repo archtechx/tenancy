@@ -11,13 +11,7 @@ class MigrateFreshOverride extends FreshCommand
 {
     public function handle()
     {
-        tenancy()->model()::all()->each(function(TenantWithDatabase $tenant) {
-            if (method_exists($tenant, 'domains')) {
-                $tenant->domains()->delete();
-            }
-
-            $tenant->delete();
-        });
+        tenancy()->model()::all()->each->delete();
 
         return parent::handle();
     }
