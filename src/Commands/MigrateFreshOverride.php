@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Database\Console\Migrations\FreshCommand;
-use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
 class MigrateFreshOverride extends FreshCommand
 {
