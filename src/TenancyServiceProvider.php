@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Illuminate\Cache\CacheManager;
+use Illuminate\Database\Console\Migrations\FreshCommand;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
@@ -71,10 +72,6 @@ class TenancyServiceProvider extends ServiceProvider
         $this->app->bind('globalCache', function ($app) {
             return new CacheManager($app);
         });
-
-        if ($this->app['config']['tenancy.database.drop_tenant_databases_on_migrate_fresh']) {
-            $this->app->extend('command.migrate.fresh', fn () => new Commands\MigrateFreshOverride);
-        }
     }
 
     /* Bootstrap services. */
@@ -95,7 +92,7 @@ class TenancyServiceProvider extends ServiceProvider
         ]);
 
         if ($this->app['config']['tenancy.database.drop_tenant_databases_on_migrate_fresh']) {
-            $this->commands(Commands\MigrateFreshOverride::class);
+            $this->app->extend(FreshCommand::class, fn () => new Commands\MigrateFreshOverride);
         }
 
         $this->publishes([
@@ -144,12 +141,5 @@ class TenancyServiceProvider extends ServiceProvider
 
             return $instance;
         });
-    }
-
-    public function provides()
-    {
-        return [
-            'command.migrate.fresh',
-        ];
     }
 }
