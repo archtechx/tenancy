@@ -267,7 +267,9 @@ test('run command works when sub command asks questions and accepts arguments', 
     expect($user->email)->toBe('email@localhost');
 });
 
-test('migrate fresh command deletes tenant databases', function() {
+test('migrate fresh command deletes tenant databases based on the tenancy.database.drop_tenant_databases_on_migrate_fresh config value', function() {
+    config(['tenancy.database.drop_tenant_databases_on_migrate_fresh' => false]);
+
     /** @var Tenant[] $tenants */
     $tenants = [
         Tenant::create(),
@@ -275,16 +277,50 @@ test('migrate fresh command deletes tenant databases', function() {
         Tenant::create(),
     ];
 
+    Artisan::call('migrate:fresh', [
+        '--force' => true,
+        '--path' => __DIR__ . '/../assets/migrations',
+        '--realpath' => true,
+    ]);
+
+    $tenantDatabaseExists = fn(Tenant $tenant) => $tenant->database()->manager()->databaseExists($tenant->database()->getName());
+
     foreach ($tenants as $tenant) {
-        expect($tenant->database()->manager()->databaseExists($tenant->database()->getName()))->toBeTrue();
+        expect($tenantDatabaseExists($tenant))->toBeTrue();
     }
 
-    pest()->artisan('migrate:fresh');
+    pest()->artisan('migrate:fresh', [
+        '--force' => true,
+        '--path' => __DIR__ . '/../assets/migrations',
+        '--realpath' => true,
+    ]);
 
     foreach ($tenants as $tenant) {
-        expect($tenant->database()->manager()->databaseExists($tenant->database()->getName()))->toBeFalse();
+        expect($tenantDatabaseExists($tenant))->toBeTrue();
     }
-});
+
+    config(['tenancy.database.drop_tenant_databases_on_migrate_fresh' => true]);
+
+    $tenants = [
+        Tenant::create(),
+        Tenant::create(),
+        Tenant::create(),
+    ];
+
+    foreach ($tenants as $tenant) {
+        expect($tenantDatabaseExists($tenant))->toBeTrue();
+    }
+
+    pest()->artisan('migrate:fresh', [
+        '--force' => true,
+        '--path' => __DIR__ . '/../assets/migrations',
+        '--realpath' => true,
+    ]);
+
+    foreach ($tenants as $tenant) {
+        expect($tenantDatabaseExists($tenant))->toBeFalse();
+    }
+})->group('fresh');
 
 // todo@tests
 function runCommandWorks(): void
