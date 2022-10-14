@@ -8,12 +8,16 @@ use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
+use Stancl\Tenancy\Jobs\DeleteDomains;
 use Illuminate\Support\Facades\Artisan;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Jobs\DeleteDatabase;
 use Illuminate\Database\DatabaseManager;
 use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Events\TenantDeleted;
 use Stancl\Tenancy\Tests\Etc\TestSeeder;
+use Stancl\Tenancy\Events\DeletingTenant;
 use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
@@ -267,6 +271,20 @@ test('run command works when sub command asks questions and accepts arguments', 
 });
 
 test('migrate fresh command deletes tenant databases by default', function() {
+    Event::listen(
+        DeletingTenant::class,
+        JobPipeline::make([DeleteDomains::class])->send(function (DeletingTenant $event) {
+            return $event->tenant;
+        })->shouldBeQueued(false)->toListener()
+    );
+
+    Event::listen(
+        TenantDeleted::class,
+        JobPipeline::make([DeleteDatabase::class])->send(function (TenantDeleted $event) {
+            return $event->tenant;
+        })->shouldBeQueued(false)->toListener()
+    );
+
     /** @var Tenant[] $tenants */
     $tenants = [
         Tenant::create(),
@@ -277,7 +295,6 @@ test('migrate fresh command deletes tenant databases by default', function() {
     $tenantHasDatabase = fn (Tenant $tenant) => $tenant->database()->manager()->databaseExists($tenant->database()->getName());
 
     foreach ($tenants as $tenant) {
-        expect()->toBeTrue();
         expect($tenantHasDatabase($tenant))->toBeTrue();
     }
 
@@ -288,7 +305,6 @@ test('migrate fresh command deletes tenant databases by default', function() {
     ]);
 
     foreach ($tenants as $tenant) {
-        expect($tenant->exists())->toBeFalse();
         expect($tenantHasDatabase($tenant))->toBeFalse();
     }
 })->group('fresh');
