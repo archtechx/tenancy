@@ -10,7 +10,9 @@ class MigrateFreshOverride extends FreshCommand
 {
     public function handle()
     {
-        tenancy()->model()::all()->each->delete();
+        if (config('tenancy.database.drop_tenant_databases_on_migrate_fresh')) {
+            tenancy()->model()::cursor()->each->delete();
+        }
 
         return parent::handle();
     }

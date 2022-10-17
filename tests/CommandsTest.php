@@ -18,16 +18,11 @@ use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Events\TenantDeleted;
 use Stancl\Tenancy\Tests\Etc\TestSeeder;
 use Stancl\Tenancy\Events\DeletingTenant;
-use Stancl\Tenancy\TenancyServiceProvider;
 use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
 use Stancl\Tenancy\Events\TenancyInitialized;
-use Illuminate\Console\ContainerCommandLoader;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Illuminate\Contracts\Foundation\Application;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Illuminate\Database\Console\Migrations\FreshCommand;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
-use Symfony\Component\Console\CommandLoader\CommandLoaderInterface;
 
 
 beforeEach(function () {
@@ -276,9 +271,8 @@ test('run command works when sub command asks questions and accepts arguments', 
     expect($user->email)->toBe('email@localhost');
 });
 
-test('migrate fresh command only deletes tenant databases if drop_tenant_databases_on_migrate_fresh is true', function() {
-    Event::listen(
-        DeletingTenant::class,
+test('migrate fresh command only deletes tenant databases if drop_tenant_databases_on_migrate_fresh is true', function (bool $dropTenantDBsOnMigrateFresh) {
+    Event::listen(DeletingTenant::class,
         JobPipeline::make([DeleteDomains::class])->send(function (DeletingTenant $event) {
             return $event->tenant;
         })->shouldBeQueued(false)->toListener()
@@ -291,9 +285,8 @@ test('migrate fresh command only deletes tenant databases if drop_tenant_databas
         })->shouldBeQueued(false)->toListener()
     );
 
-
-    config(['tenancy.database.drop_tenant_databases_on_migrate_fresh' => false]);
-    app()->forgetInstance(FreshCommand::class);
+    config(['tenancy.database.drop_tenant_databases_on_migrate_fresh' => $dropTenantDBsOnMigrateFresh]);
+    $shouldHaveDBAfterMigrateFresh = ! $dropTenantDBsOnMigrateFresh;
 
     /** @var Tenant[] $tenants */
     $tenants = [
@@ -315,32 +308,9 @@ test('migrate fresh command only deletes tenant databases if drop_tenant_databas
     ]);
 
     foreach ($tenants as $tenant) {
-        expect($tenantHasDatabase($tenant))->toBeTrue();
+        expect($tenantHasDatabase($tenant))->toBe($shouldHaveDBAfterMigrateFresh);
     }
-
-    config(['tenancy.database.drop_tenant_databases_on_migrate_fresh' => true]);
-    app()->forgetInstance(FreshCommand::class);
-
-    $tenants = [
-        Tenant::create(),
-        Tenant::create(),
-        Tenant::create(),
-    ];
-
-    foreach ($tenants as $tenant) {
-        expect($tenantHasDatabase($tenant))->toBeTrue();
-    }
-
-    pest()->artisan('migrate:fresh', [
-        '--force' => true,
-        '--path' => __DIR__ . '/../assets/migrations',
-        '--realpath' => true,
-    ]);
-
-    foreach ($tenants as $tenant) {
-        expect($tenantHasDatabase($tenant))->toBeFalse();
-    }
-});
+})->with([true, false]);
 
 // todo@tests
 function runCommandWorks(): void
