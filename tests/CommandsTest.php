@@ -2,24 +2,28 @@
 
 declare(strict_types=1);
 
-use Illuminate\Database\DatabaseManager;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Stancl\Tenancy\Tests\Etc\User;
+use Stancl\JobPipeline\JobPipeline;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
-use Stancl\JobPipeline\JobPipeline;
-use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Jobs\DeleteDomains;
+use Illuminate\Support\Facades\Artisan;
 use Stancl\Tenancy\Events\TenancyEnded;
-use Stancl\Tenancy\Events\TenancyInitialized;
-use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Jobs\DeleteDatabase;
+use Illuminate\Database\DatabaseManager;
+use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Events\TenantDeleted;
+use Stancl\Tenancy\Tests\Etc\TestSeeder;
+use Stancl\Tenancy\Events\DeletingTenant;
+use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
+use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
-use Stancl\Tenancy\Tests\Etc\Tenant;
-use Stancl\Tenancy\Tests\Etc\TestSeeder;
-use Stancl\Tenancy\Tests\Etc\User;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+
 
 beforeEach(function () {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
@@ -266,6 +270,47 @@ test('run command works when sub command asks questions and accepts arguments', 
     expect($user->name)->toBe('Abrar');
     expect($user->email)->toBe('email@localhost');
 });
+
+test('migrate fresh command only deletes tenant databases if drop_tenant_databases_on_migrate_fresh is true', function (bool $dropTenantDBsOnMigrateFresh) {
+    Event::listen(DeletingTenant::class,
+        JobPipeline::make([DeleteDomains::class])->send(function (DeletingTenant $event) {
+            return $event->tenant;
+        })->shouldBeQueued(false)->toListener()
+    );
+
+    Event::listen(
+        TenantDeleted::class,
+        JobPipeline::make([DeleteDatabase::class])->send(function (TenantDeleted $event) {
+            return $event->tenant;
+        })->shouldBeQueued(false)->toListener()
+    );
+
+    config(['tenancy.database.drop_tenant_databases_on_migrate_fresh' => $dropTenantDBsOnMigrateFresh]);
+    $shouldHaveDBAfterMigrateFresh = ! $dropTenantDBsOnMigrateFresh;
+
+    /** @var Tenant[] $tenants */
+    $tenants = [
+        Tenant::create(),
+        Tenant::create(),
+        Tenant::create(),
+    ];
+
+    $tenantHasDatabase = fn (Tenant $tenant) => $tenant->database()->manager()->databaseExists($tenant->database()->getName());
+
+    foreach ($tenants as $tenant) {
+        expect($tenantHasDatabase($tenant))->toBeTrue();
+    }
+
+    pest()->artisan('migrate:fresh', [
+        '--force' => true,
+        '--path' => __DIR__ . '/../assets/migrations',
+        '--realpath' => true,
+    ]);
+
+    foreach ($tenants as $tenant) {
+        expect($tenantHasDatabase($tenant))->toBe($shouldHaveDBAfterMigrateFresh);
+    }
+})->with([true, false]);
 
 // todo@tests
 function runCommandWorks(): void
