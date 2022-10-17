@@ -91,9 +91,13 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\Up::class,
         ]);
 
-        if ($this->app['config']['tenancy.database.drop_tenant_databases_on_migrate_fresh']) {
-            $this->app->extend(FreshCommand::class, fn () => new Commands\MigrateFreshOverride);
-        }
+        $this->app->extend(FreshCommand::class, function (FreshCommand $originalCommand) {
+            if ($this->app['config']['tenancy.database.drop_tenant_databases_on_migrate_fresh']) {
+                return new Commands\MigrateFreshOverride;
+            }
+
+            return $originalCommand;
+        });
 
         $this->publishes([
             __DIR__ . '/../assets/config.php' => config_path('tenancy.php'),
