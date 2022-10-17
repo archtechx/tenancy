@@ -33,13 +33,18 @@ class InitializeTenancyByRequestData extends IdentificationMiddleware
 
     protected function getPayload(Request $request): ?string
     {
-        $tenant = null;
         if (static::$header && $request->hasHeader(static::$header)) {
-            $tenant = $request->header(static::$header);
-        } elseif (static::$queryParameter && $request->has(static::$queryParameter)) {
-            $tenant = $request->get(static::$queryParameter);
+            return $request->header(static::$header);
         }
 
-        return $tenant;
+        if (static::$queryParameter && $request->has(static::$queryParameter)) {
+            return $request->get(static::$queryParameter);
+        }
+
+        if (static::$header && $request->hasCookie(static::$header)) {
+            return $request->cookie(static::$header);
+        }
+
+        return null;
     }
 }

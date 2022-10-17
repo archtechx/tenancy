@@ -26,13 +26,11 @@ afterEach(function () {
 test('header identification works', function () {
     InitializeTenancyByRequestData::$header = 'X-Tenant';
     $tenant = Tenant::create();
-    $tenant2 = Tenant::create();
 
     $this
         ->withoutExceptionHandling()
-        ->get('test', [
-            'X-Tenant' => $tenant->id,
-        ])
+        ->withHeader('X-Tenant', $tenant->id)
+        ->get('test')
         ->assertSee($tenant->id);
 });
 
@@ -40,10 +38,20 @@ test('query parameter identification works', function () {
     InitializeTenancyByRequestData::$queryParameter = 'tenant';
 
     $tenant = Tenant::create();
-    $tenant2 = Tenant::create();
 
     $this
         ->withoutExceptionHandling()
         ->get('test?tenant=' . $tenant->id)
+        ->assertSee($tenant->id);
+});
+
+test('cookie identification works', function () {
+    InitializeTenancyByRequestData::$header = 'X-Tenant';
+    $tenant = Tenant::create();
+
+    $this
+        ->withoutExceptionHandling()
+        ->withUnencryptedCookie('X-Tenant', $tenant->id)
+        ->get('test',)
         ->assertSee($tenant->id);
 });
