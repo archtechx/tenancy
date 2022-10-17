@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Database\Concerns\MaintenanceMode;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\CheckTenantForMaintenanceMode;
@@ -30,6 +31,20 @@ test('tenants can be in maintenance mode', function () {
 
     tenancy()->end(); // End tenancy before making a request
     pest()->get('http://acme.localhost/foo')->assertStatus(200);
+});
+
+test('maintenance mode events are fired', function () {
+    $tenant = MaintenanceTenant::create();
+
+    Event::fake();
+
+    $tenant->putDownForMaintenance();
+
+    Event::assertDispatched(\Stancl\Tenancy\Events\TenantMaintenanceModeEnabled::class);
+
+    $tenant->bringUpFromMaintenance();
+
+    Event::assertDispatched(\Stancl\Tenancy\Events\TenantMaintenanceModeDisabled::class);
 });
 
 test('tenants can be put into maintenance mode using artisan commands', function() {
