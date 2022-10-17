@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 namespace Stancl\Tenancy\Database\Concerns;
+
 use Stancl\Tenancy\Events\TenantMaintenanceModeDisabled;
 use Stancl\Tenancy\Events\TenantMaintenanceModeEnabled;
 
