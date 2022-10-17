@@ -7,7 +7,7 @@ namespace Stancl\Tenancy\Events\Contracts;
 use Illuminate\Queue\SerializesModels;
 use Stancl\Tenancy\Contracts\Tenant;
 
-abstract class TenantEvent
+abstract class TenantEvent // todo we could add a feature to JobPipeline that automatically gets data for the send() from here
 {
     use SerializesModels;
 
