@@ -20,6 +20,7 @@ beforeEach(function () {
 
 afterEach(function () {
     InitializeTenancyByRequestData::$header = 'X-Tenant';
+    InitializeTenancyByRequestData::$cookie = 'X-Tenant';
     InitializeTenancyByRequestData::$queryParameter = 'tenant';
 });
 
@@ -46,7 +47,7 @@ test('query parameter identification works', function () {
 });
 
 test('cookie identification works', function () {
-    InitializeTenancyByRequestData::$header = 'X-Tenant';
+    InitializeTenancyByRequestData::$cookie = 'X-Tenant';
     $tenant = Tenant::create();
 
     $this
