@@ -12,7 +12,7 @@ use Stancl\Tenancy\Events\PendingTenantPulled;
 use Stancl\Tenancy\Events\PullingPendingTenant;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
-test('a tenant is correctly identified as pending', function (){
+test('tenants are correctly identified as pending', function (){
     Tenant::createPending();
 
     expect(Tenant::onlyPending()->count())->toBe(1);
