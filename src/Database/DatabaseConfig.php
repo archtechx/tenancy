@@ -148,8 +148,7 @@ class DatabaseConfig
      */
     public function purgeHostConnection(): void
     {
-        $tenantHostConnectionName = $this->getTenantHostConnectionName();
-        DB::purge($tenantHostConnectionName);
+        DB::purge($this->getTenantHostConnectionName());
     }
 
     /**
