@@ -104,7 +104,7 @@ class DatabaseConfig
 
     public function getTenantHostConnectionName(): string
     {
-        return config('tenancy.database.tenant_host_connection_name');
+        return config('tenancy.database.tenant_host_connection_name', 'tenant_host_connection');
     }
 
     /**
