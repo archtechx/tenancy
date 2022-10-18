@@ -168,7 +168,7 @@ test('install command works', function () {
     }
 
     pest()->artisan('tenancy:install')
-        ->expectsConfirmation('Would you like to show your support by starring the project on Github ?', 'no')
+        ->expectsConfirmation('Would you like to show your support by starring the project on GitHub?', 'no')
         ->assertExitCode(0);
     expect(base_path('routes/tenant.php'))->toBeFile();
     expect(base_path('config/tenancy.php'))->toBeFile();
