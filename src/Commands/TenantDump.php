@@ -32,7 +32,7 @@ class TenantDump extends DumpCommand
         }
 
         if ($tenant === null) {
-            $this->components->error("Could not find tenant to use for dumping the schema.");
+            $this->components->error('Could not find tenant to use for dumping the schema.');
 
             return 1;
         }

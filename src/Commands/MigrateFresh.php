@@ -36,7 +36,7 @@ class MigrateFresh extends Command
                 ]));
             });
 
-            $this->components->task('Migrating', function () use ($tenant){
+            $this->components->task('Migrating', function () use ($tenant) {
                 $this->callSilent('tenants:migrate', [
                     '--tenants' => [$tenant->getTenantKey()],
                     '--force' => true,

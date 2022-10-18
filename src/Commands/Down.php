@@ -37,9 +37,7 @@ class Down extends DownCommand
     /**
      * Get the payload to be placed in the "down" file. This
      * payload is the same as the original function
-     * but without the 'template' option
-     *
-     * @return array
+     * but without the 'template' option.
      */
     protected function getDownDatabasePayload(): array
     {
