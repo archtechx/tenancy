@@ -23,7 +23,7 @@ class Install extends Command
         );
 
         $this->step(
-            name: 'Publishing routes [routes/tenant.php]',
+            name: 'Publishing routes',
             tag: 'routes',
             file: 'routes/tenant.php',
         );
