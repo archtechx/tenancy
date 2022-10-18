@@ -145,6 +145,9 @@ class DatabaseConfig
 
     /**
      * Purge host database connection.
+     *
+     * Its possible database has previous tenant connection.
+     * This will clean up the previous connection before creating it for the current tenant.
      */
     public function purgeHostConnection(): void
     {
