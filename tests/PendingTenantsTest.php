@@ -24,7 +24,7 @@ test('tenants are correctly identified as pending', function (){
     expect(Tenant::onlyPending()->count())->toBe(0);
 });
 
-test('pending trait imports query scopes', function () {
+test('pending trait adds query scopes', function () {
     Tenant::createPending();
     Tenant::create();
     Tenant::create();
@@ -36,7 +36,7 @@ test('pending trait imports query scopes', function () {
 
 });
 
-test('pending tenants are created and deleted from the commands', function () {
+test('pending tenants can be created and deleted using commands', function () {
     config(['tenancy.pending.count' => 4]);
 
     Artisan::call(CreatePendingTenants::class);
@@ -48,7 +48,7 @@ test('pending tenants are created and deleted from the commands', function () {
     expect(Tenant::onlyPending()->count())->toBe(0);
 });
 
-test('clear pending tenants command only delete pending tenants older than', function () {
+test('CreatePendingTenants command can have an older than constraint', function () {
     config(['tenancy.pending.count' => 2]);
 
     Artisan::call(CreatePendingTenants::class);
@@ -62,12 +62,12 @@ test('clear pending tenants command only delete pending tenants older than', fun
     expect(Tenant::onlyPending()->count())->toBe(1);
 });
 
-test('clear pending tenants command cannot run with both time constraints', function () {
+test('CreatePendingTenants command cannot run with both time constraints', function () {
     pest()->artisan('tenants:pending-clear --older-than-days=2 --older-than-hours=2')
         ->assertFailed();
 });
 
-test('clear pending tenants command all option overrides config', function () {
+test('CreatePendingTenants commands all option overrides any config constraints', function () {
     Tenant::createPending();
     Tenant::createPending();
 
@@ -110,7 +110,7 @@ test('tenancy can create if none are pending', function () {
     expect(Tenant::all()->count())->toBe(1);
 });
 
-test('pending tenants global scope config can include or exclude', function () {
+test('the include in queries global scope can include pending tenants in all queries', function () {
     Tenant::createPending();
 
     config(['tenancy.pending.include_in_queries' => false]);
@@ -123,7 +123,7 @@ test('pending tenants global scope config can include or exclude', function () {
     Tenant::all();
 });
 
-test('pending events are triggerred', function () {
+test('pending events are dispatched', function () {
     Event::fake([
         CreatingPendingTenant::class,
         PendingTenantCreated::class,
