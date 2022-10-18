@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Commands;
 
+use Closure;
 use Illuminate\Console\Command;
 
 class Install extends Command
@@ -14,60 +15,110 @@ class Install extends Command
 
     public function handle(): int
     {
-        $this->newLine();
+        $this->step(
+            name: 'Publishing config file',
+            tag: 'config',
+            file: 'config/tenancy.php',
+            newLineBefore: true,
+        );
 
-        $this->components->task('Publishing config file [config/tenancy.php]', function () {
-            $this->callSilent('vendor:publish', [
-                '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
-                '--tag' => 'config',
-            ]);
-        });
+        $this->step(
+            name: 'Publishing routes [routes/tenant.php]',
+            tag: 'routes',
+            file: 'routes/tenant.php',
+        );
 
-        $this->newLine();
+        $this->step(
+            name: 'Publishing service provider',
+            tag: 'providers',
+            file: 'app/Providers/TenancyServiceProvider.php',
+        );
 
-        if (! file_exists(base_path('routes/tenant.php'))) {
-            $this->components->task('Publishing routes [routes/tenant.php]', function () {
-                $this->callSilent('vendor:publish', [
-                    '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
-                    '--tag' => 'routes',
-                ]);
-            });
-            $this->newLine();
-        } else {
-            $this->components->warn('File [routes/tenant.php] already exists.');
-        }
+        $this->step(
+            name: 'Publishing migrations',
+            tag: 'migrations',
+            files: [
+                'database/migrations/2019_09_15_000010_create_tenants_table.php',
+                'database/migrations/2019_09_15_000020_create_domains_table.php',
+            ],
+            warning: 'Migrations already exist',
+        );
 
-        $this->components->task('Publishing service provider [app/Providers/TenancyServiceProvider.php]', function () {
-            $this->callSilent('vendor:publish', [
-                '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
-                '--tag' => 'providers',
-            ]);
-        });
-
-        $this->newLine();
-
-        $this->components->task('Publishing migrations', function () {
-            $this->callSilent('vendor:publish', [
-                '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
-                '--tag' => 'migrations',
-            ]);
-        });
-
-        $this->newLine();
-
-        if (! is_dir(database_path('migrations/tenant'))) {
-            $this->components->task('Creating [database/migrations/tenant] folder', function () {
-                mkdir(database_path('migrations/tenant'));
-            });
-        } else {
-            $this->components->warn('Folder [database/migrations/tenant] already exists.');
-        }
+        $this->step(
+            name: 'Creating [database/migrations/tenant] folder',
+            task: fn () => mkdir(database_path('migrations/tenant')),
+            unless: is_dir(database_path('migrations/tenant')),
+            warning: 'Folder [database/migrations/tenant] already exists.',
+            newLineAfter: true,
+        );
 
         $this->components->info('✨️ Tenancy for Laravel successfully installed.');
 
         $this->askForSupport();
 
         return 0;
+    }
+
+    /**
+     * Run a step of the installation process.
+     *
+     * @param string $name The name of the step.
+     * @param Closure|null $task The task code.
+     * @param bool $unless Condition specifying when the task should NOT run.
+     * @param string|null $warning Warning shown when the $unless condition is true.
+     * @param string|null $file Name of the file being added.
+     * @param string|null $tag The tag being published.
+     * @param array|null $files Names of files being added.
+     * @param bool $newLineBefore Should a new line be printed after the step.
+     * @param bool $newLineAfter Should a new line be printed after the step.
+     */
+    protected function step(
+        string $name,
+        Closure $task = null,
+        bool $unless = false,
+        string $warning = null,
+        string $file = null,
+        string $tag = null,
+        array $files = null,
+        bool $newLineBefore = false,
+        bool $newLineAfter = false,
+    ): void {
+        if ($file) {
+            $name .= " [$file]"; // Append clickable path to the task name
+            $unless = file_exists(base_path($file)); // Make the condition a check for the file's existence
+            $warning = "File [$file] already exists."; // Make the warning a message about the file already existing
+        }
+
+        if ($tag) {
+            $task = fn () => $this->callSilent('vendor:publish', [
+                '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
+                '--tag' => $tag,
+            ]);
+        }
+
+        if ($files) {
+            // Show a warning if any of the files already exist
+            $unless = count(array_filter($files, fn ($file) => file_exists(base_path($file)))) !== 0;
+        }
+
+        if (! $unless) {
+            if ($newLineBefore) {
+                $this->newLine();
+            }
+
+            $this->components->task($name, $task ?? fn () => null);
+
+            if ($files) {
+                // Print out a clickable list of the added files
+                $this->components->bulletList(array_map(fn (string $file) => "[$file]", $files));
+            }
+
+            if ($newLineAfter) {
+                $this->newLine();
+            }
+        } else {
+            $this->components->warn($warning);
+        }
     }
 
     /** If the user accepts, opens the GitHub project in the browser. */

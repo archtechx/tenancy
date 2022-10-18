@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\Contracts\Tenant;
 
@@ -22,36 +23,27 @@ class TenantList extends Command
 
         foreach ($tenants as $tenant) {
             /** @var Model&Tenant $tenant */
-            $this->components->twoColumnDetail($this->tenantCli($tenant), $this->domainsCli($tenant));
+            $this->components->twoColumnDetail($this->tenantCLI($tenant), $this->domainsCLI($tenant->domains));
         }
+
+        $this->newLine();
 
         return 0;
     }
 
-    /**
-     * Generate the visual cli output for the tenant name
-     *
-     * @param  Model  $tenant
-     * @return string
-     */
-    protected function tenantCli(Model $tenant): string
+    /** Generate the visual CLI output for the tenant name. */
+    protected function tenantCLI(Model&Tenant $tenant): string
     {
         return "<fg=yellow>{$tenant->getTenantKeyName()}: {$tenant->getTenantKey()}</>";
     }
 
-    /**
-     * Generate the visual cli output for the domain names
-     *
-     * @param  Model  $tenant
-     * @return string|null
-     */
-    protected function domainsCli(Model $tenant): ?string
+    /** Generate the visual CLI output for the domain names. */
+    protected function domainsCLI(?Collection $domains): ?string
     {
-        if (! $tenant->domains) {
-
+        if (! $domains) {
             return null;
         }
 
-        return "<fg=blue;options=bold>{$tenant->domains->pluck('domain')->implode(' ; ')}</>";
+        return "<fg=blue;options=bold>{$domains->pluck('domain')->implode(' / ')}</>";
     }
 }
