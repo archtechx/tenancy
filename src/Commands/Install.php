@@ -10,13 +10,13 @@ class Install extends Command
 {
     protected $signature = 'tenancy:install';
 
-    protected $description = 'Install stancl/tenancy.';
+    protected $description = 'Install Tenancy for Laravel.';
 
     public function handle(): int
     {
         $this->newLine();
 
-        $this->components->task('Publishing config file', function () {
+        $this->components->task('Publishing config file [config/tenancy.php]', function () {
             $this->callSilent('vendor:publish', [
                 '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
                 '--tag' => 'config',
@@ -25,8 +25,8 @@ class Install extends Command
 
         $this->newLine();
 
-        if (!file_exists(base_path('routes/tenant.php'))) {
-            $this->components->task('Publishing routes', function () {
+        if (! file_exists(base_path('routes/tenant.php'))) {
+            $this->components->task('Publishing routes [routes/tenant.php]', function () {
                 $this->callSilent('vendor:publish', [
                     '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
                     '--tag' => 'routes',
@@ -34,11 +34,10 @@ class Install extends Command
             });
             $this->newLine();
         } else {
-            $this->components->warn('File [routes/tenant.php] already existe.');
+            $this->components->warn('File [routes/tenant.php] already exists.');
         }
 
-
-        $this->components->task('Publishing providers', function () {
+        $this->components->task('Publishing service provider [app/Providers/TenancyServiceProvider.php]', function () {
             $this->callSilent('vendor:publish', [
                 '--provider' => 'Stancl\Tenancy\TenancyServiceProvider',
                 '--tag' => 'providers',
@@ -56,29 +55,25 @@ class Install extends Command
 
         $this->newLine();
 
-        if (!is_dir(database_path('migrations/tenant'))) {
-            $this->components->task('Creating database/migrations/tenant folder', function () {
+        if (! is_dir(database_path('migrations/tenant'))) {
+            $this->components->task('Creating [database/migrations/tenant] folder', function () {
                 mkdir(database_path('migrations/tenant'));
             });
         } else {
-            $this->components->warn('Folder [database/migrations/tenant] already existe.');
+            $this->components->warn('Folder [database/migrations/tenant] already exists.');
         }
 
-        $this->components->info('✨️ stancl/tenancy installed successfully.');
+        $this->components->info('✨️ Tenancy for Laravel successfully installed.');
 
         $this->askForSupport();
 
         return 0;
     }
 
-    /**
-     * If the user accepts, opens the GitHub project in the browser
-     *
-     * @return void
-     */
+    /** If the user accepts, opens the GitHub project in the browser. */
     public function askForSupport(): void
     {
-        if ($this->components->confirm("Would you like to show your support by starring the project on Github ?", true)) {
+        if ($this->components->confirm('Would you like to show your support by starring the project on GitHub?', true)) {
             if (PHP_OS_FAMILY === 'Darwin') {
                 exec('open https://github.com/archtechx/tenancy');
             }
