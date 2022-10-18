@@ -59,12 +59,18 @@ test('tenants can be put into maintenance mode using artisan commands', function
 
     pest()->get('http://acme.localhost/foo')->assertStatus(200);
 
+    pest()->artisan('tenants:down')
+        ->expectsOutputToContain('Tenants are now in maintenance mode.')
+        ->assertExitCode(0);
+
     Artisan::call('tenants:down');
 
     tenancy()->end(); // End tenancy before making a request
     pest()->get('http://acme.localhost/foo')->assertStatus(503);
 
-    Artisan::call('tenants:up');
+    pest()->artisan('tenants:up')
+        ->expectsOutputToContain('Tenants are now out of maintenance mode.')
+        ->assertExitCode(0);
 
     tenancy()->end(); // End tenancy before making a request
     pest()->get('http://acme.localhost/foo')->assertStatus(200);

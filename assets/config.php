@@ -2,16 +2,14 @@
 
 declare(strict_types=1);
 
-use Stancl\Tenancy\Database\Models\Domain;
-use Stancl\Tenancy\Database\Models\Tenant;
 use Stancl\Tenancy\Middleware;
 use Stancl\Tenancy\Resolvers;
 
 return [
-    'tenant_model' => Tenant::class,
-    'id_generator' => Stancl\Tenancy\UUIDGenerator::class,
+    'tenant_model' => Stancl\Tenancy\Database\Models\Tenant::class,
+    'domain_model' => Stancl\Tenancy\Database\Models\Domain::class,
 
-    'domain_model' => Domain::class,
+    'id_generator' => Stancl\Tenancy\UUIDGenerator::class,
 
     /**
      * The list of domains hosting your central app.

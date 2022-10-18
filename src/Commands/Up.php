@@ -15,13 +15,15 @@ class Up extends Command
 
     protected $description = 'Put tenants out of maintenance mode.';
 
-    public function handle(): void
+    public function handle(): int
     {
         tenancy()->runForMultiple($this->getTenants(), function ($tenant) {
-            $this->line("Tenant: {$tenant['id']}");
+            $this->components->info("Tenant: {$tenant->getTenantKey()}");
             $tenant->bringUpFromMaintenance();
         });
 
-        $this->comment('Tenants are now out of maintenance mode.');
+        $this->components->info('Tenants are now out of maintenance mode.');
+
+        return 0;
     }
 }
