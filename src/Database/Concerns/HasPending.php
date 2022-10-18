@@ -49,6 +49,7 @@ trait HasPending
         return ! is_null($this->pending_since);
     }
 
+    /** Create a pending tenant. */
     public static function createPending($attributes = []): Tenant
     {
         $tenant = static::create($attributes);
@@ -66,12 +67,20 @@ trait HasPending
         return $tenant;
     }
 
-    public static function pullPendingTenant(bool $firstOrCreate = false): ?Tenant
+    /** Pull a pending tenant. */
+    public static function pullPendingTenant(): Tenant
+    {
+        return static::pullPendingTenantFromPool(true);
+    }
+
+    /** Try to pull a tenant from the pool of pending tenants. */
+    public static function pullPendingTenantFromPool(bool $firstOrCreate = false): ?Tenant
     {
         if (! static::onlyPending()->exists()) {
             if (! $firstOrCreate) {
                 return null;
             }
+
             static::createPending();
         }
 
