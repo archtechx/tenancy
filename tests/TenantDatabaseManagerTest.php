@@ -228,7 +228,7 @@ test('tenant database can be created and deleted on a foreign server', function 
 test('tenant database can be created on a foreign server by using the host from tenant config', function () {
     config([
         'tenancy.database.managers.mysql' => MySQLDatabaseManager::class,
-        'tenancy.database.template_tenant_connection' => 'mysql',
+        'tenancy.database.template_tenant_connection' => 'mysql', // This will be overridden by tenancy_db_host
         'database.connections.mysql2' => [
             'driver' => 'mysql',
             'host' => 'mysql2',
@@ -270,24 +270,6 @@ test('tenant database can be created on a foreign server by using the username a
     config([
         'tenancy.database.managers.mysql' => MySQLDatabaseManager::class,
         'tenancy.database.template_tenant_connection' => 'mysql',
-        'database.connections.mysql' => [
-            'driver' => 'mysql',
-            'host' => 'mysql',
-            'port' => 3306,
-            'database' => 'main',
-            'username' => '', // provide using tenant config
-            'password' => '', // provide using tenant config
-            'unix_socket' => env('DB_SOCKET', ''),
-            'charset' => 'utf8mb4',
-            'collation' => 'utf8mb4_unicode_ci',
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'strict' => true,
-            'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
-        ],
     ]);
 
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
