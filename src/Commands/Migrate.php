@@ -44,7 +44,7 @@ class Migrate extends MigrateCommand
         }
 
         tenancy()->runForMultiple($this->getTenants(), function ($tenant) {
-            $this->line("Tenant: {$tenant->getTenantKey()}");
+            $this->components->info("Tenant: {$tenant->getTenantKey()}");
 
             event(new MigratingDatabase($tenant));
 

@@ -8,12 +8,16 @@ use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
+use Stancl\Tenancy\Jobs\DeleteDomains;
 use Illuminate\Support\Facades\Artisan;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Jobs\DeleteDatabase;
 use Illuminate\Database\DatabaseManager;
 use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Events\TenantDeleted;
 use Stancl\Tenancy\Tests\Etc\TestSeeder;
+use Stancl\Tenancy\Events\DeletingTenant;
 use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
@@ -162,7 +166,9 @@ test('install command works', function () {
         mkdir($dir, 0777, true);
     }
 
-    pest()->artisan('tenancy:install');
+    pest()->artisan('tenancy:install')
+        ->expectsConfirmation('Would you like to show your support by starring the project on GitHub?', 'no')
+        ->assertExitCode(0);
     expect(base_path('routes/tenant.php'))->toBeFile();
     expect(base_path('config/tenancy.php'))->toBeFile();
     expect(app_path('Providers/TenancyServiceProvider.php'))->toBeFile();
@@ -205,7 +211,8 @@ test('run command with array of tenants works', function () {
 test('link command works', function() {
     $tenantId1 = Tenant::create()->getTenantKey();
     $tenantId2 = Tenant::create()->getTenantKey();
-    pest()->artisan('tenants:link');
+    pest()->artisan('tenants:link')
+        ->assertExitCode(0);
 
     $this->assertDirectoryExists(storage_path("tenant-$tenantId1/app/public"));
     $this->assertEquals(storage_path("tenant-$tenantId1/app/public/"), readlink(public_path("public-$tenantId1")));
@@ -215,7 +222,7 @@ test('link command works', function() {
 
     pest()->artisan('tenants:link', [
         '--remove' => true,
-    ]);
+    ])->assertExitCode(0);
 
     $this->assertDirectoryDoesNotExist(public_path("public-$tenantId1"));
     $this->assertDirectoryDoesNotExist(public_path("public-$tenantId2"));
@@ -247,8 +254,9 @@ test('run command works when sub command asks questions and accepts arguments', 
 
     pest()->artisan("tenants:run --tenants=$id 'user:addwithname Abrar' ")
         ->expectsQuestion('What is your email?', 'email@localhost')
-        ->expectsOutput("Tenant: $id")
-        ->expectsOutput("User created: Abrar(email@localhost)");
+        ->expectsOutputToContain("Tenant: $id.")
+        ->expectsOutput("User created: Abrar(email@localhost)")
+        ->assertExitCode(0);
 
     // Assert we are in central context
     expect(tenancy()->initialized)->toBeFalse();
@@ -261,6 +269,47 @@ test('run command works when sub command asks questions and accepts arguments', 
     expect($user->name)->toBe('Abrar');
     expect($user->email)->toBe('email@localhost');
 });
+
+test('migrate fresh command only deletes tenant databases if drop_tenant_databases_on_migrate_fresh is true', function (bool $dropTenantDBsOnMigrateFresh) {
+    Event::listen(DeletingTenant::class,
+        JobPipeline::make([DeleteDomains::class])->send(function (DeletingTenant $event) {
+            return $event->tenant;
+        })->shouldBeQueued(false)->toListener()
+    );
+
+    Event::listen(
+        TenantDeleted::class,
+        JobPipeline::make([DeleteDatabase::class])->send(function (TenantDeleted $event) {
+            return $event->tenant;
+        })->shouldBeQueued(false)->toListener()
+    );
+
+    config(['tenancy.database.drop_tenant_databases_on_migrate_fresh' => $dropTenantDBsOnMigrateFresh]);
+    $shouldHaveDBAfterMigrateFresh = ! $dropTenantDBsOnMigrateFresh;
+
+    /** @var Tenant[] $tenants */
+    $tenants = [
+        Tenant::create(),
+        Tenant::create(),
+        Tenant::create(),
+    ];
+
+    $tenantHasDatabase = fn (Tenant $tenant) => $tenant->database()->manager()->databaseExists($tenant->database()->getName());
+
+    foreach ($tenants as $tenant) {
+        expect($tenantHasDatabase($tenant))->toBeTrue();
+    }
+
+    pest()->artisan('migrate:fresh', [
+        '--force' => true,
+        '--path' => __DIR__ . '/../assets/migrations',
+        '--realpath' => true,
+    ]);
+
+    foreach ($tenants as $tenant) {
+        expect($tenantHasDatabase($tenant))->toBe($shouldHaveDBAfterMigrateFresh);
+    }
+})->with([true, false]);
 
 // todo@tests
 function runCommandWorks(): void

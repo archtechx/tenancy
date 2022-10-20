@@ -58,6 +58,8 @@ class TenancyServiceProvider extends ServiceProvider
                     return $event->tenant;
                 })->shouldBeQueued(false), // `false` by default, but you probably want to make this `true` for production.
             ],
+            Events\TenantMaintenanceModeEnabled::class => [],
+            Events\TenantMaintenanceModeDisabled::class => [],
 
             // Pending tenant events
             Events\CreatingPendingTenant::class => [],
