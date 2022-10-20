@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Database\Concerns;
 
+use Carbon\Carbon;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Events\CreatingPendingTenant;
 use Stancl\Tenancy\Events\PendingTenantCreated;
@@ -11,7 +12,7 @@ use Stancl\Tenancy\Events\PendingTenantPulled;
 use Stancl\Tenancy\Events\PullingPendingTenant;
 
 /**
- * @property $pending_since
+ * @property Carbon $pending_since
  *
  * @method static static|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder withPending(bool $withPending = true)
  * @method static static|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder onlyPending()
