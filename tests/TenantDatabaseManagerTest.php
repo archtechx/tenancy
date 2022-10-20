@@ -267,7 +267,7 @@ test('tenant database can be created on a foreign server by using the host from 
     expect($manager->databaseExists($name))->toBeTrue();
 });
 
-test('tenant database can be created using host and credentials from the tenant config', closure: function () {
+test('tenant database can be created using connection key from the tenant config for permission controller manager', function () {
     config([
         'tenancy.database.managers.mysql' => PermissionControlledMySQLDatabaseManager::class,
         'tenancy.database.template_tenant_connection' => 'mysql',
