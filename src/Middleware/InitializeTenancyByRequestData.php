@@ -12,6 +12,7 @@ use Stancl\Tenancy\Tenancy;
 class InitializeTenancyByRequestData extends IdentificationMiddleware
 {
     public static string $header = 'X-Tenant';
+    public static string $cookie = 'X-Tenant';
     public static string $queryParameter = 'tenant';
     public static ?Closure $onFail = null;
 
@@ -33,13 +34,18 @@ class InitializeTenancyByRequestData extends IdentificationMiddleware
 
     protected function getPayload(Request $request): ?string
     {
-        $tenant = null;
         if (static::$header && $request->hasHeader(static::$header)) {
-            $tenant = $request->header(static::$header);
-        } elseif (static::$queryParameter && $request->has(static::$queryParameter)) {
-            $tenant = $request->get(static::$queryParameter);
+            return $request->header(static::$header);
         }
 
-        return $tenant;
+        if (static::$queryParameter && $request->has(static::$queryParameter)) {
+            return $request->get(static::$queryParameter);
+        }
+
+        if (static::$cookie && $request->hasCookie(static::$cookie)) {
+            return $request->cookie(static::$cookie);
+        }
+
+        return null;
     }
 }

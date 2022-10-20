@@ -19,30 +19,32 @@ class Run extends Command
     protected $signature = 'tenants:run {commandname : The artisan command.}
                             {--tenants=* : The tenant(s) to run the command for. Default: all}';
 
-    public function handle(): void
+    public function handle(): int
     {
         $argvInput = $this->argvInput();
 
         tenancy()->runForMultiple($this->getTenants(), function ($tenant) use ($argvInput) {
-            $this->line("Tenant: {$tenant->getTenantKey()}");
+            $this->components->info("Tenant: {$tenant->getTenantKey()}");
 
             $this->getLaravel()
                 ->make(Kernel::class)
                 ->handle($argvInput, new ConsoleOutput);
         });
+
+        return 0;
     }
 
     protected function argvInput(): ArgvInput
     {
-        /** @var string $commandname */
-        $commandname = $this->argument('commandname');
+        /** @var string $commandName */
+        $commandName = $this->argument('commandname');
 
         // Convert string command to array
-        $subcommand = explode(' ', $commandname);
+        $subCommand = explode(' ', $commandName);
 
         // Add "artisan" as first parameter because ArgvInput expects "artisan" as first parameter and later removes it
-        array_unshift($subcommand, 'artisan');
+        array_unshift($subCommand, 'artisan');
 
-        return new ArgvInput($subcommand);
+        return new ArgvInput($subCommand);
     }
 }
