@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -263,6 +264,54 @@ test('tenant database can be created on a foreign server by using the host from 
     $manager = $tenant->database()->manager();
 
     $manager->setConnection('mysql2');
+    expect($manager->databaseExists($name))->toBeTrue();
+});
+
+test('tenant database can be created using host and credentials from the tenant config', closure: function () {
+    config([
+        'tenancy.database.managers.mysql' => PermissionControlledMySQLDatabaseManager::class,
+        'tenancy.database.template_tenant_connection' => 'mysql',
+        'database.connections.mysql2' => [
+            'driver' => 'mysql',
+            'host' => 'mysql2',
+            'port' => 3306,
+            'database' => 'main',
+            'username' => 'root',
+            'password' => 'password',
+            'unix_socket' => env('DB_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+    ]);
+
+    // Create a new and random database user with privileges to use with mysql2 connection
+    $username = 'dbuser' . Str::random(4);
+    DB::statement("CREATE USER `{$username}`@`%` IDENTIFIED BY 'password'");
+    DB::connection('mysql2')->statement("GRANT ALL PRIVILEGES ON *.* TO `{$username}`@`%` identified by 'password' WITH GRANT OPTION;");
+    DB::connection('mysql2')->statement("FLUSH PRIVILEGES;");
+    config(['database.connections.mysql2.username' => $username]);
+
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    $name = 'foo' . Str::random(8);
+    $tenant = Tenant::create([
+        'tenancy_db_name' => $name,
+        'tenancy_db_connection' => 'mysql2',
+    ]);
+
+    /** @var MySQLDatabaseManager $manager */
+    $manager = $tenant->database()->manager();
+
+    //$manager->setConnection('mysql2');
     expect($manager->databaseExists($name))->toBeTrue();
 });
 

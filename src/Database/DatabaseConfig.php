@@ -132,8 +132,9 @@ class DatabaseConfig
 
         if ($this->manager() instanceof Contracts\ManagesDatabaseUsers) {
             // We're removing the username and password because user with these credentials is not created yet
-            unset($config['username']);
-            unset($config['password']);
+            // If you need to provide username and password when using PermissionControlledMySQLDatabaseManager,
+            // consider creating a new connection and use it as `tenancy_db_connection` tenant config key
+            unset($config['username'], $config['password']);
         }
 
         if (! $config) {
