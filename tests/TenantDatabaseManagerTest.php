@@ -267,7 +267,7 @@ test('tenant database can be created on a foreign server by using the host from 
     expect($manager->databaseExists($name))->toBeTrue();
 });
 
-test('tenant database can be created using connection key from the tenant config for permission controller manager', function () {
+test('database credentials can be provided to PermissionControlledMySQLDatabaseManager by specifying a connection', function () {
     config([
         'tenancy.database.managers.mysql' => PermissionControlledMySQLDatabaseManager::class,
         'tenancy.database.template_tenant_connection' => 'mysql',
@@ -291,12 +291,15 @@ test('tenant database can be created using connection key from the tenant config
         ],
     ]);
 
-    // Create a new and random database user with privileges to use with mysql2 connection
+    // Create a new random database user with privileges to use with mysql2 connection
     $username = 'dbuser' . Str::random(4);
-    DB::statement("CREATE USER `{$username}`@`%` IDENTIFIED BY 'password'");
-    DB::connection('mysql2')->statement("GRANT ALL PRIVILEGES ON *.* TO `{$username}`@`%` identified by 'password' WITH GRANT OPTION;");
-    DB::connection('mysql2')->statement("FLUSH PRIVILEGES;");
+    $password = Str::random('8');
+    $mysql2DB = DB::connection('mysql2');
+    $mysql2DB->statement("CREATE USER `{$username}`@`%` IDENTIFIED BY '{$password}';");
+    $mysql2DB->statement("GRANT ALL PRIVILEGES ON *.* TO `{$username}`@`%` identified by '{$password}' WITH GRANT OPTION;");
+    $mysql2DB->statement("FLUSH PRIVILEGES;");
     config(['database.connections.mysql2.username' => $username]);
+    config(['database.connections.mysql2.password' => $password]);
 
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
@@ -306,16 +309,18 @@ test('tenant database can be created using connection key from the tenant config
     $tenant = Tenant::create([
         'tenancy_db_name' => $name,
         'tenancy_db_connection' => 'mysql2',
+        'tenancy_db_username' => $username = 'user_for_new_db' . Str::random(4),
+        'tenancy_db_password' => Str::random(8),
     ]);
 
-    /** @var MySQLDatabaseManager $manager */
+    /** @var PermissionControlledMySQLDatabaseManager $manager */
     $manager = $tenant->database()->manager();
 
-    //$manager->setConnection('mysql2');
+    expect($manager->userExists($username))->toBeTrue();
     expect($manager->databaseExists($name))->toBeTrue();
 });
 
-test('tenant database can be created on a foreign server by using the username and password from tenant config', function () {
+test('tenant database can be created by using the username and password from tenant config', function () {
     config([
         'tenancy.database.managers.mysql' => MySQLDatabaseManager::class,
         'tenancy.database.template_tenant_connection' => 'mysql',
