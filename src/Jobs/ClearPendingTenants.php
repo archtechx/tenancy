@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Jobs;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Stancl\Tenancy\Commands\ClearPendingTenants as ClearPendingTenantsCommand;
 
 class ClearPendingTenants implements ShouldQueue
 {
@@ -22,6 +23,6 @@ class ClearPendingTenants implements ShouldQueue
      */
     public function handle()
     {
-        Artisan::call(\Stancl\Tenancy\Commands\ClearPendingTenants::class);
+        Artisan::call(ClearPendingTenantsCommand::class);
     }
 }
