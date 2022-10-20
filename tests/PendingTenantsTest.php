@@ -141,3 +141,64 @@ test('pending events are dispatched', function () {
     Event::assertDispatched(PullingPendingTenant::class);
     Event::assertDispatched(PendingTenantPulled::class);
 });
+
+test('commands do not run for pending tenants if tenancy.pending.include_in_queries is false and the with pending option does not get passed', function() {
+    config(['tenancy.pending.include_in_queries' => false]);
+
+    $tenants = collect([
+        Tenant::create(),
+        Tenant::create(),
+        Tenant::createPending(),
+        Tenant::createPending(),
+    ]);
+
+    pest()->artisan('tenants:migrate --with-pending');
+
+    $artisan = pest()->artisan("tenants:run 'foo foo --b=bar --c=xyz'");
+
+    $pendingTenants = $tenants->filter->pending();
+    $readyTenants = $tenants->reject->pending();
+
+    $pendingTenants->each(fn($tenant) => $artisan->doesntExpectOutputToContain("Tenant: {$tenant->getTenantKey()}"));
+    $readyTenants->each(fn($tenant) => $artisan->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}"));
+
+    $artisan->assertExitCode(0);
+});
+
+test('commands run for pending tenants too if tenancy.pending.include_in_queries is true', function() {
+    config(['tenancy.pending.include_in_queries' => true]);
+
+    $tenants = collect([
+        Tenant::create(),
+        Tenant::create(),
+        Tenant::createPending(),
+        Tenant::createPending(),
+    ]);
+
+    pest()->artisan('tenants:migrate --with-pending');
+
+    $artisan = pest()->artisan("tenants:run 'foo foo --b=bar --c=xyz'");
+
+    $tenants->each(fn($tenant) => $artisan->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}"));
+
+    $artisan->assertExitCode(0);
+});
+
+test('commands run for pending tenants too if the with pending option is passed', function() {
+    config(['tenancy.pending.include_in_queries' => false]);
+
+    $tenants = collect([
+        Tenant::create(),
+        Tenant::create(),
+        Tenant::createPending(),
+        Tenant::createPending(),
+    ]);
+
+    pest()->artisan('tenants:migrate --with-pending');
+
+    $artisan = pest()->artisan("tenants:run 'foo foo --b=bar --c=xyz' --with-pending");
+
+    $tenants->each(fn($tenant) => $artisan->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}"));
+
+    $artisan->assertExitCode(0);
+});
