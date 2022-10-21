@@ -62,7 +62,7 @@ class ClearPendingTenants extends Command
             ->query()
             ->onlyPending()
             ->when($originalExpirationDate->notEqualTo($expirationDate), function (Builder $query) use ($expirationDate) {
-                $query->where('data->pending_since', '<', $expirationDate->timestamp);
+                $query->where($query->getModel('pending_since'), '<', $expirationDate->timestamp);
             })
             ->get()
             ->each // Trigger the model events by deleting the tenants one by one
