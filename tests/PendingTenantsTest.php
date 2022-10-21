@@ -95,7 +95,9 @@ test('tenancy can check for pending tenants', function () {
 });
 
 test('tenancy can pull a pending tenant', function () {
-    expect(Tenant::pullPending())->toBeInstanceOf(Tenant::class);
+    Tenant::createPending();
+
+    expect(Tenant::pullPendingFromPool())->toBeInstanceOf(Tenant::class);
 });
 
 test('pulling a tenant from the pending tenant pool removes it from the pool', function () {
