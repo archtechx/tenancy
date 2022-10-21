@@ -69,13 +69,13 @@ trait HasPending
     }
 
     /** Pull a pending tenant. */
-    public static function pullPendingTenant(): Tenant
+    public static function pullPending(): Tenant
     {
-        return static::pullPendingTenantFromPool(true);
+        return static::pullPendingFromPool(true);
     }
 
     /** Try to pull a tenant from the pool of pending tenants. */
-    public static function pullPendingTenantFromPool(bool $firstOrCreate = false): ?Tenant
+    public static function pullPendingFromPool(bool $firstOrCreate = false): ?Tenant
     {
         if (! static::onlyPending()->exists()) {
             if (! $firstOrCreate) {

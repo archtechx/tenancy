@@ -95,17 +95,17 @@ test('tenancy can check for pending tenants', function () {
 });
 
 test('tenancy can pull a pending tenant', function () {
-    expect(Tenant::pullPendingTenant())->toBeNull();
+    expect(Tenant::pullPending())->toBeNull();
 
     Tenant::createPending();
 
-    expect(Tenant::pullPendingTenant(true))->toBeInstanceOf(Tenant::class);
+    expect(Tenant::pullPending())->toBeInstanceOf(Tenant::class);
 });
 
 test('tenancy can create if none are pending', function () {
     expect(Tenant::all()->count())->toBe(0);
 
-    Tenant::pullPendingTenant(true);
+    Tenant::pullPending();
 
     expect(Tenant::all()->count())->toBe(1);
 });
@@ -136,7 +136,7 @@ test('pending events are dispatched', function () {
     Event::assertDispatched(CreatingPendingTenant::class);
     Event::assertDispatched(PendingTenantCreated::class);
 
-    Tenant::pullPendingTenant();
+    Tenant::pullPending();
 
     Event::assertDispatched(PullingPendingTenant::class);
     Event::assertDispatched(PendingTenantPulled::class);
