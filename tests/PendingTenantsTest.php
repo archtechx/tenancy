@@ -110,7 +110,7 @@ test('pulling a tenant from the pending tenant pool removes it from the pool', f
     expect(Tenant::onlyPending()->count())->toEqual(0);
 });
 
-test('a new tenant can get created while pulling a pending tenant from the pool if the pool is empty', function () {
+test('a new tenant gets created while pulling a pending tenant if the pending pool is empty', function () {
     expect(Tenant::all()->count())->toBe(0);
 
     Tenant::pullPending();
