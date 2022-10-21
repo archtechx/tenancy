@@ -25,7 +25,7 @@ class PendingScope implements Scope
     public function apply(Builder $builder, Model $model)
     {
         $builder->when(! config('tenancy.pending.include_in_queries'), function (Builder $builder) {
-            $builder->whereNull('data->pending_since');
+            $builder->whereNull($builder->getModel()->getColumnForQuery('pending_since'));
         });
     }
 
@@ -65,8 +65,8 @@ class PendingScope implements Scope
     {
         $builder->macro('withoutPending', function (Builder $builder) {
             $builder->withoutGlobalScope($this)
-                ->whereNull('data->pending_since')
-                ->orWhereNull('data');
+                ->whereNull($builder->getModel()->getColumnForQuery('pending_since'))
+                ->orWhereNull($builder->getModel()->getDataColumn());
 
             return $builder;
         });
@@ -80,7 +80,7 @@ class PendingScope implements Scope
     protected function addOnlyPending(Builder $builder)
     {
         $builder->macro('onlyPending', function (Builder $builder) {
-            $builder->withoutGlobalScope($this)->whereNotNull('data->pending_since');
+            $builder->withoutGlobalScope($this)->whereNotNull($builder->getModel()->getColumnForQuery('pending_since'));
 
             return $builder;
         });
