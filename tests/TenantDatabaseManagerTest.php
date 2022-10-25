@@ -309,14 +309,14 @@ test('database credentials can be provided to PermissionControlledMySQLDatabaseM
     $tenant = Tenant::create([
         'tenancy_db_name' => $name,
         'tenancy_db_connection' => 'mysql2',
-        'tenancy_db_username' => $username = 'user_for_new_db' . Str::random(4),
+        'tenancy_db_username' => $usernameForNewDB = 'user_for_new_db' . Str::random(4),
         'tenancy_db_password' => Str::random(8),
     ]);
 
     /** @var PermissionControlledMySQLDatabaseManager $manager */
     $manager = $tenant->database()->manager();
 
-    expect($manager->userExists($username))->toBeTrue();
+    expect($manager->userExists($usernameForNewDB))->toBeTrue();
     expect($manager->databaseExists($name))->toBeTrue();
 });
 
