@@ -321,20 +321,32 @@ test('database credentials can be provided to PermissionControlledMySQLDatabaseM
 });
 
 test('tenant database can be created by using the username and password from tenant config', function () {
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
     config([
         'tenancy.database.managers.mysql' => MySQLDatabaseManager::class,
         'tenancy.database.template_tenant_connection' => 'mysql',
     ]);
 
-    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
-        return $event->tenant;
-    })->toListener());
+    // Create a new random database user with privileges to use with `mysql` connection
+    $username = 'dbuser' . Str::random(4);
+    $password = Str::random('8');
+    $mysqlDB = DB::connection('mysql');
+    $mysqlDB->statement("CREATE USER `{$username}`@`%` IDENTIFIED BY '{$password}';");
+    $mysqlDB->statement("GRANT ALL PRIVILEGES ON *.* TO `{$username}`@`%` identified by '{$password}' WITH GRANT OPTION;");
+    $mysqlDB->statement("FLUSH PRIVILEGES;");
+
+    // Remove `mysql` credentials to make sure we will be using the credentials from the tenant config
+    config(['database.connections.mysql.username' => null]);
+    config(['database.connections.mysql.password' => null]);
 
     $name = 'foo' . Str::random(8);
     $tenant = Tenant::create([
         'tenancy_db_name' => $name,
-        'tenancy_db_username' => 'root',
-        'tenancy_db_password' => 'password',
+        'tenancy_db_username' => $username,
+        'tenancy_db_password' => $password,
     ]);
 
     /** @var MySQLDatabaseManager $manager */
