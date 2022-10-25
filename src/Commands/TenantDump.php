@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Commands;
 
-use Stancl\Tenancy\Contracts\Tenant;
 use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Database\Console\DumpCommand;
-use Symfony\Component\Console\Input\InputOption;
 use Illuminate\Database\ConnectionResolverInterface;
+use Illuminate\Database\Console\DumpCommand;
+use Stancl\Tenancy\Contracts\Tenant;
+use Symfony\Component\Console\Input\InputOption;
 
 class TenantDump extends DumpCommand
 {
