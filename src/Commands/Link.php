@@ -23,7 +23,7 @@ class Link extends Command
 
     protected $description = 'Create or remove tenant symbolic links.';
 
-    public function handle(): void
+    public function handle(): int
     {
         $tenants = $this->getTenants();
 
@@ -35,14 +35,18 @@ class Link extends Command
             }
         } catch (Exception $exception) {
             $this->error($exception->getMessage());
+
+            return 1;
         }
+
+        return 0;
     }
 
     protected function removeLinks(LazyCollection $tenants): void
     {
         RemoveStorageSymlinksAction::handle($tenants);
 
-        $this->info('The links have been removed.');
+        $this->components->info('The links have been removed.');
     }
 
     protected function createLinks(LazyCollection $tenants): void
@@ -53,6 +57,6 @@ class Link extends Command
             (bool) ($this->option('force') ?? false),
         );
 
-        $this->info('The links have been created.');
+        $this->components->info('The links have been created.');
     }
 }

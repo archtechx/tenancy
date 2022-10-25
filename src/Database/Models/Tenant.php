@@ -10,6 +10,7 @@ use Stancl\Tenancy\Contracts;
 use Stancl\Tenancy\Database\Concerns;
 use Stancl\Tenancy\Database\TenantCollection;
 use Stancl\Tenancy\Events;
+use Stancl\Tenancy\Exceptions\TenancyNotInitializedException;
 
 /**
  * @property string|int $id
@@ -43,6 +44,17 @@ class Tenant extends Model implements Contracts\Tenant
     public function getTenantKey(): int|string
     {
         return $this->getAttribute($this->getTenantKeyName());
+    }
+
+    public static function current(): static|null
+    {
+        return tenant();
+    }
+
+    /** @throws TenancyNotInitializedException */
+    public static function currentOrFail(): static
+    {
+        return static::current() ?? throw new TenancyNotInitializedException;
     }
 
     public function newCollection(array $models = []): TenantCollection

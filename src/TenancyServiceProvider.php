@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Illuminate\Cache\CacheManager;
+use Illuminate\Database\Console\Migrations\FreshCommand;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
@@ -89,6 +90,10 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\Down::class,
             Commands\Up::class,
         ]);
+
+        $this->app->extend(FreshCommand::class, function () {
+            return new Commands\MigrateFreshOverride;
+        });
 
         $this->publishes([
             __DIR__ . '/../assets/config.php' => config_path('tenancy.php'),

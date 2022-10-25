@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Database\Concerns\MaintenanceMode;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\CheckTenantForMaintenanceMode;
@@ -32,6 +33,20 @@ test('tenants can be in maintenance mode', function () {
     pest()->get('http://acme.localhost/foo')->assertStatus(200);
 });
 
+test('maintenance mode events are fired', function () {
+    $tenant = MaintenanceTenant::create();
+
+    Event::fake();
+
+    $tenant->putDownForMaintenance();
+
+    Event::assertDispatched(\Stancl\Tenancy\Events\TenantMaintenanceModeEnabled::class);
+
+    $tenant->bringUpFromMaintenance();
+
+    Event::assertDispatched(\Stancl\Tenancy\Events\TenantMaintenanceModeDisabled::class);
+});
+
 test('tenants can be put into maintenance mode using artisan commands', function() {
     Route::get('/foo', function () {
         return 'bar';
@@ -44,12 +59,18 @@ test('tenants can be put into maintenance mode using artisan commands', function
 
     pest()->get('http://acme.localhost/foo')->assertStatus(200);
 
+    pest()->artisan('tenants:down')
+        ->expectsOutputToContain('Tenants are now in maintenance mode.')
+        ->assertExitCode(0);
+
     Artisan::call('tenants:down');
 
     tenancy()->end(); // End tenancy before making a request
     pest()->get('http://acme.localhost/foo')->assertStatus(503);
 
-    Artisan::call('tenants:up');
+    pest()->artisan('tenants:up')
+        ->expectsOutputToContain('Tenants are now out of maintenance mode.')
+        ->assertExitCode(0);
 
     tenancy()->end(); // End tenancy before making a request
     pest()->get('http://acme.localhost/foo')->assertStatus(200);

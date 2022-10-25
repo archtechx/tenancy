@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Database\Contracts\StatefulTenantDatabaseManager;
 use Stancl\Tenancy\Database\DatabaseManager;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
@@ -37,7 +38,10 @@ test('databases can be created and deleted', function ($driver, $databaseManager
     $name = 'db' . pest()->randomString();
 
     $manager = app($databaseManager);
-    $manager->setConnection($driver);
+
+    if ($manager instanceof StatefulTenantDatabaseManager) {
+        $manager->setConnection($driver);
+    }
 
     expect($manager->databaseExists($name))->toBeFalse();
 

@@ -102,3 +102,4 @@ jobs:
           author_name: "PHP CS Fixer"
           author_email: "phpcsfixer@example.com"
           message: Fix code style (php-cs-fixer)
+

@@ -195,7 +195,9 @@ class DatabaseConfig
         /** @var Contracts\TenantDatabaseManager $databaseManager */
         $databaseManager = app($databaseManagers[$driver]);
 
-        $databaseManager->setConnection($this->getTemplateConnectionName());
+        if ($databaseManager instanceof Contracts\StatefulTenantDatabaseManager) {
+            $databaseManager->setConnection($this->getTemplateConnectionName());
+        }
 
         return $databaseManager;
     }
