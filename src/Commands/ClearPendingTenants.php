@@ -43,7 +43,7 @@ class ClearPendingTenants extends Command
             $olderThanHours = $this->option('older-than-hours');
 
             if ($olderThanDays && $olderThanHours) {
-                $this->line("<options=bold,reverse;fg=red> Cannot use '--older-than-days' and '--older-than-hours' together \n");
+                $this->line("<options=bold,reverse;fg=red> Cannot use '--older-than-days' and '--older-than-hours' together \n"); // todo@cli refactor all of these styled command outputs to use $this->components
                 $this->line('Please, choose only one of these options.');
 
                 return 1; // Exit code for failure
