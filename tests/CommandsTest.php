@@ -120,6 +120,39 @@ test('dump command works', function () {
     expect('tests/Etc/tenant-schema-test.dump')->toBeFile();
 });
 
+test('tenant dump file gets created as tenant-schema.dump in the database schema folder by default', function() {
+    config(['tenancy.migration_parameters.--schema-path' => $schemaPath = database_path('schema/tenant-schema.dump')]);
+
+    $tenant = Tenant::create();
+    Artisan::call('tenants:migrate');
+
+    tenancy()->initialize($tenant);
+
+    Artisan::call('tenants:dump');
+
+    expect($schemaPath)->toBeFile();
+    unlink($schemaPath);
+});
+
+test('migrate command uses the correct schema path by default', function () {
+    config(['tenancy.migration_parameters.--schema-path' => 'tests/Etc/tenant-schema.dump']);
+    $tenant = Tenant::create();
+
+    expect(Schema::hasTable('schema_users'))->toBeFalse();
+    expect(Schema::hasTable('users'))->toBeFalse();
+
+    Artisan::call('tenants:migrate');
+
+    expect(Schema::hasTable('schema_users'))->toBeFalse();
+    expect(Schema::hasTable('users'))->toBeFalse();
+
+    tenancy()->initialize($tenant);
+
+    // Check for both tables to see if missing migrations also get executed
+    expect(Schema::hasTable('schema_users'))->toBeTrue();
+    expect(Schema::hasTable('users'))->toBeTrue();
+});
+
 test('rollback command works', function () {
     $tenant = Tenant::create();
     Artisan::call('tenants:migrate');
