@@ -49,7 +49,7 @@ test('databases can be created and deleted', function ($driver, $databaseManager
     expect($manager->databaseExists($name))->toBeTrue();
     $manager->deleteDatabase($tenant);
     expect($manager->databaseExists($name))->toBeFalse();
-})->with('database_manager_provider');
+})->with('database_managers');
 
 test('dbs can be created when another driver is used for the central db', function () {
     expect(config('database.default'))->toBe('central');
@@ -298,6 +298,9 @@ test('database credentials can be provided to PermissionControlledMySQLDatabaseM
     $mysql2DB->statement("CREATE USER `{$username}`@`%` IDENTIFIED BY '{$password}';");
     $mysql2DB->statement("GRANT ALL PRIVILEGES ON *.* TO `{$username}`@`%` identified by '{$password}' WITH GRANT OPTION;");
     $mysql2DB->statement("FLUSH PRIVILEGES;");
+    
+    DB::purge('mysql2'); // forget the mysql2 connection so that it uses the new credentials the next time
+
     config(['database.connections.mysql2.username' => $username]);
     config(['database.connections.mysql2.password' => $password]);
 
@@ -339,6 +342,8 @@ test('tenant database can be created by using the username and password from ten
     $mysqlDB->statement("CREATE USER `{$username}`@`%` IDENTIFIED BY '{$password}';");
     $mysqlDB->statement("GRANT ALL PRIVILEGES ON *.* TO `{$username}`@`%` identified by '{$password}' WITH GRANT OPTION;");
     $mysqlDB->statement("FLUSH PRIVILEGES;");
+    
+    DB::purge('mysql2'); // forget the mysql2 connection so that it uses the new credentials the next time
 
     // Remove `mysql` credentials to make sure we will be using the credentials from the tenant config
     config(['database.connections.mysql.username' => null]);
@@ -380,7 +385,7 @@ test('path used by sqlite manager can be customized', function () {
 });
 
 // Datasets
-dataset('database_manager_provider', [
+dataset('database_managers', [
     ['mysql', MySQLDatabaseManager::class],
     ['mysql', PermissionControlledMySQLDatabaseManager::class],
     ['sqlite', SQLiteDatabaseManager::class],
