@@ -216,13 +216,14 @@ test('tenant database can be created and deleted on a foreign server', function 
     /** @var PermissionControlledMySQLDatabaseManager $manager */
     $manager = $tenant->database()->manager();
 
+    expect($manager->databaseExists($name))->toBeTrue(); // mysql2
+
     $manager->setConnection('mysql');
-    expect($manager->databaseExists($name))->toBeFalse();
+    expect($manager->databaseExists($name))->toBeFalse(); // check that the DB doesn't exist in 'mysql'
 
-    $manager->setConnection('mysql2');
-    expect($manager->databaseExists($name))->toBeTrue();
-
+    $manager->setConnection('mysql2'); // set the connection back
     $manager->deleteDatabase($tenant);
+
     expect($manager->databaseExists($name))->toBeFalse();
 });
 
@@ -263,7 +264,6 @@ test('tenant database can be created on a foreign server by using the host from 
     /** @var MySQLDatabaseManager $manager */
     $manager = $tenant->database()->manager();
 
-    $manager->setConnection('mysql2');
     expect($manager->databaseExists($name))->toBeTrue();
 });
 
@@ -321,6 +321,7 @@ test('database credentials can be provided to PermissionControlledMySQLDatabaseM
     /** @var PermissionControlledMySQLDatabaseManager $manager */
     $manager = $tenant->database()->manager();
 
+    expect($manager->database()->getConfig('username'))->toBe($username); // user created for the HOST connection
     expect($manager->userExists($usernameForNewDB))->toBeTrue();
     expect($manager->databaseExists($name))->toBeTrue();
 });
@@ -359,6 +360,7 @@ test('tenant database can be created by using the username and password from ten
     /** @var MySQLDatabaseManager $manager */
     $manager = $tenant->database()->hostManager();
 
+    expect($manager->database()->getConfig('username'))->toBe($username); // user created for the HOST connection
     expect($manager->databaseExists($name))->toBeTrue();
 });
 
@@ -381,7 +383,7 @@ test('path used by sqlite manager can be customized', function () {
         'tenancy_db_connection' => 'sqlite',
     ]);
 
-    expect(file_exists( $customPath . '/' . $name))->toBeTrue();
+    expect(file_exists($customPath . '/' . $name))->toBeTrue();
 });
 
 // Datasets
