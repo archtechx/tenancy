@@ -22,6 +22,10 @@ class TenantDump extends DumpCommand
 
     public function handle(ConnectionResolverInterface $connections, Dispatcher $dispatcher): int
     {
+        if (is_null($this->option('path'))) {
+            $this->input->setOption('path', database_path('schema/tenant-schema.dump'));
+        }
+
         $tenant = $this->option('tenant')
             ?? tenant()
             ?? $this->ask('What tenant do you want to dump the schema for?')
