@@ -306,11 +306,13 @@ test('database credentials can be provided to PermissionControlledMySQLDatabaseM
     })->toListener());
 
     $name = 'foo' . Str::random(8);
+    $usernameForNewDB = 'user_for_new_db' . Str::random(4);
+    $passwordForNewDB = Str::random(8);
     $tenant = Tenant::create([
         'tenancy_db_name' => $name,
         'tenancy_db_connection' => 'mysql2',
-        'tenancy_db_username' => $usernameForNewDB = 'user_for_new_db' . Str::random(4),
-        'tenancy_db_password' => Str::random(8),
+        'tenancy_db_username' => $usernameForNewDB,
+        'tenancy_db_password' => $passwordForNewDB,
     ]);
 
     /** @var PermissionControlledMySQLDatabaseManager $manager */
