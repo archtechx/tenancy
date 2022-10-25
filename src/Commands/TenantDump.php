@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Commands;
 
-use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Database\ConnectionResolverInterface;
-use Illuminate\Database\Console\DumpCommand;
 use Stancl\Tenancy\Contracts\Tenant;
+use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Database\Console\DumpCommand;
 use Symfony\Component\Console\Input\InputOption;
+use Illuminate\Database\ConnectionResolverInterface;
 
 class TenantDump extends DumpCommand
 {
@@ -22,6 +22,10 @@ class TenantDump extends DumpCommand
 
     public function handle(ConnectionResolverInterface $connections, Dispatcher $dispatcher): int
     {
+        if (is_null($this->option('path'))) {
+            $this->input->setOption('path', config('tenancy.migration_parameters.--schema-path'));
+        }
+
         $tenant = $this->option('tenant')
             ?? tenant()
             ?? $this->ask('What tenant do you want to dump the schema for?')
