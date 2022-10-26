@@ -26,6 +26,10 @@ use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 
 
 beforeEach(function () {
+    if (file_exists($schemaPath = tenantSchemaPath())) {
+        unlink($schemaPath);
+    }
+
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
     })->toListener());
@@ -136,7 +140,6 @@ test('tenant dump file gets created as tenant-schema.dump in the database schema
     Artisan::call('tenants:dump');
 
     expect($schemaPath)->toBeFile();
-    unlink($schemaPath);
 });
 
 test('migrate command uses the correct schema path by default', function () {
