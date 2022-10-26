@@ -112,12 +112,12 @@ test('the tenant connection is fully removed', function () {
 
     createUsersTable();
 
-    expect(array_keys(app('db')->getConnections()))->toBe(['central', 'tenant_host_connection', 'tenant']);
+    expect(array_keys(app('db')->getConnections()))->toBe(['central', 'tenant']);
     pest()->assertArrayHasKey('tenant', config('database.connections'));
 
     tenancy()->end();
 
-    expect(array_keys(app('db')->getConnections()))->toBe(['central', 'tenant_host_connection']);
+    expect(array_keys(app('db')->getConnections()))->toBe(['central']);
     expect(config('database.connections.tenant'))->toBeNull();
 });
 
