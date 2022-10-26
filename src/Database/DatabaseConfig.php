@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase as Tenant;
+use Stancl\Tenancy\Database\Exceptions\DatabaseManagerNotRegisteredException;
+use Stancl\Tenancy\Database\Exceptions\NoConnectionSetException;
 
 class DatabaseConfig
 {
@@ -85,7 +87,7 @@ class DatabaseConfig
     {
         $this->tenant->setInternal('db_name', $this->getName());
 
-        if ($this->manager() instanceof Contracts\ManagesDatabaseUsers) {
+        if ($this->getManagerClassFromConnectionDriver($this->getTemplateConnectionName()) instanceof Contracts\ManagesDatabaseUsers) {
             $this->tenant->setInternal('db_username', $this->getUsername() ?? (static::$usernameGenerator)($this->tenant));
             $this->tenant->setInternal('db_password', $this->getPassword() ?? (static::$passwordGenerator)($this->tenant));
         }
@@ -130,7 +132,7 @@ class DatabaseConfig
         $template = $this->getTemplateConnectionName();
         $templateConnection = config("database.connections.{$template}");
 
-        if ($this->manager() instanceof Contracts\ManagesDatabaseUsers) {
+        if ($this->getManagerClassFromConnectionDriver($template) instanceof Contracts\ManagesDatabaseUsers) {
             // We're removing the username and password because user with these credentials is not created yet
             // If you need to provide username and password when using PermissionControlledMySQLDatabaseManager,
             // consider creating a new connection and use it as `tenancy_db_connection` tenant config key
@@ -181,29 +183,11 @@ class DatabaseConfig
         }, []);
     }
 
-    /** Get the TenantDatabaseManager for this tenant's connection. */
+    /** Get the TenantDatabaseManager for this tenant's connection.
+     *
+     * @throws NoConnectionSetException|DatabaseManagerNotRegisteredException
+     */
     public function manager(): Contracts\TenantDatabaseManager
-    {
-        $driver = config("database.connections.{$this->getTemplateConnectionName()}.driver");
-
-        $databaseManagers = config('tenancy.database.managers');
-
-        if (! array_key_exists($driver, $databaseManagers)) {
-            throw new Exceptions\DatabaseManagerNotRegisteredException($driver);
-        }
-
-        /** @var Contracts\TenantDatabaseManager $databaseManager */
-        $databaseManager = app($databaseManagers[$driver]);
-
-        if ($databaseManager instanceof Contracts\StatefulTenantDatabaseManager) {
-            $databaseManager->setConnection($this->getTemplateConnectionName());
-        }
-
-        return $databaseManager;
-    }
-
-    /** Get the TenantDatabaseManager for this tenant's connection. */
-    public function hostManager(): Contracts\TenantDatabaseManager
     {
         // Laravel caches the previous PDO connection, so we purge it to be able to change the connection details
         $this->purgeHostConnection(); // todo come up with a better name
@@ -212,18 +196,31 @@ class DatabaseConfig
         $tenantHostConnectionName = $this->getTenantHostConnectionName();
         config(["database.connections.{$tenantHostConnectionName}" => $this->hostConnection()]);
 
-        $driver = config("database.connections.{$tenantHostConnectionName}.driver");
+        $manager = $this->getManagerClassFromConnectionDriver($tenantHostConnectionName);
+
+        if ($manager instanceof Contracts\StatefulTenantDatabaseManager) {
+            $manager->setConnection($tenantHostConnectionName);
+        }
+
+        return $manager;
+    }
+
+    /**
+     * todo come up with a better name
+     * Get database manager class from the given connection config's driver.
+     *
+     * @throws DatabaseManagerNotRegisteredException
+     */
+    protected function getManagerClassFromConnectionDriver(string $connectionName): Contracts\TenantDatabaseManager
+    {
+        $driver = config("database.connections.{$connectionName}.driver");
+
         $databaseManagers = config('tenancy.database.managers');
 
         if (! array_key_exists($driver, $databaseManagers)) {
             throw new Exceptions\DatabaseManagerNotRegisteredException($driver);
         }
 
-        /** @var Contracts\TenantDatabaseManager $databaseManager */
-        $databaseManager = app($databaseManagers[$driver]);
-
-        $databaseManager->setConnection($tenantHostConnectionName);
-
-        return $databaseManager;
+        return app($databaseManagers[$driver]);
     }
 }

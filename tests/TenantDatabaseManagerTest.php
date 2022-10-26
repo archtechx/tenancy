@@ -362,7 +362,7 @@ test('tenant database can be created by using the username and password from ten
     ]);
 
     /** @var MySQLDatabaseManager $manager */
-    $manager = $tenant->database()->hostManager();
+    $manager = $tenant->database()->manager();
 
     expect($manager->database()->getConfig('username'))->toBe($username); // user created for the HOST connection
     expect($manager->databaseExists($name))->toBeTrue();
