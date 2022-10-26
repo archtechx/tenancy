@@ -54,6 +54,11 @@ afterEach(function () {
     }
 });
 
+function tenantSchemaPath(): string
+{
+    return database_path('schema/tenant-schema.dump');
+}
+
 test('migrate command doesnt change the db connection', function () {
     expect(Schema::hasTable('users'))->toBeFalse();
 
@@ -121,7 +126,7 @@ test('dump command works', function () {
 });
 
 test('tenant dump file gets created as tenant-schema.dump in the database schema folder by default', function() {
-    config(['tenancy.migration_parameters.--schema-path' => $schemaPath = database_path('schema/tenant-schema.dump')]);
+    config(['tenancy.migration_parameters.--schema-path' => $schemaPath = tenantSchemaPath()]);
 
     $tenant = Tenant::create();
     Artisan::call('tenants:migrate');
