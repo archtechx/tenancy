@@ -85,8 +85,6 @@ test('CreatePendingTenants commands all option overrides any config constraints'
 });
 
 test('tenancy can check for pending tenants', function () {
-    Tenant::query()->delete();
-
     expect(Tenant::onlyPending()->exists())->toBeFalse();
 
     Tenant::createPending();
