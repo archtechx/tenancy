@@ -87,7 +87,7 @@ class DatabaseConfig
     {
         $this->tenant->setInternal('db_name', $this->getName());
 
-        if ($this->getManagerClassFromConnectionDriver($this->getTemplateConnectionName()) instanceof Contracts\ManagesDatabaseUsers) {
+        if ($this->connectionDriverManager($this->getTemplateConnectionName()) instanceof Contracts\ManagesDatabaseUsers) {
             $this->tenant->setInternal('db_username', $this->getUsername() ?? (static::$usernameGenerator)($this->tenant));
             $this->tenant->setInternal('db_password', $this->getPassword() ?? (static::$passwordGenerator)($this->tenant));
         }
@@ -132,7 +132,7 @@ class DatabaseConfig
         $template = $this->getTemplateConnectionName();
         $templateConnection = config("database.connections.{$template}");
 
-        if ($this->getManagerClassFromConnectionDriver($template) instanceof Contracts\ManagesDatabaseUsers) {
+        if ($this->connectionDriverManager($template) instanceof Contracts\ManagesDatabaseUsers) {
             // We're removing the username and password because user with these credentials is not created yet
             // If you need to provide username and password when using PermissionControlledMySQLDatabaseManager,
             // consider creating a new connection and use it as `tenancy_db_connection` tenant config key
@@ -196,7 +196,7 @@ class DatabaseConfig
         $tenantHostConnectionName = $this->getTenantHostConnectionName();
         config(["database.connections.{$tenantHostConnectionName}" => $this->hostConnection()]);
 
-        $manager = $this->getManagerClassFromConnectionDriver($tenantHostConnectionName);
+        $manager = $this->connectionDriverManager($tenantHostConnectionName);
 
         if ($manager instanceof Contracts\StatefulTenantDatabaseManager) {
             $manager->setConnection($tenantHostConnectionName);
@@ -211,7 +211,7 @@ class DatabaseConfig
      *
      * @throws DatabaseManagerNotRegisteredException
      */
-    protected function getManagerClassFromConnectionDriver(string $connectionName): Contracts\TenantDatabaseManager
+    protected function connectionDriverManager(string $connectionName): Contracts\TenantDatabaseManager
     {
         $driver = config("database.connections.{$connectionName}.driver");
 
