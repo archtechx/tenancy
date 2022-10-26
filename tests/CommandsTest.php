@@ -26,7 +26,7 @@ use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 
 
 beforeEach(function () {
-    if (file_exists($schemaPath = tenantSchemaPath())) {
+    if (file_exists($schemaPath = database_path('schema/tenant-schema.dump'))) {
         unlink($schemaPath);
     }
 
@@ -57,11 +57,6 @@ afterEach(function () {
         unlink(base_path('config/tenancy.php'));
     }
 });
-
-function tenantSchemaPath(): string
-{
-    return database_path('schema/tenant-schema.dump');
-}
 
 test('migrate command doesnt change the db connection', function () {
     expect(Schema::hasTable('users'))->toBeFalse();
@@ -130,7 +125,7 @@ test('dump command works', function () {
 });
 
 test('tenant dump file gets created as tenant-schema.dump in the database schema folder by default', function() {
-    config(['tenancy.migration_parameters.--schema-path' => $schemaPath = tenantSchemaPath()]);
+    config(['tenancy.migration_parameters.--schema-path' => $schemaPath = database_path('schema/tenant-schema.dump')]);
 
     $tenant = Tenant::create();
     Artisan::call('tenants:migrate');
