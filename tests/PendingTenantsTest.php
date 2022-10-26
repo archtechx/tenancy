@@ -118,7 +118,7 @@ test('a new tenant gets created while pulling a pending tenant if the pending po
     expect(Tenant::all()->count())->toBe(1);
 });
 
-test('the include in queries global scope can include pending tenants in all queries', function () {
+test('pending tenants are included in all queries based on the include_in_queries config', function () {
     Tenant::createPending();
 
     config(['tenancy.pending.include_in_queries' => false]);
