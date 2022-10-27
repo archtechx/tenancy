@@ -109,11 +109,11 @@ test('pulling a tenant from the pending tenant pool removes it from the pool', f
 });
 
 test('a new tenant gets created while pulling a pending tenant if the pending pool is empty', function () {
-    expect(Tenant::all()->count())->toBe(0);
+    expect(Tenant::withPending()->all()->count())->toBe(0);
 
     Tenant::pullPending();
 
-    expect(Tenant::all()->count())->toBe(1);
+    expect(Tenant::withPending()->all()->count())->toBe(1);
 });
 
 test('pending tenants are included in all queries based on the include_in_queries config', function () {
