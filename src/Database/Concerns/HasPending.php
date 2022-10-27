@@ -11,6 +11,8 @@ use Stancl\Tenancy\Events\PendingTenantCreated;
 use Stancl\Tenancy\Events\PendingTenantPulled;
 use Stancl\Tenancy\Events\PullingPendingTenant;
 
+// todo consider adding a method that sets pending_since to null — to flag tenants as not-pending
+
 /**
  * @property Carbon $pending_since
  *
