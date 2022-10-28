@@ -126,7 +126,6 @@ test('pending tenants are included in all queries based on the include_in_querie
     config(['tenancy.pending.include_in_queries' => true]);
 
     expect(Tenant::all()->count())->toBe(1);
-    Tenant::all();
 });
 
 test('pending events are dispatched', function () {
