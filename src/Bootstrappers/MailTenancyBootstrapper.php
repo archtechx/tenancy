@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Bootstrappers;
 
-use Illuminate\Support\Arr;
 use Illuminate\Config\Repository;
-use Stancl\Tenancy\Contracts\Tenant;
+use Illuminate\Support\Arr;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
+use Stancl\Tenancy\Contracts\Tenant;
 
 class MailTenancyBootstrapper implements TenancyBootstrapper
 {
