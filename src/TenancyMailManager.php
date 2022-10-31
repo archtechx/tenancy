@@ -8,8 +8,16 @@ use Illuminate\Mail\MailManager;
 
 class TenancyMailManager extends MailManager
 {
+    public static array $mailersToNotCache = [
+        'smtp',
+    ];
+
     protected function get($name)
     {
-        return $this->resolve($name);
+        if (in_array($name, static::$mailersToNotCache)) {
+            return $this->resolve($name);
+        }
+
+        return parent::get($name);
     }
 }
