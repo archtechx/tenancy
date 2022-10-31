@@ -70,7 +70,8 @@ class TenancyServiceProvider extends ServiceProvider
             return new Commands\Seed($app['db']);
         });
 
-        // Use custom mail manager that resolves the mailers instead of getting the cached mailers from the $mailers property
+        // Use custom mail manager that resolves the mailers specified in its $mailersToNotCache static property
+        // Instead of getting the cached mailers from the $mailers property
         $this->app->extend(MailManager::class, function (MailManager $mailManager) {
             return new TenancyMailManager($this->app);
         });
