@@ -14,7 +14,7 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
     protected array $originalConfig = [];
 
     /**
-     * Tenant properties to be mapped to config (similarly the TenantConfig feature).
+     * Tenant properties to be mapped to config (similarly to the TenantConfig feature).
      *
      * For example:
      * [
