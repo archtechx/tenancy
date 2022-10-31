@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
+use Illuminate\Mail\MailManager;
+use Stancl\Tenancy\Enums\LogMode;
 use Illuminate\Cache\CacheManager;
-use Illuminate\Database\Console\Migrations\FreshCommand;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\ServiceProvider;
-use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Domain;
 use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\Enums\LogMode;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Events\Contracts\TenancyEvent;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
+use Illuminate\Database\Console\Migrations\FreshCommand;
+use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 
 class TenancyServiceProvider extends ServiceProvider
 {
@@ -67,6 +68,11 @@ class TenancyServiceProvider extends ServiceProvider
         });
         $this->app->singleton(Commands\Seed::class, function ($app) {
             return new Commands\Seed($app['db']);
+        });
+
+        // Use custom mail manager that resolves the mailers instead of getting the cached mailers from the $mailers property
+        $this->app->extend(MailManager::class, function (MailManager $mailManager) {
+            return new TenancyMailManager($this->app);
         });
 
         $this->app->bind('globalCache', function ($app) {
