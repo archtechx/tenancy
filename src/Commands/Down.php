@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Foundation\Console\DownCommand;
-use Stancl\Tenancy\Concerns\HasATenantsOption;
+use Stancl\Tenancy\Concerns\HasTenantOptions;
 
 class Down extends DownCommand
 {
-    use HasATenantsOption;
+    use HasTenantOptions;
 
     protected $signature = 'tenants:down
          {--redirect= : The path that users should be redirected to}

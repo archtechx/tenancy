@@ -86,6 +86,25 @@ return [
         // Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
     ],
 
+
+    /**
+     * Pending tenants config.
+     * This is useful if you're looking for a way to always have a tenant ready to be used.
+     */
+    'pending' => [
+        /**
+         * If disabled, pending tenants will be excluded from all tenant queries.
+         * You can still use ::withPending(), ::withoutPending() and ::onlyPending() to include or exclude the pending tenants regardless of this setting.
+         * Note: when disabled, this will also ignore pending tenants when running the tenant commands (migration, seed, etc.)
+         */
+        'include_in_queries' => true,
+        /**
+         * Defines how many pending tenants you want to have ready in the pending tenant pool.
+         * This depends on the volume of tenants you're creating.
+         */
+        'count' => env('TENANCY_PENDING_COUNT', 5),
+    ],
+
     /**
      * Database tenancy config. Used by DatabaseTenancyBootstrapper.
      */

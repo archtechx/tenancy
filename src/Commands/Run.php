@@ -6,13 +6,13 @@ namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\Kernel;
-use Stancl\Tenancy\Concerns\HasATenantsOption;
+use Stancl\Tenancy\Concerns\HasTenantOptions;
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
 class Run extends Command
 {
-    use HasATenantsOption;
+    use HasTenantOptions;
 
     protected $description = 'Run a command for tenant(s)';
 

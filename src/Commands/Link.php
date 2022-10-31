@@ -9,11 +9,11 @@ use Illuminate\Console\Command;
 use Illuminate\Support\LazyCollection;
 use Stancl\Tenancy\Actions\CreateStorageSymlinksAction;
 use Stancl\Tenancy\Actions\RemoveStorageSymlinksAction;
-use Stancl\Tenancy\Concerns\HasATenantsOption;
+use Stancl\Tenancy\Concerns\HasTenantOptions;
 
 class Link extends Command
 {
-    use HasATenantsOption;
+    use HasTenantOptions;
 
     protected $signature = 'tenants:link
                 {--tenants=* : The tenant(s) to run the command for. Default: all}

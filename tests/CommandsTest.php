@@ -24,7 +24,6 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 
-
 beforeEach(function () {
     if (file_exists($schemaPath = database_path('schema/tenant-schema.dump'))) {
         unlink($schemaPath);
@@ -33,10 +32,6 @@ beforeEach(function () {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
     })->toListener());
-
-    config(['tenancy.bootstrappers' => [
-        DatabaseTenancyBootstrapper::class,
-    ]]);
 
     config([
         'tenancy.bootstrappers' => [
