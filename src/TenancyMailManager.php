@@ -36,7 +36,7 @@ class TenancyMailManager extends MailManager
     /**
      * Override the get method so that the mailers in $tenantMailers
      * always get resolved, even when they're cached and available in the $mailers property
-     * for the mailers to have the up-to-date tenant credentials.
+     * so that the mailers have up-to-date mailer credentials.
      */
     protected function get($name)
     {
