@@ -13,7 +13,7 @@ use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
  *
  * Tenancy swaps Laravel's MailManager singleton for an instance of this class,
  * which overrides the manager's get method to always resolve
- * the mailers specified in the static $mailersToAlwaysResolve property
+ * the mailers specified in the static $tenantMailers property
  * instead of getting them from the $mailers property where they're cached.
  *
  * This is mainly used to solve the issue where
@@ -26,21 +26,21 @@ use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
 class TenancyMailManager extends MailManager
 {
     /**
-     * Names of mailers which will always get re-resolved even when they're
+     * Mailers which will always get resolved even when they're
      * cached & available in the $mailers property.
      */
-    public static array $mailersToAlwaysResolve = [
+    public static array $tenantMailers = [
         'smtp',
     ];
 
     /**
-     * Override the get method so that the mailers in $mailersToAlwaysResolve
-     * always get resolved even when they're cached and available in the $mailers property
+     * Override the get method so that the mailers in $tenantMailers
+     * always get resolved, even when they're cached and available in the $mailers property
      * for the mailers to have the up-to-date tenant credentials.
      */
     protected function get($name)
     {
-        if (in_array($name, static::$mailersToAlwaysResolve)) {
+        if (in_array($name, static::$tenantMailers)) {
             return $this->resolve($name);
         }
 
