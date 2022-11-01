@@ -61,6 +61,12 @@ class TenancyServiceProvider extends ServiceProvider
             Events\TenantMaintenanceModeEnabled::class => [],
             Events\TenantMaintenanceModeDisabled::class => [],
 
+            // Pending tenant events
+            Events\CreatingPendingTenant::class => [],
+            Events\PendingTenantCreated::class => [],
+            Events\PullingPendingTenant::class => [],
+            Events\PendingTenantPulled::class => [],
+
             // Domain events
             Events\CreatingDomain::class => [],
             Events\DomainCreated::class => [],

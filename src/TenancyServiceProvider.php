@@ -78,7 +78,9 @@ class TenancyServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->commands([
+            Commands\Up::class,
             Commands\Run::class,
+            Commands\Down::class,
             Commands\Link::class,
             Commands\Seed::class,
             Commands\Install::class,
@@ -87,8 +89,8 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\TenantList::class,
             Commands\TenantDump::class,
             Commands\MigrateFresh::class,
-            Commands\Down::class,
-            Commands\Up::class,
+            Commands\ClearPendingTenants::class,
+            Commands\CreatePendingTenants::class,
         ]);
 
         $this->app->extend(FreshCommand::class, function () {

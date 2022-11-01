@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
-use Stancl\Tenancy\Concerns\HasATenantsOption;
+use Stancl\Tenancy\Concerns\HasTenantOptions;
 
 class Up extends Command
 {
-    use HasATenantsOption;
+    use HasTenantOptions;
 
     protected $signature = 'tenants:up';
 
