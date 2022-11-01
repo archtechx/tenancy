@@ -326,6 +326,14 @@ test('local storage public urls are generated correctly', function() {
     expect(File::isDirectory($tenantStoragePath))->toBeFalse();
 });
 
+test('MailTenancyBootstrapper maps tenant properties to config as specified in the $credentialsMap property', function() {
+
+});
+
+test('MailTenancyBootstrapper reverts the config to default when tenancy ends', function() {
+
+});
+
 function getDiskPrefix(string $disk): string
 {
     /** @var FilesystemAdapter $disk */
