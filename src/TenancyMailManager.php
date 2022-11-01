@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy;
+namespace Stancl\Tenancy; // todo new Overrides namespace?
 
 use Illuminate\Mail\MailManager;
 
