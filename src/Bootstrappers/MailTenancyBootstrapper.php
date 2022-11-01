@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Illuminate\Config\Repository;
-use Illuminate\Support\Arr;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
@@ -38,12 +37,11 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant): void
     {
-        foreach (static::$credentialsMap as $storageKey => $configKey) {
-            /** @var Tenant&Model $tenant */
-            $override = Arr::get($tenant, $storageKey);
+        foreach (static::$credentialsMap as $configKey => $storageKey) {
+            $override = $tenant->$storageKey;
 
             if (! is_null($override)) {
-                $this->originalConfig[$configKey] = $this->originalConfig[$configKey] ?? $this->config->get($configKey);
+                $this->originalConfig[$configKey] ??= $this->config->get($configKey);
 
                 $this->config->set($configKey, $override);
             }
