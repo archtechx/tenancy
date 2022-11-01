@@ -26,8 +26,8 @@ use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
 class TenancyMailManager extends MailManager
 {
     /**
-     * Mailers which will always get resolved even when they're
-     * cached & available in the $mailers property.
+     * Mailers to always resolve from the container (even when they're
+     * cached and available in the $mailers property).
      */
     public static array $tenantMailers = [
         'smtp',
