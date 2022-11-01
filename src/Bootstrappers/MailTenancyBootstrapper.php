@@ -43,17 +43,9 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
             $override = Arr::get($tenant, $storageKey);
 
             if (! is_null($override)) {
-                if (is_array($configKey)) {
-                    foreach ($configKey as $key) {
-                        $this->originalConfig[$key] = $this->originalConfig[$key] ?? $this->config->get($key);
+                $this->originalConfig[$configKey] = $this->originalConfig[$configKey] ?? $this->config->get($configKey);
 
-                        $this->config->set($key, $override);
-                    }
-                } else {
-                    $this->originalConfig[$configKey] = $this->originalConfig[$configKey] ?? $this->config->get($configKey);
-
-                    $this->config->set($configKey, $override);
-                }
+                $this->config->set($configKey, $override);
             }
         }
     }
