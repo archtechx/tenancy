@@ -17,18 +17,18 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
      *
      * For example:
      * [
-     *     'property' => 'config.key.name',
+     *     'config.key.name' => 'tenant_property',
      * ]
      */
     public static array $credentialsMap = [
-        'smtp_transport' => 'mail.mailers.smtp.transport',
-        'smtp_host' => 'mail.mailers.smtp.host',
-        'smtp_port' => 'mail.mailers.smtp.port',
-        'smtp_encryption' => 'mail.mailers.smtp.encryption',
-        'smtp_username' => 'mail.mailers.smtp.username',
-        'smtp_password' => 'mail.mailers.smtp.password',
-        'smtp_timeout' => 'mail.mailers.smtp.timeout',
-        'smtp_local_domain' => 'mail.mailers.smtp.local_domain',
+        'mail.mailers.smtp.transport' => 'smtp_transport',
+        'mail.mailers.smtp.host' => 'smtp_host',
+        'mail.mailers.smtp.port' => 'smtp_port',
+        'mail.mailers.smtp.encryption' => 'smtp_encryption',
+        'mail.mailers.smtp.username' => 'smtp_username',
+        'mail.mailers.smtp.password' => 'smtp_password',
+        'mail.mailers.smtp.timeout' => 'smtp_timeout',
+        'mail.mailers.smtp.local_domain' => 'smtp_local_domain',
     ];
 
     public function __construct(protected Repository $config)
