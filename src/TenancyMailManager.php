@@ -24,9 +24,7 @@ class TenancyMailManager extends MailManager
      * Mailers to always resolve from the container (even when they're
      * cached and available in the $mailers property).
      */
-    public static array $tenantMailers = [
-        'smtp',
-    ];
+    public static array $tenantMailers = [];
 
     /**
      * Override the get method so that the mailers in $tenantMailers always get resolved,
