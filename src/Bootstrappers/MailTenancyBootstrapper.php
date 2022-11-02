@@ -34,12 +34,15 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
 
     public function __construct(protected Repository $config)
     {
-        $mapPreset = match ($config->get('mail.default')) {
+        static::$credentialsMap = array_merge(static::$credentialsMap, $this->pickMapPreset() ?? []);
+    }
+
+    protected function pickMapPreset(): array|null
+    {
+        return match ($this->config->get('mail.default')) {
             'smtp' => static::smtpCredentialsMap(),
             default => null,
         };
-
-        static::$credentialsMap = array_merge(static::$credentialsMap, $mapPreset ?? []);
     }
 
     public function bootstrap(Tenant $tenant): void
