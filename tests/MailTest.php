@@ -50,7 +50,7 @@ test('MailTenancyBootstrapper reverts the config back to default when tenancy en
     expect(config('mail.mailers.smtp.password'))->toBe($defaultPassword);
 });
 
-test('mailer transporters use the correct tenant mail credentials', function() {
+test('SMTP mailer transporter uses the correct tenant credentials', function() {
     TenancyMailManager::$tenantMailers = ['smtp'];
     MailTenancyBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'smtp_password'];
 
