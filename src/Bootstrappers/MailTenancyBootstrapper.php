@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Illuminate\Config\Repository;
-use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\TenancyMailManager;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
+use Stancl\Tenancy\Contracts\Tenant;
 
 class MailTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -35,7 +34,7 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
 
     public function __construct(protected Repository $config)
     {
-        $mapPreset = match($config->get('mail.default')) {
+        $mapPreset = match ($config->get('mail.default')) {
             'smtp' => static::smtpCredentialsMap(),
             default => null,
         };
