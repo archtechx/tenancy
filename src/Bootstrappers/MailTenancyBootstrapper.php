@@ -40,7 +40,7 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
         foreach (static::$credentialsMap as $configKey => $storageKey) {
             $override = $tenant->$storageKey;
 
-            if (! is_null($override)) {
+            if (array_key_exists($storageKey, $tenant->getAttributes())) {
                 $this->originalConfig[$configKey] ??= $this->config->get($configKey);
 
                 $this->config->set($configKey, $override);
