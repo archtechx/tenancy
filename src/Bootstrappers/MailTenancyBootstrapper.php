@@ -37,6 +37,16 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant): void
     {
+        $this->setConfig($tenant);
+    }
+
+    public function revert(): void
+    {
+        $this->unsetConfig();
+    }
+
+    protected function setConfig(Tenant $tenant)
+    {
         foreach (static::$credentialsMap as $configKey => $storageKey) {
             $override = $tenant->$storageKey;
 
@@ -48,7 +58,7 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
         }
     }
 
-    public function revert(): void
+    protected function unsetConfig()
     {
         foreach ($this->originalConfig as $key => $value) {
             $this->config->set($key, $value);
