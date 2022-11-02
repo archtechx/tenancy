@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Illuminate\Config\Repository;
-use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\TenancyMailManager;
+use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 
 class MailTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -20,19 +21,26 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
      *     'config.key.name' => 'tenant_property',
      * ]
      */
-    public static array $credentialsMap = [
-        'mail.mailers.smtp.transport' => 'smtp_transport',
-        'mail.mailers.smtp.host' => 'smtp_host',
-        'mail.mailers.smtp.port' => 'smtp_port',
-        'mail.mailers.smtp.encryption' => 'smtp_encryption',
-        'mail.mailers.smtp.username' => 'smtp_username',
-        'mail.mailers.smtp.password' => 'smtp_password',
-        'mail.mailers.smtp.timeout' => 'smtp_timeout',
-        'mail.mailers.smtp.local_domain' => 'smtp_local_domain',
-    ];
+    public static array $credentialsMap = [];
+
+    public static function smtpCredentialsMap(): array
+    {
+        return [
+            'mail.mailers.smtp.host' => 'smtp_host',
+            'mail.mailers.smtp.port' => 'smtp_port',
+            'mail.mailers.smtp.username' => 'smtp_username',
+            'mail.mailers.smtp.password' => 'smtp_password',
+        ];
+    }
 
     public function __construct(protected Repository $config)
     {
+        $mapPreset = match($config->get('mail.default')) {
+            'smtp' => static::smtpCredentialsMap(),
+            default => null,
+        };
+
+        static::$credentialsMap = array_merge(static::$credentialsMap, $mapPreset ?? []);
     }
 
     public function bootstrap(Tenant $tenant): void
