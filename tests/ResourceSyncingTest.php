@@ -84,7 +84,7 @@ test('only the synced columns are updated in the central db', function () {
     ]);
 
     $tenant = ResourceTenant::create();
-    migrateTenantsResource();
+    migrateUsersTableForTenants();
 
     tenancy()->initialize($tenant);
 
@@ -132,6 +132,8 @@ test('only the synced columns are updated in the central db', function () {
 // using tests that combine the two, to avoid having an excessively long and complex test suite
 test('sync resource creation works when central model provides attributes and resource model provides default values', function () {
     [$tenant1, $tenant2] = createTenantsAndRunMigrations();
+
+    addExtraColumnToCentralDB();
 
     $centralUser = CentralUserProvidingAttributeNames::create([
         'global_id' => 'acme',
@@ -187,6 +189,8 @@ test('sync resource creation works when central model provides attributes and re
 test('sync resource creation works when central model provides default values and resource model provides attributes', function () {
     [$tenant1, $tenant2] = createTenantsAndRunMigrations();
 
+    addExtraColumnToCentralDB();
+
     $centralUser = CentralUserProvidingDefaultValues::create([
         'global_id' => 'acme',
         'name' => 'John Doe',
@@ -238,9 +242,7 @@ test('sync resource creation works when central model provides default values an
 // Those two don't depend on each other, we're just testing having each option on each side
 // using tests that combine the two, to avoid having an excessively long and complex test suite
 test('sync resource creation works when central model provides mixture and resource model provides nothing', function () {
-    [$tenant1, $tenant2] = [ResourceTenant::create(['id' => 't1']), ResourceTenant::create(['id' => 't2'])];
-
-    migrateTenantsResource();
+    [$tenant1, $tenant2] = createTenantsAndRunMigrations();
 
     $centralUser = CentralUserProvidingMixture::create([
         'global_id' => 'acme',
@@ -298,9 +300,7 @@ test('sync resource creation works when central model provides mixture and resou
 // Those two don't depend on each other, we're just testing having each option on each side
 // using tests that combine the two, to avoid having an excessively long and complex test suite
 test('sync resource creation works when central model provides nothing and resource model provides mixture', function () {
-    [$tenant1, $tenant2] = [ResourceTenant::create(['id' => 't1']), ResourceTenant::create(['id' => 't2'])];
-
-    migrateTenantsResource();
+    [$tenant1, $tenant2] = createTenantsAndRunMigrations();
 
     $centralUser = CentralUser::create([
         'global_id' => 'acme',
@@ -378,7 +378,7 @@ test('attaching a tenant to the central resource triggers a pull from the tenant
     $tenant = ResourceTenant::create([
         'id' => 't1',
     ]);
-    migrateTenantsResource();
+    migrateUsersTableForTenants();
 
     $tenant->run(function () {
         expect(ResourceUser::all())->toHaveCount(0);
@@ -403,7 +403,7 @@ test('attaching users to tenants does not do anything', function () {
     $tenant = ResourceTenant::create([
         'id' => 't1',
     ]);
-    migrateTenantsResource();
+    migrateUsersTableForTenants();
 
     $tenant->run(function () {
         expect(ResourceUser::all())->toHaveCount(0);
@@ -438,7 +438,7 @@ test('resources are synced only to workspaces that have the resource', function 
     $t3 = ResourceTenant::create([
         'id' => 't3',
     ]);
-    migrateTenantsResource();
+    migrateUsersTableForTenants();
 
     $centralUser->tenants()->attach('t1');
     $centralUser->tenants()->attach('t2');
@@ -476,7 +476,7 @@ test('when a resource exists in other tenant dbs but is created in a tenant db t
     $t2 = ResourceTenant::create([
         'id' => 't2',
     ]);
-    migrateTenantsResource();
+    migrateUsersTableForTenants();
 
     // Copy (cascade) user to t1 DB
     $centralUser->tenants()->attach('t1');
@@ -524,7 +524,7 @@ test('the synced columns are updated in other tenant dbs where the resource exis
     $t3 = ResourceTenant::create([
         'id' => 't3',
     ]);
-    migrateTenantsResource();
+    migrateUsersTableForTenants();
 
     // Copy (cascade) user to t1 DB
     $centralUser->tenants()->attach('t1');
@@ -579,7 +579,7 @@ test('when the resource doesnt exist in the tenant db non synced columns will ca
         'id' => 't1',
     ]);
 
-    migrateTenantsResource();
+    migrateUsersTableForTenants();
 
     $centralUser->tenants()->attach('t1');
 
@@ -593,7 +593,7 @@ test('when the resource doesnt exist in the central db non synced columns will b
         'id' => 't1',
     ]);
 
-    migrateTenantsResource();
+    migrateUsersTableForTenants();
 
     $t1->run(function () {
         ResourceUser::create([
@@ -615,7 +615,7 @@ test('the listener can be queued', function () {
         'id' => 't1',
     ]);
 
-    migrateTenantsResource();
+    migrateUsersTableForTenants();
 
     Queue::assertNothingPushed();
 
@@ -654,7 +654,7 @@ test('an event is fired for all touched resources', function () {
     $t3 = ResourceTenant::create([
         'id' => 't3',
     ]);
-    migrateTenantsResource();
+    migrateUsersTableForTenants();
 
     // Copy (cascade) user to t1 DB
     $centralUser->tenants()->attach('t1');
@@ -735,7 +735,7 @@ function creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase()
     expect(ResourceUser::all())->toHaveCount(0);
 
     $tenant = ResourceTenant::create();
-    migrateTenantsResource();
+    migrateUsersTableForTenants();
 
     tenancy()->initialize($tenant);
 
@@ -765,26 +765,26 @@ function creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase()
 
 /**
  * Create two tenants and run migrations for those tenants.
- * Also, add an extra column "foo" in central DB.
  */
 function createTenantsAndRunMigrations(): array
 {
     [$tenant1, $tenant2] = [ResourceTenant::create(['id' => 't1']), ResourceTenant::create(['id' => 't2'])];
 
+    migrateUsersTableForTenants();
+
+    return [$tenant1, $tenant2];
+}
+
+function addExtraColumnToCentralDB(): void
+{
     // migrate extra column "foo" in central DB
     pest()->artisan('migrate', [
         '--path' => __DIR__ . '/Etc/synced_resource_migrations/users_extra',
         '--realpath' => true,
     ])->assertExitCode(0);
-    migrateTenantsResource();
-
-    return [$tenant1, $tenant2];
 }
 
-/**
- * Run tenant migrations using the tenants:migrate command.
- */
-function migrateTenantsResource(): void
+function migrateUsersTableForTenants(): void
 {
     pest()->artisan('tenants:migrate', [
         '--path' => __DIR__ . '/Etc/synced_resource_migrations/users',
