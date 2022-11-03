@@ -10,8 +10,6 @@ use Stancl\Tenancy\Contracts\Tenant;
 
 class MailTenancyBootstrapper implements TenancyBootstrapper
 {
-    protected array $originalConfig = [];
-
     /**
      * Tenant properties to be mapped to config (similarly to the TenantConfig feature).
      *
@@ -22,7 +20,11 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
      */
     public static array $credentialsMap = [];
 
-    public static function smtpCredentialsMap(): array
+    public static string|null $mailer = null;
+
+    protected array $originalConfig = [];
+
+    public static function smtpPreset(): array
     {
         return [
             'mail.mailers.smtp.host' => 'smtp_host',
@@ -34,13 +36,14 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
 
     public function __construct(protected Repository $config)
     {
+        static::$mailer ??= $config->get('mail.default');
         static::$credentialsMap = array_merge(static::$credentialsMap, $this->pickMapPreset() ?? []);
     }
 
     protected function pickMapPreset(): array|null
     {
-        return match ($this->config->get('mail.default')) {
-            'smtp' => static::smtpCredentialsMap(),
+        return match (static::$mailer) {
+            'smtp' => static::smtpPreset(),
             default => null,
         };
     }
