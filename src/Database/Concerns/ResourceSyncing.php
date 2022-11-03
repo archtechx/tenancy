@@ -32,4 +32,9 @@ trait ResourceSyncing
         /** @var Syncable $this */
         event(new SyncedResourceSaved($this, tenant()));
     }
+
+    public function getSyncedCreationAttributes(): array|null
+    {
+        return null;
+    }
 }
