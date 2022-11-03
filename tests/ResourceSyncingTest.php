@@ -884,8 +884,9 @@ class ResourceUser extends Model implements Syncable
     }
 }
 
-// override method in ResourceUser class to return attribute default values
-class ResourceUserProvidingDefaultValues extends ResourceUser {
+// override method in ResourceUser class to return default attribute values
+class ResourceUserProvidingDefaultValues extends ResourceUser
+{
     public function getSyncedCreationAttributes(): array
     {
         // Default values when creating resources from tenant to central DB
@@ -901,7 +902,8 @@ class ResourceUserProvidingDefaultValues extends ResourceUser {
 }
 
 // override method in ResourceUser class to return attribute names
-class ResourceUserProvidingAttributeNames extends ResourceUser {
+class ResourceUserProvidingAttributeNames extends ResourceUser
+{
     public function getSyncedCreationAttributes(): array
     {
         // Attributes used when creating resources from tenant to central DB
@@ -920,7 +922,8 @@ class ResourceUserProvidingAttributeNames extends ResourceUser {
 }
 
 // override method in CentralUser class to return attribute default values
-class CentralUserProvidingDefaultValues extends CentralUser {
+class CentralUserProvidingDefaultValues extends CentralUser
+{
     public function getSyncedCreationAttributes(): array
     {
         // Attributes default values when creating resources from central to tenant model
@@ -935,7 +938,8 @@ class CentralUserProvidingDefaultValues extends CentralUser {
 }
 
 // override method in CentralUser class to return attribute names
-class CentralUserProvidingAttributeNames extends CentralUser {
+class CentralUserProvidingAttributeNames extends CentralUser
+{
     public function getSyncedCreationAttributes(): array
     {
         // Attributes used when creating resources from central to tenant DB
@@ -950,8 +954,8 @@ class CentralUserProvidingAttributeNames extends CentralUser {
     }
 }
 
-class CentralUserProvidingMixture extends CentralUser {
-
+class CentralUserProvidingMixture extends CentralUser
+{
     public function getSyncedCreationAttributes(): array
     {
         return [
@@ -963,7 +967,8 @@ class CentralUserProvidingMixture extends CentralUser {
     }
 }
 
-class ResourceUserProvidingMixture extends ResourceUser {
+class ResourceUserProvidingMixture extends ResourceUser
+{
     public function getSyncedCreationAttributes(): array
     {
         return [
