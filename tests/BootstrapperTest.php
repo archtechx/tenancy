@@ -23,6 +23,7 @@ use Stancl\Tenancy\Jobs\RemoveStorageSymlinks;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\DeleteTenantStorage;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
@@ -326,12 +327,32 @@ test('local storage public urls are generated correctly', function() {
     expect(File::isDirectory($tenantStoragePath))->toBeFalse();
 });
 
-test('MailTenancyBootstrapper maps tenant properties to config as specified in the $credentialsMap property', function() {
+test('MailTenancyBootstrapper maps tenant mail credentials to config as specified in the $credentialsMap property', function() {
+    MailTenancyBootstrapper::$credentialsMap = [
+        'mail.mailers.smtp.username' => 'smtp_username',
+        'mail.mailers.smtp.password' => 'smtp_password'
+    ];
 
+    config([
+        'mail.mailers.smtp.username' => $defaultUsername = 'default username',
+        'mail.mailers.smtp.password' => 'no password'
+    ]);
+
+    Tenant::create(['smtp_password' => 'testing password'])->run(function() use ($defaultUsername) {
+        expect(array_key_exists('smtp_password', tenant()->getAttributes()))->toBeTrue();
+        expect(array_key_exists('smtp_host', tenant()->getAttributes()))->toBeFalse();
+        expect(config('mail.mailers.smtp.username'))->toBe($defaultUsername);
+        expect(config('mail.mailers.smtp.password'))->toBe(tenant()->smtp_password);
+    });
 });
 
 test('MailTenancyBootstrapper reverts the config to default when tenancy ends', function() {
+    MailTenancyBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'smtp_password'];
+    config(['mail.mailers.smtp.password' => $defaultPassword = 'no password']);
 
+    Tenant::create(['smtp_password' => 'testing password'])->run(fn() => '');
+
+    expect(config('mail.mailers.smtp.password'))->toBe($defaultPassword);
 });
 
 function getDiskPrefix(string $disk): string

@@ -22,34 +22,6 @@ test('tenancy swaps the MailManager singleton for an instance of TenancyMailMana
     expect(app(MailManager::class))->toBeInstanceOf(TenancyMailManager::class);
 });
 
-test('MailTenancyBootstrapper maps tenant mail credentials to config as specified in the credentialsMap property', function() {
-    MailTenancyBootstrapper::$credentialsMap = [
-        'mail.mailers.smtp.username' => 'smtp_username',
-        'mail.mailers.smtp.password' => 'smtp_password'
-    ];
-
-    config([
-        'mail.mailers.smtp.username' => $defaultUsername = 'default username',
-        'mail.mailers.smtp.password' => 'no password'
-    ]);
-
-    Tenant::create(['smtp_password' => 'testing password'])->run(function() use ($defaultUsername) {
-        expect(array_key_exists('smtp_password', tenant()->getAttributes()))->toBeTrue();
-        expect(array_key_exists('smtp_host', tenant()->getAttributes()))->toBeFalse();
-        expect(config('mail.mailers.smtp.username'))->toBe($defaultUsername);
-        expect(config('mail.mailers.smtp.password'))->toBe(tenant()->smtp_password);
-    });
-});
-
-test('MailTenancyBootstrapper reverts the config back to default when tenancy ends', function() {
-    MailTenancyBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'smtp_password'];
-    config(['mail.mailers.smtp.password' => $defaultPassword = 'no password']);
-
-    Tenant::create(['smtp_password' => 'testing password'])->run(fn() => '');
-
-    expect(config('mail.mailers.smtp.password'))->toBe($defaultPassword);
-});
-
 test('SMTP mailer transporter uses the correct tenant credentials', function() {
     TenancyMailManager::$tenantMailers = ['smtp'];
     MailTenancyBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'smtp_password'];
