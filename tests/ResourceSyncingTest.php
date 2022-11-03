@@ -784,10 +784,10 @@ function createTenantsAndRunMigrations(): array
 /**
  * Run tenant migrations using the tenants:migrate command.
  */
-function migrateTenantsResource(?string $path = null): void
+function migrateTenantsResource(): void
 {
     pest()->artisan('tenants:migrate', [
-        '--path' => $path ?? __DIR__ . '/Etc/synced_resource_migrations/users',
+        '--path' => __DIR__ . '/Etc/synced_resource_migrations/users',
         '--realpath' => true,
     ])->assertExitCode(0);
 }
