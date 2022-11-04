@@ -800,7 +800,7 @@ test('resources are synced only when sync is enabled', function () {
         expect(ResourceUser::all())->toHaveCount(0);
         expect(ResourceUser::whereGlobalId('acme')->first())->toBeNull();
     });
-})->group('current');
+});
 
 /**
  * Create two tenants and run migrations for those tenants.
