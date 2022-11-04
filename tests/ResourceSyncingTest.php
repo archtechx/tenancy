@@ -763,6 +763,43 @@ function creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase()
     expect(ResourceUser::first()->role)->toBe('commenter');
 }
 
+test('resources are synced only when sync is enabled', function (bool $enabled) {
+    app()->instance('_tenancy_test_shouldSync', $enabled);
+
+    [$tenant1, $tenant2] = createTenantsAndRunMigrations();
+    migrateUsersTableForTenants();
+
+    tenancy()->initialize($tenant1);
+
+    TenantUserWithConditionalSync::create([
+        'global_id' => 'absd',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'password',
+        'role' => 'commenter',
+    ]);
+
+    tenancy()->end();
+
+    expect(CentralUserWithConditionalSync::all())->toHaveCount($enabled ? 1 : 0);
+    expect(CentralUserWithConditionalSync::whereGlobalId('absd')->exists())->toBe($enabled);
+
+    $centralUser = CentralUserWithConditionalSync::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'password',
+        'role' => 'commenter',
+    ]);
+
+    $centralUser->tenants()->attach('t2');
+
+    $tenant2->run(function () use ($enabled) {
+        expect(TenantUserWithConditionalSync::all())->toHaveCount($enabled ? 1 : 0);
+        expect(TenantUserWithConditionalSync::whereGlobalId('acme')->exists())->toBe($enabled);
+    });
+})->with([[true], [false]]);
+
 /**
  * Create two tenants and run migrations for those tenants.
  */
@@ -977,5 +1014,21 @@ class ResourceUserProvidingMixture extends ResourceUser
             'role' => 'admin',
             'password' => 'secret',
         ];
+    }
+}
+
+class CentralUserWithConditionalSync extends CentralUser
+{
+    public function shouldSync(): bool
+    {
+        return app('_tenancy_test_shouldSync');
+    }
+}
+
+class TenantUserWithConditionalSync extends ResourceUser
+{
+    public function shouldSync(): bool
+    {
+        return app('_tenancy_test_shouldSync');
     }
 }
