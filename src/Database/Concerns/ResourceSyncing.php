@@ -13,7 +13,6 @@ trait ResourceSyncing
     public static function bootResourceSyncing(): void
     {
         static::saved(function (Syncable $model) {
-            dump($model->shouldSync());
             if ($model->shouldSync()) {
                 $model->triggerSyncEvent();
             }

@@ -765,9 +765,12 @@ function creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase()
 
 test('resources are synced only when sync is enabled', function () {
     [$tenant1, $tenant2] = createTenantsAndRunMigrations();
+    migrateUsersTableForTenants();
 
     tenancy()->initialize($tenant1);
 
+    // Tenant model returns false from `shouldSync`
+    // central model will not be created
     TenantUserWithDisabledSync::create([
         'global_id' => 'absd',
         'name' => 'John Doe',
@@ -779,7 +782,24 @@ test('resources are synced only when sync is enabled', function () {
     tenancy()->end();
 
     expect(CentralUser::all())->toHaveCount(0);
+    expect(CentralUser::whereGlobalId('absd')->first())->toBeNull();
 
+    $centralUser = CentralUserWithDisabledSync::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'password',
+        'role' => 'commenter',
+    ]);
+
+    // central model returns false from `shouldSync`
+    // resource model will not be created
+    $centralUser->tenants()->attach('t2');
+
+    $tenant2->run(function () {
+        expect(ResourceUser::all())->toHaveCount(0);
+        expect(ResourceUser::whereGlobalId('acme')->first())->toBeNull();
+    });
 })->group('current');
 
 /**
@@ -1007,7 +1027,7 @@ class CentralUserWithDisabledSync extends CentralUser
     }
 }
 
-class TenantUserWithDisabledSync extends CentralUser
+class TenantUserWithDisabledSync extends ResourceUser
 {
     public function shouldSync(): bool
     {
