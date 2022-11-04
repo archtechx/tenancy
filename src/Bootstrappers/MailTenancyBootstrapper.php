@@ -24,28 +24,19 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
 
     protected array $originalConfig = [];
 
-    public static function smtpPreset(): array
-    {
-        return [
+    public static array $mapPresets = [
+        'smtp' => [
             'mail.mailers.smtp.host' => 'smtp_host',
             'mail.mailers.smtp.port' => 'smtp_port',
             'mail.mailers.smtp.username' => 'smtp_username',
             'mail.mailers.smtp.password' => 'smtp_password',
-        ];
-    }
+        ],
+    ];
 
     public function __construct(protected Repository $config)
     {
         static::$mailer ??= $config->get('mail.default');
-        static::$credentialsMap = array_merge(static::$credentialsMap, $this->pickMapPreset() ?? []);
-    }
-
-    protected function pickMapPreset(): array|null
-    {
-        return match (static::$mailer) {
-            'smtp' => static::smtpPreset(),
-            default => null,
-        };
+        static::$credentialsMap = array_merge(static::$credentialsMap, static::$mapPresets[static::$mailer] ?? []);
     }
 
     public function bootstrap(Tenant $tenant): void
