@@ -6,15 +6,15 @@ namespace Stancl\Tenancy\Database\TenantDatabaseManagers;
 
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
-use Stancl\Tenancy\Database\Contracts\TenantDatabaseManager as Contract;
+use Stancl\Tenancy\Database\Contracts\StatefulTenantDatabaseManager;
 use Stancl\Tenancy\Database\Exceptions\NoConnectionSetException;
 
-abstract class TenantDatabaseManager implements Contract // todo better naming?
+abstract class TenantDatabaseManager implements StatefulTenantDatabaseManager
 {
     /** The database connection to the server. */
     protected string $connection;
 
-    protected function database(): Connection
+    public function database(): Connection
     {
         if (! isset($this->connection)) {
             throw new NoConnectionSetException(static::class);

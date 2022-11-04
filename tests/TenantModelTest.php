@@ -18,6 +18,7 @@ use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\UUIDGenerator;
+use Stancl\Tenancy\Exceptions\TenancyNotInitializedException;
 
 test('created event is dispatched', function () {
     Event::fake([TenantCreated::class]);
@@ -140,6 +141,31 @@ test('a command can be run on a collection of tenants', function () {
     expect(Tenant::find('t1')->foo)->toBe('xyz');
     expect(Tenant::find('t2')->foo)->toBe('xyz');
 });
+
+test('the current method returns the currently initialized tenant', function() {
+    tenancy()->initialize($tenant = Tenant::create());
+
+    expect(Tenant::current())->toBe($tenant);
+});
+
+test('the current method returns null if there is no currently initialized tenant', function() {
+    tenancy()->end();
+
+    expect(Tenant::current())->toBeNull();
+});
+
+test('currentOrFail method returns the currently initialized tenant', function() {
+    tenancy()->initialize($tenant = Tenant::create());
+
+    expect(Tenant::currentOrFail())->toBe($tenant);
+});
+
+test('currentOrFail method throws an exception if there is no currently initialized tenant', function() {
+    tenancy()->end();
+
+    expect(fn() => Tenant::currentOrFail())->toThrow(TenancyNotInitializedException::class);
+});
+
 
 class MyTenant extends Tenant
 {

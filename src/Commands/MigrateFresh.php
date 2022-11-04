@@ -6,18 +6,13 @@ namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
 use Stancl\Tenancy\Concerns\DealsWithMigrations;
-use Stancl\Tenancy\Concerns\HasATenantsOption;
+use Stancl\Tenancy\Concerns\HasTenantOptions;
 use Symfony\Component\Console\Input\InputOption;
 
-final class MigrateFresh extends Command
+class MigrateFresh extends Command
 {
-    use HasATenantsOption, DealsWithMigrations;
+    use HasTenantOptions, DealsWithMigrations;
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Drop all tables and re-run all migrations for tenant(s)';
 
     public function __construct()
@@ -29,26 +24,27 @@ final class MigrateFresh extends Command
         $this->setName('tenants:migrate-fresh');
     }
 
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function handle(): int
     {
-        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
-            $this->info('Dropping tables.');
-            $this->call('db:wipe', array_filter([
-                '--database' => 'tenant',
-                '--drop-views' => $this->option('drop-views'),
-                '--force' => true,
-            ]));
+        tenancy()->runForMultiple($this->getTenants(), function ($tenant) {
+            $this->components->info("Tenant: {$tenant->getTenantKey()}");
 
-            $this->info('Migrating.');
-            $this->callSilent('tenants:migrate', [
-                '--tenants' => [$tenant->getTenantKey()],
-                '--force' => true,
-            ]);
+            $this->components->task('Dropping tables', function () {
+                $this->callSilently('db:wipe', array_filter([
+                    '--database' => 'tenant',
+                    '--drop-views' => $this->option('drop-views'),
+                    '--force' => true,
+                ]));
+            });
+
+            $this->components->task('Migrating', function () use ($tenant) {
+                $this->callSilent('tenants:migrate', [
+                    '--tenants' => [$tenant->getTenantKey()],
+                    '--force' => true,
+                ]);
+            });
         });
 
-        $this->info('Done.');
+        return 0;
     }
 }

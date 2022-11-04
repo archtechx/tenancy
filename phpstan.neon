@@ -1,5 +1,6 @@
 includes:
     - ./vendor/nunomaduro/larastan/extension.neon
+    - ./vendor/spatie/invade/phpstan-extension.neon
 
 parameters:
     paths:
@@ -10,16 +11,39 @@ parameters:
 
     universalObjectCratesClasses:
         - Illuminate\Routing\Route
+        - Illuminate\Database\Eloquent\Model
 
     ignoreErrors:
-        -
-            message: '#Cannot access offset (.*?) on Illuminate\\Contracts\\Foundation\\Application#'
-            paths:
-                - src/TenancyServiceProvider.php
+        - '#Cannot access offset (.*?) on Illuminate\\Contracts\\Foundation\\Application#'
+        - '#Cannot access offset (.*?) on Illuminate\\Contracts\\Config\\Repository#'
         -
             message: '#invalid type Laravel\\Telescope\\IncomingEntry#'
             paths:
                 - src/Features/TelescopeTags.php
+        -
+            message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::getRelationshipToPrimaryModel\(\)#'
+            paths:
+                - src/Database/ParentModelScope.php
+        -
+            message: '#Parameter \#1 \$key of method Illuminate\\Contracts\\Cache\\Repository::put\(\) expects string#'
+            paths:
+                - src/helpers.php
+        -
+            message: '#PHPDoc tag \@param has invalid value \(dynamic#'
+            paths:
+                - src/helpers.php
+        -
+            message: '#Illuminate\\Routing\\UrlGenerator#'
+            paths:
+                - src/Bootstrappers/FilesystemTenancyBootstrapper.php
+        -
+            message: '#select\(\) expects string, Illuminate\\Database\\Query\\Expression given#'
+            paths:
+                - src/Database/TenantDatabaseManagers/PermissionControlledMySQLDatabaseManager.php
+        -
+            message: '#Trying to invoke Closure\|null but it might not be a callable#'
+            paths:
+                - src/Database/DatabaseConfig.php
 
     checkMissingIterableValueType: false
     treatPhpDocTypesAsCertain: false

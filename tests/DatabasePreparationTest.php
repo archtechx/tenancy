@@ -22,9 +22,7 @@ test('database can be created after tenant creation', function () {
     })->toListener());
 
     $tenant = Tenant::create();
-
-    $manager = app(MySQLDatabaseManager::class);
-    $manager->setConnection('mysql');
+    $manager = $tenant->database()->manager();
 
     expect($manager->databaseExists($tenant->database()->getName()))->toBeTrue();
 });

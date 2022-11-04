@@ -39,7 +39,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
      * However, we're registering a hook to initialize tenancy. Therefore,
      * we need to register the hook at service provider execution time.
      */
-    public static function __constructStatic(Application $app)
+    public static function __constructStatic(Application $app): void
     {
         static::setUpJobListener($app->make(Dispatcher::class), $app->runningUnitTests());
     }
@@ -52,7 +52,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         $this->setUpPayloadGenerator();
     }
 
-    protected static function setUpJobListener($dispatcher, $runningTests)
+    protected static function setUpJobListener(Dispatcher $dispatcher, bool $runningTests): void
     {
         $previousTenant = null;
 
@@ -62,14 +62,11 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             static::initializeTenancyForQueue($event->job->payload()['tenant_id'] ?? null);
         });
 
-        if (version_compare(app()->version(), '8.64', '>=')) {
-            // JobRetryRequested only exists since Laravel 8.64
-            $dispatcher->listen(JobRetryRequested::class, function ($event) use (&$previousTenant) {
-                $previousTenant = tenant();
+        $dispatcher->listen(JobRetryRequested::class, function ($event) use (&$previousTenant) {
+            $previousTenant = tenant();
 
-                static::initializeTenancyForQueue($event->payload()['tenant_id'] ?? null);
-            });
-        }
+            static::initializeTenancyForQueue($event->payload()['tenant_id'] ?? null);
+        });
 
         // If we're running tests, we make sure to clean up after any artisan('queue:work') calls
         $revertToPreviousState = function ($event) use (&$previousTenant, $runningTests) {
@@ -82,7 +79,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         $dispatcher->listen(JobFailed::class, $revertToPreviousState); // artisan('queue:work') which fails
     }
 
-    protected static function initializeTenancyForQueue($tenantId)
+    protected static function initializeTenancyForQueue(string|int $tenantId): void
     {
         if (! $tenantId) {
             // The job is not tenant-aware
@@ -100,7 +97,9 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
                 tenancy()->end();
             }
 
-            tenancy()->initialize(tenancy()->find($tenantId));
+            /** @var Tenant $tenant */
+            $tenant = tenancy()->find($tenantId);
+            tenancy()->initialize($tenant);
 
             return;
         }
@@ -115,10 +114,13 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
 
         // Tenancy was either not initialized, or initialized for a different tenant.
         // Therefore, we initialize it for the correct tenant.
-        tenancy()->initialize(tenancy()->find($tenantId));
+
+        /** @var Tenant $tenant */
+        $tenant = tenancy()->find($tenantId);
+        tenancy()->initialize($tenant);
     }
 
-    protected static function revertToPreviousState($event, &$previousTenant)
+    protected static function revertToPreviousState(JobProcessed|JobFailed $event, ?Tenant &$previousTenant): void
     {
         $tenantId = $event->job->payload()['tenant_id'] ?? null;
 
@@ -138,7 +140,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         }
     }
 
-    protected function setUpPayloadGenerator()
+    protected function setUpPayloadGenerator(): void
     {
         $bootstrapper = &$this;
 
@@ -149,17 +151,17 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         }
     }
 
-    public function bootstrap(Tenant $tenant)
+    public function bootstrap(Tenant $tenant): void
     {
         //
     }
 
-    public function revert()
+    public function revert(): void
     {
         //
     }
 
-    public function getPayload(string $connection)
+    public function getPayload(string $connection): array
     {
         if (! tenancy()->initialized) {
             return [];

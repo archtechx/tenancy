@@ -5,36 +5,46 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Contracts\Console\Kernel;
+use Stancl\Tenancy\Concerns\HasTenantOptions;
+use Symfony\Component\Console\Input\ArgvInput;
+use Symfony\Component\Console\Output\ConsoleOutput;
 
 class Run extends Command
 {
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
+    use HasTenantOptions;
+
     protected $description = 'Run a command for tenant(s)';
 
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'tenants:run {commandname : The artisan command.}
                             {--tenants=* : The tenant(s) to run the command for. Default: all}';
 
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function handle(): int
     {
-        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
-            $this->line("Tenant: {$tenant->getTenantKey()}");
+        $argvInput = $this->argvInput();
 
-            Artisan::call($this->argument('commandname'));
-            $this->comment('Command output:');
-            $this->info(Artisan::output());
+        tenancy()->runForMultiple($this->getTenants(), function ($tenant) use ($argvInput) {
+            $this->components->info("Tenant: {$tenant->getTenantKey()}");
+
+            $this->getLaravel()
+                ->make(Kernel::class)
+                ->handle($argvInput, new ConsoleOutput);
         });
+
+        return 0;
+    }
+
+    protected function argvInput(): ArgvInput
+    {
+        /** @var string $commandName */
+        $commandName = $this->argument('commandname');
+
+        // Convert string command to array
+        $subCommand = explode(' ', $commandName);
+
+        // Add "artisan" as first parameter because ArgvInput expects "artisan" as first parameter and later removes it
+        array_unshift($subCommand, 'artisan');
+
+        return new ArgvInput($subCommand);
     }
 }

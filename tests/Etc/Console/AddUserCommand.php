@@ -2,16 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Tests\Etc;
+namespace Stancl\Tenancy\Tests\Etc\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
-use Stancl\Tenancy\Concerns\HasATenantsOption;
+use Stancl\Tenancy\Concerns\HasTenantOptions;
 use Stancl\Tenancy\Concerns\TenantAwareCommand;
+use Stancl\Tenancy\Tests\Etc\User;
 
 class AddUserCommand extends Command
 {
-    use TenantAwareCommand, HasATenantsOption;
+    use TenantAwareCommand, HasTenantOptions;
 
     /**
      * The name and signature of the console command.

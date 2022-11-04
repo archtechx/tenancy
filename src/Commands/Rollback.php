@@ -8,31 +8,16 @@ use Illuminate\Database\Console\Migrations\RollbackCommand;
 use Illuminate\Database\Migrations\Migrator;
 use Stancl\Tenancy\Concerns\DealsWithMigrations;
 use Stancl\Tenancy\Concerns\ExtendsLaravelCommand;
-use Stancl\Tenancy\Concerns\HasATenantsOption;
+use Stancl\Tenancy\Concerns\HasTenantOptions;
 use Stancl\Tenancy\Events\DatabaseRolledBack;
 use Stancl\Tenancy\Events\RollingBackDatabase;
 
 class Rollback extends RollbackCommand
 {
-    use HasATenantsOption, DealsWithMigrations, ExtendsLaravelCommand;
+    use HasTenantOptions, DealsWithMigrations, ExtendsLaravelCommand;
 
-    protected static function getTenantCommandName(): string
-    {
-        return 'tenants:rollback';
-    }
-
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Rollback migrations for tenant(s).';
 
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
     public function __construct(Migrator $migrator)
     {
         parent::__construct($migrator);
@@ -40,10 +25,7 @@ class Rollback extends RollbackCommand
         $this->specifyTenantSignature();
     }
 
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function handle(): int
     {
         foreach (config('tenancy.migration_parameters') as $parameter => $value) {
             if (! $this->input->hasParameterOption($parameter)) {
@@ -52,11 +34,11 @@ class Rollback extends RollbackCommand
         }
 
         if (! $this->confirmToProceed()) {
-            return;
+            return 1;
         }
 
-        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
-            $this->line("Tenant: {$tenant->getTenantKey()}");
+        tenancy()->runForMultiple($this->getTenants(), function ($tenant) {
+            $this->components->info("Tenant: {$tenant->getTenantKey()}");
 
             event(new RollingBackDatabase($tenant));
 
@@ -65,5 +47,12 @@ class Rollback extends RollbackCommand
 
             event(new DatabaseRolledBack($tenant));
         });
+
+        return 0;
+    }
+
+    protected static function getTenantCommandName(): string
+    {
+        return 'tenants:rollback';
     }
 }

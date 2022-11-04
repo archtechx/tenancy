@@ -11,33 +11,19 @@ use Stancl\Tenancy\Tenancy;
 
 class InitializeTenancyByRequestData extends IdentificationMiddleware
 {
-    /** @var string|null */
-    public static $header = 'X-Tenant';
+    public static string $header = 'X-Tenant';
+    public static string $cookie = 'X-Tenant';
+    public static string $queryParameter = 'tenant';
+    public static ?Closure $onFail = null;
 
-    /** @var string|null */
-    public static $queryParameter = 'tenant';
-
-    /** @var callable|null */
-    public static $onFail;
-
-    /** @var Tenancy */
-    protected $tenancy;
-
-    /** @var TenantResolver */
-    protected $resolver;
-
-    public function __construct(Tenancy $tenancy, RequestDataTenantResolver $resolver)
-    {
-        $this->tenancy = $tenancy;
-        $this->resolver = $resolver;
+    public function __construct(
+        protected Tenancy $tenancy,
+        protected RequestDataTenantResolver $resolver,
+    ) {
     }
 
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     */
-    public function handle($request, Closure $next)
+    /** @return \Illuminate\Http\Response|mixed */
+    public function handle(Request $request, Closure $next): mixed
     {
         if ($request->method() !== 'OPTIONS') {
             return $this->initializeTenancy($request, $next, $this->getPayload($request));
@@ -48,13 +34,18 @@ class InitializeTenancyByRequestData extends IdentificationMiddleware
 
     protected function getPayload(Request $request): ?string
     {
-        $tenant = null;
         if (static::$header && $request->hasHeader(static::$header)) {
-            $tenant = $request->header(static::$header);
-        } elseif (static::$queryParameter && $request->has(static::$queryParameter)) {
-            $tenant = $request->get(static::$queryParameter);
+            return $request->header(static::$header);
         }
 
-        return $tenant;
+        if (static::$queryParameter && $request->has(static::$queryParameter)) {
+            return $request->get(static::$queryParameter);
+        }
+
+        if (static::$cookie && $request->hasCookie(static::$cookie)) {
+            return $request->cookie(static::$cookie);
+        }
+
+        return null;
     }
 }

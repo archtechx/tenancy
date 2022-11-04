@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Illuminate\Cache\CacheManager;
+use Illuminate\Database\Console\Migrations\FreshCommand;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
@@ -77,7 +78,10 @@ class TenancyServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->commands([
+            Commands\Up::class,
             Commands\Run::class,
+            Commands\Down::class,
+            Commands\Link::class,
             Commands\Seed::class,
             Commands\Install::class,
             Commands\Migrate::class,
@@ -85,7 +89,13 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\TenantList::class,
             Commands\TenantDump::class,
             Commands\MigrateFresh::class,
+            Commands\ClearPendingTenants::class,
+            Commands\CreatePendingTenants::class,
         ]);
+
+        $this->app->extend(FreshCommand::class, function () {
+            return new Commands\MigrateFreshOverride;
+        });
 
         $this->publishes([
             __DIR__ . '/../assets/config.php' => config_path('tenancy.php'),
@@ -117,7 +127,7 @@ class TenancyServiceProvider extends ServiceProvider
             if ($event instanceof TenancyEvent) {
                 match (tenancy()->logMode()) {
                     LogMode::SILENT => tenancy()->logEvent($event),
-                    LogMode::INSTANT => dump($event), // todo0 perhaps still log
+                    LogMode::INSTANT => dump($event), // todo1 perhaps still log
                     default => null,
                 };
             }

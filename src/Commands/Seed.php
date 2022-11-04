@@ -6,37 +6,24 @@ namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Database\Console\Seeds\SeedCommand;
-use Stancl\Tenancy\Concerns\HasATenantsOption;
+use Stancl\Tenancy\Concerns\HasTenantOptions;
 use Stancl\Tenancy\Events\DatabaseSeeded;
 use Stancl\Tenancy\Events\SeedingDatabase;
 
 class Seed extends SeedCommand
 {
-    use HasATenantsOption;
+    use HasTenantOptions;
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Seed tenant database(s).';
 
     protected $name = 'tenants:seed';
 
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
     public function __construct(ConnectionResolverInterface $resolver)
     {
         parent::__construct($resolver);
     }
 
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function handle(): int
     {
         foreach (config('tenancy.seeder_parameters') as $parameter => $value) {
             if (! $this->input->hasParameterOption($parameter)) {
@@ -45,11 +32,11 @@ class Seed extends SeedCommand
         }
 
         if (! $this->confirmToProceed()) {
-            return;
+            return 1;
         }
 
-        tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
-            $this->line("Tenant: {$tenant->getTenantKey()}");
+        tenancy()->runForMultiple($this->getTenants(), function ($tenant) {
+            $this->components->info("Tenant: {$tenant->getTenantKey()}");
 
             event(new SeedingDatabase($tenant));
 
@@ -58,5 +45,7 @@ class Seed extends SeedCommand
 
             event(new DatabaseSeeded($tenant));
         });
+
+        return 0;
     }
 }

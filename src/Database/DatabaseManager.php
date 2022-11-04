@@ -15,25 +15,14 @@ use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
  */
 class DatabaseManager
 {
-    /** @var Application */
-    protected $app;
-
-    /** @var BaseDatabaseManager */
-    protected $database;
-
-    /** @var Repository */
-    protected $config;
-
-    public function __construct(Application $app, BaseDatabaseManager $database, Repository $config)
-    {
-        $this->app = $app;
-        $this->database = $database;
-        $this->config = $config;
+    public function __construct(
+        protected Application $app,
+        protected BaseDatabaseManager $database,
+        protected Repository $config,
+    ) {
     }
 
-    /**
-     * Connect to a tenant's database.
-     */
+    /** Connect to a tenant's database. */
     public function connectToTenant(TenantWithDatabase $tenant): void
     {
         $this->purgeTenantConnection();
@@ -41,35 +30,27 @@ class DatabaseManager
         $this->setDefaultConnection('tenant');
     }
 
-    /**
-     * Reconnect to the default non-tenant connection.
-     */
+    /** Reconnect to the default non-tenant connection. */
     public function reconnectToCentral(): void
     {
         $this->purgeTenantConnection();
         $this->setDefaultConnection($this->config->get('tenancy.database.central_connection'));
     }
 
-    /**
-     * Change the default database connection config.
-     */
+    /** Change the default database connection config. */
     public function setDefaultConnection(string $connection): void
     {
         $this->config['database.default'] = $connection;
         $this->database->setDefaultConnection($connection);
     }
 
-    /**
-     * Create the tenant database connection.
-     */
+    /** Create the tenant database connection. */
     public function createTenantConnection(TenantWithDatabase $tenant): void
     {
         $this->config['database.connections.tenant'] = $tenant->database()->connection();
     }
 
-    /**
-     * Purge the tenant database connection.
-     */
+    /** Purge the tenant database connection. */
     public function purgeTenantConnection(): void
     {
         if (array_key_exists('tenant', $this->database->getConnections())) {
@@ -83,8 +64,8 @@ class DatabaseManager
      * Check if a tenant can be created.
      *
      * @throws TenantCannotBeCreatedException
-     * @throws DatabaseManagerNotRegisteredException
-     * @throws TenantDatabaseAlreadyExistsException
+     * @throws Exceptions\DatabaseManagerNotRegisteredException
+     * @throws Exceptions\TenantDatabaseAlreadyExistsException
      */
     public function ensureTenantCanBeCreated(TenantWithDatabase $tenant): void
     {
@@ -94,8 +75,13 @@ class DatabaseManager
             throw new Exceptions\TenantDatabaseAlreadyExistsException($database);
         }
 
-        if ($manager instanceof Contracts\ManagesDatabaseUsers && $manager->userExists($username = $tenant->database()->getUsername())) {
-            throw new Exceptions\TenantDatabaseUserAlreadyExistsException($username);
+        if ($manager instanceof Contracts\ManagesDatabaseUsers) {
+            /** @var string $username */
+            $username = $tenant->database()->getUsername();
+
+            if ($manager->userExists($username)) {
+                throw new Exceptions\TenantDatabaseUserAlreadyExistsException($username);
+            }
         }
     }
 }

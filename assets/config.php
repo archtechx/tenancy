@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-use Stancl\Tenancy\Database\Models\Domain;
-use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Middleware;
+use Stancl\Tenancy\Resolvers;
 
 return [
-    'tenant_model' => Tenant::class,
-    'id_generator' => Stancl\Tenancy\UUIDGenerator::class,
+    'tenant_model' => Stancl\Tenancy\Database\Models\Tenant::class,
+    'domain_model' => Stancl\Tenancy\Database\Models\Domain::class,
 
-    'domain_model' => Domain::class,
+    'id_generator' => Stancl\Tenancy\UUIDGenerator::class,
 
     /**
      * The list of domains hosting your central app.
@@ -19,6 +19,56 @@ return [
     'central_domains' => [
         '127.0.0.1',
         'localhost',
+    ],
+
+    'identification' => [
+        /**
+         * The default middleware used for tenant identification.
+         *
+         * If you use multiple forms of identification, you can set this to the "main" approach you use.
+         */
+        'default_middleware' => Middleware\InitializeTenancyByDomain::class,// todo@identification add this to a 'tenancy' mw group
+
+        /**
+         * All of the identification middleware used by the package.
+         *
+         * If you write your own, make sure to add them to this array.
+         */
+        'middleware' => [
+            Middleware\InitializeTenancyByDomain::class,
+            Middleware\InitializeTenancyBySubdomain::class,
+            Middleware\InitializeTenancyByDomainOrSubdomain::class,
+            Middleware\InitializeTenancyByPath::class,
+            Middleware\InitializeTenancyByRequestData::class,
+        ],
+
+        /**
+         * Tenant resolvers used by the package.
+         *
+         * Resolvers which implement the CachedTenantResolver contract have options for configuring the caching details.
+         * If you add your own resolvers, do not add the 'cache' key unless your resolver is based on CachedTenantResolver.
+         */
+        'resolvers' => [
+            Resolvers\DomainTenantResolver::class => [
+                'cache' => false,
+                'cache_ttl' => 3600, // seconds
+                'cache_store' => null, // default
+            ],
+            Resolvers\PathTenantResolver::class => [
+                'tenant_parameter_name' => 'tenant',
+
+                'cache' => false,
+                'cache_ttl' => 3600, // seconds
+                'cache_store' => null, // default
+            ],
+            Resolvers\RequestDataTenantResolver::class => [
+                'cache' => false,
+                'cache_ttl' => 3600, // seconds
+                'cache_store' => null, // default
+            ],
+        ],
+
+        // todo@docs update integration guides to use Stancl\Tenancy::defaultMiddleware()
     ],
 
     /**
@@ -32,7 +82,27 @@ return [
         Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper::class,
+        Stancl\Tenancy\Bootstrappers\BatchTenancyBootstrapper::class,
         // Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
+    ],
+
+
+    /**
+     * Pending tenants config.
+     * This is useful if you're looking for a way to always have a tenant ready to be used.
+     */
+    'pending' => [
+        /**
+         * If disabled, pending tenants will be excluded from all tenant queries.
+         * You can still use ::withPending(), ::withoutPending() and ::onlyPending() to include or exclude the pending tenants regardless of this setting.
+         * Note: when disabled, this will also ignore pending tenants when running the tenant commands (migration, seed, etc.)
+         */
+        'include_in_queries' => true,
+        /**
+         * Defines how many pending tenants you want to have ready in the pending tenant pool.
+         * This depends on the volume of tenants you're creating.
+         */
+        'count' => env('TENANCY_PENDING_COUNT', 5),
     ],
 
     /**
@@ -46,6 +116,11 @@ return [
          * Note: don't name your template connection tenant. That name is reserved by package.
          */
         'template_tenant_connection' => null,
+
+        /**
+         * The name of the temporary connection used for creating and deleting tenant databases.
+         */
+        'tenant_host_connection_name' => 'tenant_host_connection',
 
         /**
          * Tenant database names are created like this:
@@ -63,18 +138,21 @@ return [
             'pgsql' => Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLDatabaseManager::class,
             'sqlsrv' => Stancl\Tenancy\Database\TenantDatabaseManagers\MicrosoftSQLDatabaseManager::class,
 
-        /**
-         * Use this database manager for MySQL to have a DB user created for each tenant database.
-         * You can customize the grants given to these users by changing the $grants property.
-         */
+            /**
+             * Use this database manager for MySQL to have a DB user created for each tenant database.
+             * You can customize the grants given to these users by changing the $grants property.
+             */
             // 'mysql' => Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager::class,
 
-        /**
-         * Disable the pgsql manager above, and enable the one below if you
-         * want to separate tenant DBs by schemas rather than databases.
-         */
+            /**
+             * Disable the pgsql manager above, and enable the one below if you
+             * want to separate tenant DBs by schemas rather than databases.
+             */
             // 'pgsql' => Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLSchemaManager::class, // Separate by schema instead of database
         ],
+
+        // todo docblock
+        'drop_tenant_databases_on_migrate_fresh' => false,
     ],
 
     /**
@@ -116,6 +194,24 @@ return [
             // Disks whose roots should be overriden after storage_path() is suffixed.
             'local' => '%storage_path%/app/',
             'public' => '%storage_path%/app/public/',
+        ],
+
+        /*
+         * Tenant-aware Storage::disk()->url() can be enabled for specific local disks here
+         * by mapping the disk's name to a name with '%tenant_id%' (this will be used as the public name of the disk).
+         * Doing that will override the disk's default URL with a URL containing the current tenant's key.
+         *
+         * For example, Storage::disk('public')->url('') will return https://your-app.test/storage/ by default.
+         * After adding 'public' => 'public-%tenant_id%' to 'url_override',
+         * the returned URL will be https://your-app.test/public-1/ (%tenant_id% gets substitued by the current tenant's ID).
+         *
+         * Use `php artisan tenants:link` to create a symbolic link from the tenant's storage to its public directory.
+         */
+        'url_override' => [
+            // Note that the local disk you add must exist in the tenancy.filesystem.root_override config
+            // todo@v4 Rename %tenant_id% to %tenant_key%
+            // todo@v4 Rename url_override to something that describes the config key better
+            'public' => 'public-%tenant_id%',
         ],
 
         /**
@@ -186,6 +282,7 @@ return [
     'migration_parameters' => [
         '--force' => true, // This needs to be true to run migrations in production.
         '--path' => [database_path('migrations/tenant')],
+        '--schema-path' => database_path('schema/tenant-schema.dump'),
         '--realpath' => true,
     ],
 
@@ -193,7 +290,15 @@ return [
      * Parameters used by the tenants:seed command.
      */
     'seeder_parameters' => [
-        '--class' => 'DatabaseSeeder', // root seeder class
+        '--class' => 'Database\Seeders\DatabaseSeeder', // root seeder class
         // '--force' => true,
+    ],
+
+    /**
+     * Single-database tenancy config.
+     */
+    'single_db' => [
+        /** The name of the column used by models with the BelongsToTenant trait. */
+        'tenant_id_column' => 'tenant_id',
     ],
 ];
