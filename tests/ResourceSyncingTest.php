@@ -932,13 +932,12 @@ class CentralUserProvidingDefaultValues extends CentralUser
 {
     public function getSyncedCreationAttributes(): array
     {
-        return
-            [
-                'name' => 'Default User',
-                'email' => 'default@localhost',
-                'password' => 'password',
-                'role' => 'admin',
-            ];
+        return  [
+            'name' => 'Default User',
+            'email' => 'default@localhost',
+            'password' => 'password',
+            'role' => 'admin',
+        ];
     }
 }
 
