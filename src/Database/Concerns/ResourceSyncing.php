@@ -13,8 +13,10 @@ trait ResourceSyncing
     public static function bootResourceSyncing(): void
     {
         static::saved(function (Syncable $model) {
-            /** @var ResourceSyncing $model */
-            $model->triggerSyncEvent();
+            dump($model->shouldSync());
+            if ($model->shouldSync()) {
+                $model->triggerSyncEvent();
+            }
         });
 
         static::creating(function (self $model) {
@@ -36,5 +38,10 @@ trait ResourceSyncing
     public function getSyncedCreationAttributes(): array|null
     {
         return null;
+    }
+
+    public function shouldSync(): bool
+    {
+        return true;
     }
 }

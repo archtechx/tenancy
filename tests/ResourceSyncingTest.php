@@ -763,6 +763,25 @@ function creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase()
     expect(ResourceUser::first()->role)->toBe('commenter');
 }
 
+test('resources are synced only when sync is enabled', function () {
+    [$tenant1, $tenant2] = createTenantsAndRunMigrations();
+
+    tenancy()->initialize($tenant1);
+
+    TenantUserWithDisabledSync::create([
+        'global_id' => 'absd',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'password',
+        'role' => 'commenter',
+    ]);
+
+    tenancy()->end();
+
+    expect(CentralUser::all())->toHaveCount(0);
+
+})->group('current');
+
 /**
  * Create two tenants and run migrations for those tenants.
  */
@@ -977,5 +996,21 @@ class ResourceUserProvidingMixture extends ResourceUser
             'role' => 'admin',
             'password' => 'secret',
         ];
+    }
+}
+
+class CentralUserWithDisabledSync extends CentralUser
+{
+    public function shouldSync(): bool
+    {
+        return false;
+    }
+}
+
+class TenantUserWithDisabledSync extends CentralUser
+{
+    public function shouldSync(): bool
+    {
+        return false;
     }
 }
