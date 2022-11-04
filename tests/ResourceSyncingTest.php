@@ -60,7 +60,7 @@ beforeEach(function () {
 test('an event is triggered when a synced resource is changed', function () {
     Event::fake([SyncedResourceSaved::class]);
 
-    $user = ResourceUser::create([
+    $user = TenantUser::create([
         'name' => 'Foo',
         'email' => 'foo@email.com',
         'password' => 'secret',
@@ -89,7 +89,7 @@ test('only the synced columns are updated in the central db', function () {
     tenancy()->initialize($tenant);
 
     // Create the same user in tenant DB
-    $user = ResourceUser::create([
+    $user = TenantUser::create([
         'global_id' => 'acme',
         'name' => 'John Doe',
         'email' => 'john@localhost',
@@ -124,7 +124,7 @@ test('only the synced columns are updated in the central db', function () {
         'email' => 'john@foreignhost', // synced
         'password' => 'secret', // no changes
         'role' => 'superadmin', // unsynced
-    ], ResourceUser::first()->getAttributes());
+    ], TenantUser::first()->getAttributes());
 });
 
 // This tests attribute list on the central side, and default values on the tenant side
@@ -145,14 +145,14 @@ test('sync resource creation works when central model provides attributes and te
     ]);
 
     $tenant1->run(function () {
-        expect(ResourceUserProvidingDefaultValues::all())->toHaveCount(0);
+        expect(TenantUserProvidingDefaultValues::all())->toHaveCount(0);
     });
 
     // When central model provides the list of attributes, resource model will be created from the provided list of attributes' values
     $centralUser->tenants()->attach('t1');
 
     $tenant1->run(function () {
-        $resourceUser = ResourceUserProvidingDefaultValues::all();
+        $resourceUser = TenantUserProvidingDefaultValues::all();
         expect($resourceUser)->toHaveCount(1);
         expect($resourceUser->first()->global_id)->toBe('acme');
         expect($resourceUser->first()->email)->toBe('john@localhost');
@@ -163,7 +163,7 @@ test('sync resource creation works when central model provides attributes and te
     tenancy()->initialize($tenant2);
 
     // When resource model provides the list of default values, central model will be created from the provided list of default values
-    ResourceUserProvidingDefaultValues::create([
+    TenantUserProvidingDefaultValues::create([
         'global_id' => 'asdf',
         'name' => 'John Doe',
         'email' => 'john@localhost',
@@ -201,7 +201,7 @@ test('sync resource creation works when central model provides default values an
     ]);
 
     $tenant1->run(function () {
-        expect(ResourceUserProvidingDefaultValues::all())->toHaveCount(0);
+        expect(TenantUserProvidingDefaultValues::all())->toHaveCount(0);
     });
 
     // When central model provides the list of default values, resource model will be created from the provided list of default values
@@ -209,7 +209,7 @@ test('sync resource creation works when central model provides default values an
 
     $tenant1->run(function () {
         // Assert resource user was created using the list of default values
-        $resourceUser = ResourceUserProvidingDefaultValues::first();
+        $resourceUser = TenantUserProvidingDefaultValues::first();
         expect($resourceUser)->not()->toBeNull();
         expect($resourceUser->global_id)->toBe('acme');
         expect($resourceUser->email)->toBe('default@localhost');
@@ -220,7 +220,7 @@ test('sync resource creation works when central model provides default values an
     tenancy()->initialize($tenant2);
 
     // When resource model provides the list of attributes, central model will be created from the provided list of attributes' values
-    ResourceUserProvidingAttributeNames::create([
+    TenantUserProvidingAttributeNames::create([
         'global_id' => 'asdf',
         'name' => 'John Doe',
         'email' => 'john@localhost',
@@ -253,14 +253,14 @@ test('sync resource creation works when central model provides mixture and tenan
     ]);
 
     $tenant1->run(function () {
-        expect(ResourceUser::all())->toHaveCount(0);
+        expect(TenantUser::all())->toHaveCount(0);
     });
 
     // When central model provides the list of a mixture (attributes and default values), resource model will be created from the provided list of mixture (attributes and default values)
     $centralUser->tenants()->attach('t1');
 
     $tenant1->run(function () {
-        $resourceUser = ResourceUser::first();
+        $resourceUser = TenantUser::first();
 
         // Assert resource user was created using the provided attributes and default values
         expect($resourceUser->global_id)->toBe('acme');
@@ -274,7 +274,7 @@ test('sync resource creation works when central model provides mixture and tenan
     tenancy()->initialize($tenant2);
 
     // When resource model provides nothing/null, the central model will be created as a 1:1 copy of resource model
-    $resourceUser = ResourceUser::create([
+    $resourceUser = TenantUser::create([
         'global_id' => 'acmey',
         'name' => 'John Doe',
         'email' => 'john@localhost',
@@ -311,7 +311,7 @@ test('sync resource creation works when central model provides nothing and tenan
     ]);
 
     $tenant1->run(function () {
-        expect(ResourceUserProvidingMixture::all())->toHaveCount(0);
+        expect(TenantUserProvidingMixture::all())->toHaveCount(0);
     });
 
     // When central model provides nothing/null, the resource model will be created as a 1:1 copy of central model
@@ -319,7 +319,7 @@ test('sync resource creation works when central model provides nothing and tenan
 
     expect($centralUser->getSyncedCreationAttributes())->toBeNull();
     $tenant1->run(function () use ($centralUser) {
-        $resourceUser = ResourceUserProvidingMixture::first();
+        $resourceUser = TenantUserProvidingMixture::first();
         expect($resourceUser)->not()->toBeNull();
         $resourceUser = $resourceUser->toArray();
         $centralUser = $centralUser->withoutRelations()->toArray();
@@ -332,7 +332,7 @@ test('sync resource creation works when central model provides nothing and tenan
     tenancy()->initialize($tenant2);
 
     // When resource model provides the list of a mixture (attributes and default values), central model will be created from the provided list of mixture (attributes and default values)
-    ResourceUserProvidingMixture::create([
+    TenantUserProvidingMixture::create([
         'global_id' => 'absd',
         'name' => 'John Doe',
         'email' => 'john@localhost',
@@ -363,7 +363,7 @@ test('trying to update synced resources from central context using tenant models
     expect(tenancy()->initialized)->toBeFalse();
 
     pest()->expectException(ModelNotSyncMasterException::class);
-    ResourceUser::first()->update(['role' => 'foobar']);
+    TenantUser::first()->update(['role' => 'foobar']);
 });
 
 test('attaching a tenant to the central resource triggers a pull from the tenant db', function () {
@@ -381,13 +381,13 @@ test('attaching a tenant to the central resource triggers a pull from the tenant
     migrateUsersTableForTenants();
 
     $tenant->run(function () {
-        expect(ResourceUser::all())->toHaveCount(0);
+        expect(TenantUser::all())->toHaveCount(0);
     });
 
     $centralUser->tenants()->attach('t1');
 
     $tenant->run(function () {
-        expect(ResourceUser::all())->toHaveCount(1);
+        expect(TenantUser::all())->toHaveCount(1);
     });
 });
 
@@ -406,7 +406,7 @@ test('attaching users to tenants does not do anything', function () {
     migrateUsersTableForTenants();
 
     $tenant->run(function () {
-        expect(ResourceUser::all())->toHaveCount(0);
+        expect(TenantUser::all())->toHaveCount(0);
     });
 
     // The child model is inaccessible in the Pivot Model, so we can't fire any events.
@@ -414,7 +414,7 @@ test('attaching users to tenants does not do anything', function () {
 
     $tenant->run(function () {
         // Still zero
-        expect(ResourceUser::all())->toHaveCount(0);
+        expect(TenantUser::all())->toHaveCount(0);
     });
 });
 
@@ -446,17 +446,17 @@ test('resources are synced only to workspaces that have the resource', function 
 
     $t1->run(function () {
         // assert user exists
-        expect(ResourceUser::all())->toHaveCount(1);
+        expect(TenantUser::all())->toHaveCount(1);
     });
 
     $t2->run(function () {
         // assert user exists
-        expect(ResourceUser::all())->toHaveCount(1);
+        expect(TenantUser::all())->toHaveCount(1);
     });
 
     $t3->run(function () {
         // assert user does NOT exist
-        expect(ResourceUser::all())->toHaveCount(0);
+        expect(TenantUser::all())->toHaveCount(0);
     });
 });
 
@@ -483,7 +483,7 @@ test('when a resource exists in other tenant dbs but is created in a tenant db t
 
     $t2->run(function () {
         // Create user with the same global ID in t2 database
-        ResourceUser::create([
+        TenantUser::create([
             'global_id' => 'acme',
             'name' => 'John Foo', // changed
             'email' => 'john@foo', // changed
@@ -498,7 +498,7 @@ test('when a resource exists in other tenant dbs but is created in a tenant db t
     expect($centralUser->role)->toBe('commenter'); // role didn't change
 
     $t1->run(function () {
-        $user = ResourceUser::first();
+        $user = TenantUser::first();
         expect($user->name)->toBe('John Foo'); // name changed
         expect($user->email)->toBe('john@foo'); // email changed
         expect($user->role)->toBe('commenter'); // role didn't change, i.e. is the same as from the original copy from central
@@ -532,17 +532,17 @@ test('the synced columns are updated in other tenant dbs where the resource exis
     $centralUser->tenants()->attach('t3');
 
     $t3->run(function () {
-        ResourceUser::first()->update([
+        TenantUser::first()->update([
             'name' => 'John 3',
             'role' => 'employee', // unsynced
         ]);
 
-        expect(ResourceUser::first()->role)->toBe('employee');
+        expect(TenantUser::first()->role)->toBe('employee');
     });
 
     // Check that change was cascaded to other tenants
     $t1->run($check = function () {
-        $user = ResourceUser::first();
+        $user = TenantUser::first();
 
         expect($user->name)->toBe('John 3'); // synced
         expect($user->role)->toBe('commenter'); // unsynced
@@ -584,7 +584,7 @@ test('when the resource doesnt exist in the tenant db non synced columns will ca
     $centralUser->tenants()->attach('t1');
 
     $t1->run(function () {
-        expect(ResourceUser::first()->role)->toBe('employee');
+        expect(TenantUser::first()->role)->toBe('employee');
     });
 });
 
@@ -596,7 +596,7 @@ test('when the resource doesnt exist in the central db non synced columns will b
     migrateUsersTableForTenants();
 
     $t1->run(function () {
-        ResourceUser::create([
+        TenantUser::create([
             'name' => 'John Doe',
             'email' => 'john@doe',
             'password' => 'secret',
@@ -620,7 +620,7 @@ test('the listener can be queued', function () {
     Queue::assertNothingPushed();
 
     $t1->run(function () {
-        ResourceUser::create([
+        TenantUser::create([
             'name' => 'John Doe',
             'email' => 'john@doe',
             'password' => 'secret',
@@ -681,12 +681,12 @@ test('an event is fired for all touched resources', function () {
     Event::fake([SyncedResourceChangedInForeignDatabase::class]);
 
     $t3->run(function () {
-        ResourceUser::first()->update([
+        TenantUser::first()->update([
             'name' => 'John 3',
             'role' => 'employee', // unsynced
         ]);
 
-        expect(ResourceUser::first()->role)->toBe('employee');
+        expect(TenantUser::first()->role)->toBe('employee');
     });
 
     Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
@@ -732,7 +732,7 @@ test('an event is fired for all touched resources', function () {
 function creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase()
 {
     // Assert no user in central DB
-    expect(ResourceUser::all())->toHaveCount(0);
+    expect(TenantUser::all())->toHaveCount(0);
 
     $tenant = ResourceTenant::create();
     migrateUsersTableForTenants();
@@ -740,7 +740,7 @@ function creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase()
     tenancy()->initialize($tenant);
 
     // Create the same user in tenant DB
-    ResourceUser::create([
+    TenantUser::create([
         'global_id' => 'acme',
         'name' => 'John Doe',
         'email' => 'john@localhost',
@@ -760,7 +760,7 @@ function creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase()
     // Assert role change doesn't cascade
     CentralUser::first()->update(['role' => 'central superadmin']);
     tenancy()->initialize($tenant);
-    expect(ResourceUser::first()->role)->toBe('commenter');
+    expect(TenantUser::first()->role)->toBe('commenter');
 }
 
 /**
@@ -820,7 +820,7 @@ class CentralUser extends Model implements SyncMaster
 
     public function getTenantModelName(): string
     {
-        return ResourceUser::class;
+        return TenantUser::class;
     }
 
     public function getGlobalIdentifierKey(): string|int
@@ -849,8 +849,7 @@ class CentralUser extends Model implements SyncMaster
     }
 }
 
-// Tenant users
-class ResourceUser extends Model implements Syncable
+class TenantUser extends Model implements Syncable
 {
     use ResourceSyncing;
 
@@ -886,7 +885,7 @@ class ResourceUser extends Model implements Syncable
     }
 }
 
-class ResourceUserProvidingDefaultValues extends ResourceUser
+class TenantUserProvidingDefaultValues extends TenantUser
 {
     public function getSyncedCreationAttributes(): array
     {
@@ -900,7 +899,7 @@ class ResourceUserProvidingDefaultValues extends ResourceUser
     }
 }
 
-class ResourceUserProvidingAttributeNames extends ResourceUser
+class TenantUserProvidingAttributeNames extends TenantUser
 {
     public function getSyncedCreationAttributes(): array
     {
@@ -915,7 +914,7 @@ class ResourceUserProvidingAttributeNames extends ResourceUser
 
 }
 
-class ResourceUserProvidingMixture extends ResourceUser
+class TenantUserProvidingMixture extends TenantUser
 {
     public function getSyncedCreationAttributes(): array
     {
