@@ -17,13 +17,16 @@ parameters:
         - '#Cannot access offset (.*?) on Illuminate\\Contracts\\Foundation\\Application#'
         - '#Cannot access offset (.*?) on Illuminate\\Contracts\\Config\\Repository#'
         -
+            message: '#Call to an undefined (method|static method) Illuminate\\Database\\Eloquent\\(Model|Builder)#'
+            paths:
+                - src/Commands/CreatePendingTenants.php
+                - src/Commands/ClearPendingTenants.php
+                - src/Database/Concerns/PendingScope.php
+                - src/Database/ParentModelScope.php
+        -
             message: '#invalid type Laravel\\Telescope\\IncomingEntry#'
             paths:
                 - src/Features/TelescopeTags.php
-        -
-            message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::getRelationshipToPrimaryModel\(\)#'
-            paths:
-                - src/Database/ParentModelScope.php
         -
             message: '#Parameter \#1 \$key of method Illuminate\\Contracts\\Cache\\Repository::put\(\) expects string#'
             paths:
@@ -44,6 +47,7 @@ parameters:
             message: '#Trying to invoke Closure\|null but it might not be a callable#'
             paths:
                 - src/Database/DatabaseConfig.php
+        - '#Method Stancl\\Tenancy\\Tenancy::cachedResolvers\(\) should return array#'
 
     checkMissingIterableValueType: false
     treatPhpDocTypesAsCertain: false

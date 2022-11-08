@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Database\Concerns;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Events\CreatingPendingTenant;
 use Stancl\Tenancy\Events\PendingTenantCreated;
@@ -14,7 +15,7 @@ use Stancl\Tenancy\Events\PullingPendingTenant;
 // todo consider adding a method that sets pending_since to null — to flag tenants as not-pending
 
 /**
- * @property Carbon $pending_since
+ * @property ?Carbon $pending_since
  *
  * @method static static|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder withPending(bool $withPending = true)
  * @method static static|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder onlyPending()
@@ -22,38 +23,30 @@ use Stancl\Tenancy\Events\PullingPendingTenant;
  */
 trait HasPending
 {
-    /**
-     * Boot the has pending trait for a model.
-     *
-     * @return void
-     */
-    public static function bootHasPending()
+    /** Boot the trait. */
+    public static function bootHasPending(): void
     {
         static::addGlobalScope(new PendingScope());
     }
 
-    /**
-     * Initialize the has pending trait for an instance.
-     *
-     * @return void
-     */
-    public function initializeHasPending()
+    /** Initialize the trait. */
+    public function initializeHasPending(): void
     {
         $this->casts['pending_since'] = 'timestamp';
     }
 
-    /**
-     * Determine if the model instance is in a pending state.
-     *
-     * @return bool
-     */
-    public function pending()
+    /** Determine if the model instance is in a pending state. */
+    public function pending(): bool
     {
         return ! is_null($this->pending_since);
     }
 
-    /** Create a pending tenant. */
-    public static function createPending($attributes = []): Tenant
+    /**
+     * Create a pending tenant.
+     *
+     * @param array<string, mixed> $attributes
+     */
+    public static function createPending(array $attributes = []): Model&Tenant
     {
         $tenant = static::create($attributes);
 
@@ -71,9 +64,12 @@ trait HasPending
     }
 
     /** Pull a pending tenant. */
-    public static function pullPending(): Tenant
+    public static function pullPending(): Model&Tenant
     {
-        return static::pullPendingFromPool(true);
+        /** @var Model&Tenant $pendingTenant */
+        $pendingTenant = static::pullPendingFromPool(true);
+
+        return $pendingTenant;
     }
 
     /** Try to pull a tenant from the pool of pending tenants. */
@@ -88,6 +84,7 @@ trait HasPending
         }
 
         // A pending tenant is surely available at this point
+        /** @var Model&Tenant $tenant */
         $tenant = static::onlyPending()->first();
 
         event(new PullingPendingTenant($tenant));

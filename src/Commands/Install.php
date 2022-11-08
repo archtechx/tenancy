@@ -117,6 +117,7 @@ class Install extends Command
                 $this->newLine();
             }
         } else {
+            /** @var string $warning */
             $this->components->warn($warning);
         }
     }
