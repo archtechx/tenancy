@@ -1005,19 +1005,6 @@ class CentralUserProvidingMixture extends CentralUser
     }
 }
 
-class ResourceUserProvidingMixture extends ResourceUser
-{
-    public function getSyncedCreationAttributes(): array
-    {
-        return [
-            'name',
-            'email',
-            'role' => 'admin',
-            'password' => 'secret',
-        ];
-    }
-}
-
 class CentralUserWithConditionalSync extends CentralUser
 {
     public function shouldSync(): bool
