@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Events\CallQueuedListener;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
@@ -149,7 +150,7 @@ test('sync resource creation works when central model provides attributes and re
     });
 
     // When central model provides the list of attributes, resource model will be created from the provided list of attributes' values
-    $centralUser->tenants()->attach('t1');
+    $centralUser->resources()->attach('t1');
 
     $tenant1->run(function () {
         $resourceUser = ResourceUserProvidingDefaultValues::all();
@@ -205,7 +206,7 @@ test('sync resource creation works when central model provides default values an
     });
 
     // When central model provides the list of default values, resource model will be created from the provided list of default values
-    $centralUser->tenants()->attach('t1');
+    $centralUser->resources()->attach('t1');
 
     $tenant1->run(function () {
         // Assert resource user was created using the list of default values
@@ -257,7 +258,7 @@ test('sync resource creation works when central model provides mixture and resou
     });
 
     // When central model provides the list of a mixture (attributes and default values), resource model will be created from the provided list of mixture (attributes and default values)
-    $centralUser->tenants()->attach('t1');
+    $centralUser->resources()->attach('t1');
 
     $tenant1->run(function () {
         $resourceUser = ResourceUser::first();
@@ -284,14 +285,10 @@ test('sync resource creation works when central model provides mixture and resou
 
     tenancy()->end();
 
-    $centralUser = CentralUserProvidingMixture::whereGlobalId('acmey')->first();
+    $centralUser = CentralUserProvidingMixture::whereGlobalId('acmey')->first()->only(['name', 'email', 'password', 'role']);
     expect($resourceUser->getSyncedCreationAttributes())->toBeNull();
 
-    $centralUser = $centralUser->toArray();
-    $resourceUser = $resourceUser->toArray();
-    unset($centralUser['id']);
-    unset($resourceUser['id']);
-
+    $resourceUser = $resourceUser->only(['name', 'email', 'password', 'role']);
     // Assert central user created as 1:1 copy of resource model except "id"
     expect($centralUser)->toBe($resourceUser);
 });
@@ -315,16 +312,12 @@ test('sync resource creation works when central model provides nothing and resou
     });
 
     // When central model provides nothing/null, the resource model will be created as a 1:1 copy of central model
-    $centralUser->tenants()->attach('t1');
+    $centralUser->resources()->attach('t1');
 
     expect($centralUser->getSyncedCreationAttributes())->toBeNull();
     $tenant1->run(function () use ($centralUser) {
-        $resourceUser = ResourceUserProvidingMixture::first();
-        expect($resourceUser)->not()->toBeNull();
-        $resourceUser = $resourceUser->toArray();
-        $centralUser = $centralUser->withoutRelations()->toArray();
-        unset($resourceUser['id']);
-        unset($centralUser['id']);
+        $resourceUser = ResourceUserProvidingMixture::first()->only(['name', 'email', 'password', 'role']);
+        $centralUser = $centralUser->only(['name', 'email', 'password', 'role']);
 
         expect($resourceUser)->toBe($centralUser);
     });
@@ -384,7 +377,7 @@ test('attaching a tenant to the central resource triggers a pull from the tenant
         expect(ResourceUser::all())->toHaveCount(0);
     });
 
-    $centralUser->tenants()->attach('t1');
+    $centralUser->resources()->attach('t1');
 
     $tenant->run(function () {
         expect(ResourceUser::all())->toHaveCount(1);
@@ -440,8 +433,8 @@ test('resources are synced only to workspaces that have the resource', function 
     ]);
     migrateUsersTableForTenants();
 
-    $centralUser->tenants()->attach('t1');
-    $centralUser->tenants()->attach('t2');
+    $centralUser->resources()->attach('t1');
+    $centralUser->resources()->attach('t2');
     // t3 is not attached
 
     $t1->run(function () {
@@ -479,7 +472,7 @@ test('when a resource exists in other tenant dbs but is created in a tenant db t
     migrateUsersTableForTenants();
 
     // Copy (cascade) user to t1 DB
-    $centralUser->tenants()->attach('t1');
+    $centralUser->resources()->attach('t1');
 
     $t2->run(function () {
         // Create user with the same global ID in t2 database
@@ -527,9 +520,9 @@ test('the synced columns are updated in other tenant dbs where the resource exis
     migrateUsersTableForTenants();
 
     // Copy (cascade) user to t1 DB
-    $centralUser->tenants()->attach('t1');
-    $centralUser->tenants()->attach('t2');
-    $centralUser->tenants()->attach('t3');
+    $centralUser->resources()->attach('t1');
+    $centralUser->resources()->attach('t2');
+    $centralUser->resources()->attach('t3');
 
     $t3->run(function () {
         ResourceUser::first()->update([
@@ -581,7 +574,7 @@ test('when the resource doesnt exist in the tenant db non synced columns will ca
 
     migrateUsersTableForTenants();
 
-    $centralUser->tenants()->attach('t1');
+    $centralUser->resources()->attach('t1');
 
     $t1->run(function () {
         expect(ResourceUser::first()->role)->toBe('employee');
@@ -657,17 +650,17 @@ test('an event is fired for all touched resources', function () {
     migrateUsersTableForTenants();
 
     // Copy (cascade) user to t1 DB
-    $centralUser->tenants()->attach('t1');
+    $centralUser->resources()->attach('t1');
     Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
         return $event->tenant->getTenantKey() === 't1';
     });
 
-    $centralUser->tenants()->attach('t2');
+    $centralUser->resources()->attach('t2');
     Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
         return $event->tenant->getTenantKey() === 't2';
     });
 
-    $centralUser->tenants()->attach('t3');
+    $centralUser->resources()->attach('t3');
     Event::assertDispatched(SyncedResourceChangedInForeignDatabase::class, function (SyncedResourceChangedInForeignDatabase $event) {
         return $event->tenant->getTenantKey() === 't3';
     });
@@ -755,7 +748,7 @@ function creatingResourceInTenantDatabaseCreatesAndMapInCentralDatabase()
     expect(CentralUser::first()->role)->toBe('commenter');
 
     // Assert mapping was created
-    expect(CentralUser::first()->tenants)->toHaveCount(1);
+    expect(CentralUser::first()->resources)->toHaveCount(1);
 
     // Assert role change doesn't cascade
     CentralUser::first()->update(['role' => 'central superadmin']);
@@ -792,7 +785,7 @@ test('resources are synced only when sync is enabled', function (bool $enabled) 
         'role' => 'commenter',
     ]);
 
-    $centralUser->tenants()->attach('t2');
+    $centralUser->resources()->attach('t2');
 
     $tenant2->run(function () use ($enabled) {
         expect(TenantUserWithConditionalSync::all())->toHaveCount($enabled ? 1 : 0);
@@ -831,9 +824,9 @@ function migrateUsersTableForTenants(): void
 
 class ResourceTenant extends Tenant
 {
-    public function users()
+    public function users(): MorphToMany
     {
-        return $this->belongsToMany(CentralUser::class, 'tenant_users', 'tenant_id', 'global_user_id', 'id', 'global_id')
+        return $this->morphedByMany(CentralUserForPolymorphic::class, 'tenant_resources', 'tenant_resources', 'tenant_id', 'resource_global_id', 'id', 'global_id')
             ->using(TenantPivot::class);
     }
 }
@@ -848,10 +841,10 @@ class CentralUser extends Model implements SyncMaster
 
     public $table = 'users';
 
-    public function tenants(): BelongsToMany
+    // override method to provide different tenant
+    public function getResourceTenantModelName(): string
     {
-        return $this->belongsToMany(ResourceTenant::class, 'tenant_users', 'global_user_id', 'tenant_id', 'global_id')
-            ->using(TenantPivot::class);
+        return ResourceTenant::class;
     }
 
     public function getTenantModelName(): string

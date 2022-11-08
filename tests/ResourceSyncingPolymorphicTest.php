@@ -73,16 +73,9 @@ test('polymorphic relationship works for every model when syncing resources from
     // When central model provides nothing/null, the resource model will be created as a 1:1 copy of central model
     $centralUser->resources()->attach('t1');
 
-    expect($centralUser->getSyncedCreationAttributes())->toBeNull();
     $tenant1->run(function () use ($centralUser) {
-        $resourceUser = ResourceUserForPolymorphic::first();
-        expect($resourceUser)->not()->toBeNull();
-        $resourceUser = $resourceUser->toArray();
-        $centralUser = $centralUser->withoutRelations()->toArray();
-
-        // remove id from comparison, because we don't copy id and let target model handle it
-        unset($resourceUser['id']);
-        unset($centralUser['id']);
+        $resourceUser = ResourceUserForPolymorphic::first()->only(['name', 'email', 'password', 'role']);
+        $centralUser = $centralUser->only(['name', 'email', 'password', 'role']);
 
         expect($resourceUser)->toBe($centralUser);
     });
@@ -104,16 +97,9 @@ test('polymorphic relationship works for every model when syncing resources from
     // When central model provides nothing/null, the resource model will be created as a 1:1 copy of central model
     $centralCompany->resources()->attach('t2');
 
-    expect($centralCompany->getSyncedCreationAttributes())->toBeNull();
     $tenant2->run(function () use ($centralCompany) {
-        $resourceCompany = ResourceCompanyForPolymorphic::first();
-        expect($resourceCompany)->not()->toBeNull();
-        $resourceCompany = $resourceCompany->toArray();
-        $centralCompany = $centralCompany->withoutRelations()->toArray();
-
-        // remove id from comparison, because we don't copy id and let target model handle it
-        unset($resourceCompany['id']);
-        unset($centralCompany['id']);
+        $resourceCompany = ResourceCompanyForPolymorphic::first()->only(['name', 'email']);
+        $centralCompany = $centralCompany->only(['name', 'email']);
 
         expect($resourceCompany)->toBe($centralCompany);
     });
@@ -186,13 +172,13 @@ function migrateCompaniesTableForTenants(): void
 
 class ResourceTenantForPolymorphic extends Tenant
 {
-    public function users()
+    public function users(): MorphToMany
     {
         return $this->morphedByMany(CentralUserForPolymorphic::class, 'tenant_resources', 'tenant_resources', 'tenant_id', 'resource_global_id', 'id', 'global_id')
             ->using(TenantPivot::class);
     }
 
-    public function companies()
+    public function companies(): MorphToMany
     {
         return $this->morphedByMany(CentralCompanyForPolymorphic::class, 'tenant_resources', 'tenant_resources', 'tenant_id', 'resource_global_id', 'id', 'global_id')
             ->using(TenantPivot::class);
@@ -209,10 +195,10 @@ class CentralUserForPolymorphic extends Model implements SyncMaster
 
     public $table = 'users';
 
-    public function resources(): MorphToMany
+    // override method to provide different tenant
+    public function getResourceTenantModelName(): string
     {
-        return $this->morphToMany(ResourceTenantForPolymorphic::class, 'tenant_resources', 'tenant_resources', 'resource_global_id', 'tenant_id', 'global_id')
-            ->using(TenantPivot::class);
+        return ResourceTenantForPolymorphic::class;
     }
 
     public function getTenantModelName(): string
@@ -292,10 +278,10 @@ class CentralCompanyForPolymorphic extends Model implements SyncMaster
 
     public $table = 'companies';
 
-    public function resources(): MorphToMany
+    // override method to provide different tenant
+    public function getResourceTenantModelName(): string
     {
-        return $this->morphToMany(ResourceTenantForPolymorphic::class, 'tenant_resources', 'tenant_resources', 'resource_global_id', 'tenant_id', 'global_id')
-            ->using(TenantPivot::class);
+        return ResourceTenantForPolymorphic::class;
     }
 
     public function getTenantModelName(): string
