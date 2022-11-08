@@ -170,6 +170,8 @@ function migrateCompaniesTableForTenants(): void
     ])->assertExitCode(0);
 }
 
+// todo@1 better names for resource syncing setup here
+
 class ResourceTenantForPolymorphic extends Tenant
 {
     public function users(): MorphToMany
