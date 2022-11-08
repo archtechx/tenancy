@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Contracts;
 
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 // todo move all resource syncing-related things to a separate namespace?
 
@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  */
 interface SyncMaster extends Syncable
 {
-    //public function tenants(): BelongsToMany;
+    public function resources(): MorphToMany;
 
     public function getTenantModelName(): string;
 }
