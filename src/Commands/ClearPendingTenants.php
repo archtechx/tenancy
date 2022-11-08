@@ -9,27 +9,14 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ClearPendingTenants extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'tenants:pending-clear
                             {--all : Override the default settings and deletes all pending tenants}
                             {--older-than-days= : Deletes all pending tenants older than the amount of days}
                             {--older-than-hours= : Deletes all pending tenants older than the amount of hours}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Remove pending tenants.';
 
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function handle(): int
     {
         $this->info('Removing pending tenants.');
 
@@ -39,7 +26,10 @@ class ClearPendingTenants extends Command
 
         // Skip the time constraints if the 'all' option is given
         if (! $this->option('all')) {
+            /** @var ?int $olderThanDays */
             $olderThanDays = $this->option('older-than-days');
+
+            /** @var ?int $olderThanHours */
             $olderThanHours = $this->option('older-than-hours');
 
             if ($olderThanDays && $olderThanHours) {
@@ -70,5 +60,7 @@ class ClearPendingTenants extends Command
             ->count();
 
         $this->info($deletedTenantCount . ' pending ' . str('tenant')->plural($deletedTenantCount) . ' deleted.');
+
+        return 0;
     }
 }

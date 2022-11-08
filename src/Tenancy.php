@@ -42,8 +42,7 @@ class Tenancy
             }
         }
 
-        // todo1 for phpstan this should be $this->tenant?, but first I want to clean up the $initialized logic and explore removing the property
-        if ($this->initialized && $this->tenant->getTenantKey() === $tenant->getTenantKey()) {
+        if ($this->initialized && $this->tenant?->getTenantKey() === $tenant->getTenantKey()) {
             return;
         }
 
@@ -52,6 +51,7 @@ class Tenancy
             $this->end();
         }
 
+        /** @var Tenant&Model $tenant */
         $this->tenant = $tenant;
 
         event(new Events\InitializingTenancy($this));
