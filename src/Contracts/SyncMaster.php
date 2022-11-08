@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  */
 interface SyncMaster extends Syncable
 {
-    public function tenants(): BelongsToMany;
+    //public function tenants(): BelongsToMany;
 
     public function getTenantModelName(): string;
 }

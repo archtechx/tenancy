@@ -46,10 +46,10 @@ class UpdateSyncedResource extends QueueableListener
 
         // Since this model is "dirty" (taken by reference from the event), it might have the tenants
         // relationship already loaded and cached. For this reason, we refresh the relationship.
-        $centralModel->load('tenants');
+        $centralModel->load('resources');
 
         /** @var TenantCollection $tenants */
-        $tenants = $centralModel->tenants;
+        $tenants = $centralModel->resources;
 
         return $tenants;
     }
@@ -80,7 +80,7 @@ class UpdateSyncedResource extends QueueableListener
             return ((string) $model->pivot->tenant_id) === ((string) $tenant->getTenantKey());
         };
 
-        $mappingExists = $centralModel->tenants->contains($currentTenantMapping);
+        $mappingExists = $centralModel->resources->contains($currentTenantMapping);
 
         if (! $mappingExists) {
             // Here we should call TenantPivot, but we call general Pivot, so that this works
@@ -89,12 +89,12 @@ class UpdateSyncedResource extends QueueableListener
                 /** @var Tenant */
                 $tenant = $event->tenant;
 
-                $centralModel->tenants()->attach($tenant->getTenantKey());
+                $centralModel->resources()->attach($tenant->getTenantKey());
             });
         }
 
         /** @var TenantCollection $tenants */
-        $tenants = $centralModel->tenants->filter(function ($model) use ($currentTenantMapping) {
+        $tenants = $centralModel->resources->filter(function ($model) use ($currentTenantMapping) {
             // Remove the mapping for the current tenant.
             return ! $currentTenantMapping($model);
         });
