@@ -103,3 +103,12 @@ jobs:
           author_email: "phpcsfixer@example.com"
           message: Fix code style (php-cs-fixer)
 
+  phpstan:
+    name: Static analysis (PHPStan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install composer dependencies
+        run: composer install
+      - name: Run phpstan
+        run: vendor/bin/phpstan analyse
