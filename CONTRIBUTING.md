@@ -10,6 +10,8 @@ Run `composer docker-up` to start the containers. Then run `composer test` to ru
 
 If you need to pass additional flags to phpunit, use `./test --foo` instead of `composer test --foo`. Composer scripts unfortunately don't pass CLI arguments.
 
+If you want to run a specific test (or test file), you can also use `./t 'name of the test'`. This is equivalent to `./test --no-coverage --filter 'name of the test'`.
+
 When you're done testing, run `composer docker-down` to shut down the containers.
 
 ### Docker on M1

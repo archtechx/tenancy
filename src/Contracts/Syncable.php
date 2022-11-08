@@ -18,4 +18,6 @@ interface Syncable
 
     /** Get the attributes used for creating the *other* model (i.e. tenant if this is the central one, and central if this is the tenant one). */
     public function getSyncedCreationAttributes(): array|null; // todo come up with a better name
+
+    public function shouldSync(): bool;
 }
