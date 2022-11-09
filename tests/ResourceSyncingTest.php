@@ -923,10 +923,12 @@ class ResourceUser extends Model implements Syncable
     }
 }
 
+// override method in ResourceUser class to return default attribute values
 class TenantUserProvidingDefaultValues extends ResourceUser
 {
     public function getSyncedCreationAttributes(): array
     {
+        // Default values when creating resources from tenant to central DB
         return
             [
                 'name' => 'Default Name',
@@ -938,10 +940,14 @@ class TenantUserProvidingDefaultValues extends ResourceUser
     }
 }
 
+// override method in ResourceUser class to return attribute names
 class TenantUserProvidingAttributeNames extends ResourceUser
 {
     public function getSyncedCreationAttributes(): array
     {
+        // Attributes used when creating resources from tenant to central DB
+        // Notice here we are not adding "code" filed because it doesn't
+        // exist in central model
         return
             [
                 'name',
@@ -954,10 +960,12 @@ class TenantUserProvidingAttributeNames extends ResourceUser
 
 }
 
-class TenantUserProvidingMixture extends ResourceUser
+// override method in CentralUser class to return attribute default values
+class CentralUserProvidingDefaultValues extends CentralUser
 {
     public function getSyncedCreationAttributes(): array
     {
+        // Attributes default values when creating resources from central to tenant model
         return
             [
                 'name' => 'Default User',
@@ -968,10 +976,12 @@ class TenantUserProvidingMixture extends ResourceUser
     }
 }
 
-class CentralUserProvidingDefaultValues extends CentralUser
+// override method in CentralUser class to return attribute names
+class CentralUserProvidingAttributeNames extends CentralUser
 {
     public function getSyncedCreationAttributes(): array
     {
+        // Attributes used when creating resources from central to tenant DB
         return
             [
                 'global_id',
@@ -983,21 +993,20 @@ class CentralUserProvidingDefaultValues extends CentralUser
     }
 }
 
-class CentralUserProvidingAttributeNames extends CentralUser
+class CentralUserProvidingMixture extends CentralUser
 {
     public function getSyncedCreationAttributes(): array
     {
         return [
-            'global_id',
             'name',
-            'password',
             'email',
-            'role',
+            'role' => 'admin',
+            'password' => 'secret',
         ];
     }
 }
 
-class CentralUserProvidingMixture extends CentralUser
+class TenantUserProvidingMixture extends ResourceUser
 {
     public function getSyncedCreationAttributes(): array
     {
