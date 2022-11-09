@@ -927,13 +927,14 @@ class TenantUserProvidingDefaultValues extends ResourceUser
 {
     public function getSyncedCreationAttributes(): array
     {
-        return [
-            'name' => 'Default Name',
-            'email' => 'default@localhost',
-            'password' => 'password',
-            'role' => 'admin',
-            'foo' => 'bar'
-        ];
+        return
+            [
+                'name' => 'Default Name',
+                'email' => 'default@localhost',
+                'password' => 'password',
+                'role' => 'admin',
+                'foo' => 'bar'
+            ];
     }
 }
 
@@ -941,13 +942,14 @@ class TenantUserProvidingAttributeNames extends ResourceUser
 {
     public function getSyncedCreationAttributes(): array
     {
-        return [
-            'name',
-            'password',
-            'email',
-            'role',
-            'foo' => 'bar'
-        ];
+        return
+            [
+                'name',
+                'password',
+                'email',
+                'role',
+                'foo' => 'bar'
+            ];
     }
 
 }
@@ -956,12 +958,13 @@ class TenantUserProvidingMixture extends ResourceUser
 {
     public function getSyncedCreationAttributes(): array
     {
-        return [
-            'name',
-            'email',
-            'role' => 'admin',
-            'password' => 'secret',
-        ];
+        return
+            [
+                'name' => 'Default User',
+                'email' => 'default@localhost',
+                'password' => 'password',
+                'role' => 'admin',
+            ];
     }
 }
 
@@ -969,12 +972,14 @@ class CentralUserProvidingDefaultValues extends CentralUser
 {
     public function getSyncedCreationAttributes(): array
     {
-        return  [
-            'name' => 'Default User',
-            'email' => 'default@localhost',
-            'password' => 'password',
-            'role' => 'admin',
-        ];
+        return
+            [
+                'global_id',
+                'name',
+                'password',
+                'email',
+                'role',
+            ];
     }
 }
 
