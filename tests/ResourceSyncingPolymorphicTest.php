@@ -71,7 +71,7 @@ test('polymorphic relationship works for every model when syncing resources from
     });
 
     // When central model provides nothing/null, the resource model will be created as a 1:1 copy of central model
-    $centralUser->resources()->attach('t1');
+    $centralUser->tenants()->attach('t1');
 
     $tenant1->run(function () use ($centralUser) {
         $resourceUser = ResourceUserForPolymorphic::first()->only(['name', 'email', 'password', 'role']);
@@ -95,7 +95,7 @@ test('polymorphic relationship works for every model when syncing resources from
     });
 
     // When central model provides nothing/null, the resource model will be created as a 1:1 copy of central model
-    $centralCompany->resources()->attach('t2');
+    $centralCompany->tenants()->attach('t2');
 
     $tenant2->run(function () use ($centralCompany) {
         $resourceCompany = ResourceCompanyForPolymorphic::first()->only(['name', 'email']);

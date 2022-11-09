@@ -47,7 +47,7 @@ trait ResourceSyncing
         return true;
     }
 
-    public function resources(): MorphToMany
+    public function tenants(): MorphToMany
     {
         return $this->morphToMany($this->getResourceTenantModelName(), 'tenant_resources', 'tenant_resources', 'resource_global_id', 'tenant_id', 'global_id')
             ->using(TenantPivot::class);

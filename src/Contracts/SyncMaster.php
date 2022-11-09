@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
  */
 interface SyncMaster extends Syncable
 {
-    public function resources(): MorphToMany;
+    public function tenants(): MorphToMany;
 
     public function getTenantModelName(): string;
 }
