@@ -48,16 +48,16 @@ beforeEach(function () {
         '--path' => [
             __DIR__ . '/Etc/synced_resource_migrations',
             __DIR__ . '/Etc/synced_resource_migrations/users',
+            __DIR__ . '/Etc/synced_resource_migrations/companies',
         ],
         '--realpath' => true,
     ])->assertExitCode(0);
 });
 
-test('polymorphic relationship works for every model when syncing resources from central to tenant', function (){
+test('resource syncing works using a single pivot table for multiple models when syncing from central to tenant', function () {
     $tenant1 = ResourceTenantForPolymorphic::create(['id' => 't1']);
-    migrateUsersTableForPloymorphicTenants();
+    migrateUsersTableForTenants();
 
-    // Assert User resource is synced
     $centralUser = CentralUserForPolymorphic::create([
         'global_id' => 'acme',
         'name' => 'John Doe',
@@ -70,9 +70,9 @@ test('polymorphic relationship works for every model when syncing resources from
         expect(ResourceUserForPolymorphic::all())->toHaveCount(0);
     });
 
-    // When central model provides nothing/null, the resource model will be created as a 1:1 copy of central model
     $centralUser->tenants()->attach('t1');
 
+    // Assert User resource is synced
     $tenant1->run(function () use ($centralUser) {
         $resourceUser = ResourceUserForPolymorphic::first()->only(['name', 'email', 'password', 'role']);
         $centralUser = $centralUser->only(['name', 'email', 'password', 'role']);
@@ -83,7 +83,6 @@ test('polymorphic relationship works for every model when syncing resources from
     $tenant2 = ResourceTenantForPolymorphic::create(['id' => 't2']);
     migrateCompaniesTableForTenants();
 
-    // Assert Company resource is synced
     $centralCompany = CentralCompanyForPolymorphic::create([
         'global_id' => 'acme',
         'name' => 'ArchTech',
@@ -94,9 +93,9 @@ test('polymorphic relationship works for every model when syncing resources from
         expect(ResourceCompanyForPolymorphic::all())->toHaveCount(0);
     });
 
-    // When central model provides nothing/null, the resource model will be created as a 1:1 copy of central model
     $centralCompany->tenants()->attach('t2');
 
+    // Assert Company resource is synced
     $tenant2->run(function () use ($centralCompany) {
         $resourceCompany = ResourceCompanyForPolymorphic::first()->only(['name', 'email']);
         $centralCompany = $centralCompany->only(['name', 'email']);
@@ -105,13 +104,12 @@ test('polymorphic relationship works for every model when syncing resources from
     });
 });
 
-test('polymorphic relationship works for multiple models when syncing resources from tenant to central', function () {
+test('resource syncing works using a single pivot table for multiple models when syncing from tenant to central', function () {
     $tenant1 = ResourceTenantForPolymorphic::create(['id' => 't1']);
-    migrateUsersTableForPloymorphicTenants();
+    migrateUsersTableForTenants();
 
     tenancy()->initialize($tenant1);
 
-    // Assert User resource is synced
     $resourceUser = ResourceUserForPolymorphic::create([
         'name' => 'John Doe',
         'email' => 'john@localhost',
@@ -121,18 +119,16 @@ test('polymorphic relationship works for multiple models when syncing resources 
 
     tenancy()->end();
 
+    // Assert User resource is synced
     $centralUser = CentralUserForPolymorphic::first()->only(['name', 'email', 'password', 'role']);
     $resourceUser = $resourceUser->only(['name', 'email', 'password', 'role']);
-
     expect($resourceUser)->toBe($centralUser);
 
-    // Assert Company resource is synced
     $tenant2 = ResourceTenantForPolymorphic::create(['id' => 't2']);
     migrateCompaniesTableForTenants();
 
     tenancy()->initialize($tenant2);
 
-    // Assert User resource is synced
     $resourceCompany = ResourceCompanyForPolymorphic::create([
         'global_id' => 'acme',
         'name' => 'tenant comp',
@@ -141,36 +137,21 @@ test('polymorphic relationship works for multiple models when syncing resources 
 
     tenancy()->end();
 
+    // Assert Company resource is synced
     $centralCompany = CentralCompanyForPolymorphic::first()->only(['name', 'email']);
     $resourceCompany = $resourceCompany->only(['name', 'email']);
     expect($resourceCompany)->toBe($centralCompany);
 });
 
-function migrateUsersTableForPloymorphicTenants(): void
-{
-    pest()->artisan('tenants:migrate', [
-        '--path' => __DIR__ . '/Etc/synced_resource_migrations/users',
-        '--realpath' => true,
-    ])->assertExitCode(0);
-}
-
 function migrateCompaniesTableForTenants(): void
 {
-    // Run migrations on central connection
-    pest()->artisan('migrate', [
-        '--path' => [
-            __DIR__ . '/Etc/synced_resource_migrations/companies',
-        ],
-        '--realpath' => true,
-    ])->assertExitCode(0);
-
     pest()->artisan('tenants:migrate', [
         '--path' => __DIR__ . '/Etc/synced_resource_migrations/companies',
         '--realpath' => true,
     ])->assertExitCode(0);
 }
 
-// todo@1 better names for resource syncing setup here
+// todo better names for resource syncing setup here
 
 class ResourceTenantForPolymorphic extends Tenant
 {
