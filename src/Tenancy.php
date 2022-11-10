@@ -97,7 +97,7 @@ class Tenancy
 
     public static function model(): Tenant&Model
     {
-        $class = config('tenancy.tenant_model');
+        $class = config('tenancy.models.tenant');
 
         /** @var Tenant&Model $model */
         $model = new $class;

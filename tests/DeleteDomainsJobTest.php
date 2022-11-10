@@ -6,7 +6,7 @@ use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Jobs\DeleteDomains;
 
 beforeEach(function () {
-    config(['tenancy.tenant_model' => DatabaseAndDomainTenant::class]);
+    config(['tenancy.models.tenant' => DatabaseAndDomainTenant::class]);
 });
 
 test('job delete domains successfully', function (){

@@ -21,7 +21,7 @@ beforeEach(function () {
         });
     });
 
-    config(['tenancy.tenant_model' => DomainTenant::class]);
+    config(['tenancy.models.tenant' => DomainTenant::class]);
 });
 
 test('tenant can be identified using hostname', function () {

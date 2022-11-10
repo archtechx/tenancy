@@ -14,12 +14,12 @@ trait BelongsToTenant
 {
     public function tenant()
     {
-        return $this->belongsTo(config('tenancy.tenant_model'), static::tenantIdColumn());
+        return $this->belongsTo(config('tenancy.models.tenant'), static::tenantIdColumn());
     }
 
     public static function tenantIdColumn(): string
     {
-        return config('tenancy.single_db.tenant_id_column');
+        return config('tenancy.models.tenant_key_column');
     }
 
     public static function bootBelongsToTenant(): void

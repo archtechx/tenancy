@@ -6,10 +6,29 @@ use Stancl\Tenancy\Middleware;
 use Stancl\Tenancy\Resolvers;
 
 return [
-    'tenant_model' => Stancl\Tenancy\Database\Models\Tenant::class,
-    'domain_model' => Stancl\Tenancy\Database\Models\Domain::class,
+    /**
+     * Configuration for the models used by Tenancy.
+     */
+    'models' => [
+        'tenant' => Stancl\Tenancy\Database\Models\Tenant::class,
+        'domain' => Stancl\Tenancy\Database\Models\Domain::class,
 
-    'id_generator' => Stancl\Tenancy\UUIDGenerator::class,
+        /**
+         * Name of the column used to for ->tenant() relationships.
+         *
+         * This is used by the HasDomains trait, and models that use the BelongsToTenant trait (used in single-database tenancy).
+         */
+        'tenant_key_column' => 'tenant_id',
+
+        /**
+         * Used for generating tenant IDs.
+         *
+         *   - Feel free to override this with a custom class that implements the UniqueIdentifierGenerator interface.
+         *   - To use autoincrement IDs, set this to null and update the `tenants` table migration to use an autoincrement column.
+         *     SECURITY NOTE: Keep in mind that autoincrement IDs come with *potential* enumeration issues (such as tenant storage URLs).
+         */
+        'id_generator' => Stancl\Tenancy\UUIDGenerator::class,
+    ],
 
     /**
      * The list of domains hosting your central app.
@@ -292,13 +311,5 @@ return [
     'seeder_parameters' => [
         '--class' => 'Database\Seeders\DatabaseSeeder', // root seeder class
         // '--force' => true,
-    ],
-
-    /**
-     * Single-database tenancy config.
-     */
-    'single_db' => [
-        /** The name of the column used by models with the BelongsToTenant trait. */
-        'tenant_id_column' => 'tenant_id',
     ],
 ];
