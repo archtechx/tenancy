@@ -110,6 +110,10 @@ class TenancyServiceProvider extends ServiceProvider
         ], 'impersonation-migrations');
 
         $this->publishes([
+            __DIR__ . '/../assets/resource-syncing-migrations/' => database_path('migrations'),
+        ], 'resource-syncing-migrations');
+
+        $this->publishes([
             __DIR__ . '/../assets/tenant_routes.stub.php' => base_path('routes/tenant.php'),
         ], 'routes');
 
