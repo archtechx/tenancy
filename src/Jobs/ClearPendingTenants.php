@@ -16,12 +16,7 @@ class ClearPendingTenants implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /**
-     * Execute the job.
-     *
-     * @return void
-     */
-    public function handle()
+    public function handle(): void
     {
         Artisan::call(ClearPendingTenantsCommand::class);
     }

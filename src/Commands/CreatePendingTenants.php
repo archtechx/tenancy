@@ -8,24 +8,11 @@ use Illuminate\Console\Command;
 
 class CreatePendingTenants extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'tenants:pending-create {--count= : The number of pending tenants to be created}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Create pending tenants.';
 
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function handle(): int
     {
         $this->info('Creating pending tenants.');
 
@@ -46,13 +33,11 @@ class CreatePendingTenants extends Command
         $this->info($createdCount . ' ' . str('tenant')->plural($createdCount) . ' created.');
         $this->info($maxPendingTenantCount . ' ' . str('tenant')->plural($maxPendingTenantCount) . ' ready to be used.');
 
-        return 1;
+        return 0;
     }
 
-    /**
-     * Calculate the number of currently available pending tenants.
-     */
-    private function getPendingTenantCount(): int
+    /** Calculate the number of currently available pending tenants. */
+    protected function getPendingTenantCount(): int
     {
         return tenancy()
             ->query()
