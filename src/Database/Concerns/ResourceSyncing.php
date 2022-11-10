@@ -9,7 +9,6 @@ use Stancl\Tenancy\Contracts\Syncable;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 use Stancl\Tenancy\Database\Models\Tenant;
 use Stancl\Tenancy\Database\Models\TenantMorphPivot;
-use Stancl\Tenancy\Database\Models\TenantPivot;
 use Stancl\Tenancy\Events\SyncedResourceSaved;
 
 trait ResourceSyncing
