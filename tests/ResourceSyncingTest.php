@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Events\CallQueuedListener;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
@@ -824,10 +823,9 @@ function migrateUsersTableForTenants(): void
 
 class ResourceTenant extends Tenant
 {
-    public function users(): MorphToMany
+    public function users(): BelongsToMany
     {
-        return $this->morphedByMany(CentralUserForPolymorphic::class, 'tenant_resources', 'tenant_resources', 'tenant_id', 'resource_global_id', 'id', 'global_id')
-            ->using(TenantPivot::class);
+        return $this->belongsToMany(CentralUser::class, 'tenant_users', 'tenant_id', 'global_user_id', 'id', 'global_id');
     }
 }
 
@@ -841,10 +839,10 @@ class CentralUser extends Model implements SyncMaster
 
     public $table = 'users';
 
-    // override method to provide different tenant
-    public function getResourceTenantModelName(): string
+    public function tenants(): BelongsToMany
     {
-        return ResourceTenant::class;
+        return $this->belongsToMany(ResourceTenant::class, 'tenant_users', 'global_user_id', 'tenant_id', 'global_id')
+            ->using(TenantPivot::class);
     }
 
     public function getTenantModelName(): string

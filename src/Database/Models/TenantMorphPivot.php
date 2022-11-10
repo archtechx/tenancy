@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Database\Models;
 
-use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Database\Eloquent\Relations\MorphPivot;
 use Stancl\Tenancy\Contracts\Syncable;
 
-class TenantPivot extends Pivot
+class TenantMorphPivot extends MorphPivot
 {
     public static function booted(): void
     {

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Stancl\Tenancy\Contracts\Syncable;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 use Stancl\Tenancy\Database\Models\Tenant;
+use Stancl\Tenancy\Database\Models\TenantMorphPivot;
 use Stancl\Tenancy\Database\Models\TenantPivot;
 use Stancl\Tenancy\Events\SyncedResourceSaved;
 
@@ -50,7 +51,7 @@ trait ResourceSyncing
     public function tenants(): MorphToMany
     {
         return $this->morphToMany($this->getResourceTenantModelName(), 'tenant_resources', 'tenant_resources', 'resource_global_id', 'tenant_id', 'global_id')
-            ->using(TenantPivot::class);
+            ->using(TenantMorphPivot::class);
     }
 
     public function getResourceTenantModelName(): string // todo better name
