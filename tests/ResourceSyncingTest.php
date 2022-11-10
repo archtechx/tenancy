@@ -130,7 +130,7 @@ test('only the synced columns are updated in the central db', function () {
 // This tests attribute list on the central side, and default values on the tenant side
 // Those two don't depend on each other, we're just testing having each option on each side
 // using tests that combine the two, to avoid having an excessively long and complex test suite
-test('sync resource creation works when central model provides attributes and resource model provides default values', function () {
+test('sync resource creation works when central model provides attributes and tenant model provides default values', function () {
     [$tenant1, $tenant2] = createTenantsAndRunMigrations();
 
     addExtraColumnToCentralDB();
@@ -145,14 +145,14 @@ test('sync resource creation works when central model provides attributes and re
     ]);
 
     $tenant1->run(function () {
-        expect(ResourceUserProvidingDefaultValues::all())->toHaveCount(0);
+        expect(TenantUserProvidingDefaultValues::all())->toHaveCount(0);
     });
 
     // When central model provides the list of attributes, resource model will be created from the provided list of attributes' values
     $centralUser->tenants()->attach('t1');
 
     $tenant1->run(function () {
-        $resourceUser = ResourceUserProvidingDefaultValues::all();
+        $resourceUser = TenantUserProvidingDefaultValues::all();
         expect($resourceUser)->toHaveCount(1);
         expect($resourceUser->first()->global_id)->toBe('acme');
         expect($resourceUser->first()->email)->toBe('john@localhost');
@@ -163,7 +163,7 @@ test('sync resource creation works when central model provides attributes and re
     tenancy()->initialize($tenant2);
 
     // When resource model provides the list of default values, central model will be created from the provided list of default values
-    ResourceUserProvidingDefaultValues::create([
+    TenantUserProvidingDefaultValues::create([
         'global_id' => 'asdf',
         'name' => 'John Doe',
         'email' => 'john@localhost',
@@ -186,7 +186,7 @@ test('sync resource creation works when central model provides attributes and re
 // This tests default values on the central side, and attribute list on the tenant side
 // Those two don't depend on each other, we're just testing having each option on each side
 // using tests that combine the two, to avoid having an excessively long and complex test suite
-test('sync resource creation works when central model provides default values and resource model provides attributes', function () {
+test('sync resource creation works when central model provides default values and tenant model provides attributes', function () {
     [$tenant1, $tenant2] = createTenantsAndRunMigrations();
 
     addExtraColumnToCentralDB();
@@ -201,7 +201,7 @@ test('sync resource creation works when central model provides default values an
     ]);
 
     $tenant1->run(function () {
-        expect(ResourceUserProvidingDefaultValues::all())->toHaveCount(0);
+        expect(TenantUserProvidingDefaultValues::all())->toHaveCount(0);
     });
 
     // When central model provides the list of default values, resource model will be created from the provided list of default values
@@ -209,7 +209,7 @@ test('sync resource creation works when central model provides default values an
 
     $tenant1->run(function () {
         // Assert resource user was created using the list of default values
-        $resourceUser = ResourceUserProvidingDefaultValues::first();
+        $resourceUser = TenantUserProvidingDefaultValues::first();
         expect($resourceUser)->not()->toBeNull();
         expect($resourceUser->global_id)->toBe('acme');
         expect($resourceUser->email)->toBe('default@localhost');
@@ -220,7 +220,7 @@ test('sync resource creation works when central model provides default values an
     tenancy()->initialize($tenant2);
 
     // When resource model provides the list of attributes, central model will be created from the provided list of attributes' values
-    ResourceUserProvidingAttributeNames::create([
+    TenantUserProvidingAttributeNames::create([
         'global_id' => 'asdf',
         'name' => 'John Doe',
         'email' => 'john@localhost',
@@ -241,7 +241,7 @@ test('sync resource creation works when central model provides default values an
 // This tests mixed attribute list/defaults on the central side, and no specified attributes on the tenant side
 // Those two don't depend on each other, we're just testing having each option on each side
 // using tests that combine the two, to avoid having an excessively long and complex test suite
-test('sync resource creation works when central model provides mixture and resource model provides nothing', function () {
+test('sync resource creation works when central model provides mixture and tenant model provides nothing', function () {
     [$tenant1, $tenant2] = createTenantsAndRunMigrations();
 
     $centralUser = CentralUserProvidingMixture::create([
@@ -299,7 +299,7 @@ test('sync resource creation works when central model provides mixture and resou
 // This tests no specified attributes on the central side, and mixed attribute list/defaults on the tenant side
 // Those two don't depend on each other, we're just testing having each option on each side
 // using tests that combine the two, to avoid having an excessively long and complex test suite
-test('sync resource creation works when central model provides nothing and resource model provides mixture', function () {
+test('sync resource creation works when central model provides nothing and tenant model provides mixture', function () {
     [$tenant1, $tenant2] = createTenantsAndRunMigrations();
 
     $centralUser = CentralUser::create([
@@ -311,7 +311,7 @@ test('sync resource creation works when central model provides nothing and resou
     ]);
 
     $tenant1->run(function () {
-        expect(ResourceUserProvidingMixture::all())->toHaveCount(0);
+        expect(TenantUserProvidingMixture::all())->toHaveCount(0);
     });
 
     // When central model provides nothing/null, the resource model will be created as a 1:1 copy of central model
@@ -319,7 +319,7 @@ test('sync resource creation works when central model provides nothing and resou
 
     expect($centralUser->getSyncedCreationAttributes())->toBeNull();
     $tenant1->run(function () use ($centralUser) {
-        $resourceUser = ResourceUserProvidingMixture::first();
+        $resourceUser = TenantUserProvidingMixture::first();
         expect($resourceUser)->not()->toBeNull();
         $resourceUser = $resourceUser->toArray();
         $centralUser = $centralUser->withoutRelations()->toArray();
@@ -332,7 +332,7 @@ test('sync resource creation works when central model provides nothing and resou
     tenancy()->initialize($tenant2);
 
     // When resource model provides the list of a mixture (attributes and default values), central model will be created from the provided list of mixture (attributes and default values)
-    ResourceUserProvidingMixture::create([
+    TenantUserProvidingMixture::create([
         'global_id' => 'absd',
         'name' => 'John Doe',
         'email' => 'john@localhost',
@@ -829,6 +829,7 @@ function migrateUsersTableForTenants(): void
     ])->assertExitCode(0);
 }
 
+// Tenant model used for resource syncing setup
 class ResourceTenant extends Tenant
 {
     public function users()
@@ -885,6 +886,7 @@ class CentralUser extends Model implements SyncMaster
     }
 }
 
+// Tenant users
 class ResourceUser extends Model implements Syncable
 {
     use ResourceSyncing;
@@ -922,7 +924,7 @@ class ResourceUser extends Model implements Syncable
 }
 
 // override method in ResourceUser class to return default attribute values
-class ResourceUserProvidingDefaultValues extends ResourceUser
+class TenantUserProvidingDefaultValues extends ResourceUser
 {
     public function getSyncedCreationAttributes(): array
     {
@@ -939,7 +941,7 @@ class ResourceUserProvidingDefaultValues extends ResourceUser
 }
 
 // override method in ResourceUser class to return attribute names
-class ResourceUserProvidingAttributeNames extends ResourceUser
+class TenantUserProvidingAttributeNames extends ResourceUser
 {
     public function getSyncedCreationAttributes(): array
     {
@@ -1004,7 +1006,7 @@ class CentralUserProvidingMixture extends CentralUser
     }
 }
 
-class ResourceUserProvidingMixture extends ResourceUser
+class TenantUserProvidingMixture extends ResourceUser
 {
     public function getSyncedCreationAttributes(): array
     {
