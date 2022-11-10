@@ -46,7 +46,7 @@ beforeEach(function () {
     // Run migrations on central connection
     pest()->artisan('migrate', [
         '--path' => [
-            __DIR__ . '/Etc/synced_resource_migrations',
+            __DIR__ . '/../assets/resource-syncing-migrations',
             __DIR__ . '/Etc/synced_resource_migrations/users',
             __DIR__ . '/Etc/synced_resource_migrations/companies',
         ],
