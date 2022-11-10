@@ -105,6 +105,12 @@ class Tenancy
         return $model;
     }
 
+    /** Name of the column used to relate models to tenants. */
+    public static function tenantKeyColumn(): string
+    {
+        return config('tenancy.models.tenant_key_column') ?? 'tenant_id';
+    }
+
     /**
      * Try to find a tenant using an ID.
      *

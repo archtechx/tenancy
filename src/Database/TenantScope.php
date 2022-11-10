@@ -7,7 +7,7 @@ namespace Stancl\Tenancy\Database;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
-use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
+use Stancl\Tenancy\Tenancy;
 
 class TenantScope implements Scope
 {
@@ -17,7 +17,7 @@ class TenantScope implements Scope
             return;
         }
 
-        $builder->where($model->qualifyColumn(BelongsToTenant::tenantIdColumn()), tenant()->getTenantKey());
+        $builder->where($model->qualifyColumn(Tenancy::tenantKeyColumn()), tenant()->getTenantKey());
     }
 
     public function extend(Builder $builder): void

@@ -20,7 +20,7 @@ class UserImpersonation implements Feature
     {
         $tenancy->macro('impersonate', function (Tenant $tenant, string $userId, string $redirectUrl, string $authGuard = null): ImpersonationToken {
             return ImpersonationToken::create([
-                'tenant_id' => $tenant->getTenantKey(),
+                Tenancy::tenantKeyColumn() => $tenant->getTenantKey(),
                 'user_id' => $userId,
                 'redirect_url' => $redirectUrl,
                 'auth_guard' => $authGuard,
@@ -39,7 +39,7 @@ class UserImpersonation implements Feature
 
         abort_if($tokenExpired, 403);
 
-        $tokenTenantId = (string) $token->tenant_id;
+        $tokenTenantId = (string) $token->getAttribute(Tenancy::tenantKeyColumn());
         $currentTenantId = (string) tenant()->getTenantKey();
 
         abort_unless($tokenTenantId === $currentTenantId, 403);

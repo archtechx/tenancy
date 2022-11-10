@@ -6,6 +6,7 @@ namespace Stancl\Tenancy\Database\Concerns;
 
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\TenantScope;
+use Stancl\Tenancy\Tenancy;
 
 /**
  * @property-read Tenant $tenant
@@ -14,12 +15,7 @@ trait BelongsToTenant
 {
     public function tenant()
     {
-        return $this->belongsTo(config('tenancy.models.tenant'), static::tenantIdColumn());
-    }
-
-    public static function tenantIdColumn(): string
-    {
-        return config('tenancy.models.tenant_key_column');
+        return $this->belongsTo(config('tenancy.models.tenant'), Tenancy::tenantKeyColumn());
     }
 
     public static function bootBelongsToTenant(): void
@@ -27,9 +23,9 @@ trait BelongsToTenant
         static::addGlobalScope(new TenantScope);
 
         static::creating(function ($model) {
-            if (! $model->getAttribute(static::tenantIdColumn()) && ! $model->relationLoaded('tenant')) {
+            if (! $model->getAttribute(Tenancy::tenantKeyColumn()) && ! $model->relationLoaded('tenant')) {
                 if (tenancy()->initialized) {
-                    $model->setAttribute(static::tenantIdColumn(), tenant()->getTenantKey());
+                    $model->setAttribute(Tenancy::tenantKeyColumn(), tenant()->getTenantKey());
                     $model->setRelation('tenant', tenant());
                 }
             }

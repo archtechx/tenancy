@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Database\Concerns;
 
 use Stancl\Tenancy\Contracts\Domain;
+use Stancl\Tenancy\Tenancy;
 
 /**
  * @property-read Domain[]|\Illuminate\Database\Eloquent\Collection $domains
@@ -15,7 +16,7 @@ trait HasDomains
 {
     public function domains()
     {
-        return $this->hasMany(config('tenancy.models.domain'), 'tenant_id');
+        return $this->hasMany(config('tenancy.models.domain'), Tenancy::tenantKeyColumn());
     }
 
     public function createDomain($data): Domain

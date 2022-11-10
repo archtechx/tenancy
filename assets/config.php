@@ -14,7 +14,7 @@ return [
         'domain' => Stancl\Tenancy\Database\Models\Domain::class,
 
         /**
-         * Name of the column used to for ->tenant() relationships.
+         * Name of the column used to relate models to tenants.
          *
          * This is used by the HasDomains trait, and models that use the BelongsToTenant trait (used in single-database tenancy).
          */
