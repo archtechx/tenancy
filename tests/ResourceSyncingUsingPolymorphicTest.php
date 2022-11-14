@@ -55,10 +55,10 @@ beforeEach(function () {
 });
 
 test('resource syncing works using a single pivot table for multiple models when syncing from central to tenant', function () {
-    $tenant1 = ResourceTenantForPolymorphic::create(['id' => 't1']);
+    $tenant1 = ResourceTenantUsingPolymorphic::create(['id' => 't1']);
     migrateUsersTableForTenants();
 
-    $centralUser = CentralUserForPolymorphic::create([
+    $centralUser = CentralUserUsingPolymorphic::create([
         'global_id' => 'acme',
         'name' => 'John Doe',
         'email' => 'john@localhost',
@@ -67,50 +67,50 @@ test('resource syncing works using a single pivot table for multiple models when
     ]);
 
     $tenant1->run(function () {
-        expect(ResourceUserForPolymorphic::all())->toHaveCount(0);
+        expect(TenantUserUsingPolymorphic::all())->toHaveCount(0);
     });
 
     $centralUser->tenants()->attach('t1');
 
     // Assert User resource is synced
     $tenant1->run(function () use ($centralUser) {
-        $resourceUser = ResourceUserForPolymorphic::first()->only(['name', 'email', 'password', 'role']);
+        $tenantUser = TenantUserUsingPolymorphic::first()->only(['name', 'email', 'password', 'role']);
         $centralUser = $centralUser->only(['name', 'email', 'password', 'role']);
 
-        expect($resourceUser)->toBe($centralUser);
+        expect($tenantUser)->toBe($centralUser);
     });
 
-    $tenant2 = ResourceTenantForPolymorphic::create(['id' => 't2']);
+    $tenant2 = ResourceTenantUsingPolymorphic::create(['id' => 't2']);
     migrateCompaniesTableForTenants();
 
-    $centralCompany = CentralCompanyForPolymorphic::create([
+    $centralCompany = CentralCompanyUsingPolymorphic::create([
         'global_id' => 'acme',
         'name' => 'ArchTech',
         'email' => 'archtech@localhost',
     ]);
 
     $tenant2->run(function () {
-        expect(ResourceCompanyForPolymorphic::all())->toHaveCount(0);
+        expect(TenantCompanyUsingPolymorphic::all())->toHaveCount(0);
     });
 
     $centralCompany->tenants()->attach('t2');
 
     // Assert Company resource is synced
     $tenant2->run(function () use ($centralCompany) {
-        $resourceCompany = ResourceCompanyForPolymorphic::first()->only(['name', 'email']);
+        $tenantCompany = TenantCompanyUsingPolymorphic::first()->only(['name', 'email']);
         $centralCompany = $centralCompany->only(['name', 'email']);
 
-        expect($resourceCompany)->toBe($centralCompany);
+        expect($tenantCompany)->toBe($centralCompany);
     });
 });
 
 test('resource syncing works using a single pivot table for multiple models when syncing from tenant to central', function () {
-    $tenant1 = ResourceTenantForPolymorphic::create(['id' => 't1']);
+    $tenant1 = ResourceTenantUsingPolymorphic::create(['id' => 't1']);
     migrateUsersTableForTenants();
 
     tenancy()->initialize($tenant1);
 
-    $resourceUser = ResourceUserForPolymorphic::create([
+    $tenantUser = TenantUserUsingPolymorphic::create([
         'name' => 'John Doe',
         'email' => 'john@localhost',
         'password' => 'password',
@@ -120,16 +120,16 @@ test('resource syncing works using a single pivot table for multiple models when
     tenancy()->end();
 
     // Assert User resource is synced
-    $centralUser = CentralUserForPolymorphic::first()->only(['name', 'email', 'password', 'role']);
-    $resourceUser = $resourceUser->only(['name', 'email', 'password', 'role']);
-    expect($resourceUser)->toBe($centralUser);
+    $centralUser = CentralUserUsingPolymorphic::first()->only(['name', 'email', 'password', 'role']);
+    $tenantUser = $tenantUser->only(['name', 'email', 'password', 'role']);
+    expect($tenantUser)->toBe($centralUser);
 
-    $tenant2 = ResourceTenantForPolymorphic::create(['id' => 't2']);
+    $tenant2 = ResourceTenantUsingPolymorphic::create(['id' => 't2']);
     migrateCompaniesTableForTenants();
 
     tenancy()->initialize($tenant2);
 
-    $resourceCompany = ResourceCompanyForPolymorphic::create([
+    $tenantCompany = TenantCompanyUsingPolymorphic::create([
         'global_id' => 'acme',
         'name' => 'tenant comp',
         'email' => 'company@localhost',
@@ -138,9 +138,9 @@ test('resource syncing works using a single pivot table for multiple models when
     tenancy()->end();
 
     // Assert Company resource is synced
-    $centralCompany = CentralCompanyForPolymorphic::first()->only(['name', 'email']);
-    $resourceCompany = $resourceCompany->only(['name', 'email']);
-    expect($resourceCompany)->toBe($centralCompany);
+    $centralCompany = CentralCompanyUsingPolymorphic::first()->only(['name', 'email']);
+    $tenantCompany = $tenantCompany->only(['name', 'email']);
+    expect($tenantCompany)->toBe($centralCompany);
 });
 
 function migrateCompaniesTableForTenants(): void
@@ -151,24 +151,23 @@ function migrateCompaniesTableForTenants(): void
     ])->assertExitCode(0);
 }
 
-// todo better names for resource syncing setup here
-
-class ResourceTenantForPolymorphic extends Tenant
+// Tenant model used for resource syncing setup
+class ResourceTenantUsingPolymorphic extends Tenant
 {
     public function users(): MorphToMany
     {
-        return $this->morphedByMany(CentralUserForPolymorphic::class, 'tenant_resources', 'tenant_resources', 'tenant_id', 'resource_global_id', 'id', 'global_id')
+        return $this->morphedByMany(CentralUserUsingPolymorphic::class, 'tenant_resources', 'tenant_resources', 'tenant_id', 'resource_global_id', 'id', 'global_id')
             ->using(TenantPivot::class);
     }
 
     public function companies(): MorphToMany
     {
-        return $this->morphedByMany(CentralCompanyForPolymorphic::class, 'tenant_resources', 'tenant_resources', 'tenant_id', 'resource_global_id', 'id', 'global_id')
+        return $this->morphedByMany(CentralCompanyUsingPolymorphic::class, 'tenant_resources', 'tenant_resources', 'tenant_id', 'resource_global_id', 'id', 'global_id')
             ->using(TenantPivot::class);
     }
 }
 
-class CentralUserForPolymorphic extends Model implements SyncMaster
+class CentralUserUsingPolymorphic extends Model implements SyncMaster
 {
     use ResourceSyncing, CentralConnection;
 
@@ -181,12 +180,12 @@ class CentralUserForPolymorphic extends Model implements SyncMaster
     // override method to provide different tenant
     public function getResourceTenantModelName(): string
     {
-        return ResourceTenantForPolymorphic::class;
+        return ResourceTenantUsingPolymorphic::class;
     }
 
     public function getTenantModelName(): string
     {
-        return ResourceUserForPolymorphic::class;
+        return TenantUserUsingPolymorphic::class;
     }
 
     public function getGlobalIdentifierKey(): string|int
@@ -215,7 +214,7 @@ class CentralUserForPolymorphic extends Model implements SyncMaster
     }
 }
 
-class ResourceUserForPolymorphic extends Model implements Syncable
+class TenantUserUsingPolymorphic extends Model implements Syncable
 {
     use ResourceSyncing;
 
@@ -237,7 +236,7 @@ class ResourceUserForPolymorphic extends Model implements Syncable
 
     public function getCentralModelName(): string
     {
-        return CentralUserForPolymorphic::class;
+        return CentralUserUsingPolymorphic::class;
     }
 
     public function getSyncedAttributeNames(): array
@@ -251,7 +250,7 @@ class ResourceUserForPolymorphic extends Model implements Syncable
     }
 }
 
-class CentralCompanyForPolymorphic extends Model implements SyncMaster
+class CentralCompanyUsingPolymorphic extends Model implements SyncMaster
 {
     use ResourceSyncing, CentralConnection;
 
@@ -264,12 +263,12 @@ class CentralCompanyForPolymorphic extends Model implements SyncMaster
     // override method to provide different tenant
     public function getResourceTenantModelName(): string
     {
-        return ResourceTenantForPolymorphic::class;
+        return ResourceTenantUsingPolymorphic::class;
     }
 
     public function getTenantModelName(): string
     {
-        return ResourceCompanyForPolymorphic::class;
+        return TenantCompanyUsingPolymorphic::class;
     }
 
     public function getGlobalIdentifierKey(): string|int
@@ -297,7 +296,7 @@ class CentralCompanyForPolymorphic extends Model implements SyncMaster
     }
 }
 
-class ResourceCompanyForPolymorphic extends Model implements Syncable
+class TenantCompanyUsingPolymorphic extends Model implements Syncable
 {
     use ResourceSyncing;
 
@@ -319,7 +318,7 @@ class ResourceCompanyForPolymorphic extends Model implements Syncable
 
     public function getCentralModelName(): string
     {
-        return CentralCompanyForPolymorphic::class;
+        return CentralCompanyUsingPolymorphic::class;
     }
 
     public function getSyncedAttributeNames(): array
