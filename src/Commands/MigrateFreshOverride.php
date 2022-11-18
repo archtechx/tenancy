@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Commands;
 
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Console\Migrations\FreshCommand;
+use Illuminate\Support\Facades\Schema;
 
 class MigrateFreshOverride extends FreshCommand
 {
@@ -13,7 +13,7 @@ class MigrateFreshOverride extends FreshCommand
     {
         if (config('tenancy.database.drop_tenant_databases_on_migrate_fresh')) {
             $tenantModel = tenancy()->model();
-            
+
             if (Schema::hasTable($tenantModel->getTable())) {
                 $tenantModel::cursor()->each->delete();
             }
