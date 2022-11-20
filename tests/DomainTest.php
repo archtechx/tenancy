@@ -8,7 +8,6 @@ use Stancl\Tenancy\Database\Models;
 use Stancl\Tenancy\Database\Models\Domain;
 use Stancl\Tenancy\Exceptions\DomainOccupiedByOtherTenantException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
-use Stancl\Tenancy\Features\UniversalRoutes;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 
@@ -95,7 +94,6 @@ test('throw correct exception when onFail is null and universal routes are enabl
 
     // Enable UniversalRoute feature
     Route::middlewareGroup('universal', []);
-    config(['tenancy.features' => [UniversalRoutes::class]]);
 
     $this->withoutExceptionHandling()->get('http://foo.localhost/foo/abc/xyz');
 })->throws(TenantCouldNotBeIdentifiedOnDomainException::class);;

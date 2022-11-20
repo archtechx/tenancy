@@ -52,12 +52,13 @@ test('onfail logic can be customized', function () {
         ->assertSee('foo');
 });
 
-test('localhost is not a valid subdomain', function () {
+test('archte.ch is not a valid subdomain', function () {
     pest()->expectException(NotASubdomainException::class);
 
+    // This gets routed to the app, but with a request domain of 'archte.ch'
     $this
         ->withoutExceptionHandling()
-        ->get('http://localhost/foo/abc/xyz');
+        ->get('http://archte.ch/foo/abc/xyz');
 });
 
 test('ip address is not a valid subdomain', function () {
@@ -65,7 +66,7 @@ test('ip address is not a valid subdomain', function () {
 
     $this
         ->withoutExceptionHandling()
-        ->get('http://127.0.0.1/foo/abc/xyz');
+        ->get('http://127.0.0.2/foo/abc/xyz');
 });
 
 test('oninvalidsubdomain logic can be customized', function () {
@@ -81,7 +82,7 @@ test('oninvalidsubdomain logic can be customized', function () {
 
     $this
         ->withoutExceptionHandling()
-        ->get('http://127.0.0.1/foo/abc/xyz')
+        ->get('http://127.0.0.2/foo/abc/xyz')
         ->assertSee('foo custom invalid subdomain handler');
 });
 
@@ -104,26 +105,6 @@ test('we cant use a subdomain that doesnt belong to our central domains', functi
     $this
         ->withoutExceptionHandling()
         ->get('http://foo.localhost/foo/abc/xyz');
-});
-
-test('central domain is not a subdomain', function () {
-    config(['tenancy.central_domains' => [
-        'localhost',
-    ]]);
-
-    $tenant = SubdomainTenant::create([
-        'id' => 'acme',
-    ]);
-
-    $tenant->domains()->create([
-        'domain' => 'acme',
-    ]);
-
-    pest()->expectException(NotASubdomainException::class);
-
-    $this
-        ->withoutExceptionHandling()
-        ->get('http://localhost/foo/abc/xyz');
 });
 
 class SubdomainTenant extends Models\Tenant
