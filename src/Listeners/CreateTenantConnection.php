@@ -20,6 +20,7 @@ class CreateTenantConnection
         /** @var TenantWithDatabase $tenant */
         $tenant = $event->tenancy->tenant;
 
+        $this->database->purgeTenantConnection();
         $this->database->createTenantConnection($tenant);
     }
 }
