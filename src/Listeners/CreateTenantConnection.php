@@ -6,6 +6,7 @@ namespace Stancl\Tenancy\Listeners;
 
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\DatabaseManager;
+use Stancl\Tenancy\Events\Contracts\TenancyEvent;
 use Stancl\Tenancy\Events\Contracts\TenantEvent;
 
 class CreateTenantConnection
@@ -15,10 +16,10 @@ class CreateTenantConnection
     ) {
     }
 
-    public function handle(TenantEvent $event): void
+    public function handle(TenancyEvent $event): void
     {
-        /** @var TenantWithDatabase */
-        $tenant = $event->tenant;
+        /** @var TenantWithDatabase $tenant */
+        $tenant = $event->tenancy->tenant;
 
         $this->database->createTenantConnection($tenant);
     }
