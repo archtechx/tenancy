@@ -8,7 +8,7 @@ use Dotenv\Dotenv;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Redis;
 use PDO;
-use Stancl\Tenancy\Bootstrappers\BatchTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Facades\GlobalCache;
 use Stancl\Tenancy\Facades\Tenancy;
@@ -113,6 +113,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         ]);
 
         $app->singleton(RedisTenancyBootstrapper::class); // todo (Samuel) use proper approach eg config for singleton registration
+        $app->singleton(PrefixCacheTenancyBootstrapper::class); // todo (Samuel) use proper approach eg config for singleton registration
     }
 
     protected function getPackageProviders($app)

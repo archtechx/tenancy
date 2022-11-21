@@ -6,6 +6,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Stancl\JobPipeline\JobPipeline;
 use Illuminate\Support\Facades\File;
+use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
@@ -73,11 +74,9 @@ test('database data is separated', function () {
     expect(DB::table('users')->first()->name)->toBe('Foo');
 });
 
-test('cache data is separated', function () {
+test('cache data is separated', function (string $bootstrapper) {
     config([
-        'tenancy.bootstrappers' => [
-            CacheTenancyBootstrapper::class,
-        ],
+        'tenancy.bootstrappers' => [$bootstrapper],
         'cache.default' => 'redis',
     ]);
 
@@ -112,7 +111,10 @@ test('cache data is separated', function () {
 
     // Asset central is still the same
     expect(Cache::get('foo'))->toBe('central');
-});
+})->with([
+    'CacheTenancyBootstrapper' => CacheTenancyBootstrapper::class,
+    'PrefixCacheTenancyBootstrapper' => PrefixCacheTenancyBootstrapper::class,
+]);
 
 test('redis data is separated', function () {
     config(['tenancy.bootstrappers' => [
