@@ -25,7 +25,7 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
         $this->originalPrefix = $this->app['config']['cache.prefix'];
         $this->storeName = $this->app['config']['cache.default'];
 
-        $this->setCachePrefix('tenant_id_' . $tenant->id);
+        $this->setCachePrefix($this->app['config']['tenancy.cache.prefix_base'] . $tenant->id);
     }
 
     public function revert(): void
