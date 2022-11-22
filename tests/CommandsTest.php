@@ -29,6 +29,10 @@ beforeEach(function () {
         unlink($schemaPath);
     }
 
+    if (file_exists($schemaPath = database_path('tenant-schema.dump'))) {
+        unlink($schemaPath);
+    }
+
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
     })->toListener());
@@ -122,16 +126,14 @@ test('dump command works', function () {
     expect($schemaPath)->toBeFile();
 });
 
-test('dump command generates dump at the path specified in the tenancy migration parameters config', function() {
-    config(['tenancy.migration_parameters.--schema-path' => $schemaPath = 'tests/Etc/tenant-schema-test.dump']);
-
+test('dump command generates dump at the passed path', function() {
     $tenant = Tenant::create();
 
     Artisan::call('tenants:migrate');
 
-    expect($schemaPath)->not()->toBeFile();
+    expect($schemaPath = 'tests/Etc/tenant-schema-test.dump')->not()->toBeFile();
 
-    Artisan::call("tenants:dump --tenant='$tenant->id'");
+    Artisan::call("tenants:dump --tenant='$tenant->id' --path='$schemaPath'");
 
     expect($schemaPath)->toBeFile();
 });
