@@ -40,16 +40,8 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
 
         $this->app['cache']->forgetDriver($this->storeName);
 
-        // This is important because the `CacheManager` will have the `$app['config']` array cached
-        // with old prefixes on the `cache` instance. Simply calling `forgetDriver` only removes
-        // the `$store` but doesn't update the `$app['config']`.
-        $this->app->forgetInstance('cache');
-
         //This is important because the Cache Repository is using an old version of the CacheManager
         $this->app->forgetInstance('cache.store');
-
-        // Forget the cache repository in the container
-        $this->app->forgetInstance(Repository::class);
 
         Cache::clearResolvedInstances();
     }
