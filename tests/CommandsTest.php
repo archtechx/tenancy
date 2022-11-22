@@ -29,10 +29,6 @@ beforeEach(function () {
         unlink($schemaPath);
     }
 
-    if (file_exists($schemaPath = database_path('tenant-schema.dump'))) {
-        unlink($schemaPath);
-    }
-
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
     })->toListener());
