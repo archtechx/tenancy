@@ -22,7 +22,7 @@ test('tenancy swaps the MailManager singleton for an instance of TenancyMailMana
     expect(app(MailManager::class))->toBeInstanceOf(TenancyMailManager::class);
 });
 
-test('SMTP mailer transporter uses the correct tenant credentials', function() {
+test('SMTP mailer transport uses the correct tenant credentials', function() {
     TenancyMailManager::$tenantMailers = ['smtp'];
     MailTenancyBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'smtp_password'];
 
