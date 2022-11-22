@@ -34,7 +34,7 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
         $this->originalPrefix = null;
     }
 
-    protected function setCachePrefix(string $prefix): void
+    protected function setCachePrefix(null|string $prefix): void
     {
         $this->app['config']['cache.prefix'] = $prefix;
 
