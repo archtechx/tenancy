@@ -12,7 +12,9 @@ test('manual tenancy initialization works', function () {
 
     $tenant = Tenant::create();
 
-    tenancy()->initialize($tenant);
+    expect(array_keys(config('database.connections')))->not()->toContain('tenant');
 
-    expect(tenancy()->initialized)->toBeTrue();
+    tenancy()->initialize($tenant);
+    
+    expect(array_keys(config('database.connections')))->toContain('tenant');
 });
