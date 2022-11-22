@@ -30,10 +30,8 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
 
     public function revert(): void
     {
-        if ($this->originalPrefix) {
-            $this->setCachePrefix($this->originalPrefix);
-            $this->originalPrefix = null;
-        }
+        $this->setCachePrefix($this->originalPrefix);
+        $this->originalPrefix = null;
     }
 
     protected function setCachePrefix(string $prefix): void
