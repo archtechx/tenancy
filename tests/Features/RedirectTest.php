@@ -34,3 +34,20 @@ test('tenant route helper generates correct url', function () {
     expect(tenant_route('foo.localhost', 'foo', ['a' => 'as', 'b' => 'df']))->toBe('http://foo.localhost/abcdef/as/df');
     expect(tenant_route('foo.localhost', 'foo', []))->toBe('http://foo.localhost/abcdef');
 });
+
+test('redirect from central to tenant works fine', function () {
+    config([
+        'tenancy.features' => [CrossDomainRedirect::class],
+    ]);
+
+    Route::get('/foobar', function () {
+        return 'Foo';
+    })->name('home');
+
+    Route::get('/redirect', function () {
+        return redirect()->route('home')->domain('abcd');
+    });
+
+    pest()->get('/redirect')
+        ->assertRedirect('http://abcd/foobar');
+});

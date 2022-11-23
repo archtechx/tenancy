@@ -36,6 +36,10 @@ class TenancyServiceProvider extends ServiceProvider
             return $tenancy;
         });
 
+        foreach ($this->app['config']['tenancy.tenant_unaware_features'] ?? [] as $feature) {
+            $this->app[$feature]->bootstrap();
+        }
+
         // Make it possible to inject the current tenant by typehinting the Tenant contract.
         $this->app->bind(Tenant::class, function ($app) {
             return $app[Tenancy::class]->tenant;
