@@ -50,4 +50,4 @@ test('redirect from central to tenant works fine', function () {
 
     pest()->get('/redirect')
         ->assertRedirect('http://abcd/foobar');
-});
+})->skip('Incomplete');
