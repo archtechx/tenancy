@@ -134,19 +134,6 @@ test('dump command generates dump at the passed path', function() {
     expect($schemaPath)->toBeFile();
 });
 
-test('tenant dump file gets created at the path specified in the tenancy migration parameters config', function() {
-    $tenant = Tenant::create();
-    $schemaPath = 'tests/Etc/tenant-schema-test.dump';
-
-    Artisan::call('tenants:migrate');
-
-    expect($schemaPath)->not()->toBeFile();
-
-    Artisan::call("tenants:dump --tenant='$tenant->id' --path='$schemaPath'");
-
-    expect($schemaPath)->toBeFile();
-});
-
 test('migrate command correctly uses the dump located at the configured schema path by default', function () {
     config(['tenancy.migration_parameters.--schema-path' => 'tests/Etc/tenant-schema.dump']);
     $tenant = Tenant::create();
