@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
+use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Listeners\RevertToCentralContext;
 
 beforeEach(function () {
     config([
@@ -14,6 +16,7 @@ beforeEach(function () {
     ]);
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
 test('cache prefix is separate for each tenant', function () {
@@ -70,5 +73,33 @@ test('prefix separate cache well enough', function () {
 
     cache()->put('foo', 'xyz', 1);
     expect(cache()->get('foo'))->toBe('xyz');
+});
+
+test('central cache is not broke', function () {
+    cache()->put('key', 'central');
+
+    $tenant1 = Tenant::create();
+    tenancy()->initialize($tenant1);
+
+    cache()->put('key', 'tenant');
+
+    expect(cache()->get('key'))->toBe('tenant');
+
+    tenancy()->end();
+
+    expect(cache()->get('key'))->toBe('central');
+});
+
+test('cache base prefix can be customized', function () {
+    config([
+        'tenancy.cache.prefix_base' => 'custom_'
+    ]);
+
+    $tenant1 = Tenant::create();
+    tenancy()->initialize($tenant1);
+
+    expect('custom_' . $tenant1->id . ':')
+        ->toBe(app('cache')->getPrefix())
+        ->toBe(app('cache.store')->getPrefix());
 });
 
