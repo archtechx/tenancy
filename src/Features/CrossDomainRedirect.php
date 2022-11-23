@@ -5,17 +5,11 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Features;
 
 use Illuminate\Http\RedirectResponse;
-use Stancl\Tenancy\Contracts\Feature;
-use Stancl\Tenancy\Tenancy;
+use Stancl\Tenancy\Contracts\TenantUnwareFeature;
 
-class CrossDomainRedirect implements Feature
+class CrossDomainRedirect implements TenantUnwareFeature
 {
-    public function __construct(protected Tenancy $tenancy)
-    {
-        dd($this->tenancy);
-    }
-
-    public function bootstrap(Tenancy $tenancy): void
+    public function bootstrap(): void
     {
         RedirectResponse::macro('domain', function (string $domain) {
             /** @var RedirectResponse $this */
