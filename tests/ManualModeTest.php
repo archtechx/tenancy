@@ -14,16 +14,21 @@ use Stancl\Tenancy\Listeners\UseTenantConnection;
 use \Stancl\Tenancy\Tests\Etc\Tenant;
 
 test('manual tenancy initialization works', function () {
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
     Event::listen(TenancyInitialized::class, CreateTenantConnection::class);
     Event::listen(TenancyInitialized::class, UseTenantConnection::class);
     Event::listen(TenancyEnded::class, UseCentralConnection::class);
 
     $tenant = Tenant::create();
 
-    expect(array_keys(app('db')->getConnections()))->toBe(['central']);
+    expect(array_keys(app('db')->getConnections()))->toBe(['central', 'tenant_host_connection']);
     pest()->assertArrayNotHasKey('tenant', config('database.connections'));
 
     tenancy()->initialize($tenant);
+    createUsersTable();
 
     expect(app('db')->getDefaultConnection())->toBe('tenant');
     expect(array_keys(app('db')->getConnections()))->toBe(['central', 'tenant']);
