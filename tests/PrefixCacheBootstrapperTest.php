@@ -86,8 +86,10 @@ test('central cache is not broke', function () {
     expect(cache()->get('key'))->toBe('tenant');
 
     tenancy()->end();
+    cache()->put('key2', 'central-two');
 
     expect(cache()->get('key'))->toBe('central');
+    expect(cache()->get('key2'))->toBe('central-two');
 });
 
 test('cache base prefix can be customized', function () {
