@@ -29,6 +29,8 @@ test('manual tenancy initialization works', function () {
     pest()->assertArrayNotHasKey('tenant', config('database.connections'));
 
     tenancy()->initialize($tenant);
+    
+    // Use the `tenant` connection to make sure the connection is useable and `tenant` connection is created inside the `db` class
     createUsersTable();
 
     expect(app('db')->getDefaultConnection())->toBe('tenant');
