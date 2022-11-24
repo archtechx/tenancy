@@ -350,7 +350,11 @@ test('MailTenancyBootstrapper reverts the config to default when tenancy ends', 
     MailTenancyBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'smtp_password'];
     config(['mail.mailers.smtp.password' => $defaultPassword = 'no password']);
 
-    Tenant::create(['smtp_password' => 'testing password'])->run(fn() => '');
+    tenancy()->initialize(Tenant::create(['smtp_password' => $tenantPassword = 'testing password']));
+
+    expect(config('mail.mailers.smtp.password'))->toBe($tenantPassword);
+
+    tenancy()->end();
 
     expect(config('mail.mailers.smtp.password'))->toBe($defaultPassword);
 });
