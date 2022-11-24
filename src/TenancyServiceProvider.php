@@ -6,7 +6,6 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Cache\CacheManager;
 use Illuminate\Database\Console\Migrations\FreshCommand;
-use Illuminate\Mail\MailManager;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
