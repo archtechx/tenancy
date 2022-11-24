@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Bootstrappers;
 
+use Illuminate\Mail\MailManager;
 use Illuminate\Config\Repository;
-use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
+use Illuminate\Foundation\Application;
+use Stancl\Tenancy\TenancyMailManager;
+use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 
 class MailTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -33,7 +36,7 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
         ],
     ];
 
-    public function __construct(protected Repository $config)
+    public function __construct(protected Repository $config, protected Application $app)
     {
         static::$mailer ??= $config->get('mail.default');
         static::$credentialsMap = array_merge(static::$credentialsMap, static::$mapPresets[static::$mailer] ?? []);
@@ -41,6 +44,12 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant): void
     {
+        // Use custom mail manager that resolves the mailers specified in its $tenantMailers static property
+        // Instead of getting the cached mailers from the $mailers property
+        $this->app->extend(MailManager::class, function (MailManager $mailManager) {
+            return new TenancyMailManager($this->app);
+        });
+
         $this->setConfig($tenant);
     }
 

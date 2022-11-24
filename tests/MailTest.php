@@ -19,6 +19,8 @@ beforeEach(function() {
 });
 
 test('tenancy swaps the MailManager singleton for an instance of TenancyMailManager', function() {
+    tenancy()->initialize(Tenant::create());
+
     expect(app(MailManager::class))->toBeInstanceOf(TenancyMailManager::class);
 });
 
