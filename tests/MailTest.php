@@ -36,14 +36,8 @@ test('SMTP mailer transport uses the correct tenant credentials', function() {
 
         $manager = app(MailManager::class);
 
-        $getMailerViaManager = new ReflectionMethod($manager::class, 'get');
-        $getMailerViaManager->setAccessible(true);
-        $mailer = $getMailerViaManager->invoke($manager, 'smtp');
-
-        $transportReflection = new ReflectionClass($transport = $mailer->getSymfonyTransport());
-        $transportPassword = $transportReflection->getProperty('password');
-        $transportPassword->setAccessible(true);
-        $mailerPassword = $transportPassword->getValue($transport);
+        $mailer = invade($manager)->get('smtp');
+        $mailerPassword = invade($mailer->getSymfonyTransport())->password;
 
         expect($mailerPassword)->toBe((string) $password);
 
