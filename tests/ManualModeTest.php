@@ -24,6 +24,7 @@ test('manual tenancy initialization works', function () {
 
     $tenant = Tenant::create();
 
+    expect(app('db')->getDefaultConnection())->toBe('central');
     expect(array_keys(app('db')->getConnections()))->toBe(['central', 'tenant_host_connection']);
     pest()->assertArrayNotHasKey('tenant', config('database.connections'));
 
