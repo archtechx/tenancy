@@ -30,7 +30,7 @@ test('manual tenancy initialization works', function () {
 
     tenancy()->initialize($tenant);
     
-    // Use the `tenant` connection to make sure the connection is useable and `tenant` connection is created inside the `db` class
+    // Trigger creation of the tenant connection
     createUsersTable();
 
     expect(app('db')->getDefaultConnection())->toBe('tenant');
