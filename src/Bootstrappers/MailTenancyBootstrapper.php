@@ -36,8 +36,10 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
         ],
     ];
 
-    public function __construct(protected Repository $config, protected Application $app)
-    {
+    public function __construct(
+        protected Repository $config,
+        protected Application $app
+    ) {
         static::$mailer ??= $config->get('mail.default');
         static::$credentialsMap = array_merge(static::$credentialsMap, static::$mapPresets[static::$mailer] ?? []);
     }
