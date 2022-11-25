@@ -16,9 +16,9 @@ class UserImpersonation implements Feature
     /** The lifespan of impersonation tokens (in seconds). */
     public static int $ttl = 60;
 
-    public function bootstrap(Tenancy $tenancy): void
+    public function bootstrap(): void
     {
-        $tenancy->macro('impersonate', function (Tenant $tenant, string $userId, string $redirectUrl, string $authGuard = null): ImpersonationToken {
+        Tenancy::macro('impersonate', function (Tenant $tenant, string $userId, string $redirectUrl, string $authGuard = null): ImpersonationToken {
             return ImpersonationToken::create([
                 Tenancy::tenantKeyColumn() => $tenant->getTenantKey(),
                 'user_id' => $userId,

@@ -9,7 +9,6 @@ use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Route as Router;
 use Stancl\Tenancy\Contracts\Feature;
 use Stancl\Tenancy\Middleware;
-use Stancl\Tenancy\Tenancy;
 
 class UniversalRoutes implements Feature
 {
@@ -22,7 +21,7 @@ class UniversalRoutes implements Feature
         Middleware\InitializeTenancyBySubdomain::class,
     ];
 
-    public function bootstrap(Tenancy $tenancy): void
+    public function bootstrap(): void
     {
         foreach (static::$identificationMiddlewares as $middleware) {
             $originalOnFail = $middleware::$onFail;

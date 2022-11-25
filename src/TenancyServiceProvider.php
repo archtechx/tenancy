@@ -27,16 +27,7 @@ class TenancyServiceProvider extends ServiceProvider
         // Make sure Tenancy is stateful.
         $this->app->singleton(Tenancy::class);
 
-        // Make sure features are bootstrapped as soon as Tenancy is instantiated.
-        $this->app->extend(Tenancy::class, function (Tenancy $tenancy) {
-            foreach ($this->app['config']['tenancy.features'] ?? [] as $feature) {
-                $this->app[$feature]->bootstrap($tenancy);
-            }
-
-            return $tenancy;
-        });
-
-        foreach ($this->app['config']['tenancy.tenant_unaware_features'] ?? [] as $feature) {
+        foreach ($this->app['config']['tenancy.features'] ?? [] as $feature) {
             $this->app[$feature]->bootstrap();
         }
 

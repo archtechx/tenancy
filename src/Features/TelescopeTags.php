@@ -7,11 +7,10 @@ namespace Stancl\Tenancy\Features;
 use Laravel\Telescope\IncomingEntry;
 use Laravel\Telescope\Telescope;
 use Stancl\Tenancy\Contracts\Feature;
-use Stancl\Tenancy\Tenancy;
 
 class TelescopeTags implements Feature
 {
-    public function bootstrap(Tenancy $tenancy): void
+    public function bootstrap(): void
     {
         if (! class_exists(Telescope::class)) {
             return;
