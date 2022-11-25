@@ -10,11 +10,6 @@ use Stancl\Tenancy\Tenancy;
 
 class CrossDomainRedirect implements Feature
 {
-    public function __construct(
-        protected Tenancy $tenancy
-    ) {
-    }
-
     public function bootstrap(): void
     {
         RedirectResponse::macro('domain', function (string $domain) {
