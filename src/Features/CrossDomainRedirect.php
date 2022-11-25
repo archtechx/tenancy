@@ -6,7 +6,6 @@ namespace Stancl\Tenancy\Features;
 
 use Illuminate\Http\RedirectResponse;
 use Stancl\Tenancy\Contracts\Feature;
-use Stancl\Tenancy\Tenancy;
 
 class CrossDomainRedirect implements Feature
 {
