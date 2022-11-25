@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route as Router;
 use Stancl\Tenancy\Contracts\Feature;
 use Stancl\Tenancy\Middleware;
 
+// todo this got deleted in v4.
 class UniversalRoutes implements Feature
 {
     public static string $middlewareGroup = 'universal';

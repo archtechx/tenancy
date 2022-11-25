@@ -8,7 +8,7 @@ use Stancl\Tenancy\Tests\Etc\Tenant;
 
 test('tenant redirect macro replaces only the hostname', function () {
     config([
-        'tenancy.features' => [CrossDomainRedirect::class],
+        'tenancy.tenant_unaware_features' => [CrossDomainRedirect::class],
     ]);
 
     Route::get('/foobar', function () {
@@ -37,7 +37,7 @@ test('tenant route helper generates correct url', function () {
 
 test('redirect from central to tenant works fine', function () {
     config([
-        'tenancy.features' => [CrossDomainRedirect::class],
+        'tenancy.tenant_unaware_features' => [CrossDomainRedirect::class],
     ]);
 
     Route::get('/foobar', function () {
