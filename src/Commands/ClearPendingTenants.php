@@ -23,8 +23,8 @@ class ClearPendingTenants extends Command
         // We compare the original expiration date to the new one to check if the new one is different later
         $originalExpirationDate = $expirationDate->copy()->toImmutable();
 
-        $olderThanDays = $this->option('older-than-days');
-        $olderThanHours = $this->option('older-than-hours');
+        $olderThanDays = (int) $this->option('older-than-days');
+        $olderThanHours = (int) $this->option('older-than-hours');
 
         if ($olderThanDays && $olderThanHours) {
             $this->line("<options=bold,reverse;fg=red> Cannot use '--older-than-days' and '--older-than-hours' together \n"); // todo@cli refactor all of these styled command outputs to use $this->components
