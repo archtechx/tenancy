@@ -35,10 +35,9 @@ test('tenant route helper generates correct url', function () {
     expect(tenant_route('foo.localhost', 'foo', []))->toBe('http://foo.localhost/abcdef');
 });
 
-test('redirect from central to tenant works fine', function () {
-    config([
-        'tenancy.tenant_unaware_features' => [CrossDomainRedirect::class],
-    ]);
+// Check that `domain()` can be called on a redirect before tenancy is used (regression test for #949)
+test('redirect from central to tenant works', function () {
+    // `CrossDomainRedirect` feature already enabled in config
 
     Route::get('/foobar', function () {
         return 'Foo';
