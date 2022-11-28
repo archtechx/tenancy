@@ -39,8 +39,7 @@ class CreatePendingTenants extends Command
     /** Calculate the number of currently available pending tenants. */
     protected function getPendingTenantCount(): int
     {
-        return tenancy()
-            ->query()
+        return tenancy()->query()
             ->onlyPending()
             ->count();
     }

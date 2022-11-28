@@ -41,8 +41,7 @@ class ClearPendingTenants extends Command
             $expirationDate->subHours($olderThanHours);
         }
 
-        $deletedTenantCount = tenancy()
-            ->query()
+        $deletedTenantCount = tenancy()->query()
             ->onlyPending()
             ->when($originalExpirationDate->notEqualTo($expirationDate), function (Builder $query) use ($expirationDate) {
                 $query->where($query->getModel()->getColumnForQuery('pending_since'), '<', $expirationDate->timestamp);
