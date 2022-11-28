@@ -30,8 +30,8 @@ class CreatePendingTenants extends Command
             $createdCount++;
         }
 
-        $this->info($createdCount . ' ' . str('tenant')->plural($createdCount) . ' created.');
-        $this->info($maxPendingTenantCount . ' ' . str('tenant')->plural($maxPendingTenantCount) . ' ready to be used.');
+        $this->info($createdCount . ' pending ' . str('tenant')->plural($createdCount) . ' created.');
+        $this->info($maxPendingTenantCount . ' pending ' . str('tenant')->plural($maxPendingTenantCount) . ' ready to be used.');
 
         return 0;
     }
