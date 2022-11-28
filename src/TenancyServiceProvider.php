@@ -29,12 +29,16 @@ class TenancyServiceProvider extends ServiceProvider
 
         $this->app->resolving(Tenancy::class, function (Tenancy $tenancy, $app) {
             foreach ($this->app['config']['tenancy.features'] ?? [] as $feature) {
-                $this->app[$feature]->bootstrap();
+                if (! $feature::alwaysBootstrap()) { // avoid bootstrapping already bootstrapped features
+                    $this->app[$feature]->bootstrap();
+                }
             }
         });
 
-        foreach ($this->app['config']['tenancy.tenant_unaware_features'] ?? [] as $feature) {
-            $this->app[$feature]->bootstrap();
+        foreach ($this->app['config']['tenancy.features'] ?? [] as $feature) {
+            if ($feature::alwaysBootstrap()) {
+                $this->app[$feature]->bootstrap();
+            }
         }
 
         // Make it possible to inject the current tenant by typehinting the Tenant contract.

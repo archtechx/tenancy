@@ -32,4 +32,9 @@ class TelescopeTags implements Feature
             return $tags;
         });
     }
+
+    public static function alwaysBootstrap(): bool
+    {
+        return false;
+    }
 }

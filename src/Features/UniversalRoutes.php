@@ -60,4 +60,9 @@ class UniversalRoutes implements Feature
 
         return false;
     }
+
+    public static function alwaysBootstrap(): bool
+    {
+        return false;
+    }
 }

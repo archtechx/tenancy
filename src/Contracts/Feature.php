@@ -8,4 +8,6 @@ namespace Stancl\Tenancy\Contracts;
 interface Feature
 {
     public function bootstrap(): void;
+
+    public static function alwaysBootstrap(): bool;
 }

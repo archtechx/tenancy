@@ -69,4 +69,9 @@ class TenantConfig implements Feature
             $this->config->set($key, $value);
         }
     }
+
+    public static function alwaysBootstrap(): bool
+    {
+        return false;
+    }
 }

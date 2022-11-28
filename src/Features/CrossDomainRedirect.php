@@ -27,4 +27,9 @@ class CrossDomainRedirect implements Feature
             return $this;
         });
     }
+
+    public static function alwaysBootstrap(): bool
+    {
+        return true;
+    }
 }

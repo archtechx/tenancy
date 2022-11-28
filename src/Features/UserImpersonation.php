@@ -50,4 +50,9 @@ class UserImpersonation implements Feature
 
         return redirect($token->redirect_url);
     }
+
+    public static function alwaysBootstrap(): bool
+    {
+        return false;
+    }
 }
