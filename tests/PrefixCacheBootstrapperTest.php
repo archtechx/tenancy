@@ -75,7 +75,7 @@ test('prefix separate cache well enough', function () {
     expect(cache()->get('foo'))->toBe('xyz');
 });
 
-test('central cache is not broke', function () {
+test('central cache is persisted', function () {
     cache()->put('key', 'central');
 
     $tenant1 = Tenant::create();
@@ -92,7 +92,7 @@ test('central cache is not broke', function () {
     expect(cache()->get('key2'))->toBe('central-two');
 });
 
-test('cache base prefix can be customized', function () {
+test('cache base prefix is customizable', function () {
     config([
         'tenancy.cache.prefix_base' => 'custom_'
     ]);
