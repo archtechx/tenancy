@@ -21,6 +21,7 @@ beforeEach(function () {
 
 test('cache prefix is separate for each tenant', function () {
     $originalPrefix = config('cache.prefix') . ':';
+    cache()->set('key', 'original-value');
 
     expect($originalPrefix)
         ->toBe(app('cache')->getPrefix())
@@ -32,6 +33,8 @@ test('cache prefix is separate for each tenant', function () {
     $tenantOnePrefix = 'tenant_' . $tenant1->id . ':';
 
     tenancy()->initialize($tenant1);
+    cache()->set('key', 'tenantone-value');
+
     expect($tenantOnePrefix)
         ->toBe(app('cache')->getPrefix())
         ->toBe(app('cache.store')->getPrefix());
@@ -39,9 +42,18 @@ test('cache prefix is separate for each tenant', function () {
     $tenantTwoPrefix = 'tenant_' . $tenant2->id . ':';
 
     tenancy()->initialize($tenant2);
+    cache()->set('key', 'tenanttwo-value');
+
     expect($tenantTwoPrefix)
         ->toBe(app('cache')->getPrefix())
         ->toBe(app('cache.store')->getPrefix());
+
+    // Assert tenants' data is accessible using the prefix from the central context
+    tenancy()->end();
+    config(['cache.prefix' => null]); // stop prefixing cache keys in central
+
+    expect(cache($tenantOnePrefix . 'key'))->toBe('tenantone-value');
+    expect(cache($tenantTwoPrefix . 'key'))->toBe('tenanttwo-value');
 });
 
 test('cache is persisted when reidentification is used', function () {
