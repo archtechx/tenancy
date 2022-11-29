@@ -48,7 +48,7 @@ class InitializeTenancyByPath extends IdentificationMiddleware
 
     protected function route(Request $request): Route
     {
-        /** @var Route $route */
+        /** @var ?Route $route */
         $route = $request->route();
 
         if (! $route) {

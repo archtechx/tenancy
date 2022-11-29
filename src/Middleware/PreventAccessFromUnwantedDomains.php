@@ -20,7 +20,10 @@ class PreventAccessFromUnwantedDomains
     /** @return \Illuminate\Http\Response|mixed */
     public function handle(Request $request, Closure $next): mixed
     {
-        if ($this->routeHasMiddleware($request->route(), 'universal')) {
+        /** @var Route $route */
+        $route = $request->route();
+
+        if ($this->routeHasMiddleware($route, 'universal')) {
             return $next($request);
         }
 
