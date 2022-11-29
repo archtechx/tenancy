@@ -21,7 +21,6 @@ beforeEach(function () {
 
 test('cache prefix is separate for each tenant', function () {
     $originalPrefix = config('cache.prefix') . ':';
-    cache()->set('key', 'original-value');
 
     expect($originalPrefix)
         ->toBe(app('cache')->getPrefix())
