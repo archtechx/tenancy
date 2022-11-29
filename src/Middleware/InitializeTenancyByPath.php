@@ -28,14 +28,13 @@ class InitializeTenancyByPath extends IdentificationMiddleware
     /** @return \Illuminate\Http\Response|mixed */
     public function handle(Request $request, Closure $next): mixed
     {
-        /** @var Route $route */
-        $route = $request->route();
+        $route = $this->route($request);
 
         // Only initialize tenancy if tenant is the first parameter
         // We don't want to initialize tenancy if the tenant is
         // simply injected into some route controller action.
         if ($route->parameterNames()[0] === PathTenantResolver::tenantParameterName()) {
-            $this->setDefaultTenantForRouteParametersWhenTenancyIsInitialized();
+            $this->setDefaultTenantForRouteParametersWhenInitializingTenancy();
 
             return $this->initializeTenancy(
                 $request,
@@ -47,7 +46,26 @@ class InitializeTenancyByPath extends IdentificationMiddleware
         }
     }
 
-    protected function setDefaultTenantForRouteParametersWhenTenancyIsInitialized(): void
+    protected function route(Request $request): Route
+    {
+        /** @var Route $route */
+        $route = $request->route();
+
+        if (! $route) {
+            // Create a fake $route instance that has enough information for this middleware's needs
+            $route = new Route($request->method(), $request->getUri(), []);
+            /**
+             * getPathInfo() returns the path except the root domain.
+             * We fetch the first parameter because tenant parameter is *always* first.
+             */
+            $route->parameters[PathTenantResolver::tenantParameterName()] = explode('/', ltrim($request->getPathInfo(), '/'))[0];
+            $route->parameterNames[] = PathTenantResolver::tenantParameterName();
+        }
+
+        return $route;
+    }
+
+    protected function setDefaultTenantForRouteParametersWhenInitializingTenancy(): void
     {
         Event::listen(InitializingTenancy::class, function (InitializingTenancy $event) {
             /** @var Tenant $tenant */
