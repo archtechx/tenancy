@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
-use Stancl\Tenancy\TenancyServiceProvider;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
 test('tenant redirect macro replaces only the hostname', function () {
