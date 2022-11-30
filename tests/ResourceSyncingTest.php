@@ -284,10 +284,14 @@ test('sync resource creation works when central model provides mixture and tenan
 
     tenancy()->end();
 
-    $centralUser = CentralUserProvidingMixture::whereGlobalId('acmey')->first()->only(['name', 'email', 'password', 'role']);
+    $centralUser = CentralUserProvidingMixture::whereGlobalId('acmey')->first();
     expect($resourceUser->getSyncedCreationAttributes())->toBeNull();
 
-    $resourceUser = $resourceUser->only(['name', 'email', 'password', 'role']);
+    $centralUser = $centralUser->toArray();
+    $resourceUser = $resourceUser->toArray();
+    unset($centralUser['id']);
+    unset($resourceUser['id']);
+
     // Assert central user created as 1:1 copy of resource model except "id"
     expect($centralUser)->toBe($resourceUser);
 });
@@ -315,8 +319,12 @@ test('sync resource creation works when central model provides nothing and tenan
 
     expect($centralUser->getSyncedCreationAttributes())->toBeNull();
     $tenant1->run(function () use ($centralUser) {
-        $resourceUser = TenantUserProvidingMixture::first()->only(['name', 'email', 'password', 'role']);
-        $centralUser = $centralUser->only(['name', 'email', 'password', 'role']);
+        $resourceUser = TenantUserProvidingMixture::first();
+        expect($resourceUser)->not()->toBeNull();
+        $resourceUser = $resourceUser->toArray();
+        $centralUser = $centralUser->withoutRelations()->toArray();
+        unset($resourceUser['id']);
+        unset($centralUser['id']);
 
         expect($resourceUser)->toBe($centralUser);
     });
