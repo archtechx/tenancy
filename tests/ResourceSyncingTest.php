@@ -826,7 +826,8 @@ class ResourceTenant extends Tenant
 {
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(CentralUser::class, 'tenant_users', 'tenant_id', 'global_user_id', 'id', 'global_id');
+        return $this->belongsToMany(CentralUser::class, 'tenant_users', 'tenant_id', 'global_user_id', 'id', 'global_id')
+            ->using(TenantPivot::class);
     }
 }
 
