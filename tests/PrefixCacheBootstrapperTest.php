@@ -105,14 +105,17 @@ test('central cache is persisted', function () {
 });
 
 test('cache base prefix is customizable', function () {
+    $originalPrefix = config('cache.prefix');
+    $prefixBase = 'custom_';
+
     config([
-        'tenancy.cache.prefix_base' => 'custom_'
+        'tenancy.cache.prefix_base' => $prefixBase
     ]);
 
     $tenant1 = Tenant::create();
     tenancy()->initialize($tenant1);
 
-    expect('custom_' . $tenant1->id . ':')
+    expect($originalPrefix . $prefixBase . $tenant1->getTenantKey() . ':')
         ->toBe(app('cache')->getPrefix())
         ->toBe(app('cache.store')->getPrefix());
 });
