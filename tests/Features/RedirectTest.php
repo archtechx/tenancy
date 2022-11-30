@@ -9,8 +9,6 @@ use Stancl\Tenancy\Tests\Etc\Tenant;
 test('tenant redirect macro replaces only the hostname', function () {
     // `CrossDomainRedirect` feature already enabled in config
 
-    $this->app->register(new TenancyServiceProvider($this->app));
-
     Route::get('/foobar', function () {
         return 'Foo';
     })->name('home');
@@ -19,7 +17,7 @@ test('tenant redirect macro replaces only the hostname', function () {
         return redirect()->route('home')->domain('abcd');
     });
 
-    $tenant = Tenant::create(['id' => 'foo']);
+    $tenant = Tenant::create();
     tenancy()->initialize($tenant);
 
     pest()->get('/redirect')
