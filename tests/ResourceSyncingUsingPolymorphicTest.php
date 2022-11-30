@@ -74,8 +74,9 @@ test('resource syncing works using a single pivot table for multiple models when
 
     // Assert User resource is synced
     $tenant1->run(function () use ($centralUser) {
-        $tenantUser = TenantUserUsingPolymorphic::first()->only(['name', 'email', 'password', 'role']);
-        $centralUser = $centralUser->only(['name', 'email', 'password', 'role']);
+        $tenantUser = TenantUserUsingPolymorphic::first()->toArray();
+        $centralUser = $centralUser->withoutRelations()->toArray();
+        unset($centralUser['id'], $tenantUser['id']);
 
         expect($tenantUser)->toBe($centralUser);
     });
@@ -122,8 +123,13 @@ test('resource syncing works using a single pivot table for multiple models when
     tenancy()->end();
 
     // Assert User resource is synced
-    $centralUser = CentralUserUsingPolymorphic::first()->only(['name', 'email', 'password', 'role']);
-    $tenantUser = $tenantUser->only(['name', 'email', 'password', 'role']);
+    $centralUser = CentralUserUsingPolymorphic::first()->toArray();
+    $tenantUser = $tenantUser->toArray();
+    unset($centralUser['id'], $tenantUser['id']);
+
+    // reorder global_id in $centralUser to put it at the last position so we can match the exact array
+    $centralUser['global_id'] = array_shift($centralUser);
+
     expect($tenantUser)->toBe($centralUser);
 
     $tenant2 = ResourceTenantUsingPolymorphic::create(['id' => 't2']);
