@@ -128,12 +128,19 @@ test('prefix separate cache well enough using CacheManager dependency injection'
 
     expect(cache('key'))->toBe('central-value');
 
-    $tenant = Tenant::create();
-    tenancy()->initialize($tenant);
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+    tenancy()->initialize($tenant1);
 
     expect(cache('key'))->toBeNull();
     app()->make(CacheAction::class)->handle();
-    expect(cache('key'))->toBe($tenant->getTenantKey());
+    expect(cache('key'))->toBe($tenant1->getTenantKey());
+
+    tenancy()->initialize($tenant2);
+
+    expect(cache('key'))->toBeNull();
+    app()->make(CacheAction::class)->handle();
+    expect(cache('key'))->toBe($tenant2->getTenantKey());
 
     tenancy()->end();
 
