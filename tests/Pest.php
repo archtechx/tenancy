@@ -4,7 +4,7 @@ use Stancl\Tenancy\Tests\TestCase;
 
 uses(TestCase::class)->in(...filesAndFoldersExcluding(['WithoutTenancy'])); // todo move all tests to a separate folder
 
-function pest(): \Orchestra\Testbench\TestCase
+function pest(): TestCase
 {
     return Pest\TestSuite::getInstance()->test;
 }
