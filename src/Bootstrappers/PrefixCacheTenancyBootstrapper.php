@@ -40,7 +40,7 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
     {
         $this->config->set('cache.prefix', $prefix);
 
-        // $this->app['cache']->forgetDriver($this->storeName);
+        $this->app['cache']->forgetDriver($this->storeName);
 
         // The CacheManager will have the $app['config'] array cached with old prefixes on the 'cache' instance
         // This call will forget the 'cache' instance

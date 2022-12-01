@@ -122,6 +122,8 @@ test('cache base prefix is customizable', function () {
 });
 
 test('prefix separate cache well enough using CacheManager dependency injection', function () {
+    $this->app->singleton(CacheAction::class);
+
     app()->make(CacheAction::class)->handle();
 
     expect(cache('key'))->toBe('central-value');
