@@ -72,7 +72,10 @@ test('resource syncing works using a single pivot table for multiple models when
 
     $centralUser->tenants()->attach('t1');
 
-    expect($centralUser->tenants()->count())->toBe(1); // Assert `tenants` are accessible
+    // Assert `tenants` are accessible
+    expect($centralUser->tenants->first())
+        ->not()->toBeNull()
+        ->id->toBe('t1');
 
     // Assert User resource is synced
     $tenant1->run(function () use ($centralUser) {
@@ -98,7 +101,10 @@ test('resource syncing works using a single pivot table for multiple models when
 
     $centralCompany->tenants()->attach('t2');
 
-    expect($centralCompany->tenants()->count())->toBe(1); // Assert `tenants` are accessible
+    // Assert `tenants` are accessible
+    expect($centralCompany->tenants->first())
+        ->not()->toBeNull()
+        ->id->toBe('t2');
 
     // Assert Company resource is synced
     $tenant2->run(function () use ($centralCompany) {
@@ -129,9 +135,12 @@ test('resource syncing works using a single pivot table for multiple models when
     // Assert User resource is synced
     $centralUser = CentralUserUsingPolymorphic::first();
 
-    expect($centralUser->tenants()->count())->toBe(1); // Assert `tenants` are accessible
+    // Assert `tenants` are accessible
+    expect($centralUser->tenants->first())
+        ->not()->toBeNull()
+        ->id->toBe('t1');
 
-    $centralUser = $centralUser->toArray();
+    $centralUser = $centralUser->withoutRelations()->toArray();
     $tenantUser = $tenantUser->toArray();
     unset($centralUser['id'], $tenantUser['id']);
 
@@ -156,9 +165,12 @@ test('resource syncing works using a single pivot table for multiple models when
     // Assert Company resource is synced
     $centralCompany = CentralCompanyUsingPolymorphic::first();
 
-    expect($centralCompany->tenants()->count())->toBe(1); // Assert `tenants` are accessible
+    // Assert `tenants` are accessible
+    expect($centralCompany->tenants->first())
+        ->not()->toBeNull()
+        ->id->toBe('t2');
 
-    $centralCompany = $centralCompany->toArray();
+    $centralCompany = $centralCompany->withoutRelations()->toArray();
     $tenantCompany = $tenantCompany->toArray();
     unset($centralCompany['id'], $tenantCompany['id']);
 
