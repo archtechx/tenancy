@@ -73,7 +73,7 @@ test('resource syncing works using a single pivot table for multiple models when
     $centralUser->tenants()->attach('t1');
 
     // Assert `tenants` are accessible
-    expect($centralUser->tenants->first()->id)->toBe('t1');
+    expect($centralUser->tenants->pluck('id')->toArray())->toBe(['t1']);
 
     // Assert User resource is synced
     $tenant1->run(function () use ($centralUser) {
@@ -100,7 +100,7 @@ test('resource syncing works using a single pivot table for multiple models when
     $centralCompany->tenants()->attach('t2');
 
     // Assert `tenants` are accessible
-    expect($centralCompany->tenants->first()->id)->toBe('t2');
+    expect($centralCompany->tenants->pluck('id')->toArray())->toBe(['t2']);
 
     // Assert Company resource is synced
     $tenant2->run(function () use ($centralCompany) {
@@ -132,7 +132,7 @@ test('resource syncing works using a single pivot table for multiple models when
     $centralUser = CentralUserUsingPolymorphic::first();
 
     // Assert `tenants` are accessible
-    expect($centralUser->tenants->first()->id)->toBe('t1');
+    expect($centralUser->tenants->pluck('id')->toArray())->toBe(['t1']);
 
     $centralUser = $centralUser->withoutRelations()->toArray();
     $tenantUser = $tenantUser->toArray();
@@ -160,7 +160,7 @@ test('resource syncing works using a single pivot table for multiple models when
     $centralCompany = CentralCompanyUsingPolymorphic::first();
 
     // Assert `tenants` are accessible
-    expect($centralCompany->tenants->first()->id)->toBe('t2');
+    expect($centralCompany->tenants->pluck('id')->toArray())->toBe(['t2']);
 
     $centralCompany = $centralCompany->withoutRelations()->toArray();
     $tenantCompany = $tenantCompany->toArray();
