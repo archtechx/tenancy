@@ -27,7 +27,9 @@ use Stancl\Tenancy\Tests\Etc\Tenant;
 beforeEach(function () {
     config(['tenancy.bootstrappers' => [
         DatabaseTenancyBootstrapper::class,
-    ]]);
+    ],
+        'tenancy.tenant_model' => ResourceTenantUsingPolymorphic::class,
+    ]);
 
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
@@ -203,12 +205,6 @@ class CentralUserUsingPolymorphic extends Model implements SyncMaster
 
     public $table = 'users';
 
-    // override method to provide different tenant
-    public function getResourceTenantModelName(): string
-    {
-        return ResourceTenantUsingPolymorphic::class;
-    }
-
     public function getTenantModelName(): string
     {
         return TenantUserUsingPolymorphic::class;
@@ -285,12 +281,6 @@ class CentralCompanyUsingPolymorphic extends Model implements SyncMaster
     public $timestamps = false;
 
     public $table = 'companies';
-
-    // override method to provide different tenant
-    public function getResourceTenantModelName(): string
-    {
-        return ResourceTenantUsingPolymorphic::class;
-    }
 
     public function getTenantModelName(): string
     {

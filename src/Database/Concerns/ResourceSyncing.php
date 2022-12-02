@@ -7,7 +7,6 @@ namespace Stancl\Tenancy\Database\Concerns;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Stancl\Tenancy\Contracts\Syncable;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
-use Stancl\Tenancy\Database\Models\Tenant;
 use Stancl\Tenancy\Database\Models\TenantMorphPivot;
 use Stancl\Tenancy\Events\SyncedResourceSaved;
 
@@ -49,12 +48,7 @@ trait ResourceSyncing
 
     public function tenants(): MorphToMany
     {
-        return $this->morphToMany($this->getResourceTenantModelName(), 'tenant_resources', 'tenant_resources', 'resource_global_id', 'tenant_id', 'global_id')
+        return $this->morphToMany(config('tenancy.tenant_model'), 'tenant_resources', 'tenant_resources', 'resource_global_id', 'tenant_id', 'global_id')
             ->using(TenantMorphPivot::class);
-    }
-
-    public function getResourceTenantModelName(): string // todo better name
-    {
-        return config('tenancy.tenant_model', Tenant::class);
     }
 }
