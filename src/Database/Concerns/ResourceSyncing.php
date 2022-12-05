@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Database\Concerns;
 
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Stancl\Tenancy\Contracts\Syncable;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
@@ -46,7 +47,7 @@ trait ResourceSyncing
         return true;
     }
 
-    public function tenants(): MorphToMany
+    public function tenants(): BelongsToMany
     {
         return $this->morphToMany(config('tenancy.tenant_model'), 'tenant_resources', 'tenant_resources', 'resource_global_id', 'tenant_id', 'global_id')
             ->using(TenantMorphPivot::class);
