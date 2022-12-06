@@ -25,10 +25,11 @@ use Stancl\Tenancy\Listeners\UpdateSyncedResource;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
 beforeEach(function () {
-    config(['tenancy.bootstrappers' => [
-        DatabaseTenancyBootstrapper::class,
-    ],
-        'tenancy.tenant_model' => ResourceTenantUsingPolymorphic::class,
+    config([
+        'tenancy.bootstrappers' => [
+            DatabaseTenancyBootstrapper::class,
+        ],
+        'tenancy.models.tenant' => ResourceTenantUsingPolymorphic::class,
     ]);
 
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
