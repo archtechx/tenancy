@@ -13,6 +13,7 @@ use Stancl\Tenancy\Contracts\SyncMaster;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
 use Stancl\Tenancy\Database\Concerns\ResourceSyncing;
 use Stancl\Tenancy\Database\DatabaseConfig;
+use Stancl\Tenancy\Database\Models\TenantMorphPivot;
 use Stancl\Tenancy\Database\Models\TenantPivot;
 use Stancl\Tenancy\Events\SyncedResourceSaved;
 use Stancl\Tenancy\Events\TenancyEnded;
@@ -78,6 +79,9 @@ test('resource syncing works using a single pivot table for multiple models when
     // Assert `tenants` are accessible
     expect($centralUser->tenants->pluck('id')->toArray())->toBe(['t1']);
 
+    // Users are accessible from tenant
+    expect($tenant1->users()->pluck('email')->toArray())->toBe(['john@localhost']);
+
     // Assert User resource is synced
     $tenant1->run(function () use ($centralUser) {
         $tenantUser = TenantUserUsingPolymorphic::first()->toArray();
@@ -104,6 +108,9 @@ test('resource syncing works using a single pivot table for multiple models when
 
     // Assert `tenants` are accessible
     expect($centralCompany->tenants->pluck('id')->toArray())->toBe(['t2']);
+
+    // Companies are accessible from tenant
+    expect($tenant2->companies()->pluck('email')->toArray())->toBe(['archtech@localhost']);
 
     // Assert Company resource is synced
     $tenant2->run(function () use ($centralCompany) {
@@ -137,6 +144,9 @@ test('resource syncing works using a single pivot table for multiple models when
     // Assert `tenants` are accessible
     expect($centralUser->tenants->pluck('id')->toArray())->toBe(['t1']);
 
+    // Users are accessible from tenant
+    expect($tenant1->users()->pluck('email')->toArray())->toBe(['john@localhost']);
+
     $centralUser = $centralUser->withoutRelations()->toArray();
     $tenantUser = $tenantUser->toArray();
     unset($centralUser['id'], $tenantUser['id']);
@@ -165,11 +175,51 @@ test('resource syncing works using a single pivot table for multiple models when
     // Assert `tenants` are accessible
     expect($centralCompany->tenants->pluck('id')->toArray())->toBe(['t2']);
 
+    // Companies are accessible from tenant
+    expect($tenant2->companies()->pluck('email')->toArray())->toBe(['company@localhost']);
+
     $centralCompany = $centralCompany->withoutRelations()->toArray();
     $tenantCompany = $tenantCompany->toArray();
     unset($centralCompany['id'], $tenantCompany['id']);
 
     expect($tenantCompany)->toBe($centralCompany);
+});
+
+test('right resources are accessible from the tenant', function () {
+    $tenant1 = ResourceTenantUsingPolymorphic::create(['id' => 't1']);
+    $tenant2 = ResourceTenantUsingPolymorphic::create(['id' => 't2']);
+    migrateUsersTableForTenants();
+
+    $user1 = CentralUserUsingPolymorphic::create([
+        'global_id' => 'user1',
+        'name' => 'user1',
+        'email' => 'user1@localhost',
+        'password' => 'password',
+        'role' => 'commenter',
+    ]);
+
+    $user2 = CentralUserUsingPolymorphic::create([
+        'global_id' => 'user2',
+        'name' => 'user2',
+        'email' => 'user2@localhost',
+        'password' => 'password',
+        'role' => 'commenter',
+    ]);
+
+    $user3 = CentralUserUsingPolymorphic::create([
+        'global_id' => 'user3',
+        'name' => 'user3',
+        'email' => 'user3@localhost',
+        'password' => 'password',
+        'role' => 'commenter',
+    ]);
+
+    $user1->tenants()->attach('t1');
+    $user2->tenants()->attach('t1');
+    $user3->tenants()->attach('t2');
+
+    expect($tenant1->users()->pluck('email')->toArray())->toBe([$user1->email, $user2->email]);
+    expect($tenant2->users()->pluck('email')->toArray())->toBe([$user3->email]);
 });
 
 function migrateCompaniesTableForTenants(): void
@@ -186,13 +236,13 @@ class ResourceTenantUsingPolymorphic extends Tenant
     public function users(): MorphToMany
     {
         return $this->morphedByMany(CentralUserUsingPolymorphic::class, 'tenant_resources', 'tenant_resources', 'tenant_id', 'resource_global_id', 'id', 'global_id')
-            ->using(TenantPivot::class);
+            ->using(TenantMorphPivot::class);
     }
 
     public function companies(): MorphToMany
     {
         return $this->morphedByMany(CentralCompanyUsingPolymorphic::class, 'tenant_resources', 'tenant_resources', 'tenant_id', 'resource_global_id', 'id', 'global_id')
-            ->using(TenantPivot::class);
+            ->using(TenantMorphPivot::class);
     }
 }
 
