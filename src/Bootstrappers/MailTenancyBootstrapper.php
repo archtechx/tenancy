@@ -59,7 +59,7 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
         $this->bindNewMailManagerInstance();
     }
 
-    protected function bindNewMailManagerInstance()
+    protected function bindNewMailManagerInstance(): void
     {
         $this->app->extend(MailManager::class, function (MailManager $mailManager) {
             return new MailManager($this->app);
