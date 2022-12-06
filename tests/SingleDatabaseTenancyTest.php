@@ -31,7 +31,7 @@ beforeEach(function () {
         $table->foreign('post_id')->references('id')->on('posts')->onUpdate('cascade')->onDelete('cascade');
     });
 
-    config(['tenancy.tenant_model' => Tenant::class]);
+    config(['tenancy.models.tenant' => Tenant::class]);
 });
 
 test('primary models are scoped to the current tenant', function () {
@@ -142,7 +142,7 @@ test('tenant id is not auto added when creating primary resources in central con
 });
 
 test('tenant id column name can be customized', function () {
-    config(['tenancy.single_db.tenant_id_column' => 'team_id']);
+    config(['tenancy.models.tenant_key_column' => 'team_id']);
 
     Schema::drop('comments');
     Schema::drop('posts');

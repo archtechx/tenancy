@@ -97,12 +97,18 @@ class Tenancy
 
     public static function model(): Tenant&Model
     {
-        $class = config('tenancy.tenant_model');
+        $class = config('tenancy.models.tenant');
 
         /** @var Tenant&Model $model */
         $model = new $class;
 
         return $model;
+    }
+
+    /** Name of the column used to relate models to tenants. */
+    public static function tenantKeyColumn(): string
+    {
+        return config('tenancy.models.tenant_key_column') ?? 'tenant_id';
     }
 
     /**

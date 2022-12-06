@@ -109,7 +109,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'central' => true,
             ],
             'tenancy.seeder_parameters' => [],
-            'tenancy.tenant_model' => Tenant::class, // Use test tenant w/ DBs & domains
+            'tenancy.models.tenant' => Tenant::class, // Use test tenant w/ DBs & domains
         ]);
 
         $app->singleton(RedisTenancyBootstrapper::class); // todo (Samuel) use proper approach eg config for singleton registration

@@ -14,6 +14,7 @@ use Stancl\Tenancy\Database\TenantCollection;
 use Stancl\Tenancy\Events\SyncedResourceChangedInForeignDatabase;
 use Stancl\Tenancy\Events\SyncedResourceSaved;
 use Stancl\Tenancy\Exceptions\ModelNotSyncMasterException;
+use Stancl\Tenancy\Tenancy;
 
 // todo@v4 review all code related to resource syncing
 
@@ -77,7 +78,7 @@ class UpdateSyncedResource extends QueueableListener
             /** @var Tenant */
             $tenant = $event->tenant;
 
-            return ((string) $model->pivot->tenant_id) === ((string) $tenant->getTenantKey());
+            return ((string) $model->pivot->getAttribute(Tenancy::tenantKeyColumn())) === ((string) $tenant->getTenantKey());
         };
 
         $mappingExists = $centralModel->tenants->contains($currentTenantMapping);

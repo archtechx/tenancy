@@ -30,8 +30,8 @@ class CreatePendingTenants extends Command
             $createdCount++;
         }
 
-        $this->info($createdCount . ' ' . str('tenant')->plural($createdCount) . ' created.');
-        $this->info($maxPendingTenantCount . ' ' . str('tenant')->plural($maxPendingTenantCount) . ' ready to be used.');
+        $this->info($createdCount . ' pending ' . str('tenant')->plural($createdCount) . ' created.');
+        $this->info($maxPendingTenantCount . ' pending ' . str('tenant')->plural($maxPendingTenantCount) . ' ready to be used.');
 
         return 0;
     }
@@ -39,8 +39,7 @@ class CreatePendingTenants extends Command
     /** Calculate the number of currently available pending tenants. */
     protected function getPendingTenantCount(): int
     {
-        return tenancy()
-            ->query()
+        return tenancy()->query()
             ->onlyPending()
             ->count();
     }

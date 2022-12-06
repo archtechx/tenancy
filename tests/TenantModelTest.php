@@ -43,7 +43,7 @@ test('current tenant can be resolved from service container using typehint', fun
 });
 
 test('id is generated when no id is supplied', function () {
-    config(['tenancy.id_generator' => UUIDGenerator::class]);
+    config(['tenancy.models.id_generator' => UUIDGenerator::class]);
 
     $this->mock(UUIDGenerator::class, function ($mock) {
         return $mock->shouldReceive('generate')->once();
