@@ -26,27 +26,47 @@ function assertMailerTransportUsesPassword(string|null $password) {
     expect($mailerPassword)->toBe((string) $password);
 };
 
-test('SMTP mailer transport uses the correct tenant credentials', function() {
+test('mailer transport uses the correct credentials', function() {
+    config(['mail.default' => 'smtp', 'mail.mailers.smtp.password' => $defaultPassword = 'DEFAULT']);
     MailTenancyBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'smtp_password'];
 
-    $tenant = Tenant::create();
+    tenancy()->initialize($tenant = Tenant::create());
+    assertMailerTransportUsesPassword($defaultPassword); // $tenant->smtp_password is not set, so the default password should be used
+    tenancy()->end();
 
-    tenancy()->initialize($tenant);
-
-    assertMailerTransportUsesPassword(null); // $tenant->smtp_password is null
-
-    tenancy()->end($tenant);
-
+    // Assert mailer uses the updated password
     $tenant->update(['smtp_password' => $newPassword = 'changed']);
 
     tenancy()->initialize($tenant);
-
     assertMailerTransportUsesPassword($newPassword);
+    tenancy()->end();
 
-    tenancy()->end($tenant);
+    // Assert mailer uses the correct password after switching to a different tenant
+    tenancy()->initialize(Tenant::create(['smtp_password' => $newTenantPassword = 'updated']));
+    assertMailerTransportUsesPassword($newTenantPassword);
+    tenancy()->end();
 
-    $tenant->update(['smtp_password' => $newPassword = 'updated']);
-    tenancy()->initialize($tenant);
+    // Assert mailer uses the default password after tenancy ends
+    assertMailerTransportUsesPassword($defaultPassword);
+})->group('mailer');
 
-    assertMailerTransportUsesPassword($newPassword);
+
+test('initializing and ending tenancy binds a fresh MailManager instance without cached mailers', function() {
+    $mailers = fn() => invade(app(MailManager::class))->mailers;
+
+    app(MailManager::class)->mailer('smtp');
+
+    expect($mailers())->toHaveCount(1);
+
+    tenancy()->initialize(Tenant::create());
+
+    expect($mailers())->toHaveCount(0);
+
+    app(MailManager::class)->mailer('smtp');
+
+    expect($mailers())->toHaveCount(1);
+
+    tenancy()->end();
+
+    expect($mailers())->toHaveCount(0);
 })->group('mailer');
