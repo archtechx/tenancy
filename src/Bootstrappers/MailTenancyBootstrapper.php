@@ -45,8 +45,8 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant): void
     {
-        // Use custom mail manager that resolves the mailers specified in its $tenantMailers static property
-        // Instead of getting the cached mailers from the $mailers property
+        // Bind fresh mail manager instance to clear the cached mailers
+        // So that the manager is forced to resolve the mailers with the correct credentials from the config
         $this->bindNewMailManagerInstance();
 
         $this->setConfig($tenant);
