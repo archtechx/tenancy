@@ -9,7 +9,6 @@ use Illuminate\Foundation\Application;
 use Illuminate\Mail\MailManager;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\TenancyMailManager;
 
 class MailTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -48,9 +47,7 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
     {
         // Use custom mail manager that resolves the mailers specified in its $tenantMailers static property
         // Instead of getting the cached mailers from the $mailers property
-        $this->app->extend(MailManager::class, function (MailManager $mailManager) {
-            return new TenancyMailManager($this->app);
-        });
+        $this->bindNewMailManagerInstance();
 
         $this->setConfig($tenant);
     }
@@ -58,6 +55,15 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
     public function revert(): void
     {
         $this->unsetConfig();
+
+        $this->bindNewMailManagerInstance();
+    }
+
+    protected function bindNewMailManagerInstance()
+    {
+        $this->app->extend(MailManager::class, function (MailManager $mailManager) {
+            return new MailManager($this->app);
+        });
     }
 
     protected function setConfig(Tenant $tenant): void

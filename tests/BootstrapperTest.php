@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Str;
+use Illuminate\Mail\MailManager;
 use Illuminate\Support\Facades\DB;
 use Stancl\JobPipeline\JobPipeline;
 use Illuminate\Support\Facades\File;
@@ -327,37 +328,48 @@ test('local storage public urls are generated correctly', function() {
     expect(File::isDirectory($tenantStoragePath))->toBeFalse();
 });
 
-test('MailTenancyBootstrapper maps tenant mail credentials to config as specified in the $credentialsMap property', function() {
+test('MailTenancyBootstrapper maps tenant mail credentials to config as specified in the $credentialsMap property and makes the mailer use tenant credentials', function() {
     MailTenancyBootstrapper::$credentialsMap = [
         'mail.mailers.smtp.username' => 'smtp_username',
         'mail.mailers.smtp.password' => 'smtp_password'
     ];
 
     config([
+        'mail.default' => 'smtp',
         'mail.mailers.smtp.username' => $defaultUsername = 'default username',
         'mail.mailers.smtp.password' => 'no password'
     ]);
 
-    Tenant::create(['smtp_password' => 'testing password'])->run(function() use ($defaultUsername) {
-        expect(array_key_exists('smtp_password', tenant()->getAttributes()))->toBeTrue();
-        expect(array_key_exists('smtp_host', tenant()->getAttributes()))->toBeFalse();
-        expect(config('mail.mailers.smtp.username'))->toBe($defaultUsername);
-        expect(config('mail.mailers.smtp.password'))->toBe(tenant()->smtp_password);
-    });
-});
+    $tenant = Tenant::create(['smtp_password' => $password = 'testing password']);
 
-test('MailTenancyBootstrapper reverts the config to default when tenancy ends', function() {
+    tenancy()->initialize($tenant);
+
+    expect(array_key_exists('smtp_password', tenant()->getAttributes()))->toBeTrue();
+    expect(array_key_exists('smtp_host', tenant()->getAttributes()))->toBeFalse();
+    expect(config('mail.mailers.smtp.username'))->toBe($defaultUsername);
+    expect(config('mail.mailers.smtp.password'))->toBe(tenant()->smtp_password);
+
+    // Assert that the current mailer uses tenant's smtp_password
+    assertMailerTransportUsesPassword($password);
+})->group('mailer');
+
+test('MailTenancyBootstrapper reverts the config and mailer credentials to default when tenancy ends', function() {
     MailTenancyBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'smtp_password'];
-    config(['mail.mailers.smtp.password' => $defaultPassword = 'no password']);
+    config(['mail.default' => 'smtp', 'mail.mailers.smtp.password' => $defaultPassword = 'no password']);
 
     tenancy()->initialize(Tenant::create(['smtp_password' => $tenantPassword = 'testing password']));
 
     expect(config('mail.mailers.smtp.password'))->toBe($tenantPassword);
 
+    assertMailerTransportUsesPassword($tenantPassword);
+
     tenancy()->end();
 
     expect(config('mail.mailers.smtp.password'))->toBe($defaultPassword);
-});
+
+    // Assert that the current mailer uses the default smtp_password
+    assertMailerTransportUsesPassword($defaultPassword);
+})->group('mailer');
 
 function getDiskPrefix(string $disk): string
 {

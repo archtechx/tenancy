@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Illuminate\Mail\MailManager;
 use Illuminate\Support\Facades\Event;
-use Stancl\Tenancy\TenancyMailManager;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
@@ -18,39 +17,36 @@ beforeEach(function() {
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
-test('tenancy swaps the MailManager singleton for an instance of TenancyMailManager', function() {
-    tenancy()->initialize(Tenant::create());
+// Initialize tenancy as $tenant and assert that the smtp mailer's transport has the correct password
+function assertMailerTransportUsesPassword(string|null $password) {
+    $manager = app(MailManager::class);
+    $mailer = invade($manager)->get('smtp');
+    $mailerPassword = invade($mailer->getSymfonyTransport())->password;
 
-    expect(app(MailManager::class))->toBeInstanceOf(TenancyMailManager::class);
-});
+    expect($mailerPassword)->toBe((string) $password);
+};
 
 test('SMTP mailer transport uses the correct tenant credentials', function() {
-    TenancyMailManager::$tenantMailers = ['smtp'];
     MailTenancyBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'smtp_password'];
 
     $tenant = Tenant::create();
 
-    // Initialize tenancy as $tenant and assert that the smtp mailer's transport has the correct password
-    $assertTransportUsesPassword = function(string|null $password) use ($tenant) {
-        tenancy()->initialize($tenant);
+    tenancy()->initialize($tenant);
 
-        $manager = app(MailManager::class);
+    assertMailerTransportUsesPassword(null); // $tenant->smtp_password is null
 
-        $mailer = invade($manager)->get('smtp');
-        $mailerPassword = invade($mailer->getSymfonyTransport())->password;
-
-        expect($mailerPassword)->toBe((string) $password);
-
-        tenancy()->end();
-    };
-
-    $assertTransportUsesPassword(null); // $tenant->smtp_password is null
+    tenancy()->end($tenant);
 
     $tenant->update(['smtp_password' => $newPassword = 'changed']);
 
-    $assertTransportUsesPassword($newPassword);
+    tenancy()->initialize($tenant);
+
+    assertMailerTransportUsesPassword($newPassword);
+
+    tenancy()->end($tenant);
 
     $tenant->update(['smtp_password' => $newPassword = 'updated']);
+    tenancy()->initialize($tenant);
 
-    $assertTransportUsesPassword($newPassword);
-});
+    assertMailerTransportUsesPassword($newPassword);
+})->group('mailer');
