@@ -48,7 +48,7 @@ test('mailer transport uses the correct credentials', function() {
 
     // Assert mailer uses the default password after tenancy ends
     assertMailerTransportUsesPassword($defaultPassword);
-})->group('mailer');
+});
 
 
 test('initializing and ending tenancy binds a fresh MailManager instance without cached mailers', function() {
@@ -69,4 +69,4 @@ test('initializing and ending tenancy binds a fresh MailManager instance without
     tenancy()->end();
 
     expect($mailers())->toHaveCount(0);
-})->group('mailer');
+});
