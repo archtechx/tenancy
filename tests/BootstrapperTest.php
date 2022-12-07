@@ -351,7 +351,7 @@ test('MailTenancyBootstrapper maps tenant mail credentials to config as specifie
 
     // Assert that the current mailer uses tenant's smtp_password
     assertMailerTransportUsesPassword($password);
-})->group('mailer');
+});
 
 test('MailTenancyBootstrapper reverts the config and mailer credentials to default when tenancy ends', function() {
     MailTenancyBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'smtp_password'];
@@ -369,7 +369,7 @@ test('MailTenancyBootstrapper reverts the config and mailer credentials to defau
 
     // Assert that the current mailer uses the default smtp_password
     assertMailerTransportUsesPassword($defaultPassword);
-})->group('mailer');
+});
 
 function getDiskPrefix(string $disk): string
 {
