@@ -12,7 +12,9 @@ use Stancl\Tenancy\Tests\Etc\CacheAction;
 
 beforeEach(function () {
     config([
-        'tenancy.bootstrappers' => [PrefixCacheTenancyBootstrapper::class],
+        'tenancy.bootstrappers' => [
+            PrefixCacheTenancyBootstrapper::class
+        ],
         'cache.default' => 'redis',
     ]);
 
