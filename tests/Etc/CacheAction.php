@@ -6,7 +6,7 @@ namespace Stancl\Tenancy\Tests\Etc;
 
 use Illuminate\Cache\Repository;
 
-class CacheAction
+class CacheAction // todo renamed to CacheService
 {
     public function __construct(
        protected Repository $cache
