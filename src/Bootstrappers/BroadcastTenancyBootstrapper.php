@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Bootstrappers;
 
-use Illuminate\Config\Repository;
-use Stancl\Tenancy\Contracts\Tenant;
-use Illuminate\Foundation\Application;
-use Stancl\Tenancy\TenancyBroadcastManager;
 use Illuminate\Broadcasting\BroadcastManager;
+use Illuminate\Config\Repository;
+use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
+use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\TenancyBroadcastManager;
 
 class BroadcastTenancyBootstrapper implements TenancyBootstrapper
 {

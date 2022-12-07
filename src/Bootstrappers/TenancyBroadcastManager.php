@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy; // todo new Overrides namespace?
 
-use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Broadcasting\Broadcasters\Broadcaster;
+use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Contracts\Broadcasting\Broadcaster as BroadcasterContract;
 
 class TenancyBroadcastManager extends BroadcastManager
