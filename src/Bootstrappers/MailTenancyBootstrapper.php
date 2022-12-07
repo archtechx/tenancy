@@ -6,7 +6,6 @@ namespace Stancl\Tenancy\Bootstrappers;
 
 use Illuminate\Config\Repository;
 use Illuminate\Foundation\Application;
-use Illuminate\Mail\MailManager;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
@@ -47,7 +46,7 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
     {
         // Bind fresh mail manager instance to clear the cached mailers
         // So that the manager is forced to resolve the mailers with the correct credentials from the config
-        $this->bindNewMailManagerInstance();
+        $this->app->forgetInstance('mail.manager');
 
         $this->setConfig($tenant);
     }
@@ -56,14 +55,7 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
     {
         $this->unsetConfig();
 
-        $this->bindNewMailManagerInstance();
-    }
-
-    protected function bindNewMailManagerInstance(): void
-    {
-        $this->app->extend(MailManager::class, function (MailManager $mailManager) {
-            return new MailManager($this->app);
-        });
+        $this->app->forgetInstance('mail.manager');
     }
 
     protected function setConfig(Tenant $tenant): void
