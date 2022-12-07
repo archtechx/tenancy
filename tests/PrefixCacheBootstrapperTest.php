@@ -8,7 +8,7 @@ use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Tests\Etc\CacheAction;
+use Stancl\Tenancy\Tests\Etc\CacheService;
 
 beforeEach(function () {
     config([
@@ -124,9 +124,9 @@ test('cache base prefix is customizable', function () {
 });
 
 test('prefix separate cache well enough using CacheManager dependency injection', function () {
-    $this->app->singleton(CacheAction::class);
+    $this->app->singleton(CacheService::class);
 
-    app()->make(CacheAction::class)->handle();
+    app()->make(CacheService::class)->handle();
 
     expect(cache('key'))->toBe('central-value');
 
@@ -135,13 +135,13 @@ test('prefix separate cache well enough using CacheManager dependency injection'
     tenancy()->initialize($tenant1);
 
     expect(cache('key'))->toBeNull();
-    app()->make(CacheAction::class)->handle();
+    app()->make(CacheService::class)->handle();
     expect(cache('key'))->toBe($tenant1->getTenantKey());
 
     tenancy()->initialize($tenant2);
 
     expect(cache('key'))->toBeNull();
-    app()->make(CacheAction::class)->handle();
+    app()->make(CacheService::class)->handle();
     expect(cache('key'))->toBe($tenant2->getTenantKey());
 
     tenancy()->end();
