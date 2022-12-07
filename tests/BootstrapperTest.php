@@ -367,7 +367,7 @@ test('MailTenancyBootstrapper reverts the config and mailer credentials to defau
 
     expect(config('mail.mailers.smtp.password'))->toBe($defaultPassword);
 
-    // Assert that the current mailer uses the default smtp_password
+    // Assert that the current mailer uses the default SMTP password
     assertMailerTransportUsesPassword($defaultPassword);
 });
 
