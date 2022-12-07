@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Bootstrappers;
 
+use Illuminate\Broadcasting\Broadcasters\Broadcaster;
 use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Config\Repository;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\TenancyBroadcastManager;
-use Illuminate\Broadcasting\Broadcasters\Broadcaster;
 
 class BroadcastTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -65,7 +65,7 @@ class BroadcastTenancyBootstrapper implements TenancyBootstrapper
 
     public function revert(): void
     {
-        $this->app->singleton(BroadcastManager::class, fn(Application $app) => $this->originalBroadcastManager);
+        $this->app->singleton(BroadcastManager::class, fn (Application $app) => $this->originalBroadcastManager);
 
         $this->unsetConfig();
     }
