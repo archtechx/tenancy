@@ -10,6 +10,7 @@ use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\TenancyBroadcastManager;
+use Illuminate\Broadcasting\Broadcasters\Broadcaster;
 
 class BroadcastTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -26,6 +27,7 @@ class BroadcastTenancyBootstrapper implements TenancyBootstrapper
     public static string|null $broadcaster = null;
 
     protected array $originalConfig = [];
+    protected Broadcaster|null $originalBroadcastManager = null;
 
     public static array $mapPresets = [
         'pusher' => [
@@ -52,6 +54,8 @@ class BroadcastTenancyBootstrapper implements TenancyBootstrapper
     {
         $this->setConfig($tenant);
 
+        $this->originalBroadcastManager = $this->app->make(BroadcastManager::class);
+
         $this->app->extend(BroadcastManager::class, function (BroadcastManager $broadcastManager) {
             $tenancyBroadcastManager = new TenancyBroadcastManager($this->app);
 
@@ -61,6 +65,8 @@ class BroadcastTenancyBootstrapper implements TenancyBootstrapper
 
     public function revert(): void
     {
+        $this->app->singleton(BroadcastManager::class, fn(Application $app) => $this->originalBroadcastManager);
+
         $this->unsetConfig();
     }
 
