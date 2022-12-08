@@ -26,7 +26,7 @@ test('cache prefix is separate for each tenant', function () {
     $originalPrefix = config('cache.prefix');
     $prefixBase = config('tenancy.cache.prefix_base');
 
-    expect($originalPrefix . ':') // cache manager postfix ':' to prefix
+    expect($originalPrefix . ':') // RedisStore suffixes prefix with ':'
         ->toBe(app('cache')->getPrefix())
         ->toBe(app('cache.store')->getPrefix());
 
@@ -53,7 +53,9 @@ test('cache prefix is separate for each tenant', function () {
 
     // Assert tenants' data is accessible using the prefix from the central context
     tenancy()->end();
+
     config(['cache.prefix' => null]); // stop prefixing cache keys in central so we can provide prefix manually
+    app('cache')->forgetDriver(config('cache.default'));
 
     expect(cache($tenantOnePrefix . ':key'))->toBe('tenantone-value');
     expect(cache($tenantTwoPrefix . ':key'))->toBe('tenanttwo-value');

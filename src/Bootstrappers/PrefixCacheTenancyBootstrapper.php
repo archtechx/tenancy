@@ -4,21 +4,20 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Bootstrappers;
 
-use Illuminate\Cache\Repository as CacheRepository;
+use Illuminate\Cache\CacheManager;
 use Illuminate\Contracts\Config\Repository;
-use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\Cache;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
 class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
 {
-    protected null|string $originalPrefix = null;
+    protected string|null $originalPrefix = null;
     protected string $storeName;
 
     public function __construct(
-        protected Application $app,
         protected Repository $config,
+        protected CacheManager $cacheManager,
     ) {
     }
 
@@ -36,21 +35,30 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
         $this->originalPrefix = null;
     }
 
-    protected function setCachePrefix(null|string $prefix): void
+    protected function syncStore(): void
+    {
+        $originalRepository = $this->cacheManager->driver($this->storeName);
+
+        // Delete the repository from CacheManager's $stores cache
+        // So that it's forced to resolve the repository again on the next attempt to get it
+        $this->cacheManager->forgetDriver($this->storeName);
+
+        // Let CacheManager create a repository with a fresh store
+        // To get a new store that uses the current value of `config('cache.prefix')` as the prefix
+        $newRepository = $this->cacheManager->driver($this->storeName);
+
+        // Give the new store to the old repository
+        $originalRepository->setStore($newRepository->getStore());
+
+        // Overwrite the new repository with the modified old one
+        $this->cacheManager->setStore($this->storeName, $originalRepository);
+    }
+
+    protected function setCachePrefix(string|null $prefix): void
     {
         $this->config->set('cache.prefix', $prefix);
 
-        $this->app['cache']->forgetDriver($this->storeName);
-
-        // The CacheManager will have the $app['config'] array cached with old prefixes on the 'cache' instance
-        // This call will forget the 'cache' instance
-        $this->app->forgetInstance('cache');
-
-        // The Cache Repository is using an old version of the CacheManager so we need to forget it
-        $this->app->forgetInstance('cache.store');
-
-        // Forget the cache repository in the container to cover some edge-cases
-        $this->app->forgetInstance(CacheRepository::class);
+        $this->syncStore();
 
         // It is needed when a call to the facade has been made before bootstrapping tenancy
         // The facade has its own cache, separate from the container
