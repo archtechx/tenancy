@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Illuminate\Cache\CacheManager;
-use Illuminate\Contracts\Config\Repository;
-use Illuminate\Support\Facades\Cache;
-use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Contracts\Config\Repository;
+use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 
 class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -23,6 +23,10 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant): void
     {
+        Cache::macro('setStore', function($store) {
+            $this->store = $store;
+        });
+
         $this->originalPrefix = $this->config->get('cache.prefix');
         $this->storeName = $this->config->get('cache.default');
 
