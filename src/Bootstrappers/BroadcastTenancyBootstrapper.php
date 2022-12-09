@@ -27,7 +27,7 @@ class BroadcastTenancyBootstrapper implements TenancyBootstrapper
     public static string|null $broadcaster = null;
 
     protected array $originalConfig = [];
-    protected Broadcaster|null $originalBroadcastManager = null;
+    protected BroadcastManager|null $originalBroadcastManager = null;
 
     public static array $mapPresets = [
         'pusher' => [
