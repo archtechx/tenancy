@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
-use Dotenv\Dotenv;
-use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Redis;
 use PDO;
+use Dotenv\Dotenv;
+use Stancl\Tenancy\Facades\Tenancy;
+use Stancl\Tenancy\Tests\Etc\Tenant;
+use Illuminate\Support\Facades\Redis;
+use Illuminate\Foundation\Application;
+use Stancl\Tenancy\Facades\GlobalCache;
+use Stancl\Tenancy\TenancyServiceProvider;
 use Stancl\Tenancy\Bootstrappers\BatchTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
-use Stancl\Tenancy\Facades\GlobalCache;
-use Stancl\Tenancy\Facades\Tenancy;
-use Stancl\Tenancy\TenancyServiceProvider;
-use Stancl\Tenancy\Tests\Etc\Tenant;
+use Stancl\Tenancy\Bootstrappers\BroadcastTenancyBootstrapper;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
@@ -104,6 +105,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 '--force' => true,
             ],
             'tenancy.bootstrappers.redis' => RedisTenancyBootstrapper::class, // todo1 change this to []? two tests in TenantDatabaseManagerTest are failing with that
+            'tenancy.bootstrappers.broadcast' => BroadcastTenancyBootstrapper::class, // todo1 change this to []? two tests in TenantDatabaseManagerTest are failing with that
             'queue.connections.central' => [
                 'driver' => 'sync',
                 'central' => true,
@@ -113,6 +115,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         ]);
 
         $app->singleton(RedisTenancyBootstrapper::class); // todo (Samuel) use proper approach eg config for singleton registration
+        $app->singleton(BroadcastTenancyBootstrapper::class);
     }
 
     protected function getPackageProviders($app)
