@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 use Carbon\Carbon;
 use Carbon\CarbonInterval;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Auth\TokenGuard;
 use Illuminate\Auth\SessionGuard;
@@ -83,6 +86,19 @@ test('tenant user can be impersonated on a tenant domain', function () {
     pest()->get('http://foo.localhost/dashboard')
         ->assertSuccessful()
         ->assertSee('You are logged in as Joe');
+
+    expect(UserImpersonation::isImpersonating())->toBeTrue();
+    expect(session('tenancy_impersonation'))->toBeTrue();
+
+    // Leave impersonation
+    UserImpersonation::stop();
+
+    expect(UserImpersonation::isImpersonating())->toBeFalse();
+    expect(session('tenancy_impersonation'))->toBeNull();
+
+    // Assert can't access the tenant dashboard
+    pest()->get('http://foo.localhost/dashboard')
+        ->assertRedirect('http://foo.localhost/login');
 });
 
 test('tenant user can be impersonated on a tenant path', function () {
@@ -116,6 +132,19 @@ test('tenant user can be impersonated on a tenant path', function () {
     pest()->get('/acme/dashboard')
         ->assertSuccessful()
         ->assertSee('You are logged in as Joe');
+
+    expect(UserImpersonation::isImpersonating())->toBeTrue();
+    expect(session('tenancy_impersonation'))->toBeTrue();
+
+    // Leave impersonation
+    UserImpersonation::stop();
+
+    expect(UserImpersonation::isImpersonating())->toBeFalse();
+    expect(session('tenancy_impersonation'))->toBeNull();
+
+    // Assert can't access the tenant dashboard
+    pest()->get('/acme/dashboard')
+        ->assertRedirect('/login');
 });
 
 test('tokens have a limited ttl', function () {
@@ -304,6 +333,14 @@ class ImpersonationUser extends Authenticable
 class AnotherImpersonationUser extends Authenticable
 {
     protected $guarded = [];
+
+    protected $table = 'users';
+}
+
+class Admin extends Authenticable
+{
+    protected $guarded = [];
+    public $timestamps = false;
 
     protected $table = 'users';
 }
