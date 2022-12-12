@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
+use Illuminate\Cache\CacheManager;
 use Illuminate\Support\Facades\Event;
-use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
 use Stancl\Tenancy\Events\TenancyEnded;
+use Stancl\Tenancy\Tests\Etc\CacheService;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Tests\Etc\CacheService;
+use Stancl\Tenancy\CacheManager as TenancyCacheManager;
+use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
 
 beforeEach(function () {
     config([
@@ -20,6 +22,26 @@ beforeEach(function () {
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+});
+
+test('Tenancy overrides CacheManager', function() {
+    expect(app('cache')::class)->toBe(TenancyCacheManager::class);
+    expect(app(CacheManager::class)::class)->toBe(TenancyCacheManager::class);
+
+    tenancy()->initialize(Tenant::create(['id' => 'first']));
+
+    expect(app('cache')::class)->toBe(TenancyCacheManager::class);
+    expect(app(CacheManager::class)::class)->toBe(TenancyCacheManager::class);
+
+    tenancy()->initialize(Tenant::create(['id' => 'second']));
+
+    expect(app('cache')::class)->toBe(TenancyCacheManager::class);
+    expect(app(CacheManager::class)::class)->toBe(TenancyCacheManager::class);
+
+    tenancy()->end();
+
+    expect(app('cache')::class)->toBe(TenancyCacheManager::class);
+    expect(app(CacheManager::class)::class)->toBe(TenancyCacheManager::class);
 });
 
 test('cache prefix is separate for each tenant', function () {
@@ -45,21 +67,21 @@ test('cache prefix is separate for each tenant', function () {
     $tenantTwoPrefix = $originalPrefix . $prefixBase . $tenant2->getTenantKey();
 
     tenancy()->initialize($tenant2);
+
     cache()->set('key', 'tenanttwo-value');
 
     expect($tenantTwoPrefix . ':')
         ->toBe(app('cache')->getPrefix())
         ->toBe(app('cache.store')->getPrefix());
 
-    // Assert tenants' data is accessible using the prefix from the central context
-    tenancy()->end();
+    // Assert tenants' data is accessible using the prefix from the central context tenancy()->end();
 
     config(['cache.prefix' => null]); // stop prefixing cache keys in central so we can provide prefix manually
     app('cache')->forgetDriver(config('cache.default'));
 
     expect(cache($tenantOnePrefix . ':key'))->toBe('tenantone-value');
     expect(cache($tenantTwoPrefix . ':key'))->toBe('tenanttwo-value');
-});
+})->group('prefix');
 
 test('cache is persisted when reidentification is used', function () {
     $tenant1 = Tenant::create();
