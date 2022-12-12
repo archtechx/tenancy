@@ -59,7 +59,7 @@ class UserImpersonation implements Feature
     }
 
     /**
-     * Logout and forget session
+     * Logout and forget session.
      */
     public static function stop(): void
     {
