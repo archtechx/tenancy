@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
-use Stancl\Tenancy\Enums\LogMode;
 use Illuminate\Cache\CacheManager;
-use Stancl\Tenancy\Contracts\Domain;
-use Stancl\Tenancy\Contracts\Tenant;
+use Illuminate\Database\Console\Migrations\FreshCommand;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
+use Stancl\Tenancy\CacheManager as TenantCacheManager;
+use Stancl\Tenancy\Contracts\Domain;
+use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Enums\LogMode;
 use Stancl\Tenancy\Events\Contracts\TenancyEvent;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
-use Stancl\Tenancy\CacheManager as TenantCacheManager;
-use Illuminate\Database\Console\Migrations\FreshCommand;
-use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 
 class TenancyServiceProvider extends ServiceProvider
 {

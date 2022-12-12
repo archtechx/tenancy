@@ -41,7 +41,6 @@ class CacheManager extends BaseCacheManager
         return parent::__call($method, $parameters);
     }
 
-
     public function refreshStore(string|null $repository = null): void
     {
         $newStore = $this->resolve($repository ?? $this->getDefaultDriver())->getStore();
