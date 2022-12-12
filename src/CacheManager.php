@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Cache\CacheManager as BaseCacheManager;
+use Illuminate\Support\Facades\Cache;
 
 // todo move to Cache namespace?
 
