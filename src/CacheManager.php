@@ -19,7 +19,7 @@ class CacheManager extends BaseCacheManager
     public function __call($method, $parameters)
     {
         // todo0 Make PrefixCacheTenancyBootstrapper work with tags
-        /* if (tenancy()->initialized) {
+        if (tenancy()->initialized) {
             $tags = [config('tenancy.cache.tag_base') . tenant()?->getTenantKey()];
 
             if ($method === 'tags') {
@@ -36,7 +36,7 @@ class CacheManager extends BaseCacheManager
             }
 
             return $this->store()->tags($tags)->$method(...$parameters);
-        } */
+        }
 
         return parent::__call($method, $parameters);
     }
