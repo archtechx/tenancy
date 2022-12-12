@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Cache\CacheManager as BaseCacheManager;
 
 // todo move to Cache namespace?
@@ -43,6 +44,10 @@ class CacheManager extends BaseCacheManager
 
     public function refreshStore(string|null $repository = null): void
     {
+        Cache::macro('setStore', function ($store) {
+            $this->store = $store;
+        });
+
         $newStore = $this->resolve($repository ?? $this->getDefaultDriver())->getStore();
 
         $this->driver($repository)->setStore($newStore);

@@ -23,10 +23,6 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant): void
     {
-        Cache::macro('setStore', function ($store) {
-            $this->store = $store;
-        });
-
         $this->originalPrefix = $this->config->get('cache.prefix');
         $this->storeName = $this->config->get('cache.default');
 
