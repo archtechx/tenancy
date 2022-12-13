@@ -343,6 +343,22 @@ test('BroadcastTenancyBootstrapper binds TenancyBroadcastManager to BroadcastMan
     expect(app(BroadcastManager::class))->toBeInstanceOf(BroadcastManager::class);
 });
 
+test('bound broadcaster instance is the same before initializing tenancy and after ending it', function() {
+    config(['broadcasting.default' => 'null']);
+    TenancyBroadcastManager::$tenantBroadcasters[] = 'null';
+
+    $originalBroadcaster = app(BroadcasterContract::class);
+
+    tenancy()->initialize(Tenant::create());
+
+    // TenancyBroadcastManager binds new broadcaster
+    app(BroadcastManager::class)->driver();
+
+    tenancy()->end();
+
+    expect($originalBroadcaster)->toBe(app(BroadcasterContract::class));
+});
+
 test('BroadcastTenancyBootstrapper maps tenant broadcaster credentials to config as specified in the $credentialsMap property and reverts the config after ending tenancy', function() {
     config([
         'broadcasting.connections.testing.driver' => 'testing',
@@ -396,7 +412,6 @@ test('broadcasters are created with the correct credentials', function() {
 
     expect(invade(app(BroadcastManager::class)->driver())->message)->toBe($tenantMessage);
 
-    tenancy()->end();
     tenancy()->initialize($tenant2);
     $registerTestingBroadcaster();
 
