@@ -11,6 +11,8 @@ use Illuminate\Cache\Repository;
 
 class CacheManager extends BaseCacheManager
 {
+    public static bool $addTags = false;
+
     /**
      * Add tags and forward the call to the inner cache store.
      *
@@ -19,8 +21,7 @@ class CacheManager extends BaseCacheManager
      */
     public function __call($method, $parameters)
     {
-        // todo0 Make PrefixCacheTenancyBootstrapper work with tags
-        if (! tenancy()->initialized) {
+        if (! tenancy()->initialized || ! static::$addTags) {
             return parent::__call($method, $parameters);
         }
 

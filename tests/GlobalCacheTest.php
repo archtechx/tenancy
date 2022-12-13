@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
+use Stancl\Tenancy\CacheManager;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Facades\GlobalCache;
@@ -15,6 +16,8 @@ beforeEach(function () {
     config(['tenancy.bootstrappers' => [
         CacheTenancyBootstrapper::class,
     ]]);
+
+    CacheManager::$addTags = true;
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);

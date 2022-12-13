@@ -2,16 +2,19 @@
 
 declare(strict_types=1);
 
+use Stancl\Tenancy\CacheManager;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
-use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Tests\Etc\Tenant;
+use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 
 beforeEach(function () {
     config(['tenancy.bootstrappers' => [
         CacheTenancyBootstrapper::class,
     ]]);
+
+    CacheManager::$addTags = true;
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
 });

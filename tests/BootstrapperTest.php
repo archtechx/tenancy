@@ -28,6 +28,7 @@ use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
+use Stancl\Tenancy\CacheManager;
 
 beforeEach(function () {
     $this->mockConsoleOutput = false;
@@ -75,6 +76,8 @@ test('database data is separated', function () {
 });
 
 test('cache data is separated', function (string $bootstrapper) {
+    CacheManager::$addTags = true;
+
     config([
         'tenancy.bootstrappers' => [$bootstrapper],
         'cache.default' => 'redis',
@@ -114,7 +117,7 @@ test('cache data is separated', function (string $bootstrapper) {
 })->with([
     'CacheTenancyBootstrapper' => CacheTenancyBootstrapper::class,
     'PrefixCacheTenancyBootstrapper' => PrefixCacheTenancyBootstrapper::class,
-]);
+])->group('bootstrapper');
 
 test('redis data is separated', function () {
     config(['tenancy.bootstrappers' => [

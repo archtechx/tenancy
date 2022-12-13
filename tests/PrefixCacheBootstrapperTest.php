@@ -20,6 +20,8 @@ beforeEach(function () {
         'cache.default' => 'redis',
     ]);
 
+    TenancyCacheManager::$addTags = false;
+
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
