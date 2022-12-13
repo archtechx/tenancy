@@ -345,6 +345,33 @@ test('BroadcastTenancyBootstrapper binds TenancyBroadcastManager to BroadcastMan
 
 test('BroadcastTenancyBootstrapper maps tenant broadcaster credentials to config as specified in the $credentialsMap property and reverts the config after ending tenancy', function() {
     config([
+        'broadcasting.connections.testing.driver' => 'testing',
+        'broadcasting.connections.testing.message' => $defaultMessage = 'default',
+    ]);
+
+    BroadcastTenancyBootstrapper::$credentialsMap = [
+        'broadcasting.connections.testing.message' => 'testing_broadcaster_message',
+    ];
+
+    $tenant = Tenant::create(['testing_broadcaster_message' => $tenantMessage = 'first testing']);
+    $tenant2 = Tenant::create(['testing_broadcaster_message' => $secondTenantMessage = 'second testing']);
+
+    tenancy()->initialize($tenant);
+
+    expect(array_key_exists('testing_broadcaster_message', tenant()->getAttributes()))->toBeTrue();
+    expect(config('broadcasting.connections.testing.message'))->toBe($tenantMessage);
+
+    tenancy()->initialize($tenant2);
+
+    expect(config('broadcasting.connections.testing.message'))->toBe($secondTenantMessage);
+
+    tenancy()->end();
+
+    expect(config('broadcasting.connections.testing.message'))->toBe($defaultMessage);
+});
+
+test('broadcasters are created with the correct credentials', function() {
+    config([
         'broadcasting.default' => 'testing',
         'broadcasting.connections.testing.driver' => 'testing',
         'broadcasting.connections.testing.message' => $defaultMessage = 'default',
@@ -367,21 +394,17 @@ test('BroadcastTenancyBootstrapper maps tenant broadcaster credentials to config
     tenancy()->initialize($tenant);
     $registerTestingBroadcaster();
 
-    expect(array_key_exists('testing_broadcaster_message', tenant()->getAttributes()))->toBeTrue();
-    expect(config('broadcasting.connections.testing.message'))->toBe($tenantMessage);
     expect(invade(app(BroadcastManager::class)->driver())->message)->toBe($tenantMessage);
 
     tenancy()->end();
     tenancy()->initialize($tenant2);
     $registerTestingBroadcaster();
 
-    expect(config('broadcasting.connections.testing.message'))->toBe($secondTenantMessage);
     expect(invade(app(BroadcastManager::class)->driver())->message)->toBe($secondTenantMessage);
 
     tenancy()->end();
     $registerTestingBroadcaster();
 
-    expect(config('broadcasting.connections.testing.message'))->toBe($defaultMessage);
     expect(invade(app(BroadcastManager::class)->driver())->message)->toBe($defaultMessage);
 });
 
