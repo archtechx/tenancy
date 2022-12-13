@@ -61,7 +61,7 @@ class UserImpersonation implements Feature
     /**
      * Logout and forget session.
      */
-    public static function stop(): void
+    public static function leave(): void
     {
         auth()->logout();
 
