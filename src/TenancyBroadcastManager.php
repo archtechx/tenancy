@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy; // todo new Overrides namespace?
 
-use Illuminate\Broadcasting\Broadcasters\Broadcaster;
 use Illuminate\Broadcasting\BroadcastManager;
+use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Broadcasting\Broadcasters\Broadcaster;
 use Illuminate\Contracts\Broadcasting\Broadcaster as BroadcasterContract;
 
 class TenancyBroadcastManager extends BroadcastManager
@@ -26,11 +27,11 @@ class TenancyBroadcastManager extends BroadcastManager
             /** @var Broadcaster|null $cachedBroadcaster */
             $cachedBroadcaster = $this->drivers[$name] ?? null;
 
-            $this->app->forgetInstance(BroadcasterContract::class);
-
             /** @var Broadcaster $broadcaster */
             $broadcaster = $this->resolve($name);
 
+
+            // If there is a cached broadcaster, give its channels to the newly resolved one
             if ($cachedBroadcaster) {
                 $cachedBroadcaster = invade($cachedBroadcaster);
 
@@ -38,6 +39,8 @@ class TenancyBroadcastManager extends BroadcastManager
                     $broadcaster->channel($channel, $callback, $cachedBroadcaster->retrieveChannelOptions($channel));
                 }
             }
+
+            $this->app->singleton(BroadcasterContract::class, fn(Application $app) => $broadcaster);
 
             return $broadcaster;
         }
