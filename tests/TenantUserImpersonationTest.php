@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 use Carbon\Carbon;
 use Carbon\CarbonInterval;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Auth\TokenGuard;
 use Illuminate\Auth\SessionGuard;
@@ -333,14 +330,6 @@ class ImpersonationUser extends Authenticable
 class AnotherImpersonationUser extends Authenticable
 {
     protected $guarded = [];
-
-    protected $table = 'users';
-}
-
-class Admin extends Authenticable
-{
-    protected $guarded = [];
-    public $timestamps = false;
 
     protected $table = 'users';
 }
