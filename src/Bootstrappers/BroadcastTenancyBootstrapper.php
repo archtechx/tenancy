@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Bootstrappers;
 
-use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Config\Repository;
-use Illuminate\Foundation\Application;
-use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
+use Illuminate\Foundation\Application;
 use Stancl\Tenancy\TenancyBroadcastManager;
+use Illuminate\Broadcasting\BroadcastManager;
+use Stancl\Tenancy\Contracts\TenancyBootstrapper;
+use Illuminate\Contracts\Broadcasting\Broadcaster;
 
 class BroadcastTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -27,6 +28,7 @@ class BroadcastTenancyBootstrapper implements TenancyBootstrapper
 
     protected array $originalConfig = [];
     protected BroadcastManager|null $originalBroadcastManager = null;
+    protected Broadcaster|null $originalBroadcaster = null;
 
     public static array $mapPresets = [
         'pusher' => [
@@ -51,9 +53,10 @@ class BroadcastTenancyBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant): void
     {
-        $this->setConfig($tenant);
-
         $this->originalBroadcastManager = $this->app->make(BroadcastManager::class);
+        $this->originalBroadcaster = $this->app->make(Broadcaster::class);
+
+        $this->setConfig($tenant);
 
         $this->app->extend(BroadcastManager::class, function (BroadcastManager $broadcastManager) {
             $tenancyBroadcastManager = new TenancyBroadcastManager($this->app);
@@ -65,6 +68,7 @@ class BroadcastTenancyBootstrapper implements TenancyBootstrapper
     public function revert(): void
     {
         $this->app->singleton(BroadcastManager::class, fn (Application $app) => $this->originalBroadcastManager);
+        $this->app->singleton(Broadcaster::class, fn (Application $app) => $this->originalBroadcaster);
 
         $this->unsetConfig();
     }
