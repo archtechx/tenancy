@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Broadcasting\Broadcasters\Broadcaster;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Stancl\JobPipeline\JobPipeline;
@@ -16,7 +17,10 @@ use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Events\TenantDeleted;
 use Stancl\Tenancy\Events\DeletingTenant;
+use Stancl\Tenancy\TenancyBroadcastManager;
 use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Broadcasting\BroadcastManager;
+use Illuminate\Contracts\Broadcasting\Broadcaster as BroadcasterContract;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Jobs\CreateStorageSymlinks;
 use Stancl\Tenancy\Jobs\RemoveStorageSymlinks;
@@ -26,6 +30,7 @@ use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\BroadcastTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 
 beforeEach(function () {
@@ -326,6 +331,60 @@ test('local storage public urls are generated correctly', function() {
     expect(File::isDirectory($tenantStoragePath))->toBeFalse();
 });
 
+test('BroadcastTenancyBootstrapper binds TenancyBroadcastManager to BroadcastManager::class and reverts the binding when tenancy is ended', function() {
+    expect(app(BroadcastManager::class))->toBeInstanceOf(BroadcastManager::class);
+
+    tenancy()->initialize(Tenant::create());
+
+    expect(app(BroadcastManager::class))->toBeInstanceOf(TenancyBroadcastManager::class);
+
+    tenancy()->end();
+
+    expect(app(BroadcastManager::class))->toBeInstanceOf(BroadcastManager::class);
+});
+
+test('BroadcastTenancyBootstrapper maps tenant broadcaster credentials to config as specified in the $credentialsMap property and reverts the config after ending tenancy', function() {
+    config([
+        'broadcasting.default' => 'testing',
+        'broadcasting.connections.testing.driver' => 'testing',
+        'broadcasting.connections.testing.message' => $defaultMessage = 'default',
+    ]);
+
+    TenancyBroadcastManager::$tenantBroadcasters[] = 'testing';
+    BroadcastTenancyBootstrapper::$credentialsMap = [
+        'broadcasting.connections.testing.message' => 'testing_broadcaster_message',
+    ];
+
+    $registerTestingBroadcaster = fn() => app(BroadcastManager::class)->extend('testing', fn($app, $config) => new TestingBroadcaster($config['message']));
+
+    $registerTestingBroadcaster();
+
+    expect(invade(app(BroadcastManager::class)->driver())->message)->toBe($defaultMessage);
+
+    $tenant = Tenant::create(['testing_broadcaster_message' => $tenantMessage = 'first testing']);
+    $tenant2 = Tenant::create(['testing_broadcaster_message' => $secondTenantMessage = 'second testing']);
+
+    tenancy()->initialize($tenant);
+    $registerTestingBroadcaster();
+
+    expect(array_key_exists('testing_broadcaster_message', tenant()->getAttributes()))->toBeTrue();
+    expect(config('broadcasting.connections.testing.message'))->toBe($tenantMessage);
+    expect(invade(app(BroadcastManager::class)->driver())->message)->toBe($tenantMessage);
+
+    tenancy()->end();
+    tenancy()->initialize($tenant2);
+    $registerTestingBroadcaster();
+
+    expect(config('broadcasting.connections.testing.message'))->toBe($secondTenantMessage);
+    expect(invade(app(BroadcastManager::class)->driver())->message)->toBe($secondTenantMessage);
+
+    tenancy()->end();
+    $registerTestingBroadcaster();
+
+    expect(config('broadcasting.connections.testing.message'))->toBe($defaultMessage);
+    expect(invade(app(BroadcastManager::class)->driver())->message)->toBe($defaultMessage);
+});
+
 function getDiskPrefix(string $disk): string
 {
     /** @var FilesystemAdapter $disk */
@@ -342,4 +401,24 @@ function getDiskPrefix(string $disk): string
      $prefix->setAccessible(true);
 
      return $prefix->getValue($prefixer);
+}
+
+class TestingBroadcaster extends Broadcaster {
+    public function __construct(
+        public string $message
+    ) {}
+
+    public function auth($request)
+    {
+        return true;
+    }
+
+    public function validAuthenticationResponse($request, $result)
+    {
+        return true;
+    }
+
+    public function broadcast(array $channels, $event, array $payload = [])
+    {
+    }
 }
