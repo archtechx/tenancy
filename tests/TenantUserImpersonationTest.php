@@ -85,7 +85,7 @@ test('tenant user can be impersonated on a tenant domain', function () {
         ->assertSee('You are logged in as Joe');
 
     expect(UserImpersonation::isImpersonating())->toBeTrue();
-    expect(session('tenancy_impersonation'))->toBeTrue();
+    expect(session('tenancy_impersonating'))->toBeTrue();
 
     // Leave impersonation
     UserImpersonation::leave();
