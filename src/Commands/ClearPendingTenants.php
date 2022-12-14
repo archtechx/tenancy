@@ -17,7 +17,7 @@ class ClearPendingTenants extends Command
 
     public function handle(): int
     {
-        $this->info('Removing pending tenants.');
+        $this->components->info('Removing pending tenants.');
 
         $expirationDate = now();
         // We compare the original expiration date to the new one to check if the new one is different later
@@ -27,8 +27,7 @@ class ClearPendingTenants extends Command
         $olderThanHours = (int) $this->option('older-than-hours');
 
         if ($olderThanDays && $olderThanHours) {
-            $this->line("<options=bold,reverse;fg=red> Cannot use '--older-than-days' and '--older-than-hours' together \n"); // todo@cli refactor all of these styled command outputs to use $this->components
-            $this->line('Please, choose only one of these options.');
+            $this->components->error("Cannot use '--older-than-days' and '--older-than-hours' together. Please, choose only one of these options.");
 
             return 1; // Exit code for failure
         }
@@ -51,7 +50,7 @@ class ClearPendingTenants extends Command
             ->delete()
             ->count();
 
-        $this->info($deletedTenantCount . ' pending ' . str('tenant')->plural($deletedTenantCount) . ' deleted.');
+        $this->components->info($deletedTenantCount . ' pending ' . str('tenant')->plural($deletedTenantCount) . ' deleted.');
 
         return 0;
     }
