@@ -11,7 +11,7 @@ use Illuminate\Cache\Repository;
 
 class CacheManager extends BaseCacheManager
 {
-    public static bool $addTags = false;
+    public static bool $addTags = true;
 
     /**
      * Add tags and forward the call to the inner cache store.

@@ -14,8 +14,6 @@ beforeEach(function () {
         CacheTenancyBootstrapper::class,
     ]]);
 
-    CacheManager::$addTags = true;
-
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
 });
 
