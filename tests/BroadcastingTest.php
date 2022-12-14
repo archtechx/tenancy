@@ -11,7 +11,6 @@ use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Tests\Etc\TestingBroadcaster;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Bootstrappers\BroadcastTenancyBootstrapper;
 use Illuminate\Contracts\Broadcasting\Broadcaster as BroadcasterContract;
 
 beforeEach(function() {
@@ -20,15 +19,17 @@ beforeEach(function() {
 });
 
 test('bound broadcaster instance is the same before initializing tenancy and after ending it', function() {
-    config(['broadcasting.default' => 'testing']);
-    TenancyBroadcastManager::$tenantBroadcasters[] = 'testing';
+    config(['broadcasting.default' => 'null']);
+    TenancyBroadcastManager::$tenantBroadcasters[] = 'null';
 
     $originalBroadcaster = app(BroadcasterContract::class);
 
     tenancy()->initialize(Tenant::create());
 
     // TenancyBroadcastManager binds new broadcaster
-    app(BroadcastManager::class)->driver();
+    $tenantBroadcaster = app(BroadcastManager::class)->driver();
+
+    expect($tenantBroadcaster)->not()->toBe($originalBroadcaster);
 
     tenancy()->end();
 
@@ -43,7 +44,7 @@ test('new broadcasters get the channels from the previously bound broadcaster', 
 
     TenancyBroadcastManager::$tenantBroadcasters[] = $driver;
 
-    $registerTestingBroadcaster = fn() => app(BroadcastManager::class)->extend('testing', fn($app, $config) => new TestingBroadcaster($config['message']));
+    $registerTestingBroadcaster = fn() => app(BroadcastManager::class)->extend('testing', fn($app, $config) => new TestingBroadcaster('testing'));
     $getCurrentChannels = fn() => array_keys(invade(app(BroadcastManager::class)->driver())->channels);
 
     $registerTestingBroadcaster();
