@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Illuminate\Broadcasting\Broadcasters\Broadcaster;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Stancl\JobPipeline\JobPipeline;
@@ -20,12 +19,11 @@ use Stancl\Tenancy\Events\DeletingTenant;
 use Stancl\Tenancy\TenancyBroadcastManager;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Broadcasting\BroadcastManager;
-use Illuminate\Contracts\Broadcasting\Broadcaster as BroadcasterContract;
-use Illuminate\Support\Facades\Broadcast;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Jobs\CreateStorageSymlinks;
 use Stancl\Tenancy\Jobs\RemoveStorageSymlinks;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Tests\Etc\TestingBroadcaster;
 use Stancl\Tenancy\Listeners\DeleteTenantStorage;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
@@ -344,22 +342,6 @@ test('BroadcastTenancyBootstrapper binds TenancyBroadcastManager to BroadcastMan
     expect(app(BroadcastManager::class))->toBeInstanceOf(BroadcastManager::class);
 });
 
-test('bound broadcaster instance is the same before initializing tenancy and after ending it', function() {
-    config(['broadcasting.default' => 'null']);
-    TenancyBroadcastManager::$tenantBroadcasters[] = 'null';
-
-    $originalBroadcaster = app(BroadcasterContract::class);
-
-    tenancy()->initialize(Tenant::create());
-
-    // TenancyBroadcastManager binds new broadcaster
-    app(BroadcastManager::class)->driver();
-
-    tenancy()->end();
-
-    expect($originalBroadcaster)->toBe(app(BroadcasterContract::class));
-});
-
 test('BroadcastTenancyBootstrapper maps tenant broadcaster credentials to config as specified in the $credentialsMap property and reverts the config after ending tenancy', function() {
     config([
         'broadcasting.connections.testing.driver' => 'testing',
@@ -387,7 +369,7 @@ test('BroadcastTenancyBootstrapper maps tenant broadcaster credentials to config
     expect(config('broadcasting.connections.testing.message'))->toBe($defaultMessage);
 });
 
-test('broadcasters are created with the correct credentials', function() {
+test('BroadcastTenancyBootstrapper makes the app use broadcasters with the correct credentials', function() {
     config([
         'broadcasting.default' => 'testing',
         'broadcasting.connections.testing.driver' => 'testing',
@@ -424,37 +406,6 @@ test('broadcasters are created with the correct credentials', function() {
     expect(invade(app(BroadcastManager::class)->driver())->message)->toBe($defaultMessage);
 });
 
-test('new broadcasters get the channels from the previously bound broadcaster', function() {
-    config([
-        'broadcasting.default' => $driver = 'testing',
-        'broadcasting.connections.testing.driver' => $driver,
-        'broadcasting.connections.testing.message' => $defaultMessage = 'default',
-    ]);
-
-    TenancyBroadcastManager::$tenantBroadcasters[] = $driver;
-    BroadcastTenancyBootstrapper::$credentialsMap = [
-        'broadcasting.connections.testing.message' => 'testing_broadcaster_message',
-    ];
-
-    $registerTestingBroadcaster = fn() => app(BroadcastManager::class)->extend('testing', fn($app, $config) => new TestingBroadcaster($config['message']));
-    $getCurrentChannels = fn() => array_keys(invade(app(BroadcastManager::class)->driver())->channels);
-
-    $registerTestingBroadcaster();
-    Broadcast::channel($channel = 'testing-channel', fn() => true);
-
-    expect($channel)->toBeIn($getCurrentChannels());
-
-    tenancy()->initialize(Tenant::create());
-    $registerTestingBroadcaster();
-
-    expect($channel)->toBeIn($getCurrentChannels());
-
-    tenancy()->end();
-    $registerTestingBroadcaster();
-
-    expect($channel)->toBeIn($getCurrentChannels());
-});
-
 function getDiskPrefix(string $disk): string
 {
     /** @var FilesystemAdapter $disk */
@@ -471,24 +422,4 @@ function getDiskPrefix(string $disk): string
      $prefix->setAccessible(true);
 
      return $prefix->getValue($prefixer);
-}
-
-class TestingBroadcaster extends Broadcaster {
-    public function __construct(
-        public string $message
-    ) {}
-
-    public function auth($request)
-    {
-        return true;
-    }
-
-    public function validAuthenticationResponse($request, $result)
-    {
-        return true;
-    }
-
-    public function broadcast(array $channels, $event, array $payload = [])
-    {
-    }
 }
