@@ -21,6 +21,7 @@ use Stancl\Tenancy\TenancyBroadcastManager;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Contracts\Broadcasting\Broadcaster as BroadcasterContract;
+use Illuminate\Support\Facades\Broadcast;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Jobs\CreateStorageSymlinks;
 use Stancl\Tenancy\Jobs\RemoveStorageSymlinks;
@@ -421,6 +422,37 @@ test('broadcasters are created with the correct credentials', function() {
     $registerTestingBroadcaster();
 
     expect(invade(app(BroadcastManager::class)->driver())->message)->toBe($defaultMessage);
+});
+
+test('new broadcasters get the channels from the previously bound broadcaster', function() {
+    config([
+        'broadcasting.default' => $driver = 'testing',
+        'broadcasting.connections.testing.driver' => $driver,
+        'broadcasting.connections.testing.message' => $defaultMessage = 'default',
+    ]);
+
+    TenancyBroadcastManager::$tenantBroadcasters[] = $driver;
+    BroadcastTenancyBootstrapper::$credentialsMap = [
+        'broadcasting.connections.testing.message' => 'testing_broadcaster_message',
+    ];
+
+    $registerTestingBroadcaster = fn() => app(BroadcastManager::class)->extend('testing', fn($app, $config) => new TestingBroadcaster($config['message']));
+    $getCurrentChannels = fn() => array_keys(invade(app(BroadcastManager::class)->driver())->channels);
+
+    $registerTestingBroadcaster();
+    Broadcast::channel($channel = 'testing-channel', fn() => true);
+
+    expect($channel)->toBeIn($getCurrentChannels());
+
+    tenancy()->initialize(Tenant::create());
+    $registerTestingBroadcaster();
+
+    expect($channel)->toBeIn($getCurrentChannels());
+
+    tenancy()->end();
+    $registerTestingBroadcaster();
+
+    expect($channel)->toBeIn($getCurrentChannels());
 });
 
 function getDiskPrefix(string $disk): string
