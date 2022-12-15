@@ -31,10 +31,15 @@ class TenancyBroadcastManager extends BroadcastManager
     protected function get($name)
     {
         if (in_array($name, static::$tenantBroadcasters)) {
+            /** @var Broadcaster|null $originalBroadcaster */
+            $originalBroadcaster = $this->app->make(BroadcasterContract::class);
             $newBroadcaster = $this->resolve($name);
 
             // If there is a current broadcaster, give its channels to the newly resolved one
-            if ($originalBroadcaster = $this->app->make(BroadcasterContract::class)) {
+            // Broadcasters only have to implement the Illuminate\Contracts\Broadcasting\Broadcaster contract
+            // Which doesn't require the channels property
+            // So passing the channels is only needed for Illuminate\Broadcasting\Broadcasters\Broadcaster instances
+            if ($originalBroadcaster instanceof Broadcaster && $newBroadcaster instanceof Broadcaster) {
                 $this->passChannelsFromOriginalBroadcaster($originalBroadcaster, $newBroadcaster);
             }
 
@@ -46,9 +51,9 @@ class TenancyBroadcastManager extends BroadcastManager
         return parent::get($name);
     }
 
-    // Because, unlike the original broadcaster, the newly resolved broadcaster won't have the channels registered in routes/channels.php
+    // Because, unlike the original broadcaster, the newly resolved broadcaster won't have the channels registered using routes/channels.php
     // Using it for broadcasting won't work, unless we make it have the original broadcaster's channels
-    protected function passChannelsFromOriginalBroadcaster(BroadcasterContract $originalBroadcaster, BroadcasterContract $newBroadcaster): void
+    protected function passChannelsFromOriginalBroadcaster(Broadcaster $originalBroadcaster, Broadcaster $newBroadcaster): void
     {
         // invade() because channels can't be retrieved through any of the broadcaster's public methods
         $originalBroadcaster = invade($originalBroadcaster);
