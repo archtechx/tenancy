@@ -31,7 +31,6 @@ class TenancyBroadcastManager extends BroadcastManager
     protected function get($name)
     {
         if (in_array($name, static::$tenantBroadcasters)) {
-            /** @var Broadcaster $broadcaster */
             $newBroadcaster = $this->resolve($name);
 
             // If there is a current broadcaster, give its channels to the newly resolved one
@@ -49,7 +48,7 @@ class TenancyBroadcastManager extends BroadcastManager
 
     // Because, unlike the original broadcaster, the newly resolved broadcaster won't have the channels registered in routes/channels.php
     // Using it for broadcasting won't work, unless we make it have the original broadcaster's channels
-    protected function passChannelsFromOriginalBroadcaster(Broadcaster $originalBroadcaster, Broadcaster $newBroadcaster): void
+    protected function passChannelsFromOriginalBroadcaster(BroadcasterContract $originalBroadcaster, BroadcasterContract $newBroadcaster): void
     {
         // invade() because channels can't be retrieved through any of the broadcaster's public methods
         $originalBroadcaster = invade($originalBroadcaster);
