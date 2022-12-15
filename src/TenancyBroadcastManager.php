@@ -12,14 +12,21 @@ use Illuminate\Contracts\Foundation\Application;
 class TenancyBroadcastManager extends BroadcastManager
 {
     /**
-     * Broadcasters to always resolve from the container (even when they're
+     * Names of broadcasters to always recreate using $this->resolve() (even when they're
      * cached and available in the $broadcasters property).
+     *
+     * The reason for recreating the broadcasters is
+     * to make your app use the correct broadcaster credentials when tenancy is initialized.
      */
     public static array $tenantBroadcasters = ['pusher', 'ably'];
 
     /**
-     * Override the get method so that the broadcasters in $tenantBroadcasters always get resolved,
-     * even when they're cached and available in the $broadcasters property.
+     * Override the get method so that the broadcasters in $tenantBroadcasters
+     * always get freshly resolved even when they're cached and available in the $broadcasters property,
+     * and that the resolved broadcaster will override the BroadcasterContract::class singleton.
+     *
+     * If there's a cached broadcaster with the same name as $name,
+     * give its channels to the newly resolved bootstrapper.
      */
     protected function get($name)
     {
@@ -32,6 +39,7 @@ class TenancyBroadcastManager extends BroadcastManager
 
             // If there is a cached broadcaster, give its channels to the newly resolved one
             if ($cachedBroadcaster) {
+                // invade() because channels can't be retrieved through any of the broadcaster's public methods
                 $cachedBroadcaster = invade($cachedBroadcaster);
 
                 foreach ($cachedBroadcaster->channels as $channel => $callback) {
