@@ -60,12 +60,7 @@ class BroadcastTenancyBootstrapper implements TenancyBootstrapper
 
         // Make BroadcastManager resolve to a custom BroadcastManager which makes the broadcasters use the tenant credentials
         $this->app->extend(BroadcastManager::class, function (BroadcastManager $broadcastManager) {
-            $tenancyBroadcastManager = new TenancyBroadcastManager($this->app);
-
-            // Because the new custom TenancyBroadcastManager won't have the original broadcasters
-            // It also won't have the channels registered in routes/channels.php, and without these, broadcasting won't work
-            // So we pass the default broadcaster to the new TenancyBroadcastManager
-            return $tenancyBroadcastManager->setDriver($broadcastManager->getDefaultDriver(), $broadcastManager->driver());
+            return new TenancyBroadcastManager($this->app);
         });
     }
 

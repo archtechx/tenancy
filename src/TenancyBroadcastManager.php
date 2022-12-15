@@ -31,34 +31,29 @@ class TenancyBroadcastManager extends BroadcastManager
     protected function get($name)
     {
         if (in_array($name, static::$tenantBroadcasters)) {
-            /** @var Broadcaster|null $cachedBroadcaster */
-            $cachedBroadcaster = $this->drivers[$name] ?? null;
-
             /** @var Broadcaster $broadcaster */
-            $broadcaster = $this->resolve($name);
+            $newBroadcaster = $this->resolve($name);
 
-            // If there is a cached broadcaster, give its channels to the newly resolved one
-            if ($cachedBroadcaster) {
-                // invade() because channels can't be retrieved through any of the broadcaster's public methods
-                $cachedBroadcaster = invade($cachedBroadcaster);
-
-                foreach ($cachedBroadcaster->channels as $channel => $callback) {
-                    $broadcaster->channel($channel, $callback, $cachedBroadcaster->retrieveChannelOptions($channel));
-                }
+            // If there is a current broadcaster, give its channels to the newly resolved one
+            if ($originalBroadcaster = $this->app->make(BroadcasterContract::class)) {
+                $this->passChannelsFromOriginalBroadcaster($originalBroadcaster, $newBroadcaster);
             }
 
-            $this->app->singleton(BroadcasterContract::class, fn (Application $app) => $broadcaster);
+            $this->app->singleton(BroadcasterContract::class, fn (Application $app) => $newBroadcaster);
 
-            return $broadcaster;
+            return $newBroadcaster;
         }
 
         return parent::get($name);
     }
 
-    public function setDriver(string $name, BroadcasterContract $broadcaster): static
+    protected function passChannelsFromOriginalBroadcaster(Broadcaster $originalBroadcaster, Broadcaster $newBroadcaster): void
     {
-        $this->drivers[$name] = $broadcaster;
+        // invade() because channels can't be retrieved through any of the broadcaster's public methods
+        $originalBroadcaster = invade($originalBroadcaster);
 
-        return $this;
+        foreach ($originalBroadcaster->channels as $channel => $callback) {
+            $newBroadcaster->channel($channel, $callback, $originalBroadcaster->retrieveChannelOptions($channel));
+        }
     }
 }
