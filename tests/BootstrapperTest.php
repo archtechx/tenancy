@@ -331,15 +331,7 @@ function getDiskPrefix(string $disk): string
     /** @var FilesystemAdapter $disk */
     $disk = Storage::disk($disk);
     $adapter = $disk->getAdapter();
+    $prefix = invade(invade($adapter)->prefixer)->prefix;
 
-     $prefixer = (new ReflectionObject($adapter))->getProperty('prefixer');
-     $prefixer->setAccessible(true);
-
-     // reflection -> instance
-     $prefixer = $prefixer->getValue($adapter);
-
-     $prefix = (new ReflectionProperty($prefixer, 'prefix'));
-     $prefix->setAccessible(true);
-
-     return $prefix->getValue($prefixer);
+    return $prefix;
 }
