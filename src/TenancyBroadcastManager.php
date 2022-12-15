@@ -47,6 +47,8 @@ class TenancyBroadcastManager extends BroadcastManager
         return parent::get($name);
     }
 
+    // Because, unlike the original broadcaster, the newly resolved broadcaster won't have the channels registered in routes/channels.php
+    // Using it for broadcasting won't work, unless we make it have the original broadcaster's channels
     protected function passChannelsFromOriginalBroadcaster(Broadcaster $originalBroadcaster, Broadcaster $newBroadcaster): void
     {
         // invade() because channels can't be retrieved through any of the broadcaster's public methods
