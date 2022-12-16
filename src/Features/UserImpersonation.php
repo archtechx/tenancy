@@ -59,7 +59,7 @@ class UserImpersonation implements Feature
     }
 
     /**
-     * Logout and forget session.
+     * Logout from the current domain and forget impersonation session.
      */
     public static function leave(): void
     {
