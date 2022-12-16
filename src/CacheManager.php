@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Illuminate\Cache\ApcStore;
-use Illuminate\Cache\FileStore;
-use Illuminate\Cache\NullStore;
 use Illuminate\Cache\ApcWrapper;
 use Illuminate\Cache\ArrayStore;
+use Illuminate\Cache\CacheManager as BaseCacheManager;
+use Illuminate\Cache\FileStore;
+use Illuminate\Cache\MemcachedStore;
+use Illuminate\Cache\NullStore;
 use Illuminate\Cache\RedisStore;
 use Illuminate\Cache\Repository;
-use Illuminate\Cache\MemcachedStore;
 use Illuminate\Contracts\Cache\Store;
-use Illuminate\Cache\CacheManager as BaseCacheManager;
 
 // todo move to Cache namespace?
 
