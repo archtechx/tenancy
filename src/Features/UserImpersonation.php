@@ -61,7 +61,7 @@ class UserImpersonation implements Feature
     /**
      * Logout from the current domain and forget impersonation session.
      */
-    public static function leave(): void
+    public static function leave(): void // todo possibly rename
     {
         auth()->logout();
 
