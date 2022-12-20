@@ -10,6 +10,7 @@ use Stancl\Tenancy\Contracts;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\Concerns;
 use Stancl\Tenancy\Events;
+use Stancl\Tenancy\Tenancy;
 
 /**
  * @property string $domain
@@ -28,7 +29,7 @@ class Domain extends Model implements Contracts\Domain
 
     public function tenant(): BelongsTo
     {
-        return $this->belongsTo(config('tenancy.models.tenant'));
+        return $this->belongsTo(config('tenancy.models.tenant'), Tenancy::tenantKeyColumn());
     }
 
     protected $dispatchesEvents = [
