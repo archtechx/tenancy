@@ -90,6 +90,61 @@ class ResourceSyncingTest extends TestCase
     }
 
     /** @test */
+    public function resources_are_synced_only_sync_is_enabled()
+    {
+        CentralUser::create([
+            'global_id' => 'acme',
+            'name' => 'John Doe',
+            'email' => 'john@localhost',
+            'password' => 'secret',
+            'role' => 'commenter', // synced
+        ]);
+
+        $tenant = ResourceTenant::create();
+        $this->migrateTenants();
+
+        $tenant->run(function() {
+            ResourceUser::create([
+                'name' => 'Foo',
+                'email' => 'foo@email.com',
+                'password' => 'secret',
+                'global_id' => 'acme',
+                'role' => 'not_sync',
+            ]);
+        });
+
+        $centralUser = CentralUser::first();
+        $this->assertSame('John Doe',  $centralUser->name); // not sync
+        $this->assertSame('john@localhost',  $centralUser->email); // not sync
+        $this->assertSame('secret',  $centralUser->password); // not sync
+    }
+
+    /** @test */
+    public function central_users_are_synced_only_sync_is_enabled()
+    {
+        $centralUser = CentralUser::create([
+            'global_id' => 'acme',
+            'name' => 'John Doe',
+            'email' => 'john@localhost',
+            'password' => 'secret',
+            'role' => 'not_sync', // unsynced
+        ]);
+
+        $t1 = ResourceTenant::create([
+            'id' => 't1',
+        ]);
+        $this->migrateTenants();
+
+        $centralUser->tenants()->attach('t1');
+
+        $t1->run(function () {
+            // assert user not exsits
+            $this->assertCount(0, ResourceUser::all());
+        });
+
+    }
+
+    /** @test */
     public function only_the_synced_columns_are_updated_in_the_central_db()
     {
         // Create user in central DB
@@ -626,6 +681,11 @@ class CentralUser extends Model implements SyncMaster
             'email',
         ];
     }
+
+    public function isSyncEnabled()
+    {
+        return $this->role !== 'not_sync';
+    }
 }
 
 class ResourceUser extends Model implements Syncable
@@ -658,5 +718,10 @@ class ResourceUser extends Model implements Syncable
             'password',
             'email',
         ];
+    }
+
+    public function isSyncEnabled()
+    {
+        return $this->role !== 'not_sync';
     }
 }

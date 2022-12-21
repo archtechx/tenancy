@@ -16,7 +16,7 @@ class TenantPivot extends Pivot
         static::saved(function (self $pivot) {
             $parent = $pivot->pivotParent;
 
-            if ($parent instanceof Syncable) {
+            if ($parent instanceof Syncable && $parent->isSyncEnabled()) {
                 $parent->triggerSyncEvent();
             }
         });
