@@ -682,7 +682,7 @@ class CentralUser extends Model implements SyncMaster
         ];
     }
 
-    public function isSyncEnabled()
+    public function shouldSync()
     {
         return $this->role !== 'not_sync';
     }
@@ -720,7 +720,7 @@ class ResourceUser extends Model implements Syncable
         ];
     }
 
-    public function isSyncEnabled()
+    public function shouldSync()
     {
         return $this->role !== 'not_sync';
     }

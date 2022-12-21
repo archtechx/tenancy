@@ -16,5 +16,5 @@ interface Syncable
 
     public function triggerSyncEvent();
 
-    public function isSyncEnabled();
+    public function shouldSync(): bool;
 }

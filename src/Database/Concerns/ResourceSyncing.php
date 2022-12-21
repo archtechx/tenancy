@@ -14,7 +14,7 @@ trait ResourceSyncing
     {
         static::saved(function (Syncable $model) {
             /** @var ResourceSyncing $model */
-            if ($model->isSyncEnabled()) {
+            if ($model->shouldSync()) {
                 $model->triggerSyncEvent();
             }
         });
@@ -34,7 +34,7 @@ trait ResourceSyncing
         event(new SyncedResourceSaved($this, tenant()));
     }
 
-    public function isSyncEnabled()
+    public function shouldSync(): bool
     {
         return true;
     }
