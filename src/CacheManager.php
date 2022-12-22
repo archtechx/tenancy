@@ -4,16 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
-use Illuminate\Cache\ApcStore;
-use Illuminate\Cache\ApcWrapper;
-use Illuminate\Cache\ArrayStore;
 use Illuminate\Cache\CacheManager as BaseCacheManager;
-use Illuminate\Cache\FileStore;
-use Illuminate\Cache\MemcachedStore;
-use Illuminate\Cache\NullStore;
-use Illuminate\Cache\RedisStore;
 use Illuminate\Cache\Repository;
-use Illuminate\Contracts\Cache\Store;
 
 // todo move to Cache namespace?
 
@@ -53,58 +45,13 @@ class CacheManager extends BaseCacheManager
 
     public function refreshStore(string|null $repository = null): void
     {
+        // Could be public setStore(string $store) in Illuminate\Cache\Repository
         Repository::macro('setStore', function ($store) {
             $this->store = $store;
         });
 
-        $this->driver($repository)->setStore($this->createStore($repository ?? $this->getDefaultDriver()));
-    }
+        $newStore = $this->resolve($repository ?? $this->getDefaultDriver())->getStore();
 
-    protected function createApcStore(array $config): ApcStore
-    {
-        return new ApcStore(new ApcWrapper, $this->getPrefix($config));
-    }
-
-    protected function createArrayStore(array $config): ArrayStore
-    {
-        return new ArrayStore($config['serialize'] ?? false);
-    }
-
-    protected function createFileStore(array $config): FileStore
-    {
-        return new FileStore($this->app['files'], $config['path'], $config['permission'] ?? null);
-    }
-
-    protected function createMemcachedStore(array $config): MemcachedStore
-    {
-        $memcached = $this->app['memcached.connector']->connect(
-            $config['servers'],
-            $config['persistent_id'] ?? null,
-            $config['options'] ?? [],
-            array_filter($config['sasl'] ?? [])
-        );
-
-        return new MemcachedStore($memcached, $this->getPrefix($config));
-    }
-
-    protected function createRedisStore(array $config): RedisStore
-    {
-        $connection = $config['connection'] ?? 'default';
-        $store = new RedisStore($this->app['redis'], $this->getPrefix($config), $connection);
-
-        return $store->setLockConnection($config['lock_connection'] ?? $connection);
-    }
-
-    protected function createNullStore(): NullStore
-    {
-        return new NullStore;
-    }
-
-    public function createStore(string|null $name, array|null $config = null): Store
-    {
-        $name ??= 'null';
-        $storeCreationMethod = 'create' . ucfirst($name) . 'Store';
-
-        return $this->{$storeCreationMethod}($config ?? $this->getConfig($name));
+        $this->driver($repository)->setStore($newStore);
     }
 }
