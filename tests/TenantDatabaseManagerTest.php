@@ -438,7 +438,7 @@ test('template tenant connection config can be both connection name or connectio
     $manager = $tenant->database()->manager();
     expect($manager->databaseExists($name))->toBeTrue();
     expect($manager->database()->getConfig('host'))->toBe('mysql2');
-})->group('current');
+});
 
 // Datasets
 dataset('database_managers', [
