@@ -207,7 +207,7 @@ class DatabaseConfig
         $tenantHostConnectionName = $this->getTenantHostConnectionName();
         config(["database.connections.{$tenantHostConnectionName}" => $this->hostConnection()]);
 
-        $manager = $this->connectionDriverManager($tenantHostConnectionName);
+        $manager = $this->connectionDriverManager(config("database.connections.{$tenantHostConnectionName}.driver"));
 
         if ($manager instanceof Contracts\StatefulTenantDatabaseManager) {
             $manager->setConnection($tenantHostConnectionName);
@@ -222,10 +222,8 @@ class DatabaseConfig
      *
      * @throws DatabaseManagerNotRegisteredException
      */
-    protected function connectionDriverManager(string $connectionName): Contracts\TenantDatabaseManager
+    protected function connectionDriverManager(string $driver): Contracts\TenantDatabaseManager
     {
-        $driver = config("database.connections.{$connectionName}.driver");
-
         $databaseManagers = config('tenancy.database.managers');
 
         if (! array_key_exists($driver, $databaseManagers)) {
