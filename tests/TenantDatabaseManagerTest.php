@@ -411,7 +411,7 @@ test('template tenant connection config can be both connection name or connectio
     expect($manager->database()->getConfig('host'))->toBe('mysql');
 
     config([
-        'tenancy.database.template_tenant_connection' =>  [
+        'tenancy.database.template_tenant_connection' => [
             'driver' => 'mysql',
             'url' => null,
             'host' => 'mysql2',
