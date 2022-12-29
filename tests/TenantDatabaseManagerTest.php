@@ -390,6 +390,56 @@ test('path used by sqlite manager can be customized', function () {
     expect(file_exists($customPath . '/' . $name))->toBeTrue();
 });
 
+test('template tenant connection config can be both connection name or connection array', function () {
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    config([
+        'tenancy.database.managers.mysql' => MySQLDatabaseManager::class,
+        'tenancy.database.template_tenant_connection' => 'mysql',
+    ]);
+
+    $name = 'foo' . Str::random(8);
+    $tenant = Tenant::create([
+        'tenancy_db_name' => $name,
+    ]);
+
+    /** @var MySQLDatabaseManager $manager */
+    $manager = $tenant->database()->manager();
+    expect($manager->databaseExists($name))->toBeTrue();
+    expect($manager->database()->getConfig('host'))->toBe('mysql');
+
+    config([
+        'tenancy.database.template_tenant_connection' =>  [
+            'driver' => 'mysql',
+            'url' => null,
+            'host' => 'mysql2',
+            'port' => '3306',
+            'database' => 'main',
+            'username' => 'root',
+            'password' => 'password',
+            'unix_socket' => '',
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => [],
+        ],
+    ]);
+
+    $tenant = Tenant::create([
+        'tenancy_db_name' => $name,
+    ]);
+
+    /** @var MySQLDatabaseManager $manager */
+    $manager = $tenant->database()->manager();
+    expect($manager->databaseExists($name))->toBeTrue();
+    expect($manager->database()->getConfig('host'))->toBe('mysql2');
+})->group('current');
+
 // Datasets
 dataset('database_managers', [
     ['mysql', MySQLDatabaseManager::class],
