@@ -15,7 +15,7 @@
         }
     ],
     "require": {
-        "php": "^8.2",
+        "php": "^8.1",
         "ext-json": "*",
         "illuminate/support": "^9.0",
         "spatie/ignition": "^1.4",
