@@ -48,8 +48,10 @@ parameters:
             paths:
                 - src/Database/DatabaseConfig.php
         - '#Method Stancl\\Tenancy\\Tenancy::cachedResolvers\(\) should return array#'
-        - '#Access to an undefined property Stancl\\Tenancy\\Middleware\\IdentificationMiddleware\:\:\$tenancy#'
-        - '#Access to an undefined property Stancl\\Tenancy\\Middleware\\IdentificationMiddleware\:\:\$resolver#'
+
+        # php 8.2
+        # - '#Access to an undefined property Stancl\\Tenancy\\Middleware\\IdentificationMiddleware\:\:\$tenancy#'
+        # - '#Access to an undefined property Stancl\\Tenancy\\Middleware\\IdentificationMiddleware\:\:\$resolver#'
 
     checkMissingIterableValueType: false
     treatPhpDocTypesAsCertain: false
