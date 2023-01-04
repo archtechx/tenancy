@@ -47,7 +47,6 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
     public function getArgsForTenant(Tenant $tenant): array
     {
         /** @var Tenant&Model $tenant */
-
         $tenant->unsetRelation('domains');
 
         return $tenant->domains->map(function (Domain&Model $domain) {
