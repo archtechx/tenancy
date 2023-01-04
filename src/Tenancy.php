@@ -118,6 +118,7 @@ class Tenancy
      */
     public static function find(int|string $id): Tenant|null
     {
+        // todo update all syntax like this once we're fully on PHP 8.2
         /** @var (Tenant&Model)|null */
         $tenant = static::model()->where(static::model()->getTenantKeyName(), $id)->first();
 

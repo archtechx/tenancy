@@ -34,7 +34,7 @@ class Link extends Command
                 $this->createLinks($tenants);
             }
         } catch (Exception $exception) {
-            $this->error($exception->getMessage());
+            $this->components->error($exception->getMessage());
 
             return 1;
         }

@@ -14,7 +14,7 @@ class CreatePendingTenants extends Command
 
     public function handle(): int
     {
-        $this->info('Creating pending tenants.');
+        $this->components->info('Creating pending tenants.');
 
         $maxPendingTenantCount = (int) ($this->option('count') ?? config('tenancy.pending.count'));
         $pendingTenantCount = $this->getPendingTenantCount();
@@ -30,8 +30,8 @@ class CreatePendingTenants extends Command
             $createdCount++;
         }
 
-        $this->info($createdCount . ' pending ' . str('tenant')->plural($createdCount) . ' created.');
-        $this->info($maxPendingTenantCount . ' pending ' . str('tenant')->plural($maxPendingTenantCount) . ' ready to be used.');
+        $this->components->info($createdCount . ' pending ' . str('tenant')->plural($createdCount) . ' created.');
+        $this->components->info($maxPendingTenantCount . ' pending ' . str('tenant')->plural($maxPendingTenantCount) . ' ready to be used.');
 
         return 0;
     }

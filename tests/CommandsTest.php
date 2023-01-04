@@ -372,7 +372,7 @@ function runCommandWorks(): void
     Artisan::call('tenants:migrate', ['--tenants' => [$id]]);
 
     pest()->artisan("tenants:run --tenants=$id 'foo foo --b=bar --c=xyz' ")
-        ->expectsOutput("User's name is Test command")
+        ->expectsOutput("User's name is Test user")
         ->expectsOutput('foo')
         ->expectsOutput('xyz');
 }
