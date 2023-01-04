@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Resolvers;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\Contracts\Domain;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
@@ -39,14 +40,17 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
 
     protected function setCurrentDomain(Tenant $tenant, string $domain): void
     {
+        /** @var Tenant&Model $tenant */
         static::$currentDomain = $tenant->domains->where('domain', $domain)->first();
     }
 
     public function getArgsForTenant(Tenant $tenant): array
     {
+        /** @var Tenant&Model $tenant */
+
         $tenant->unsetRelation('domains');
 
-        return $tenant->domains->map(function (Domain $domain) {
+        return $tenant->domains->map(function (Domain&Model $domain) {
             return [$domain->domain];
         })->toArray();
     }
