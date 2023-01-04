@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
+use Illuminate\Cache\RedisStore;
 use Illuminate\Cache\CacheManager;
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Tests\Etc\CacheService;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Tests\Etc\CacheManagerService;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\CacheManager as TenancyCacheManager;
 use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
@@ -173,4 +175,43 @@ test('prefix separate cache well enough using CacheManager dependency injection'
     tenancy()->end();
 
     expect(cache('key'))->toBe('central-value');
+});
+
+test('stores other than the default one are not prefixed', function () {
+    config(['cache.default' => 'redis']);
+    config(['cache.stores.redis2' => config('cache.stores.redis')]);
+
+    app(CacheManager::class)->extend('redis2', function($config) {
+        $redis = $this->app['redis'];
+
+        $connection = $config['connection'] ?? 'default';
+
+        $store = new RedisStore($redis, $this->getPrefix($config), $connection);
+
+        return $this->repository(
+            $store->setLockConnection($config['lock_connection'] ?? $connection)
+        );
+    });
+
+    $this->app->singleton(CacheManagerService::class);
+
+    app()->make(CacheManagerService::class)->handle();
+    expect(cache()->driver('redis2')->get('key'))->toBe('central-value');
+
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+    tenancy()->initialize($tenant1);
+
+    expect(cache()->driver('redis2')->get('key'))->toBe('central-value');
+    app()->make(CacheManagerService::class)->handle();
+    expect(cache()->driver('redis2')->get('key'))->toBe($tenant1->getTenantKey());
+
+    tenancy()->initialize($tenant2);
+
+    expect(cache()->driver('redis2')->get('key'))->toBe($tenant1->getTenantKey());
+    app()->make(CacheManagerService::class)->handle();
+    expect(cache()->driver('redis2')->get('key'))->toBe($tenant2->getTenantKey());
+
+    tenancy()->end();
+    expect(cache()->driver('redis2')->get('key'))->toBe($tenant2->getTenantKey());
 });
