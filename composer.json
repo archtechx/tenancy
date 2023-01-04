@@ -15,7 +15,7 @@
         }
     ],
     "require": {
-        "php": "^8.1",
+        "php": "^8.2",
         "ext-json": "*",
         "illuminate/support": "^9.0",
         "spatie/ignition": "^1.4",
@@ -58,16 +58,16 @@
         }
     },
     "scripts": {
-        "docker-up": "PHP_VERSION=8.1 docker-compose up -d",
-        "docker-down": "PHP_VERSION=8.1 docker-compose down",
-        "docker-rebuild": "PHP_VERSION=8.1 docker-compose up -d --no-deps --build",
+        "docker-up": "PHP_VERSION=8.2 docker-compose up -d",
+        "docker-down": "PHP_VERSION=8.2 docker-compose down",
+        "docker-rebuild": "PHP_VERSION=8.2 docker-compose up -d --no-deps --build",
         "docker-m1": "ln -s docker-compose-m1.override.yml docker-compose.override.yml",
         "coverage": "open coverage/phpunit/html/index.html",
         "phpstan": "vendor/bin/phpstan",
         "phpstan-pro": "vendor/bin/phpstan --pro",
         "cs": "php-cs-fixer fix --config=.php-cs-fixer.php",
-        "test": "PHP_VERSION=8.1 ./test --no-coverage",
-        "test-full": "PHP_VERSION=8.1 ./test"
+        "test": "PHP_VERSION=8.2 ./test --no-coverage",
+        "test-full": "PHP_VERSION=8.2 ./test"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
