@@ -181,18 +181,6 @@ test('stores other than the default one are not prefixed', function () {
     config(['cache.default' => 'redis']);
     config(['cache.stores.redis2' => config('cache.stores.redis')]);
 
-    app(CacheManager::class)->extend('redis2', function($config) {
-        $redis = $this->app['redis'];
-
-        $connection = $config['connection'] ?? 'default';
-
-        $store = new RedisStore($redis, $this->getPrefix($config), $connection);
-
-        return $this->repository(
-            $store->setLockConnection($config['lock_connection'] ?? $connection)
-        );
-    });
-
     $this->app->singleton(CacheManagerService::class);
 
     app()->make(CacheManagerService::class)->handle();
