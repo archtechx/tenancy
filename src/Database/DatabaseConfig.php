@@ -109,12 +109,17 @@ class DatabaseConfig
         }
 
         if ($template = config('tenancy.database.template_tenant_connection')) {
-            return is_array($template) ? $template : config("database.connections.{$template}");
+            return is_array($template) ? array_merge($this->getCentralConnection(), $template) : config("database.connections.{$template}");
         }
 
-        $template = config('tenancy.database.central_connection');
+        return $this->getCentralConnection();
+    }
 
-        return config("database.connections.{$template}");
+    protected function getCentralConnection(): array
+    {
+        $centralConnectionName = config('tenancy.database.central_connection');
+
+        return config("database.connections.{$centralConnectionName}");
     }
 
     public function getTenantHostConnectionName(): string

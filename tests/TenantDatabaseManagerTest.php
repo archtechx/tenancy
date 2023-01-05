@@ -440,6 +440,31 @@ test('template tenant connection value can be connection name or connection arra
     expect($manager->database()->getConfig('host'))->toBe('mysql2');
 });
 
+test('template tenant connection value can be partial database config', function () {
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    config([
+        'database.connections.central.url' => 'example.com',
+        'tenancy.database.template_tenant_connection' => [
+            'url' => null,
+            'host' => 'mysql2',
+        ],
+    ]);
+
+    $name = 'foo' . Str::random(8);
+    $tenant = Tenant::create([
+        'tenancy_db_name' => $name,
+    ]);
+
+    /** @var MySQLDatabaseManager $manager */
+    $manager = $tenant->database()->manager();
+    expect($manager->databaseExists($name))->toBeTrue();
+    expect($manager->database()->getConfig('host'))->toBe('mysql2');
+    expect($manager->database()->getConfig('url'))->toBeNull();
+});
+
 // Datasets
 dataset('database_managers', [
     ['mysql', MySQLDatabaseManager::class],
