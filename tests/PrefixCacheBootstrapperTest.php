@@ -152,7 +152,7 @@ test('cache base prefix is customizable', function () {
         ->toBe(app('cache.store')->getPrefix());
 });
 
-test('prefix separate cache well enough using CacheManager dependency injection', function () {
+test('cache is prefixed correctly when using a repository injected in a singleton', function () {
     $this->app->singleton(CacheService::class);
 
     app()->make(CacheService::class)->handle();
