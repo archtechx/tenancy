@@ -7,7 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Stancl\Tenancy\Tenancy;
 
-class CreateTenantUserImpersonationTokensTable extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -37,4 +37,4 @@ class CreateTenantUserImpersonationTokensTable extends Migration
     {
         Schema::dropIfExists('tenant_user_impersonation_tokens');
     }
-}
+};

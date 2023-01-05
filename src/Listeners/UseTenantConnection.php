@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Listeners;
 
-use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\DatabaseManager;
 use Stancl\Tenancy\Events\Contracts\TenancyEvent;
 
-class CreateTenantConnection
+class UseTenantConnection
 {
     public function __construct(
         protected DatabaseManager $database,
@@ -17,10 +16,6 @@ class CreateTenantConnection
 
     public function handle(TenancyEvent $event): void
     {
-        /** @var TenantWithDatabase $tenant */
-        $tenant = $event->tenancy->tenant;
-
-        $this->database->purgeTenantConnection();
-        $this->database->createTenantConnection($tenant);
+        $this->database->setDefaultConnection('tenant');
     }
 }

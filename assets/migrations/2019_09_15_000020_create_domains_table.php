@@ -7,7 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Stancl\Tenancy\Tenancy;
 
-class CreateDomainsTable extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -35,4 +35,4 @@ class CreateDomainsTable extends Migration
     {
         Schema::dropIfExists('domains');
     }
-}
+};

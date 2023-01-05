@@ -23,8 +23,7 @@ trait HasTenantOptions
 
     protected function getTenants(): LazyCollection
     {
-        return tenancy()
-            ->query()
+        return tenancy()->query()
             ->when($this->option('tenants'), function ($query) {
                 $query->whereIn(tenancy()->model()->getTenantKeyName(), $this->option('tenants'));
             })
