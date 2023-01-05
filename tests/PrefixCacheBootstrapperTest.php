@@ -217,10 +217,16 @@ test('stores other than the default one are not prefixed', function () {
 });
 
 test('drivers specified in the nonTenantCacheDrivers property do not get prefixed', function() {
+    $defaultPrefix = config('cache.prefix');
     PrefixCacheTenancyBootstrapper::$nonTenantCacheDrivers[] = config('cache.default');
+    $expectPrefixToBeAnEmptyString = fn() => expect($defaultPrefix . ':')
+        ->toBe(app('cache')->getPrefix())
+        ->toBe(app('cache.store')->getPrefix());
+
     $this->app->singleton(CacheService::class);
 
     app()->make(CacheService::class)->handle();
+    $expectPrefixToBeAnEmptyString();
 
     expect(cache('key'))->toBe('central-value');
 
@@ -230,15 +236,18 @@ test('drivers specified in the nonTenantCacheDrivers property do not get prefixe
 
     expect(cache('key'))->toBe('central-value');
     app()->make(CacheService::class)->handle();
+    $expectPrefixToBeAnEmptyString();
     expect(cache('key'))->toBe($tenant1->getTenantKey());
 
     tenancy()->initialize($tenant2);
 
     expect(cache('key'))->toBe($tenant1->getTenantKey());
     app()->make(CacheService::class)->handle();
+    $expectPrefixToBeAnEmptyString();
     expect(cache('key'))->toBe($tenant2->getTenantKey());
 
     tenancy()->end();
 
+    $expectPrefixToBeAnEmptyString();
     expect(cache('key'))->toBe($tenant2->getTenantKey());
 });
