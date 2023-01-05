@@ -14,7 +14,7 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
 {
     protected string|null $originalPrefix = null;
     protected string $storeName;
-    public static array $nonTenantCacheDrivers = [];
+    public static array $tenantCacheStores = [];
 
     public function __construct(
         protected Repository $config,
@@ -27,7 +27,7 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
         $this->originalPrefix = $this->config->get('cache.prefix');
         $this->storeName = $this->config->get('cache.default');
 
-        if (! in_array($this->storeName, static::$nonTenantCacheDrivers)) {
+        if (in_array($this->storeName, static::$tenantCacheStores)) {
             $this->setCachePrefix($this->originalPrefix . $this->config->get('tenancy.cache.prefix_base') . $tenant->getTenantKey());
         }
     }
