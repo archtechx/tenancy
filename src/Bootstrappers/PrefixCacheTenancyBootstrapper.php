@@ -14,6 +14,7 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
 {
     protected string|null $originalPrefix = null;
     protected string $storeName;
+    public static array $nonTenantCacheDrivers = [];
 
     public function __construct(
         protected Repository $config,

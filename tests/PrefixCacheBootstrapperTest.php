@@ -215,3 +215,30 @@ test('stores other than the default one are not prefixed', function () {
     tenancy()->end();
     expect(cache()->driver('redis2')->get('key'))->toBe($tenant2->getTenantKey());
 });
+
+test('drivers specified in the nonTenantCacheDrivers property do not get prefixed', function() {
+    PrefixCacheTenancyBootstrapper::$nonTenantCacheDrivers[] = config('cache.default');
+    $this->app->singleton(CacheService::class);
+
+    app()->make(CacheService::class)->handle();
+
+    expect(cache('key'))->toBe('central-value');
+
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+    tenancy()->initialize($tenant1);
+
+    expect(cache('key'))->toBe('central-value');
+    app()->make(CacheService::class)->handle();
+    expect(cache('key'))->toBe($tenant1->getTenantKey());
+
+    tenancy()->initialize($tenant2);
+
+    expect(cache('key'))->toBe($tenant1->getTenantKey());
+    app()->make(CacheService::class)->handle();
+    expect(cache('key'))->toBe($tenant2->getTenantKey());
+
+    tenancy()->end();
+
+    expect(cache('key'))->toBe($tenant2->getTenantKey());
+});
