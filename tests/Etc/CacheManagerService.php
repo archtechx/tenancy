@@ -9,7 +9,7 @@ use Illuminate\Cache\Repository;
 
 class CacheManagerService
 {
-    public Repository|null $cache = null;
+    public Repository $cache;
 
     public function __construct(CacheManager $cacheManager)
     {
