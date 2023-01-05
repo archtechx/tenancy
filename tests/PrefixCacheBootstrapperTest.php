@@ -209,6 +209,8 @@ test('stores specified in tenantCacheStores get prefixed', function() {
     // Make the currently used store ('redis') the only store in $tenantCacheStores
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = ['redis'];
 
+    $this->app->singleton(CacheService::class);
+
     app()->make(CacheService::class)->handle();
     expect(cache('key'))->toBe($centralValue = 'central-value');
 
