@@ -86,7 +86,7 @@ test('cache prefix is different for each tenant', function () {
 
     expect(cache($tenantOnePrefix . ':key'))->toBe('tenantone-value');
     expect(cache($tenantTwoPrefix . ':key'))->toBe('tenanttwo-value');
-})->group('prefix');
+});
 
 test('cache is persisted when reidentification is used', function () {
     $tenant1 = Tenant::create();
