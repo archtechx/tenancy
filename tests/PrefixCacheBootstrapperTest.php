@@ -19,8 +19,10 @@ beforeEach(function () {
         'tenancy.bootstrappers' => [
             PrefixCacheTenancyBootstrapper::class
         ],
-        'cache.default' => 'redis',
+        'cache.default' => $cacheDriver = 'redis',
     ]);
+
+    PrefixCacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
 
     TenancyCacheManager::$addTags = false;
 
@@ -204,38 +206,58 @@ test('stores other than the default one are not prefixed', function () {
     expect(cache()->driver('redis2')->get('key'))->toBe($tenant2->getTenantKey());
 });
 
-test('drivers specified in the nonTenantCacheDrivers property do not get prefixed', function() {
-    $defaultPrefix = config('cache.prefix');
-    PrefixCacheTenancyBootstrapper::$nonTenantCacheDrivers[] = config('cache.default');
-    $expectPrefixToBeAnEmptyString = fn() => expect($defaultPrefix . ':')
-        ->toBe(app('cache')->getPrefix())
-        ->toBe(app('cache.store')->getPrefix());
+test('stores specified in tenantCacheStores get prefixed', function() {
+    // Make the currently used store ('redis') the only store in $tenantCacheStores
+    PrefixCacheTenancyBootstrapper::$tenantCacheStores = ['redis'];
+
+    app()->make(CacheService::class)->handle();
+    expect(cache('key'))->toBe($centralValue = 'central-value');
+
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    tenancy()->initialize($tenant1);
+
+    expect(cache('key'))->toBeNull();
+    app()->make(CacheService::class)->handle();
+    expect(cache('key'))->toBe($tenant1->getTenantKey());
+
+    tenancy()->initialize($tenant2);
+
+    expect(cache('key'))->toBeNull();
+    app()->make(CacheService::class)->handle();
+    expect(cache('key'))->toBe($tenant2->getTenantKey());
+
+    tenancy()->end();
+    expect(cache('key'))->toBe($centralValue);
+});
+
+test('stores that are not specified in tenantCacheStores do not get prefixed', function() {
+    config(['cache.stores.redis2' => config('cache.stores.redis')]);
+    config(['cache.default' => 'redis2']);
+    // Make 'redis' the only store in $tenantCacheStores so that the current store ('redis2') doesn't get prefixed
+    PrefixCacheTenancyBootstrapper::$tenantCacheStores = ['redis'];
 
     $this->app->singleton(CacheService::class);
 
     app()->make(CacheService::class)->handle();
-    $expectPrefixToBeAnEmptyString();
-
     expect(cache('key'))->toBe('central-value');
 
     $tenant1 = Tenant::create();
     $tenant2 = Tenant::create();
     tenancy()->initialize($tenant1);
 
+    // The cache isn't prefixed, so it isn't separated
     expect(cache('key'))->toBe('central-value');
     app()->make(CacheService::class)->handle();
-    $expectPrefixToBeAnEmptyString();
     expect(cache('key'))->toBe($tenant1->getTenantKey());
 
     tenancy()->initialize($tenant2);
 
     expect(cache('key'))->toBe($tenant1->getTenantKey());
     app()->make(CacheService::class)->handle();
-    $expectPrefixToBeAnEmptyString();
     expect(cache('key'))->toBe($tenant2->getTenantKey());
 
     tenancy()->end();
-
-    $expectPrefixToBeAnEmptyString();
     expect(cache('key'))->toBe($tenant2->getTenantKey());
 });
