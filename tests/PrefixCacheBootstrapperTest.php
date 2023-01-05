@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Illuminate\Cache\RedisStore;
 use Illuminate\Cache\CacheManager;
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Events\TenancyEnded;
@@ -50,7 +49,7 @@ test('Tenancy overrides CacheManager', function() {
     expect(app(CacheManager::class)::class)->toBe(TenancyCacheManager::class);
 });
 
-test('cache prefix is separate for each tenant', function () {
+test('cache prefix is different for each tenant', function () {
     $originalPrefix = config('cache.prefix');
     $prefixBase = config('tenancy.cache.prefix_base');
 
