@@ -8,7 +8,7 @@ use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Tests\Etc\CacheService;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Tests\Etc\CacheManagerService;
+use Stancl\Tenancy\Tests\Etc\SpecificCacheStoreService;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\CacheManager as TenancyCacheManager;
 use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
@@ -178,31 +178,36 @@ test('cache is prefixed correctly when using a repository injected in a singleto
     expect(cache('key'))->toBe('central-value');
 });
 
-test('stores other than the default one are not prefixed', function () {
+test('specific central cache store can be used inside a service', function () {
     config(['cache.default' => 'redis']);
     config(['cache.stores.redis2' => config('cache.stores.redis')]);
+    $cacheStore = 'redis2'; // Non-default, central cache store name that we'll use using cache()->store($cacheStore)
 
-    $this->app->singleton(CacheManagerService::class);
+    // Service uses the 'redis2' store which is central/not prefixed (not present in PrefixCacheTenancyBootstrapper::$tenantCacheStores)
+    $this->app->singleton(SpecificCacheStoreService::class, function() use ($cacheStore) {
+        return new SpecificCacheStoreService($this->app->make(CacheManager::class), $cacheStore);
+    });
 
-    app()->make(CacheManagerService::class)->handle();
-    expect(cache()->driver('redis2')->get('key'))->toBe('central-value');
+    app()->make(SpecificCacheStoreService::class)->handle();
+    expect(cache()->store($cacheStore)->get('key'))->toBe('central-value');
 
     $tenant1 = Tenant::create();
     $tenant2 = Tenant::create();
     tenancy()->initialize($tenant1);
 
-    expect(cache()->driver('redis2')->get('key'))->toBe('central-value');
-    app()->make(CacheManagerService::class)->handle();
-    expect(cache()->driver('redis2')->get('key'))->toBe($tenant1->getTenantKey());
+    // The store isn't prefixed, so the cache isn't separated
+    expect(cache()->store($cacheStore)->get('key'))->toBe('central-value');
+    app()->make(SpecificCacheStoreService::class)->handle();
+    expect(cache()->store($cacheStore)->get('key'))->toBe($tenant1->getTenantKey());
 
     tenancy()->initialize($tenant2);
 
-    expect(cache()->driver('redis2')->get('key'))->toBe($tenant1->getTenantKey());
-    app()->make(CacheManagerService::class)->handle();
-    expect(cache()->driver('redis2')->get('key'))->toBe($tenant2->getTenantKey());
+    expect(cache()->store($cacheStore)->get('key'))->toBe($tenant1->getTenantKey());
+    app()->make(SpecificCacheStoreService::class)->handle();
+    expect(cache()->store($cacheStore)->get('key'))->toBe($tenant2->getTenantKey());
 
     tenancy()->end();
-    expect(cache()->driver('redis2')->get('key'))->toBe($tenant2->getTenantKey());
+    expect(cache()->store($cacheStore)->get('key'))->toBe($tenant2->getTenantKey());
 });
 
 test('stores specified in tenantCacheStores get prefixed', function() {
