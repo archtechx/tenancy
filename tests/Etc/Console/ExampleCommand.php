@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests\Etc\Console;
 
+use Illuminate\Support\Str;
 use Illuminate\Console\Command;
 
 class ExampleCommand extends Command
@@ -22,14 +23,13 @@ class ExampleCommand extends Command
      */
     public function handle()
     {
-        User::create([
-            'id' => 999,
-            'name' => 'Test command',
-            'email' => 'test@command.com',
+        $id = User::create([
+            'name' => 'Test user',
+            'email' => Str::random(8) . '@example.com',
             'password' => bcrypt('password'),
-        ]);
+        ])->id;
 
-        $this->line("User's name is " . User::find(999)->name);
+        $this->line("User's name is " . User::find($id)->name);
         $this->line($this->argument('a'));
         $this->line($this->option('c'));
     }

@@ -22,6 +22,10 @@ class TenantDump extends DumpCommand
 
     public function handle(ConnectionResolverInterface $connections, Dispatcher $dispatcher): int
     {
+        if (is_null($this->option('path'))) {
+            $this->input->setOption('path', config('tenancy.migration_parameters.--schema-path') ?? database_path('schema/tenant-schema.dump'));
+        }
+
         $tenant = $this->option('tenant')
             ?? tenant()
             ?? $this->ask('What tenant do you want to dump the schema for?')
@@ -37,7 +41,7 @@ class TenantDump extends DumpCommand
             return 1;
         }
 
-        parent::handle($connections, $dispatcher);
+        $tenant->run(fn () => parent::handle($connections, $dispatcher));
 
         return 0;
     }

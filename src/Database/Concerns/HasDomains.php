@@ -2,11 +2,10 @@
 
 declare(strict_types=1);
 
-// todo not sure if this should be in Database\
-
 namespace Stancl\Tenancy\Database\Concerns;
 
 use Stancl\Tenancy\Contracts\Domain;
+use Stancl\Tenancy\Tenancy;
 
 /**
  * @property-read Domain[]|\Illuminate\Database\Eloquent\Collection $domains
@@ -17,12 +16,12 @@ trait HasDomains
 {
     public function domains()
     {
-        return $this->hasMany(config('tenancy.domain_model'), 'tenant_id');
+        return $this->hasMany(config('tenancy.models.domain'), Tenancy::tenantKeyColumn());
     }
 
     public function createDomain($data): Domain
     {
-        $class = config('tenancy.domain_model');
+        $class = config('tenancy.models.domain');
 
         if (! is_array($data)) {
             $data = ['domain' => $data];

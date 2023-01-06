@@ -3,11 +3,13 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Database\Contracts\StatefulTenantDatabaseManager;
 use Stancl\Tenancy\Database\DatabaseManager;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
@@ -36,7 +38,10 @@ test('databases can be created and deleted', function ($driver, $databaseManager
     $name = 'db' . pest()->randomString();
 
     $manager = app($databaseManager);
-    $manager->setConnection($driver);
+
+    if ($manager instanceof StatefulTenantDatabaseManager) {
+        $manager->setConnection($driver);
+    }
 
     expect($manager->databaseExists($name))->toBeFalse();
 
@@ -48,7 +53,7 @@ test('databases can be created and deleted', function ($driver, $databaseManager
     expect($manager->databaseExists($name))->toBeTrue();
     $manager->deleteDatabase($tenant);
     expect($manager->databaseExists($name))->toBeFalse();
-})->with('database_manager_provider');
+})->with('database_managers');
 
 test('dbs can be created when another driver is used for the central db', function () {
     expect(config('database.default'))->toBe('central');
@@ -100,7 +105,7 @@ test('the tenant connection is fully removed', function () {
 
     $tenant = Tenant::create();
 
-    expect(array_keys(app('db')->getConnections()))->toBe(['central']);
+    expect(array_keys(app('db')->getConnections()))->toBe(['central', 'tenant_host_connection']);
     pest()->assertArrayNotHasKey('tenant', config('database.connections'));
 
     tenancy()->initialize($tenant);
@@ -179,7 +184,7 @@ test('a tenants database cannot be created when the database already exists', fu
     ]);
 });
 
-test('tenant database can be created on a foreign server', function () {
+test('tenant database can be created and deleted on a foreign server', function () {
     config([
         'tenancy.database.managers.mysql' => PermissionControlledMySQLDatabaseManager::class,
         'database.connections.mysql2' => [
@@ -215,10 +220,151 @@ test('tenant database can be created on a foreign server', function () {
     /** @var PermissionControlledMySQLDatabaseManager $manager */
     $manager = $tenant->database()->manager();
 
-    $manager->setConnection('mysql');
-    expect($manager->databaseExists($name))->toBeFalse();
+    expect($manager->databaseExists($name))->toBeTrue(); // mysql2
 
-    $manager->setConnection('mysql2');
+    $manager->setConnection('mysql');
+    expect($manager->databaseExists($name))->toBeFalse(); // check that the DB doesn't exist in 'mysql'
+
+    $manager->setConnection('mysql2'); // set the connection back
+    $manager->deleteDatabase($tenant);
+
+    expect($manager->databaseExists($name))->toBeFalse();
+});
+
+test('tenant database can be created on a foreign server by using the host from tenant config', function () {
+    config([
+        'tenancy.database.managers.mysql' => MySQLDatabaseManager::class,
+        'tenancy.database.template_tenant_connection' => 'mysql', // This will be overridden by tenancy_db_host
+        'database.connections.mysql2' => [
+            'driver' => 'mysql',
+            'host' => 'mysql2',
+            'port' => 3306,
+            'database' => 'main',
+            'username' => 'root',
+            'password' => 'password',
+            'unix_socket' => env('DB_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+    ]);
+
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    $name = 'foo' . Str::random(8);
+    $tenant = Tenant::create([
+        'tenancy_db_name' => $name,
+        'tenancy_db_host' => 'mysql2',
+    ]);
+
+    /** @var MySQLDatabaseManager $manager */
+    $manager = $tenant->database()->manager();
+
+    expect($manager->databaseExists($name))->toBeTrue();
+});
+
+test('database credentials can be provided to PermissionControlledMySQLDatabaseManager by specifying a connection', function () {
+    config([
+        'tenancy.database.managers.mysql' => PermissionControlledMySQLDatabaseManager::class,
+        'tenancy.database.template_tenant_connection' => 'mysql',
+        'database.connections.mysql2' => [
+            'driver' => 'mysql',
+            'host' => 'mysql2',
+            'port' => 3306,
+            'database' => 'main',
+            'username' => 'root',
+            'password' => 'password',
+            'unix_socket' => env('DB_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+    ]);
+
+    // Create a new random database user with privileges to use with mysql2 connection
+    $username = 'dbuser' . Str::random(4);
+    $password = Str::random('8');
+    $mysql2DB = DB::connection('mysql2');
+    $mysql2DB->statement("CREATE USER `{$username}`@`%` IDENTIFIED BY '{$password}';");
+    $mysql2DB->statement("GRANT ALL PRIVILEGES ON *.* TO `{$username}`@`%` identified by '{$password}' WITH GRANT OPTION;");
+    $mysql2DB->statement("FLUSH PRIVILEGES;");
+    
+    DB::purge('mysql2'); // forget the mysql2 connection so that it uses the new credentials the next time
+
+    config(['database.connections.mysql2.username' => $username]);
+    config(['database.connections.mysql2.password' => $password]);
+
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    $name = 'foo' . Str::random(8);
+    $usernameForNewDB = 'user_for_new_db' . Str::random(4);
+    $passwordForNewDB = Str::random(8);
+    $tenant = Tenant::create([
+        'tenancy_db_name' => $name,
+        'tenancy_db_connection' => 'mysql2',
+        'tenancy_db_username' => $usernameForNewDB,
+        'tenancy_db_password' => $passwordForNewDB,
+    ]);
+
+    /** @var PermissionControlledMySQLDatabaseManager $manager */
+    $manager = $tenant->database()->manager();
+
+    expect($manager->database()->getConfig('username'))->toBe($username); // user created for the HOST connection
+    expect($manager->userExists($usernameForNewDB))->toBeTrue();
+    expect($manager->databaseExists($name))->toBeTrue();
+});
+
+test('tenant database can be created by using the username and password from tenant config', function () {
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    config([
+        'tenancy.database.managers.mysql' => MySQLDatabaseManager::class,
+        'tenancy.database.template_tenant_connection' => 'mysql',
+    ]);
+
+    // Create a new random database user with privileges to use with `mysql` connection
+    $username = 'dbuser' . Str::random(4);
+    $password = Str::random('8');
+    $mysqlDB = DB::connection('mysql');
+    $mysqlDB->statement("CREATE USER `{$username}`@`%` IDENTIFIED BY '{$password}';");
+    $mysqlDB->statement("GRANT ALL PRIVILEGES ON *.* TO `{$username}`@`%` identified by '{$password}' WITH GRANT OPTION;");
+    $mysqlDB->statement("FLUSH PRIVILEGES;");
+    
+    DB::purge('mysql2'); // forget the mysql2 connection so that it uses the new credentials the next time
+
+    // Remove `mysql` credentials to make sure we will be using the credentials from the tenant config
+    config(['database.connections.mysql.username' => null]);
+    config(['database.connections.mysql.password' => null]);
+
+    $name = 'foo' . Str::random(8);
+    $tenant = Tenant::create([
+        'tenancy_db_name' => $name,
+        'tenancy_db_username' => $username,
+        'tenancy_db_password' => $password,
+    ]);
+
+    /** @var MySQLDatabaseManager $manager */
+    $manager = $tenant->database()->manager();
+
+    expect($manager->database()->getConfig('username'))->toBe($username); // user created for the HOST connection
     expect($manager->databaseExists($name))->toBeTrue();
 });
 
@@ -241,11 +387,11 @@ test('path used by sqlite manager can be customized', function () {
         'tenancy_db_connection' => 'sqlite',
     ]);
 
-    expect(file_exists( $customPath . '/' . $name))->toBeTrue();
+    expect(file_exists($customPath . '/' . $name))->toBeTrue();
 });
 
 // Datasets
-dataset('database_manager_provider', [
+dataset('database_managers', [
     ['mysql', MySQLDatabaseManager::class],
     ['mysql', PermissionControlledMySQLDatabaseManager::class],
     ['sqlite', SQLiteDatabaseManager::class],

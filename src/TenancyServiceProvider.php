@@ -54,9 +54,9 @@ class TenancyServiceProvider extends ServiceProvider
             $this->app->singleton($bootstrapper);
         }
 
-        // Bind the class in the tenancy.id_generator config to the UniqueIdentifierGenerator abstract.
-        if (! is_null($this->app['config']['tenancy.id_generator'])) {
-            $this->app->bind(Contracts\UniqueIdentifierGenerator::class, $this->app['config']['tenancy.id_generator']);
+        // Bind the class in the tenancy.models.id_generator config to the UniqueIdentifierGenerator abstract.
+        if (! is_null($this->app['config']['tenancy.models.id_generator'])) {
+            $this->app->bind(Contracts\UniqueIdentifierGenerator::class, $this->app['config']['tenancy.models.id_generator']);
         }
 
         $this->app->singleton(Commands\Migrate::class, function ($app) {
@@ -78,7 +78,9 @@ class TenancyServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->commands([
+            Commands\Up::class,
             Commands\Run::class,
+            Commands\Down::class,
             Commands\Link::class,
             Commands\Seed::class,
             Commands\Install::class,
@@ -87,8 +89,8 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\TenantList::class,
             Commands\TenantDump::class,
             Commands\MigrateFresh::class,
-            Commands\Down::class,
-            Commands\Up::class,
+            Commands\ClearPendingTenants::class,
+            Commands\CreatePendingTenants::class,
         ]);
 
         $this->app->extend(FreshCommand::class, function () {

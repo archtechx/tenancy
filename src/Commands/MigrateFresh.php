@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Commands;
 
-use Illuminate\Console\Command;
-use Stancl\Tenancy\Concerns\HasATenantsOption;
+use Illuminate\Database\Console\Migrations\BaseCommand;
+use Stancl\Tenancy\Concerns\DealsWithMigrations;
+use Stancl\Tenancy\Concerns\HasTenantOptions;
 use Symfony\Component\Console\Input\InputOption;
 
-class MigrateFresh extends Command
+class MigrateFresh extends BaseCommand
 {
-    use HasATenantsOption;
+    use HasTenantOptions, DealsWithMigrations;
 
     protected $description = 'Drop all tables and re-run all migrations for tenant(s)';
 

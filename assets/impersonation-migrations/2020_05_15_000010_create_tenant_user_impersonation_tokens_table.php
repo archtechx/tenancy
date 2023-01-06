@@ -5,8 +5,9 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Stancl\Tenancy\Tenancy;
 
-class CreateTenantUserImpersonationTokensTable extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -17,13 +18,13 @@ class CreateTenantUserImpersonationTokensTable extends Migration
     {
         Schema::create('tenant_user_impersonation_tokens', function (Blueprint $table) {
             $table->string('token', 128)->primary();
-            $table->string('tenant_id');
+            $table->string(Tenancy::tenantKeyColumn());
             $table->string('user_id');
             $table->string('auth_guard');
             $table->string('redirect_url');
             $table->timestamp('created_at');
 
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreign(Tenancy::tenantKeyColumn())->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
         });
     }
 
@@ -36,4 +37,4 @@ class CreateTenantUserImpersonationTokensTable extends Migration
     {
         Schema::dropIfExists('tenant_user_impersonation_tokens');
     }
-}
+};

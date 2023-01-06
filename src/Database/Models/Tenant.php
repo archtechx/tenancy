@@ -11,6 +11,7 @@ use Stancl\Tenancy\Database\Concerns;
 use Stancl\Tenancy\Database\TenantCollection;
 use Stancl\Tenancy\Events;
 use Stancl\Tenancy\Exceptions\TenancyNotInitializedException;
+use Stancl\VirtualColumn\VirtualColumn;
 
 /**
  * @property string|int $id
@@ -22,18 +23,17 @@ use Stancl\Tenancy\Exceptions\TenancyNotInitializedException;
  */
 class Tenant extends Model implements Contracts\Tenant
 {
-    use Concerns\CentralConnection,
+    use VirtualColumn,
+        Concerns\CentralConnection,
         Concerns\GeneratesIds,
-        Concerns\HasDataColumn,
         Concerns\HasInternalKeys,
         Concerns\TenantRun,
+        Concerns\HasPending,
         Concerns\InitializationHelpers,
         Concerns\InvalidatesResolverCache;
 
     protected $table = 'tenants';
-
     protected $primaryKey = 'id';
-
     protected $guarded = [];
 
     public function getTenantKeyName(): string
@@ -46,12 +46,17 @@ class Tenant extends Model implements Contracts\Tenant
         return $this->getAttribute($this->getTenantKeyName());
     }
 
+    /** Get the current tenant. */
     public static function current(): static|null
     {
         return tenant();
     }
 
-    /** @throws TenancyNotInitializedException */
+    /**
+     * Get the current tenant or throw an exception if tenancy is not initialized.
+     *
+     * @throws TenancyNotInitializedException
+     */
     public static function currentOrFail(): static
     {
         return static::current() ?? throw new TenancyNotInitializedException;

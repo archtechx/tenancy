@@ -9,14 +9,15 @@ use Illuminate\Database\Console\Migrations\MigrateCommand;
 use Illuminate\Database\Migrations\Migrator;
 use Illuminate\Database\QueryException;
 use Stancl\Tenancy\Concerns\ExtendsLaravelCommand;
-use Stancl\Tenancy\Concerns\HasATenantsOption;
+use Stancl\Tenancy\Concerns\DealsWithMigrations;
+use Stancl\Tenancy\Concerns\HasTenantOptions;
 use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
 use Stancl\Tenancy\Events\DatabaseMigrated;
 use Stancl\Tenancy\Events\MigratingDatabase;
 
 class Migrate extends MigrateCommand
 {
-    use HasATenantsOption, ExtendsLaravelCommand;
+    use HasTenantOptions, DealsWithMigrations, ExtendsLaravelCommand;
 
     protected $description = 'Run migrations for tenant(s)';
 

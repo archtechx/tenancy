@@ -15,7 +15,10 @@ class PathTenantResolver extends Contracts\CachedTenantResolver
         /** @var Route $route */
         $route = $args[0];
 
-        if ($id = (string) $route->parameter(static::tenantParameterName())) {
+        /** @var string $id */
+        $id = $route->parameter(static::tenantParameterName());
+
+        if ($id) {
             $route->forgetParameter(static::tenantParameterName());
 
             if ($tenant = tenancy()->find($id)) {

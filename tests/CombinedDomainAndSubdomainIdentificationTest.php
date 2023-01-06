@@ -16,7 +16,7 @@ beforeEach(function () {
         });
     });
 
-    config(['tenancy.tenant_model' => CombinedTenant::class]);
+    config(['tenancy.models.tenant' => CombinedTenant::class]);
 });
 
 test('tenant can be identified by subdomain', function () {

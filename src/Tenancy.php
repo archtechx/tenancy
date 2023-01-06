@@ -42,8 +42,7 @@ class Tenancy
             }
         }
 
-        // todo1 for phpstan this should be $this->tenant?, but first I want to clean up the $initialized logic and explore removing the property
-        if ($this->initialized && $this->tenant->getTenantKey() === $tenant->getTenantKey()) {
+        if ($this->initialized && $this->tenant?->getTenantKey() === $tenant->getTenantKey()) {
             return;
         }
 
@@ -52,6 +51,7 @@ class Tenancy
             $this->end();
         }
 
+        /** @var Tenant&Model $tenant */
         $this->tenant = $tenant;
 
         event(new Events\InitializingTenancy($this));
@@ -97,12 +97,18 @@ class Tenancy
 
     public static function model(): Tenant&Model
     {
-        $class = config('tenancy.tenant_model');
+        $class = config('tenancy.models.tenant');
 
         /** @var Tenant&Model $model */
         $model = new $class;
 
         return $model;
+    }
+
+    /** Name of the column used to relate models to tenants. */
+    public static function tenantKeyColumn(): string
+    {
+        return config('tenancy.models.tenant_key_column') ?? 'tenant_id';
     }
 
     /**
@@ -112,6 +118,7 @@ class Tenancy
      */
     public static function find(int|string $id): Tenant|null
     {
+        // todo update all syntax like this once we're fully on PHP 8.2
         /** @var (Tenant&Model)|null */
         $tenant = static::model()->where(static::model()->getTenantKeyName(), $id)->first();
 
@@ -156,7 +163,7 @@ class Tenancy
         // Wrap string in array
         $tenants = is_string($tenants) ? [$tenants] : $tenants;
 
-        // Use all tenants if $tenants is falsey
+        // Use all tenants if $tenants is falsy
         $tenants = $tenants ?: $this->model()->cursor(); // todo1 phpstan thinks this isn't needed, but tests fail without it
 
         $originalTenant = $this->tenant;

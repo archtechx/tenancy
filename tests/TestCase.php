@@ -14,6 +14,7 @@ use Stancl\Tenancy\Facades\GlobalCache;
 use Stancl\Tenancy\Facades\Tenancy;
 use Stancl\Tenancy\TenancyServiceProvider;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
@@ -104,15 +105,17 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 '--force' => true,
             ],
             'tenancy.bootstrappers.redis' => RedisTenancyBootstrapper::class, // todo1 change this to []? two tests in TenantDatabaseManagerTest are failing with that
+            'tenancy.bootstrappers.mail' => MailTenancyBootstrapper::class,
             'queue.connections.central' => [
                 'driver' => 'sync',
                 'central' => true,
             ],
             'tenancy.seeder_parameters' => [],
-            'tenancy.tenant_model' => Tenant::class, // Use test tenant w/ DBs & domains
+            'tenancy.models.tenant' => Tenant::class, // Use test tenant w/ DBs & domains
         ]);
 
         $app->singleton(RedisTenancyBootstrapper::class); // todo (Samuel) use proper approach eg config for singleton registration
+        $app->singleton(MailTenancyBootstrapper::class);
     }
 
     protected function getPackageProviders($app)

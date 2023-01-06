@@ -6,10 +6,29 @@ use Stancl\Tenancy\Middleware;
 use Stancl\Tenancy\Resolvers;
 
 return [
-    'tenant_model' => Stancl\Tenancy\Database\Models\Tenant::class,
-    'domain_model' => Stancl\Tenancy\Database\Models\Domain::class,
+    /**
+     * Configuration for the models used by Tenancy.
+     */
+    'models' => [
+        'tenant' => Stancl\Tenancy\Database\Models\Tenant::class,
+        'domain' => Stancl\Tenancy\Database\Models\Domain::class,
 
-    'id_generator' => Stancl\Tenancy\UUIDGenerator::class,
+        /**
+         * Name of the column used to relate models to tenants.
+         *
+         * This is used by the HasDomains trait, and models that use the BelongsToTenant trait (used in single-database tenancy).
+         */
+        'tenant_key_column' => 'tenant_id',
+
+        /**
+         * Used for generating tenant IDs.
+         *
+         *   - Feel free to override this with a custom class that implements the UniqueIdentifierGenerator interface.
+         *   - To use autoincrement IDs, set this to null and update the `tenants` table migration to use an autoincrement column.
+         *     SECURITY NOTE: Keep in mind that autoincrement IDs come with *potential* enumeration issues (such as tenant storage URLs).
+         */
+        'id_generator' => Stancl\Tenancy\UUIDGenerator::class,
+    ],
 
     /**
      * The list of domains hosting your central app.
@@ -83,7 +102,27 @@ return [
         Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\BatchTenancyBootstrapper::class,
+        // Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper::class, // Queueing mail requires using QueueTenancyBootstrapper with $forceRefresh set to true
         // Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
+    ],
+
+
+    /**
+     * Pending tenants config.
+     * This is useful if you're looking for a way to always have a tenant ready to be used.
+     */
+    'pending' => [
+        /**
+         * If disabled, pending tenants will be excluded from all tenant queries.
+         * You can still use ::withPending(), ::withoutPending() and ::onlyPending() to include or exclude the pending tenants regardless of this setting.
+         * Note: when disabled, this will also ignore pending tenants when running the tenant commands (migration, seed, etc.)
+         */
+        'include_in_queries' => true,
+        /**
+         * Defines how many pending tenants you want to have ready in the pending tenant pool.
+         * This depends on the volume of tenants you're creating.
+         */
+        'count' => env('TENANCY_PENDING_COUNT', 5),
     ],
 
     /**
@@ -97,6 +136,11 @@ return [
          * Note: don't name your template connection tenant. That name is reserved by package.
          */
         'template_tenant_connection' => null,
+
+        /**
+         * The name of the temporary connection used for creating and deleting tenant databases.
+         */
+        'tenant_host_connection_name' => 'tenant_host_connection',
 
         /**
          * Tenant database names are created like this:
@@ -258,6 +302,7 @@ return [
     'migration_parameters' => [
         '--force' => true, // This needs to be true to run migrations in production.
         '--path' => [database_path('migrations/tenant')],
+        '--schema-path' => database_path('schema/tenant-schema.dump'),
         '--realpath' => true,
     ],
 
@@ -265,15 +310,7 @@ return [
      * Parameters used by the tenants:seed command.
      */
     'seeder_parameters' => [
-        '--class' => 'DatabaseSeeder', // root seeder class
+        '--class' => 'Database\Seeders\DatabaseSeeder', // root seeder class
         // '--force' => true,
-    ],
-
-    /**
-     * Single-database tenancy config.
-     */
-    'single_db' => [
-        /** The name of the column used by models with the BelongsToTenant trait. */
-        'tenant_id_column' => 'tenant_id',
     ],
 ];
