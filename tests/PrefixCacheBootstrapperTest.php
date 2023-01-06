@@ -181,7 +181,7 @@ test('cache is prefixed correctly when using a repository injected in a singleto
 test('specific central cache store can be used inside a service', function () {
     config(['cache.default' => 'redis']);
     config(['cache.stores.redis2' => config('cache.stores.redis')]);
-    $cacheStore = 'redis2'; // Non-default, central cache store name that we'll use using cache()->store($cacheStore)
+    $cacheStore = 'redis2'; // Name of the non-default, central cache store that we'll use using cache()->store($cacheStore)
 
     // Service uses the 'redis2' store which is central/not prefixed (not present in PrefixCacheTenancyBootstrapper::$tenantCacheStores)
     $this->app->singleton(SpecificCacheStoreService::class, function() use ($cacheStore) {
