@@ -48,7 +48,7 @@ class Migrate extends MigrateCommand
 
         foreach ($this->option('tenants') as $tenant) {
             try {
-                tenancy()->find($tenant)->run(function($tenant) {
+                tenancy()->find($tenant)->run(function ($tenant) {
                     $this->line("Tenant: {$tenant->getTenantKey()}");
 
                     event(new MigratingDatabase($tenant));
