@@ -49,13 +49,16 @@ test('Tenancy overrides CacheManager', function() {
     expect(app(CacheManager::class)::class)->toBe(TenancyCacheManager::class);
 });
 
-test('cache prefix is different for each tenant', function () {
+test('correct cache prefix is used in all contexts', function () {
     $originalPrefix = config('cache.prefix');
     $prefixBase = config('tenancy.cache.prefix_base');
+    $expectPrefixToBe = function(string $prefix) {
+        expect($prefix . ':') // RedisStore suffixes prefix with ':'
+            ->toBe(app('cache')->getPrefix())
+            ->toBe(app('cache.store')->getPrefix());
+    };
 
-    expect($originalPrefix . ':') // RedisStore suffixes prefix with ':'
-        ->toBe(app('cache')->getPrefix())
-        ->toBe(app('cache.store')->getPrefix());
+    $expectPrefixToBe($originalPrefix);
 
     $tenant1 = Tenant::create();
     $tenant2 = Tenant::create();
@@ -65,9 +68,7 @@ test('cache prefix is different for each tenant', function () {
     tenancy()->initialize($tenant1);
     cache()->set('key', 'tenantone-value');
 
-    expect($tenantOnePrefix . ':')
-        ->toBe(app('cache')->getPrefix())
-        ->toBe(app('cache.store')->getPrefix());
+    $expectPrefixToBe($tenantOnePrefix);
 
     $tenantTwoPrefix = $originalPrefix . $prefixBase . $tenant2->getTenantKey();
 
@@ -75,9 +76,7 @@ test('cache prefix is different for each tenant', function () {
 
     cache()->set('key', 'tenanttwo-value');
 
-    expect($tenantTwoPrefix . ':')
-        ->toBe(app('cache')->getPrefix())
-        ->toBe(app('cache.store')->getPrefix());
+    $expectPrefixToBe($tenantTwoPrefix);
 
     // Assert tenants' data is accessible using the prefix from the central context tenancy()->end();
 
@@ -103,7 +102,7 @@ test('cache is persisted when reidentification is used', function () {
     expect(cache('foo'))->toBe('bar');
 });
 
-test('prefix separate cache well enough', function () {
+test('prefixing separates the cache', function () {
     $tenant1 = Tenant::create();
     tenancy()->initialize($tenant1);
 
@@ -238,7 +237,7 @@ test('stores specified in tenantCacheStores get prefixed', function() {
     expect(cache('key'))->toBe($centralValue);
 });
 
-test('stores that are not specified in tenantCacheStores do not get prefixed', function() {
+test('stores not specified in tenantCacheStores do not get prefixed', function() {
     config(['cache.stores.redis2' => config('cache.stores.redis')]);
     config(['cache.default' => 'redis2']);
     // Make 'redis' the only store in $tenantCacheStores so that the current store ('redis2') doesn't get prefixed
