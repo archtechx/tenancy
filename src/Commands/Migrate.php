@@ -46,24 +46,24 @@ class Migrate extends MigrateCommand
             return 1;
         }
 
-        try {
-            tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
-                $this->line("Tenant: {$tenant->getTenantKey()}");
+        foreach ($this->option('tenants') as $tenant) {
+            try {
+                tenancy()->find($tenant)->run(function($tenant) {
+                    $this->line("Tenant: {$tenant->getTenantKey()}");
 
-                event(new MigratingDatabase($tenant));
-                // Migrate
-                parent::handle();
+                    event(new MigratingDatabase($tenant));
+                    // Migrate
+                    parent::handle();
 
-                event(new DatabaseMigrated($tenant));
-            });
-
-            return 0;
-        } catch (TenantDatabaseDoesNotExistException|QueryException $th) {
-            if (! $this->option('skip-failing')) {
-                throw $th;
+                    event(new DatabaseMigrated($tenant));
+                });
+            } catch (TenantDatabaseDoesNotExistException|QueryException $th) {
+                if (! $this->option('skip-failing')) {
+                    throw $th;
+                }
             }
-
-            return 1;
         }
+
+        return 0;
     }
 }
