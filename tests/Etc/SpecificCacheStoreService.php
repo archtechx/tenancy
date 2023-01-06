@@ -7,13 +7,13 @@ namespace Stancl\Tenancy\Tests\Etc;
 use Illuminate\Cache\CacheManager;
 use Illuminate\Cache\Repository;
 
-class CacheManagerService
+class SpecificCacheStoreService
 {
     public Repository $cache;
 
-    public function __construct(CacheManager $cacheManager)
+    public function __construct(CacheManager $cacheManager, string $cacheStoreName)
     {
-        $this->cache = $cacheManager->driver('redis2');
+        $this->cache = $cacheManager->store($cacheStoreName);
     }
 
     public function handle(): void
