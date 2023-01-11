@@ -50,6 +50,8 @@ test('context is switched when tenancy is reinitialized', function () {
 });
 
 test('central helper runs callbacks in the central state', function () {
+    withTenantDatabases();
+
     tenancy()->initialize($tenant = Tenant::create());
 
     tenancy()->central(function () {
@@ -60,6 +62,8 @@ test('central helper runs callbacks in the central state', function () {
 });
 
 test('central helper returns the value from the callback', function () {
+    withTenantDatabases();
+
     tenancy()->initialize(Tenant::create());
 
     pest()->assertSame('foo', tenancy()->central(function () {
@@ -68,6 +72,8 @@ test('central helper returns the value from the callback', function () {
 });
 
 test('central helper reverts back to tenant context', function () {
+    withTenantDatabases();
+
     tenancy()->initialize($tenant = Tenant::create());
 
     tenancy()->central(function () {

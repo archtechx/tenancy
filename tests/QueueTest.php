@@ -3,23 +3,23 @@
 declare(strict_types=1);
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
 use Spatie\Valuestore\Valuestore;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Tests\Etc\User;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Schema;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Jobs\CreateDatabase;
+use Illuminate\Queue\InteractsWithQueue;
 use Stancl\Tenancy\Events\TenantCreated;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
@@ -48,6 +48,8 @@ afterEach(function () {
 });
 
 test('tenant id is passed to tenant queues', function () {
+    withTenantDatabases();
+
     config(['queue.default' => 'sync']);
 
     $tenant = Tenant::create();
@@ -64,6 +66,8 @@ test('tenant id is passed to tenant queues', function () {
 });
 
 test('tenant id is not passed to central queues', function () {
+    withTenantDatabases();
+
     $tenant = Tenant::create();
 
     tenancy()->initialize($tenant);
@@ -215,13 +219,6 @@ function withUsers()
         $table->rememberToken();
         $table->timestamps();
     });
-}
-
-function withTenantDatabases()
-{
-    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
-        return $event->tenant;
-    })->toListener());
 }
 
 class TestJob implements ShouldQueue
