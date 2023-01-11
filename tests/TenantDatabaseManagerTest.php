@@ -390,7 +390,7 @@ test('path used by sqlite manager can be customized', function () {
     expect(file_exists($customPath . '/' . $name))->toBeTrue();
 });
 
-test('template tenant connection value can be connection name or connection array', function () {
+test('you can define the connection template array in template_tenant_connection or use a name of an existing connection template', function () {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
     })->toListener());
