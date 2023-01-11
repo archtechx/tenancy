@@ -160,6 +160,8 @@ test('tenancy is initialized when retrying jobs', function (bool $shouldEndTenan
 })->with([true, false]);
 
 test('the tenant used by the job doesnt change when the current tenant changes', function () {
+    withTenantDatabases();
+
     $tenant1 = Tenant::create([
         'id' => 'acme',
     ]);
