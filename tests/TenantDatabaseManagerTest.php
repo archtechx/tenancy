@@ -440,7 +440,7 @@ test('you can define the connection template array in template_tenant_connection
     expect($manager->database()->getConfig('host'))->toBe('mysql2');
 });
 
-test('template tenant connection value can be partial database config', function () {
+test('you can define the partial connection template array in template_tenant_connection and it will be completed by merging into the central connection', function () {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
     })->toListener());
