@@ -28,6 +28,8 @@ class Tenant extends Model implements Contracts\Tenant
         Concerns\TenantRun,
         Concerns\InvalidatesResolverCache;
 
+    protected static $modelsShouldPreventAccessingMissingAttributes = false;
+
     protected $table = 'tenants';
     protected $primaryKey = 'id';
     protected $guarded = [];
