@@ -118,7 +118,20 @@ class TenancyServiceProvider extends ServiceProvider
 
     public function register()
     {
-        //
+        /**
+         * Example of CLI tenant URL root override:
+         *
+         * UrlTenancyBootstrapper::$rootUrlOverride = function (Tenant $tenant) {
+         *    $baseUrl = URL::to('/');
+         *    $scheme = str($baseUrl)->before('://') . '://';
+         *
+         *    return str($baseUrl)
+         *        ->after($scheme)
+         *        ->prepend($tenant->getTenantKey() . '.')
+         *        ->prepend($scheme)
+         *        ->toString();
+         *};
+         */
     }
 
     public function boot()
