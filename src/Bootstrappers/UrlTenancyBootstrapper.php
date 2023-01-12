@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Closure;
-use Stancl\Tenancy\Contracts\Tenant;
 use Illuminate\Contracts\Routing\UrlGenerator;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
+use Stancl\Tenancy\Contracts\Tenant;
 
 class UrlTenancyBootstrapper implements TenancyBootstrapper
 {
