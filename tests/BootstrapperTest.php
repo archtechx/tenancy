@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Str;
-use Illuminate\Mail\MailManager;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Stancl\JobPipeline\JobPipeline;
 use Illuminate\Support\Facades\File;
 use Stancl\Tenancy\Tests\Etc\Tenant;
@@ -24,6 +24,7 @@ use Stancl\Tenancy\Jobs\RemoveStorageSymlinks;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\DeleteTenantStorage;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Bootstrappers\UrlTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
@@ -380,3 +381,30 @@ function getDiskPrefix(string $disk): string
 
     return $prefix;
 }
+
+test('url bootstrapper overrides the root url when tenancy gets initialized and reverts the url to the central one after tenancy ends', function() {
+    config(['tenancy.bootstrappers.url' => UrlTenancyBootstrapper::class]);
+
+    UrlTenancyBootstrapper::$rootUrlOverride = function (Tenant $tenant) {
+        $baseUrl = URL::to('/');
+        $scheme = str($baseUrl)->before('://') . '://';
+
+        return str($baseUrl)
+            ->after($scheme)
+            ->prepend($tenant->getTenantKey() . '.')
+            ->prepend($scheme)
+            ->toString();
+     };
+
+     $tenant = Tenant::create();
+
+     expect(URL::to('/'))->not()->toContain($tenant->getTenantKey());
+
+     tenancy()->initialize($tenant);
+
+     expect(URL::to('/'))->toContain($tenant->getTenantKey());
+
+     tenancy()->end();
+
+     expect(URL::to('/'))->not()->toContain($tenant->getTenantKey());
+});
