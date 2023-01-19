@@ -36,9 +36,7 @@ abstract class CachedTenantResolver implements TenantResolver
 
         $key = $this->getCacheKey(...$args);
 
-        if ($this->cache->has($key)) {
-            $tenant = $this->cache->get($key);
-
+        if ($tenant = $this->cache->get($key)) {
             $this->resolved($tenant, ...$args);
 
             return $tenant;
