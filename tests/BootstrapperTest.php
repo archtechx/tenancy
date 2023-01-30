@@ -406,6 +406,8 @@ test('BroadcastTenancyBootstrapper makes the app use broadcasters with the corre
     $registerTestingBroadcaster();
 
     expect(invade(app(BroadcastManager::class)->driver())->message)->toBe($defaultMessage);
+});
+
 test('MailTenancyBootstrapper maps tenant mail credentials to config as specified in the $credentialsMap property and makes the mailer use tenant credentials', function() {
     MailTenancyBootstrapper::$credentialsMap = [
         'mail.mailers.smtp.username' => 'smtp_username',
