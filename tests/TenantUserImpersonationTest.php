@@ -83,6 +83,19 @@ test('tenant user can be impersonated on a tenant domain', function () {
     pest()->get('http://foo.localhost/dashboard')
         ->assertSuccessful()
         ->assertSee('You are logged in as Joe');
+
+    expect(UserImpersonation::isImpersonating())->toBeTrue();
+    expect(session('tenancy_impersonating'))->toBeTrue();
+
+    // Leave impersonation
+    UserImpersonation::leave();
+
+    expect(UserImpersonation::isImpersonating())->toBeFalse();
+    expect(session('tenancy_impersonating'))->toBeNull();
+
+    // Assert can't access the tenant dashboard
+    pest()->get('http://foo.localhost/dashboard')
+        ->assertRedirect('http://foo.localhost/login');
 });
 
 test('tenant user can be impersonated on a tenant path', function () {
@@ -116,6 +129,19 @@ test('tenant user can be impersonated on a tenant path', function () {
     pest()->get('/acme/dashboard')
         ->assertSuccessful()
         ->assertSee('You are logged in as Joe');
+
+    expect(UserImpersonation::isImpersonating())->toBeTrue();
+    expect(session('tenancy_impersonating'))->toBeTrue();
+
+    // Leave impersonation
+    UserImpersonation::leave();
+
+    expect(UserImpersonation::isImpersonating())->toBeFalse();
+    expect(session('tenancy_impersonating'))->toBeNull();
+
+    // Assert can't access the tenant dashboard
+    pest()->get('/acme/dashboard')
+        ->assertRedirect('/login');
 });
 
 test('tokens have a limited ttl', function () {

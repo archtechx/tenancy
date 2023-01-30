@@ -1,7 +1,7 @@
 # add amd64 platform to support Mac M1
 FROM --platform=linux/amd64 shivammathur/node:latest-amd64
 
-ARG PHP_VERSION=8.1
+ARG PHP_VERSION=8.2
 
 WORKDIR /var/www/html
 

@@ -28,7 +28,7 @@ parameters:
             paths:
                 - src/Features/TelescopeTags.php
         -
-            message: '#Parameter \#1 \$key of method Illuminate\\Contracts\\Cache\\Repository::put\(\) expects string#'
+            message: '#Parameter \#1 \$key of method Illuminate\\Cache\\Repository::put\(\) expects#'
             paths:
                 - src/helpers.php
         -
@@ -48,6 +48,8 @@ parameters:
             paths:
                 - src/Database/DatabaseConfig.php
         - '#Method Stancl\\Tenancy\\Tenancy::cachedResolvers\(\) should return array#'
+        - '#Access to an undefined property Stancl\\Tenancy\\Middleware\\IdentificationMiddleware\:\:\$tenancy#'
+        - '#Access to an undefined property Stancl\\Tenancy\\Middleware\\IdentificationMiddleware\:\:\$resolver#'
 
     checkMissingIterableValueType: false
     treatPhpDocTypesAsCertain: false

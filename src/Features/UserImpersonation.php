@@ -48,6 +48,23 @@ class UserImpersonation implements Feature
 
         $token->delete();
 
+        session()->put('tenancy_impersonating', true);
+
         return redirect($token->redirect_url);
+    }
+
+    public static function isImpersonating(): bool
+    {
+        return session()->has('tenancy_impersonating');
+    }
+
+    /**
+     * Logout from the current domain and forget impersonation session.
+     */
+    public static function leave(): void // todo possibly rename
+    {
+        auth()->logout();
+
+        session()->forget('tenancy_impersonating');
     }
 }
