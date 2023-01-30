@@ -12,10 +12,8 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Facades\GlobalCache;
 use Stancl\Tenancy\TenancyServiceProvider;
-use Stancl\Tenancy\Bootstrappers\BatchTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastTenancyBootstrapper;
-use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
