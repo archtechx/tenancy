@@ -24,7 +24,7 @@
         "stancl/virtualcolumn": "^1.3"
     },
     "require-dev": {
-        "laravel/framework": "^9.0",
+        "laravel/framework": "dev-cache-methods as 9.21",
         "orchestra/testbench": "^7.0",
         "league/flysystem-aws-s3-v3": "^3.0",
         "doctrine/dbal": "^2.10",
@@ -33,6 +33,12 @@
         "nunomaduro/larastan": "^1.0",
         "spatie/invade": "^1.1"
     },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "http://github.com/lukinovec/framework"
+        }
+    ],
     "autoload": {
         "psr-4": {
             "Stancl\\Tenancy\\": "src/"

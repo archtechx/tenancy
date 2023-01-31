@@ -42,16 +42,4 @@ class CacheManager extends BaseCacheManager
 
         return $this->store()->tags($tags)->$method(...$parameters);
     }
-
-    public function refreshStore(string|null $repository = null): void
-    {
-        // Could be public setStore(string $store) in Illuminate\Cache\Repository
-        Repository::macro('setStore', function ($store) {
-            $this->store = $store;
-        });
-
-        $newStore = $this->resolve($repository ?? $this->getDefaultDriver())->getStore();
-
-        $this->driver($repository)->setStore($newStore);
-    }
 }

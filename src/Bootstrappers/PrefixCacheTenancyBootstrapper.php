@@ -42,7 +42,9 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
     {
         $this->config->set('cache.prefix', $prefix);
 
-        $this->cacheManager->refreshStore();
+        $newStore = $this->cacheManager->resolve($this->storeName ?? $this->cacheManager->getDefaultDriver())->getStore();
+
+        $this->cacheManager->driver($this->storeName)->setStore($newStore);
 
         // It is needed when a call to the facade has been made before bootstrapping tenancy
         // The facade has its own cache, separate from the container
