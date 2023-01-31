@@ -6,13 +6,10 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Cache\CacheManager;
 use Illuminate\Database\Console\Migrations\FreshCommand;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Domain;
 use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\Enums\LogMode;
-use Stancl\Tenancy\Events\Contracts\TenancyEvent;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 
 class TenancyServiceProvider extends ServiceProvider
