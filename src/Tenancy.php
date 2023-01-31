@@ -8,21 +8,18 @@ use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Traits\Macroable;
-use Stancl\Tenancy\Concerns\Debuggable;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByIdException;
 
 class Tenancy
 {
-    use Macroable, Debuggable;
+    use Macroable;
 
     /**
      * The current tenant.
-     *
-     * @var (Tenant&Model)|null
      */
-    public ?Tenant $tenant = null;
+    public (Tenant&Model)|null $tenant = null;
 
     // todo docblock
     public ?Closure $getBootstrappersUsing = null;
@@ -97,9 +94,9 @@ class Tenancy
 
     public static function model(): Tenant&Model
     {
+        /** @var class-string<Tenant&Model> $class */
         $class = config('tenancy.models.tenant');
 
-        /** @var Tenant&Model $model */
         $model = new $class;
 
         return $model;
@@ -113,13 +110,9 @@ class Tenancy
 
     /**
      * Try to find a tenant using an ID.
-     *
-     * @return (Tenant&Model)|null
      */
-    public static function find(int|string $id): Tenant|null
+    public static function find(int|string $id): (Tenant&Model)|null
     {
-        // todo update all syntax like this once we're fully on PHP 8.2
-        /** @var (Tenant&Model)|null */
         $tenant = static::model()->where(static::model()->getTenantKeyName(), $id)->first();
 
         return $tenant;

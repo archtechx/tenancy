@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Database\Concerns;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\TenantScope;
 use Stancl\Tenancy\Tenancy;
@@ -13,7 +14,7 @@ use Stancl\Tenancy\Tenancy;
  */
 trait BelongsToTenant
 {
-    public function tenant()
+    public function tenant(): BelongsTo
     {
         return $this->belongsTo(config('tenancy.models.tenant'), Tenancy::tenantKeyColumn());
     }
