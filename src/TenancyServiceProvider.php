@@ -121,18 +121,6 @@ class TenancyServiceProvider extends ServiceProvider
             $this->loadRoutesFrom(__DIR__ . '/../assets/routes.php');
         }
 
-        Event::listen('Stancl\\Tenancy\\Events\\*', function (string $name, array $data) {
-            $event = $data[0];
-
-            if ($event instanceof TenancyEvent) {
-                match (tenancy()->logMode()) {
-                    LogMode::SILENT => tenancy()->logEvent($event),
-                    LogMode::INSTANT => dump($event), // todo1 perhaps still log
-                    default => null,
-                };
-            }
-        });
-
         $this->app->singleton('globalUrl', function ($app) {
             if ($app->bound(FilesystemTenancyBootstrapper::class)) {
                 $instance = clone $app['url'];
