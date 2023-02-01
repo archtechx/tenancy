@@ -18,11 +18,13 @@ use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Events\TenantDeleted;
 use Stancl\Tenancy\Tests\Etc\TestSeeder;
 use Stancl\Tenancy\Events\DeletingTenant;
+use Stancl\Tenancy\Events\DatabaseMigrated;
 use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
 
 beforeEach(function () {
     if (file_exists($schemaPath = 'tests/Etc/tenant-schema-test.dump')) {
@@ -107,6 +109,46 @@ test('migrate command loads schema state', function () {
     // Check for both tables to see if missing migrations also get executed
     expect(Schema::hasTable('schema_users'))->toBeTrue();
     expect(Schema::hasTable('users'))->toBeTrue();
+});
+
+test('migrate command only throws exceptions if skip-failing is not passed', function() {
+    Tenant::create();
+
+    $tenantWithoutDatabase = Tenant::create();
+    $databaseToDrop = $tenantWithoutDatabase->run(fn() => DB::connection()->getDatabaseName());
+
+    DB::statement("DROP DATABASE `$databaseToDrop`");
+
+    Tenant::create();
+
+    expect(fn() => pest()->artisan('tenants:migrate --schema-path="tests/Etc/tenant-schema.dump"'))->toThrow(TenantDatabaseDoesNotExistException::class);
+    expect(fn() => pest()->artisan('tenants:migrate --schema-path="tests/Etc/tenant-schema.dump" --skip-failing'))->not()->toThrow(TenantDatabaseDoesNotExistException::class);
+});
+
+test('migrate command does not stop after the first failure if skip-failing is passed', function() {
+    $tenants = collect([
+        Tenant::create(),
+        $tenantWithoutDatabase = Tenant::create(),
+        Tenant::create(),
+    ]);
+
+    $migratedTenants = 0;
+
+    Event::listen(DatabaseMigrated::class, function() use (&$migratedTenants) {
+        $migratedTenants++;
+    });
+
+    $databaseToDrop = $tenantWithoutDatabase->run(fn() => DB::connection()->getDatabaseName());
+
+    DB::statement("DROP DATABASE `$databaseToDrop`");
+
+    Artisan::call('tenants:migrate', [
+        '--schema-path' => '"tests/Etc/tenant-schema.dump"',
+        '--skip-failing' => true,
+        '--tenants' => $tenants->pluck('id')->toArray(),
+    ]);
+
+    expect($migratedTenants)->toBe(2);
 });
 
 test('dump command works', function () {
