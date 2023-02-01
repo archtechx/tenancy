@@ -14,9 +14,9 @@ class UrlTenancyBootstrapper implements TenancyBootstrapper
     public static Closure|null $rootUrlOverride = null;
     protected string|null $originalRootUrl = null;
 
-    public function __construct(protected UrlGenerator $urlGenerator)
-    {
-    }
+    public function __construct(
+        protected UrlGenerator $urlGenerator,
+    ) {}
 
     public function bootstrap(Tenant $tenant): void
     {
