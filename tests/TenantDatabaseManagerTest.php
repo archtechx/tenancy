@@ -390,7 +390,7 @@ test('path used by sqlite manager can be customized', function () {
     expect(file_exists($customPath . '/' . $name))->toBeTrue();
 });
 
-test('you can define the connection template array in template_tenant_connection or use a name of an existing connection template', function () {
+test('the tenant connection template can be specified either by name or as a connection array', function () {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
     })->toListener());
@@ -440,7 +440,7 @@ test('you can define the connection template array in template_tenant_connection
     expect($manager->database()->getConfig('host'))->toBe('mysql2');
 });
 
-test('you can define the partial connection template array in template_tenant_connection and it will be completed by merging into the central connection', function () {
+test('partial tenant connection templates get merged into the central connection template', function () {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
     })->toListener());
