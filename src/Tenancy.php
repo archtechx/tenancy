@@ -19,7 +19,7 @@ class Tenancy
     /**
      * The current tenant.
      */
-    public (Tenant&Model)|null $tenant = null;
+    public Tenant|null $tenant = null;
 
     // todo docblock
     public ?Closure $getBootstrappersUsing = null;
@@ -111,7 +111,7 @@ class Tenancy
     /**
      * Try to find a tenant using an ID.
      */
-    public static function find(int|string $id): (Tenant&Model)|null
+    public static function find(int|string $id): Tenant|null
     {
         $tenant = static::model()->where(static::model()->getTenantKeyName(), $id)->first();
 
