@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Illuminate\Cache\CacheManager;
-use Illuminate\Contracts\Config\Repository;
+use Illuminate\Cache\Repository;
+use Illuminate\Contracts\Config\Repository as RepositoryContract;
 use Illuminate\Support\Facades\Cache;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
@@ -17,7 +18,7 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
     public static array $tenantCacheStores = [];
 
     public function __construct(
-        protected Repository $config,
+        protected RepositoryContract $config,
         protected CacheManager $cacheManager,
     ) {
     }
@@ -44,7 +45,10 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
 
         $newStore = $this->cacheManager->resolve($this->storeName ?? $this->cacheManager->getDefaultDriver())->getStore();
 
-        $this->cacheManager->driver($this->storeName)->setStore($newStore);
+        /** @var Repository $repository */
+        $repository = $this->cacheManager->driver($this->storeName);
+
+        $repository->setStore($newStore);
 
         // It is needed when a call to the facade has been made before bootstrapping tenancy
         // The facade has its own cache, separate from the container
