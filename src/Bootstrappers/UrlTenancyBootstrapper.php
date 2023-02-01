@@ -16,7 +16,8 @@ class UrlTenancyBootstrapper implements TenancyBootstrapper
 
     public function __construct(
         protected UrlGenerator $urlGenerator,
-    ) {}
+    ) {
+    }
 
     public function bootstrap(Tenant $tenant): void
     {
