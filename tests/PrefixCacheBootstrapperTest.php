@@ -78,8 +78,11 @@ test('correct cache prefix is used in all contexts', function () {
 
     $expectPrefixToBe($tenantTwoPrefix);
 
-    // Assert tenants' data is accessible using the prefix from the central context tenancy()->end();
+    // Prefix gets reverted to default after ending tenancy
+    tenancy()->end();
+    $expectPrefixToBe($originalPrefix);
 
+    // Assert tenant's data is accessible using the prefix from the central context
     config(['cache.prefix' => null]); // stop prefixing cache keys in central so we can provide prefix manually
     app('cache')->forgetDriver(config('cache.default'));
 
