@@ -113,6 +113,7 @@ class Tenancy
      */
     public static function find(int|string $id): Tenant|null
     {
+        /** @var (Tenant&Model)|null */
         $tenant = static::model()->where(static::model()->getTenantKeyName(), $id)->first();
 
         return $tenant;
