@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Bootstrappers;
 
-use Illuminate\Cache\CacheManager;
 use Illuminate\Cache\Repository;
-use Illuminate\Contracts\Config\Repository as RepositoryContract;
+use Illuminate\Cache\CacheManager;
+use Stancl\Tenancy\Contracts\Tenant;
 use Illuminate\Support\Facades\Cache;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
-use Stancl\Tenancy\Contracts\Tenant;
+use Illuminate\Contracts\Config\Repository as ConfigRepository;
 
 class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -18,7 +18,7 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
     public static array $tenantCacheStores = [];
 
     public function __construct(
-        protected RepositoryContract $config,
+        protected ConfigRepository $config,
         protected CacheManager $cacheManager,
     ) {
     }
