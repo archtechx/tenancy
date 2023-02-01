@@ -31,14 +31,16 @@ class TenancyServiceProvider extends ServiceProvider
                     Jobs\CreateDatabase::class,
                     Jobs\MigrateDatabase::class,
                     // Jobs\SeedDatabase::class,
-                    Jobs\CreateStorageSymlinks::class,
+
+                    // Jobs\CreateStorageSymlinks::class,
 
                     // Your own jobs to prepare the tenant.
                     // Provision API keys, create S3 buckets, anything you want!
-
                 ])->send(function (Events\TenantCreated $event) {
                     return $event->tenant;
                 })->shouldBeQueued(false), // `false` by default, but you probably want to make this `true` for production.
+
+                // Listeners\CreateTenantStorage::class,
             ],
             Events\SavingTenant::class => [],
             Events\TenantSaved::class => [],
@@ -56,7 +58,7 @@ class TenancyServiceProvider extends ServiceProvider
             Events\TenantDeleted::class => [
                 JobPipeline::make([
                     Jobs\DeleteDatabase::class,
-                    Jobs\RemoveStorageSymlinks::class,
+                    // Jobs\RemoveStorageSymlinks::class,
                 ])->send(function (Events\TenantDeleted $event) {
                     return $event->tenant;
                 })->shouldBeQueued(false), // `false` by default, but you probably want to make this `true` for production.
@@ -176,7 +178,7 @@ class TenancyServiceProvider extends ServiceProvider
     protected function makeTenancyMiddlewareHighestPriority()
     {
         // PreventAccessFromCentralDomains has even higher priority than the identification middleware
-        $tenancyMiddleware = array_merge([Middleware\PreventAccessFromCentralDomains::class], config('tenancy.identification.middleware'));
+        $tenancyMiddleware = array_merge([Middleware\PreventAccessFromUnwantedDomains::class], config('tenancy.identification.middleware'));
 
         foreach (array_reverse($tenancyMiddleware) as $middleware) {
             $this->app[\Illuminate\Contracts\Http\Kernel::class]->prependToMiddlewarePriority($middleware);

@@ -22,6 +22,11 @@ class InitializeTenancyByDomain extends IdentificationMiddleware
     /** @return \Illuminate\Http\Response|mixed */
     public function handle(Request $request, Closure $next): mixed
     {
+        if (in_array($request->getHost(), config('tenancy.central_domains', []), true)) {
+            // Always bypass tenancy initialization when host is in central domains
+            return $next($request);
+        }
+
         return $this->initializeTenancy(
             $request,
             $next,
