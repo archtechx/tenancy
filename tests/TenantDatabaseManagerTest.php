@@ -436,7 +436,7 @@ test('the tenant connection template can be specified either by name or as a con
 
     /** @var MySQLDatabaseManager $manager */
     $manager = $tenant->database()->manager();
-    expect($manager->databaseExists($name))->toBeTrue();
+    expect($manager->databaseExists($name))->toBeTrue(); // tenant connection works
     expect($manager->database()->getConfig('host'))->toBe('mysql2');
 });
 
@@ -460,7 +460,7 @@ test('partial tenant connection templates get merged into the central connection
 
     /** @var MySQLDatabaseManager $manager */
     $manager = $tenant->database()->manager();
-    expect($manager->databaseExists($name))->toBeTrue();
+    expect($manager->databaseExists($name))->toBeTrue(); // tenant connection works
     expect($manager->database()->getConfig('host'))->toBe('mysql2');
     expect($manager->database()->getConfig('url'))->toBeNull();
 });
