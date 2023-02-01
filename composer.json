@@ -24,7 +24,7 @@
         "stancl/virtualcolumn": "^1.3"
     },
     "require-dev": {
-        "laravel/framework": "dev-cache-methods as 9.21",
+        "laravel/framework": "dev-cache-methods as 9.47",
         "orchestra/testbench": "^7.0",
         "league/flysystem-aws-s3-v3": "^3.0",
         "doctrine/dbal": "^2.10",
