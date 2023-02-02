@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        laravel: ['^9.0']
+        laravel: ['dev-cache-methods as 9.47']
 
     steps:
       - name: Checkout
