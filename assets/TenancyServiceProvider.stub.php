@@ -8,13 +8,10 @@ use Stancl\Tenancy\Jobs;
 use Stancl\Tenancy\Events;
 use Stancl\Tenancy\Listeners;
 use Stancl\Tenancy\Middleware;
-use Illuminate\Support\Facades\URL;
 use Stancl\JobPipeline\JobPipeline;
-use Stancl\Tenancy\Contracts\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
-use Stancl\Tenancy\Bootstrappers\UrlTenancyBootstrapper;
 
 class TenancyServiceProvider extends ServiceProvider
 {
@@ -127,14 +124,11 @@ class TenancyServiceProvider extends ServiceProvider
          * Example of CLI tenant URL root override:
          *
          * UrlTenancyBootstrapper::$rootUrlOverride = function (Tenant $tenant) {
-         *    $baseUrl = URL::to('/');
-         *    $scheme = str($baseUrl)->before('://') . '://';
+         *    $baseUrl = url('/');
+         *    $scheme = str($baseUrl)->before('://');
+         *    $hostname = str($baseUrl)->after($scheme . '://');
          *
-         *    return str($baseUrl)
-         *        ->after($scheme)
-         *        ->prepend($tenant->getTenantKey() . '.')
-         *        ->prepend($scheme)
-         *        ->toString();
+         *    return $scheme . '://' . $tenant->getTenantKey() . '.' . $hostname;
          *};
          */
 
