@@ -399,9 +399,11 @@ test('url bootstrapper overrides the root url when tenancy gets initialized and 
     });
 
     $baseUrl = url(route($routeName));
-    $scheme = str($baseUrl)->before('://');
-    $hostname = str($baseUrl)->after($scheme . '://');
-    $rootUrlOverride = function (Tenant $tenant) use ($scheme, $hostname) {
+
+    $rootUrlOverride = function (Tenant $tenant) use ($baseUrl) {
+        $scheme = str($baseUrl)->before('://');
+        $hostname = str($baseUrl)->after($scheme . '://');
+
         return $scheme . '://' . $tenant->getTenantKey() . '.' . $hostname;
     };
 
