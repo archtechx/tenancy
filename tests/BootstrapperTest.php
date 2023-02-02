@@ -387,18 +387,15 @@ function getDiskPrefix(string $disk): string
 test('url bootstrapper overrides the root url when tenancy gets initialized and reverts the url to the central one after tenancy ends', function() {
     config(['tenancy.bootstrappers.url' => UrlTenancyBootstrapper::class]);
 
-    $routeName = 'home';
-    $routeUri = '/';
-
     Route::group([
         'middleware' => InitializeTenancyBySubdomain::class,
-    ], function () use ($routeUri, $routeName) {
-        Route::get($routeUri, function () {
+    ], function () {
+        Route::get('/', function () {
             return true;
-        })->name($routeName);
+        })->name('home');
     });
 
-    $baseUrl = url(route($routeName));
+    $baseUrl = url(route('home'));
 
     $rootUrlOverride = function (Tenant $tenant) use ($baseUrl) {
         $scheme = str($baseUrl)->before('://');
@@ -414,16 +411,16 @@ test('url bootstrapper overrides the root url when tenancy gets initialized and 
 
     expect($tenantUrl)->not()->toBe($baseUrl);
 
-    expect(url(route($routeName)))->toBe($baseUrl);
-    expect(URL::to($routeUri))->toBe($baseUrl);
+    expect(url(route('home')))->toBe($baseUrl);
+    expect(URL::to('/'))->toBe($baseUrl);
 
     tenancy()->initialize($tenant);
 
-    expect(url(route($routeName)))->toBe($tenantUrl);
-    expect(URL::to($routeUri))->toBe($tenantUrl);
+    expect(url(route('home')))->toBe($tenantUrl);
+    expect(URL::to('/'))->toBe($tenantUrl);
 
     tenancy()->end();
 
-    expect(url(route($routeName)))->toBe($baseUrl);
-    expect(URL::to($routeUri))->toBe($baseUrl);
+    expect(url(route('home')))->toBe($baseUrl);
+    expect(URL::to('/'))->toBe($baseUrl);
 });
