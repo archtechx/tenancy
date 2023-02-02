@@ -151,10 +151,8 @@ test('resource syncing works using a single pivot table for multiple models when
     $tenantUser = $tenantUser->toArray();
     unset($centralUser['id'], $tenantUser['id']);
 
-    // reorder global_id in $centralUser to put it at the last position so we can match the exact array
-    $centralUser['global_id'] = array_shift($centralUser);
-
-    expect($tenantUser)->toBe($centralUser);
+    // array keys use a different order here
+    expect($tenantUser)->toEqualCanonicalizing($centralUser);
 
     $tenant2 = ResourceTenantUsingPolymorphic::create(['id' => 't2']);
     migrateCompaniesTableForTenants();
