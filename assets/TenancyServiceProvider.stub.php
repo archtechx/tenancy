@@ -131,7 +131,6 @@ class TenancyServiceProvider extends ServiceProvider
          *    return $scheme . '://' . $tenant->getTenantKey() . '.' . $hostname;
          *};
          */
-
     }
 
     public function register()
