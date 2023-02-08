@@ -10,6 +10,7 @@ use ReflectionProperty;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Stancl\JobPipeline\JobPipeline;
+use Stancl\Tenancy\Bootstrappers\AuthTenancyBootstrapper;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
@@ -201,11 +202,31 @@ class BootstrapperTest extends TestCase
         $this->assertEquals($expected_storage_path, $new_storage_path);
     }
 
-    protected function getDiskPrefix(string $disk): string
-    {
-        /** @var FilesystemAdapter $disk */
-        $disk = Storage::disk($disk);
-        $adapter = $disk->getAdapter();
+    /**
+     * @test
+     */
+	public function it_resets_the_auth_password_singleton_after_tenant_switch(): void {
+        config(['tenancy.bootstrappers' => [
+            AuthTenancyBootstrapper::class,
+        ]]);
+
+		$tenant1 = Tenant::create();
+		$tenant2 = Tenant::create();
+
+		tenancy()->initialize($tenant1);
+        $manager = app('auth.password');
+        tenancy()->end();
+        tenancy()->initialize($tenant2);
+        $manager2 = app('auth.password');
+
+        $this->assertFalse($manager === $manager2);
+	}
+
+	protected function getDiskPrefix(string $disk): string
+	{
+		/** @var FilesystemAdapter $disk */
+		$disk = Storage::disk($disk);
+		$adapter = $disk->getAdapter();
 
         if (! Str::startsWith(app()->version(), '9.')) {
             return $adapter->getPathPrefix();
