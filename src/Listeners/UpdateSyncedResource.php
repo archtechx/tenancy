@@ -60,7 +60,10 @@ class UpdateSyncedResource extends QueueableListener
             } else {
                 // If the resource doesn't exist at all in the central DB,we create
                 // the record with all attributes, not just the synced ones.
-                $centralModel = $event->model->getCentralModelName()::create($syncedAttributes);
+                $centralModel = $event->model->getCentralModelName()::create(
+                    config('tenancy.created_only_with_synced_attributes') ? $syncedAttributes
+                    : $event->model->getAttributes()
+                );
                 event(new SyncedResourceChangedInForeignDatabase($event->model, null));
             }
         });

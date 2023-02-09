@@ -196,4 +196,9 @@ return [
         '--class' => 'DatabaseSeeder', // root seeder class
         // '--force' => true,
     ],
+
+    /** 
+     * Allow the resource be created in the central DB just with the synced attributes.
+    */
+    'created_only_with_synced_attributes' => false,
 ];
