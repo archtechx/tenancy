@@ -332,7 +332,7 @@ test('local storage public urls are generated correctly', function() {
     expect(File::isDirectory($tenantStoragePath))->toBeFalse();
 });
 
-test('BroadcastTenancyBootstrapper binds TenancyBroadcastManager to BroadcastManager::class and reverts the binding when tenancy is ended', function() {
+test('BroadcastTenancyBootstrapper binds TenancyBroadcastManager to BroadcastManager and reverts the binding when tenancy is ended', function() {
     expect(app(BroadcastManager::class))->toBeInstanceOf(BroadcastManager::class);
 
     tenancy()->initialize(Tenant::create());
