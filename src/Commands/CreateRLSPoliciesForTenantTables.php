@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
@@ -19,7 +21,6 @@ class CreateRLSPoliciesForTenantTables extends Command
 
             $this->components->info("Created RLS policy for table '$table'");
         }
-
 
         return Command::SUCCESS;
     }
