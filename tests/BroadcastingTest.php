@@ -14,6 +14,7 @@ use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Illuminate\Contracts\Broadcasting\Broadcaster as BroadcasterContract;
 
 beforeEach(function() {
+    withTenantDatabases();
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
