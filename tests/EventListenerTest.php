@@ -94,7 +94,7 @@ class EventListenerTest extends TestCase
         });
 
         $tenant = Tenant::create();
-        dispatch_now(new CreateDatabase($tenant));
+        dispatch_sync(new CreateDatabase($tenant));
 
         $this->assertFalse($tenant->database()->manager()->databaseExists(
             $tenant->database()->getName()
