@@ -25,6 +25,8 @@ jobs:
         exclude:
           - laravel: "^10.0"
             php: "8.0"
+          - laravel: "^10.0"
+            php: "7.3"
           - laravel: "^9.0"
             php: "7.3"
 
