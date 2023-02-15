@@ -30,7 +30,7 @@ class TenancyServiceProvider extends ServiceProvider
                     // Jobs\SeedDatabase::class,
 
                     // Jobs\CreateStorageSymlinks::class,
-                    // Jobs\CreatePostgresRoleForTenant::class,
+                    // Jobs\CreatePostgresUserForTenant::class,
 
                     // Your own jobs to prepare the tenant.
                     // Provision API keys, create S3 buckets, anything you want!
@@ -56,7 +56,7 @@ class TenancyServiceProvider extends ServiceProvider
             Events\TenantDeleted::class => [
                 JobPipeline::make([
                     Jobs\DeleteDatabase::class,
-                    // Jobs\DeleteTenantsPostgresRole::class,
+                    // Jobs\DeleteTenantsPostgresUser::class,
                     // Jobs\RemoveStorageSymlinks::class,
                 ])->send(function (Events\TenantDeleted $event) {
                     return $event->tenant;

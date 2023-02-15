@@ -14,7 +14,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
-class CreatePostgresRoleForTenant implements ShouldQueue
+class DeleteTenantsPostgresUser implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -35,13 +35,14 @@ class CreatePostgresRoleForTenant implements ShouldQueue
      */
     public function handle()
     {
-        $name = $this->tenant->getTenantKey();
-        $password = $this->tenant->database()->getPassword() ?? 'password';
+        $tenantKey = $this->tenant->getTenantKey();
 
+        // Revoke all permissions of a Postgres user before dropping it
         try {
-            DB::statement("CREATE ROLE \"$name\" LOGIN PASSWORD '$password';");
+            DB::statement("DROP OWNED BY \"{$tenantKey}\";");
+            DB::statement("DROP USER \"{$tenantKey}\";");
         } catch (QueryException $exception) {
-            // Skip creating Postgres role if it already exists
+            // Skip dropping permissions if the user doesn't exist
         }
     }
 }
