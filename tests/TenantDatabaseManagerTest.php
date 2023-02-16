@@ -95,7 +95,7 @@ class TenantDatabaseManagerTest extends TestCase
         $this->assertTrue($postgresManager->databaseExists($database));
     }
 
-    public function database_manager_provider()
+    public static function database_manager_provider()
     {
         return [
             ['mysql', MySQLDatabaseManager::class],
