@@ -10,7 +10,7 @@
         }
     ],
     "require": {
-        "php": "^8.0",
+        "php": "^8.0|^8.1",
         "ext-json": "*",
         "illuminate/support": "^9.0|^10.0",
         "facade/ignition-contracts": "^1.0.2",
