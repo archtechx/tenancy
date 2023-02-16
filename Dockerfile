@@ -17,6 +17,9 @@ RUN apt-get update \
     && apt-get update \
     && ACCEPT_EULA=Y apt-get install -y unixodbc-dev=2.3.7 unixodbc=2.3.7 odbcinst1debian2=2.3.7 odbcinst=2.3.7 msodbcsql17
 
+# temporary fix (the below step wasn't working properly on GH)
+RUN rm -f /etc/alternatives/php && sudo update-alternatives --install /usr/bin/php php /usr/bin/php$PHP_VERSION 1
+
 # set PHP version
 RUN update-alternatives --set php /usr/bin/php$PHP_VERSION \
     && update-alternatives --set phar /usr/bin/phar$PHP_VERSION \
