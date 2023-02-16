@@ -10,19 +10,20 @@
         }
     ],
     "require": {
+        "php": "^8.0",
         "ext-json": "*",
-        "illuminate/support": "^6.0|^7.0|^8.0|^9.0",
-        "facade/ignition-contracts": "^1.0",
-        "ramsey/uuid": "^3.7|^4.0",
-        "stancl/jobpipeline": "^1.0",
-        "stancl/virtualcolumn": "^1.0"
+        "illuminate/support": "^9.0|^10.0",
+        "facade/ignition-contracts": "^1.0.2",
+        "ramsey/uuid": "^4.7.3",
+        "stancl/jobpipeline": "^1.6.2",
+        "stancl/virtualcolumn": "^1.3.1"
     },
     "require-dev": {
-        "laravel/framework": "^6.0|^7.0|^8.0|^9.0",
-        "orchestra/testbench": "^4.0|^5.0|^6.0|^7.0",
-        "league/flysystem-aws-s3-v3": "^1.0|^3.0",
-        "doctrine/dbal": "^2.10",
-        "spatie/valuestore": "^1.2.5"
+        "laravel/framework": "^9.0|^10.0",
+        "orchestra/testbench": "^7.0|^8.0",
+        "league/flysystem-aws-s3-v3": "^3.12.2",
+        "doctrine/dbal": "^3.6.0",
+        "spatie/valuestore": "^1.3.2"
     },
     "autoload": {
         "psr-4": {
@@ -49,5 +50,10 @@
         }
     },
     "minimum-stability": "dev",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
 }
