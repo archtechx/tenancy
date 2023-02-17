@@ -62,6 +62,7 @@ class TenancyServiceProvider extends ServiceProvider
         $this->app->singleton(Commands\Rollback::class, function ($app) {
             return new Commands\Rollback($app['migrator']);
         });
+
         $this->app->singleton(Commands\Seed::class, function ($app) {
             return new Commands\Seed($app['db']);
         });
