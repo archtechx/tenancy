@@ -16,9 +16,9 @@ jobs:
     strategy:
       matrix:
         include:
-        - laravel: 9
+        - laravel: "9.0"
           php: "8.0"
-        - laravel: 10
+        - laravel: "10.0"
           php: "8.1"
 
     steps:
