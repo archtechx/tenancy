@@ -46,11 +46,7 @@ class PostgreSQLSchemaManager implements TenantDatabaseManager
 
     public function makeConnectionConfig(array $baseConfig, string $databaseName): array
     {
-        if (version_compare(app()->version(), '9.0', '>=')) {
-            $baseConfig['search_path'] = $databaseName;
-        } else {
-            $baseConfig['schema'] = $databaseName;
-        }
+        $baseConfig['search_path'] = $databaseName;
 
         return $baseConfig;
     }

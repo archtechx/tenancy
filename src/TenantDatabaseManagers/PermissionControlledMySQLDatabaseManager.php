@@ -40,7 +40,8 @@ class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager impl
 
     protected function isVersion8(): bool
     {
-        $version = $this->database()->select($this->database()->raw('select version()'))[0]->{'version()'};
+        $versionSelect = $this->database()->raw('select version()')->getValue($this->database()->getQueryGrammar());
+        $version = $this->database()->select($versionSelect)[0]->{'version()'};
 
         return version_compare($version, '8.0.0') >= 0;
     }

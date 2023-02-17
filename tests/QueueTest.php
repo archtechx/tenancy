@@ -197,10 +197,6 @@ class QueueTest extends TestCase
      */
     public function tenancy_is_initialized_when_retrying_jobs(bool $shouldEndTenancy)
     {
-        if (! Str::startsWith(app()->version(), '8')) {
-            $this->markTestSkipped('queue:retry tenancy is only supported in Laravel 8');
-        }
-
         $this->withFailedJobs();
         $this->withTenantDatabases();
 

@@ -12,10 +12,6 @@ class ViteBundlerTest extends TestCase
     /** @test */
     public function the_vite_helper_uses_our_custom_class()
     {
-        if (version_compare(app()->version(), '9.0', '<')) {
-            $this->markTestSkipped('Vite is only used in Laravel 9+');
-        }
-
         $vite = app(\Illuminate\Foundation\Vite::class);
 
         $this->assertInstanceOf(\Illuminate\Foundation\Vite::class, $vite);
