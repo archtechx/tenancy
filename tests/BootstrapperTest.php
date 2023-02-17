@@ -396,6 +396,7 @@ test('url bootstrapper overrides the root url when tenancy gets initialized and 
     });
 
     $baseUrl = url(route('home'));
+    config(['app.url' => $baseUrl]);
 
     $rootUrlOverride = function (Tenant $tenant) use ($baseUrl) {
         $scheme = str($baseUrl)->before('://');
