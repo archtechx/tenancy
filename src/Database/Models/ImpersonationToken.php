@@ -34,8 +34,8 @@ class ImpersonationToken extends Model
 
     protected $table = 'tenant_user_impersonation_tokens';
 
-    protected $dates = [
-        'created_at',
+    protected $casts = [
+        'created_at' => 'datetime',
     ];
 
     public static function booted(): void
