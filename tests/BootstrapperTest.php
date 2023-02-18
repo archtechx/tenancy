@@ -476,6 +476,7 @@ test('url bootstrapper overrides the root url when tenancy gets initialized and 
     });
 
     $baseUrl = url(route('home'));
+    config(['app.url' => $baseUrl]);
 
     $rootUrlOverride = function (Tenant $tenant) use ($baseUrl) {
         $scheme = str($baseUrl)->before('://');
@@ -493,14 +494,17 @@ test('url bootstrapper overrides the root url when tenancy gets initialized and 
 
     expect(url(route('home')))->toBe($baseUrl);
     expect(URL::to('/'))->toBe($baseUrl);
+    expect(config('app.url'))->toBe($baseUrl);
 
     tenancy()->initialize($tenant);
 
     expect(url(route('home')))->toBe($tenantUrl);
     expect(URL::to('/'))->toBe($tenantUrl);
+    expect(config('app.url'))->toBe($tenantUrl);
 
     tenancy()->end();
 
     expect(url(route('home')))->toBe($baseUrl);
     expect(URL::to('/'))->toBe($baseUrl);
+    expect(config('app.url'))->toBe($baseUrl);
 });
