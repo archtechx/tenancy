@@ -12,9 +12,10 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Facades\GlobalCache;
 use Stancl\Tenancy\TenancyServiceProvider;
+use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\BroadcastTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\UrlTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
-use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
@@ -105,6 +106,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 '--force' => true,
             ],
             'tenancy.bootstrappers.redis' => RedisTenancyBootstrapper::class, // todo1 change this to []? two tests in TenantDatabaseManagerTest are failing with that
+            'tenancy.bootstrappers.broadcast' => BroadcastTenancyBootstrapper::class, // todo1 change this to []? two tests in TenantDatabaseManagerTest are failing with that
             'tenancy.bootstrappers.mail' => MailTenancyBootstrapper::class,
             'tenancy.bootstrappers.url' => UrlTenancyBootstrapper::class,
             'queue.connections.central' => [
@@ -116,6 +118,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         ]);
 
         $app->singleton(RedisTenancyBootstrapper::class); // todo (Samuel) use proper approach eg config for singleton registration
+        $app->singleton(BroadcastTenancyBootstrapper::class);
         $app->singleton(MailTenancyBootstrapper::class);
         $app->singleton(UrlTenancyBootstrapper::class);
     }
