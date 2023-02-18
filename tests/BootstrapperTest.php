@@ -3,14 +3,15 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Str;
-use Illuminate\Mail\MailManager;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Stancl\JobPipeline\JobPipeline;
 use Illuminate\Support\Facades\File;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Jobs\CreateDatabase;
@@ -27,9 +28,11 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Tests\Etc\TestingBroadcaster;
 use Stancl\Tenancy\Listeners\DeleteTenantStorage;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Bootstrappers\UrlTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
+use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
@@ -460,3 +463,44 @@ function getDiskPrefix(string $disk): string
 
     return $prefix;
 }
+
+test('url bootstrapper overrides the root url when tenancy gets initialized and reverts the url to the central one after tenancy ends', function() {
+    config(['tenancy.bootstrappers.url' => UrlTenancyBootstrapper::class]);
+
+    Route::group([
+        'middleware' => InitializeTenancyBySubdomain::class,
+    ], function () {
+        Route::get('/', function () {
+            return true;
+        })->name('home');
+    });
+
+    $baseUrl = url(route('home'));
+
+    $rootUrlOverride = function (Tenant $tenant) use ($baseUrl) {
+        $scheme = str($baseUrl)->before('://');
+        $hostname = str($baseUrl)->after($scheme . '://');
+
+        return $scheme . '://' . $tenant->getTenantKey() . '.' . $hostname;
+    };
+
+    UrlTenancyBootstrapper::$rootUrlOverride = $rootUrlOverride;
+
+    $tenant = Tenant::create();
+    $tenantUrl = $rootUrlOverride($tenant);
+
+    expect($tenantUrl)->not()->toBe($baseUrl);
+
+    expect(url(route('home')))->toBe($baseUrl);
+    expect(URL::to('/'))->toBe($baseUrl);
+
+    tenancy()->initialize($tenant);
+
+    expect(url(route('home')))->toBe($tenantUrl);
+    expect(URL::to('/'))->toBe($tenantUrl);
+
+    tenancy()->end();
+
+    expect(url(route('home')))->toBe($baseUrl);
+    expect(URL::to('/'))->toBe($baseUrl);
+});

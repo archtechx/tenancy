@@ -27,6 +27,8 @@ function assertMailerTransportUsesPassword(string|null $password) {
 };
 
 test('mailer transport uses the correct credentials', function() {
+    withTenantDatabases();
+
     config(['mail.default' => 'smtp', 'mail.mailers.smtp.password' => $defaultPassword = 'DEFAULT']);
     MailTenancyBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'smtp_password'];
 
@@ -52,6 +54,8 @@ test('mailer transport uses the correct credentials', function() {
 
 
 test('initializing and ending tenancy binds a fresh MailManager instance without cached mailers', function() {
+    withTenantDatabases();
+
     $mailers = fn() => invade(app(MailManager::class))->mailers;
 
     app(MailManager::class)->mailer('smtp');

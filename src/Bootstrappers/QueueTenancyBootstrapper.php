@@ -79,9 +79,9 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         $dispatcher->listen(JobFailed::class, $revertToPreviousState); // artisan('queue:work') which fails
     }
 
-    protected static function initializeTenancyForQueue(string|int $tenantId): void
+    protected static function initializeTenancyForQueue(string|int|null $tenantId): void
     {
-        if (! $tenantId) {
+        if ($tenantId === null) {
             // The job is not tenant-aware
             if (tenancy()->initialized) {
                 // Tenancy was initialized, so we revert back to the central context
