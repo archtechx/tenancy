@@ -16,9 +16,9 @@ jobs:
     strategy:
       matrix:
         include:
-        - laravel: "9.0"
+        - laravel: 9
           php: "8.0"
-        - laravel: "10.0"
+        - laravel: 10
           php: "8.1"
 
     steps:
@@ -27,7 +27,7 @@ jobs:
 
       - name: Install Composer dependencies
         run: |
-          composer require "laravel/framework:^${{ matrix.laravel }}" --no-interaction --no-update
+          composer require "laravel/framework:^${{ matrix.laravel }}.0" --no-interaction --no-update
           composer update --prefer-dist --no-interaction
       - name: Run tests
         run: ./vendor/bin/pest
