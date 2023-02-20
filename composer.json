@@ -33,7 +33,7 @@
         "spatie/valuestore": "^1.2.5",
         "pestphp/pest": "^1.21",
         "nunomaduro/larastan": "^2.4",
-        "spatie/invade": "^1.3.2"
+        "spatie/invade": "^1.1"
     },
     "autoload": {
         "psr-4": {
