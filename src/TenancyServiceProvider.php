@@ -17,6 +17,8 @@ use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 
 class TenancyServiceProvider extends ServiceProvider
 {
+    public static $bootstrapFeatures = true;
+
     /* Register services. */
     public function register(): void
     {
@@ -27,18 +29,8 @@ class TenancyServiceProvider extends ServiceProvider
         // Make sure Tenancy is stateful.
         $this->app->singleton(Tenancy::class);
 
-        $this->app->resolving(Tenancy::class, function (Tenancy $tenancy, $app) {
-            foreach ($this->app['config']['tenancy.features'] ?? [] as $feature) {
-                if (! $feature::alwaysBootstrap()) { // avoid bootstrapping already bootstrapped features
-                    $this->app[$feature]->bootstrap();
-                }
-            }
-        });
-
-        foreach ($this->app['config']['tenancy.features'] ?? [] as $feature) {
-            if ($feature::alwaysBootstrap()) {
-                $this->app[$feature]->bootstrap();
-            }
+        if (static::bootstrapFeatures()) {
+            $this->bootstrapFeatures();
         }
 
         // Make it possible to inject the current tenant by typehinting the Tenant contract.
@@ -147,6 +139,23 @@ class TenancyServiceProvider extends ServiceProvider
             }
 
             return $instance;
+        });
+    }
+
+    public static function bootstrapFeatures(): void
+    {
+        foreach (config('tenancy.features') ?? [] as $feature) {
+            if ($feature::alwaysBootstrap()) {
+                app($feature)->bootstrap();
+            }
+        }
+
+        app()->resolving(Tenancy::class, function (Tenancy $tenancy, $app) {
+            foreach (config('tenancy.features') ?? [] as $feature) {
+                if (! $feature::alwaysBootstrap()) { // Avoid bootstrapping already bootstrapped features
+                    $app[$feature]->bootstrap();
+                }
+            }
         });
     }
 }
