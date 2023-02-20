@@ -8,7 +8,6 @@ use Dotenv\Dotenv;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Redis;
 use PDO;
-use Stancl\Tenancy\Bootstrappers\BatchTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Facades\GlobalCache;
 use Stancl\Tenancy\Facades\Tenancy;
@@ -118,8 +117,6 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
     protected function getPackageProviders($app)
     {
-        config()->set('tenancy.features', [CrossDomainRedirect::class]); // todo (Samuel) use proper approach to enable feature in right place
-
         return [
             TenancyServiceProvider::class,
         ];
