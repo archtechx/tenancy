@@ -2,33 +2,28 @@
 
 declare(strict_types=1);
 
-use Stancl\Tenancy\Features\ViteBundler;
+use Illuminate\Foundation\Vite;
 use Stancl\Tenancy\Tests\Etc\Tenant;
-use Stancl\Tenancy\Tests\TestCase;
 use Stancl\Tenancy\Vite as StanclVite;
+use Stancl\Tenancy\Features\ViteBundler;
 
-class ViteBundlerTest extends TestCase
-{
-    /** @test */
-    public function the_vite_helper_uses_our_custom_class()
-    {
-        $vite = app(\Illuminate\Foundation\Vite::class);
+test('vite helper uses our custom class', function() {
+    $vite = app(Vite::class);
 
-        $this->assertInstanceOf(\Illuminate\Foundation\Vite::class, $vite);
-        $this->assertNotInstanceOf(StanclVite::class, $vite);
+    expect($vite)->toBeInstanceOf(Vite::class);
+    expect($vite)->not()->toBeInstanceOf(StanclVite::class);
 
-        config([
-            'tenancy.features' => [ViteBundler::class],
-        ]);
+    config([
+        'tenancy.features' => [ViteBundler::class],
+    ]);
 
-        $tenant = Tenant::create();
+    $tenant = Tenant::create();
 
-        tenancy()->initialize($tenant);
+    tenancy()->initialize($tenant);
 
-        app()->forgetInstance(\Illuminate\Foundation\Vite::class);
+    app()->forgetInstance(Vite::class);
 
-        $vite = app(\Illuminate\Foundation\Vite::class);
+    $vite = app(Vite::class);
 
-        $this->assertInstanceOf(StanclVite::class, $vite);
-    }
-}
+    expect($vite)->toBeInstanceOf(StanclVite::class);
+});
