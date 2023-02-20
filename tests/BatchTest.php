@@ -23,6 +23,8 @@ beforeEach(function () {
 });
 
 test('batch repository is set to tenant connection and reverted', function () {
+    withTenantDatabases();
+
     $tenant = Tenant::create();
     $tenant2 = Tenant::create();
 

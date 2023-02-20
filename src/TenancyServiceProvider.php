@@ -62,6 +62,7 @@ class TenancyServiceProvider extends ServiceProvider
         $this->app->singleton(Commands\Rollback::class, function ($app) {
             return new Commands\Rollback($app['migrator']);
         });
+
         $this->app->singleton(Commands\Seed::class, function ($app) {
             return new Commands\Seed($app['db']);
         });
@@ -105,6 +106,10 @@ class TenancyServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../assets/impersonation-migrations/' => database_path('migrations'),
         ], 'impersonation-migrations');
+
+        $this->publishes([
+            __DIR__ . '/../assets/resource-syncing-migrations/' => database_path('migrations'),
+        ], 'resource-syncing-migrations');
 
         $this->publishes([
             __DIR__ . '/../assets/tenant_routes.stub.php' => base_path('routes/tenant.php'),

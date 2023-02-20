@@ -302,7 +302,7 @@ test('database credentials can be provided to PermissionControlledMySQLDatabaseM
     $mysql2DB->statement("CREATE USER `{$username}`@`%` IDENTIFIED BY '{$password}';");
     $mysql2DB->statement("GRANT ALL PRIVILEGES ON *.* TO `{$username}`@`%` identified by '{$password}' WITH GRANT OPTION;");
     $mysql2DB->statement("FLUSH PRIVILEGES;");
-    
+
     DB::purge('mysql2'); // forget the mysql2 connection so that it uses the new credentials the next time
 
     config(['database.connections.mysql2.username' => $username]);
@@ -347,7 +347,7 @@ test('tenant database can be created by using the username and password from ten
     $mysqlDB->statement("CREATE USER `{$username}`@`%` IDENTIFIED BY '{$password}';");
     $mysqlDB->statement("GRANT ALL PRIVILEGES ON *.* TO `{$username}`@`%` identified by '{$password}' WITH GRANT OPTION;");
     $mysqlDB->statement("FLUSH PRIVILEGES;");
-    
+
     DB::purge('mysql2'); // forget the mysql2 connection so that it uses the new credentials the next time
 
     // Remove `mysql` credentials to make sure we will be using the credentials from the tenant config
@@ -388,6 +388,81 @@ test('path used by sqlite manager can be customized', function () {
     ]);
 
     expect(file_exists($customPath . '/' . $name))->toBeTrue();
+});
+
+test('the tenant connection template can be specified either by name or as a connection array', function () {
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    config([
+        'tenancy.database.managers.mysql' => MySQLDatabaseManager::class,
+        'tenancy.database.template_tenant_connection' => 'mysql',
+    ]);
+
+    $name = 'foo' . Str::random(8);
+    $tenant = Tenant::create([
+        'tenancy_db_name' => $name,
+    ]);
+
+    /** @var MySQLDatabaseManager $manager */
+    $manager = $tenant->database()->manager();
+    expect($manager->databaseExists($name))->toBeTrue();
+    expect($manager->database()->getConfig('host'))->toBe('mysql');
+
+    config([
+        'tenancy.database.template_tenant_connection' => [
+            'driver' => 'mysql',
+            'url' => null,
+            'host' => 'mysql2',
+            'port' => '3306',
+            'database' => 'main',
+            'username' => 'root',
+            'password' => 'password',
+            'unix_socket' => '',
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => [],
+        ],
+    ]);
+
+    $tenant = Tenant::create([
+        'tenancy_db_name' => $name,
+    ]);
+
+    /** @var MySQLDatabaseManager $manager */
+    $manager = $tenant->database()->manager();
+    expect($manager->databaseExists($name))->toBeTrue(); // tenant connection works
+    expect($manager->database()->getConfig('host'))->toBe('mysql2');
+});
+
+test('partial tenant connection templates get merged into the central connection template', function () {
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    config([
+        'database.connections.central.url' => 'example.com',
+        'tenancy.database.template_tenant_connection' => [
+            'url' => null,
+            'host' => 'mysql2',
+        ],
+    ]);
+
+    $name = 'foo' . Str::random(8);
+    $tenant = Tenant::create([
+        'tenancy_db_name' => $name,
+    ]);
+
+    /** @var MySQLDatabaseManager $manager */
+    $manager = $tenant->database()->manager();
+    expect($manager->databaseExists($name))->toBeTrue(); // tenant connection works
+    expect($manager->database()->getConfig('host'))->toBe('mysql2');
+    expect($manager->database()->getConfig('url'))->toBeNull();
 });
 
 // Datasets
