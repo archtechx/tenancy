@@ -302,7 +302,7 @@ test('database credentials can be provided to PermissionControlledMySQLDatabaseM
     $mysql2DB->statement("CREATE USER `{$username}`@`%` IDENTIFIED BY '{$password}';");
     $mysql2DB->statement("GRANT ALL PRIVILEGES ON *.* TO `{$username}`@`%` identified by '{$password}' WITH GRANT OPTION;");
     $mysql2DB->statement("FLUSH PRIVILEGES;");
-    
+
     DB::purge('mysql2'); // forget the mysql2 connection so that it uses the new credentials the next time
 
     config(['database.connections.mysql2.username' => $username]);
@@ -347,7 +347,7 @@ test('tenant database can be created by using the username and password from ten
     $mysqlDB->statement("CREATE USER `{$username}`@`%` IDENTIFIED BY '{$password}';");
     $mysqlDB->statement("GRANT ALL PRIVILEGES ON *.* TO `{$username}`@`%` identified by '{$password}' WITH GRANT OPTION;");
     $mysqlDB->statement("FLUSH PRIVILEGES;");
-    
+
     DB::purge('mysql2'); // forget the mysql2 connection so that it uses the new credentials the next time
 
     // Remove `mysql` credentials to make sure we will be using the credentials from the tenant config
