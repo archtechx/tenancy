@@ -79,7 +79,7 @@ test('ing events can be used to cancel db creation', function () {
     });
 
     $tenant = Tenant::create();
-    dispatch_now(new CreateDatabase($tenant));
+    dispatch_sync(new CreateDatabase($tenant));
 
     pest()->assertFalse($tenant->database()->manager()->databaseExists(
         $tenant->database()->getName()
@@ -171,12 +171,13 @@ test('database is not migrated if creation is disabled', function () {
         })->toListener()
     );
 
-    Tenant::create([
+    $tenant = Tenant::create([
         'tenancy_create_database' => false,
         'tenancy_db_name' => 'already_created',
     ]);
 
-    expect(pest()->hasFailed())->toBeFalse();
+    // assert test didn't fail
+    $this->assertTrue($tenant->exists());
 });
 
 class FooListener extends QueueableListener
