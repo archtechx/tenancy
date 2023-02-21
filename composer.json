@@ -35,12 +35,6 @@
         "nunomaduro/larastan": "^2.4",
         "spatie/invade": "^1.1"
     },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "http://github.com/lukinovec/framework"
-        }
-    ],
     "autoload": {
         "psr-4": {
             "Stancl\\Tenancy\\": "src/"
