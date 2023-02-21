@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         include:
-        - laravel: "dev-master"
+        - laravel: "10.x-dev"
           php: "8.2"
 
     steps:
