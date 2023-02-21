@@ -114,9 +114,7 @@ jobs:
         with:
           php-version: '8.2'
       - uses: actions/checkout@v2
-      - name: Install Composer dependencies
-        run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
-          composer update --prefer-dist --no-interaction
+      - name: Install composer dependencies
+        run: composer install
       - name: Run phpstan
         run: vendor/bin/phpstan analyse --xdebug
