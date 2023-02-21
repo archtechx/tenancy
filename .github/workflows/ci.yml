@@ -16,8 +16,6 @@ jobs:
     strategy:
       matrix:
         include:
-        - laravel: "^9.0"
-          php: "8.0"
         - laravel: "dev-master"
           php: "8.2"
 
