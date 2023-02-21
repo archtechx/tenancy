@@ -269,3 +269,21 @@ test('stores not specified in tenantCacheStores do not get prefixed', function()
     tenancy()->end();
     expect(cache('key'))->toBe($tenant2->getTenantKey());
 });
+
+test('stores that are not default get prefixed too', function () {
+    config(['cache.stores.redis2' => config('cache.stores.redis')]);
+    config(['cache.default' => 'redis2']);
+    PrefixCacheTenancyBootstrapper::$tenantCacheStores = ['redis', 'redis2'];
+
+    $defaultPrefix = cache()->store()->getPrefix();
+
+    expect(cache()->store('redis')->getPrefix())->toBe($defaultPrefix);
+
+    tenancy()->initialize($tenant = Tenant::create());
+    $generateTenantPrefix = fn (Tenant $tenant) => str($defaultPrefix)->beforeLast(':') . 'tenant_' . $tenant->getTenantKey() . ':';
+
+    // Default store
+    expect(cache()->store()->getPrefix())->toBe($generateTenantPrefix($tenant));
+    // Non-default store
+    expect(cache()->store('redis')->getPrefix())->toBe($generateTenantPrefix($tenant));
+});
