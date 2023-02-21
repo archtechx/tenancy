@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\TenancyServiceProvider;
 use Stancl\Tenancy\Features\CrossDomainRedirect;
 
+beforeAll(function () {
+    TenancyServiceProvider::$bootstrapFeatures = false;
+});
+
 test('tenant redirect macro replaces only the hostname', function () {
     config()->set('tenancy.features', [CrossDomainRedirect::class]);
 
@@ -40,9 +44,9 @@ test('tenant route helper generates correct url', function () {
 test('redirect from central to tenant works', function (bool $enabled, bool $shouldThrow) {
     if ($enabled) {
         config()->set('tenancy.features', [CrossDomainRedirect::class]);
-
-        TenancyServiceProvider::bootstrapFeatures();
     }
+
+    TenancyServiceProvider::bootstrapFeatures();
 
 
     Route::get('/foobar', function () {
