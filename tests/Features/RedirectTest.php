@@ -48,7 +48,6 @@ test('redirect from central to tenant works', function (bool $enabled, bool $sho
 
     TenancyServiceProvider::bootstrapFeatures();
 
-
     Route::get('/foobar', function () {
         return 'Foo';
     })->name('home');
