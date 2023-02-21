@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use Stancl\Tenancy\Jobs;
+use Stancl\Tenancy\Events;
+use Stancl\Tenancy\Listeners;
+use Stancl\Tenancy\Middleware;
+use Stancl\JobPipeline\JobPipeline;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
-use Stancl\JobPipeline\JobPipeline;
-use Stancl\Tenancy\Events;
-use Stancl\Tenancy\Jobs;
-use Stancl\Tenancy\Listeners;
-use Stancl\Tenancy\Middleware;
 
 class TenancyServiceProvider extends ServiceProvider
 {
@@ -118,6 +118,21 @@ class TenancyServiceProvider extends ServiceProvider
         ];
     }
 
+    protected function overrideUrlInTenantContext(): void
+    {
+        /**
+         * Example of CLI tenant URL root override:
+         *
+         * UrlTenancyBootstrapper::$rootUrlOverride = function (Tenant $tenant) {
+         *    $baseUrl = url('/');
+         *    $scheme = str($baseUrl)->before('://');
+         *    $hostname = str($baseUrl)->after($scheme . '://');
+         *
+         *    return $scheme . '://' . $tenant->getTenantKey() . '.' . $hostname;
+         *};
+         */
+    }
+
     public function register()
     {
         //
@@ -129,6 +144,7 @@ class TenancyServiceProvider extends ServiceProvider
         $this->mapRoutes();
 
         $this->makeTenancyMiddlewareHighestPriority();
+        $this->overrideUrlInTenantContext();
     }
 
     protected function bootEvents()
