@@ -26,7 +26,7 @@ class TenancyServiceProvider extends ServiceProvider
         // Make sure Tenancy is stateful.
         $this->app->singleton(Tenancy::class);
 
-        if ($this->bootstrapFeatures) {
+        if (static::$bootstrapFeatures) {
             static::bootstrapFeatures();
         }
 
