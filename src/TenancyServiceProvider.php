@@ -14,7 +14,7 @@ use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 
 class TenancyServiceProvider extends ServiceProvider
 {
-    public static $bootstrapFeatures = true;
+    public static bool $bootstrapFeatures = true;
 
     /* Register services. */
     public function register(): void
@@ -27,7 +27,7 @@ class TenancyServiceProvider extends ServiceProvider
         $this->app->singleton(Tenancy::class);
 
         if (static::bootstrapFeatures()) {
-            $this->bootstrapFeatures();
+            $this->bootstrapFeatures;
         }
 
         // Make it possible to inject the current tenant by typehinting the Tenant contract.
