@@ -72,6 +72,6 @@ class TenantConfig implements Feature
 
     public static function alwaysBootstrap(): bool
     {
-        return false;
+        return true;
     }
 }
