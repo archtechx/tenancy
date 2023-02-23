@@ -1,7 +1,7 @@
 # add amd64 platform to support Mac M1
 FROM --platform=linux/amd64 shivammathur/node:latest-amd64
 
-ARG PHP_VERSION=8.1
+ARG PHP_VERSION=8.2
 
 WORKDIR /var/www/html
 
@@ -15,7 +15,7 @@ RUN apt-get update \
     && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
     && curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list > /etc/apt/sources.list.d/mssql-release.list \
     && apt-get update \
-    && ACCEPT_EULA=Y apt-get install -y unixodbc-dev msodbcsql17
+    && ACCEPT_EULA=Y apt-get install -y unixodbc-dev=2.3.7 unixodbc=2.3.7 odbcinst1debian2=2.3.7 odbcinst=2.3.7 msodbcsql17
 
 # set PHP version
 RUN update-alternatives --set php /usr/bin/php$PHP_VERSION \

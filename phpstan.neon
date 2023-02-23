@@ -23,12 +23,13 @@ parameters:
                 - src/Commands/ClearPendingTenants.php
                 - src/Database/Concerns/PendingScope.php
                 - src/Database/ParentModelScope.php
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:withPending\(\)#'
         -
             message: '#invalid type Laravel\\Telescope\\IncomingEntry#'
             paths:
                 - src/Features/TelescopeTags.php
         -
-            message: '#Parameter \#1 \$key of method Illuminate\\Contracts\\Cache\\Repository::put\(\) expects string#'
+            message: '#Parameter \#1 \$key of method Illuminate\\Cache\\Repository::put\(\) expects#'
             paths:
                 - src/helpers.php
         -
@@ -40,14 +41,17 @@ parameters:
             paths:
                 - src/Bootstrappers/FilesystemTenancyBootstrapper.php
         -
-            message: '#select\(\) expects string, Illuminate\\Database\\Query\\Expression given#'
-            paths:
-                - src/Database/TenantDatabaseManagers/PermissionControlledMySQLDatabaseManager.php
-        -
             message: '#Trying to invoke Closure\|null but it might not be a callable#'
             paths:
                 - src/Database/DatabaseConfig.php
+        -
+            message: '#Unable to resolve the template type (TMapWithKeysKey|TMapWithKeysValue) in call to method#'
+            paths:
+                - src/Concerns/DealsWithTenantSymlinks.php
         - '#Method Stancl\\Tenancy\\Tenancy::cachedResolvers\(\) should return array#'
+        - '#Access to an undefined property Stancl\\Tenancy\\Middleware\\IdentificationMiddleware\:\:\$tenancy#'
+        - '#Access to an undefined property Stancl\\Tenancy\\Middleware\\IdentificationMiddleware\:\:\$resolver#'
 
     checkMissingIterableValueType: false
+    checkGenericClassInNonGenericObjectType: false # later we may want to enable this
     treatPhpDocTypesAsCertain: false

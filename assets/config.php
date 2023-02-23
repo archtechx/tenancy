@@ -102,6 +102,9 @@ return [
         Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\BatchTenancyBootstrapper::class,
+        // Stancl\Tenancy\Bootstrappers\UrlTenancyBootstrapper::class,
+        // Stancl\Tenancy\Bootstrappers\SessionTenancyBootstrapper::class,
+        // Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper::class, // Queueing mail requires using QueueTenancyBootstrapper with $forceRefresh set to true
         // Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
     ],
 
@@ -255,7 +258,7 @@ return [
     ],
 
     /**
-     * Redis tenancy config. Used by RedisTenancyBoostrapper.
+     * Redis tenancy config. Used by RedisTenancyBootstrapper.
      *
      * Note: You need phpredis to use Redis tenancy.
      *
@@ -281,9 +284,9 @@ return [
     'features' => [
         // Stancl\Tenancy\Features\UserImpersonation::class,
         // Stancl\Tenancy\Features\TelescopeTags::class,
-        // Stancl\Tenancy\Features\UniversalRoutes::class,
         // Stancl\Tenancy\Features\TenantConfig::class, // https://tenancyforlaravel.com/docs/v3/features/tenant-config
         // Stancl\Tenancy\Features\CrossDomainRedirect::class, // https://tenancyforlaravel.com/docs/v3/features/cross-domain-redirect
+        // Stancl\Tenancy\Features\ViteBundler::class,
     ],
 
     /**

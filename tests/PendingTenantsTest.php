@@ -67,23 +67,6 @@ test('CreatePendingTenants command cannot run with both time constraints', funct
         ->assertFailed();
 });
 
-test('CreatePendingTenants commands all option overrides any config constraints', function () {
-    Tenant::createPending();
-    Tenant::createPending();
-
-    tenancy()->model()->query()->onlyPending()->first()->update([
-        'pending_since' => now()->subDays(10)
-    ]);
-
-    config(['tenancy.pending.older_than_days' => 4]);
-
-    Artisan::call(ClearPendingTenants::class, [
-        '--all' => true
-    ]);
-
-    expect(Tenant::onlyPending()->count())->toBe(0);
-});
-
 test('tenancy can check if there are any pending tenants', function () {
     expect(Tenant::onlyPending()->exists())->toBeFalse();
 

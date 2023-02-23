@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Builder;
 class ClearPendingTenants extends Command
 {
     protected $signature = 'tenants:pending-clear
-                            {--all : Override the default settings and deletes all pending tenants}
                             {--older-than-days= : Deletes all pending tenants older than the amount of days}
                             {--older-than-hours= : Deletes all pending tenants older than the amount of hours}';
 
@@ -18,38 +17,30 @@ class ClearPendingTenants extends Command
 
     public function handle(): int
     {
-        $this->info('Removing pending tenants.');
+        $this->components->info('Removing pending tenants.');
 
         $expirationDate = now();
         // We compare the original expiration date to the new one to check if the new one is different later
         $originalExpirationDate = $expirationDate->copy()->toImmutable();
 
-        // Skip the time constraints if the 'all' option is given
-        if (! $this->option('all')) {
-            /** @var ?int $olderThanDays */
-            $olderThanDays = $this->option('older-than-days');
+        $olderThanDays = (int) $this->option('older-than-days');
+        $olderThanHours = (int) $this->option('older-than-hours');
 
-            /** @var ?int $olderThanHours */
-            $olderThanHours = $this->option('older-than-hours');
+        if ($olderThanDays && $olderThanHours) {
+            $this->components->error("Cannot use '--older-than-days' and '--older-than-hours' together. Please, choose only one of these options.");
 
-            if ($olderThanDays && $olderThanHours) {
-                $this->line("<options=bold,reverse;fg=red> Cannot use '--older-than-days' and '--older-than-hours' together \n"); // todo@cli refactor all of these styled command outputs to use $this->components
-                $this->line('Please, choose only one of these options.');
-
-                return 1; // Exit code for failure
-            }
-
-            if ($olderThanDays) {
-                $expirationDate->subDays($olderThanDays);
-            }
-
-            if ($olderThanHours) {
-                $expirationDate->subHours($olderThanHours);
-            }
+            return 1; // Exit code for failure
         }
 
-        $deletedTenantCount = tenancy()
-            ->query()
+        if ($olderThanDays) {
+            $expirationDate->subDays($olderThanDays);
+        }
+
+        if ($olderThanHours) {
+            $expirationDate->subHours($olderThanHours);
+        }
+
+        $deletedTenantCount = tenancy()->query()
             ->onlyPending()
             ->when($originalExpirationDate->notEqualTo($expirationDate), function (Builder $query) use ($expirationDate) {
                 $query->where($query->getModel()->getColumnForQuery('pending_since'), '<', $expirationDate->timestamp);
@@ -59,7 +50,7 @@ class ClearPendingTenants extends Command
             ->delete()
             ->count();
 
-        $this->info($deletedTenantCount . ' pending ' . str('tenant')->plural($deletedTenantCount) . ' deleted.');
+        $this->components->info($deletedTenantCount . ' pending ' . str('tenant')->plural($deletedTenantCount) . ' deleted.');
 
         return 0;
     }

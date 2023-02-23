@@ -18,14 +18,16 @@ use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Events\TenantDeleted;
 use Stancl\Tenancy\Tests\Etc\TestSeeder;
 use Stancl\Tenancy\Events\DeletingTenant;
+use Stancl\Tenancy\Events\DatabaseMigrated;
 use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
 
 beforeEach(function () {
-    if (file_exists($schemaPath = database_path('schema/tenant-schema.dump'))) {
+    if (file_exists($schemaPath = 'tests/Etc/tenant-schema-test.dump')) {
         unlink($schemaPath);
     }
 
@@ -109,30 +111,86 @@ test('migrate command loads schema state', function () {
     expect(Schema::hasTable('users'))->toBeTrue();
 });
 
-test('dump command works', function () {
-    $tenant = Tenant::create();
-    Artisan::call('tenants:migrate');
+test('migrate command only throws exceptions if skip-failing is not passed', function() {
+    Tenant::create();
 
-    tenancy()->initialize($tenant);
+    $tenantWithoutDatabase = Tenant::create();
+    $databaseToDrop = $tenantWithoutDatabase->run(fn() => DB::connection()->getDatabaseName());
 
-    Artisan::call('tenants:dump --path="tests/Etc/tenant-schema-test.dump"');
-    expect('tests/Etc/tenant-schema-test.dump')->toBeFile();
+    DB::statement("DROP DATABASE `$databaseToDrop`");
+
+    Tenant::create();
+
+    expect(fn() => pest()->artisan('tenants:migrate --schema-path="tests/Etc/tenant-schema.dump"'))->toThrow(TenantDatabaseDoesNotExistException::class);
+    expect(fn() => pest()->artisan('tenants:migrate --schema-path="tests/Etc/tenant-schema.dump" --skip-failing'))->not()->toThrow(TenantDatabaseDoesNotExistException::class);
 });
 
-test('tenant dump file gets created as tenant-schema.dump in the database schema folder by default', function() {
-    config(['tenancy.migration_parameters.--schema-path' => $schemaPath = database_path('schema/tenant-schema.dump')]);
+test('migrate command does not stop after the first failure if skip-failing is passed', function() {
+    $tenants = collect([
+        Tenant::create(),
+        $tenantWithoutDatabase = Tenant::create(),
+        Tenant::create(),
+    ]);
 
+    $migratedTenants = 0;
+
+    Event::listen(DatabaseMigrated::class, function() use (&$migratedTenants) {
+        $migratedTenants++;
+    });
+
+    $databaseToDrop = $tenantWithoutDatabase->run(fn() => DB::connection()->getDatabaseName());
+
+    DB::statement("DROP DATABASE `$databaseToDrop`");
+
+    Artisan::call('tenants:migrate', [
+        '--schema-path' => '"tests/Etc/tenant-schema.dump"',
+        '--skip-failing' => true,
+        '--tenants' => $tenants->pluck('id')->toArray(),
+    ]);
+
+    expect($migratedTenants)->toBe(2);
+});
+
+test('dump command works', function () {
     $tenant = Tenant::create();
+    $schemaPath = 'tests/Etc/tenant-schema-test.dump';
+
     Artisan::call('tenants:migrate');
 
-    tenancy()->initialize($tenant);
+    expect($schemaPath)->not()->toBeFile();
 
-    Artisan::call('tenants:dump');
+    Artisan::call('tenants:dump ' . "--tenant='$tenant->id' --path='$schemaPath'");
 
     expect($schemaPath)->toBeFile();
 });
 
-test('migrate command uses the correct schema path by default', function () {
+test('dump command generates dump at the passed path', function() {
+    $tenant = Tenant::create();
+
+    Artisan::call('tenants:migrate');
+
+    expect($schemaPath = 'tests/Etc/tenant-schema-test.dump')->not()->toBeFile();
+
+    Artisan::call("tenants:dump --tenant='$tenant->id' --path='$schemaPath'");
+
+    expect($schemaPath)->toBeFile();
+});
+
+test('dump command generates dump at the path specified in the tenancy migration parameters config', function() {
+    config(['tenancy.migration_parameters.--schema-path' => $schemaPath = 'tests/Etc/tenant-schema-test.dump']);
+
+    $tenant = Tenant::create();
+
+    Artisan::call('tenants:migrate');
+
+    expect($schemaPath)->not()->toBeFile();
+
+    Artisan::call("tenants:dump --tenant='$tenant->id'");
+
+    expect($schemaPath)->toBeFile();
+});
+
+test('migrate command correctly uses the schema dump located at the configured schema path by default', function () {
     config(['tenancy.migration_parameters.--schema-path' => 'tests/Etc/tenant-schema.dump']);
     $tenant = Tenant::create();
 
@@ -146,6 +204,7 @@ test('migrate command uses the correct schema path by default', function () {
 
     tenancy()->initialize($tenant);
 
+    // schema_users is a table included in the tests/Etc/tenant-schema dump
     // Check for both tables to see if missing migrations also get executed
     expect(Schema::hasTable('schema_users'))->toBeTrue();
     expect(Schema::hasTable('users'))->toBeTrue();
@@ -163,17 +222,17 @@ test('rollback command works', function () {
     expect(Schema::hasTable('users'))->toBeFalse();
 });
 
-test('seed command works', function (){
+test('seed command works', function () {
     $tenant = Tenant::create();
     Artisan::call('tenants:migrate');
 
-    $tenant->run(function (){
+    $tenant->run(function () {
         expect(DB::table('users')->count())->toBe(0);
     });
 
     Artisan::call('tenants:seed', ['--class' => TestSeeder::class]);
 
-    $tenant->run(function (){
+    $tenant->run(function () {
         $user = DB::table('users');
         expect($user->count())->toBe(1)
             ->and($user->first()->email)->toBe('seeded@user');
@@ -355,7 +414,7 @@ function runCommandWorks(): void
     Artisan::call('tenants:migrate', ['--tenants' => [$id]]);
 
     pest()->artisan("tenants:run --tenants=$id 'foo foo --b=bar --c=xyz' ")
-        ->expectsOutput("User's name is Test command")
+        ->expectsOutput("User's name is Test user")
         ->expectsOutput('foo')
         ->expectsOutput('xyz');
 }
