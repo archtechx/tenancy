@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Features;
 
-use Stancl\Tenancy\Vite;
-use Stancl\Tenancy\Contracts\Feature;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Vite as BaseVite;
+use Stancl\Tenancy\Contracts\Feature;
+use Stancl\Tenancy\Vite;
 
 class ViteBundler implements Feature
 {
