@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\TenancyServiceProvider;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Features\UserImpersonation;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
@@ -40,6 +41,8 @@ beforeEach(function () {
             UserImpersonation::class,
         ],
     ]);
+
+    TenancyServiceProvider::bootstrapFeatures();
 
     Event::listen(
         TenantCreated::class,

@@ -2,13 +2,23 @@
 
 declare(strict_types=1);
 
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Events\TenancyEnded;
-use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Features\TenantConfig;
+use Stancl\Tenancy\TenancyServiceProvider;
+use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Tests\Etc\Tenant;
+
+beforeEach(function() {
+    config([
+        'tenancy.features' => [TenantConfig::class],
+        'tenancy.bootstrappers' => [],
+    ]);
+
+    TenancyServiceProvider::bootstrapFeatures();
+});
 
 afterEach(function () {
     TenantConfig::$storageToConfigMap = [];
@@ -16,10 +26,7 @@ afterEach(function () {
 
 test('nested tenant values are merged', function () {
     expect(config('whitelabel.theme'))->toBeNull();
-    config([
-        'tenancy.features' => [TenantConfig::class],
-        'tenancy.bootstrappers' => [],
-    ]);
+
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
@@ -37,11 +44,8 @@ test('nested tenant values are merged', function () {
 });
 
 test('config is merged and removed', function () {
-    expect(config('services.paypal'))->toBe(null);
-    config([
-        'tenancy.features' => [TenantConfig::class],
-        'tenancy.bootstrappers' => [],
-    ]);
+    expect(config('services.paypal'))->toBeNull();
+
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
@@ -64,13 +68,9 @@ test('config is merged and removed', function () {
         'private' => null,
     ], config('services.paypal'));
 });
-
 test('the value can be set to multiple config keys', function () {
-    expect(config('services.paypal'))->toBe(null);
-    config([
-        'tenancy.features' => [TenantConfig::class],
-        'tenancy.bootstrappers' => [],
-    ]);
+    expect(config('services.paypal'))->toBeNull();
+
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
