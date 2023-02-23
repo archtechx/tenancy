@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Features;
 
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Auth;
-use Stancl\Tenancy\Contracts\Feature;
-use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\Database\Models\ImpersonationToken;
 use Stancl\Tenancy\Tenancy;
+use Illuminate\Support\Facades\Auth;
+use Stancl\Tenancy\Contracts\Tenant;
+use Illuminate\Http\RedirectResponse;
+use Stancl\Tenancy\Contracts\Feature;
+use Stancl\Tenancy\Database\Models\ImpersonationToken;
 
 class UserImpersonation implements Feature
 {
@@ -56,6 +56,8 @@ class UserImpersonation implements Feature
     public static function alwaysBootstrap(): bool
     {
         return false;
+    }
+
     public static function isImpersonating(): bool
     {
         return session()->has('tenancy_impersonating');

@@ -18,6 +18,8 @@ function filesAndFoldersExcluding(array $exclude = []): array
     $dirs = scandir(__DIR__);
 
     return array_filter($dirs, fn($dir) => ! in_array($dir, array_merge(['.', '..'], $exclude) , true));
+}
+
 function withTenantDatabases()
 {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
