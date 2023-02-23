@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Features;
 
-use Illuminate\Foundation\Application;
-use Stancl\Tenancy\Contracts\Feature;
-use Stancl\Tenancy\Tenancy;
 use Stancl\Tenancy\Vite;
+use Stancl\Tenancy\Contracts\Feature;
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Vite as BaseVite;
 
 class ViteBundler implements Feature
 {
@@ -19,8 +19,13 @@ class ViteBundler implements Feature
         $this->app = $app;
     }
 
-    public function bootstrap(Tenancy $tenancy): void
+    public function bootstrap(): void
     {
-        $this->app->singleton(\Illuminate\Foundation\Vite::class, Vite::class);
+        $this->app->singleton(BaseVite::class, Vite::class);
+    }
+
+    public static function alwaysBootstrap(): bool
+    {
+        return false;
     }
 }
