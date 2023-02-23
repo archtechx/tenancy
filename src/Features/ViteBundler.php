@@ -11,12 +11,9 @@ use Stancl\Tenancy\Vite;
 
 class ViteBundler implements Feature
 {
-    /** @var Application */
-    protected $app;
-
-    public function __construct(Application $app)
-    {
-        $this->app = $app;
+    public function __construct(
+        protected Application $app
+    ) {
     }
 
     public function bootstrap(): void
