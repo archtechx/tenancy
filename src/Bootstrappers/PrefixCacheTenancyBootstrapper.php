@@ -14,7 +14,6 @@ use Stancl\Tenancy\Contracts\Tenant;
 class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
 {
     protected string|null $originalPrefix = null;
-    protected string $storeName;
     public static array $tenantCacheStores = [];
 
     public function __construct(
@@ -26,16 +25,14 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
     public function bootstrap(Tenant $tenant): void
     {
         $this->originalPrefix = $this->config->get('cache.prefix');
-        $this->storeName = $this->config->get('cache.default');
 
-        if (in_array($this->storeName, static::$tenantCacheStores)) {
-            $this->setCachePrefix($this->originalPrefix . $this->config->get('tenancy.cache.prefix_base') . $tenant->getTenantKey());
-        }
+        $this->setCachePrefix($this->originalPrefix . $this->config->get('tenancy.cache.prefix_base') . $tenant->getTenantKey());
     }
 
     public function revert(): void
     {
         $this->setCachePrefix($this->originalPrefix);
+
         $this->originalPrefix = null;
     }
 
@@ -43,15 +40,25 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
     {
         $this->config->set('cache.prefix', $prefix);
 
-        $newStore = $this->cacheManager->resolve($this->storeName ?? $this->cacheManager->getDefaultDriver())->getStore();
-
-        /** @var Repository $repository */
-        $repository = $this->cacheManager->driver($this->storeName);
-
-        $repository->setStore($newStore);
+        foreach (static::$tenantCacheStores as $driver) {
+            // Refresh driver's store to make the driver use the current prefix
+            $this->refreshStore($driver);
+        }
 
         // It is needed when a call to the facade has been made before bootstrapping tenancy
         // The facade has its own cache, separate from the container
         Cache::clearResolvedInstances();
+    }
+
+    /**
+     * Refresh cache driver's store.
+     */
+    protected function refreshStore(string $driver): void
+    {
+        $newStore = $this->cacheManager->resolve($driver)->getStore();
+        /** @var Repository $repository */
+        $repository = $this->cacheManager->driver($driver);
+
+        $repository->setStore($newStore);
     }
 }
