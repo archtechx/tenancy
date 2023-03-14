@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Bootstrappers;
 
-use Illuminate\Cache\CacheManager;
+use Closure;
 use Illuminate\Cache\Repository;
-use Illuminate\Contracts\Config\Repository as ConfigRepository;
+use Illuminate\Cache\CacheManager;
+use Stancl\Tenancy\Contracts\Tenant;
 use Illuminate\Support\Facades\Cache;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
-use Stancl\Tenancy\Contracts\Tenant;
+use Illuminate\Contracts\Config\Repository as ConfigRepository;
 
 class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
 {
-    protected string|null $originalPrefix = null;
-    public static array $tenantCacheStores = [];
+    protected array $originalPrefixes = []; // E.g. 'redis' => 'redis_prefix_'
+    public static array $tenantCacheStores = []; // E.g. 'redis'
+    public static array $prefixGenerators = [
+        // driverName => Closure(Tenant $tenant)
+    ];
 
     public function __construct(
         protected ConfigRepository $config,
@@ -24,30 +28,60 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant): void
     {
-        $this->originalPrefix = $this->config->get('cache.prefix');
+        // If the user didn't specify the default generator
+        // Use static::defaultPrefixGenerator() as the default prefix generator
+        if (! isset(static::$prefixGenerators['default'])) {
+            static::generatePrefixUsing('default', static::defaultPrefixGenerator($this->config->get('cache.prefix')));
+        }
 
-        $this->setCachePrefix($this->originalPrefix . $this->config->get('tenancy.cache.prefix_base') . $tenant->getTenantKey());
+        foreach (static::$tenantCacheStores as $store) {
+            $this->originalPrefixes[$store] = $this->config->get('cache.prefix');
+
+            $this->setCachePrefix($store, $this->getStorePrefix($store, $tenant));
+        }
     }
 
     public function revert(): void
     {
-        $this->setCachePrefix($this->originalPrefix);
+        foreach ($this->originalPrefixes as $driver => $prefix) {
+            $this->setCachePrefix($driver, $prefix);
+        }
 
-        $this->originalPrefix = null;
+        $this->originalPrefixes = [];
     }
 
-    protected function setCachePrefix(string|null $prefix): void
+    public static function defaultPrefixGenerator(string $originalPrefix = ''): Closure
+    {
+        return function (Tenant $tenant) use ($originalPrefix) {
+            return $originalPrefix . config('tenancy.cache.prefix_base') . $tenant->getTenantKey();
+        };
+    }
+
+    protected function setCachePrefix(string $driver, string|null $prefix): void
     {
         $this->config->set('cache.prefix', $prefix);
 
-        foreach (static::$tenantCacheStores as $driver) {
-            // Refresh driver's store to make the driver use the current prefix
-            $this->refreshStore($driver);
-        }
+        // Refresh driver's store to make the driver use the current prefix
+        $this->refreshStore($driver);
 
         // It is needed when a call to the facade has been made before bootstrapping tenancy
         // The facade has its own cache, separate from the container
         Cache::clearResolvedInstances();
+    }
+
+    public function getStorePrefix(string $store, Tenant $tenant): string
+    {
+        if (isset(static::$prefixGenerators[$store])) {
+            return static::$prefixGenerators[$store]($tenant);
+        }
+
+        // Use default generator if the store doesn't have a custom generator
+        return static::$prefixGenerators['default']($tenant);
+    }
+
+    public static function generatePrefixUsing(string $store, Closure $prefixGenerator): void
+    {
+        static::$prefixGenerators[$store] = $prefixGenerator;
     }
 
     /**
