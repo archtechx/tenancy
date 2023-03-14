@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Closure;
-use Illuminate\Cache\Repository;
 use Illuminate\Cache\CacheManager;
-use Stancl\Tenancy\Contracts\Tenant;
+use Illuminate\Cache\Repository;
+use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Support\Facades\Cache;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
-use Illuminate\Contracts\Config\Repository as ConfigRepository;
+use Stancl\Tenancy\Contracts\Tenant;
 
 class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
 {
