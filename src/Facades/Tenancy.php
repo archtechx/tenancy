@@ -12,4 +12,9 @@ class Tenancy extends Facade
     {
         return \Stancl\Tenancy\Tenancy::class;
     }
+
+    public static function fake()
+    {
+        static::swap(new TenancyFake);
+    }
 }
