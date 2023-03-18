@@ -15,6 +15,8 @@ class Tenancy extends Facade
 
     public static function fake()
     {
-        static::swap(new TenancyFake);
+        static::swap($fake = new TenancyFake);
+
+        return $fake;
     }
 }
