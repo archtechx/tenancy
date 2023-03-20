@@ -124,12 +124,12 @@ class TenancyServiceProvider extends ServiceProvider
          * Example of CLI tenant URL root override:
          *
          * UrlTenancyBootstrapper::$rootUrlOverride = function (Tenant $tenant) {
-         *    $baseUrl = url('/');
-         *    $scheme = str($baseUrl)->before('://');
-         *    $hostname = str($baseUrl)->after($scheme . '://');
+         *     $baseUrl = env('APP_URL');
+         *     $scheme = str($baseUrl)->before('://');
+         *     $hostname = str($baseUrl)->after($scheme . '://');
          *
-         *    return $scheme . '://' . $tenant->getTenantKey() . '.' . $hostname;
-         *};
+         *     return $scheme . '://' . $tenant->getTenantKey() . '.' . $hostname;
+         * };
          */
     }
 
