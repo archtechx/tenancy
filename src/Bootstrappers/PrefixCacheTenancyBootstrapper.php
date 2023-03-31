@@ -28,12 +28,6 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant): void
     {
-        // If the user didn't specify the default generator
-        // Use static::defaultPrefixGenerator() as the default prefix generator
-        if (! isset(static::$prefixGenerators['default'])) {
-            static::generatePrefixUsing('default', static::defaultPrefixGenerator($this->config->get('cache.prefix')));
-        }
-
         foreach (static::$tenantCacheStores as $store) {
             $this->originalPrefixes[$store] = $this->config->get('cache.prefix');
 
@@ -48,13 +42,6 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
         }
 
         $this->originalPrefixes = [];
-    }
-
-    public static function defaultPrefixGenerator(string $originalPrefix = ''): Closure
-    {
-        return function (Tenant $tenant) use ($originalPrefix) {
-            return $originalPrefix . config('tenancy.cache.prefix_base') . $tenant->getTenantKey();
-        };
     }
 
     protected function setCachePrefix(string $driver, string|null $prefix): void
@@ -75,8 +62,7 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
             return static::$prefixGenerators[$store]($tenant);
         }
 
-        // Use default generator if the store doesn't have a custom generator
-        return static::$prefixGenerators['default']($tenant);
+        return $this->config->get('cache.prefix', '') . config('tenancy.cache.prefix_base') . $tenant->getTenantKey();
     }
 
     public static function generatePrefixUsing(string $store, Closure $prefixGenerator): void
