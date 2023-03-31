@@ -282,16 +282,18 @@ test('non default stores get prefixed too', function () {
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = ['redis', 'redis2'];
 
     // The prefix is the same for both drivers in the central context
-    $originalConfigPrefix = config('cache.prefix');
+    $tenant = Tenant::create();
     $defaultPrefix = cache()->store()->getPrefix();
+    $expectedPrefix = config('cache.prefix', '') . config('tenancy.cache.prefix_base', '') . $tenant->getTenantKey();
+
     expect(cache()->store('redis')->getPrefix())->toBe($defaultPrefix);
 
-    tenancy()->initialize($tenant = Tenant::create());
+    tenancy()->initialize($tenant);
 
     // We didn't add a prefix generator for our 'redis' driver, so we expect the prefix to be generated using the 'default' generator
-    expect(cache()->store()->getPrefix())->toBe($prefix = PrefixCacheTenancyBootstrapper::defaultPrefixGenerator($originalConfigPrefix)($tenant) . ':');
+    expect(cache()->store()->getPrefix())->toBe($expectedPrefix . ':');
     // Non-default store
-    expect(cache()->store('redis')->getPrefix())->toBe($prefix);
+    expect(cache()->store('redis')->getPrefix())->toBe($expectedPrefix . ':');
 
     tenancy()->end();
 });
@@ -317,32 +319,20 @@ test('cache store prefix generation can be customized', function() {
     tenancy()->end();
 });
 
-test('stores get prefixed by the default prefix generator if the store does not have a corresponding generator', function() {
+test('stores get prefixed using the default way if the store does not have a corresponding generator', function() {
     config(['cache.stores.redis2' => config('cache.stores.redis')]);
     // Make 'redis2' the default cache driver
     config(['cache.default' => 'redis2']);
+    $tenant = Tenant::create();
+    $expectedPrefix = config('cache.prefix', '') . config('tenancy.cache.prefix_base', '') . $tenant->getTenantKey();
 
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = ['redis', 'redis2'];
 
     // Don't add a generator for 'redis2'
-    // Let the default generator generate the prefix
-    // The default generator is created for you in bootstrap()
-    tenancy()->initialize($tenant = Tenant::create());
-    $defaultGenerator = PrefixCacheTenancyBootstrapper::$prefixGenerators['default'];
-    expect(cache()->store()->getPrefix())->toBe($defaultGenerator($tenant) . ':');
+    // Let the prefix get created using the default approach
+    tenancy()->initialize($tenant);
+    expect(cache()->store()->getPrefix())->toBe($expectedPrefix . ':');
     // Other stores without a prefix generator use the default generator too
-    expect(cache()->store('redis')->getPrefix())->toBe($defaultGenerator($tenant) . ':');
-    tenancy()->end();
-
-    // You can override the default prefix generator
-    PrefixCacheTenancyBootstrapper::generatePrefixUsing('default', $newDefaultGenerator = function (Tenant $tenant) {
-        return 'new_' . $tenant->getTenantKey();
-    });
-
-    tenancy()->initialize($tenant = Tenant::create());
-    // The store gets prefixed using the new default generator
-    expect(cache()->store()->getPrefix())->toBe($newDefaultGenerator($tenant) . ':');
-    expect(cache()->store('redis')->getPrefix())->toBe($newDefaultGenerator($tenant) . ':');
-
+    expect(cache()->store('redis')->getPrefix())->toBe($expectedPrefix . ':');
     tenancy()->end();
 });
