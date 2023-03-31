@@ -98,7 +98,6 @@ return [
      */
     'bootstrappers' => [
         Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper::class,
-        Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\BatchTenancyBootstrapper::class,
@@ -179,7 +178,7 @@ return [
     ],
 
     /**
-     * Cache tenancy config. Used by CacheTenancyBootstrapper.
+     * Cache tenancy config. Used by the custom CacheManager and the PrefixCacheTenancyBootstrapper.
      *
      * This works for all Cache facade calls, cache() helper
      * calls and direct calls to injected cache stores.

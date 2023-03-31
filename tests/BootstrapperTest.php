@@ -31,7 +31,6 @@ use Stancl\Tenancy\Listeners\DeleteTenantStorage;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\UrlTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
-use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
@@ -84,11 +83,13 @@ test('database data is separated', function () {
     expect(DB::table('users')->first()->name)->toBe('Foo');
 });
 
-test('cache data is separated', function (string $bootstrapper) {
+test('cache data is separated', function () {
     CacheManager::$addTags = true;
 
     config([
-        'tenancy.bootstrappers' => [$bootstrapper],
+        'tenancy.bootstrappers' => [
+            PrefixCacheTenancyBootstrapper::class,
+        ],
         'cache.default' => 'redis',
     ]);
 
@@ -123,10 +124,7 @@ test('cache data is separated', function (string $bootstrapper) {
 
     // Asset central is still the same
     expect(Cache::get('foo'))->toBe('central');
-})->with([
-    'CacheTenancyBootstrapper' => CacheTenancyBootstrapper::class,
-    'PrefixCacheTenancyBootstrapper' => PrefixCacheTenancyBootstrapper::class,
-])->group('bootstrapper');
+});
 
 test('redis data is separated', function () {
     config(['tenancy.bootstrappers' => [

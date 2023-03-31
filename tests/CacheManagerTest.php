@@ -7,13 +7,11 @@ use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 
 beforeEach(function () {
-    config(['tenancy.bootstrappers' => [
-        CacheTenancyBootstrapper::class,
-    ]]);
+    config(['tenancy.bootstrappers' => []]);
 
+    CacheManager::$addTags = true;
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
 });
 
