@@ -8,9 +8,9 @@ use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Tests\Etc\CacheService;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Tests\Etc\SpecificCacheStoreService;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\CacheManager as TenancyCacheManager;
+use Stancl\Tenancy\Tests\Etc\SpecificCacheStoreService;
 use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
 
 beforeEach(function () {
@@ -32,6 +32,9 @@ beforeEach(function () {
 
 afterEach(function () {
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = [];
+    PrefixCacheTenancyBootstrapper::$prefixGenerators = [];
+
+    TenancyCacheManager::$addTags = true;
 });
 
 test('Tenancy overrides CacheManager', function() {
