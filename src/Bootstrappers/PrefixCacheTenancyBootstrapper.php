@@ -64,7 +64,7 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
             return static::$prefixGenerators[$store]($tenant);
         }
 
-        return $this->originalPrefixes[$store] . config('tenancy.cache.prefix_base') . $tenant->getTenantKey();
+        return $this->originalPrefixes[$store] . $this->config->get('tenancy.cache.prefix_base') . $tenant->getTenantKey();
     }
 
     public static function generatePrefixUsing(string $store, Closure $prefixGenerator): void
