@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Stancl\JobPipeline\JobPipeline;
 use Illuminate\Support\Facades\File;
-use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
@@ -29,6 +28,7 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Tests\Etc\TestingBroadcaster;
 use Stancl\Tenancy\Listeners\DeleteTenantStorage;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Bootstrappers\CacheTagBootstrapper;
 use Stancl\Tenancy\Bootstrappers\UrlTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
@@ -36,7 +36,6 @@ use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
-use Stancl\Tenancy\CacheManager;
 
 beforeEach(function () {
     $this->mockConsoleOutput = false;
@@ -84,11 +83,9 @@ test('database data is separated', function () {
 });
 
 test('cache data is separated', function () {
-    CacheManager::$addTags = true;
-
     config([
         'tenancy.bootstrappers' => [
-            PrefixCacheTenancyBootstrapper::class,
+            CacheTagBootstrapper::class,
         ],
         'cache.default' => 'redis',
     ]);

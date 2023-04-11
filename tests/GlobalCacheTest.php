@@ -2,16 +2,17 @@
 
 declare(strict_types=1);
 
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Events\TenancyEnded;
-use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Facades\GlobalCache;
+use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Tests\Etc\Tenant;
+use Stancl\Tenancy\Bootstrappers\CacheTagBootstrapper;
 
 beforeEach(function () {
-    config(['tenancy.bootstrappers' => []]);
+    config(['tenancy.bootstrappers' => [CacheTagBootstrapper::class]]);
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);

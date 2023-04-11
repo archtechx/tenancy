@@ -10,7 +10,7 @@ use Illuminate\Cache\CacheManager as BaseCacheManager;
 
 class CacheManager extends BaseCacheManager
 {
-    public static bool $addTags = true;
+    public static bool $addTags = false;
 
     /**
      * Add tags and forward the call to the inner cache store.
