@@ -9,10 +9,10 @@ use Stancl\Tenancy\Facades\GlobalCache;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Bootstrappers\CacheTagBootstrapper;
+use Stancl\Tenancy\Bootstrappers\CacheTaggingBootstrapper;
 
 beforeEach(function () {
-    config(['tenancy.bootstrappers' => [CacheTagBootstrapper::class]]);
+    config(['tenancy.bootstrappers' => [CacheTaggingBootstrapper::class]]);
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);

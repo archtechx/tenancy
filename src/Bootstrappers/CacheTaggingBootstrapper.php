@@ -8,7 +8,10 @@ use Stancl\Tenancy\CacheManager;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
-class CacheTagBootstrapper implements TenancyBootstrapper
+/**
+ * Separate tenant cache using tagging.
+ */
+class CacheTaggingBootstrapper implements TenancyBootstrapper
 {
     public function bootstrap(Tenant $tenant): void
     {
