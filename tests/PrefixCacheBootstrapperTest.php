@@ -167,7 +167,7 @@ test('cache base prefix is customizable', function () {
 test('cache is prefixed correctly when using a repository injected in a singleton', function () {
     $this->app->singleton(CacheService::class);
 
-    app()->make(CacheService::class)->handle();
+    $this->app->make(CacheService::class)->handle();
 
     expect(cache('key'))->toBe('central-value');
 
@@ -176,13 +176,13 @@ test('cache is prefixed correctly when using a repository injected in a singleto
     tenancy()->initialize($tenant1);
 
     expect(cache('key'))->toBeNull();
-    app()->make(CacheService::class)->handle();
+    $this->app->make(CacheService::class)->handle();
     expect(cache('key'))->toBe($tenant1->getTenantKey());
 
     tenancy()->initialize($tenant2);
 
     expect(cache('key'))->toBeNull();
-    app()->make(CacheService::class)->handle();
+    $this->app->make(CacheService::class)->handle();
     expect(cache('key'))->toBe($tenant2->getTenantKey());
 
     tenancy()->end();
@@ -200,7 +200,7 @@ test('specific central cache store can be used inside a service', function () {
         return new SpecificCacheStoreService($this->app->make(CacheManager::class), $cacheStore);
     });
 
-    app()->make(SpecificCacheStoreService::class)->handle();
+    $this->app->make(SpecificCacheStoreService::class)->handle();
     expect(cache()->store($cacheStore)->get('key'))->toBe('central-value');
 
     $tenant1 = Tenant::create();
@@ -209,13 +209,13 @@ test('specific central cache store can be used inside a service', function () {
 
     // The store isn't prefixed, so the cache isn't separated
     expect(cache()->store($cacheStore)->get('key'))->toBe('central-value');
-    app()->make(SpecificCacheStoreService::class)->handle();
+    $this->app->make(SpecificCacheStoreService::class)->handle();
     expect(cache()->store($cacheStore)->get('key'))->toBe($tenant1->getTenantKey());
 
     tenancy()->initialize($tenant2);
 
     expect(cache()->store($cacheStore)->get('key'))->toBe($tenant1->getTenantKey());
-    app()->make(SpecificCacheStoreService::class)->handle();
+    $this->app->make(SpecificCacheStoreService::class)->handle();
     expect(cache()->store($cacheStore)->get('key'))->toBe($tenant2->getTenantKey());
 
     tenancy()->end();
@@ -228,7 +228,7 @@ test('stores specified in tenantCacheStores get prefixed', function() {
 
     $this->app->singleton(CacheService::class);
 
-    app()->make(CacheService::class)->handle();
+    $this->app->make(CacheService::class)->handle();
     expect(cache('key'))->toBe($centralValue = 'central-value');
 
     $tenant1 = Tenant::create();
@@ -237,13 +237,13 @@ test('stores specified in tenantCacheStores get prefixed', function() {
     tenancy()->initialize($tenant1);
 
     expect(cache('key'))->toBeNull();
-    app()->make(CacheService::class)->handle();
+    $this->app->make(CacheService::class)->handle();
     expect(cache('key'))->toBe($tenant1->getTenantKey());
 
     tenancy()->initialize($tenant2);
 
     expect(cache('key'))->toBeNull();
-    app()->make(CacheService::class)->handle();
+    $this->app->make(CacheService::class)->handle();
     expect(cache('key'))->toBe($tenant2->getTenantKey());
 
     tenancy()->end();
@@ -258,7 +258,7 @@ test('stores not specified in tenantCacheStores do not get prefixed', function()
 
     $this->app->singleton(CacheService::class);
 
-    app()->make(CacheService::class)->handle();
+    $this->app->make(CacheService::class)->handle();
     expect(cache('key'))->toBe('central-value');
 
     $tenant1 = Tenant::create();
@@ -267,13 +267,13 @@ test('stores not specified in tenantCacheStores do not get prefixed', function()
 
     // The cache isn't prefixed, so it isn't separated
     expect(cache('key'))->toBe('central-value');
-    app()->make(CacheService::class)->handle();
+    $this->app->make(CacheService::class)->handle();
     expect(cache('key'))->toBe($tenant1->getTenantKey());
 
     tenancy()->initialize($tenant2);
 
     expect(cache('key'))->toBe($tenant1->getTenantKey());
-    app()->make(CacheService::class)->handle();
+    $this->app->make(CacheService::class)->handle();
     expect(cache('key'))->toBe($tenant2->getTenantKey());
 
     tenancy()->end();
