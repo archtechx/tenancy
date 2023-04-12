@@ -14,7 +14,7 @@ use Stancl\Tenancy\Contracts\Tenant;
 
 class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
 {
-    public static array $originalPrefixes = []; // E.g. 'redis' => 'redis_prefix_'
+    public static array $originalPrefixes = []; // E.g. 'redis' => 'redis_prefix_' (if not specified, use config('cache.prefix') as the default)
     public static array $tenantCacheStores = []; // E.g. 'redis'
     public static array $prefixGenerators = [
         // driverName => Closure(Tenant $tenant)
