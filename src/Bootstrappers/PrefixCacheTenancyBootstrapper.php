@@ -14,7 +14,7 @@ use Stancl\Tenancy\Contracts\Tenant;
 
 class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
 {
-    protected array $originalPrefixes = []; // E.g. 'redis' => 'redis_prefix_'
+    public static array $originalPrefixes = []; // E.g. 'redis' => 'redis_prefix_'
     public static array $tenantCacheStores = []; // E.g. 'redis'
     public static array $prefixGenerators = [
         // driverName => Closure(Tenant $tenant)
@@ -28,22 +28,22 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant): void
     {
-        $originalPrefix = $this->config->get('cache.prefix');
+        foreach (static::$tenantCacheStores as $store) {
+            static::$originalPrefixes[$store] ??= $this->config->get('cache.prefix');
+        }
 
         foreach (static::$tenantCacheStores as $store) {
-            $this->originalPrefixes[$store] = $originalPrefix;
-
             $this->setCachePrefix($store, $this->getStorePrefix($store, $tenant));
         }
     }
 
     public function revert(): void
     {
-        foreach ($this->originalPrefixes as $driver => $prefix) {
+        foreach (static::$originalPrefixes as $driver => $prefix) {
             $this->setCachePrefix($driver, $prefix);
         }
 
-        $this->originalPrefixes = [];
+        static::$originalPrefixes = [];
     }
 
     protected function setCachePrefix(string $driver, string|null $prefix): void
@@ -64,7 +64,7 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
             return static::$prefixGenerators[$store]($tenant);
         }
 
-        return $this->originalPrefixes[$store] . $this->config->get('tenancy.cache.prefix_base') . $tenant->getTenantKey();
+        return static::$originalPrefixes[$store] . $this->config->get('tenancy.cache.prefix_base') . $tenant->getTenantKey();
     }
 
     public static function generatePrefixUsing(string $store, Closure $prefixGenerator): void

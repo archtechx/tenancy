@@ -23,6 +23,7 @@ beforeEach(function () {
 
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
     PrefixCacheTenancyBootstrapper::$prefixGenerators = [];
+    PrefixCacheTenancyBootstrapper::$originalPrefixes = [];
 
     TenancyCacheManager::$addTags = false;
 
@@ -33,6 +34,7 @@ beforeEach(function () {
 afterEach(function () {
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = [];
     PrefixCacheTenancyBootstrapper::$prefixGenerators = [];
+    PrefixCacheTenancyBootstrapper::$originalPrefixes = [];
 
     TenancyCacheManager::$addTags = true;
 });
@@ -338,4 +340,19 @@ test('stores get prefixed using the default way if the store does not have a cor
     // Other stores without a prefix generator use the default generator too
     expect(cache()->store('redis')->getPrefix())->toBe($expectedPrefix . ':');
     tenancy()->end();
+});
+
+test('stores can have different original prefixes', function() {
+    config(['cache.default' => 'redis']);
+    config(['cache.stores.redis2' => config('cache.stores.redis')]);
+    config(['cache.prefix' => $defaultOriginalPrefix = 'default_prefix_']);
+
+    // The prefix specified for a store in PrefixCacheTenancyBootstrapper::$originalPrefixes
+    // Will be used as the original prefix for that store instead of `config('cache.prefix')`
+    PrefixCacheTenancyBootstrapper::$originalPrefixes = ['redis2' => $customOriginalPrefix = 'redis2_prefix_'];
+    PrefixCacheTenancyBootstrapper::$tenantCacheStores = ['redis', 'redis2'];
+
+    tenancy()->initialize(Tenant::create());
+    expect(cache()->store('redis')->getPrefix())->toStartWith($defaultOriginalPrefix);
+    expect(cache()->store('redis2')->getPrefix())->toStartWith($customOriginalPrefix);
 });
