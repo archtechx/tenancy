@@ -14,6 +14,7 @@ use Stancl\Tenancy\Contracts\Tenant;
 
 class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
 {
+    protected string|null $defaultPrefix = null;
     public static array $originalPrefixes = []; // E.g. 'redis' => 'redis_prefix_' (if not specified, use config('cache.prefix') as the default)
     public static array $tenantCacheStores = []; // E.g. 'redis'
     public static array $prefixGenerators = [
@@ -28,8 +29,10 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant): void
     {
+        $this->defaultPrefix = $this->config->get('cache.prefix');
+
         foreach (static::$tenantCacheStores as $store) {
-            static::$originalPrefixes[$store] ??= $this->config->get('cache.prefix');
+            static::$originalPrefixes[$store] ??= $this->defaultPrefix;
         }
 
         foreach (static::$tenantCacheStores as $store) {
@@ -56,6 +59,10 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
         // It is needed when a call to the facade has been made before bootstrapping tenancy
         // The facade has its own cache, separate from the container
         Cache::clearResolvedInstances();
+
+        // Now that the store uses the passed prefix
+        // Set the configured prefix back to the default one
+        $this->config->set('cache.prefix', $this->defaultPrefix);
     }
 
     public function getStorePrefix(string $store, Tenant $tenant): string
@@ -64,7 +71,7 @@ class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
             return static::$prefixGenerators[$store]($tenant);
         }
 
-        return static::$originalPrefixes[$store] . $this->config->get('tenancy.cache.prefix_base') . $tenant->getTenantKey();
+        return (static::$originalPrefixes[$store] ?? $this->defaultPrefix) . $this->config->get('tenancy.cache.prefix_base') . $tenant->getTenantKey();
     }
 
     public static function generatePrefixUsing(string $store, Closure $prefixGenerator): void
