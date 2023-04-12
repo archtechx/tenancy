@@ -20,10 +20,15 @@ class CacheManager extends BaseCacheManager
      */
     public function __call($method, $parameters)
     {
-        if (! tenancy()->initialized || ! static::$addTags) {
-            return parent::__call($method, $parameters);
+        if (tenancy()->initialized && static::$addTags) {
+            return $this->callWithTag($method, $parameters);
         }
 
+        return parent::__call($method, $parameters);
+    }
+
+    protected function callWithTag($method, $parameters)
+    {
         $tags = [config('tenancy.cache.tag_base') . tenant()?->getTenantKey()];
 
         if ($method === 'tags') {
