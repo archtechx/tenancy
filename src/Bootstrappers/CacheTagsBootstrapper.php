@@ -9,7 +9,7 @@ use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
 /**
- * todo name
+ * todo name.
  *
  * Separate tenant cache using tagging.
  */
