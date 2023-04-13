@@ -14,24 +14,16 @@ use Stancl\Tenancy\Bootstrappers\CacheTagsBootstrapper;
 use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
 
 beforeEach(function () {
+    CacheManager::$addTags = false;
+    config(['cache.default' => $cacheDriver = 'redis']);
+    PrefixCacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
+
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
 test('global cache manager stores data in global cache', function (string $bootstrapper) {
-    $cacheDriver = 'redis';
-
-    if ($bootstrapper === PrefixCacheTenancyBootstrapper::class) {
-        CacheManager::$addTags = false;
-        PrefixCacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
-    } else {
-        CacheManager::$addTags = true;
-    }
-
-    config([
-        'tenancy.bootstrappers' => [$bootstrapper],
-        'cache.default' => $cacheDriver,
-    ]);
+    config(['tenancy.bootstrappers' => [$bootstrapper]]);
 
     expect(cache('foo'))->toBe(null);
     GlobalCache::put(['foo' => 'bar'], 1);
@@ -66,19 +58,7 @@ test('global cache manager stores data in global cache', function (string $boots
 ]);
 
 test('the global_cache helper supports the same syntax as the cache helper', function (string $bootstrapper) {
-    $cacheDriver = 'redis';
-
-    if ($bootstrapper === PrefixCacheTenancyBootstrapper::class) {
-        CacheManager::$addTags = false;
-        PrefixCacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
-    } else {
-        CacheManager::$addTags = true;
-    }
-
-    config([
-        'tenancy.bootstrappers' => [$bootstrapper],
-        'cache.default' => $cacheDriver,
-    ]);
+    config(['tenancy.bootstrappers' => [$bootstrapper]]);
 
     $tenant = Tenant::create();
     $tenant->enter();

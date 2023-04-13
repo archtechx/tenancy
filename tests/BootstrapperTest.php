@@ -41,6 +41,7 @@ use Stancl\Tenancy\CacheManager;
 
 beforeEach(function () {
     $this->mockConsoleOutput = false;
+    CacheManager::$addTags = false;
 
     Event::listen(
         TenantCreated::class,
@@ -51,6 +52,10 @@ beforeEach(function () {
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+});
+
+afterEach(function () {
+    CacheManager::$addTags = false;
 });
 
 test('database data is separated', function () {
@@ -88,10 +93,7 @@ test('cache data is separated', function (string $bootstrapper) {
     $cacheDriver = 'redis';
 
     if ($bootstrapper === PrefixCacheTenancyBootstrapper::class) {
-        CacheManager::$addTags = false;
         PrefixCacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
-    } else {
-        CacheManager::$addTags = true;
     }
 
     config([
