@@ -9,9 +9,11 @@ use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
 /**
+ * todo name
+ *
  * Separate tenant cache using tagging.
  */
-class CacheTaggingBootstrapper implements TenancyBootstrapper
+class CacheTagsBootstrapper implements TenancyBootstrapper
 {
     public function bootstrap(Tenant $tenant): void
     {

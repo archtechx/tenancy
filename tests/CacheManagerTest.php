@@ -6,10 +6,10 @@ use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Bootstrappers\CacheTaggingBootstrapper;
+use Stancl\Tenancy\Bootstrappers\CacheTagsBootstrapper;
 
 beforeEach(function () {
-    config(['tenancy.bootstrappers' => [CacheTaggingBootstrapper::class]]);
+    config(['tenancy.bootstrappers' => [CacheTagsBootstrapper::class]]);
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
 });

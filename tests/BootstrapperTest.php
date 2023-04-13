@@ -28,7 +28,7 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Tests\Etc\TestingBroadcaster;
 use Stancl\Tenancy\Listeners\DeleteTenantStorage;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Bootstrappers\CacheTaggingBootstrapper;
+use Stancl\Tenancy\Bootstrappers\CacheTagsBootstrapper;
 use Stancl\Tenancy\Bootstrappers\UrlTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
@@ -85,7 +85,7 @@ test('database data is separated', function () {
 test('cache data is separated', function () {
     config([
         'tenancy.bootstrappers' => [
-            CacheTaggingBootstrapper::class,
+            CacheTagsBootstrapper::class,
         ],
         'cache.default' => 'redis',
     ]);
