@@ -36,6 +36,8 @@ use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
+use Stancl\Tenancy\CacheManager;
 
 beforeEach(function () {
     $this->mockConsoleOutput = false;
@@ -82,12 +84,19 @@ test('database data is separated', function () {
     expect(DB::table('users')->first()->name)->toBe('Foo');
 });
 
-test('cache data is separated', function () {
+test('cache data is separated', function (string $bootstrapper) {
+    $cacheDriver = 'redis';
+
+    if ($bootstrapper === PrefixCacheTenancyBootstrapper::class) {
+        CacheManager::$addTags = false;
+        PrefixCacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
+    } else {
+        CacheManager::$addTags = true;
+    }
+
     config([
-        'tenancy.bootstrappers' => [
-            CacheTagsBootstrapper::class,
-        ],
-        'cache.default' => 'redis',
+        'tenancy.bootstrappers' => [$bootstrapper],
+        'cache.default' => $cacheDriver,
     ]);
 
     $tenant1 = Tenant::create();
@@ -121,7 +130,13 @@ test('cache data is separated', function () {
 
     // Asset central is still the same
     expect(Cache::get('foo'))->toBe('central');
-});
+
+    // Reset the static property
+    CacheManager::$addTags = false;
+})->with([
+    'tagging' => CacheTagsBootstrapper::class,
+    'prefixing' => PrefixCacheTenancyBootstrapper::class,
+])->group('bootstrapper');
 
 test('redis data is separated', function () {
     config(['tenancy.bootstrappers' => [
