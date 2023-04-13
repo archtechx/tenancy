@@ -54,10 +54,6 @@ beforeEach(function () {
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
-afterEach(function () {
-    CacheManager::$addTags = false;
-});
-
 test('database data is separated', function () {
     config(['tenancy.bootstrappers' => [
         DatabaseTenancyBootstrapper::class,
