@@ -34,7 +34,7 @@ afterEach(function () {
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = [];
     PrefixCacheTenancyBootstrapper::$prefixGenerator = null;
 
-    TenancyCacheManager::$addTags = true;
+    TenancyCacheManager::$addTags = false;
 });
 
 test('Tenancy overrides CacheManager', function() {
