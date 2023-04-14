@@ -92,7 +92,7 @@ class Tenancy
         return static::model()->query();
     }
 
-    public static function model(): Tenant&Model
+    public static function model(): Tenant
     {
         /** @var class-string<Tenant&Model> $class */
         $class = config('tenancy.models.tenant');

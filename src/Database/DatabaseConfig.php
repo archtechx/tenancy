@@ -6,7 +6,6 @@ namespace Stancl\Tenancy\Database;
 
 use Closure;
 use Illuminate\Database;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -17,7 +16,7 @@ use Stancl\Tenancy\Database\Exceptions\NoConnectionSetException;
 class DatabaseConfig
 {
     /** The tenant whose database we're dealing with. */
-    public Tenant&Model $tenant;
+    public Tenant $tenant;
 
     /** Database username generator (can be set by the developer.) */
     public static Closure|null $usernameGenerator = null;
@@ -30,20 +29,20 @@ class DatabaseConfig
 
     public static function __constructStatic(): void
     {
-        static::$usernameGenerator = static::$usernameGenerator ?? function (Model&Tenant $tenant) {
+        static::$usernameGenerator = static::$usernameGenerator ?? function (Tenant $tenant) {
             return Str::random(16);
         };
 
-        static::$passwordGenerator = static::$passwordGenerator ?? function (Model&Tenant $tenant) {
+        static::$passwordGenerator = static::$passwordGenerator ?? function (Tenant $tenant) {
             return Hash::make(Str::random(32));
         };
 
-        static::$databaseNameGenerator = static::$databaseNameGenerator ?? function (Model&Tenant $tenant) {
+        static::$databaseNameGenerator = static::$databaseNameGenerator ?? function (Tenant $tenant) {
             return config('tenancy.database.prefix') . $tenant->getTenantKey() . config('tenancy.database.suffix');
         };
     }
 
-    public function __construct(Model&Tenant $tenant)
+    public function __construct(Tenant $tenant)
     {
         static::__constructStatic();
 

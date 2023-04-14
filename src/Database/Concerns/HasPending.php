@@ -46,7 +46,7 @@ trait HasPending
      *
      * @param array<string, mixed> $attributes
      */
-    public static function createPending(array $attributes = []): Model&Tenant
+    public static function createPending(array $attributes = []): Tenant
     {
         $tenant = static::create($attributes);
 
@@ -64,7 +64,7 @@ trait HasPending
     }
 
     /** Pull a pending tenant. */
-    public static function pullPending(): Model&Tenant
+    public static function pullPending(): Tenant
     {
         /** @var Model&Tenant $pendingTenant */
         $pendingTenant = static::pullPendingFromPool(true);

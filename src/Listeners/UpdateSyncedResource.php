@@ -138,7 +138,8 @@ class UpdateSyncedResource extends QueueableListener
         });
     }
 
-    protected function getAttributesForCreation(Model&Syncable $model): array
+    /** @param Syncable&Model $model */
+    protected function getAttributesForCreation(Syncable $model): array
     {
         if (! $model->getSyncedCreationAttributes()) {
             // Creation attributes are not specified so create the model as 1:1 copy
@@ -165,7 +166,7 @@ class UpdateSyncedResource extends QueueableListener
     /**
      * Split the attribute names (sequential index items) and default values (key => values).
      */
-    protected function getAttributeNamesAndDefaultValues(Model&Syncable $model): array
+    protected function getAttributeNamesAndDefaultValues(Syncable $model): array
     {
         $syncedCreationAttributes = $model->getSyncedCreationAttributes() ?? [];
 

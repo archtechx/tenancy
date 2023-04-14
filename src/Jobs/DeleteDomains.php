@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Jobs;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -15,9 +14,9 @@ class DeleteDomains
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected TenantWithDatabase&Model $tenant;
+    protected TenantWithDatabase $tenant;
 
-    public function __construct(TenantWithDatabase&Model $tenant)
+    public function __construct(TenantWithDatabase $tenant)
     {
         $this->tenant = $tenant;
     }

@@ -49,7 +49,7 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
         /** @var Tenant&Model $tenant */
         $tenant->unsetRelation('domains');
 
-        return $tenant->domains->map(function (Domain&Model $domain) {
+        return $tenant->domains->map(function (Domain $domain) {
             return [$domain->domain];
         })->toArray();
     }
