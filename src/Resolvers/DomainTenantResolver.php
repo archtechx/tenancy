@@ -51,6 +51,7 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
 
         /** @param Domain&Model $domain */
         return $tenant->domains->map(function (Domain $domain) {
+            /** @var Domain&Model $domain */
             return [$domain->domain];
         })->toArray();
     }
