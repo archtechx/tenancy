@@ -18,12 +18,13 @@ class UserImpersonation implements Feature
 
     public function bootstrap(Tenancy $tenancy): void
     {
-        $tenancy->macro('impersonate', function (Tenant $tenant, string $userId, string $redirectUrl, string $authGuard = null): ImpersonationToken {
+        $tenancy->macro('impersonate', function (Tenant $tenant, string $userId, string $redirectUrl, string|null $authGuard = null, bool $remember = false): ImpersonationToken {
             return ImpersonationToken::create([
                 Tenancy::tenantKeyColumn() => $tenant->getTenantKey(),
                 'user_id' => $userId,
                 'redirect_url' => $redirectUrl,
                 'auth_guard' => $authGuard,
+                'remember' => $remember,
             ]);
         });
     }
@@ -44,7 +45,7 @@ class UserImpersonation implements Feature
 
         abort_unless($tokenTenantId === $currentTenantId, 403);
 
-        Auth::guard($token->auth_guard)->loginUsingId($token->user_id);
+        Auth::guard($token->auth_guard)->loginUsingId($token->user_id, $token->remember);
 
         $token->delete();
 
