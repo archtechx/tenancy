@@ -53,8 +53,8 @@ test('global cache manager stores data in global cache', function (string $boots
     tenancy()->initialize($tenant1);
     expect(cache('def'))->toBe('ghi');
 })->with([
-    'tagging' => CacheTagsBootstrapper::class,
-    'prefixing' => PrefixCacheTenancyBootstrapper::class,
+    CacheTagsBootstrapper::class,
+    PrefixCacheTenancyBootstrapper::class,
 ]);
 
 test('the global_cache helper supports the same syntax as the cache helper', function (string $bootstrapper) {
@@ -73,6 +73,6 @@ test('the global_cache helper supports the same syntax as the cache helper', fun
 
     expect(cache('foo'))->toBe(null); // tenant cache is not affected
 })->with([
-    'tagging' => CacheTagsBootstrapper::class,
-    'prefixing' => PrefixCacheTenancyBootstrapper::class,
+    CacheTagsBootstrapper::class,
+    PrefixCacheTenancyBootstrapper::class,
 ]);
