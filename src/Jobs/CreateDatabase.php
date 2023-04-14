@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Jobs;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Queue\InteractsWithQueue;
-use Stancl\Tenancy\Events\DatabaseCreated;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Stancl\Tenancy\Events\CreatingDatabase;
-use Stancl\Tenancy\Database\DatabaseManager;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
+use Stancl\Tenancy\Database\DatabaseManager;
+use Stancl\Tenancy\Events\CreatingDatabase;
+use Stancl\Tenancy\Events\DatabaseCreated;
 
 class CreateDatabase implements ShouldQueue
 {

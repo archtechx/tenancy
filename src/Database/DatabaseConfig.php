@@ -6,20 +6,20 @@ namespace Stancl\Tenancy\Database;
 
 use Closure;
 use Illuminate\Database;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Database\Eloquent\Model;
-use Stancl\Tenancy\Database\Exceptions\NoConnectionSetException;
+use Illuminate\Support\Str;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase as Tenant;
 use Stancl\Tenancy\Database\Exceptions\DatabaseManagerNotRegisteredException;
+use Stancl\Tenancy\Database\Exceptions\NoConnectionSetException;
 
 class DatabaseConfig
 {
     /**
      * The tenant whose database we're dealing with.
      *
-     * @var Tenant&Model $tenant
+     * @var Tenant&Model
      */
     public Tenant $tenant;
 
