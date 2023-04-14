@@ -45,6 +45,7 @@ trait HasPending
      * Create a pending tenant.
      *
      * @param array<string, mixed> $attributes
+     * @return Model&Tenant
      */
     public static function createPending(array $attributes = []): Tenant
     {
@@ -63,7 +64,11 @@ trait HasPending
         return $tenant;
     }
 
-    /** Pull a pending tenant. */
+    /**
+     * Pull a pending tenant.
+     *
+     * @return Model&Tenant
+     */
     public static function pullPending(): Tenant
     {
         /** @var Model&Tenant $pendingTenant */

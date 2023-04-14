@@ -165,6 +165,8 @@ class UpdateSyncedResource extends QueueableListener
 
     /**
      * Split the attribute names (sequential index items) and default values (key => values).
+     *
+     * @param Model&Syncable $model
      */
     protected function getAttributeNamesAndDefaultValues(Syncable $model): array
     {

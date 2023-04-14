@@ -31,7 +31,11 @@ class TenantList extends Command
         return 0;
     }
 
-    /** Generate the visual CLI output for the tenant name. */
+    /**
+     * Generate the visual CLI output for the tenant name.
+     *
+     * @param Model&Tenant $tenant
+    */
     protected function tenantCLI(Tenant $tenant): string
     {
         return "<fg=yellow>{$tenant->getTenantKeyName()}: {$tenant->getTenantKey()}</>";
