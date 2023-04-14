@@ -130,7 +130,5 @@ jobs:
         uses: sudo-bot/action-doctum@latest
         with:
             config-file: doctum.php
-            # parse, render or update
             method: "update"
-            # (optional) defaults to '--output-format=github --no-ansi --no-progress -v'
             cli-args: "--output-format=github --force --ignore-parse-errors --no-ansi --no-progress -v"
