@@ -19,7 +19,6 @@ class DeleteDatabase implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
-     * @var TenantWithDatabase&Model
      * @param TenantWithDatabase&Model $tenant
      */
     public function __construct(
