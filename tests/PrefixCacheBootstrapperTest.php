@@ -122,7 +122,7 @@ test('prefixing separates the cache', function () {
     $tenant2 = Tenant::create();
     tenancy()->initialize($tenant2);
 
-    pest()->assertNotSame('bar', cache()->get('foo'));
+    expect(cache()->get('foo'))->not()->toBe('bar');
 
     cache()->put('foo', 'xyz', 1);
     expect(cache()->get('foo'))->toBe('xyz');
