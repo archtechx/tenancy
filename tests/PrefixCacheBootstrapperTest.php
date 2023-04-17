@@ -168,6 +168,8 @@ test('cache base prefix is customizable', function () {
 test('cache is prefixed correctly when using a repository injected in a singleton', function () {
     $this->app->singleton(CacheService::class);
 
+    expect(cache('key'))->toBeNull();
+
     $this->app->make(CacheService::class)->handle();
 
     expect(cache('key'))->toBe('central-value');
