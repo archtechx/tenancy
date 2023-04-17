@@ -299,7 +299,7 @@ test('only the stores specified in tenantCacheStores get prefixed', function() {
     expect(cache('key'))->toBe($centralValue);
 });
 
-test('non default stores get prefixed too', function () {
+test('non default stores get prefixed too when specified in tenantCacheStores', function () {
     $generatePrefixForTenant = function (Tenant $tenant) {
         return app(PrefixCacheTenancyBootstrapper::class)->generatePrefix($tenant);
     };
