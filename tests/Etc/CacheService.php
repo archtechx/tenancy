@@ -10,7 +10,7 @@ class CacheService
 {
     public function __construct(
        protected Repository $cache
-    ){
+    ) {
     }
 
     public function handle(): void
