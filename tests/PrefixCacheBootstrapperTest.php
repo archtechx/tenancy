@@ -101,7 +101,7 @@ test('cache is persisted when reidentification is used', function () {
     $tenant2 = Tenant::create();
     tenancy()->initialize($tenant1);
 
-    cache(['foo' => 'bar'], 10);
+    cache(['foo' => 'bar']);
     expect(cache('foo'))->toBe('bar');
 
     tenancy()->initialize($tenant2);
@@ -116,7 +116,7 @@ test('prefixing separates the cache', function () {
     $tenant1 = Tenant::create();
     tenancy()->initialize($tenant1);
 
-    cache()->put('foo', 'bar', 1);
+    cache()->put('foo', 'bar');
     expect(cache()->get('foo'))->toBe('bar');
 
     $tenant2 = Tenant::create();
@@ -124,7 +124,7 @@ test('prefixing separates the cache', function () {
 
     expect(cache()->get('foo'))->not()->toBe('bar');
 
-    cache()->put('foo', 'xyz', 1);
+    cache()->put('foo', 'xyz');
     expect(cache()->get('foo'))->toBe('xyz');
 });
 
@@ -134,6 +134,7 @@ test('central cache is persisted', function () {
     $tenant1 = Tenant::create();
     tenancy()->initialize($tenant1);
 
+    expect(cache('key'))->toBeNull();
     cache()->put('key', 'tenant');
 
     expect(cache()->get('key'))->toBe('tenant');
