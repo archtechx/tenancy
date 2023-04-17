@@ -126,6 +126,9 @@ test('prefixing separates the cache', function () {
 
     cache()->put('foo', 'xyz');
     expect(cache()->get('foo'))->toBe('xyz');
+
+    tenancy()->initialize($tenant1);
+    expect(cache()->get('foo'))->toBe('bar');
 });
 
 test('central cache is persisted', function () {
