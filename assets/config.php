@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Stancl\Tenancy\CacheManager;
 use Stancl\Tenancy\Middleware;
 use Stancl\Tenancy\Resolvers;
 
@@ -189,6 +190,7 @@ return [
      * You can clear cache selectively by specifying the tag.
      */
     'cache' => [
+        'manager' => CacheManager::class,
         'tag_base' => 'tenant', // This tag_base, followed by the tenant_id, will form a tag that will be applied on each cache call.
         'prefix_base' => 'tenant_', // This prefix_base, followed by the tenant_id, will form a cache prefix that will be used for every cache key.
     ],

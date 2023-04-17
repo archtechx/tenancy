@@ -96,10 +96,6 @@ class TenancyServiceProvider extends ServiceProvider
             return new Commands\MigrateFreshOverride;
         });
 
-        $this->app->singleton('cache', function ($app) {
-            return new TenantCacheManager($app);
-        });
-
         $this->publishes([
             __DIR__ . '/../assets/config.php' => config_path('tenancy.php'),
         ], 'config');
@@ -137,6 +133,10 @@ class TenancyServiceProvider extends ServiceProvider
             }
 
             return $instance;
+        });
+
+        $this->app->singleton('cache', function ($app) {
+            return new $this->app['config']['tenancy.cache.manager']($app);
         });
     }
 }
