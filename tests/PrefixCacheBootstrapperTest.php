@@ -105,6 +105,7 @@ test('cache is persisted when reidentification is used', function () {
     expect(cache('foo'))->toBe('bar');
 
     tenancy()->initialize($tenant2);
+    expect(cache('foo'))->not()->toBe('bar');
     tenancy()->end();
 
     tenancy()->initialize($tenant1);
