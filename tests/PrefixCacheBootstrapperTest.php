@@ -33,8 +33,6 @@ beforeEach(function () {
 afterEach(function () {
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = [];
     PrefixCacheTenancyBootstrapper::$prefixGenerator = null;
-
-    TenancyCacheManager::$addTags = false;
 });
 
 test('Tenancy overrides CacheManager', function() {
@@ -60,38 +58,35 @@ test('Tenancy overrides CacheManager', function() {
 test('correct cache prefix is used in all contexts', function () {
     $originalPrefix = config('cache.prefix');
     $prefixBase = config('tenancy.cache.prefix_base');
-    $expectPrefixToBe = function(string $prefix) {
+    $getDefaultPrefixForTenant = fn (Tenant $tenant) => $originalPrefix . $prefixBase . $tenant->getTenantKey();
+    $generatePrefixForTenant = function (Tenant $tenant) {
+        return app(PrefixCacheTenancyBootstrapper::class)->generatePrefix($tenant);
+    };
+
+    $expectCachePrefixToBe = function (string $prefix) {
         expect($prefix . ':') // RedisStore suffixes prefix with ':'
             ->toBe(app('cache')->getPrefix())
             ->toBe(app('cache.store')->getPrefix());
     };
 
-    $expectPrefixToBe($originalPrefix);
+    $expectCachePrefixToBe($originalPrefix);
 
     $tenant1 = Tenant::create();
     $tenant2 = Tenant::create();
 
-    $tenantOnePrefix = $originalPrefix . $prefixBase . $tenant1->getTenantKey();
-
     tenancy()->initialize($tenant1);
-    // Default prefix generator
-    $prefixGenerator = PrefixCacheTenancyBootstrapper::$prefixGenerator;
-
     cache()->set('key', 'tenantone-value');
-
-    $expectPrefixToBe($prefixGenerator($tenant1));
-
-    $tenantTwoPrefix = $originalPrefix . $prefixBase . $tenant2->getTenantKey();
+    expect($generatePrefixForTenant($tenant1))->toBe($tenantOnePrefix = $getDefaultPrefixForTenant($tenant1));
+    $expectCachePrefixToBe($tenantOnePrefix);
 
     tenancy()->initialize($tenant2);
-
     cache()->set('key', 'tenanttwo-value');
-
-    $expectPrefixToBe($prefixGenerator($tenant2));
+    expect($generatePrefixForTenant($tenant2))->toBe($tenantTwoPrefix = $getDefaultPrefixForTenant($tenant2));
+    $expectCachePrefixToBe($tenantTwoPrefix);
 
     // Prefix gets reverted to default after ending tenancy
     tenancy()->end();
-    $expectPrefixToBe($originalPrefix);
+    $expectCachePrefixToBe($originalPrefix);
 
     // Assert tenant's data is accessible using the prefix from the central context
     config(['cache.prefix' => null]); // stop prefixing cache keys in central so we can provide prefix manually
@@ -282,6 +277,10 @@ test('stores not specified in tenantCacheStores do not get prefixed', function()
 });
 
 test('non default stores get prefixed too', function () {
+    $generatePrefixForTenant = function (Tenant $tenant) {
+        return app(PrefixCacheTenancyBootstrapper::class)->generatePrefix($tenant);
+    };
+
     config(['cache.stores.redis2' => config('cache.stores.redis')]);
     // Make 'redis2' the default cache driver
     config(['cache.default' => 'redis2']);
@@ -294,7 +293,8 @@ test('non default stores get prefixed too', function () {
     expect(cache()->store('redis')->getPrefix())->toBe($defaultPrefix);
 
     tenancy()->initialize($tenant);
-    $expectedPrefix = (PrefixCacheTenancyBootstrapper::$prefixGenerator)($tenant);
+
+    $expectedPrefix = $generatePrefixForTenant($tenant);
 
     // We didn't add a prefix generator for our 'redis' driver, so we expect the prefix to be generated using the 'default' generator
     expect(cache()->store()->getPrefix())->toBe($expectedPrefix . ':');
@@ -327,7 +327,11 @@ test('stores get prefixed using the default way if the store does not have a cor
     config(['cache.stores.redis2' => config('cache.stores.redis')]);
     // Make 'redis2' the default cache driver
     config(['cache.default' => 'redis2']);
+    $originalPrefix = config('cache.prefix');
+    $prefixBase = config('tenancy.cache.prefix_base');
+
     $tenant = Tenant::create();
+    $defaultPrefix = $originalPrefix . $prefixBase . $tenant->getTenantKey();
 
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = ['redis', 'redis2'];
 
@@ -335,11 +339,9 @@ test('stores get prefixed using the default way if the store does not have a cor
     // Let the prefix get created using the default approach
     tenancy()->initialize($tenant);
 
-    $expectedPrefix = (PrefixCacheTenancyBootstrapper::$prefixGenerator)($tenant);
-
-    expect(cache()->store()->getPrefix())->toBe($expectedPrefix . ':');
+    expect(cache()->store()->getPrefix())->toBe($defaultPrefix . ':');
     // Other stores without a prefix generator use the default generator too
-    expect(cache()->store('redis')->getPrefix())->toBe($expectedPrefix . ':');
+    expect(cache()->store('redis')->getPrefix())->toBe($defaultPrefix . ':');
 
     tenancy()->end();
 });
