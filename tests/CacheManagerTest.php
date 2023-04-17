@@ -58,7 +58,7 @@ test('tags separate cache well enough', function () {
     $tenant2 = Tenant::create();
     tenancy()->initialize($tenant2);
 
-    pest()->assertNotSame('bar', cache()->get('foo'));
+    expect(cache('foo'))->not()->toBe('bar');
 
     cache()->put('foo', 'xyz', 1);
     expect(cache()->get('foo'))->toBe('xyz');
@@ -74,7 +74,7 @@ test('invoking the cache helper works', function () {
     $tenant2 = Tenant::create();
     tenancy()->initialize($tenant2);
 
-    pest()->assertNotSame('bar', cache('foo'));
+    expect(cache('foo'))->not()->toBe('bar');
 
     cache(['foo' => 'xyz'], 1);
     expect(cache('foo'))->toBe('xyz');
