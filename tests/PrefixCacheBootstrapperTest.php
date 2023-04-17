@@ -225,7 +225,9 @@ test('specific central cache store can be used inside a service', function () {
     expect(cache()->store($cacheStore)->get('key'))->toBe($tenant2->getTenantKey());
 });
 
-test('stores specified in tenantCacheStores get prefixed', function() {
+test('only the stores specified in tenantCacheStores get prefixed', function() {
+    config(['cache.stores.redis2' => config('cache.stores.redis')]);
+
     // Make the currently used store ('redis') the only store in $tenantCacheStores
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = ['redis'];
 
@@ -243,44 +245,58 @@ test('stores specified in tenantCacheStores get prefixed', function() {
     $this->app->make(CacheService::class)->handle();
     expect(cache('key'))->toBe($tenant1->getTenantKey());
 
+    // Switch to an unprefixed store
+    config(['cache.default' => 'redis2']);
+    expect(cache('key'))->toBe($centralValue);
+    config(['cache.default' => 'redis']);
+
     tenancy()->initialize($tenant2);
 
     expect(cache('key'))->toBeNull();
     $this->app->make(CacheService::class)->handle();
     expect(cache('key'))->toBe($tenant2->getTenantKey());
 
+    // Switch to an unprefixed store
+    config(['cache.default' => 'redis2']);
+    expect(cache('key'))->toBe($centralValue);
+    // Switch back to the prefixed store
+    config(['cache.default' => 'redis']);
+
     tenancy()->end();
     expect(cache('key'))->toBe($centralValue);
-});
-
-test('stores not specified in tenantCacheStores do not get prefixed', function() {
-    config(['cache.stores.redis2' => config('cache.stores.redis')]);
-    config(['cache.default' => 'redis2']);
-    // Make 'redis' the only store in $tenantCacheStores so that the current store ('redis2') doesn't get prefixed
-    PrefixCacheTenancyBootstrapper::$tenantCacheStores = ['redis'];
-
-    $this->app->singleton(CacheService::class);
 
     $this->app->make(CacheService::class)->handle();
-    expect(cache('key'))->toBe('central-value');
+    expect(cache('key'))->toBe($centralValue);
 
     $tenant1 = Tenant::create();
     $tenant2 = Tenant::create();
+
     tenancy()->initialize($tenant1);
 
-    // The cache isn't prefixed, so it isn't separated
-    expect(cache('key'))->toBe('central-value');
+    expect(cache('key'))->toBeNull();
     $this->app->make(CacheService::class)->handle();
     expect(cache('key'))->toBe($tenant1->getTenantKey());
+
+    // Switch to an unprefixed store
+    config(['cache.default' => 'redis2']);
+    expect(cache('key'))->toBe($centralValue);
+    // Switch back to the prefixed store
+    config(['cache.default' => 'redis']);
 
     tenancy()->initialize($tenant2);
 
-    expect(cache('key'))->toBe($tenant1->getTenantKey());
+    expect(cache('key'))->toBeNull();
     $this->app->make(CacheService::class)->handle();
     expect(cache('key'))->toBe($tenant2->getTenantKey());
 
+    // Switch to an unprefixed store
+    config(['cache.default' => 'redis2']);
+    expect(cache('key'))->toBe($centralValue);
+    // Switch back to the prefixed store
+    config(['cache.default' => 'redis']);
+
     tenancy()->end();
-    expect(cache('key'))->toBe($tenant2->getTenantKey());
+    expect(cache('key'))->toBe($centralValue);
 });
 
 test('non default stores get prefixed too', function () {
