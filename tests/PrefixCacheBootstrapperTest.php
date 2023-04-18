@@ -9,7 +9,6 @@ use Stancl\Tenancy\Tests\Etc\CacheService;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\CacheManager as TenancyCacheManager;
 use Stancl\Tenancy\Tests\Etc\SpecificCacheStoreService;
 use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
 
@@ -25,7 +24,7 @@ beforeEach(function () {
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
     PrefixCacheTenancyBootstrapper::$prefixGenerator = null;
 
-    TenancyCacheManager::$addTags = false;
+    config('tenancy.cache.manager')::$addTags = false;
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
@@ -37,23 +36,25 @@ afterEach(function () {
 });
 
 test('Tenancy overrides CacheManager', function() {
-    expect(app('cache')::class)->toBe(TenancyCacheManager::class);
-    expect(app(CacheManager::class)::class)->toBe(TenancyCacheManager::class);
+    $tenancyCacheManager = config('tenancy.cache.manager');
+
+    expect(app('cache')::class)->toBe($tenancyCacheManager);
+    expect(app(CacheManager::class)::class)->toBe($tenancyCacheManager);
 
     tenancy()->initialize(Tenant::create(['id' => 'first']));
 
-    expect(app('cache')::class)->toBe(TenancyCacheManager::class);
-    expect(app(CacheManager::class)::class)->toBe(TenancyCacheManager::class);
+    expect(app('cache')::class)->toBe($tenancyCacheManager);
+    expect(app(CacheManager::class)::class)->toBe($tenancyCacheManager);
 
     tenancy()->initialize(Tenant::create(['id' => 'second']));
 
-    expect(app('cache')::class)->toBe(TenancyCacheManager::class);
-    expect(app(CacheManager::class)::class)->toBe(TenancyCacheManager::class);
+    expect(app('cache')::class)->toBe($tenancyCacheManager);
+    expect(app(CacheManager::class)::class)->toBe($tenancyCacheManager);
 
     tenancy()->end();
 
-    expect(app('cache')::class)->toBe(TenancyCacheManager::class);
-    expect(app(CacheManager::class)::class)->toBe(TenancyCacheManager::class);
+    expect(app('cache')::class)->toBe($tenancyCacheManager);
+    expect(app(CacheManager::class)::class)->toBe($tenancyCacheManager);
 });
 
 test('correct cache prefix is used in all contexts', function () {
