@@ -363,25 +363,22 @@ test('cache store prefix generation can be customized', function() {
 });
 
 test('stores get prefixed using the default way if no prefix generator is specified', function() {
-    // Make 'redis2' the default cache driver
-    config(['cache.default' => 'redis2']);
     $originalPrefix = config('cache.prefix');
     $prefixBase = config('tenancy.cache.prefix_base');
-
     $tenant = Tenant::create();
     $defaultPrefix = $originalPrefix . $prefixBase . $tenant->getTenantKey();
 
+    // Don't specify a prefix generator
+    // Let the prefix get created using the default approach
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = ['redis', 'redis2'];
 
-    // Don't add a generator for 'redis2'
-    // Let the prefix get created using the default approach
     tenancy()->initialize($tenant);
 
     // Other stores without a prefix generator use the default generator too
     expect($defaultPrefix . ':')
-        ->toBe(cache()->getPrefix())
-        ->toBe(app('cache')->getPrefix())
-        ->toBe(app('cache.store')->getPrefix());
+        ->toBe(app(PrefixCacheTenancyBootstrapper::class)->generatePrefix($tenant) . ':')
+        ->toBe(cache()->getPrefix()) // Get prefix of the default store ('redis')
+        ->toBe(cache()->store('redis2')->getPrefix());
 
     tenancy()->end();
 });
