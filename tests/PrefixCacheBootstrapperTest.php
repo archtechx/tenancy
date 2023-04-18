@@ -200,6 +200,8 @@ test('specific central cache store can be used inside a service', function () {
     $cacheStore = 'redis2'; // Name of the non-default, central cache store that we'll use using cache()->store($cacheStore)
 
     // Service uses the 'redis2' store which is central/not prefixed (not present in PrefixCacheTenancyBootstrapper::$tenantCacheStores)
+    // The service's handle() method sets the value of the cache key 'key' to the current tenant key
+    // Or to 'central-value' if tenancy isn't initialized
     $this->app->singleton(SpecificCacheStoreService::class, function() use ($cacheStore) {
         return new SpecificCacheStoreService($this->app->make(CacheManager::class), $cacheStore);
     });
@@ -211,7 +213,8 @@ test('specific central cache store can be used inside a service', function () {
     $tenant2 = Tenant::create();
     tenancy()->initialize($tenant1);
 
-    // The store isn't prefixed, so the cache isn't separated
+    // The store isn't prefixed, so the cache isn't separated – the values persist from one context to another
+    // Also check if the cache key SpecificCacheStoreService sets using the Repository singleton is set correctly
     expect(cache()->store($cacheStore)->get('key'))->toBe('central-value');
     $this->app->make(SpecificCacheStoreService::class)->handle();
     expect(cache()->store($cacheStore)->get('key'))->toBe($tenant1->getTenantKey());
