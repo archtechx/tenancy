@@ -93,6 +93,7 @@ test('database data is separated', function () {
 });
 
 test('cache data is separated', function (string $bootstrapper) {
+    // Make sure that the prefixed 'redis' cache driver is used
     expect(config('cache.default'))->toBe('redis');
 
     config([

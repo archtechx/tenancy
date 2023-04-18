@@ -231,7 +231,8 @@ test('specific central cache store can be used inside a service', function () {
 
 test('only the stores specified in tenantCacheStores get prefixed', function() {
     // Make sure the currently used store ('redis') is the only store in $tenantCacheStores
-    PrefixCacheTenancyBootstrapper::$tenantCacheStores = [$prefixedStore = 'redis'];
+    expect(PrefixCacheTenancyBootstrapper::$tenantCacheStores)->toBe([$prefixedStore = 'redis']);
+
     $centralValue = 'central-value';
     $assertStoreIsNotPrefixed = function (string $unprefixedStore) use ($prefixedStore, $centralValue) {
         // Switch to the unprefixed store
