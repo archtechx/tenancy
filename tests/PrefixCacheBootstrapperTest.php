@@ -370,7 +370,7 @@ test('stores get prefixed using the default way if no prefix generator is specif
 
     tenancy()->initialize($tenant);
 
-    // Other stores without a prefix generator use the default generator too
+    // All stores use the default way of generating the prefix when the prefix generator isn't specified
     expect($defaultPrefix . ':')
         ->toBe(app(PrefixCacheTenancyBootstrapper::class)->generatePrefix($tenant) . ':')
         ->toBe(cache()->getPrefix()) // Get prefix of the default store ('redis')
