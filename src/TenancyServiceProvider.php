@@ -134,6 +134,7 @@ class TenancyServiceProvider extends ServiceProvider
             return $instance;
         });
 
+        // todo https://discord.com/channels/976506366502006874/976513756576243733/1097778320692740096
         $this->app->singleton('cache', function ($app) {
             return new $this->app['config']['tenancy.cache.manager']($app);
         });
