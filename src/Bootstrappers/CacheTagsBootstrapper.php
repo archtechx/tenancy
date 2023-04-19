@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Illuminate\Cache\CacheManager;
-use Stancl\Tenancy\Contracts\Tenant;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Support\Facades\Cache;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
+use Stancl\Tenancy\Contracts\Tenant;
 
 class CacheTagsBootstrapper implements TenancyBootstrapper
 {
