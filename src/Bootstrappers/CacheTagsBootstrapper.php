@@ -10,6 +10,11 @@ use Illuminate\Support\Facades\Cache;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
+/**
+ * todo name.
+ *
+ * Separate tenant cache using tagging.
+ */
 class CacheTagsBootstrapper implements TenancyBootstrapper
 {
     protected ?CacheManager $originalCache = null;
