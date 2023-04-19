@@ -37,12 +37,16 @@ use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
-use Stancl\Tenancy\CacheManager;
 
 beforeEach(function () {
     $this->mockConsoleOutput = false;
+
     config(['cache.default' => $cacheDriver = 'redis']);
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
+    // Reset static properties of classes used in this test file to their default values
+    BroadcastTenancyBootstrapper::$credentialsMap = [];
+    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably'];
+    UrlTenancyBootstrapper::$rootUrlOverride = null;
 
     Event::listen(
         TenantCreated::class,
@@ -56,7 +60,11 @@ beforeEach(function () {
 });
 
 afterEach(function () {
+    // Reset static properties of classes used in this test file to their default values
+    UrlTenancyBootstrapper::$rootUrlOverride = null;
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = [];
+    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably'];
+    BroadcastTenancyBootstrapper::$credentialsMap = [];
 });
 
 test('database data is separated', function () {

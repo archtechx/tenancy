@@ -13,10 +13,15 @@ use Stancl\Tenancy\Tests\Etc\TestingBroadcaster;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Illuminate\Contracts\Broadcasting\Broadcaster as BroadcasterContract;
 
-beforeEach(function() {
+beforeEach(function () {
     withTenantDatabases();
+    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably'];
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+});
+
+afterEach(function () {
+    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably'];
 });
 
 test('bound broadcaster instance is the same before initializing tenancy and after ending it', function() {

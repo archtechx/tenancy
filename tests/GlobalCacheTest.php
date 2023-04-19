@@ -21,6 +21,10 @@ beforeEach(function () {
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
+afterEach(function () {
+    PrefixCacheTenancyBootstrapper::$tenantCacheStores = [];
+});
+
 test('global cache manager stores data in global cache', function (string $bootstrapper) {
     config(['tenancy.bootstrappers' => [$bootstrapper]]);
 

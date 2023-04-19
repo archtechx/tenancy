@@ -12,6 +12,8 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 
 beforeEach(function () {
+    InitializeTenancyByDomain::$onFail = null;
+
     Route::group([
         'middleware' => InitializeTenancyByDomain::class,
     ], function () {
@@ -21,6 +23,10 @@ beforeEach(function () {
     });
 
     config(['tenancy.models.tenant' => DomainTenant::class]);
+});
+
+afterEach(function () {
+    InitializeTenancyByDomain::$onFail = null;
 });
 
 test('tenant can be identified using hostname', function () {
@@ -89,9 +95,6 @@ test('onfail logic can be customized', function () {
 });
 
 test('throw correct exception when onFail is null and universal routes are enabled', function () {
-    // un-define onFail logic
-    InitializeTenancyByDomain::$onFail = null;
-
     // Enable UniversalRoute feature
     Route::middlewareGroup('universal', []);
 
