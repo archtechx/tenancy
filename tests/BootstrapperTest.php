@@ -41,7 +41,6 @@ use Stancl\Tenancy\CacheManager;
 
 beforeEach(function () {
     $this->mockConsoleOutput = false;
-    CacheManager::$addTags = false;
     config(['cache.default' => $cacheDriver = 'redis']);
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
 
@@ -57,7 +56,6 @@ beforeEach(function () {
 });
 
 afterEach(function () {
-    CacheManager::$addTags = false;
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = [];
 });
 

@@ -14,7 +14,6 @@ use Stancl\Tenancy\Bootstrappers\CacheTagsBootstrapper;
 use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
 
 beforeEach(function () {
-    CacheManager::$addTags = false;
     config(['cache.default' => $cacheDriver = 'redis']);
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
 

@@ -24,8 +24,6 @@ beforeEach(function () {
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
     PrefixCacheTenancyBootstrapper::$prefixGenerator = null;
 
-    config('tenancy.cache.manager')::$addTags = false;
-
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
@@ -33,28 +31,6 @@ beforeEach(function () {
 afterEach(function () {
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = [];
     PrefixCacheTenancyBootstrapper::$prefixGenerator = null;
-});
-
-test('Tenancy overrides CacheManager', function() {
-    $tenancyCacheManager = config('tenancy.cache.manager');
-
-    expect(app('cache')::class)->toBe($tenancyCacheManager);
-    expect(app(CacheManager::class)::class)->toBe($tenancyCacheManager);
-
-    tenancy()->initialize(Tenant::create(['id' => 'first']));
-
-    expect(app('cache')::class)->toBe($tenancyCacheManager);
-    expect(app(CacheManager::class)::class)->toBe($tenancyCacheManager);
-
-    tenancy()->initialize(Tenant::create(['id' => 'second']));
-
-    expect(app('cache')::class)->toBe($tenancyCacheManager);
-    expect(app(CacheManager::class)::class)->toBe($tenancyCacheManager);
-
-    tenancy()->end();
-
-    expect(app('cache')::class)->toBe($tenancyCacheManager);
-    expect(app(CacheManager::class)::class)->toBe($tenancyCacheManager);
 });
 
 test('correct cache prefix is used in all contexts', function () {
