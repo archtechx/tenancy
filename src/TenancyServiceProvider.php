@@ -8,6 +8,7 @@ use Illuminate\Cache\CacheManager;
 use Illuminate\Database\Console\Migrations\FreshCommand;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
+use Stancl\Tenancy\CacheManager as TenancyCacheManager;
 use Stancl\Tenancy\Contracts\Domain;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
@@ -133,5 +134,12 @@ class TenancyServiceProvider extends ServiceProvider
 
             return $instance;
         });
+
+        if (! $this->app['config']['tenancy.cache.override_manager']) {
+            // todo https://discord.com/channels/976506366502006874/976513756576243733/1097778320692740096
+            $this->app->singleton('cache', function ($app) {
+                return new TenancyCacheManager($app);
+            });
+        }
     }
 }
