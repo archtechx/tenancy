@@ -11,7 +11,6 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\Etc\SpecificCacheStoreService;
 use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
-use Stancl\Tenancy\CacheManager as TenancyCacheManager;
 
 beforeEach(function () {
     config([
@@ -22,7 +21,6 @@ beforeEach(function () {
         'cache.stores.' . $secondCacheDriver = 'redis2' => config('cache.stores.redis'),
     ]);
 
-    TenancyCacheManager::$addTags = false;
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver, $secondCacheDriver];
     PrefixCacheTenancyBootstrapper::$prefixGenerator = null;
 
@@ -31,33 +29,8 @@ beforeEach(function () {
 });
 
 afterEach(function () {
-    TenancyCacheManager::$addTags = false;
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = [];
     PrefixCacheTenancyBootstrapper::$prefixGenerator = null;
-});
-
-test('Tenancy overrides CacheManager', function () {
-    // todo Change this to 'Tenancy overrides CacheManager only if configured to do so' after changing TenancyServiceProvider structure
-    // Since we override the manager in TSP by default, we can't test if the overriding is disabled by changing the override_manager config key
-    $tenancyCacheManager = TenancyCacheManager::class;
-
-    expect(app('cache')::class)->toBe($tenancyCacheManager);
-    expect(app(CacheManager::class)::class)->toBe($tenancyCacheManager);
-
-    tenancy()->initialize(Tenant::create(['id' => 'first']));
-
-    expect(app('cache')::class)->toBe($tenancyCacheManager);
-    expect(app(CacheManager::class)::class)->toBe($tenancyCacheManager);
-
-    tenancy()->initialize(Tenant::create(['id' => 'second']));
-
-    expect(app('cache')::class)->toBe($tenancyCacheManager);
-    expect(app(CacheManager::class)::class)->toBe($tenancyCacheManager);
-
-    tenancy()->end();
-
-    expect(app('cache')::class)->toBe($tenancyCacheManager);
-    expect(app(CacheManager::class)::class)->toBe($tenancyCacheManager);
 });
 
 test('correct cache prefix is used in all contexts', function () {
