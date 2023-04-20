@@ -14,6 +14,8 @@ use Stancl\Tenancy\Contracts\Tenant;
  * todo name.
  *
  * Separate tenant cache using tagging.
+ * This is the legacy approach. Some things, like dependency injection, won't work properly with this bootstrapper.
+ * PrefixCacheTenancyBootstrapper is the recommended bootstrapper for cache separation.
  */
 class CacheTagsBootstrapper implements TenancyBootstrapper
 {

@@ -103,7 +103,6 @@ return [
         Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\BatchTenancyBootstrapper::class,
         // Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper::class,
-        // Stancl\Tenancy\Bootstrappers\CacheTagsBootstrapper::class, // Note: DI won't work properly. PrefixCacheTenancyBootstrapper is the recommended way of separating cache
         // Stancl\Tenancy\Bootstrappers\UrlTenancyBootstrapper::class,
         // Stancl\Tenancy\Bootstrappers\SessionTenancyBootstrapper::class,
         // Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper::class, // Queueing mail requires using QueueTenancyBootstrapper with $forceRefresh set to true
