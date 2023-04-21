@@ -28,11 +28,15 @@ class CreateRLSPoliciesForTenantTables extends Command
 
     protected function getTenantTables(): array
     {
+        $files = array_filter(File::files('./database/migrations/tenant'), function (SplFileInfo $migration) {
+            return str($migration)->contains('create_');
+        });
+
         return array_map(function (SplFileInfo $migration) {
             return str($migration->getFilename())
                 ->after('create_')
                 ->before('_table')
                 ->toString();
-        }, File::files('./database/migrations/tenant'));
+        }, $files);
     }
 }
