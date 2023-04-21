@@ -89,6 +89,7 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\MigrateFresh::class,
             Commands\ClearPendingTenants::class,
             Commands\CreatePendingTenants::class,
+            Commands\CreatePostgresUserForTenants::class,
             Commands\CreateRLSPoliciesForTenantTables::class,
         ]);
 
