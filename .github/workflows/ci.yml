@@ -15,7 +15,11 @@ jobs:
 
     strategy:
       matrix:
-        laravel: ['^10.1']
+        include:
+        - laravel: "^9.0"
+          php: "8.0"
+        - laravel: "^10.0"
+          php: "8.2"
 
     steps:
       - name: Checkout
