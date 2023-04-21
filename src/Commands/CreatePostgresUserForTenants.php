@@ -16,9 +16,9 @@ class CreatePostgresUserForTenants extends Command
 
     public function handle(): int
     {
-        tenancy()->runForMultiple($this->getTenants(), function ($tenant) {
-            CreatePostgresUserForTenant::dispatch();
-        });
+        foreach ($this->getTenants() as $tenant) {
+            CreatePostgresUserForTenant::dispatch($tenant);
+        }
 
         return Command::SUCCESS;
     }
