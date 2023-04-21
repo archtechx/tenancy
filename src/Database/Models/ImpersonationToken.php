@@ -18,6 +18,7 @@ use Stancl\Tenancy\Exceptions\StatefulGuardRequiredException;
  * @property string $user_id
  * @property string $auth_guard
  * @property string $redirect_url
+ * @property bool $remember
  * @property Carbon $created_at
  */
 class ImpersonationToken extends Model
@@ -33,9 +34,8 @@ class ImpersonationToken extends Model
     public $incrementing = false;
 
     protected $table = 'tenant_user_impersonation_tokens';
-
-    protected $dates = [
-        'created_at',
+    protected $casts = [
+        'created_at' => 'datetime',
     ];
 
     public static function booted(): void

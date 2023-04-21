@@ -1,0 +1,8 @@
+{
+    "require": {
+        "code-lts/doctum": "v5.5.x-dev"
+    },
+    "scripts": {
+        "doctum": "./vendor/bin/doctum.php update doctum.php --output-format=github --force --ignore-parse-errors --no-ansi --no-progress -v"
+    }
+}
