@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        laravel: ['^9.0']
+        laravel: ['^10.1']
 
     steps:
       - name: Checkout
