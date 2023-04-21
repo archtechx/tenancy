@@ -89,6 +89,7 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\MigrateFresh::class,
             Commands\ClearPendingTenants::class,
             Commands\CreatePendingTenants::class,
+            Commands\CreateRLSPoliciesForTenantTables::class,
         ]);
 
         $this->app->extend(FreshCommand::class, function () {
