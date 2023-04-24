@@ -18,7 +18,7 @@ class CacheManager extends BaseCacheManager
      */
     public function __call($method, $parameters)
     {
-        $tags = [config('tenancy.cache.tag_base') . tenant()?->getTenantKey()];
+        $tags = [config('tenancy.cache.tag_base') . tenant()->getTenantKey()];
 
         if ($method === 'tags') {
             $count = count($parameters);
