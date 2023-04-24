@@ -28,17 +28,25 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Tests\Etc\TestingBroadcaster;
 use Stancl\Tenancy\Listeners\DeleteTenantStorage;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Bootstrappers\CacheTagsBootstrapper;
 use Stancl\Tenancy\Bootstrappers\UrlTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
-use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
 
 beforeEach(function () {
     $this->mockConsoleOutput = false;
+
+    config(['cache.default' => $cacheDriver = 'redis']);
+    PrefixCacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
+    // Reset static properties of classes used in this test file to their default values
+    BroadcastTenancyBootstrapper::$credentialsMap = [];
+    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably'];
+    UrlTenancyBootstrapper::$rootUrlOverride = null;
 
     Event::listen(
         TenantCreated::class,
@@ -49,6 +57,14 @@ beforeEach(function () {
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+});
+
+afterEach(function () {
+    // Reset static properties of classes used in this test file to their default values
+    UrlTenancyBootstrapper::$rootUrlOverride = null;
+    PrefixCacheTenancyBootstrapper::$tenantCacheStores = [];
+    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably'];
+    BroadcastTenancyBootstrapper::$credentialsMap = [];
 });
 
 test('database data is separated', function () {
@@ -82,12 +98,9 @@ test('database data is separated', function () {
     expect(DB::table('users')->first()->name)->toBe('Foo');
 });
 
-test('cache data is separated', function () {
+test('cache data is separated', function (string $bootstrapper) {
     config([
-        'tenancy.bootstrappers' => [
-            CacheTenancyBootstrapper::class,
-        ],
-        'cache.default' => 'redis',
+        'tenancy.bootstrappers' => [$bootstrapper],
     ]);
 
     $tenant1 = Tenant::create();
@@ -121,7 +134,10 @@ test('cache data is separated', function () {
 
     // Asset central is still the same
     expect(Cache::get('foo'))->toBe('central');
-});
+})->with([
+    CacheTagsBootstrapper::class,
+    PrefixCacheTenancyBootstrapper::class,
+]);
 
 test('redis data is separated', function () {
     config(['tenancy.bootstrappers' => [

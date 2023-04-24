@@ -2,16 +2,14 @@
 
 declare(strict_types=1);
 
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
-use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Tests\Etc\Tenant;
+use Stancl\Tenancy\Bootstrappers\CacheTagsBootstrapper;
 
 beforeEach(function () {
-    config(['tenancy.bootstrappers' => [
-        CacheTenancyBootstrapper::class,
-    ]]);
+    config(['tenancy.bootstrappers' => [CacheTagsBootstrapper::class]]);
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
 });
@@ -60,7 +58,7 @@ test('tags separate cache well enough', function () {
     $tenant2 = Tenant::create();
     tenancy()->initialize($tenant2);
 
-    pest()->assertNotSame('bar', cache()->get('foo'));
+    expect(cache('foo'))->not()->toBe('bar');
 
     cache()->put('foo', 'xyz', 1);
     expect(cache()->get('foo'))->toBe('xyz');
@@ -76,7 +74,7 @@ test('invoking the cache helper works', function () {
     $tenant2 = Tenant::create();
     tenancy()->initialize($tenant2);
 
-    pest()->assertNotSame('bar', cache('foo'));
+    expect(cache('foo'))->not()->toBe('bar');
 
     cache(['foo' => 'xyz'], 1);
     expect(cache('foo'))->toBe('xyz');

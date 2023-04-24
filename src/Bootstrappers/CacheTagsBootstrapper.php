@@ -7,13 +7,20 @@ namespace Stancl\Tenancy\Bootstrappers;
 use Illuminate\Cache\CacheManager;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\Cache;
-use Stancl\Tenancy\CacheManager as TenantCacheManager;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
-class CacheTenancyBootstrapper implements TenancyBootstrapper
+/**
+ * todo name.
+ *
+ * Separate tenant cache using tagging.
+ * This is the legacy approach. Some things, like dependency injection, won't work properly with this bootstrapper.
+ * PrefixCacheTenancyBootstrapper is the recommended bootstrapper for cache separation.
+ */
+class CacheTagsBootstrapper implements TenancyBootstrapper
 {
     protected ?CacheManager $originalCache = null;
+    public static string $cacheManagerWithTags = \Stancl\Tenancy\CacheManager::class;
 
     public function __construct(
         protected Application $app
@@ -24,9 +31,9 @@ class CacheTenancyBootstrapper implements TenancyBootstrapper
     {
         $this->resetFacadeCache();
 
-        $this->originalCache = $this->originalCache ?? $this->app['cache'];
+        $this->originalCache ??= $this->app['cache'];
         $this->app->extend('cache', function () {
-            return new TenantCacheManager($this->app);
+            return new static::$cacheManagerWithTags($this->app);
         });
     }
 

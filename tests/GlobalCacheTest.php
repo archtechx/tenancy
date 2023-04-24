@@ -2,25 +2,32 @@
 
 declare(strict_types=1);
 
+use Stancl\Tenancy\CacheManager;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
-use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Events\TenancyEnded;
-use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Facades\GlobalCache;
+use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Tests\Etc\Tenant;
+use Stancl\Tenancy\Bootstrappers\CacheTagsBootstrapper;
+use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
 
 beforeEach(function () {
-    config(['tenancy.bootstrappers' => [
-        CacheTenancyBootstrapper::class,
-    ]]);
+    config(['cache.default' => $cacheDriver = 'redis']);
+    PrefixCacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
-test('global cache manager stores data in global cache', function () {
+afterEach(function () {
+    PrefixCacheTenancyBootstrapper::$tenantCacheStores = [];
+});
+
+test('global cache manager stores data in global cache', function (string $bootstrapper) {
+    config(['tenancy.bootstrappers' => [$bootstrapper]]);
+
     expect(cache('foo'))->toBe(null);
     GlobalCache::put(['foo' => 'bar'], 1);
     expect(GlobalCache::get('foo'))->toBe('bar');
@@ -48,9 +55,14 @@ test('global cache manager stores data in global cache', function () {
 
     tenancy()->initialize($tenant1);
     expect(cache('def'))->toBe('ghi');
-});
+})->with([
+    CacheTagsBootstrapper::class,
+    PrefixCacheTenancyBootstrapper::class,
+]);
 
-test('the global_cache helper supports the same syntax as the cache helper', function () {
+test('the global_cache helper supports the same syntax as the cache helper', function (string $bootstrapper) {
+    config(['tenancy.bootstrappers' => [$bootstrapper]]);
+
     $tenant = Tenant::create();
     $tenant->enter();
 
@@ -63,4 +75,7 @@ test('the global_cache helper supports the same syntax as the cache helper', fun
     expect(global_cache()->get('foo'))->toBe('baz');
 
     expect(cache('foo'))->toBe(null); // tenant cache is not affected
-});
+})->with([
+    CacheTagsBootstrapper::class,
+    PrefixCacheTenancyBootstrapper::class,
+]);

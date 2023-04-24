@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Stancl\Tenancy\CacheManager;
 use Stancl\Tenancy\Middleware;
 use Stancl\Tenancy\Resolvers;
 
@@ -98,10 +99,10 @@ return [
      */
     'bootstrappers' => [
         Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper::class,
-        Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\BatchTenancyBootstrapper::class,
+        // Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper::class,
         // Stancl\Tenancy\Bootstrappers\UrlTenancyBootstrapper::class,
         // Stancl\Tenancy\Bootstrappers\SessionTenancyBootstrapper::class,
         // Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper::class, // Queueing mail requires using QueueTenancyBootstrapper with $forceRefresh set to true
@@ -178,7 +179,7 @@ return [
     ],
 
     /**
-     * Cache tenancy config. Used by CacheTenancyBootstrapper.
+     * Cache tenancy config. Used by the custom CacheManager and the PrefixCacheTenancyBootstrapper.
      *
      * This works for all Cache facade calls, cache() helper
      * calls and direct calls to injected cache stores.
@@ -190,6 +191,7 @@ return [
      */
     'cache' => [
         'tag_base' => 'tenant', // This tag_base, followed by the tenant_id, will form a tag that will be applied on each cache call.
+        'prefix_base' => 'tenant_', // This prefix_base, followed by the tenant_id, will form a cache prefix that will be used for every cache key.
     ],
 
     /**
