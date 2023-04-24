@@ -52,16 +52,25 @@ services:
             timeout: 10s
             retries: 10
     postgres:
-        image: postgres:11
+        image: 'postgres:15'
+        ports:
+            - '${FORWARD_DB_PORT:-5433}:5433'
         environment:
-            POSTGRES_PASSWORD: password
-            POSTGRES_USER: root # superuser name
+            PGPASSWORD: '${DB_PASSWORD:-password}:password'
             POSTGRES_DB: main
+            POSTGRES_USER: '${DB_USERNAME:-root}:root'
+            POSTGRES_PASSWORD: '${DB_PASSWORD:-password}:password'
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U postgres"]
-            interval: 10s
+            test:
+                - CMD
+                - pg_isready
+                - '-q'
+                - '-d'
+                - '${DB_DATABASE}'
+                - '-U'
+                - '${DB_USERNAME}'
+            retries: 3
             timeout: 5s
-            retries: 5
     redis:
         image: redis:alpine
         healthcheck:
