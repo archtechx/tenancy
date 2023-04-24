@@ -6,8 +6,7 @@ namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
-use Symfony\Component\Finder\SplFileInfo;
+use Illuminate\Support\Facades\Schema;
 
 class CreateRLSPoliciesForTenantTables extends Command
 {
@@ -28,15 +27,8 @@ class CreateRLSPoliciesForTenantTables extends Command
 
     protected function getTenantTables(): array
     {
-        $files = array_filter(File::files('./database/migrations/tenant'), function (SplFileInfo $migration) {
-            return str($migration->getFilename())->contains('create_');
-        });
+        $tables = array_map(fn ($table) => $table->tablename, Schema::getAllTables());
 
-        return array_map(function (SplFileInfo $migration) {
-            return str($migration->getFilename())
-                ->after('create_')
-                ->before('_table')
-                ->toString();
-        }, $files);
+        return array_filter($tables, fn ($table) => Schema::hasColumn($table, config('tenancy.models.tenant_key_column')));
     }
 }
