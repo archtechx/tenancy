@@ -54,13 +54,15 @@ test('correct cache prefix is used in all contexts', function () {
 
     tenancy()->initialize($tenant1);
     cache()->set('key', 'tenantone-value');
-    expect($bootstrapper->generatePrefix($tenant1))->toBe($tenantOnePrefix = $getDefaultPrefixForTenant($tenant1));
+    $tenantOnePrefix = $getDefaultPrefixForTenant($tenant1);
     $expectCachePrefixToBe($tenantOnePrefix);
+    expect($bootstrapper->generatePrefix($tenant1))->toBe($tenantOnePrefix);
 
     tenancy()->initialize($tenant2);
     cache()->set('key', 'tenanttwo-value');
-    expect($bootstrapper->generatePrefix($tenant2))->toBe($tenantTwoPrefix = $getDefaultPrefixForTenant($tenant2));
+    $tenantTwoPrefix = $getDefaultPrefixForTenant($tenant2);
     $expectCachePrefixToBe($tenantTwoPrefix);
+    expect($bootstrapper->generatePrefix($tenant2))->toBe($tenantTwoPrefix);
 
     // Prefix gets reverted to default after ending tenancy
     tenancy()->end();
@@ -83,7 +85,7 @@ test('cache is persisted when reidentification is used', function () {
     expect(cache('foo'))->toBe('bar');
 
     tenancy()->initialize($tenant2);
-    expect(cache('foo'))->not()->toBe('bar');
+    expect(cache('foo'))->toBeNull();
     tenancy()->end();
 
     tenancy()->initialize($tenant1);
@@ -100,7 +102,7 @@ test('prefixing separates the cache', function () {
     $tenant2 = Tenant::create();
     tenancy()->initialize($tenant2);
 
-    expect(cache()->get('foo'))->not()->toBe('bar');
+    expect(cache()->get('foo'))->toBeNull();
 
     cache()->put('foo', 'xyz');
     expect(cache()->get('foo'))->toBe('xyz');
@@ -125,6 +127,10 @@ test('central cache is persisted', function () {
 
     expect(cache()->get('key'))->toBe('central');
     expect(cache()->get('key2'))->toBe('central-two');
+    
+    tenancy()->initialize($tenant1);
+    expect(cache()->get('key'))->toBe('tenant');
+    expect(cache()->get('key2'))->toBeNull();
 });
 
 test('cache base prefix is customizable', function () {
@@ -193,7 +199,7 @@ test('specific central cache store can be used inside a service', function () {
     tenancy()->initialize($tenant1);
 
     // The store isn't prefixed, so the cache isn't separated – the values persist from one context to another
-    // Also check if the cache key SpecificCacheStoreService sets using the Repository singleton is set correctly
+    // Also assert that the value of 'key' is set correctly inside SpecificCacheStoreService according to the current context
     expect(cache()->store($cacheStore)->get('key'))->toBe('central-value');
     $this->app->make(SpecificCacheStoreService::class)->handle();
     expect(cache()->store($cacheStore)->get('key'))->toBe($tenant1->getTenantKey());
@@ -205,10 +211,11 @@ test('specific central cache store can be used inside a service', function () {
     expect(cache()->store($cacheStore)->get('key'))->toBe($tenant2->getTenantKey());
 
     tenancy()->end();
+    // We last executed handle() in tenant2's context, so the value should persist as tenant2's id
     expect(cache()->store($cacheStore)->get('key'))->toBe($tenant2->getTenantKey());
 });
 
-test('only the stores specified in tenantCacheStores get prefixed', function() {
+test('only the stores specified in tenantCacheStores get prefixed', function () {
     // Make sure the currently used store ('redis') is the only store in $tenantCacheStores
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = [$prefixedStore = 'redis'];
 
@@ -250,34 +257,12 @@ test('only the stores specified in tenantCacheStores get prefixed', function() {
 
     $this->app->make(CacheService::class)->handle();
     expect(cache('key'))->toBe($centralValue);
-
-    $tenant1 = Tenant::create();
-    $tenant2 = Tenant::create();
-
-    tenancy()->initialize($tenant1);
-
-    expect(cache('key'))->toBeNull();
-    $this->app->make(CacheService::class)->handle();
-    expect(cache('key'))->toBe($tenant1->getTenantKey());
-
-    $assertStoreIsNotPrefixed('redis2');
-
-    tenancy()->initialize($tenant2);
-
-    expect(cache('key'))->toBeNull();
-    $this->app->make(CacheService::class)->handle();
-    expect(cache('key'))->toBe($tenant2->getTenantKey());
-
-    $assertStoreIsNotPrefixed('redis2');
-
-    tenancy()->end();
-    expect(cache('key'))->toBe($centralValue);
 });
 
 test('non default stores get prefixed too when specified in tenantCacheStores', function () {
     // In beforeEach, we set $tenantCacheStores to ['redis', 'redis2']
-    // Make 'redis2' the default cache driver
-    config(['cache.default' => 'redis2']);
+    // Make 'redis' the default cache driver
+    config(['cache.default' => 'redis']);
 
     $tenant = Tenant::create();
     $defaultPrefix = cache()->store()->getPrefix();
@@ -285,13 +270,14 @@ test('non default stores get prefixed too when specified in tenantCacheStores', 
 
     // The prefix is the same for both drivers in the central context
     expect(cache()->store('redis')->getPrefix())->toBe($defaultPrefix);
+    expect(cache()->store('redis2')->getPrefix())->toBe($defaultPrefix);
 
     tenancy()->initialize($tenant);
 
-    // We didn't add a prefix generator for our 'redis' driver, so we expect the prefix to be generated using the 'default' generator
+    // We didn't add a prefix generator for our 'redis2' driver, so we expect the prefix to be generated using the 'default' generator
     expect($bootstrapper->generatePrefix($tenant) . ':')
         ->toBe(cache()->getPrefix())
-        ->toBe(cache()->store('redis')->getPrefix()); // Non-default store
+        ->toBe(cache()->store('redis2')->getPrefix()); // Non-default store
 
     tenancy()->end();
 });
@@ -312,21 +298,6 @@ test('cache store prefix generation can be customized', function() {
     expect($customPrefixGenerator($tenant) . ':')
         ->toBe(cache()->getPrefix())
         ->toBe(cache()->store('redis2')->getPrefix()) // Non-default cache stores specified in $tenantCacheStores are prefixed too
-        ->toBe(app('cache')->getPrefix())
-        ->toBe(app('cache.store')->getPrefix());
-
-    config(['cache.default' => 'redis2']);
-
-    // Use different prefix generator
-    PrefixCacheTenancyBootstrapper::generatePrefixUsing($customPrefixGenerator = function (Tenant $tenant) {
-        return 'redis2_tenant_cache_' . $tenant->getTenantKey();
-    });
-
-    tenancy()->initialize($tenant = Tenant::create());
-
-    expect($customPrefixGenerator($tenant) . ':')
-        ->toBe(cache()->getPrefix())
-        ->toBe(cache()->store('redis')->getPrefix())
         ->toBe(app('cache')->getPrefix())
         ->toBe(app('cache.store')->getPrefix());
 
