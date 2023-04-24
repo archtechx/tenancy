@@ -38,10 +38,8 @@ class CreatePostgresUserForTenant implements ShouldQueue
         $name = $this->tenant->getTenantKey();
         $password = $this->tenant->database()->getPassword() ?? 'password';
 
-        try {
+        if (count(DB::select("SELECT usename FROM pg_user WHERE usename = '$name';")) > 0) {
             DB::statement("CREATE USER \"$name\" LOGIN PASSWORD '$password';");
-        } catch (QueryException $exception) {
-            // Skip creating Postgres user if it already exists
         }
     }
 }

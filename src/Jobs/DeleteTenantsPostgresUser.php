@@ -35,14 +35,13 @@ class DeleteTenantsPostgresUser implements ShouldQueue
      */
     public function handle()
     {
-        $tenantKey = $this->tenant->getTenantKey();
+        $name = $this->tenant->getTenantKey();
 
         // Revoke all permissions of a Postgres user before dropping it
-        try {
-            DB::statement("DROP OWNED BY \"{$tenantKey}\";");
-            DB::statement("DROP USER \"{$tenantKey}\";");
-        } catch (QueryException $exception) {
-            // Skip dropping permissions if the user doesn't exist
+        // Skip dropping permissions if the user doesn't exist
+        if (count(DB::select("SELECT usename FROM pg_user WHERE usename = '$name';")) > 0) {
+            DB::statement("DROP OWNED BY \"{$name}\";");
+            DB::statement("DROP USER \"{$name}\";");
         }
     }
 }
