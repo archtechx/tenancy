@@ -53,17 +53,14 @@ services:
             retries: 10
     postgres:
         image: 'postgres:15'
-        user: '${POSTGRES_USER:-postgres}'
         ports:
-            - '${POSTGRES_PORT:-5433}'
+            - '${POSTGRES_PORT:-5432}'
         environment:
             PGPASSWORD: '${POSTGRES_PASSWORD:-postgres}'
-            PGPORT: '${POSTGRES_PORT:-5433}'
+            PGPORT: '${POSTGRES_PORT:-5432}'
             POSTGRES_DB: main
             POSTGRES_USER: '${POSTGRES_USER:-postgres}'
             POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:-postgres}'
-        expose:
-          - '${POSTGRES_PORT:-5433}'
         healthcheck:
             test:
                 - CMD
