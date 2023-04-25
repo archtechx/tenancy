@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Stancl\Tenancy\CacheManager;
 use Stancl\Tenancy\Middleware;
 use Stancl\Tenancy\Resolvers;
 
@@ -11,6 +10,10 @@ return [
      * Configuration for the models used by Tenancy.
      */
     'models' => [
+        'rls' => [
+            // The tenants:create-rls-policies comand will create RLS policies
+            // For tables of the models specified here
+        ],
         'tenant' => Stancl\Tenancy\Database\Models\Tenant::class,
         'domain' => Stancl\Tenancy\Database\Models\Domain::class,
 
