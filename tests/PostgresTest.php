@@ -15,13 +15,13 @@ test('postgres user can get created using the job', function() {
     $tenant = Tenant::create();
     $name = $tenant->getTenantKey();
 
-    $tenantHasPostgresUser = count(DB::select("SELECT usename FROM pg_user WHERE usename = '$name';")) > 0;
+    $tenantHasPostgresUser = fn () => count(DB::select("SELECT usename FROM pg_user WHERE usename = '$name';")) > 0;
 
-    expect($tenantHasPostgresUser)->toBeFalse();
+    expect($tenantHasPostgresUser())->toBeFalse();
 
     CreatePostgresUserForTenant::dispatchSync($tenant);
 
-    expect($tenantHasPostgresUser)->toBeTrue();
+    expect($tenantHasPostgresUser())->toBeTrue();
 });
 
 
@@ -30,13 +30,13 @@ test('postgres user can get deleted using the job', function() {
     $name = $tenant->getTenantKey();
     CreatePostgresUserForTenant::dispatchSync($tenant);
 
-    $tenantHasPostgresUser = count(DB::select("SELECT usename FROM pg_user WHERE usename = '$name';")) > 0;
+    $tenantHasPostgresUser = fn () => count(DB::select("SELECT usename FROM pg_user WHERE usename = '$name';")) > 0;
 
-    expect($tenantHasPostgresUser)->toBeTrue();
+    expect($tenantHasPostgresUser())->toBeTrue();
 
     DeleteTenantsPostgresUser::dispatchSync($tenant);
 
-    expect($tenantHasPostgresUser)->toBeFalse();
+    expect($tenantHasPostgresUser())->toBeFalse();
 });
 
 test('correct rls policies get created using the command', function() {
