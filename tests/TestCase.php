@@ -88,7 +88,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'driver' => 'pgsql',
                 'url' => env('DATABASE_URL'),
                 'host' => 'postgres',
-                'port' => '5434',
+                'port' => '5433',
                 'database' => 'main',
                 'username' => 'postgres',
                 'password' => 'postgres',
