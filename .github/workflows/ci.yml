@@ -50,6 +50,8 @@ jobs:
           POSTGRES_PASSWORD: password
           POSTGRES_USER: root
           POSTGRES_DB: main
+          POSTGRES_PORT: '5432'
+          PGPORT: '5432'
         ports:
           - 5432/tcp
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3
