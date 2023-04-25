@@ -9,6 +9,7 @@ use Dotenv\Dotenv;
 use Stancl\Tenancy\Facades\Tenancy;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Redis;
+use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Facades\GlobalCache;
 use Stancl\Tenancy\TenancyServiceProvider;
@@ -132,6 +133,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         ]);
 
         $app->singleton(RedisTenancyBootstrapper::class); // todo (Samuel) use proper approach eg config for singleton registration
+        $app->singleton(PrefixCacheTenancyBootstrapper::class); // todo (Samuel) use proper approach eg config for singleton registration
         $app->singleton(BroadcastTenancyBootstrapper::class);
         $app->singleton(MailTenancyBootstrapper::class);
         $app->singleton(UrlTenancyBootstrapper::class);
