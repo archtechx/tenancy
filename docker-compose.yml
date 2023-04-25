@@ -55,15 +55,15 @@ services:
         image: 'postgres:15'
         user: 'postgres'
         ports:
-            - '${FORWARD_DB_PORT:-5434}:5434'
+            - '${POSTGRES_PORT:-5434}'
         environment:
-            PGPASSWORD: 'postgres'
-            PGPORT: '5434'
+            PGPASSWORD: '${POSTGRES_PASSWORD:-postgres}'
+            PGPORT: '${POSTGRES_PORT:-5434}'
             POSTGRES_DB: main
             POSTGRES_USER: 'postgres'
             POSTGRES_PASSWORD: 'postgres'
         expose:
-          - "5434"
+          - '${POSTGRES_PORT:-5434}'
         healthcheck:
             test:
                 - CMD
