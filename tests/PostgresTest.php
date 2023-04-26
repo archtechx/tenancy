@@ -46,7 +46,7 @@ test('postgres user can get deleted using the job', function() {
     expect($tenantHasPostgresUser())->toBeFalse();
 });
 
-test('correct rls policies get created using the action or the command', function(bool $action) {
+test('correct rls policies get created', function(bool $action) {
     config([
         'tenancy.models.rls' => [
             Post::class, // Primary model (directly belongs to tenant)
@@ -94,4 +94,4 @@ test('correct rls policies get created using the action or the command', functio
         expect($getModelTables())->toContain($table->relname);
         expect($table->relforcerowsecurity)->toBeTrue();
     }
-})->with([true, false]);
+})->with(['action' => true, 'command' => false]);
