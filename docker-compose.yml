@@ -52,7 +52,7 @@ services:
             timeout: 10s
             retries: 10
     postgres:
-        image: 'postgres:15'
+        image: 'postgres:latest'
         ports:
             - '${POSTGRES_PORT:-5432}'
         environment:
