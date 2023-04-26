@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Stancl\Tenancy\Database\Concerns\BelongsToPrimaryModel;
 
 class CreateRLSPoliciesForTenantTables extends Command
 {
@@ -14,9 +15,46 @@ class CreateRLSPoliciesForTenantTables extends Command
 
     public function handle(): int
     {
-        foreach ($this->getTenantTables() as $table) {
-            DB::statement("DROP POLICY IF EXISTS {$table}_rls_policy ON {$table};");
-            DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING (tenant_id::TEXT = current_user);");
+        $tenantModels = $this->getTenantModels();
+        $tenantKey = config('tenancy.models.tenant_key_column');
+
+        foreach ($tenantModels as $model) {
+            $table = $model->getTable();
+
+            DB::statement("DROP POLICY IF EXISTS {$table}_rls_policy ON {$table}");
+
+            if (! Schema::hasColumn($table, $tenantKey)) {
+                // Table is not directly related to tenant
+                if (in_array(BelongsToPrimaryModel::class, class_uses_recursive($model::class))) {
+                    $parentName = $model->getRelationshipToPrimaryModel();
+                    $parentKey = $model->$parentName()->getForeignKeyName();
+                    $parentModel = $model->$parentName()->make();
+                    $parentTable = str($parentModel->getTable())->toString();
+
+                    DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING (
+                        {$parentKey} IN (
+                            SELECT id
+                            FROM {$parentTable}
+                            WHERE ({$tenantKey}::TEXT = (
+                                SELECT {$tenantKey}
+                                FROM {$parentTable}
+                                WHERE id = {$parentKey}
+                            ))
+                        )
+                    )");
+
+                    DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
+
+                    return Command::SUCCESS;
+                } else {
+                    $this->components->info("Table '$table' is not related to tenant. Make sure {$model::class} uses the BelongsToPrimaryModel trait.");
+
+                    return Command::FAILURE;
+                }
+            }
+
+            DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING ({$tenantKey}::TEXT = current_user);");
+
             DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
 
             $this->components->info("Created RLS policy for table '$table'");
@@ -25,10 +63,8 @@ class CreateRLSPoliciesForTenantTables extends Command
         return Command::SUCCESS;
     }
 
-    protected function getTenantTables(): array
+    public function getTenantModels(): array
     {
-        $tables = array_map(fn ($table) => $table->tablename, Schema::getAllTables());
-
-        return array_filter($tables, fn ($table) => Schema::hasColumn($table, config('tenancy.models.tenant_key_column')));
+        return array_map(fn (string $modelName) => (new $modelName), config('tenancy.models.rls'));
     }
 }
