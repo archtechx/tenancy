@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Jobs\DeleteTenantsPostgresUser;
 use Stancl\Tenancy\Jobs\CreatePostgresUserForTenant;
+use Stancl\Tenancy\Actions\CreateRLSPoliciesForTables;
 
 beforeEach(function () {
     DB::setDefaultConnection('pgsql');
@@ -45,7 +46,7 @@ test('postgres user can get deleted using the job', function() {
     expect($tenantHasPostgresUser())->toBeFalse();
 });
 
-test('correct rls policies get created using the command', function() {
+test('correct rls policies get created using the action or the command', function(bool $action) {
     config([
         'tenancy.models.rls' => [
             Post::class, // Primary model (directly belongs to tenant)
@@ -57,7 +58,13 @@ test('correct rls policies get created using the command', function() {
     $getRlsTables = fn() => $getModelTables()->map(fn ($table) => DB::select('select relname, relrowsecurity, relforcerowsecurity from pg_class WHERE oid = ' . "'$table'::regclass"))->collapse();
 
     expect($getRlsPolicies())->toHaveCount(0);
-    pest()->artisan('tenants:create-rls-policies');
+
+    if ($action) {
+        CreateRLSPoliciesForTables::handle();
+    } else {
+        pest()->artisan('tenants:create-rls-policies');
+    }
+
     expect($getRlsPolicies())->toHaveCount(count(config('tenancy.models.rls'))); // 1
     expect($getRlsTables())->toHaveCount(count(config('tenancy.models.rls'))); // 1
     // Check if tables with policies are RLS protected
@@ -72,7 +79,12 @@ test('correct rls policies get created using the command', function() {
         ], config('tenancy.models.rls')),
     ]);
 
-    pest()->artisan('tenants:create-rls-policies');
+    if ($action) {
+        CreateRLSPoliciesForTables::handle();
+    } else {
+        pest()->artisan('tenants:create-rls-policies');
+    }
+
     // Check if tables with policies are RLS protected (even the ones not directly related to the tenant)
     // Models related to tenant through some model must use the BelongsToPrimaryModel trait to work properly
     expect($getRlsPolicies())->toHaveCount(count(config('tenancy.models.rls'))); // 2
@@ -82,4 +94,4 @@ test('correct rls policies get created using the command', function() {
         expect($getModelTables())->toContain($table->relname);
         expect($table->relforcerowsecurity)->toBeTrue();
     }
-});
+})->with([true, false]);
