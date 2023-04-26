@@ -49,8 +49,6 @@ jobs:
         ports:
             - '5432/tcp'
         env:
-            PGPASSWORD: 'postgres'
-            PGPORT: '5432/tcp'
             POSTGRES_DB: main
             POSTGRES_USER: 'postgres'
             POSTGRES_PASSWORD: 'postgres'
