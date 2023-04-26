@@ -45,24 +45,14 @@ jobs:
 
     services:
       postgres:
-        image: 'postgres:latest'
-        ports:
-            - '5432/tcp'
+        image: postgres:latest
         env:
-            POSTGRES_DB: main
-            POSTGRES_USER: 'postgres'
-            POSTGRES_PASSWORD: 'postgres'
-        healthcheck:
-            test:
-                - CMD
-                - pg_isready
-                - '-q'
-                - '-d'
-                - '${DB_DATABASE}'
-                - '-U'
-                - '${POSTGRES_USER}'
-            retries: 3
-            timeout: 5s
+          POSTGRES_PASSWORD: 'postgres'
+          POSTGRES_USER: 'postgres'
+          POSTGRES_DB: main
+        ports:
+          - 5432/tcp
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3
 
       mysql:
         image: mysql:5.7
