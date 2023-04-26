@@ -49,11 +49,11 @@ jobs:
         ports:
             - '5432/tcp'
         env:
-            PGPASSWORD: '${POSTGRES_PASSWORD:-postgres}'
-            PGPORT: '${POSTGRES_PORT:-5432}'
+            PGPASSWORD: 'postgres'
+            PGPORT: '5432/tcp'
             POSTGRES_DB: main
-            POSTGRES_USER: '${POSTGRES_USER:-postgres}'
-            POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:-postgres}'
+            POSTGRES_USER: 'postgres'
+            POSTGRES_PASSWORD: 'postgres'
         healthcheck:
             test:
                 - CMD
@@ -62,7 +62,7 @@ jobs:
                 - '-d'
                 - '${DB_DATABASE}'
                 - '-U'
-                - '${DB_USERNAME}'
+                - '${POSTGRES_USER}'
             retries: 3
             timeout: 5s
 
