@@ -8,6 +8,7 @@ use Stancl\Tenancy\Jobs\DeleteTenantsPostgresUser;
 use Stancl\Tenancy\Jobs\CreatePostgresUserForTenant;
 
 beforeEach(function () {
+    $this->mockConsoleOutput = false;
     DB::setDefaultConnection('pgsql');
 
     config(['tenancy.models.tenant' => Tenant::class]);
