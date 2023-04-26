@@ -47,6 +47,8 @@ jobs:
       postgres:
         image: postgres:latest
         env:
+          PGPASSWORD: '${POSTGRES_PASSWORD:-postgres}'
+          PGPORT: '${POSTGRES_PORT:-5432}'
           POSTGRES_PASSWORD: 'postgres'
           POSTGRES_USER: 'postgres'
           POSTGRES_DB: main
