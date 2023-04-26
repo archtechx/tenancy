@@ -43,7 +43,7 @@ class CreateRLSPoliciesForTables
                         )
                     )");
 
-                    dump(DB::select("select CURRENT_USER"));
+                    dump(DB::select('select CURRENT_USER'));
 
                     DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
 
