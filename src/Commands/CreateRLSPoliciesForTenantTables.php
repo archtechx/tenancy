@@ -47,7 +47,8 @@ class CreateRLSPoliciesForTenantTables extends Command
 
                     return Command::SUCCESS;
                 } else {
-                    $this->components->info("Table '$table' is not related to tenant. Make sure {$model::class} uses the BelongsToPrimaryModel trait.");
+                    $modelName = $model::class;
+                    $this->components->info("Table '$table' is not related to tenant. Make sure $modelName uses the BelongsToPrimaryModel trait.");
 
                     return Command::FAILURE;
                 }
