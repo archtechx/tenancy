@@ -52,14 +52,6 @@ test('correct rls policies get created using the command', function() {
         ],
     ]);
 
-    $tableExists = DB::selectOne('SELECT EXISTS (
-        SELECT 1
-        FROM pg_tables
-        WHERE schemaname = ? AND tablename = ?
-    ) AS table_exists;', ['pg_catalog', 'pg_policies'])->table_exists;
-
-    dump($tableExists);
-
     $getRlsPolicies = fn () => DB::select('select * from pg_policies');
     $getModelTables = fn () => collect(config('tenancy.models.rls'))->map(fn (string $model) => (new $model)->getTable());
     $getRlsTables = fn() => $getModelTables()->map(fn ($table) => DB::select('select relname, relrowsecurity, relforcerowsecurity from pg_class WHERE oid = ' . "'$table'::regclass"))->collapse();
