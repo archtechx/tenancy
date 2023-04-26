@@ -8,7 +8,6 @@ use Stancl\Tenancy\Jobs\DeleteTenantsPostgresUser;
 use Stancl\Tenancy\Jobs\CreatePostgresUserForTenant;
 
 beforeEach(function () {
-    $this->mockConsoleOutput = false;
     DB::setDefaultConnection('pgsql');
 
     config(['tenancy.models.tenant' => Tenant::class]);
@@ -52,6 +51,14 @@ test('correct rls policies get created using the command', function() {
             Post::class, // Primary model (directly belongs to tenant)
         ],
     ]);
+
+    $tableExists = DB::selectOne('SELECT EXISTS (
+        SELECT 1
+        FROM pg_tables
+        WHERE schemaname = ? AND tablename = ?
+    ) AS table_exists;', ['pg_catalog', 'pg_policies'])->table_exists;
+
+    dd($tableExists);
 
     $getRlsPolicies = fn () => DB::select('select * from pg_policies');
     $getModelTables = fn () => collect(config('tenancy.models.rls'))->map(fn (string $model) => (new $model)->getTable());
