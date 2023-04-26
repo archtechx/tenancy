@@ -58,7 +58,6 @@ class CreateRLSPoliciesForTables
 
             DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
 
-
             // $this->components->info("Created RLS policy for table '$table'");
         }
 
