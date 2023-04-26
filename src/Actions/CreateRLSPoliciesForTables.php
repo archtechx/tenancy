@@ -43,8 +43,6 @@ class CreateRLSPoliciesForTables
                         )
                     )");
 
-                    dump(DB::select('select CURRENT_USER'));
-
                     DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
 
                     return Command::SUCCESS;
@@ -59,6 +57,7 @@ class CreateRLSPoliciesForTables
             DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING ({$tenantKey}::TEXT = current_user);");
 
             DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
+
 
             // $this->components->info("Created RLS policy for table '$table'");
         }
