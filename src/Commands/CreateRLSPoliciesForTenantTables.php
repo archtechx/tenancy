@@ -44,21 +44,18 @@ class CreateRLSPoliciesForTenantTables extends Command
                     )");
 
                     DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
-
-                    return Command::SUCCESS;
                 } else {
                     $modelName = $model::class;
                     $this->components->info("Table '$table' is not related to tenant. Make sure $modelName uses the BelongsToPrimaryModel trait.");
-
-                    return Command::FAILURE;
                 }
+            } else {
+                DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING ({$tenantKey}::TEXT = current_user);");
+
+                DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
+
+                $this->components->info("Created RLS policy for table '$table'");
             }
 
-            DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING ({$tenantKey}::TEXT = current_user);");
-
-            DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
-
-            $this->components->info("Created RLS policy for table '$table'");
         }
 
         return Command::SUCCESS;
