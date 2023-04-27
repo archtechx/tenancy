@@ -55,7 +55,6 @@ class CreateRLSPoliciesForTenantTables extends Command
 
                 $this->components->info("Created RLS policy for table '$table'");
             }
-
         }
 
         return Command::SUCCESS;
