@@ -55,8 +55,20 @@ test('correct rls policies get created', function(bool $action) {
         ],
     ]);
 
+    // Schema::dropIfExists('tenants');
     Schema::dropIfExists('comments');
     Schema::dropIfExists('posts');
+
+    if(! Schema::hasTable('tenants')) {
+        Schema::create('tenants', function (Blueprint $table) {
+            $table->string('id')->primary();
+
+            // your custom columns may go here
+
+            $table->timestamps();
+            $table->json('data')->nullable();
+        });
+    }
 
     Schema::create('posts', function (Blueprint $table) {
         $table->increments('id');
