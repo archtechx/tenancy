@@ -2,15 +2,16 @@
 
 declare(strict_types=1);
 
+use Stancl\Tenancy\Tests\Etc\Post;
+use Stancl\Tenancy\Tests\Etc\Comment;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
-use Stancl\Tenancy\Database\Concerns\BelongsToPrimaryModel;
-use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
-use Stancl\Tenancy\Database\Concerns\HasScopedValidationRules;
+use Stancl\Tenancy\Tests\Etc\ScopedComment;
 use Stancl\Tenancy\Tests\Etc\Tenant as TestTenant;
+use Stancl\Tenancy\Database\Concerns\HasScopedValidationRules;
 
 beforeEach(function () {
     Schema::create('posts', function (Blueprint $table) {
@@ -302,49 +303,6 @@ function secondaryModelsAreScopedToCurrentTenant()
 class Tenant extends TestTenant
 {
     use HasScopedValidationRules;
-}
-
-class Post extends Model
-{
-    use BelongsToTenant;
-
-    protected $guarded = [];
-
-    public $timestamps = false;
-
-    public function comments()
-    {
-        return $this->hasMany(Comment::class);
-    }
-
-    public function scoped_comments()
-    {
-        return $this->hasMany(Comment::class);
-    }
-}
-
-class Comment extends Model
-{
-    protected $guarded = [];
-
-    public $timestamps = false;
-
-    public function post()
-    {
-        return $this->belongsTo(Post::class);
-    }
-}
-
-class ScopedComment extends Comment
-{
-    use BelongsToPrimaryModel;
-
-    protected $table = 'comments';
-
-    public function getRelationshipToPrimaryModel(): string
-    {
-        return 'post';
-    }
 }
 
 class GlobalResource extends Model
