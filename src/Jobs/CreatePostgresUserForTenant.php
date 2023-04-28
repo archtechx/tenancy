@@ -38,6 +38,8 @@ class CreatePostgresUserForTenant implements ShouldQueue
         $password = $this->tenant->database()->getPassword() ?? 'password';
 
         // Create the user only if it doesn't already exist
+        // todo1 Create permissions for the user (e.g. permission to create records)
+        // todo1 Switch to the Postgres user on TenancyInitialized (purge central DB connection, change credentials in database.connections.pgsql, change database.connections.central to the pgsql connection)
         if (! count(DB::select("SELECT usename FROM pg_user WHERE usename = '$name';")) > 0) {
             DB::statement("CREATE USER \"$name\" LOGIN PASSWORD '$password';");
         }
