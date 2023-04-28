@@ -7,13 +7,14 @@ use Stancl\Tenancy\Tests\Etc\Post;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
+use Stancl\Tenancy\Tests\Etc\ScopedComment;
 use Stancl\Tenancy\Jobs\DeleteTenantsPostgresUser;
 use Stancl\Tenancy\Jobs\CreatePostgresUserForTenant;
-use Stancl\Tenancy\Tests\Etc\ScopedComment;
 
 beforeEach(function () {
-    DB::setDefaultConnection('pgsql');
+    DB::purge('central');
 
+    config(['database.connections.central' => config('database.connections.pgsql')]);
     config(['tenancy.models.tenant_key_column' => 'tenant_id']);
     config(['tenancy.models.tenant' => $tenantClass = Tenant::class]);
     config(['tenancy.models.rls' => [
@@ -47,7 +48,7 @@ beforeEach(function () {
     Schema::create($primaryModel->getTable(), function (Blueprint $table) use ($tenantTable) {
         $table->increments('id');
         $table->string('text');
-        $table->string($tenantKey = config('tenancy.models.tenant_key_column'));
+        $table->string($tenantKey = tenancy()->tenantKeyColumn());
 
         $table->foreign($tenantKey)->references('id')->on($tenantTable)->onUpdate('cascade')->onDelete('cascade');
     });
@@ -117,10 +118,49 @@ test('correct rls policies get created', function () {
 });
 
 test('queries are correctly scoped using RLS', function() {
-    // todo1
     // 1) create rls policies for tables
+    pest()->artisan('tenants:create-rls-policies');
+
     // 2) create two tenants with postgres users
+    $tenant = Tenant::create();
+    $secondTenant = Tenant::create();
+
+    CreatePostgresUserForTenant::dispatchSync($tenant);
+    CreatePostgresUserForTenant::dispatchSync($secondTenant);
+
     // 3) create posts and comments for both tenants
-    // 4) ensure RLS scopes the queries – disable the global scopes that the single-db tenancy traits add to the models
-    // 5) expect that tenants cannot access the records (posts and comments) of other tenants
-})->skip();
+    tenancy()->initialize($tenant);
+
+    $post1 = Post::create(['text' => 'first post']);
+    $post1Comment = $post1->scoped_comments()->create(['text' => 'first comment']);
+
+    tenancy()->end();
+
+    tenancy()->initialize($secondTenant);
+
+    $post2 = Post::create(['text' => 'second post']);
+    $post2Comment = $post2->scoped_comments()->create(['text' => 'second comment']);
+
+    tenancy()->end();
+
+    // todo1 Add option to disable the global scopes that the BelongsToTenant trait adds to the models, make RLS scope the queries
+    // 4) Ensure RLS scopes the queries – expect that tenants cannot access the records (posts and comments) of other tenants
+    tenancy()->initialize($tenant);
+
+    expect(Post::all()->pluck('text'))
+        ->toContain($post1->text)
+        ->not()->toContain($post2->text);
+
+    expect(ScopedComment::all()->pluck('text'))
+        ->toContain($post1Comment->text)
+        ->not()->toContain($post2Comment->text);
+
+    tenancy()->end();
+
+    tenancy()->initialize($secondTenant);
+
+    expect(Post::all()->pluck('text'))->toContain($post2->text)->not()->toContain($post1->text);
+    expect(ScopedComment::all()->pluck('text'))->toContain($post2Comment->text)->not()->toContain($post1Comment->text);
+
+    tenancy()->end();
+});
