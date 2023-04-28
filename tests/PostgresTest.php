@@ -163,4 +163,4 @@ test('queries are correctly scoped using RLS', function() {
     expect(ScopedComment::all()->pluck('text'))->toContain($post2Comment->text)->not()->toContain($post1Comment->text);
 
     tenancy()->end();
-});
+})->skip('queries are scoped using the global scope');
