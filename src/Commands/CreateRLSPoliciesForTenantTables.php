@@ -16,7 +16,7 @@ class CreateRLSPoliciesForTenantTables extends Command
     public function handle(): int
     {
         $tenantModels = $this->getTenantModels();
-        $tenantKey = config('tenancy.models.tenant_key_column');
+        $tenantKey = tenancy()->tenantKeyColumn();
 
         foreach ($tenantModels as $model) {
             $table = $model->getTable();
