@@ -43,5 +43,20 @@ class CreatePostgresUserForTenant implements ShouldQueue
         if (! count(DB::select("SELECT usename FROM pg_user WHERE usename = '$name';")) > 0) {
             DB::statement("CREATE USER \"$name\" LOGIN PASSWORD '$password';");
         }
+
+        $this->grantPermissions($name);
+    }
+
+    protected function grantPermissions(string $userName): void
+    {
+        /**
+         * @var \Stancl\Tenancy\Database\Contracts\StatefulTenantDatabaseManager $databaseManager
+         */
+        $databaseManager = $this->tenant->database()->manager();
+        foreach (array_map(fn (string $modelName) => (new $modelName), config('tenancy.models.rls')) as $model) {
+            $table = $model->getTable();
+
+            $databaseManager->database()->statement("GRANT ALL ON {$table} TO \"{$userName}\"");
+        }
     }
 }

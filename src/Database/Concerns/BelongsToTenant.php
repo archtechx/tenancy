@@ -21,7 +21,11 @@ trait BelongsToTenant
 
     public static function bootBelongsToTenant(): void
     {
-        static::addGlobalScope(new TenantScope);
+        // The queries performed for models present in the tenancy.models.rls are scoped using Postgres RLS instead of the global scope
+        if (! in_array(static::class, config('tenancy.models.rls'))) {
+           static::addGlobalScope(new TenantScope);
+        }
+
 
         static::creating(function ($model) {
             if (! $model->getAttribute(Tenancy::tenantKeyColumn()) && ! $model->relationLoaded('tenant')) {

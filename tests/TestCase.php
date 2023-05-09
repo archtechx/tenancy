@@ -9,14 +9,14 @@ use Dotenv\Dotenv;
 use Stancl\Tenancy\Facades\Tenancy;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Redis;
-use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Facades\GlobalCache;
 use Stancl\Tenancy\TenancyServiceProvider;
-use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
-use Stancl\Tenancy\Bootstrappers\BroadcastTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\UrlTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\BroadcastTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {

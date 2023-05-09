@@ -35,7 +35,7 @@ class CreateRLSPoliciesForTenantTables extends Command
                         {$parentKey} IN (
                             SELECT id
                             FROM {$parentTable}
-                            WHERE ({$tenantKey}::TEXT = (
+                            WHERE ({$tenantKey}::UUID = (
                                 SELECT {$tenantKey}
                                 FROM {$parentTable}
                                 WHERE id = {$parentKey}
@@ -43,7 +43,7 @@ class CreateRLSPoliciesForTenantTables extends Command
                         )
                     )");
 
-                    DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
+                    $this->makeTableUseRls($table);
                 } else {
                     $modelName = $model::class;
                     $this->components->info("Table '$table' is not related to tenant. Make sure $modelName uses the BelongsToPrimaryModel trait.");
@@ -51,7 +51,7 @@ class CreateRLSPoliciesForTenantTables extends Command
             } else {
                 DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING ({$tenantKey}::TEXT = current_user);");
 
-                DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
+                $this->makeTableUseRls($table);
 
                 $this->components->info("Created RLS policy for table '$table'");
             }
@@ -63,5 +63,11 @@ class CreateRLSPoliciesForTenantTables extends Command
     public function getTenantModels(): array
     {
         return array_map(fn (string $modelName) => (new $modelName), config('tenancy.models.rls'));
+    }
+
+    protected function makeTableUseRls(string $table): void
+    {
+        DB::statement("ALTER TABLE {$table} ENABLE ROW LEVEL SECURITY");
+        DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
     }
 }

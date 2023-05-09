@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Illuminate\Cache\CacheManager;
-use Illuminate\Database\Console\Migrations\FreshCommand;
-use Illuminate\Support\ServiceProvider;
-use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Domain;
 use Stancl\Tenancy\Contracts\Tenant;
+use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
+use Illuminate\Database\Console\Migrations\FreshCommand;
+use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 
 class TenancyServiceProvider extends ServiceProvider
 {

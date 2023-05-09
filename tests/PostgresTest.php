@@ -2,17 +2,29 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Tests\Etc\Post;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
+use Stancl\Tenancy\Events\TenancyEnded;
 use Illuminate\Database\Schema\Blueprint;
+use Stancl\Tenancy\Bootstrappers\Integrations\PostgresTenancyBootstrapper;
 use Stancl\Tenancy\Tests\Etc\ScopedComment;
+use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Jobs\DeleteTenantsPostgresUser;
 use Stancl\Tenancy\Jobs\CreatePostgresUserForTenant;
+use Stancl\Tenancy\Listeners\RevertToCentralContext;
 
 beforeEach(function () {
     DB::purge('central');
+
+    config(['tenancy.bootstrappers' => [PostgresTenancyBootstrapper::class]]);
+
+    Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
     config(['database.connections.central' => config('database.connections.pgsql')]);
     config(['tenancy.models.tenant_key_column' => 'tenant_id']);
@@ -35,31 +47,32 @@ beforeEach(function () {
 
     Schema::dropIfExists($secondaryModel->getTable());
     Schema::dropIfExists($primaryModel->getTable());
+    Schema::dropIfExists('domains');
+    Schema::dropIfExists($tenantTable);
 
-    if(! Schema::hasTable($tenantTable)) {
-        Schema::create($tenantTable, function (Blueprint $table) {
-            $table->string('id')->primary();
+    // todo1 The Post/Comment models have non-UUID primary keys
+    Schema::create($tenantTable, function (Blueprint $table) {
+        $table->uuid('id')->default(Str::uuid()->toString())->nullable(false)->primary();
+        $table->timestamps();
+        $table->json('data')->nullable();
+    });
 
-            $table->timestamps();
-            $table->json('data')->nullable();
-        });
-    }
-
-    Schema::create($primaryModel->getTable(), function (Blueprint $table) use ($tenantTable) {
-        $table->increments('id');
+    Schema::create($primaryModel->getTable(), function (Blueprint $table) {
+        $table->uuid('id')->default(Str::uuid()->toString())->nullable(false)->primary();
         $table->string('text');
-        $table->string($tenantKey = tenancy()->tenantKeyColumn());
-
-        $table->foreign($tenantKey)->references('id')->on($tenantTable)->onUpdate('cascade')->onDelete('cascade');
+        $table->foreignUuid('tenant_id')->constrained('tenants')->onUpdate('cascade')->onDelete('cascade');;
     });
 
     Schema::create($secondaryModel->getTable(), function (Blueprint $table) use ($primaryModel) {
-        $table->increments('id');
+        $table->uuid('id')->default(Str::uuid()->toString())->nullable(false)->primary();
         $table->string('text');
-        $table->unsignedInteger($primaryModel->getForeignKey());
-
-        $table->foreign($primaryModel->getForeignKey())->references('id')->on($primaryModel->getTable())->onUpdate('cascade')->onDelete('cascade');
+        $table->foreignUuid($primaryModel->getForeignKey())->constrained($primaryModel->getTable())->onUpdate('cascade')->onDelete('cascade');
     });
+});
+
+afterEach(function () {
+    Schema::dropIfExists('comments');
+    Schema::dropIfExists('posts');
 });
 
 test('postgres user can get created using the job', function() {
@@ -94,7 +107,7 @@ test('correct rls policies get created', function () {
     $rlsModels = config('tenancy.models.rls');
     $modelTables = collect($rlsModels)->map(fn (string $model) => (new $model)->getTable());
     $getRlsPolicies = fn () => DB::select('select * from pg_policies');
-    $getRlsTables = fn() => $modelTables->map(fn ($table) => DB::select('select relname, relrowsecurity, relforcerowsecurity from pg_class WHERE oid = ' . "'$table'::regclass"))->collapse();
+    $getRlsTables = fn () => $modelTables->map(fn ($table) => DB::select('select relname, relrowsecurity, relforcerowsecurity from pg_class WHERE oid = ' . "'$table'::regclass"))->collapse();
 
     // Drop all existing policies to check if the command creates policies for multiple tables
     foreach ($getRlsPolicies() as $policy) {
@@ -118,17 +131,17 @@ test('correct rls policies get created', function () {
 });
 
 test('queries are correctly scoped using RLS', function() {
-    // 1) create rls policies for tables
+    // Create rls policies for tables
     pest()->artisan('tenants:create-rls-policies');
 
-    // 2) create two tenants with postgres users
+    // Create two tenants with postgres users
     $tenant = Tenant::create();
     $secondTenant = Tenant::create();
 
     CreatePostgresUserForTenant::dispatchSync($tenant);
     CreatePostgresUserForTenant::dispatchSync($secondTenant);
 
-    // 3) create posts and comments for both tenants
+    // Create posts and comments for both tenants
     tenancy()->initialize($tenant);
 
     $post1 = Post::create(['text' => 'first post']);
@@ -144,7 +157,7 @@ test('queries are correctly scoped using RLS', function() {
     tenancy()->end();
 
     // todo1 Add option to disable the global scopes that the BelongsToTenant trait adds to the models, make RLS scope the queries
-    // 4) Ensure RLS scopes the queries – expect that tenants cannot access the records (posts and comments) of other tenants
+    // Ensure RLS scopes the queries – expect that tenants cannot access the records (posts and comments) of other tenants
     tenancy()->initialize($tenant);
 
     expect(Post::all()->pluck('text'))
@@ -163,4 +176,4 @@ test('queries are correctly scoped using RLS', function() {
     expect(ScopedComment::all()->pluck('text'))->toContain($post2Comment->text)->not()->toContain($post1Comment->text);
 
     tenancy()->end();
-})->skip('queries are scoped using the global scope');
+})->group('test');
