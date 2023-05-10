@@ -8,6 +8,7 @@ use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Illuminate\Database\Schema\Blueprint;
 use Stancl\Tenancy\Events\TenancyInitialized;
@@ -177,7 +178,7 @@ test('queries are correctly scoped using RLS', function() {
     expect(UuidScopedComment::all()->pluck('text'))->toContain($post2Comment->text)->not()->toContain($post1Comment->text);
 
     tenancy()->end();
-})->group('test');
+});
 
 trait UsesUuidAsPrimaryKey
 {
@@ -205,12 +206,12 @@ class UuidPost extends Model
     protected $guarded = [];
     protected $keyType = 'string';
 
-    public function uuid_comments()
+    public function uuid_comments(): HasMany
     {
         return $this->hasMany(UuidComment::class);
     }
 
-    public function uuid_scoped_comments()
+    public function uuid_scoped_comments(): HasMany
     {
         return $this->hasMany(UuidComment::class);
     }
