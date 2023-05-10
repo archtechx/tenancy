@@ -8,17 +8,19 @@ use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Illuminate\Database\Schema\Blueprint;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Jobs\DeleteTenantsPostgresUser;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Stancl\Tenancy\Jobs\CreatePostgresUserForTenant;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 use Stancl\Tenancy\Database\Concerns\BelongsToPrimaryModel;
 use Stancl\Tenancy\Bootstrappers\Integrations\PostgresTenancyBootstrapper;
-use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
 beforeEach(function () {
     DB::purge('central');
@@ -44,7 +46,7 @@ beforeEach(function () {
 
     // Drop all existing policies
     foreach (DB::select('select * from pg_policies') as $policy) {
-        DB::statement("DROP POLICY IF EXISTS {$policy->policyname} ON {$policy->tablename};");
+        DB::statement("DROP POLICY IF EXISTS {$policy->policyname} ON {$policy->tablename}");
     }
 
     Schema::dropIfExists($secondaryModel->getTable());
@@ -182,6 +184,8 @@ test('queries are correctly scoped using RLS', function() {
 
 trait UsesUuidAsPrimaryKey
 {
+    use HasUuids;
+
     protected static function boot()
     {
         parent::boot();
@@ -201,10 +205,7 @@ class UuidPost extends Model
 {
     use UsesUuidAsPrimaryKey, BelongsToTenant;
 
-    public $incrementing = false;
-    public $table = 'uuid_posts';
     protected $guarded = [];
-    protected $keyType = 'string';
 
     public function uuid_comments(): HasMany
     {
@@ -222,12 +223,8 @@ class UuidComment extends Model
     use UsesUuidAsPrimaryKey;
 
     protected $guarded = [];
-    protected $keyType = 'string';
 
-    public $incrementing = false;
-    public $table = 'uuid_comments';
-
-    public function uuid_post()
+    public function uuid_post(): BelongsTo
     {
         return $this->belongsTo(UuidPost::class);
     }
