@@ -63,6 +63,7 @@ class CreatePostgresUserForTenant implements ShouldQueue
             $table = $model->getTable();
 
             $databaseManager->database()->statement("GRANT ALL ON {$table} TO \"{$userName}\"");
+            $databaseManager->database()->statement("GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO \"{$userName}\"");
         }
     }
 }

@@ -4,22 +4,19 @@ declare(strict_types=1);
 
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Stancl\Tenancy\Tests\Etc\Post;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Illuminate\Database\Schema\Blueprint;
+use Stancl\Tenancy\Tests\Etc\ScopedComment;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Jobs\DeleteTenantsPostgresUser;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Stancl\Tenancy\Jobs\CreatePostgresUserForTenant;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
-use Stancl\Tenancy\Database\Concerns\BelongsToPrimaryModel;
 use Stancl\Tenancy\Bootstrappers\Integrations\PostgresTenancyBootstrapper;
 
 beforeEach(function () {
@@ -34,8 +31,8 @@ beforeEach(function () {
     config(['tenancy.models.tenant_key_column' => 'tenant_id']);
     config(['tenancy.models.tenant' => $tenantClass = Tenant::class]);
     config(['tenancy.models.rls' => [
-        $primaryModelClass = UuidPost::class, // Primary model (directly belongs to tenant)
-        $secondaryModelClass = UuidScopedComment::class, // Secondary model (belongs to tenant through a primary model)
+        $primaryModelClass = Post::class, // Primary model (directly belongs to tenant)
+        $secondaryModelClass = ScopedComment::class, // Secondary model (belongs to tenant through a primary model)
     ]]);
 
     $tenantModel = new $tenantClass;
@@ -49,33 +46,33 @@ beforeEach(function () {
         DB::statement("DROP POLICY IF EXISTS {$policy->policyname} ON {$policy->tablename}");
     }
 
-    Schema::dropIfExists($secondaryModel->getTable());
-    Schema::dropIfExists($primaryModel->getTable());
     Schema::dropIfExists('domains');
-    //Schema::dropIfExists($tenantTable);
+    DB::statement("DROP TABLE IF EXISTS {$secondaryModel->getTable()} CASCADE");
+    DB::statement("DROP TABLE IF EXISTS {$primaryModel->getTable()} CASCADE");
     DB::statement("DROP TABLE IF EXISTS $tenantTable CASCADE");
 
-    // todo1 The Post/Comment models have non-UUID primary keys
     Schema::create($tenantTable, function (Blueprint $table) {
-        $table->uuid('id')->default(Str::uuid()->toString())->nullable(false)->primary();
+        $table->string('id')->primary();
         $table->timestamps();
         $table->json('data')->nullable();
     });
 
     Schema::create($primaryModel->getTable(), function (Blueprint $table) {
-        $table->uuid('id')->default(Str::uuid()->toString())->nullable(false)->primary();
+        $table->id();
         $table->string('text');
+        $table->string($tenantKeyColumn = config('tenancy.models.tenant_key_column'));
 
         $table->timestamps();
-        $table->foreignUuid('tenant_id')->constrained('tenants')->onUpdate('cascade')->onDelete('cascade');
+        $table->foreign($tenantKeyColumn)->references(tenancy()->model()->getKeyName())->on(tenancy()->model()->getTable())->onUpdate('cascade')->onDelete('cascade');
     });
 
     Schema::create($secondaryModel->getTable(), function (Blueprint $table) use ($primaryModel) {
-        $table->uuid('id')->default(Str::uuid()->toString())->nullable(false)->primary();
+        $table->id();
         $table->string('text');
+        $table->unsignedBigInteger($primaryModel->getForeignKey());
 
         $table->timestamps();
-        $table->foreignUuid($primaryModel->getForeignKey())->constrained($primaryModel->getTable())->onUpdate('cascade')->onDelete('cascade');
+        $table->foreign($primaryModel->getForeignKey())->references($primaryModel->getKeyName())->on($primaryModel->getTable())->onUpdate('cascade')->onDelete('cascade');
     });
 });
 
@@ -148,15 +145,15 @@ test('queries are correctly scoped using RLS', function() {
     // Create posts and comments for both tenants
     tenancy()->initialize($tenant);
 
-    $post1 = UuidPost::create(['text' => 'first post']);
-    $post1Comment = $post1->uuid_scoped_comments()->create(['text' => 'first comment']);
+    $post1 = Post::create(['text' => 'first post']);
+    $post1Comment = $post1->scoped_comments()->create(['text' => 'first comment']);
 
     tenancy()->end();
 
     tenancy()->initialize($secondTenant);
 
-    $post2 = UuidPost::create(['text' => 'second post']);
-    $post2Comment = $post2->uuid_scoped_comments()->create(['text' => 'second comment']);
+    $post2 = Post::create(['text' => 'second post']);
+    $post2Comment = $post2->scoped_comments()->create(['text' => 'second comment']);
 
     tenancy()->end();
 
@@ -164,11 +161,11 @@ test('queries are correctly scoped using RLS', function() {
     // Ensure RLS scopes the queries – expect that tenants cannot access the records (posts and comments) of other tenants
     tenancy()->initialize($tenant);
 
-    expect(UuidPost::all()->pluck('text'))
+    expect(Post::all()->pluck('text'))
         ->toContain($post1->text)
         ->not()->toContain($post2->text);
 
-    expect(UuidScopedComment::all()->pluck('text'))
+    expect(ScopedComment::all()->pluck('text'))
         ->toContain($post1Comment->text)
         ->not()->toContain($post2Comment->text);
 
@@ -176,8 +173,8 @@ test('queries are correctly scoped using RLS', function() {
 
     tenancy()->initialize($secondTenant);
 
-    expect(UuidPost::all()->pluck('text'))->toContain($post2->text)->not()->toContain($post1->text);
-    expect(UuidScopedComment::all()->pluck('text'))->toContain($post2Comment->text)->not()->toContain($post1Comment->text);
+    expect(Post::all()->pluck('text'))->toContain($post2->text)->not()->toContain($post1->text);
+    expect(ScopedComment::all()->pluck('text'))->toContain($post2Comment->text)->not()->toContain($post1Comment->text);
 
     tenancy()->end();
 });
@@ -197,45 +194,5 @@ trait UsesUuidAsPrimaryKey
                 $model->{$model->getKeyName()} = $uuid;
             }
         });
-    }
-}
-
-
-class UuidPost extends Model
-{
-    use UsesUuidAsPrimaryKey, BelongsToTenant;
-
-    protected $guarded = [];
-
-    public function uuid_comments(): HasMany
-    {
-        return $this->hasMany(UuidComment::class);
-    }
-
-    public function uuid_scoped_comments(): HasMany
-    {
-        return $this->hasMany(UuidComment::class);
-    }
-}
-
-class UuidComment extends Model
-{
-    use UsesUuidAsPrimaryKey;
-
-    protected $guarded = [];
-
-    public function uuid_post(): BelongsTo
-    {
-        return $this->belongsTo(UuidPost::class);
-    }
-}
-
-class UuidScopedComment extends UuidComment
-{
-    use BelongsToPrimaryModel;
-
-    public function getRelationshipToPrimaryModel(): string
-    {
-        return 'uuid_post';
     }
 }
