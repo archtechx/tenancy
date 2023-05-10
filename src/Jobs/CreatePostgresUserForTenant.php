@@ -44,7 +44,7 @@ class CreatePostgresUserForTenant implements ShouldQueue
             DB::statement("CREATE USER \"$name\" LOGIN PASSWORD '$password';");
         }
 
-        $this->grantPermissions($name);
+        $this->grantPermissions((string) $name);
     }
 
     protected function grantPermissions(string $userName): void
@@ -53,7 +53,13 @@ class CreatePostgresUserForTenant implements ShouldQueue
          * @var \Stancl\Tenancy\Database\Contracts\StatefulTenantDatabaseManager $databaseManager
          */
         $databaseManager = $this->tenant->database()->manager();
-        foreach (array_map(fn (string $modelName) => (new $modelName), config('tenancy.models.rls')) as $model) {
+
+        /**
+         * @var Model[] $rlsModels
+         */
+        $rlsModels = array_map(fn (string $modelName) => (new $modelName), config('tenancy.models.rls'));
+
+        foreach ($rlsModels as $model) {
             $table = $model->getTable();
 
             $databaseManager->database()->statement("GRANT ALL ON {$table} TO \"{$userName}\"");

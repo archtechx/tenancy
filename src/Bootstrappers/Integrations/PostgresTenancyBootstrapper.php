@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Bootstrappers\Integrations;
 
-use Illuminate\Contracts\Config\Repository;
-use Illuminate\Database\DatabaseManager;
-use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
+use Illuminate\Database\DatabaseManager;
+use Illuminate\Contracts\Config\Repository;
+use Stancl\Tenancy\Contracts\TenancyBootstrapper;
+use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
 class PostgresTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -24,6 +25,7 @@ class PostgresTenancyBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant): void
     {
+        /** @var TenantWithDatabase $tenant */
         $this->database->purge('central');
 
         $this->config->set('database.connections.pgsql.username', $tenant->getTenantKey());
