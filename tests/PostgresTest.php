@@ -76,11 +76,6 @@ beforeEach(function () {
     });
 });
 
-afterEach(function () {
-    Schema::dropIfExists('uuid_comments');
-    Schema::dropIfExists('uuid_posts');
-});
-
 test('postgres user can get created using the job', function() {
     $tenant = Tenant::create();
     $name = $tenant->getTenantKey();
@@ -203,7 +198,7 @@ trait UsesUuidAsPrimaryKey
 
 class UuidPost extends Model
 {
-    use BelongsToTenant;
+    use UsesUuidAsPrimaryKey, BelongsToTenant;
 
     public $incrementing = false;
     public $table = 'uuid_posts';
@@ -221,20 +216,10 @@ class UuidPost extends Model
     }
 }
 
-class UuidScopedComment extends UuidComment
-{
-    use BelongsToPrimaryModel;
-
-    protected $guarded = [];
-
-    public function getRelationshipToPrimaryModel(): string
-    {
-        return 'uuid_post';
-    }
-}
-
 class UuidComment extends Model
 {
+    use UsesUuidAsPrimaryKey;
+
     protected $guarded = [];
     protected $keyType = 'string';
 
@@ -244,5 +229,17 @@ class UuidComment extends Model
     public function uuid_post()
     {
         return $this->belongsTo(UuidPost::class);
+    }
+}
+
+class UuidScopedComment extends UuidComment
+{
+    use UsesUuidAsPrimaryKey, BelongsToPrimaryModel;
+
+    protected $guarded = [];
+
+    public function getRelationshipToPrimaryModel(): string
+    {
+        return 'uuid_post';
     }
 }
