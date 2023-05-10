@@ -235,9 +235,7 @@ class UuidComment extends Model
 
 class UuidScopedComment extends UuidComment
 {
-    use UsesUuidAsPrimaryKey, BelongsToPrimaryModel;
-
-    protected $guarded = [];
+    use BelongsToPrimaryModel;
 
     public function getRelationshipToPrimaryModel(): string
     {
