@@ -35,7 +35,7 @@ class CreateRLSPoliciesForTenantTables extends Command
                         {$parentKey} IN (
                             SELECT id
                             FROM {$parentTable}
-                            WHERE ({$tenantKey}::UUID = (
+                            WHERE ({$tenantKey} = (
                                 SELECT {$tenantKey}
                                 FROM {$parentTable}
                                 WHERE id = {$parentKey}
