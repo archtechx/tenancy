@@ -60,12 +60,8 @@ services:
             POSTGRES_USER: '${POSTGRES_USER:-postgres}'
             POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:-postgres}'
         healthcheck:
-            test:
-                - CMD
-                - pg_isready
-                - '-q'
-            retries: 3
-            timeout: 5s
+            test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+            interval: 10s
     redis:
         image: redis:alpine
         healthcheck:
