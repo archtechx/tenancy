@@ -68,6 +68,8 @@ services:
                 - '${DB_DATABASE}'
                 - '-U'
                 - '${DB_USERNAME}'
+                - '-e POSTGRES_PASSWORD='
+                - '${POSTGRES_PASSWORD}'
             retries: 3
             timeout: 5s
     redis:
