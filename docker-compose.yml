@@ -59,7 +59,6 @@ services:
             POSTGRES_DB: main
             POSTGRES_USER: '${POSTGRES_USER:-postgres}'
             POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:-postgres}'
-            PGPASSWORD: '${POSTGRES_PASSWORD}'
         healthcheck:
             test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
             interval: 10s
