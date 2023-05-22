@@ -56,8 +56,6 @@ services:
         ports:
             - '${POSTGRES_PORT:-5432}'
         environment:
-            PGPASSWORD: '${POSTGRES_PASSWORD:-postgres}'
-            PGPORT: '${POSTGRES_PORT:-5432}'
             POSTGRES_DB: main
             POSTGRES_USER: '${POSTGRES_USER:-postgres}'
             POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:-postgres}'
