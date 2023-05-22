@@ -3,8 +3,12 @@
 namespace Stancl\Tenancy\Tests\Etc;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
+/**
+ * This model is intended to be used with the single-database tenancy approach.
+ */
 class Post extends Model
 {
     use BelongsToTenant;
@@ -13,12 +17,12 @@ class Post extends Model
 
     public $timestamps = false;
 
-    public function comments()
+    public function comments(): HasMany
     {
         return $this->hasMany(Comment::class);
     }
 
-    public function scoped_comments()
+    public function scoped_comments(): HasMany
     {
         return $this->hasMany(Comment::class);
     }
