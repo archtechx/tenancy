@@ -53,12 +53,10 @@ services:
             retries: 10
     postgres:
         image: 'postgres:latest'
-        ports:
-            - '${POSTGRES_PORT:-5432}'
         environment:
+            POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:-password}' # Superuser password
+            POSTGRES_USER: '${POSTGRES_USER:-root}' # Superuser name
             POSTGRES_DB: main
-            POSTGRES_USER: '${POSTGRES_USER:-root}'
-            POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:-password}'
         healthcheck:
             test: ["CMD-SHELL", "pg_isready -U '${POSTGRES_USER}'"]
             interval: 10s
