@@ -157,8 +157,6 @@ test('queries are correctly scoped using RLS', function() {
 
     tenancy()->end();
 
-    // todo1 Add option to disable the global scopes that the BelongsToTenant trait adds to the models, make RLS scope the queries
-    // Ensure RLS scopes the queries – expect that tenants cannot access the records (posts and comments) of other tenants
     tenancy()->initialize($tenant);
 
     expect(Post::all()->pluck('text'))
