@@ -13,6 +13,8 @@ use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 /**
  * Purge central connection, set Postgres credentials to the tenant's credentials
  * and use Postgres as the central connection.
+ *
+ * This bootstrapper is intended to be used with single-database tenancy.
  */
 class PostgresTenancyBootstrapper implements TenancyBootstrapper
 {
