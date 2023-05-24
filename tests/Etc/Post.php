@@ -24,6 +24,7 @@ class Post extends Model
 
     public function scoped_comments(): HasMany
     {
-        return $this->hasMany(Comment::class);
+        // ScopedComment = Comment model with the BelongsToPrimaryModel trait
+        return $this->hasMany(ScopedComment::class);
     }
 }
