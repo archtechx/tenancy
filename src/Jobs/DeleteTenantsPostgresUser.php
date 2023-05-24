@@ -39,8 +39,10 @@ class DeleteTenantsPostgresUser implements ShouldQueue
         // Revoke all permissions of a Postgres user before dropping it
         // Skip dropping permissions if the user doesn't exist
         if (count(DB::select("SELECT usename FROM pg_user WHERE usename = '$name';")) > 0) {
-            DB::statement("DROP OWNED BY \"{$name}\";");
-            DB::statement("DROP USER \"{$name}\";");
+            DB::transaction(function () use ($name) {
+                DB::statement("DROP OWNED BY \"{$name}\";");
+                DB::statement("DROP USER \"{$name}\";");
+            });
         }
     }
 }

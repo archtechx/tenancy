@@ -39,7 +39,9 @@ class CreatePostgresUserForTenant implements ShouldQueue
 
         // Create the user only if it doesn't already exist
         if (! count(DB::select("SELECT usename FROM pg_user WHERE usename = '$name';")) > 0) {
-            DB::statement("CREATE USER \"$name\" LOGIN PASSWORD '$password';");
+            DB::transaction(function () use ($name, $password) {
+                DB::statement("CREATE USER \"$name\" LOGIN PASSWORD '$password';");
+            });
         }
 
         $this->grantPermissions((string) $name);
@@ -60,8 +62,10 @@ class CreatePostgresUserForTenant implements ShouldQueue
         foreach ($rlsModels as $model) {
             $table = $model->getTable();
 
-            $databaseManager->database()->statement("GRANT ALL ON {$table} TO \"{$userName}\"");
-            $databaseManager->database()->statement("GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO \"{$userName}\"");
+            $databaseManager->database()->transaction(function () use ($databaseManager, $table, $userName) {
+                $databaseManager->database()->statement("GRANT ALL ON {$table} TO \"{$userName}\"");
+                $databaseManager->database()->statement("GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO \"{$userName}\"");
+            });
         }
     }
 }
