@@ -42,37 +42,39 @@ beforeEach(function () {
     $tenantTable = $tenantModel->getTable();
 
     // Drop all existing policies
-    foreach (DB::select('select * from pg_policies') as $policy) {
-        DB::statement("DROP POLICY IF EXISTS {$policy->policyname} ON {$policy->tablename}");
-    }
+    DB::transaction(function () use ($tenantTable, $primaryModel, $secondaryModel) {
+        foreach (DB::select('select * from pg_policies') as $policy) {
+            DB::statement("DROP POLICY IF EXISTS {$policy->policyname} ON {$policy->tablename}");
+        }
 
-    Schema::dropIfExists('domains');
-    DB::statement("DROP TABLE IF EXISTS {$secondaryModel->getTable()} CASCADE");
-    DB::statement("DROP TABLE IF EXISTS {$primaryModel->getTable()} CASCADE");
-    DB::statement("DROP TABLE IF EXISTS $tenantTable CASCADE");
+        Schema::dropIfExists('domains');
+        DB::statement("DROP TABLE IF EXISTS {$secondaryModel->getTable()} CASCADE");
+        DB::statement("DROP TABLE IF EXISTS {$primaryModel->getTable()} CASCADE");
+        DB::statement("DROP TABLE IF EXISTS $tenantTable CASCADE");
 
-    Schema::create($tenantTable, function (Blueprint $table) {
-        $table->string('id')->primary();
-        $table->timestamps();
-        $table->json('data')->nullable();
-    });
+        Schema::create($tenantTable, function (Blueprint $table) {
+            $table->string('id')->primary();
+            $table->timestamps();
+            $table->json('data')->nullable();
+        });
 
-    Schema::create($primaryModel->getTable(), function (Blueprint $table) {
-        $table->id();
-        $table->string('text');
-        $table->string($tenantKeyColumn = config('tenancy.models.tenant_key_column'));
+        Schema::create($primaryModel->getTable(), function (Blueprint $table) {
+            $table->id();
+            $table->string('text');
+            $table->string($tenantKeyColumn = config('tenancy.models.tenant_key_column'));
 
-        $table->timestamps();
-        $table->foreign($tenantKeyColumn)->references(tenancy()->model()->getKeyName())->on(tenancy()->model()->getTable())->onUpdate('cascade')->onDelete('cascade');
-    });
+            $table->timestamps();
+            $table->foreign($tenantKeyColumn)->references(tenancy()->model()->getKeyName())->on(tenancy()->model()->getTable())->onUpdate('cascade')->onDelete('cascade');
+        });
 
-    Schema::create($secondaryModel->getTable(), function (Blueprint $table) use ($primaryModel) {
-        $table->id();
-        $table->string('text');
-        $table->unsignedBigInteger($primaryModel->getForeignKey());
+        Schema::create($secondaryModel->getTable(), function (Blueprint $table) use ($primaryModel) {
+            $table->id();
+            $table->string('text');
+            $table->unsignedBigInteger($primaryModel->getForeignKey());
 
-        $table->timestamps();
-        $table->foreign($primaryModel->getForeignKey())->references($primaryModel->getKeyName())->on($primaryModel->getTable())->onUpdate('cascade')->onDelete('cascade');
+            $table->timestamps();
+            $table->foreign($primaryModel->getForeignKey())->references($primaryModel->getKeyName())->on($primaryModel->getTable())->onUpdate('cascade')->onDelete('cascade');
+        });
     });
 });
 
@@ -112,7 +114,7 @@ test('correct rls policies get created', function () {
 
     // Drop all existing policies to check if the command creates policies for multiple tables
     foreach ($getRlsPolicies() as $policy) {
-        DB::statement("DROP POLICY IF EXISTS {$policy->policyname} ON {$policy->tablename}");
+        DB::transaction(fn () => DB::statement("DROP POLICY IF EXISTS {$policy->policyname} ON {$policy->tablename}"));
     }
 
     expect($getRlsPolicies())->toHaveCount(0);
