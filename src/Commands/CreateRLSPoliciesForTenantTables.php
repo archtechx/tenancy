@@ -17,7 +17,10 @@ class CreateRLSPoliciesForTenantTables extends Command
     public function handle(): int
     {
         foreach (config('tenancy.models.rls') as $modelClass) {
-            $this->makeModelUseRls((new $modelClass));
+            /** @var Model $model */
+            $model = new $modelClass;
+
+            $this->makeModelUseRls($model);
         }
 
         return Command::SUCCESS;
@@ -53,6 +56,7 @@ class CreateRLSPoliciesForTenantTables extends Command
         $table = $model->getTable();
         $tenantKey = tenancy()->tenantKeyColumn();
 
+        /** @phpstan-ignore-next-line */
         $parentName = $model->getRelationshipToPrimaryModel();
         $parentKey = $model->$parentName()->getForeignKeyName();
         $parentModel = $model->$parentName()->make();
