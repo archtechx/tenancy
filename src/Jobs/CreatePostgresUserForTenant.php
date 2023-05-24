@@ -34,7 +34,7 @@ class CreatePostgresUserForTenant implements ShouldQueue
      */
     public function handle()
     {
-        $name = $this->tenant->getTenantKey();
+        $name = $this->tenant->database()->getUsername() ?? $this->tenant->getTenantKey();
         $password = $this->tenant->database()->getPassword() ?? 'password';
 
         // Create the user only if it doesn't already exist

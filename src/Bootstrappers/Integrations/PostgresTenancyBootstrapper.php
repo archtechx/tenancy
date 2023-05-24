@@ -28,8 +28,9 @@ class PostgresTenancyBootstrapper implements TenancyBootstrapper
         /** @var TenantWithDatabase $tenant */
         $this->database->purge('central');
 
-        $this->config->set('database.connections.pgsql.username', $tenant->getTenantKey());
+        $this->config->set('database.connections.pgsql.username', $tenant->database()->getUsername() ?? $tenant->getTenantKey());
         $this->config->set('database.connections.pgsql.password', $tenant->database()->getPassword() ?? 'password');
+
         $this->config->set('database.connections.central', $this->config->get('database.connections.pgsql'));
     }
 

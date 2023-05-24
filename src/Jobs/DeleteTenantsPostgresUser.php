@@ -34,7 +34,7 @@ class DeleteTenantsPostgresUser implements ShouldQueue
      */
     public function handle()
     {
-        $name = $this->tenant->getTenantKey();
+        $name = $this->tenant->database()->getUsername() ?? $this->tenant->getTenantKey();
 
         // Revoke all permissions of a Postgres user before dropping it
         // Skip dropping permissions if the user doesn't exist
