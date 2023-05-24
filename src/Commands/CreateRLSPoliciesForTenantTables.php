@@ -16,41 +16,39 @@ class CreateRLSPoliciesForTenantTables extends Command
 
     public function handle(): int
     {
-        $tenantModels = $this->getTenantModels();
-        $tenantKey = tenancy()->tenantKeyColumn();
-
-        foreach ($tenantModels as $model) {
-            $table = $model->getTable();
-
-            DB::transaction(fn () => DB::statement("DROP POLICY IF EXISTS {$table}_rls_policy ON {$table}"));
-
-            if (! Schema::hasColumn($table, $tenantKey)) {
-                // Table is not directly related to tenant
-                if (in_array(BelongsToPrimaryModel::class, class_uses_recursive($model::class))) {
-                    $this->makeModelUseRls($model);
-                } else {
-                    $modelName = $model::class;
-
-                    $this->components->info("Table '$table' is not related to tenant. Make sure $modelName uses the BelongsToPrimaryModel trait.");
-                }
-            } else {
-                DB::transaction(fn () => DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING ({$tenantKey}::TEXT = current_user);"));
-
-                $this->makeTableUseRls($table);
-
-                $this->components->info("Created RLS policy for table '$table'");
-            }
+        foreach (config('tenancy.models.rls') as $modelClass) {
+            $this->makeModelUseRls((new $modelClass));
         }
 
         return Command::SUCCESS;
     }
 
-    public function getTenantModels(): array
+    protected function makeModelUseRls(Model $model): void
     {
-        return array_map(fn (string $modelName) => (new $modelName), config('tenancy.models.rls'));
+        $table = $model->getTable();
+        $tenantKey = tenancy()->tenantKeyColumn();
+
+        DB::transaction(fn () => DB::statement("DROP POLICY IF EXISTS {$table}_rls_policy ON {$table}"));
+
+        if (! Schema::hasColumn($table, $tenantKey)) {
+            // Table is not directly related to tenant
+            if (in_array(BelongsToPrimaryModel::class, class_uses_recursive($model::class))) {
+                $this->makeSecondaryModelUseRls($model);
+            } else {
+                $modelName = $model::class;
+
+                $this->components->info("Table '$table' is not related to tenant. Make sure $modelName uses the BelongsToPrimaryModel trait.");
+            }
+        } else {
+            DB::transaction(fn () => DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING ({$tenantKey}::TEXT = current_user);"));
+
+            $this->enableRls($table);
+
+            $this->components->info("Created RLS policy for table '$table'");
+        }
     }
 
-    protected function makeModelUseRls(Model $model): void
+    protected function makeSecondaryModelUseRls(Model $model): void
     {
         $table = $model->getTable();
         $tenantKey = tenancy()->tenantKeyColumn();
@@ -72,10 +70,10 @@ class CreateRLSPoliciesForTenantTables extends Command
             )
         )"));
 
-        $this->makeTableUseRls($table);
+        $this->enableRls($table);
     }
 
-    protected function makeTableUseRls(string $table): void
+    protected function enableRls(string $table): void
     {
         DB::transaction(function () use ($table) {
             DB::statement("ALTER TABLE {$table} ENABLE ROW LEVEL SECURITY");
