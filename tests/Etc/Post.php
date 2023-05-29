@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
 /**
- * This model is intended to be used with the single-database tenancy approach.
+ * This model is used with the single-database tenancy approach.
  */
 class Post extends Model
 {

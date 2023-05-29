@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * This model is not intended to be used with the single-database tenancy approach.
+ * This model is used with the multi-database tenancy approach.
  */
 class Comment extends Model
 {
