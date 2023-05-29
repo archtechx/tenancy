@@ -16,7 +16,7 @@ use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
  *
  * This bootstrapper is intended to be used with single-database tenancy.
  */
-class PostgresTenancyBootstrapper implements TenancyBootstrapper
+class PostgresSingleDatabaseBootstrapper implements TenancyBootstrapper
 {
     protected array $originalCentralConnectionConfig;
     protected array $originalPostgresConfig;

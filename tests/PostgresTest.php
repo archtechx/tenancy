@@ -17,12 +17,12 @@ use Stancl\Tenancy\Jobs\DeleteTenantsPostgresUser;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Stancl\Tenancy\Jobs\CreatePostgresUserForTenant;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Bootstrappers\Integrations\PostgresTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\Integrations\PostgresSingleDatabaseBootstrapper;
 
 beforeEach(function () {
     DB::purge('central');
 
-    config(['tenancy.bootstrappers' => [PostgresTenancyBootstrapper::class]]);
+    config(['tenancy.bootstrappers' => [PostgresSingleDatabaseBootstrapper::class]]);
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
