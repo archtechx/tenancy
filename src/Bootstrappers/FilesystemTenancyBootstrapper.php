@@ -72,6 +72,11 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             }
 
             $this->app['config']["filesystems.disks.{$disk}.root"] = $finalPrefix;
+
+            if (!isset($this->app['config']["tenancy.filesystem.root_override.{$disk}"])) {
+                $originalUrl = $this->app['config']["filesystems.disks.{$disk}.url"];
+                $this->app['config']["filesystems.disks.{$disk}.url"] = $originalUrl ? rtrim($originalUrl, '/') . '/'. $suffix : $suffix;
+            }
         }
     }
 
