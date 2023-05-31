@@ -60,7 +60,7 @@ class CreateRLSPoliciesForTenantTables extends Command
         $parentName = $model->getRelationshipToPrimaryModel();
         $parentKey = $model->$parentName()->getForeignKeyName();
         $parentModel = $model->$parentName()->make();
-        $parentTable = str($parentModel->getTable())->toString();
+        $parentTable = $parentModel->getTable();
 
         DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING (
             {$parentKey} IN (
