@@ -20,7 +20,7 @@ class CreateRLSPoliciesForTenantTables extends Command
             /** @var Model $model */
             $model = new $modelClass;
 
-            $this->makeModelUseRls($model);
+            DB::transaction(fn () => $this->makeModelUseRls($model));
         }
 
         return Command::SUCCESS;
@@ -79,9 +79,7 @@ class CreateRLSPoliciesForTenantTables extends Command
 
     protected function enableRls(string $table): void
     {
-        DB::transaction(function () use ($table) {
-            DB::statement("ALTER TABLE {$table} ENABLE ROW LEVEL SECURITY");
-            DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
-        });
+        DB::statement("ALTER TABLE {$table} ENABLE ROW LEVEL SECURITY");
+        DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
     }
 }
