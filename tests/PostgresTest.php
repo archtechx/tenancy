@@ -114,7 +114,7 @@ test('correct rls policies get created', function () {
 
     // Drop all existing policies to check if the command creates policies for multiple tables
     foreach ($getRlsPolicies() as $policy) {
-        DB::transaction(fn () => DB::statement("DROP POLICY IF EXISTS {$policy->policyname} ON {$policy->tablename}"));
+        DB::statement("DROP POLICY IF EXISTS {$policy->policyname} ON {$policy->tablename}");
     }
 
     expect($getRlsPolicies())->toHaveCount(0);

@@ -31,7 +31,7 @@ class CreateRLSPoliciesForTenantTables extends Command
         $table = $model->getTable();
         $tenantKey = tenancy()->tenantKeyColumn();
 
-        DB::transaction(fn () => DB::statement("DROP POLICY IF EXISTS {$table}_rls_policy ON {$table}"));
+        DB::statement("DROP POLICY IF EXISTS {$table}_rls_policy ON {$table}");
 
         if (! Schema::hasColumn($table, $tenantKey)) {
             // Table is not directly related to tenant
@@ -43,7 +43,7 @@ class CreateRLSPoliciesForTenantTables extends Command
                 $this->components->info("Table '$table' is not related to tenant. Make sure $modelName uses the BelongsToPrimaryModel trait.");
             }
         } else {
-            DB::transaction(fn () => DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING ({$tenantKey}::TEXT = current_user);"));
+            DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING ({$tenantKey}::TEXT = current_user);");
 
             $this->enableRls($table);
 
@@ -62,7 +62,7 @@ class CreateRLSPoliciesForTenantTables extends Command
         $parentModel = $model->$parentName()->make();
         $parentTable = str($parentModel->getTable())->toString();
 
-        DB::transaction(fn () => DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING (
+        DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING (
             {$parentKey} IN (
                 SELECT id
                 FROM {$parentTable}
@@ -72,7 +72,7 @@ class CreateRLSPoliciesForTenantTables extends Command
                     WHERE id = {$parentKey}
                 ))
             )
-        )"));
+        )");
 
         $this->enableRls($table);
     }

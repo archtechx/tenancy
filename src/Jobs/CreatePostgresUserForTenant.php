@@ -39,7 +39,7 @@ class CreatePostgresUserForTenant implements ShouldQueue
 
         // Create the user only if it doesn't already exist
         if (! count(DB::select("SELECT usename FROM pg_user WHERE usename = '$name';")) > 0) {
-            DB::transaction(fn () => DB::statement("CREATE USER \"$name\" LOGIN PASSWORD '$password';"));
+            DB::statement("CREATE USER \"$name\" LOGIN PASSWORD '$password';");
         }
 
         $this->grantPermissions((string) $name);
