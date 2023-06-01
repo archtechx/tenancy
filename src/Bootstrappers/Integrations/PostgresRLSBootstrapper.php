@@ -11,12 +11,14 @@ use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
 /**
- * Purge central connection, set Postgres credentials to the tenant's credentials
- * and use Postgres as the central connection.
+ * Set Postgres credentials to the tenant's credentials and use Postgres as the central connection.
  *
- * This bootstrapper is intended to be used with single-database tenancy.
+ * This bootstrapper is intended to be used with Postgres RLS (single-database tenancy).
+ *
+ * @see \Stancl\Tenancy\Commands\CreatePostgresUserForTenants
+ * @see \Stancl\Tenancy\Commands\CreateRLSPoliciesForTenantTables
  */
-class PostgresSingleDatabaseBootstrapper implements TenancyBootstrapper
+class PostgresRLSBootstrapper implements TenancyBootstrapper
 {
     protected array $originalCentralConnectionConfig;
     protected array $originalPostgresConfig;
@@ -32,8 +34,6 @@ class PostgresSingleDatabaseBootstrapper implements TenancyBootstrapper
     public function bootstrap(Tenant $tenant): void
     {
         /** @var TenantWithDatabase $tenant */
-        $this->database->purge('central');
-
         $this->config->set('database.connections.pgsql.username', $tenant->database()->getUsername() ?? $tenant->getTenantKey());
         $this->config->set('database.connections.pgsql.password', $tenant->database()->getPassword() ?? 'password');
 

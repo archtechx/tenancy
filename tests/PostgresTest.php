@@ -17,7 +17,7 @@ use Stancl\Tenancy\Jobs\DeleteTenantsPostgresUser;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Stancl\Tenancy\Jobs\CreatePostgresUserForTenant;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Bootstrappers\Integrations\PostgresSingleDatabaseBootstrapper;
+use Stancl\Tenancy\Bootstrappers\Integrations\PostgresRLSBootstrapper;
 
 beforeEach(function () {
     DB::purge('central');
@@ -25,7 +25,7 @@ beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
-    config(['tenancy.bootstrappers' => [PostgresSingleDatabaseBootstrapper::class]]);
+    config(['tenancy.bootstrappers' => [PostgresRLSBootstrapper::class]]);
     config(['database.connections.central' => config('database.connections.pgsql')]);
     config(['tenancy.models.tenant_key_column' => 'tenant_id']);
     config(['tenancy.models.tenant' => $tenantClass = Tenant::class]);
