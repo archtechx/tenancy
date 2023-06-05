@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Closure;
-use Stancl\Tenancy\Contracts\Tenant;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Traits\Macroable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Traits\Macroable;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
+use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\Concerns\BelongsToPrimaryModel;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByIdException;
 

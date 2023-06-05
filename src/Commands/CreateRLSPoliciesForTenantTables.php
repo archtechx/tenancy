@@ -7,8 +7,6 @@ namespace Stancl\Tenancy\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
-use Stancl\Tenancy\Database\Concerns\BelongsToPrimaryModel;
 
 /**
  * Creates and uses RLS policies for tables related to a tenant directly, or through a parent primary model's table.
