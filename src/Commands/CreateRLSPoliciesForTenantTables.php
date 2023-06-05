@@ -16,14 +16,24 @@ class CreateRLSPoliciesForTenantTables extends Command
 
     public function handle(): int
     {
-        foreach (config('tenancy.models.rls') as $modelClass) {
-            /** @var Model $model */
-            $model = new $modelClass;
-
+        foreach ($this->rlsModels() as $model) {
             DB::transaction(fn () => $this->makeModelUseRls($model));
         }
 
         return Command::SUCCESS;
+    }
+
+    protected function rlsModels(): array
+    {
+        tenancy()->initialize($tenant = tenancy()->model()::create());
+
+        $rlsTables = array_map(fn ($table) => $table->tablename, Schema::getAllTables());
+
+        tenancy()->end();
+
+        $tenant->delete();
+
+        return array_filter(array_map(fn ($table) => $this->getModelFromTable($table), $rlsTables));
     }
 
     protected function makeModelUseRls(Model $model): void
@@ -81,5 +91,20 @@ class CreateRLSPoliciesForTenantTables extends Command
     {
         DB::statement("ALTER TABLE {$table} ENABLE ROW LEVEL SECURITY");
         DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
+    }
+
+    protected function getModelFromTable(string $table): Model|null
+    {
+        foreach(get_declared_classes() as $class) {
+            if(is_subclass_of($class, Model::class)) {
+                $model = new $class;
+
+                if ($model->getTable() === $table) {
+                    return $model;
+                }
+            }
+        }
+
+        return null;
     }
 }
