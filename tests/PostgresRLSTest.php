@@ -8,7 +8,9 @@ use Stancl\Tenancy\Tests\Etc\Post;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\Events\TenancyEnded;
+use Stancl\Tenancy\Database\TenantScope;
 use Illuminate\Database\Schema\Blueprint;
 use Stancl\Tenancy\Tests\Etc\ScopedComment;
 use Stancl\Tenancy\Events\TenancyInitialized;
@@ -25,18 +27,16 @@ beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
+    // Turn RLS scoping on
+    config(['tenancy.database.rls' => true]);
     config(['tenancy.bootstrappers' => [PostgresRLSBootstrapper::class]]);
     config(['database.connections.' . $centralConnection => config('database.connections.pgsql')]);
     config(['tenancy.models.tenant_key_column' => 'tenant_id']);
     config(['tenancy.models.tenant' => $tenantClass = Tenant::class]);
-    config(['tenancy.models.rls' => [
-        $primaryModelClass = Post::class, // Primary model (directly belongs to tenant)
-        $secondaryModelClass = ScopedComment::class, // Secondary model (belongs to tenant through a primary model)
-    ]]);
 
     $tenantModel = new $tenantClass;
-    $primaryModel = new $primaryModelClass;
-    $secondaryModel = new $secondaryModelClass;
+    $primaryModel = new Post;
+    $secondaryModel = new ScopedComment;
 
     $tenantTable = $tenantModel->getTable();
 
@@ -108,8 +108,8 @@ test('postgres user can get deleted using the job', function() {
 });
 
 test('correct rls policies get created', function () {
-    $rlsModels = config('tenancy.models.rls');
-    $modelTables = collect($rlsModels)->map(fn (string $model) => (new $model)->getTable());
+    $tenantModels = tenancy()->getTenantModels();
+    $modelTables = collect($tenantModels)->map(fn (Model $model) => $model->getTable());
     $getRlsPolicies = fn () => DB::select('select * from pg_policies');
     $getRlsTables = fn () => $modelTables->map(fn ($table) => DB::select('select relname, relrowsecurity, relforcerowsecurity from pg_class WHERE oid = ' . "'$table'::regclass"))->collapse();
 
@@ -125,8 +125,8 @@ test('correct rls policies get created', function () {
     // Check if all tables with policies are RLS protected (even the ones not directly related to the tenant)
     // Models related to tenant through some model must use the BelongsToPrimaryModel trait
     // For the command to create the policy correctly for the model's table
-    expect($getRlsPolicies())->toHaveCount(count($rlsModels)); // 2
-    expect($getRlsTables())->toHaveCount(count($rlsModels)); // 2
+    expect($getRlsPolicies())->toHaveCount(count($tenantModels)); // 2
+    expect($getRlsTables())->toHaveCount(count($tenantModels)); // 2
 
     foreach ($getRlsTables() as $table) {
         expect($modelTables)->toContain($table->relname);
@@ -137,6 +137,10 @@ test('correct rls policies get created', function () {
 test('queries are correctly scoped using RLS', function() {
     // Create rls policies for tables
     pest()->artisan('tenants:create-rls-policies');
+
+    // Ensure queries aren't scoped by the global scope (TenantScope)
+    expect(Post::hasGlobalScope(TenantScope::class))->toBeFalse();
+    expect(ScopedComment::hasGlobalScope(TenantScope::class))->toBeFalse();
 
     // Create two tenants with postgres users
     $tenant = Tenant::create();
