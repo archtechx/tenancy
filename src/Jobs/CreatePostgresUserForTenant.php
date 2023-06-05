@@ -47,17 +47,13 @@ class CreatePostgresUserForTenant implements ShouldQueue
 
     protected function grantPermissions(string $userName): void
     {
-        /**
-         * @var \Stancl\Tenancy\Database\Contracts\StatefulTenantDatabaseManager $databaseManager
-         */
+        /** @var \Stancl\Tenancy\Database\Contracts\StatefulTenantDatabaseManager $databaseManager */
         $databaseManager = $this->tenant->database()->manager();
 
-        /**
-         * @var Model[] $rlsModels
-         */
-        $rlsModels = array_map(fn (string $modelName) => (new $modelName), config('tenancy.models.rls'));
+        /** @var Model[] $tenantModels */
+        $tenantModels = tenancy()->getTenantModels();
 
-        foreach ($rlsModels as $model) {
+        foreach ($tenantModels as $model) {
             $table = $model->getTable();
 
             $databaseManager->database()->transaction(function () use ($databaseManager, $table, $userName) {

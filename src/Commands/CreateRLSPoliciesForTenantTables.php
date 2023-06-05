@@ -21,19 +21,11 @@ class CreateRLSPoliciesForTenantTables extends Command
 
     public function handle(): int
     {
-        foreach ($this->getModels() as $model) {
+        foreach (tenancy()->getModels() as $model) {
             DB::transaction(fn () => $this->useRlsOnModel($model));
         }
 
         return Command::SUCCESS;
-    }
-
-    protected function getModels(): array
-    {
-        $tables = array_map(fn ($table) => $table->tablename, Schema::getAllTables());
-        $models = array_map(fn (string $table) => $this->getModelFromTable($table), $tables);
-
-        return array_filter($models);
     }
 
     /**
@@ -46,9 +38,9 @@ class CreateRLSPoliciesForTenantTables extends Command
 
         DB::statement("DROP POLICY IF EXISTS {$table}_rls_policy ON {$table}");
 
-        if (! Schema::hasColumn($table, $tenantKey)) {
+        if (! tenancy()->modelBelongsToTenant($model)) {
             // Table is not directly related to a tenant
-            if (in_array(BelongsToPrimaryModel::class, class_uses_recursive($model::class))) {
+            if (tenancy()->modelBelongsToTenantIndirectly($model)) {
                 $this->makeSecondaryModelUseRls($model);
             } else {
                 $this->components->info("Skipping RLS policy creation – table '$table' is not related to a tenant.");
@@ -92,20 +84,5 @@ class CreateRLSPoliciesForTenantTables extends Command
     {
         DB::statement("ALTER TABLE {$table} ENABLE ROW LEVEL SECURITY");
         DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
-    }
-
-    protected function getModelFromTable(string $table): Model|null
-    {
-        foreach (get_declared_classes() as $class) {
-            if (is_subclass_of($class, Model::class)) {
-                $model = new $class;
-
-                if ($model->getTable() === $table) {
-                    return $model;
-                }
-            }
-        }
-
-        return null;
     }
 }

@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Stancl\Tenancy;
 
 use Closure;
-use Illuminate\Database\Eloquent\Builder;
+use Stancl\Tenancy\Contracts\Tenant;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Traits\Macroable;
+use Illuminate\Database\Eloquent\Builder;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
-use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Database\Concerns\BelongsToPrimaryModel;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByIdException;
 
 class Tenancy
@@ -214,5 +216,43 @@ class Tenancy
     public static function defaultMiddleware(): string
     {
         return config('tenancy.identification.default_middleware', Middleware\InitializeTenancyByDomain::class);
+    }
+
+    public static function getModels(): array
+    {
+        $tables = array_map(fn ($table) => $table->tablename, Schema::getAllTables());
+        $models = array_map(fn (string $table) => static::getModelFromTable($table), $tables);
+
+        return array_filter($models);
+    }
+
+    public static function getTenantModels(): array
+    {
+        return array_filter(static::getModels(), fn (Model $model) => tenancy()->modelBelongsToTenant($model) || tenancy()->modelBelongsToTenantIndirectly($model));
+    }
+
+    protected static function getModelFromTable(string $table): Model|null
+    {
+        foreach (get_declared_classes() as $class) {
+            if (is_subclass_of($class, Model::class)) {
+                $model = new $class;
+
+                if ($model->getTable() === $table) {
+                    return $model;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public static function modelBelongsToTenant(Model $model): bool
+    {
+        return Schema::hasColumn($model->getTable(), static::tenantKeyColumn());
+    }
+
+    public static function modelBelongsToTenantIndirectly(Model $model): bool
+    {
+        return in_array(BelongsToPrimaryModel::class, class_uses_recursive($model::class));
     }
 }
