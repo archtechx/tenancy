@@ -95,8 +95,8 @@ class CreateRLSPoliciesForTenantTables extends Command
 
     protected function getModelFromTable(string $table): Model|null
     {
-        foreach(get_declared_classes() as $class) {
-            if(is_subclass_of($class, Model::class)) {
+        foreach (get_declared_classes() as $class) {
+            if (is_subclass_of($class, Model::class)) {
                 $model = new $class;
 
                 if ($model->getTable() === $table) {
