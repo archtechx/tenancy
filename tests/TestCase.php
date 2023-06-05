@@ -16,6 +16,7 @@ use Stancl\Tenancy\Bootstrappers\UrlTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\Integrations\PostgresRLSBootstrapper;
 use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
@@ -123,6 +124,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         $app->singleton(BroadcastTenancyBootstrapper::class);
         $app->singleton(MailTenancyBootstrapper::class);
         $app->singleton(UrlTenancyBootstrapper::class);
+        $app->singleton(PostgresRLSBootstrapper::class);
     }
 
     protected function getPackageProviders($app)
