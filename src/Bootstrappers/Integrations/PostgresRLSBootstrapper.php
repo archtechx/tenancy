@@ -37,14 +37,19 @@ class PostgresRLSBootstrapper implements TenancyBootstrapper
         $this->config->set('database.connections.pgsql.username', $tenant->database()->getUsername() ?? $tenant->getTenantKey());
         $this->config->set('database.connections.pgsql.password', $tenant->database()->getPassword() ?? 'password');
 
-        $this->config->set('database.connections.central', $this->config->get('database.connections.pgsql'));
+        $this->config->set(
+            'database.connections.' . $this->config->get('tenancy.database.central_connection'),
+            $this->config->get('database.connections.pgsql')
+        );
     }
 
     public function revert(): void
     {
-        $this->database->purge('central');
+        $centralConnection = $this->config->get('tenancy.database.central_connection');
 
-        $this->config->set('database.connections.central', $this->originalCentralConnectionConfig);
+        $this->database->purge($centralConnection);
+
+        $this->config->set('database.connections.' . $centralConnection, $this->originalCentralConnectionConfig);
         $this->config->set('database.connections.pgsql', $this->originalPostgresConfig);
     }
 }

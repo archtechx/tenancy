@@ -20,13 +20,13 @@ use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\Integrations\PostgresRLSBootstrapper;
 
 beforeEach(function () {
-    DB::purge('central');
+    DB::purge($centralConnection = config('tenancy.database.central_connection'));
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
     config(['tenancy.bootstrappers' => [PostgresRLSBootstrapper::class]]);
-    config(['database.connections.central' => config('database.connections.pgsql')]);
+    config(['database.connections.' . $centralConnection => config('database.connections.pgsql')]);
     config(['tenancy.models.tenant_key_column' => 'tenant_id']);
     config(['tenancy.models.tenant' => $tenantClass = Tenant::class]);
     config(['tenancy.models.rls' => [
