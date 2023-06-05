@@ -10,10 +10,6 @@ return [
      * Configuration for the models used by Tenancy.
      */
     'models' => [
-        'rls' => [
-            // The tenants:create-rls-policies comand will create RLS policies
-            // For tables of the models specified here
-        ],
         'tenant' => Stancl\Tenancy\Database\Models\Tenant::class,
         'domain' => Stancl\Tenancy\Database\Models\Domain::class,
 
@@ -179,6 +175,13 @@ return [
 
         // todo docblock
         'drop_tenant_databases_on_migrate_fresh' => false,
+
+        /**
+         * Scope tenant models using RLS.
+         *
+         * Requires Postgres with single-database tenancy.
+         */
+        'rls' => false,
     ],
 
     /**
