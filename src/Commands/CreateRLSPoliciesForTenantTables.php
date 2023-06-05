@@ -10,33 +10,36 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Stancl\Tenancy\Database\Concerns\BelongsToPrimaryModel;
 
+/**
+ * Creates and uses RLS policies for tables related to a tenant directly, or through a parent primary model's table.
+ *
+ * This command is used with Postgres + single-database tenancy.
+ */
 class CreateRLSPoliciesForTenantTables extends Command
 {
     protected $signature = 'tenants:create-rls-policies';
 
     public function handle(): int
     {
-        foreach ($this->rlsModels() as $model) {
-            DB::transaction(fn () => $this->makeModelUseRls($model));
+        foreach ($this->getModels() as $model) {
+            DB::transaction(fn () => $this->useRlsOnModel($model));
         }
 
         return Command::SUCCESS;
     }
 
-    protected function rlsModels(): array
+    protected function getModels(): array
     {
-        tenancy()->initialize($tenant = tenancy()->model()::create());
+        $tables = array_map(fn ($table) => $table->tablename, Schema::getAllTables());
+        $models = array_map(fn (string $table) => $this->getModelFromTable($table), $tables);
 
-        $rlsTables = array_map(fn ($table) => $table->tablename, Schema::getAllTables());
-
-        tenancy()->end();
-
-        $tenant->delete();
-
-        return array_filter(array_map(fn ($table) => $this->getModelFromTable($table), $rlsTables));
+        return array_filter($models);
     }
 
-    protected function makeModelUseRls(Model $model): void
+    /**
+     * Make model use RLS if it belongs to a tenant directly, or through a parent primary model.
+     */
+    protected function useRlsOnModel(Model $model): void
     {
         $table = $model->getTable();
         $tenantKey = tenancy()->tenantKeyColumn();
@@ -44,13 +47,11 @@ class CreateRLSPoliciesForTenantTables extends Command
         DB::statement("DROP POLICY IF EXISTS {$table}_rls_policy ON {$table}");
 
         if (! Schema::hasColumn($table, $tenantKey)) {
-            // Table is not directly related to tenant
+            // Table is not directly related to a tenant
             if (in_array(BelongsToPrimaryModel::class, class_uses_recursive($model::class))) {
                 $this->makeSecondaryModelUseRls($model);
             } else {
-                $modelName = $model::class;
-
-                $this->components->info("Table '$table' is not related to tenant. Make sure $modelName uses the BelongsToPrimaryModel trait.");
+                $this->components->info("Skipping RLS policy creation – table '$table' is not related to a tenant.");
             }
         } else {
             DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING ({$tenantKey}::TEXT = current_user);");
