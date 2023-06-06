@@ -20,12 +20,15 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Stancl\Tenancy\Jobs\CreatePostgresUserForTenant;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\Integrations\PostgresRLSBootstrapper;
+use Stancl\Tenancy\Tenancy;
 
 beforeEach(function () {
     DB::purge($centralConnection = config('tenancy.database.central_connection'));
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+
+    Tenancy::$modelDirectories = [__DIR__ . '/Etc'];
 
     // Turn RLS scoping on
     config(['tenancy.database.rls' => true]);
