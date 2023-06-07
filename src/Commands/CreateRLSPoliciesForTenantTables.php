@@ -19,9 +19,9 @@ class CreateRLSPoliciesForTenantTables extends Command
 
     public function handle(): int
     {
-        foreach (tenancy()->getModels() as $model) {
-            DB::transaction(fn () => $this->useRlsOnModel($model));
-        }
+        DB::transaction(function () {
+            tenancy()->getModels()->each(fn (Model $model) => $this->useRlsOnModel($model));
+        });
 
         return Command::SUCCESS;
     }
@@ -36,46 +36,34 @@ class CreateRLSPoliciesForTenantTables extends Command
 
         DB::statement("DROP POLICY IF EXISTS {$table}_rls_policy ON {$table}");
 
-        if (! tenancy()->modelBelongsToTenant($model)) {
-            // Table is not directly related to a tenant
-            if (tenancy()->modelBelongsToTenantIndirectly($model)) {
-                $this->makeSecondaryModelUseRls($model);
-            } else {
-                $this->components->info("Skipping RLS policy creation – table '$table' is not related to a tenant.");
-            }
-        } else {
+        if (tenancy()->modelBelongsToTenant($model)) {
             DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING ({$tenantKey}::TEXT = current_user);");
 
             $this->enableRls($table);
 
             $this->components->info("Created RLS policy for table '$table'");
         }
-    }
 
-    protected function makeSecondaryModelUseRls(Model $model): void
-    {
-        $table = $model->getTable();
-        $tenantKey = tenancy()->tenantKeyColumn();
+        if (tenancy()->modelBelongsToTenantIndirectly($model)) {
+            /** @phpstan-ignore-next-line */
+            $parentName = $model->getRelationshipToPrimaryModel();
+            $parentKey = $model->$parentName()->getForeignKeyName();
+            $parentTable = $model->$parentName()->make()->getTable();
 
-        /** @phpstan-ignore-next-line */
-        $parentName = $model->getRelationshipToPrimaryModel();
-        $parentKey = $model->$parentName()->getForeignKeyName();
-        $parentModel = $model->$parentName()->make();
-        $parentTable = $parentModel->getTable();
-
-        DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING (
-            {$parentKey} IN (
-                SELECT id
-                FROM {$parentTable}
-                WHERE ({$tenantKey} = (
-                    SELECT {$tenantKey}
+            DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING (
+                {$parentKey} IN (
+                    SELECT id
                     FROM {$parentTable}
-                    WHERE id = {$parentKey}
-                ))
-            )
-        )");
+                    WHERE ({$tenantKey} = (
+                        SELECT {$tenantKey}
+                        FROM {$parentTable}
+                        WHERE id = {$parentKey}
+                    ))
+                )
+            )");
 
-        $this->enableRls($table);
+            $this->enableRls($table);
+        }
     }
 
     protected function enableRls(string $table): void
