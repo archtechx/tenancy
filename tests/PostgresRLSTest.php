@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Stancl\Tenancy\Jobs\CreatePostgresUserForTenant;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\Integrations\PostgresRLSBootstrapper;
-use Stancl\Tenancy\Database\Concerns\RLSModel;
+use Stancl\Tenancy\Database\Concerns\RlsModel;
 use Stancl\Tenancy\Tenancy;
 use Stancl\Tenancy\Tests\Etc\Post;
 
@@ -143,14 +143,18 @@ test('global scope is not applied when using rls', function () {
     // If config('tenancy.database.rls') is false (which it is by default)
     expect(Post::hasGlobalScope(TenantScope::class))->toBeTrue();
 
-    // RLSPost and RLSScopedComment implement the RLSModel interface
+    // Clear booted models to forget the global scope and see if it gets applied during the boot
+    RlsPost::clearBootedModels();
+    RlsPost::bootBelongsToTenant();
+
+    // RlsPost implements the RlsModel interface
     // The model shouldn't have the global scope
-    expect(RLSPost::hasGlobalScope(TenantScope::class))->toBeFalse();
+    expect(RlsPost::hasGlobalScope(TenantScope::class))->toBeFalse();
 
     config(['tenancy.database.rls' => true]);
 
-    // Clear booted Post to forget the global scope and see if it gets applied during the boot
     Post::clearBootedModels();
+    Post::bootBelongsToTenant();
 
     expect(Post::hasGlobalScope(TenantScope::class))->toBeFalse();
 });
@@ -169,25 +173,25 @@ test('queries are correctly scoped using RLS', function() {
     // Create posts and comments for both tenants
     tenancy()->initialize($tenant);
 
-    $post1 = RLSPost::create(['text' => 'first post']);
+    $post1 = RlsPost::create(['text' => 'first post']);
     $post1Comment = $post1->scoped_comments()->create(['text' => 'first comment']);
 
     tenancy()->end();
 
     tenancy()->initialize($secondTenant);
 
-    $post2 = RLSPost::create(['text' => 'second post']);
+    $post2 = RlsPost::create(['text' => 'second post']);
     $post2Comment = $post2->scoped_comments()->create(['text' => 'second comment']);
 
     tenancy()->end();
 
     tenancy()->initialize($tenant);
 
-    expect(RLSPost::all()->pluck('text'))
+    expect(RlsPost::all()->pluck('text'))
         ->toContain($post1->text)
         ->not()->toContain($post2->text);
 
-    expect(RLSScopedComment::all()->pluck('text'))
+    expect(ScopedComment::all()->pluck('text'))
         ->toContain($post1Comment->text)
         ->not()->toContain($post2Comment->text);
 
@@ -195,8 +199,8 @@ test('queries are correctly scoped using RLS', function() {
 
     tenancy()->initialize($secondTenant);
 
-    expect(RLSPost::all()->pluck('text'))->toContain($post2->text)->not()->toContain($post1->text);
-    expect(RLSScopedComment::all()->pluck('text'))->toContain($post2Comment->text)->not()->toContain($post1Comment->text);
+    expect(RlsPost::all()->pluck('text'))->toContain($post2->text)->not()->toContain($post1->text);
+    expect(ScopedComment::all()->pluck('text'))->toContain($post2Comment->text)->not()->toContain($post1Comment->text);
 
     tenancy()->end();
 });
@@ -220,23 +224,12 @@ trait UsesUuidAsPrimaryKey
 }
 
 /**
- * Post model that implements the RLSModel interface.
+ * Post model that implements the RlsModel interface.
  */
-class RLSPost extends Post implements RLSModel
+class RlsPost extends Post implements RlsModel
 {
     public function getForeignKey()
     {
         return 'post_id';
-    }
-}
-
-/**
- * ScopedComment model that implements the RLSModel interface.
- */
-class RLSScopedComment extends ScopedComment implements RLSModel
-{
-    public function getForeignKey()
-    {
-        return 'comment_id';
     }
 }

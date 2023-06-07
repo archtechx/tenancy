@@ -21,9 +21,9 @@ trait BelongsToTenant
 
     public static function bootBelongsToTenant(): void
     {
-        // If tenancy.database.rls is true or this model implements RLSModel
+        // If tenancy.database.rls is true or this model implements RlsModel
         // Scope queries using Postgres RLS instead of TenantScope
-        if (! (config('tenancy.database.rls') || in_array(RLSModel::class, class_implements(static::class)))) {
+        if (! (config('tenancy.database.rls') || in_array(RlsModel::class, class_implements(static::class)))) {
             static::addGlobalScope(new TenantScope);
         }
 
