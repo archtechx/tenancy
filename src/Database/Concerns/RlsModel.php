@@ -12,6 +12,6 @@ namespace Stancl\Tenancy\Database\Concerns;
  *
  * @see \Stancl\Tenancy\Database\Concerns\BelongsToTenant
  */
-interface RLSModel
+interface RlsModel
 {
 }
