@@ -15,6 +15,8 @@ class Post extends Model
 
     protected $guarded = [];
 
+    protected $table = 'posts';
+
     public $timestamps = false;
 
     public function comments(): HasMany
