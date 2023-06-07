@@ -53,13 +53,13 @@ class CreatePostgresUserForTenant implements ShouldQueue
         /** @var Model[] $tenantModels */
         $tenantModels = tenancy()->getTenantModels();
 
-        foreach ($tenantModels as $model) {
-            $table = $model->getTable();
+        $databaseManager->database()->transaction(function () use ($userName, $databaseManager, $tenantModels) {
+            foreach ($tenantModels as $model) {
+                $table = $model->getTable();
 
-            $databaseManager->database()->transaction(function () use ($databaseManager, $table, $userName) {
                 $databaseManager->database()->statement("GRANT ALL ON {$table} TO \"{$userName}\"");
                 $databaseManager->database()->statement("GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO \"{$userName}\"");
-            });
-        }
+            }
+        });
     }
 }
