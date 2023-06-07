@@ -1,14 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Stancl\Tenancy\Database\Concerns;
 
 use Closure;
-use Illuminate\Support\Collection;
-use Symfony\Component\Finder\Finder;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
+use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
-use Stancl\Tenancy\Database\Concerns\BelongsToPrimaryModel;
 
 trait DealsWithModels
 {
