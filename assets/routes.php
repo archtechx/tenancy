@@ -8,6 +8,6 @@ Route::get('/tenancy/assets/{path?}', 'Stancl\Tenancy\Controllers\TenantAssetsCo
     ->where('path', '(.*)')
     ->name('stancl.tenancy.asset');
 
-Route::get('/{tenant}/assets/{path?}', 'Stancl\Tenancy\Controllers\TenantAssetsController@asset')
+Route::get('/{tenant}/assets/{path?}', 'Stancl\Tenancy\Controllers\TenantAssetsController@assetWithPath')
     ->where('path', '(.*)')
     ->name('stancl.tenancy.asset.path');
