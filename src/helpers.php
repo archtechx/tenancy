@@ -36,9 +36,11 @@ if (! function_exists('tenant')) {
 
 if (! function_exists('tenant_asset')) {
     /** @return string */
-    function tenant_asset($asset)
+    function tenant_asset($asset, $usePathIdentification = false)
     {
-        return route('stancl.tenancy.asset', ['path' => $asset]);
+        return $usePathIdentification === true ? 
+            route('stancl.tenancy.asset.path', ['path' => $asset, 'tenant' => tenant(tenant()->getTenantKeyName())]) : 
+            route('stancl.tenancy.asset', ['path' => $asset]);
     }
 }
 
