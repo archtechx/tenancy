@@ -36,6 +36,13 @@ class PathTenantResolver extends Contracts\CachedTenantResolver
 
         throw new TenantCouldNotBeIdentifiedByPathException($id);
     }
+    
+    public function resolved(Tenant $tenant, ...$args): void
+    {
+        $route = $args[0];
+
+        $route->forgetParameter(static::$tenantParameterName);
+    }
 
     public function getArgsForTenant(Tenant $tenant): array
     {
