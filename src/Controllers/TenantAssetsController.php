@@ -39,7 +39,7 @@ class TenantAssetsController extends Controller
         $basePath = storage_path("app/public");
         $requestPath = realpath($basePath . '/' . $path);
 
-        $validPath = substr($requestPath, 0, strlen($basePath)) === $basePath;
+        $validPath = $requestPath && substr($requestPath, 0, strlen($basePath)) === $basePath;
         abort_if($validPath === false, 404);
 
         try {
