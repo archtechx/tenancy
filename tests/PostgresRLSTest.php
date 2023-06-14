@@ -38,6 +38,8 @@ beforeEach(function () {
     config(['tenancy.models.tenant_key_column' => 'tenant_id']);
     config(['tenancy.models.tenant' => $tenantClass = Tenant::class]);
 
+    CreatePostgresUserForTenant::$permissions = ['ALL'];
+
     $tenantModel = new $tenantClass;
     $primaryModel = new Post;
     $secondaryModel = new ScopedComment;
@@ -203,6 +205,18 @@ test('queries are correctly scoped using RLS', function() {
     expect(ScopedComment::all()->pluck('text'))->toContain($post2Comment->text)->not()->toContain($post1Comment->text);
 
     tenancy()->end();
+});
+
+test('users created by CreatePostgresUserForTenant are only granted the permissions specified in the static property', function() {
+    CreatePostgresUserForTenant::$permissions = ['INSERT', 'SELECT', 'UPDATE'];
+    $tenant = Tenant::create();
+    $name = $tenant->getTenantKey();
+    CreatePostgresUserForTenant::dispatchSync($tenant);
+
+    $grants = array_map(fn (object $grant) => $grant->privilege_type, DB::select("SELECT * FROM information_schema.role_table_grants WHERE grantee = '$name';"));
+
+    expect($grants)->toContain(...CreatePostgresUserForTenant::$permissions)
+        ->not()->toContain('DELETE');
 });
 
 trait UsesUuidAsPrimaryKey
