@@ -48,21 +48,6 @@ trait DealsWithModels
         return static::getModels()->filter(fn (Model $model) => tenancy()->modelBelongsToTenant($model) || tenancy()->modelBelongsToTenantIndirectly($model));
     }
 
-    protected static function getModelFromTable(string $table): Model|null
-    {
-        foreach (get_declared_classes() as $class) {
-            if (is_subclass_of($class, Model::class)) {
-                $model = new $class;
-
-                if ($model->getTable() === $table) {
-                    return $model;
-                }
-            }
-        }
-
-        return null;
-    }
-
     public static function modelBelongsToTenant(Model $model): bool
     {
         return in_array(BelongsToTenant::class, class_uses_recursive($model::class));
