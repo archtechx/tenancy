@@ -12,8 +12,6 @@ use Symfony\Component\Finder\SplFileInfo;
 
 trait DealsWithModels
 {
-    public static array $modelDirectories = ['App/Models'];
-
     public static Closure|null $modelDiscoveryOverride = null;
 
     public static function getModels(): Collection
@@ -22,7 +20,7 @@ trait DealsWithModels
             return (static::$modelDiscoveryOverride)();
         }
 
-        $modelFiles = Finder::create()->files()->name('*.php')->in(static::$modelDirectories);
+        $modelFiles = Finder::create()->files()->name('*.php')->in(config('tenancy.rls.model_directories'));
 
         $classes = collect($modelFiles)->map(function (SplFileInfo $file) {
             $fileContents = str($file->getContents());

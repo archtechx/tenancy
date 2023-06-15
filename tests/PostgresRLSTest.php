@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Stancl\Tenancy\Tests\Etc\Post;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
@@ -13,15 +14,13 @@ use Stancl\Tenancy\Database\TenantScope;
 use Illuminate\Database\Schema\Blueprint;
 use Stancl\Tenancy\Tests\Etc\ScopedComment;
 use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Database\Concerns\RlsModel;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Jobs\DeleteTenantsPostgresUser;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Stancl\Tenancy\Jobs\CreatePostgresUserForTenant;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\Integrations\PostgresRLSBootstrapper;
-use Stancl\Tenancy\Database\Concerns\RlsModel;
-use Stancl\Tenancy\Tenancy;
-use Stancl\Tenancy\Tests\Etc\Post;
 
 beforeEach(function () {
     DB::purge($centralConnection = config('tenancy.database.central_connection'));
@@ -29,10 +28,9 @@ beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
-    Tenancy::$modelDirectories = [__DIR__ . '/Etc'];
-
     // Turn RLS scoping on
-    config(['tenancy.database.rls' => false]);
+    config(['tenancy.rls.enabled' => false]);
+    config(['tenancy.rls.model_directories' => [__DIR__ . '/Etc']]);
     config(['tenancy.bootstrappers' => [PostgresRLSBootstrapper::class]]);
     config(['database.connections.' . $centralConnection => config('database.connections.pgsql')]);
     config(['tenancy.models.tenant_key_column' => 'tenant_id']);
@@ -142,7 +140,7 @@ test('correct rls policies get created', function () {
 
 test('global scope is not applied when using rls', function () {
     // By default, TenantScope is added to models using BelongsToTenant
-    // If config('tenancy.database.rls') is false (which it is by default)
+    // If config('tenancy.rls.enabled') is false (which it is by default)
     expect(Post::hasGlobalScope(TenantScope::class))->toBeTrue();
 
     // Clear booted models to forget the global scope and see if it gets applied during the boot
@@ -153,7 +151,7 @@ test('global scope is not applied when using rls', function () {
     // The model shouldn't have the global scope
     expect(RlsPost::hasGlobalScope(TenantScope::class))->toBeFalse();
 
-    config(['tenancy.database.rls' => true]);
+    config(['tenancy.rls.enabled' => true]);
 
     Post::clearBootedModels();
     Post::bootBelongsToTenant();
@@ -236,7 +234,6 @@ trait UsesUuidAsPrimaryKey
         });
     }
 }
-
 /**
  * Post model that implements the RlsModel interface.
  */

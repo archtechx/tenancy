@@ -181,7 +181,11 @@ return [
          *
          * Requires Postgres with single-database tenancy.
          */
-        'rls' => false,
+    ],
+
+    'rls' => [
+        'enabled' => false,
+        'model_directories' => ['app/Models'],
     ],
 
     /**
