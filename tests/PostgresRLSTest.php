@@ -31,12 +31,11 @@ beforeEach(function () {
     // Turn RLS scoping on
     config(['tenancy.rls.enabled' => false]);
     config(['tenancy.rls.model_directories' => [__DIR__ . '/Etc']]);
+    config(['tenancy.rls.user_permissions' => ['ALL']]);
     config(['tenancy.bootstrappers' => [PostgresRLSBootstrapper::class]]);
     config(['database.connections.' . $centralConnection => config('database.connections.pgsql')]);
     config(['tenancy.models.tenant_key_column' => 'tenant_id']);
     config(['tenancy.models.tenant' => $tenantClass = Tenant::class]);
-
-    CreatePostgresUserForTenant::$permissions = ['ALL'];
 
     $tenantModel = new $tenantClass;
     $primaryModel = new Post;
@@ -218,14 +217,14 @@ test('queries are correctly scoped using RLS', function() {
 });
 
 test('users created by CreatePostgresUserForTenant are only granted the permissions specified in the static property', function() {
-    CreatePostgresUserForTenant::$permissions = ['INSERT', 'SELECT', 'UPDATE'];
+    config(['tenancy.rls.user_permissions' => ['INSERT', 'SELECT', 'UPDATE']]);
     $tenant = Tenant::create();
     $name = $tenant->getTenantKey();
     CreatePostgresUserForTenant::dispatchSync($tenant);
 
     $grants = array_map(fn (object $grant) => $grant->privilege_type, DB::select("SELECT * FROM information_schema.role_table_grants WHERE grantee = '$name';"));
 
-    expect($grants)->toContain(...CreatePostgresUserForTenant::$permissions)
+    expect($grants)->toContain(...config('tenancy.rls.user_permissions'))
         ->not()->toContain('DELETE');
 });
 

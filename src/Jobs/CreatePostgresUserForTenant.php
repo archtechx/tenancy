@@ -17,8 +17,6 @@ class CreatePostgresUserForTenant implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public static array $permissions = ['ALL'];
-
     /**
      * Create a new job instance.
      *
@@ -59,7 +57,7 @@ class CreatePostgresUserForTenant implements ShouldQueue
             foreach ($tenantModels as $model) {
                 $table = $model->getTable();
 
-                foreach (static::$permissions as $permission) {
+                foreach (config('tenancy.rls.user_permissions') as $permission) {
                     $databaseManager->database()->statement("GRANT {$permission} ON {$table} TO \"{$userName}\"");
                 }
 

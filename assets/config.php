@@ -175,16 +175,31 @@ return [
 
         // todo docblock
         'drop_tenant_databases_on_migrate_fresh' => false,
-
-        /**
-         * Scope tenant models using RLS.
-         *
-         * Requires Postgres with single-database tenancy.
-         */
     ],
 
+    /**
+     * Requires Postgres with single-database tenancy.
+     */
     'rls' => [
+        /**
+         * Scope tenant models using RLS.
+         */
         'enabled' => false,
+
+        /**
+         * Permissions to grant to the tenant Postgres users.
+         *
+         * By default, all permissions are granted.
+         *
+         * @see Stancl\Tenancy\Jobs\CreatePostgresUserForTenant
+         */
+        'user_permissions' => ['ALL'],
+
+        /**
+         * Directories in which Tenancy will discover your models.
+         *
+         * @see Stancl\Tenancy\Commands\CreateRLSPoliciesForTenantTables
+         */
         'model_directories' => ['app/Models'],
     ],
 
