@@ -22,7 +22,7 @@ trait DealsWithModels
             return (static::$modelDiscoveryOverride)();
         }
 
-        $modelFiles = Finder::create()->files()->name('*.php')->in(static::$modelDirectories)->depth('== 0');
+        $modelFiles = Finder::create()->files()->name('*.php')->in(static::$modelDirectories);
 
         $classes = collect($modelFiles)->map(function (SplFileInfo $file) {
             $fileContents = str($file->getContents());
