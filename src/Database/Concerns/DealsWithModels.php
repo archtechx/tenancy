@@ -40,7 +40,7 @@ trait DealsWithModels
             return null;
         })->filter();
 
-        return $classes->filter(fn ($class) => in_array(Model::class, class_parents($class)));
+        return $classes->filter(fn ($class) => $class instanceof Model);
     }
 
     public static function getTenantModels(): Collection
