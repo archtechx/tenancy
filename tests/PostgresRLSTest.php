@@ -162,7 +162,9 @@ test('global scope is not applied when using rls', function () {
 
 test('queries are correctly scoped using RLS', function() {
     // Create rls policies for tables
+    dump('creating rls policies', tenancy()->getTenantModels());
     pest()->artisan('tenants:create-rls-policies');
+    dump('policies created', DB::select('select * from pg_policies'));
 
     // Create two tenants with postgres users
     $tenant = Tenant::create();
@@ -173,8 +175,6 @@ test('queries are correctly scoped using RLS', function() {
 
     // Create posts and comments for both tenants
     tenancy()->initialize($tenant);
-
-    dd(DB::select('select * from pg_policies'));
 
     $post1 = RlsPost::create(['text' => 'first post']);
     $post1Comment = $post1->scoped_comments()->create(['text' => 'first comment']);
