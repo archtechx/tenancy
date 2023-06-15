@@ -176,14 +176,10 @@ test('queries are correctly scoped using RLS', function() {
     $post1 = RlsPost::create(['text' => 'first post']);
     $post1Comment = $post1->scoped_comments()->create(['text' => 'first comment']);
 
-    tenancy()->end();
-
     tenancy()->initialize($secondTenant);
 
     $post2 = RlsPost::create(['text' => 'second post']);
     $post2Comment = $post2->scoped_comments()->create(['text' => 'second comment']);
-
-    tenancy()->end();
 
     tenancy()->initialize($tenant);
 
@@ -197,12 +193,28 @@ test('queries are correctly scoped using RLS', function() {
 
     tenancy()->end();
 
+    expect(RlsPost::all()->pluck('text'))
+        ->toContain($post1->text)
+        ->toContain($post2->text);
+
+    expect(ScopedComment::all()->pluck('text'))
+        ->toContain($post1Comment->text)
+        ->toContain($post2Comment->text);
+
     tenancy()->initialize($secondTenant);
 
     expect(RlsPost::all()->pluck('text'))->toContain($post2->text)->not()->toContain($post1->text);
     expect(ScopedComment::all()->pluck('text'))->toContain($post2Comment->text)->not()->toContain($post1Comment->text);
 
-    tenancy()->end();
+    tenancy()->initialize($tenant);
+
+    expect(RlsPost::all()->pluck('text'))
+        ->toContain($post1->text)
+        ->not()->toContain($post2->text);
+
+    expect(ScopedComment::all()->pluck('text'))
+        ->toContain($post1Comment->text)
+        ->not()->toContain($post2Comment->text);
 });
 
 test('users created by CreatePostgresUserForTenant are only granted the permissions specified in the static property', function() {
