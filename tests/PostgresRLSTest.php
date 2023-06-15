@@ -229,6 +229,18 @@ test('users created by CreatePostgresUserForTenant are only granted the permissi
         ->not()->toContain('DELETE');
 });
 
+test('model discovery gets the models correctly', function() {
+    // 'tenancy.rls.model_directories' is set to [__DIR__ . '/Etc'] in beforeEach
+    // Check that the Post and ScopedComment models are found in the directory
+    $expectedModels = [Post::class, ScopedComment::class];
+
+    $foundModels = tenancy()->getModels()->where(function (Model $model) use ($expectedModels) {
+        return in_array($model::class, $expectedModels);
+    });
+
+    expect($foundModels)->toHaveCount(count($expectedModels));
+});
+
 trait UsesUuidAsPrimaryKey
 {
     use HasUuids;
