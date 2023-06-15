@@ -45,7 +45,6 @@ class CreateRLSPoliciesForTenantTables extends Command
         }
 
         if (tenancy()->modelBelongsToTenantIndirectly($model)) {
-            dump("creating {$table}_rls_policy");
             /** @phpstan-ignore-next-line */
             $parentName = $model->getRelationshipToPrimaryModel();
             $parentKey = $model->$parentName()->getForeignKeyName();
@@ -62,8 +61,6 @@ class CreateRLSPoliciesForTenantTables extends Command
                     ))
                 )
             )");
-
-            dump("{$table}_rls_policy created");
 
             $this->enableRls($table);
 
