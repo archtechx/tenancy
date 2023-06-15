@@ -174,6 +174,8 @@ test('queries are correctly scoped using RLS', function() {
     // Create posts and comments for both tenants
     tenancy()->initialize($tenant);
 
+    dd(DB::select('select * from pg_policies'));
+
     $post1 = RlsPost::create(['text' => 'first post']);
     $post1Comment = $post1->scoped_comments()->create(['text' => 'first comment']);
 
