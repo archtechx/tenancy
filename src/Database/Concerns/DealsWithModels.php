@@ -65,7 +65,7 @@ trait DealsWithModels
 
     public static function modelBelongsToTenant(Model $model): bool
     {
-        return Schema::hasColumn($model->getTable(), static::tenantKeyColumn());
+        return in_array(BelongsToTenant::class, class_uses_recursive($model::class));
     }
 
     public static function modelBelongsToTenantIndirectly(Model $model): bool
