@@ -33,6 +33,8 @@ class PostgresRLSBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant): void
     {
+        $this->database->purge($this->config->get('tenancy.database.central_connection'));
+
         /** @var TenantWithDatabase $tenant */
         $this->config->set('database.connections.pgsql.username', $tenant->database()->getUsername() ?? $tenant->getTenantKey());
         $this->config->set('database.connections.pgsql.password', $tenant->database()->getPassword() ?? 'password');
