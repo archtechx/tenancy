@@ -19,7 +19,9 @@ class CreateRLSPoliciesForTenantTables extends Command
 
     public function handle(): int
     {
-        tenancy()->getModels()->each(fn (Model $model) => $this->useRlsOnModel($model));
+        DB::transaction(function () {
+            tenancy()->getModels()->each(fn (Model $model) => $this->useRlsOnModel($model));
+        });
 
         return Command::SUCCESS;
     }
@@ -57,7 +59,6 @@ class CreateRLSPoliciesForTenantTables extends Command
                     ))
                 )
             )");
-            dump(DB::select('SELECT * FROM pg_policies'));
 
             $this->enableRls($table);
 
