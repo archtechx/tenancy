@@ -32,8 +32,6 @@ class CreateRLSPoliciesForTenantTables extends Command
         $table = $model->getTable();
         $tenantKey = tenancy()->tenantKeyColumn();
 
-        DB::statement("DROP POLICY IF EXISTS {$table}_rls_policy ON {$table}");
-
         if (tenancy()->modelBelongsToTenant($model)) {
             DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING ({$tenantKey}::TEXT = current_user);");
 
@@ -48,7 +46,6 @@ class CreateRLSPoliciesForTenantTables extends Command
             $parentKey = $model->$parentName()->getForeignKeyName();
             $parentTable = $model->$parentName()->make()->getTable();
 
-            DB::enableQueryLog();
             DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING (
                 {$parentKey} IN (
                     SELECT id
@@ -60,8 +57,11 @@ class CreateRLSPoliciesForTenantTables extends Command
                     ))
                 )
             )");
-            dump(DB::getQueryLog());
-            DB::disableQueryLog();
+            dump(DB::select('SELECT * FROM pg_policies'));
+
+            DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING ({$tenantKey}::TEXT = current_user);");
+
+            dd(DB::select('SELECT * FROM pg_policies'));
 
             $this->enableRls($table);
 
