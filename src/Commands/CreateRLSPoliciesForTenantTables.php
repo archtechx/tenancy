@@ -48,18 +48,7 @@ class CreateRLSPoliciesForTenantTables extends Command
             $parentKey = $model->$parentName()->getForeignKeyName();
             $parentTable = $model->$parentName()->make()->getTable();
 
-            dump("CREATE POLICY {$table}_rls_policy ON {$table} USING (
-                {$parentKey} IN (
-                    SELECT id
-                    FROM {$parentTable}
-                    WHERE ({$tenantKey} = (
-                        SELECT {$tenantKey}
-                        FROM {$parentTable}
-                        WHERE id = {$parentKey}
-                    ))
-                )
-            )");
-
+            DB::enableQueryLog();
             DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING (
                 {$parentKey} IN (
                     SELECT id
@@ -71,8 +60,8 @@ class CreateRLSPoliciesForTenantTables extends Command
                     ))
                 )
             )");
-
-            dump('statement completed');
+            dump(DB::getQueryLog());
+            DB::disableQueryLog();
 
             $this->enableRls($table);
 
