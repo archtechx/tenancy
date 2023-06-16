@@ -21,8 +21,6 @@ class CreateRLSPoliciesForTenantTables extends Command
     {
         tenancy()->getModels()->each(fn (Model $model) => $this->useRlsOnModel($model));
 
-        dump('success', DB::select('SELECT * FROM pg_policies'));
-
         return Command::SUCCESS;
     }
 
