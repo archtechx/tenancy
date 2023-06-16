@@ -20,7 +20,7 @@ class CreateRLSPoliciesForTenantTables extends Command
     public function handle(): int
     {
         DB::transaction(function () {
-            tenancy()->getModels()->each(fn (Model $model) => $this->useRlsOnModel($model));
+            tenancy()->getTenantModels()->each(fn (Model $model) => $this->useRlsOnModel($model));
         });
 
         return Command::SUCCESS;
@@ -34,7 +34,6 @@ class CreateRLSPoliciesForTenantTables extends Command
         $table = $model->getTable();
         $tenantKey = tenancy()->tenantKeyColumn();
 
-        dump($model::class, 'dropping policy of ' . $table);
         DB::statement("DROP POLICY IF EXISTS {$table}_rls_policy ON {$table}");
 
         if (tenancy()->modelBelongsToTenant($model)) {
