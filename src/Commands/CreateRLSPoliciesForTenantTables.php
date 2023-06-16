@@ -34,6 +34,8 @@ class CreateRLSPoliciesForTenantTables extends Command
         $table = $model->getTable();
         $tenantKey = tenancy()->tenantKeyColumn();
 
+        DB::statement("DROP POLICY IF EXISTS {$table}_rls_policy ON {$table}");
+
         if (tenancy()->modelBelongsToTenant($model)) {
             DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING ({$tenantKey}::TEXT = current_user);");
 
