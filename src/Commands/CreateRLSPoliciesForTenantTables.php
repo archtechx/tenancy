@@ -19,9 +19,7 @@ class CreateRLSPoliciesForTenantTables extends Command
 
     public function handle(): int
     {
-        dump('Current RLS tables', DB::select('SELECT * FROM pg_policies'));
         tenancy()->getModels()->each(fn (Model $model) => $this->useRlsOnModel($model));
-        dump('RLS tables created', DB::select('SELECT * FROM pg_policies'));
 
         return Command::SUCCESS;
     }
@@ -50,6 +48,18 @@ class CreateRLSPoliciesForTenantTables extends Command
             $parentKey = $model->$parentName()->getForeignKeyName();
             $parentTable = $model->$parentName()->make()->getTable();
 
+            dump("CREATE POLICY {$table}_rls_policy ON {$table} USING (
+                {$parentKey} IN (
+                    SELECT id
+                    FROM {$parentTable}
+                    WHERE ({$tenantKey} = (
+                        SELECT {$tenantKey}
+                        FROM {$parentTable}
+                        WHERE id = {$parentKey}
+                    ))
+                )
+            )");
+
             DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING (
                 {$parentKey} IN (
                     SELECT id
@@ -61,6 +71,8 @@ class CreateRLSPoliciesForTenantTables extends Command
                     ))
                 )
             )");
+
+            dump('statement completed');
 
             $this->enableRls($table);
 
