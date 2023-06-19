@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Database\Concerns;
 
 use Closure;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
+use ReflectionClass;
 use Symfony\Component\Finder\Finder;
+use Illuminate\Database\Eloquent\Model;
 use Symfony\Component\Finder\SplFileInfo;
 
 trait DealsWithModels
@@ -17,7 +17,7 @@ trait DealsWithModels
     /**
      * Discover all models in the directories configured in 'tenancy.rls.model_directories'.
      */
-    public static function getModels(): Collection
+    public static function getModels(): array
     {
         if (static::$modelDiscoveryOverride) {
             return (static::$modelDiscoveryOverride)();
@@ -25,30 +25,34 @@ trait DealsWithModels
 
         $modelFiles = Finder::create()->files()->name('*.php')->in(config('tenancy.rls.model_directories'));
 
-        $classes = collect($modelFiles)->map(function (SplFileInfo $file) {
+        return array_filter(array_map(function (SplFileInfo $file) {
             $fileContents = str($file->getContents());
             $class = $fileContents->after('class ')->before("\n")->explode(' ')->first();
 
             if ($fileContents->contains('namespace ')) {
-                try {
-                    return new ($fileContents->after('namespace ')->before(';')->toString() . '\\' . $class);
-                } catch (\Throwable $th) {
-                    // Skip non-instantiable classes – we only care about models, and those are instantiable
+                $class = $fileContents->after('namespace ')->before(';')->toString() . '\\' . $class;
+                $reflection = new ReflectionClass($class);
+
+                // Skip non-instantiable classes – we only care about models, and those are instantiable
+                if ($reflection->getConstructor()?->getNumberOfRequiredParameters() === 0) {
+                    $object = new $class;
+
+                    if ($object instanceof Model) {
+                        return $object;
+                    }
                 }
             }
 
             return null;
-        })->filter();
-
-        return $classes->filter(fn ($class) => $class instanceof Model);
+        }, iterator_to_array($modelFiles)));
     }
 
     /**
      * Filter all models retrieved by static::getModels() to get only the models that belong to tenants.
      */
-    public static function getTenantModels(): Collection
+    public static function getTenantModels(): array
     {
-        return static::getModels()->filter(fn (Model $model) => tenancy()->modelBelongsToTenant($model) || tenancy()->modelBelongsToTenantIndirectly($model));
+        return array_filter(static::getModels(), fn (Model $model) => tenancy()->modelBelongsToTenant($model) || tenancy()->modelBelongsToTenantIndirectly($model));
     }
 
     public static function modelBelongsToTenant(Model $model): bool

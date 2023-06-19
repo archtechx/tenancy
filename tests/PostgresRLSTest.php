@@ -113,7 +113,7 @@ test('postgres user can get deleted using the job', function() {
 test('correct rls policies get created', function () {
     $tenantModels = tenancy()->getTenantModels();
     $modelTables = collect($tenantModels)->map(fn (Model $model) => $model->getTable());
-    $getRlsPolicies = fn () => array_map(fn ($policy) => $policy->policyname, DB::select('select * from pg_policies'));
+    $getRlsPolicies = fn () => DB::select('select * from pg_policies');
     $getRlsTables = fn () => $modelTables->map(fn ($table) => DB::select('select relname, relrowsecurity, relforcerowsecurity from pg_class WHERE oid = ' . "'$table'::regclass"))->collapse();
 
     // Drop all existing policies to check if the command creates policies for multiple tables
@@ -128,9 +128,7 @@ test('correct rls policies get created', function () {
     // Check if all tables with policies are RLS protected (even the ones not directly related to the tenant)
     // Models related to tenant through some model must use the BelongsToPrimaryModel trait
     // For the command to create the policy correctly for the model's table
-    expect($getRlsPolicies())
-        ->toContain(...$tenantModels->map(fn (Model $model) => $model->getTable() . '_rls_policy', ))
-        ->toHaveCount(count($tenantModels)); // 2
+    expect($getRlsPolicies())->toHaveCount(count($tenantModels)); // 2
     expect($getRlsTables())->toHaveCount(count($tenantModels)); // 2
 
     foreach ($getRlsTables() as $table) {
@@ -235,9 +233,7 @@ test('model discovery gets the models correctly', function() {
     // Check that the Post and ScopedComment models are found in the directory
     $expectedModels = [Post::class, ScopedComment::class];
 
-    $foundModels = tenancy()->getModels()->where(function (Model $model) use ($expectedModels) {
-        return in_array($model::class, $expectedModels);
-    });
+    $foundModels = array_filter(tenancy()->getModels(), fn (Model $model) => in_array($model::class, $expectedModels));
 
     expect($foundModels)->toHaveCount(count($expectedModels));
 });

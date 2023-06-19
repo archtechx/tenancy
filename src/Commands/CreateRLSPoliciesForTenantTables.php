@@ -23,7 +23,9 @@ class CreateRLSPoliciesForTenantTables extends Command
     public function handle(): int
     {
         DB::transaction(function () {
-            tenancy()->getTenantModels()->each(fn (Model $model) => $this->useRlsOnModel($model));
+            foreach (tenancy()->getTenantModels() as $model) {
+                $this->useRlsOnModel($model);
+            }
         });
 
         return Command::SUCCESS;
