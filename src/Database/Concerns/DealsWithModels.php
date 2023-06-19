@@ -27,15 +27,15 @@ trait DealsWithModels
 
         return array_filter(array_map(function (SplFileInfo $file) {
             $fileContents = str($file->getContents());
-            $class = $fileContents->after('class ')->before("\n")->explode(' ')->first();
+            $className = $fileContents->after('class ')->before("\n")->explode(' ')->first();
 
             if ($fileContents->contains('namespace ')) {
-                $class = $fileContents->after('namespace ')->before(';')->toString() . '\\' . $class;
-                $reflection = new ReflectionClass($class);
+                /** @var class-string $fullClassName */
+                $fullClassName = $fileContents->after('namespace ')->before(';')->toString() . '\\' . $className;
 
                 // Skip non-instantiable classes – we only care about models, and those are instantiable
-                if ($reflection->getConstructor()?->getNumberOfRequiredParameters() === 0) {
-                    $object = new $class;
+                if ((new ReflectionClass($fullClassName))->getConstructor()?->getNumberOfRequiredParameters() === 0) {
+                    $object = new $className;
 
                     if ($object instanceof Model) {
                         return $object;
