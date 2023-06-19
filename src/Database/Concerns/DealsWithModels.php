@@ -35,7 +35,7 @@ trait DealsWithModels
 
                 // Skip non-instantiable classes – we only care about models, and those are instantiable
                 if ((new ReflectionClass($fullClassName))->getConstructor()?->getNumberOfRequiredParameters() === 0) {
-                    $object = new $className;
+                    $object = new $fullClassName;
 
                     if ($object instanceof Model) {
                         return $object;
