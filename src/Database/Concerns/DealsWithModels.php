@@ -12,6 +12,9 @@ use Symfony\Component\Finder\SplFileInfo;
 
 trait DealsWithModels
 {
+    /**
+     * If this is not null, use this instead of the default model discovery logic.
+     */
     public static Closure|null $modelDiscoveryOverride = null;
 
     /**
@@ -27,19 +30,13 @@ trait DealsWithModels
 
         return array_filter(array_map(function (SplFileInfo $file) {
             $fileContents = str($file->getContents());
-            $className = $fileContents->after('class ')->before("\n")->explode(' ')->first();
+            $class = $fileContents->after('class ')->before("\n")->explode(' ')->first();
 
             if ($fileContents->contains('namespace ')) {
-                /** @var class-string $fullClassName */
-                $fullClassName = $fileContents->after('namespace ')->before(';')->toString() . '\\' . $className;
-
-                // Skip non-instantiable classes – we only care about models, and those are instantiable
-                if ((new ReflectionClass($fullClassName))->getConstructor()?->getNumberOfRequiredParameters() === 0) {
-                    $object = new $fullClassName;
-
-                    if ($object instanceof Model) {
-                        return $object;
-                    }
+                try {
+                    return new ($fileContents->after('namespace ')->before(';')->toString() . '\\' . $class);
+                } catch (\Throwable $th) {
+                    // Skip non-instantiable classes – we only care about models, and those are instantiable
                 }
             }
 
