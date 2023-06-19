@@ -40,7 +40,7 @@ trait DealsWithModels
             }
 
             return null;
-        }, iterator_to_array($modelFiles)));
+        }, iterator_to_array($modelFiles)), fn (object|null $class) => $class instanceof Model);
     }
 
     /**
