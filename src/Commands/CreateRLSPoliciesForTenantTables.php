@@ -9,7 +9,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Creates and uses RLS policies for tables related to a tenant directly, or through a parent primary model's table.
+ * Creates and uses RLS policies for tables of models related to a tenant directly (using BelongsToTenant),
+ * or through a parent primary model (using BelongsToPrimaryModel).
+ *
+ * The models are discovered in the directories configured in the Tenancy config ('tenancy.rls.model_directories').
  *
  * This command is used with Postgres + single-database tenancy.
  */

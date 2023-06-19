@@ -14,6 +14,9 @@ trait DealsWithModels
 {
     public static Closure|null $modelDiscoveryOverride = null;
 
+    /**
+     * Discover all models in the directories configured in 'tenancy.rls.model_directories'.
+     */
     public static function getModels(): Collection
     {
         if (static::$modelDiscoveryOverride) {
@@ -40,6 +43,9 @@ trait DealsWithModels
         return $classes->filter(fn ($class) => $class instanceof Model);
     }
 
+    /**
+     * Filter all models retrieved by static::getModels() to get only the models that belong to tenants.
+     */
     public static function getTenantModels(): Collection
     {
         return static::getModels()->filter(fn (Model $model) => tenancy()->modelBelongsToTenant($model) || tenancy()->modelBelongsToTenantIndirectly($model));

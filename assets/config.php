@@ -197,6 +197,11 @@ return [
 
         /**
          * Directories in which Tenancy will discover your models.
+         * Subdirectories of the specified directories are also scanned.
+         *
+         * For example, specifying 'app/Models' will discover all models in the 'app/Models' directory and all of its subdirectories.
+         * Specifying 'app/Models/*' will discover all models in the subdirectories of 'app/Models' (+ their subdirectories),
+         * but not the models present directly in the 'app/Models' directory.
          *
          * @see Stancl\Tenancy\Commands\CreateRLSPoliciesForTenantTables
          */
