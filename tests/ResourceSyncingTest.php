@@ -181,6 +181,38 @@ class ResourceSyncingTest extends TestCase
     }
 
     /** @test */
+    public function creating_the_resource_in_tenant_database_creates_it_in_central_database_when_id_already_exists()
+    {
+        CentralUser::create([
+            'name' => 'John Central',
+            'email' => 'john@central',
+            'password' => 'secret',
+            'role' => 'employee',
+        ]);
+
+        // Assert no user in central DB
+        $this->assertCount(1, CentralUser::all());
+
+        $tenant = ResourceTenant::create();
+        $this->migrateTenants();
+
+        tenancy()->initialize($tenant);
+
+        // Create the same user in tenant DB
+        ResourceUser::create([
+            'global_id' => 'acme',
+            'name' => 'John Doe',
+            'email' => 'john@localhost',
+            'password' => 'secret',
+            'role' => 'commenter', // unsynced
+        ]);
+
+        tenancy()->end();
+
+        $this->assertCount(2, CentralUser::all());
+    }
+
+    /** @test */
     public function trying_to_update_synced_resources_from_central_context_using_tenant_models_results_in_an_exception()
     {
         $this->creating_the_resource_in_tenant_database_creates_it_in_central_database_and_creates_the_mapping();
