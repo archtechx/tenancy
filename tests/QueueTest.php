@@ -86,7 +86,7 @@ test('tenant id is not passed to central queues', function () {
     });
 });
 
-test('tenancy is initialized inside queues', function (bool $shouldEndTenancy) {
+test('tenancy is initialized inside queues', function () {
     withTenantDatabases();
     withFailedJobs();
 
@@ -104,11 +104,10 @@ test('tenancy is initialized inside queues', function (bool $shouldEndTenancy) {
 
     expect(pest()->valuestore->has('tenant_id'))->toBeFalse();
 
-    if ($shouldEndTenancy) {
-        tenancy()->end();
-    }
-
     pest()->artisan('queue:work --once');
+
+    // Tenancy should not be initialized after the jobs get processed
+    expect(tenancy()->initialized)->toBeFalse();
 
     expect(DB::connection('central')->table('failed_jobs')->count())->toBe(0);
 
@@ -117,9 +116,9 @@ test('tenancy is initialized inside queues', function (bool $shouldEndTenancy) {
     $tenant->run(function () use ($user) {
         expect($user->fresh()->name)->toBe('Bar');
     });
-})->with([true, false]);;
+});
 
-test('tenancy is initialized when retrying jobs', function (bool $shouldEndTenancy) {
+test('tenancy is initialized when retrying jobs', function () {
     withFailedJobs();
     withTenantDatabases();
 
@@ -138,17 +137,17 @@ test('tenancy is initialized when retrying jobs', function (bool $shouldEndTenan
 
     expect(pest()->valuestore->has('tenant_id'))->toBeFalse();
 
-    if ($shouldEndTenancy) {
-        tenancy()->end();
-    }
-
     pest()->artisan('queue:work --once');
+
+    expect(tenancy()->initialized)->toBeFalse();
 
     expect(DB::connection('central')->table('failed_jobs')->count())->toBe(1);
     expect(pest()->valuestore->get('tenant_id'))->toBeNull(); // job failed
 
     pest()->artisan('queue:retry all');
     pest()->artisan('queue:work --once');
+
+    expect(tenancy()->initialized)->toBeFalse();
 
     expect(DB::connection('central')->table('failed_jobs')->count())->toBe(0);
 
@@ -157,7 +156,7 @@ test('tenancy is initialized when retrying jobs', function (bool $shouldEndTenan
     $tenant->run(function () use ($user) {
         expect($user->fresh()->name)->toBe('Bar');
     });
-})->with([true, false]);
+});
 
 test('the tenant used by the job doesnt change when the current tenant changes', function () {
     withTenantDatabases();
