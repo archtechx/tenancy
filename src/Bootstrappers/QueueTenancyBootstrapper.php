@@ -41,7 +41,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
      */
     public static function __constructStatic(Application $app): void
     {
-        static::setUpJobListener($app->make(Dispatcher::class), $app->runningUnitTests());
+        static::setUpJobListener($app->make(Dispatcher::class));
     }
 
     public function __construct(Repository $config, QueueManager $queue)
@@ -52,31 +52,23 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         $this->setUpPayloadGenerator();
     }
 
-    protected static function setUpJobListener(Dispatcher $dispatcher, bool $runningTests): void
+    protected static function setUpJobListener(Dispatcher $dispatcher): void
     {
-        $previousTenant = null;
-
-        $dispatcher->listen(JobProcessing::class, function ($event) use (&$previousTenant) {
-            $previousTenant = tenant();
-
+        $dispatcher->listen(JobProcessing::class, function ($event) {
             static::initializeTenancyForQueue($event->job->payload()['tenant_id'] ?? null);
         });
 
-        $dispatcher->listen(JobRetryRequested::class, function ($event) use (&$previousTenant) {
-            $previousTenant = tenant();
-
+        $dispatcher->listen(JobRetryRequested::class, function ($event) {
             static::initializeTenancyForQueue($event->payload()['tenant_id'] ?? null);
         });
 
         // If we're running tests, we make sure to clean up after any artisan('queue:work') calls
-        $revertToPreviousState = function ($event) use (&$previousTenant, $runningTests) {
-            if ($runningTests) {
-                static::revertToPreviousState($event, $previousTenant);
-            }
+        $revertToCentralContext = function ($event) {
+            static::revertToCentralContext($event);
         };
 
-        $dispatcher->listen(JobProcessed::class, $revertToPreviousState); // artisan('queue:work') which succeeds
-        $dispatcher->listen(JobFailed::class, $revertToPreviousState); // artisan('queue:work') which fails
+        $dispatcher->listen(JobProcessed::class, $revertToCentralContext); // artisan('queue:work') which succeeds
+        $dispatcher->listen(JobFailed::class, $revertToCentralContext); // artisan('queue:work') which fails
     }
 
     protected static function initializeTenancyForQueue(string|int|null $tenantId): void
@@ -120,7 +112,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         tenancy()->initialize($tenant);
     }
 
-    protected static function revertToPreviousState(JobProcessed|JobFailed $event, ?Tenant &$previousTenant): void
+    protected static function revertToCentralContext(JobProcessed|JobFailed $event): void
     {
         $tenantId = $event->job->payload()['tenant_id'] ?? null;
 
@@ -129,13 +121,8 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             return;
         }
 
-        // Revert back to the previous tenant
-        if (tenant() && $previousTenant && $previousTenant->isNot(tenant())) {
-            tenancy()->initialize($previousTenant);
-        }
-
         // End tenancy
-        if (tenant() && (! $previousTenant)) {
+        if (tenant()) {
             tenancy()->end();
         }
     }
