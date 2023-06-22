@@ -54,21 +54,27 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
 
     protected static function setUpJobListener(Dispatcher $dispatcher): void
     {
-        $dispatcher->listen(JobProcessing::class, function ($event) {
+        $previousTenant = null;
+
+        $dispatcher->listen(JobProcessing::class, function ($event) use (&$previousTenant) {
+            $previousTenant = tenant();
+
             static::initializeTenancyForQueue($event->job->payload()['tenant_id'] ?? null);
         });
 
-        $dispatcher->listen(JobRetryRequested::class, function ($event) {
+        $dispatcher->listen(JobRetryRequested::class, function ($event) use (&$previousTenant) {
+            $previousTenant = tenant();
+
             static::initializeTenancyForQueue($event->payload()['tenant_id'] ?? null);
         });
 
         // If we're running tests, we make sure to clean up after any artisan('queue:work') calls
-        $revertToCentralContext = function ($event) {
-            static::revertToCentralContext($event);
+        $revertToPreviousState = function ($event) use (&$previousTenant) {
+            static::revertToPreviousState($event, $previousTenant);
         };
 
-        $dispatcher->listen(JobProcessed::class, $revertToCentralContext); // artisan('queue:work') which succeeds
-        $dispatcher->listen(JobFailed::class, $revertToCentralContext); // artisan('queue:work') which fails
+        $dispatcher->listen(JobProcessed::class, $revertToPreviousState); // artisan('queue:work') which succeeds
+        $dispatcher->listen(JobFailed::class, $revertToPreviousState); // artisan('queue:work') which fails
     }
 
     protected static function initializeTenancyForQueue(string|int|null $tenantId): void
@@ -112,7 +118,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         tenancy()->initialize($tenant);
     }
 
-    protected static function revertToCentralContext(JobProcessed|JobFailed $event): void
+    protected static function revertToPreviousState(JobProcessed|JobFailed $event, ?Tenant &$previousTenant): void
     {
         $tenantId = $event->job->payload()['tenant_id'] ?? null;
 
@@ -121,8 +127,13 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             return;
         }
 
+        // Revert back to the previous tenant
+        if (tenant() && $previousTenant && $previousTenant->isNot(tenant())) {
+            tenancy()->initialize($previousTenant);
+        }
+
         // End tenancy
-        if (tenant()) {
+        if (tenant() && (! $previousTenant)) {
             tenancy()->end();
         }
     }
