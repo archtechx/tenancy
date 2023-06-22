@@ -86,7 +86,7 @@ test('tenant id is not passed to central queues', function () {
     });
 });
 
-test('tenancy is initialized inside queues', function () {
+test('tenancy is initialized inside queues', function (bool $shouldEndTenancy) {
     withTenantDatabases();
     withFailedJobs();
 
@@ -104,10 +104,13 @@ test('tenancy is initialized inside queues', function () {
 
     expect(pest()->valuestore->has('tenant_id'))->toBeFalse();
 
+    if ($shouldEndTenancy) {
+        tenancy()->end();
+    }
+
     pest()->artisan('queue:work --once');
 
-    // Tenancy should not be initialized after the jobs get processed
-    expect(tenancy()->initialized)->toBeFalse();
+    expect(! tenancy()->initialized)->toBe($shouldEndTenancy);
 
     expect(DB::connection('central')->table('failed_jobs')->count())->toBe(0);
 
@@ -116,9 +119,9 @@ test('tenancy is initialized inside queues', function () {
     $tenant->run(function () use ($user) {
         expect($user->fresh()->name)->toBe('Bar');
     });
-});
+})->with([true, false]);
 
-test('tenancy is initialized when retrying jobs', function () {
+test('tenancy is initialized when retrying jobs', function (bool $shouldEndTenancy) {
     withFailedJobs();
     withTenantDatabases();
 
@@ -137,17 +140,26 @@ test('tenancy is initialized when retrying jobs', function () {
 
     expect(pest()->valuestore->has('tenant_id'))->toBeFalse();
 
+    if ($shouldEndTenancy) {
+        tenancy()->end();
+    }
+
     pest()->artisan('queue:work --once');
 
-    expect(tenancy()->initialized)->toBeFalse();
+    expect(! tenancy()->initialized)->toBe($shouldEndTenancy);
 
     expect(DB::connection('central')->table('failed_jobs')->count())->toBe(1);
     expect(pest()->valuestore->get('tenant_id'))->toBeNull(); // job failed
 
     pest()->artisan('queue:retry all');
+
+    if ($shouldEndTenancy) {
+        tenancy()->end();
+    }
+
     pest()->artisan('queue:work --once');
 
-    expect(tenancy()->initialized)->toBeFalse();
+    expect(! tenancy()->initialized)->toBe($shouldEndTenancy);
 
     expect(DB::connection('central')->table('failed_jobs')->count())->toBe(0);
 
@@ -156,7 +168,7 @@ test('tenancy is initialized when retrying jobs', function () {
     $tenant->run(function () use ($user) {
         expect($user->fresh()->name)->toBe('Bar');
     });
-});
+})->with([true, false]);
 
 test('the tenant used by the job doesnt change when the current tenant changes', function () {
     withTenantDatabases();
@@ -190,7 +202,11 @@ test('tenant connections do not persist after tenant jobs get processed', functi
 
     dispatch(new TestJob(pest()->valuestore));
 
+    tenancy()->end();
+
     pest()->artisan('queue:work --once');
+
+    expect(tenancy()->initialized)->toBeFalse();
 
     expect(collect(DB::select('SHOW FULL PROCESSLIST'))->pluck('db'))->not()->toContain($tenant->database()->getName());
 });
