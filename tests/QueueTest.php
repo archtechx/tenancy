@@ -181,6 +181,20 @@ test('the tenant used by the job doesnt change when the current tenant changes',
     expect(pest()->valuestore->get('tenant_id'))->toBe('The current tenant id is: acme');
 });
 
+test('tenant connections do not persist after tenant jobs get processed', function() {
+    withTenantDatabases();
+
+    $tenant = Tenant::create();
+
+    tenancy()->initialize($tenant);
+
+    dispatch(new TestJob(pest()->valuestore));
+
+    pest()->artisan('queue:work --once');
+
+    expect(collect(DB::select('SHOW FULL PROCESSLIST'))->pluck('db'))->not()->toContain($tenant->database()->getName());
+});
+
 function createValueStore(): void
 {
     $valueStorePath = __DIR__ . '/Etc/tmp/queuetest.json';
