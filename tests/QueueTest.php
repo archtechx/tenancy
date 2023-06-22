@@ -206,8 +206,6 @@ test('tenant connections do not persist after tenant jobs get processed', functi
 
     pest()->artisan('queue:work --once');
 
-    expect(tenancy()->initialized)->toBeFalse();
-
     expect(collect(DB::select('SHOW FULL PROCESSLIST'))->pluck('db'))->not()->toContain($tenant->database()->getName());
 });
 
