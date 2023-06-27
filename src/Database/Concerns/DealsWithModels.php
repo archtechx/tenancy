@@ -48,7 +48,7 @@ trait DealsWithModels
      */
     public static function getTenantModels(): array
     {
-        return array_filter(static::getModels(), fn (Model $model) => tenancy()->modelBelongsToTenant($model) || tenancy()->modelBelongsToTenantIndirectly($model));
+        return array_filter(static::getModels(), fn (Model $model) => static::modelBelongsToTenant($model) || static::modelBelongsToTenantIndirectly($model));
     }
 
     public static function modelBelongsToTenant(Model $model): bool
