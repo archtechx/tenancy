@@ -43,7 +43,6 @@ class PostgresRLSBootstrapper implements TenancyBootstrapper
         $this->database->purge($centralConnection);
 
         /** @var TenantWithDatabase $tenant */
-
         $this->config->set([
             'database.connections.' . $centralConnection . '.username' => $tenant->database()->getUsername() ?? $tenant->getTenantKey(),
             'database.connections.' . $centralConnection . '.password' => $tenant->database()->getPassword() ?? $this->getDefaultPassword(),
@@ -56,7 +55,7 @@ class PostgresRLSBootstrapper implements TenancyBootstrapper
 
         $this->database->purge($centralConnection);
 
-        $this->config->set('database.connections.' . $centralConnection, $this->originalCentralConnectionConfig);;
+        $this->config->set('database.connections.' . $centralConnection, $this->originalCentralConnectionConfig);
     }
 
     public static function getDefaultPassword(): string
