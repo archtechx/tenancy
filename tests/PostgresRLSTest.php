@@ -230,7 +230,7 @@ test('users created by CreatePostgresUserForTenant are only granted the permissi
 
 test('postgres user permissions are only scoped to the tenant app', function() {
     $tenant = Tenant::create();
-    // ALL grants'
+    // ALL grants
     CreatePostgresUserForTenant::dispatchSync($tenant);
 
     tenancy()->initialize($tenant);
