@@ -228,6 +228,22 @@ test('users created by CreatePostgresUserForTenant are only granted the permissi
         ->not()->toContain('DELETE');
 });
 
+test('postgres user permissions are only scoped to the tenant app', function() {
+    $tenant = Tenant::create();
+    // ALL grants'
+    CreatePostgresUserForTenant::dispatchSync($tenant);
+
+    tenancy()->initialize($tenant);
+
+    // Tenant cannot access central data due to insufficient permissions
+    expect(fn () => Tenant::all())->toThrow(Exception::class);
+
+    tenancy()->end();
+
+    // Central data can be accessed from the central context
+    expect(Tenant::all())->not()->toBeEmpty();
+})->group('access');
+
 test('model discovery gets the models correctly', function() {
     // 'tenancy.rls.model_directories' is set to [__DIR__ . '/Etc'] in beforeEach
     // Check that the Post and ScopedComment models are found in the directory
