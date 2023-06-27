@@ -37,12 +37,12 @@ class CreateRLSPoliciesForTenantTables extends Command
     protected function useRlsOnModel(Model $model): void
     {
         $table = $model->getTable();
-        $tenantKey = tenancy()->tenantKeyColumn();
+        $tenantKeyName = tenancy()->tenantKeyColumn();
 
         DB::statement("DROP POLICY IF EXISTS {$table}_rls_policy ON {$table}");
 
         if (tenancy()->modelBelongsToTenant($model)) {
-            DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING ({$tenantKey}::TEXT = current_user);");
+            DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING ({$tenantKeyName}::TEXT = current_user);");
 
             $this->enableRls($table);
 
@@ -52,17 +52,17 @@ class CreateRLSPoliciesForTenantTables extends Command
         if (tenancy()->modelBelongsToTenantIndirectly($model)) {
             /** @phpstan-ignore-next-line */
             $parentName = $model->getRelationshipToPrimaryModel();
-            $parentKey = $model->$parentName()->getForeignKeyName();
+            $parentKeyName = $model->$parentName()->getForeignKeyName();
             $parentTable = $model->$parentName()->make()->getTable();
 
             DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING (
-                {$parentKey} IN (
+                {$parentKeyName} IN (
                     SELECT id
                     FROM {$parentTable}
-                    WHERE ({$tenantKey} = (
-                        SELECT {$tenantKey}
+                    WHERE ({$tenantKeyName} = (
+                        SELECT {$tenantKeyName}
                         FROM {$parentTable}
-                        WHERE id = {$parentKey}
+                        WHERE id = {$parentKeyName}
                     ))
                 )
             )");
