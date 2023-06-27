@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers\Integrations;
 
 use Closure;
-use Stancl\Tenancy\Contracts\Tenant;
-use Illuminate\Database\DatabaseManager;
 use Illuminate\Contracts\Config\Repository;
+use Illuminate\Database\DatabaseManager;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
+use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
 /**
