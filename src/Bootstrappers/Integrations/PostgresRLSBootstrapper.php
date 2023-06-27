@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Bootstrappers\Integrations;
 
-use Illuminate\Contracts\Config\Repository;
-use Illuminate\Database\DatabaseManager;
-use Stancl\Tenancy\Contracts\TenancyBootstrapper;
+use Closure;
 use Stancl\Tenancy\Contracts\Tenant;
+use Illuminate\Database\DatabaseManager;
+use Illuminate\Contracts\Config\Repository;
+use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
 /**
@@ -23,6 +24,11 @@ class PostgresRLSBootstrapper implements TenancyBootstrapper
     protected array $originalCentralConnectionConfig;
     protected array $originalPostgresConfig;
 
+    /**
+     * Must not return an empty string.
+     */
+    public static string|Closure $defaultPassword = 'password';
+
     public function __construct(
         protected Repository $config,
         protected DatabaseManager $database,
@@ -37,7 +43,7 @@ class PostgresRLSBootstrapper implements TenancyBootstrapper
 
         /** @var TenantWithDatabase $tenant */
         $this->config->set('database.connections.pgsql.username', $tenant->database()->getUsername() ?? $tenant->getTenantKey());
-        $this->config->set('database.connections.pgsql.password', $tenant->database()->getPassword() ?? 'password');
+        $this->config->set('database.connections.pgsql.password', $tenant->database()->getPassword() ?? $this->getDefaultPassword());
 
         $this->config->set(
             'database.connections.' . $this->config->get('tenancy.database.central_connection'),
@@ -53,5 +59,10 @@ class PostgresRLSBootstrapper implements TenancyBootstrapper
 
         $this->config->set('database.connections.' . $centralConnection, $this->originalCentralConnectionConfig);
         $this->config->set('database.connections.pgsql', $this->originalPostgresConfig);
+    }
+
+    public static function getDefaultPassword(): string
+    {
+        return is_string(static::$defaultPassword) ? static::$defaultPassword : (static::$defaultPassword)();
     }
 }
