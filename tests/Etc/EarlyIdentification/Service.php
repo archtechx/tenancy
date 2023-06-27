@@ -10,6 +10,6 @@ class Service
 
     public function __construct()
     {
-        $this->token = config('tenancy.token', '');
+        $this->token = config('tenancy.token');
     }
 }
