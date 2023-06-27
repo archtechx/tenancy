@@ -34,21 +34,20 @@ class PostgresRLSBootstrapper implements TenancyBootstrapper
         protected DatabaseManager $database,
     ) {
         $this->originalCentralConnectionConfig = $config->get('database.connections.central');
-        $this->originalPostgresConfig = $config->get('database.connections.pgsql');
     }
 
     public function bootstrap(Tenant $tenant): void
     {
-        $this->database->purge($this->config->get('tenancy.database.central_connection'));
+        $centralConnection = $this->config->get('tenancy.database.central_connection');
+
+        $this->database->purge($centralConnection);
 
         /** @var TenantWithDatabase $tenant */
-        $this->config->set('database.connections.pgsql.username', $tenant->database()->getUsername() ?? $tenant->getTenantKey());
-        $this->config->set('database.connections.pgsql.password', $tenant->database()->getPassword() ?? $this->getDefaultPassword());
 
-        $this->config->set(
-            'database.connections.' . $this->config->get('tenancy.database.central_connection'),
-            $this->config->get('database.connections.pgsql')
-        );
+        $this->config->set([
+            'database.connections.' . $centralConnection . '.username' => $tenant->database()->getUsername() ?? $tenant->getTenantKey(),
+            'database.connections.' . $centralConnection . '.password' => $tenant->database()->getPassword() ?? $this->getDefaultPassword(),
+        ]);
     }
 
     public function revert(): void
@@ -57,8 +56,7 @@ class PostgresRLSBootstrapper implements TenancyBootstrapper
 
         $this->database->purge($centralConnection);
 
-        $this->config->set('database.connections.' . $centralConnection, $this->originalCentralConnectionConfig);
-        $this->config->set('database.connections.pgsql', $this->originalPostgresConfig);
+        $this->config->set('database.connections.' . $centralConnection, $this->originalCentralConnectionConfig);;
     }
 
     public static function getDefaultPassword(): string
