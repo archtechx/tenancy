@@ -24,7 +24,7 @@ class CreateRLSPoliciesForTenantTables extends Command
     {
         DB::transaction(function () {
             foreach (tenancy()->getTenantModels() as $model) {
-                $this->useRlsOnModel($model);
+                $this->applyRlsOnModel($model);
             }
         });
 
@@ -34,7 +34,7 @@ class CreateRLSPoliciesForTenantTables extends Command
     /**
      * Make model use RLS if it belongs to a tenant directly, or through a parent primary model.
      */
-    protected function useRlsOnModel(Model $model): void
+    protected function applyRlsOnModel(Model $model): void
     {
         $table = $model->getTable();
         $tenantKeyName = tenancy()->tenantKeyColumn();
