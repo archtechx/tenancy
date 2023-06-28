@@ -39,8 +39,9 @@ class CreatePostgresUserForTenant implements ShouldQueue
         $password = $this->tenant->database()->getPassword() ?? PostgresRLSBootstrapper::getDefaultPassword();
 
         // Create the user only if it doesn't already exist
-        if (! count(DB::select("SELECT usename FROM pg_user WHERE usename = '$name';")) > 0) {
-            DB::statement("CREATE USER \"$name\" LOGIN PASSWORD '$password';");
+        if (! count(DB::select("SELECT usename FROM pg_user WHERE usename = $1", [$name])) > 0) {
+            $formattedStatement = DB::select("SELECT format('CREATE USER %I LOGIN PASSWORD %L', '$name', '$password');")[0]->format;
+            DB::statement($formattedStatement);
         }
 
         $this->grantPermissions((string) $name);
@@ -59,10 +60,12 @@ class CreatePostgresUserForTenant implements ShouldQueue
                 $table = $model->getTable();
 
                 foreach (config('tenancy.rls.user_permissions') as $permission) {
-                    $databaseManager->database()->statement("GRANT {$permission} ON {$table} TO \"{$userName}\"");
+                    $formattedStatement = $databaseManager->database()->select("SELECT format('GRANT %s ON %I TO %I', '$permission', '$table', '$userName')")[0]->format;
+                    $databaseManager->database()->statement($formattedStatement);
                 }
 
-                $databaseManager->database()->statement("GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO \"{$userName}\"");
+                $formattedStatement = $databaseManager->database()->select("SELECT format('GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO %I', '$userName')")[0]->format;
+                $databaseManager->database()->statement($formattedStatement);
             }
         });
     }
