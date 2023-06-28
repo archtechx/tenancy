@@ -193,7 +193,7 @@ return [
          *
          * @see Stancl\Tenancy\Jobs\CreatePostgresUserForTenant
          */
-        'user_permissions' => ['ALL'],
+        'user_permissions' => ['CREATE', 'UPDATE', 'DELETE', 'SELECT', 'INSERT'],
 
         /**
          * Directories in which Tenancy will discover your models.

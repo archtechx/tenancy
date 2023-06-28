@@ -31,7 +31,7 @@ beforeEach(function () {
     // Turn RLS scoping on
     config(['tenancy.rls.enabled' => false]);
     config(['tenancy.rls.model_directories' => [__DIR__ . '/Etc']]);
-    config(['tenancy.rls.user_permissions' => ['ALL']]);
+    config(['tenancy.rls.user_permissions' => ['CREATE', 'UPDATE', 'DELETE', 'SELECT', 'INSERT']]);
     config(['tenancy.bootstrappers' => [PostgresRLSBootstrapper::class]]);
     config(['database.connections.' . $centralConnection => config('database.connections.pgsql')]);
     config(['tenancy.models.tenant_key_column' => 'tenant_id']);
@@ -230,7 +230,7 @@ test('users created by CreatePostgresUserForTenant are only granted the permissi
 
 test('postgres user permissions are only scoped to the tenant app', function() {
     $tenant = Tenant::create();
-    // ALL grants
+    // All default grants ('CREATE', 'UPDATE', 'DELETE', 'SELECT', 'INSERT')
     CreatePostgresUserForTenant::dispatchSync($tenant);
 
     tenancy()->initialize($tenant);
@@ -242,7 +242,7 @@ test('postgres user permissions are only scoped to the tenant app', function() {
 
     // Central data can be accessed from the central context
     expect(Tenant::all())->not()->toBeEmpty();
-})->group('access');
+});
 
 test('model discovery gets the models correctly', function() {
     // 'tenancy.rls.model_directories' is set to [__DIR__ . '/Etc'] in beforeEach
