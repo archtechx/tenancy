@@ -55,17 +55,19 @@ class CreateRLSPoliciesForTenantTables extends Command
             $parentKeyName = $model->$parentName()->getForeignKeyName();
             $parentTable = $model->$parentName()->make()->getTable();
 
-            DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING (
-                {$parentKeyName} IN (
+            $formattedStatement = DB::select("SELECT format('CREATE POLICY %I_rls_policy ON %I USING (
+                %I IN (
                     SELECT id
-                    FROM {$parentTable}
-                    WHERE ({$tenantKeyName} = (
-                        SELECT {$tenantKeyName}
-                        FROM {$parentTable}
-                        WHERE id = {$parentKeyName}
+                    FROM %I
+                    WHERE (%I = (
+                        SELECT %I
+                        FROM %I
+                        WHERE id = %I
                     ))
                 )
-            )");
+            )', '$table', '$table', '$parentKeyName', '$parentTable', '$tenantKeyName', '$tenantKeyName', '$parentTable', '$parentKeyName')")[0]->format;
+
+            DB::statement($formattedStatement);
 
             $this->enableRls($table);
 
@@ -75,7 +77,9 @@ class CreateRLSPoliciesForTenantTables extends Command
 
     protected function enableRls(string $table): void
     {
-        DB::statement("ALTER TABLE {$table} ENABLE ROW LEVEL SECURITY");
-        DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
+        $formattedStatement = DB::select("SELECT format('ALTER TABLE %I', '$table')")[0]->format;
+
+        DB::statement($formattedStatement . ' ENABLE ROW LEVEL SECURITY');
+        DB::statement($formattedStatement . ' FORCE ROW LEVEL SECURITY');
     }
 }
