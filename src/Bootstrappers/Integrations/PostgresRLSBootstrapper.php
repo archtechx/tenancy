@@ -22,7 +22,6 @@ use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 class PostgresRLSBootstrapper implements TenancyBootstrapper
 {
     protected array $originalCentralConnectionConfig;
-    protected array $originalPostgresConfig;
 
     /**
      * Must not return an empty string.
