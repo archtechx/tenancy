@@ -27,6 +27,7 @@ trait DealsWithModels
 
         $modelFiles = Finder::create()->files()->name('*.php')->in(config('tenancy.rls.model_directories'));
 
+        // todo1 Add array property for excluding specific models
         return array_filter(array_map(function (SplFileInfo $file) {
             $fileContents = str($file->getContents());
             $class = $fileContents->after('class ')->before("\n")->explode(' ')->first();
