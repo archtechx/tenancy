@@ -249,9 +249,19 @@ test('model discovery gets the models correctly', function() {
     // Check that the Post and ScopedComment models are found in the directory
     $expectedModels = [Post::class, ScopedComment::class];
 
-    $foundModels = array_filter(tenancy()->getModels(), fn (Model $model) => in_array($model::class, $expectedModels));
+    $foundModels = fn () => collect(tenancy()->getModels())->filter(fn (Model $model) => in_array($model::class, $expectedModels));
 
-    expect($foundModels)->toHaveCount(count($expectedModels));
+    expect($foundModels()->map(fn (Model $model) => $model::class)->values())
+        ->toHaveCount(count($expectedModels))
+        ->toContain(...$expectedModels);
+
+    $expectedModels = [Post::class];
+    $excludedModels = tenancy()::$modelsExcludedFromDiscovery = [ScopedComment::class];
+
+    expect($foundModels()->map(fn (Model $model) => $model::class)->values())
+        ->toHaveCount(count($expectedModels))
+        ->toContain(...$expectedModels)
+        ->not()->toContain(...$excludedModels);
 });
 
 trait UsesUuidAsPrimaryKey

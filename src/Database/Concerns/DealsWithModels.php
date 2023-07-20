@@ -16,6 +16,8 @@ trait DealsWithModels
      */
     public static Closure|null $modelDiscoveryOverride = null;
 
+    public static array $modelsExcludedFromDiscovery = [];
+
     /**
      * Discover all models in the directories configured in 'tenancy.rls.model_directories'.
      */
@@ -41,7 +43,7 @@ trait DealsWithModels
             }
 
             return null;
-        }, iterator_to_array($modelFiles)), fn (object|null $class) => $class instanceof Model);
+        }, iterator_to_array($modelFiles)), fn (object|null $object) => $object instanceof Model && ! in_array($object::class, static::$modelsExcludedFromDiscovery));
     }
 
     /**
