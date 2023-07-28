@@ -51,11 +51,12 @@ class CreatePostgresUserForTenant implements ShouldQueue
     {
         /** @var \Stancl\Tenancy\Database\Contracts\StatefulTenantDatabaseManager $databaseManager */
         $databaseManager = $this->tenant->database()->manager();
+        $schema = config('database.connections.pgsql.search_path', 'public');
 
         /** @var Model[] $tenantModels */
         $tenantModels = tenancy()->getTenantModels();
 
-        $databaseManager->database()->transaction(function () use ($userName, $databaseManager, $tenantModels) {
+        $databaseManager->database()->transaction(function () use ($userName, $databaseManager, $tenantModels, $schema) {
             foreach ($tenantModels as $model) {
                 $table = $model->getTable();
 
@@ -64,7 +65,7 @@ class CreatePostgresUserForTenant implements ShouldQueue
                     $databaseManager->database()->statement($formattedStatement);
                 }
 
-                $formattedStatement = $databaseManager->database()->select("SELECT format('GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO %I', '$userName')")[0]->format;
+                $formattedStatement = $databaseManager->database()->select("SELECT format('GRANT USAGE ON ALL SEQUENCES IN SCHEMA %I TO %I', '$schema', '$userName')")[0]->format;
                 $databaseManager->database()->statement($formattedStatement);
             }
         });
