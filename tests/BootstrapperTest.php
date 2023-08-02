@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\TenancyUrlGenerator;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Events\TenantDeleted;
 use Stancl\Tenancy\Events\DeletingTenant;
@@ -22,6 +23,7 @@ use Stancl\Tenancy\TenancyBroadcastManager;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Broadcasting\BroadcastManager;
 use Stancl\Tenancy\Events\TenancyInitialized;
+use Illuminate\Contracts\Routing\UrlGenerator;
 use Stancl\Tenancy\Jobs\CreateStorageSymlinks;
 use Stancl\Tenancy\Jobs\RemoveStorageSymlinks;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
@@ -31,12 +33,16 @@ use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\CacheTagsBootstrapper;
 use Stancl\Tenancy\Bootstrappers\UrlTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\UrlBindingBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\Integrations\FortifyRouteTenancyBootstrapper;
+use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
+use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 
 beforeEach(function () {
     $this->mockConsoleOutput = false;
@@ -65,12 +71,11 @@ afterEach(function () {
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = [];
     TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably'];
     BroadcastTenancyBootstrapper::$credentialsMap = [];
+    TenancyUrlGenerator::$prefixRouteNames = false;
 });
 
 test('database data is separated', function () {
-    config(['tenancy.bootstrappers' => [
-        DatabaseTenancyBootstrapper::class,
-    ]]);
+    config(['tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class]]);
 
     $tenant1 = Tenant::create();
     $tenant2 = Tenant::create();
@@ -352,6 +357,8 @@ test('local storage public urls are generated correctly', function() {
 });
 
 test('BroadcastTenancyBootstrapper binds TenancyBroadcastManager to BroadcastManager and reverts the binding when tenancy is ended', function() {
+    config(['tenancy.bootstrappers' => [BroadcastTenancyBootstrapper::class]]);
+
     expect(app(BroadcastManager::class))->toBeInstanceOf(BroadcastManager::class);
 
     tenancy()->initialize(Tenant::create());
@@ -367,6 +374,7 @@ test('BroadcastTenancyBootstrapper maps tenant broadcaster credentials to config
     config([
         'broadcasting.connections.testing.driver' => 'testing',
         'broadcasting.connections.testing.message' => $defaultMessage = 'default',
+        'tenancy.bootstrappers' => [BroadcastTenancyBootstrapper::class],
     ]);
 
     BroadcastTenancyBootstrapper::$credentialsMap = [
@@ -395,6 +403,7 @@ test('BroadcastTenancyBootstrapper makes the app use broadcasters with the corre
         'broadcasting.default' => 'testing',
         'broadcasting.connections.testing.driver' => 'testing',
         'broadcasting.connections.testing.message' => $defaultMessage = 'default',
+        'tenancy.bootstrappers' => [BroadcastTenancyBootstrapper::class],
     ]);
 
     TenancyBroadcastManager::$tenantBroadcasters[] = 'testing';
@@ -436,7 +445,8 @@ test('MailTenancyBootstrapper maps tenant mail credentials to config as specifie
     config([
         'mail.default' => 'smtp',
         'mail.mailers.smtp.username' => $defaultUsername = 'default username',
-        'mail.mailers.smtp.password' => 'no password'
+        'mail.mailers.smtp.password' => 'no password',
+        'tenancy.bootstrappers' => [MailTenancyBootstrapper::class],
     ]);
 
     $tenant = Tenant::create(['smtp_password' => $password = 'testing password']);
@@ -454,7 +464,11 @@ test('MailTenancyBootstrapper maps tenant mail credentials to config as specifie
 
 test('MailTenancyBootstrapper reverts the config and mailer credentials to default when tenancy ends', function() {
     MailTenancyBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'smtp_password'];
-    config(['mail.default' => 'smtp', 'mail.mailers.smtp.password' => $defaultPassword = 'no password']);
+    config([
+        'mail.default' => 'smtp',
+        'mail.mailers.smtp.password' => $defaultPassword = 'no password',
+        'tenancy.bootstrappers' => [MailTenancyBootstrapper::class],
+    ]);
 
     tenancy()->initialize(Tenant::create(['smtp_password' => $tenantPassword = 'testing password']));
 
@@ -470,18 +484,8 @@ test('MailTenancyBootstrapper reverts the config and mailer credentials to defau
     assertMailerTransportUsesPassword($defaultPassword);
 });
 
-function getDiskPrefix(string $disk): string
-{
-    /** @var FilesystemAdapter $disk */
-    $disk = Storage::disk($disk);
-    $adapter = $disk->getAdapter();
-    $prefix = invade(invade($adapter)->prefixer)->prefix;
-
-    return $prefix;
-}
-
 test('url bootstrapper overrides the root url when tenancy gets initialized and reverts the url to the central one after tenancy ends', function() {
-    config(['tenancy.bootstrappers.url' => UrlTenancyBootstrapper::class]);
+    config(['tenancy.bootstrappers' => [UrlTenancyBootstrapper::class]]);
 
     Route::group([
         'middleware' => InitializeTenancyBySubdomain::class,
@@ -524,3 +528,106 @@ test('url bootstrapper overrides the root url when tenancy gets initialized and 
     expect(URL::to('/'))->toBe($baseUrl);
     expect(config('app.url'))->toBe($baseUrl);
 });
+
+test('url binding tenancy bootstrapper swaps the url generator instance correctly', function() {
+    config(['tenancy.bootstrappers' => [UrlBindingBootstrapper::class]]);
+
+    tenancy()->initialize(Tenant::create());
+    expect(app('url'))->toBeInstanceOf(TenancyUrlGenerator::class);
+    expect(url())->toBeInstanceOf(TenancyUrlGenerator::class);
+
+    tenancy()->end();
+    expect(app('url'))->toBeInstanceOf(UrlGenerator::class);
+    expect(url())->toBeInstanceOf(UrlGenerator::class);
+});
+
+test('url binding tenancy bootstrapper changes route helper behavior correctly', function() {
+    Route::get('/central/home', fn () => route('home'))->name('home');
+    // Tenant route name prefix is 'tenant.' by default
+    Route::get('/{tenant}/home', fn () => route('tenant.home'))->name('tenant.home')->middleware(['tenant', InitializeTenancyByPath::class]);
+    Route::get('/query-string', fn () => route('query-string'))->name('query-string')->middleware(['tenant', InitializeTenancyByRequestData::class]);
+
+    $tenant = Tenant::create();
+    $tenantKey = $tenant->getTenantKey();
+    $centralRouteUrl = route('home');
+    $tenantRouteUrl = route('tenant.home', ['tenant' => $tenantKey]);
+    $queryStringCentralUrl = route('query-string');
+    $queryStringTenantUrl = route('query-string', ['tenant' => $tenantKey]);
+    TenancyUrlGenerator::$bypassParameter = 'bypassParameter';
+    $bypassParameter = TenancyUrlGenerator::$bypassParameter;
+
+    config(['tenancy.bootstrappers' => [UrlBindingBootstrapper::class]]);
+    TenancyUrlGenerator::$prefixRouteNames = true;
+
+    tenancy()->initialize($tenant);
+    // The $prefixRouteNames property is true
+    // The route name passed to the route() helper ('home') gets prefixed prefixed with 'tenant.' automatically
+    expect(route('home'))->toBe($tenantRouteUrl);
+
+    // The 'tenant.home' route name doesn't get prefixed because it is already prefixed with 'tenant.'
+    // Also, the route receives the tenant parameter automatically
+    expect(route('tenant.home'))->toBe($tenantRouteUrl);
+
+    // The $bypassParameter parameter ('central' by default) can bypass the route name prefixing
+    // When the bypass parameter is true, the generated route URL points to the route named 'home'
+    // Also, check if the bypass parameter gets removed from the generated URL query string
+    expect(route('home', [$bypassParameter => true]))->toBe($centralRouteUrl)
+        ->not()->toContain($bypassParameter);
+    // When the bypass parameter is false, the generated route URL points to the prefixed route ('tenant.home')
+    expect(route('home', [$bypassParameter => false]))->toBe($tenantRouteUrl)
+        ->not()->toContain($bypassParameter);
+
+    TenancyUrlGenerator::$prefixRouteNames = false;
+    // Route names don't get prefixed – TenancyUrlGenerator::$prefixRouteNames is false
+    expect(route('home', [$bypassParameter => true]))->toBe($centralRouteUrl);
+    expect(route('query-string'))->toBe($queryStringTenantUrl);
+
+    TenancyUrlGenerator::$passTenantParameterToRoutes = false;
+    expect(route('query-string'))->toBe($queryStringCentralUrl);
+
+    TenancyUrlGenerator::$passTenantParameterToRoutes = true;
+    expect(route('query-string'))->toBe($queryStringTenantUrl);
+
+    // Ending tenancy reverts route() behavior changes
+    tenancy()->end();
+
+    expect(route('home'))->toBe($centralRouteUrl);
+    expect(route('query-string'))->toBe($queryStringCentralUrl);
+    expect(route('tenant.home', ['tenant' => $tenantKey]))->toBe($tenantRouteUrl);
+
+    // Route-level identification
+    pest()->get("http://localhost/central/home")->assertSee($centralRouteUrl);
+    pest()->get("http://localhost/$tenantKey/home")->assertSee($tenantRouteUrl);
+    pest()->get("http://localhost/query-string?tenant=$tenantKey")->assertSee($queryStringTenantUrl);
+})->group('string');
+
+test('fortify route tenancy bootstrapper updates fortify config correctly', function() {
+    config(['tenancy.bootstrappers' => [FortifyRouteTenancyBootstrapper::class]]);
+
+    Route::get('/', function () {
+        return true;
+    })->name($tenantHomeRouteName = 'tenant.home');
+
+    FortifyRouteTenancyBootstrapper::$fortifyHome = $tenantHomeRouteName;
+    FortifyRouteTenancyBootstrapper::$fortifyRedirectTenantMap = ['logout' => FortifyRouteTenancyBootstrapper::$fortifyHome];
+    $originalFortifyHome = config('fortify.home');
+    $originalFortifyRedirects = config('fortify.redirects');
+
+    tenancy()->initialize(Tenant::create());
+    expect(config('fortify.home'))->toBe($homeUrl = route($tenantHomeRouteName));
+    expect(config('fortify.redirects'))->toBe(['logout' => $homeUrl]);
+
+    tenancy()->end();
+    expect(config('fortify.home'))->toBe($originalFortifyHome);
+    expect(config('fortify.redirects'))->toBe($originalFortifyRedirects);
+});
+
+function getDiskPrefix(string $disk): string
+{
+    /** @var FilesystemAdapter $disk */
+    $disk = Storage::disk($disk);
+    $adapter = $disk->getAdapter();
+    $prefix = invade(invade($adapter)->prefixer)->prefix;
+
+    return $prefix;
+}

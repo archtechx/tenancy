@@ -9,10 +9,13 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
+use Stancl\Tenancy\Concerns\UsableWithEarlyIdentification;
 use Stancl\Tenancy\Exceptions\NotASubdomainException;
 
 class InitializeTenancyBySubdomain extends InitializeTenancyByDomain
 {
+    use UsableWithEarlyIdentification;
+
     /**
      * The index of the subdomain fragment in the hostname
      * split by `.`. 0 for first fragment, 1 if you prefix
@@ -27,6 +30,11 @@ class InitializeTenancyBySubdomain extends InitializeTenancyByDomain
     /** @return Response|mixed */
     public function handle(Request $request, Closure $next): mixed
     {
+        if ($this->shouldBeSkipped(tenancy()->getRoute($request))) {
+            // Allow accessing central route in kernel identification
+            return $next($request);
+        }
+
         if (in_array($request->getHost(), config('tenancy.central_domains', []), true)) {
             // Always bypass tenancy initialization when host is in central domains
             return $next($request);

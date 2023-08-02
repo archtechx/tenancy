@@ -44,14 +44,14 @@ class Link extends Command
 
     protected function removeLinks(LazyCollection $tenants): void
     {
-        RemoveStorageSymlinksAction::handle($tenants);
+        (new RemoveStorageSymlinksAction)($tenants);
 
         $this->components->info('The links have been removed.');
     }
 
     protected function createLinks(LazyCollection $tenants): void
     {
-        CreateStorageSymlinksAction::handle(
+        (new CreateStorageSymlinksAction)(
             $tenants,
             (bool) ($this->option('relative') ?? false),
             (bool) ($this->option('force') ?? false),

@@ -20,6 +20,10 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\QueueableListener;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
+beforeEach(function () {
+    FooListener::$shouldQueue = false;
+});
+
 test('listeners can be synchronous', function () {
     Queue::fake();
     Event::listen(TenantCreated::class, FooListener::class);
@@ -44,6 +48,9 @@ test('listeners can be queued by setting a static property', function () {
     });
 
     expect(app()->bound('foo'))->toBeFalse();
+
+    // Reset static property
+    FooListener::$shouldQueue = false;
 });
 
 test('ing events can be used to cancel tenant model actions', function () {

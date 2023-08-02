@@ -35,6 +35,6 @@ class RemoveStorageSymlinks implements ShouldQueue
      */
     public function handle()
     {
-        RemoveStorageSymlinksAction::handle($this->tenant);
+        (new RemoveStorageSymlinksAction)($this->tenant);
     }
 }

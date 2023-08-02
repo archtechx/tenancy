@@ -16,19 +16,19 @@ class CreateStorageSymlinksAction
 {
     use DealsWithTenantSymlinks;
 
-    public static function handle(Tenant|Collection|LazyCollection $tenants, bool $relativeLink = false, bool $force = false): void
+    public function __invoke(Tenant|Collection|LazyCollection $tenants, bool $relativeLink = false, bool $force = false): void
     {
         $tenants = $tenants instanceof Tenant ? collect([$tenants]) : $tenants;
 
         /** @var Tenant $tenant */
         foreach ($tenants as $tenant) {
-            foreach (static::possibleTenantSymlinks($tenant) as $publicPath => $storagePath) {
-                static::createLink($publicPath, $storagePath, $tenant, $relativeLink, $force);
+            foreach ($this->possibleTenantSymlinks($tenant) as $publicPath => $storagePath) {
+                $this->createLink($publicPath, $storagePath, $tenant, $relativeLink, $force);
             }
         }
     }
 
-    protected static function createLink(string $publicPath, string $storagePath, Tenant $tenant, bool $relativeLink, bool $force): void
+    protected function createLink(string $publicPath, string $storagePath, Tenant $tenant, bool $relativeLink, bool $force): void
     {
         event(new CreatingStorageSymlink($tenant));
 

@@ -25,6 +25,13 @@ beforeEach(function () {
         'tenancy.database.template_tenant_connection' => 'mysql',
     ]);
 
+    // Reset static property
+    PermissionControlledMySQLDatabaseManager::$grants = [
+        'ALTER', 'ALTER ROUTINE', 'CREATE', 'CREATE ROUTINE', 'CREATE TEMPORARY TABLES', 'CREATE VIEW',
+        'DELETE', 'DROP', 'EVENT', 'EXECUTE', 'INDEX', 'INSERT', 'LOCK TABLES', 'REFERENCES', 'SELECT',
+        'SHOW VIEW', 'TRIGGER', 'UPDATE',
+    ];
+
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
     })->toListener());
@@ -82,6 +89,13 @@ test('correct grants are given to users', function () {
 
     $query = DB::connection('mysql')->select("SHOW GRANTS FOR `{$tenant->database()->getUsername()}`@`%`")[1];
     expect($query->{"Grants for {$user}@%"})->toStartWith('GRANT CREATE, ALTER, ALTER ROUTINE ON'); // @mysql because that's the hostname within the docker network
+
+    // Reset static property
+    PermissionControlledMySQLDatabaseManager::$grants = [
+        'ALTER', 'ALTER ROUTINE', 'CREATE', 'CREATE ROUTINE', 'CREATE TEMPORARY TABLES', 'CREATE VIEW',
+        'DELETE', 'DROP', 'EVENT', 'EXECUTE', 'INDEX', 'INSERT', 'LOCK TABLES', 'REFERENCES', 'SELECT',
+        'SHOW VIEW', 'TRIGGER', 'UPDATE',
+    ];
 });
 
 test('having existing databases without users and switching to permission controlled mysql manager doesnt break existing dbs', function () {

@@ -23,6 +23,6 @@ class CreateStorageSymlinks implements ShouldQueue
 
     public function handle(): void
     {
-        CreateStorageSymlinksAction::handle($this->tenant);
+        (new CreateStorageSymlinksAction)($this->tenant);
     }
 }

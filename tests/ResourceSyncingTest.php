@@ -631,6 +631,8 @@ test('the listener can be queued', function () {
     Queue::assertPushed(CallQueuedListener::class, function (CallQueuedListener $job) {
         return $job->class === UpdateSyncedResource::class;
     });
+
+    UpdateSyncedResource::$shouldQueue = false;
 });
 
 test('an event is fired for all touched resources', function () {

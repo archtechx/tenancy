@@ -8,13 +8,14 @@ use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Traits\Macroable;
+use Stancl\Tenancy\Concerns\DealsWithEarlyIdentification;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByIdException;
 
 class Tenancy
 {
-    use Macroable;
+    use Macroable, DealsWithEarlyIdentification;
 
     /**
      * The current tenant.

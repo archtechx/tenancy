@@ -12,6 +12,7 @@ use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
 
 beforeEach(function() {
     config(['mail.default' => 'smtp']);
+    config(['tenancy.bootstrappers' => [MailTenancyBootstrapper::class]]);
     MailTenancyBootstrapper::$credentialsMap = [];
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);

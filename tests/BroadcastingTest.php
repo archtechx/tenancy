@@ -12,9 +12,11 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Tests\Etc\TestingBroadcaster;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Illuminate\Contracts\Broadcasting\Broadcaster as BroadcasterContract;
+use Stancl\Tenancy\Bootstrappers\BroadcastTenancyBootstrapper;
 
 beforeEach(function () {
     withTenantDatabases();
+    config(['tenancy.bootstrappers' => [BroadcastTenancyBootstrapper::class]]);
     TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably'];
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);

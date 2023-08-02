@@ -26,6 +26,10 @@ use Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLSchemaManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\SQLiteDatabaseManager;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
+beforeEach(function () {
+    SQLiteDatabaseManager::$path = null;
+});
+
 test('databases can be created and deleted', function ($driver, $databaseManager) {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
@@ -388,6 +392,8 @@ test('path used by sqlite manager can be customized', function () {
     ]);
 
     expect(file_exists($customPath . '/' . $name))->toBeTrue();
+
+    SQLiteDatabaseManager::$path = null;
 });
 
 test('the tenant connection template can be specified either by name or as a connection array', function () {

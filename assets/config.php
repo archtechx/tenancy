@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use Stancl\Tenancy\CacheManager;
 use Stancl\Tenancy\Middleware;
 use Stancl\Tenancy\Resolvers;
+use Stancl\Tenancy\RouteMode;
 
 return [
     /**
@@ -60,6 +60,28 @@ return [
             Middleware\InitializeTenancyByDomainOrSubdomain::class,
             Middleware\InitializeTenancyByPath::class,
             Middleware\InitializeTenancyByRequestData::class,
+        ],
+
+        /**
+         * Identification middleware tenancy recognizes as domain identification middleware.
+         *
+         * This is used for determining whether to skip the access prevention middleware.
+         * PreventAccessFromUnwantedDomains is intended to be used only with the middleware included here.
+         * It will get skipped if it's used with other identification middleware.
+         *
+         * If you're using a custom domain identification middleware, add it here.
+         *
+         * @see \Stancl\Tenancy\Concerns\UsableWithEarlyIdentification
+         * @see \Stancl\Tenancy\Middleware\PreventAccessFromUnwantedDomains
+         */
+        'domain_identification_middleware' => [
+            Middleware\InitializeTenancyByDomain::class,
+            Middleware\InitializeTenancyBySubdomain::class,
+            Middleware\InitializeTenancyByDomainOrSubdomain::class,
+        ],
+
+        'path_identification_middleware' => [
+            Middleware\InitializeTenancyByPath::class,
         ],
 
         /**
@@ -299,6 +321,13 @@ return [
      * storage (e.g. S3 / Dropbox) or have a custom asset controller.
      */
     'routes' => true,
+
+    /**
+     * Make all routes central, tenant, or universal by default.
+     *
+     * To override the default route mode, apply the middleware of another route mode ('central', 'tenant', 'universal') to the route.
+     */
+    'default_route_mode' => RouteMode::CENTRAL,
 
     /**
      * Parameters used by the tenants:migrate command.

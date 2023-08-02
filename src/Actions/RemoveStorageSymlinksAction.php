@@ -15,21 +15,21 @@ class RemoveStorageSymlinksAction
 {
     use DealsWithTenantSymlinks;
 
-    public static function handle(Tenant|Collection|LazyCollection $tenants): void
+    public function __invoke(Tenant|Collection|LazyCollection $tenants): void
     {
         $tenants = $tenants instanceof Tenant ? collect([$tenants]) : $tenants;
 
         /** @var Tenant $tenant */
         foreach ($tenants as $tenant) {
-            foreach (static::possibleTenantSymlinks($tenant) as $publicPath => $storagePath) {
-                static::removeLink($publicPath, $tenant);
+            foreach ($this->possibleTenantSymlinks($tenant) as $publicPath => $storagePath) {
+                $this->removeLink($publicPath, $tenant);
             }
         }
     }
 
-    protected static function removeLink(string $publicPath, Tenant $tenant): void
+    protected function removeLink(string $publicPath, Tenant $tenant): void
     {
-        if (static::symlinkExists($publicPath)) {
+        if ($this->symlinkExists($publicPath)) {
             event(new RemovingStorageSymlink($tenant));
 
             app()->make('files')->delete($publicPath);

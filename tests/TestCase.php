@@ -6,17 +6,20 @@ namespace Stancl\Tenancy\Tests;
 
 use PDO;
 use Dotenv\Dotenv;
-use Stancl\Tenancy\Facades\Tenancy;
+use Stancl\Tenancy\Tenancy;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Redis;
-use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Facades\GlobalCache;
 use Stancl\Tenancy\TenancyServiceProvider;
-use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
-use Stancl\Tenancy\Bootstrappers\BroadcastTenancyBootstrapper;
+use Stancl\Tenancy\Facades\Tenancy as TenancyFacade;
 use Stancl\Tenancy\Bootstrappers\UrlTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\BroadcastTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
@@ -106,10 +109,11 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 '--realpath' => true,
                 '--force' => true,
             ],
-            'tenancy.bootstrappers.redis' => RedisTenancyBootstrapper::class, // todo1 change this to []? two tests in TenantDatabaseManagerTest are failing with that
-            'tenancy.bootstrappers.broadcast' => BroadcastTenancyBootstrapper::class, // todo1 change this to []? two tests in TenantDatabaseManagerTest are failing with that
-            'tenancy.bootstrappers.mail' => MailTenancyBootstrapper::class,
-            'tenancy.bootstrappers.url' => UrlTenancyBootstrapper::class,
+            'tenancy.bootstrappers' => [
+                DatabaseTenancyBootstrapper::class,
+                FilesystemTenancyBootstrapper::class,
+                UrlTenancyBootstrapper::class,
+            ],
             'queue.connections.central' => [
                 'driver' => 'sync',
                 'central' => true,
@@ -135,7 +139,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     protected function getPackageAliases($app)
     {
         return [
-            'Tenancy' => Tenancy::class,
+            'Tenancy' => TenancyFacade::class,
             'GlobalCache' => GlobalCache::class,
         ];
     }

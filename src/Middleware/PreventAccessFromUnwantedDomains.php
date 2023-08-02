@@ -7,11 +7,23 @@ namespace Stancl\Tenancy\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
-use Illuminate\Support\Facades\Route as Router;
+use Stancl\Tenancy\Concerns\UsableWithEarlyIdentification;
+use Stancl\Tenancy\Context;
+use Stancl\Tenancy\RouteMode;
 
-// todo come up with a better name
+/**
+ * todo come up with a better name.
+ *
+ * Prevents accessing central domains in the tenant context/tenant domains in the central context.
+ * The access isn't prevented if the request is trying to access a route flagged as 'universal',
+ * or if this middleware should be skipped.
+ *
+ * @see UsableWithEarlyIdentification – more info about the skipping part
+ */
 class PreventAccessFromUnwantedDomains
 {
+    use UsableWithEarlyIdentification;
+
     /**
      * Set this property if you want to customize the on-fail behavior.
      */
@@ -20,14 +32,14 @@ class PreventAccessFromUnwantedDomains
     /** @return \Illuminate\Http\Response|mixed */
     public function handle(Request $request, Closure $next): mixed
     {
-        /** @var Route $route */
-        $route = $request->route();
+        $route = tenancy()->getRoute($request);
+        $routeIsUniversal = tenancy()->routeHasMiddleware($route, 'universal') || config('tenancy.default_route_mode') === RouteMode::UNIVERSAL;
 
-        if ($this->routeHasMiddleware($route, 'universal')) {
+        if ($this->shouldBeSkipped($route) || $routeIsUniversal) {
             return $next($request);
         }
 
-        if (in_array($request->getHost(), config('tenancy.central_domains'), true)) {
+        if ($this->accessingTenantRouteFromCentralDomain($request, $route) || $this->accessingCentralRouteFromTenantDomain($request, $route)) {
             $abortRequest = static::$abortRequest ?? function () {
                 abort(404);
             };
@@ -38,24 +50,23 @@ class PreventAccessFromUnwantedDomains
         return $next($request);
     }
 
-    protected function routeHasMiddleware(Route $route, string $middleware): bool
+    protected function accessingTenantRouteFromCentralDomain(Request $request, Route $route): bool
     {
-        /** @var array $routeMiddleware */
-        $routeMiddleware = $route->middleware();
+        return tenancy()->getMiddlewareContext($route) === RouteMode::TENANT // Current route's middleware context is tenant
+            && $this->isCentralDomain($request); // The request comes from a domain that IS present in the configured `tenancy.central_domains`
+    }
 
-        if (in_array($middleware, $routeMiddleware, true)) {
-            return true;
-        }
+    protected function accessingCentralRouteFromTenantDomain(Request $request, Route $route): bool
+    {
+        return tenancy()->getMiddlewareContext($route) === RouteMode::CENTRAL // Current route's middleware context is central
+            && ! $this->isCentralDomain($request); // The request comes from a domain that ISN'T present in the configured `tenancy.central_domains`
+    }
 
-        // Loop one level deep and check if the route's middleware
-        // groups have the searched middleware group inside them
-        $middlewareGroups = Router::getMiddlewareGroups();
-        foreach ($route->gatherMiddleware() as $inner) {
-            if (! $inner instanceof Closure && isset($middlewareGroups[$inner]) && in_array($middleware, $middlewareGroups[$inner], true)) {
-                return true;
-            }
-        }
-
-        return false;
+    /**
+     * Check if the request's host name is present in the configured `tenancy.central_domains`.
+     */
+    protected function isCentralDomain(Request $request): bool
+    {
+        return in_array($request->getHost(), config('tenancy.central_domains'), true);
     }
 }

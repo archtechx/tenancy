@@ -37,7 +37,7 @@ test('create storage symlinks action works', function() {
 
     $this->assertDirectoryDoesNotExist($publicPath = public_path("public-$tenantKey"));
 
-    CreateStorageSymlinksAction::handle($tenant);
+    (new CreateStorageSymlinksAction)($tenant);
 
     $this->assertDirectoryExists($publicPath);
     $this->assertEquals(storage_path("app/public/"), readlink($publicPath));
@@ -59,11 +59,11 @@ test('remove storage symlinks action works', function() {
 
     tenancy()->initialize($tenant);
 
-    CreateStorageSymlinksAction::handle($tenant);
+    (new CreateStorageSymlinksAction)($tenant);
 
     $this->assertDirectoryExists($publicPath = public_path("public-$tenantKey"));
 
-    RemoveStorageSymlinksAction::handle($tenant);
+    (new RemoveStorageSymlinksAction)($tenant);
 
     $this->assertDirectoryDoesNotExist($publicPath);
 });

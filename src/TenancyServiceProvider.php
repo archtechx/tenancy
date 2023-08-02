@@ -6,10 +6,14 @@ namespace Stancl\Tenancy;
 
 use Illuminate\Cache\CacheManager;
 use Illuminate\Database\Console\Migrations\FreshCommand;
+use Illuminate\Routing\Events\RouteMatched;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Domain;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Listeners\ForgetTenantParameter;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 
 class TenancyServiceProvider extends ServiceProvider
@@ -133,5 +137,11 @@ class TenancyServiceProvider extends ServiceProvider
 
             return $instance;
         });
+
+        Route::middlewareGroup('universal', []);
+        Route::middlewareGroup('tenant', []);
+        Route::middlewareGroup('central', []);
+
+        Event::listen(RouteMatched::class, ForgetTenantParameter::class);
     }
 }

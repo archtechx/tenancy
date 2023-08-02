@@ -6,17 +6,25 @@ namespace Stancl\Tenancy\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
+use Stancl\Tenancy\Concerns\UsableWithEarlyIdentification;
+use Stancl\Tenancy\Concerns\UsableWithUniversalRoutes;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Events\InitializingTenancy;
 use Stancl\Tenancy\Exceptions\RouteIsMissingTenantParameterException;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
+use Stancl\Tenancy\RouteMode;
 use Stancl\Tenancy\Tenancy;
+use Stancl\Tenancy\TenancyUrlGenerator;
 
-class InitializeTenancyByPath extends IdentificationMiddleware
+/**
+ * @see Stancl\Tenancy\Listeners\ForgetTenantParameter
+ */
+class InitializeTenancyByPath extends IdentificationMiddleware implements UsableWithUniversalRoutes
 {
+    use UsableWithEarlyIdentification;
+
     public static ?Closure $onFail = null;
 
     public function __construct(
@@ -28,12 +36,19 @@ class InitializeTenancyByPath extends IdentificationMiddleware
     /** @return \Illuminate\Http\Response|mixed */
     public function handle(Request $request, Closure $next): mixed
     {
-        $route = $this->route($request);
+        $route = tenancy()->getRoute($request);
 
-        // Only initialize tenancy if tenant is the first parameter
+        if ($this->shouldBeSkipped($route)) {
+            return $next($request);
+        }
+
+        // Used with *route-level* identification, takes precedence over what may have been configured for global stack middleware
+        TenancyUrlGenerator::$prefixRouteNames = true;
+
+        // Only initialize tenancy if the route has the tenant parameter.
         // We don't want to initialize tenancy if the tenant is
         // simply injected into some route controller action.
-        if ($route->parameterNames()[0] === PathTenantResolver::tenantParameterName()) {
+        if (in_array(PathTenantResolver::tenantParameterName(), $route->parameterNames())) {
             $this->setDefaultTenantForRouteParametersWhenInitializingTenancy();
 
             return $this->initializeTenancy(
@@ -46,25 +61,6 @@ class InitializeTenancyByPath extends IdentificationMiddleware
         }
     }
 
-    protected function route(Request $request): Route
-    {
-        /** @var ?Route $route */
-        $route = $request->route();
-
-        if (! $route) {
-            // Create a fake $route instance that has enough information for this middleware's needs
-            $route = new Route($request->method(), $request->getUri(), []);
-            /**
-             * getPathInfo() returns the path except the root domain.
-             * We fetch the first parameter because tenant parameter is *always* first.
-             */
-            $route->parameters[PathTenantResolver::tenantParameterName()] = explode('/', ltrim($request->getPathInfo(), '/'))[0];
-            $route->parameterNames[] = PathTenantResolver::tenantParameterName();
-        }
-
-        return $route;
-    }
-
     protected function setDefaultTenantForRouteParametersWhenInitializingTenancy(): void
     {
         Event::listen(InitializingTenancy::class, function (InitializingTenancy $event) {
@@ -75,5 +71,20 @@ class InitializeTenancyByPath extends IdentificationMiddleware
                 PathTenantResolver::tenantParameterName() => $tenant->getTenantKey(),
             ]);
         });
+    }
+
+    /**
+     * Path identification request has a tenant if the middleware context is tenant.
+     *
+     * With path identification, we can just check the MW context because we're re-registering the universal routes,
+     * and the routes are flagged with the 'tenant' MW group (= their MW context is tenant).
+     *
+     * With other identification middleware, we have to determine the context differently because we only have one
+     * truly universal route available ('truly universal' because with path identification, applying 'universal' to a route just means that
+     * it should get re-registered, whereas with other ID MW, it means that the route you apply the 'universal' flag to will be accessible in both contexts).
+     */
+    public function requestHasTenant(Request $request): bool
+    {
+        return tenancy()->getMiddlewareContext(tenancy()->getRoute($request)) === RouteMode::TENANT;
     }
 }

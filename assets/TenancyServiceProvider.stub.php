@@ -10,8 +10,12 @@ use Stancl\Tenancy\Listeners;
 use Stancl\Tenancy\Middleware;
 use Stancl\JobPipeline\JobPipeline;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Stancl\Tenancy\TenancyUrlGenerator;
+use Illuminate\Support\Facades\Route as RouteFacade;
+use Stancl\Tenancy\Actions\CloneRoutesAsTenant;
+use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
+use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 
 class TenancyServiceProvider extends ServiceProvider
 {
@@ -145,6 +149,54 @@ class TenancyServiceProvider extends ServiceProvider
 
         $this->makeTenancyMiddlewareHighestPriority();
         $this->overrideUrlInTenantContext();
+
+        /**
+         * To make Livewire v3 work with Tenancy, make the update route universal.
+         *
+         * Livewire::setUpdateRoute(function ($handle) {
+         *     return Route::post('/livewire/update', $handle)->middleware(['web', 'universal']);
+         * });
+         *
+         * If using domain identification, also make the script route universal.
+         *
+         * app(FrontendAssets::class)->setScriptRoute(function ($handle) {
+         *    return Route::get('/livewire/livewire.js', $handle)->middleware(['universal']);
+         * });
+         */
+
+        if (InitializeTenancyByRequestData::inGlobalStack()) {
+            TenancyUrlGenerator::$prefixRouteNames = false;
+        }
+
+        if (InitializeTenancyByPath::inGlobalStack()) {
+            TenancyUrlGenerator::$prefixRouteNames = true;
+
+            /** @var CloneRoutesAsTenant $reregisterRoutes */
+            $reregisterRoutes = app(CloneRoutesAsTenant::class);
+
+            /**
+             * You can provide a closure for re-registering a specific route, e.g.:
+             * $reregisterRoutes->reregisterUsing('welcome', function () {
+             *      Route::get('/tenant-welcome', fn () => 'Current tenant: ' . tenant()->getTenantKey())
+             *          ->middleware(['universal', InitializeTenancyByPath::class])
+             *          ->name('tenant.welcome');
+             * });
+             *
+             * To make Livewire v2 (2.12.2+) work with kernel path identification,
+             * use this closure to override the livewire.message-localized route:
+             *
+             * $reregisterRoutes->reregisterUsing('livewire.message-localized', function (Route $route) {
+             *     $route->setUri(str($route->uri())->replaceFirst('locale', $tenantParameter = PathTenantResolver::tenantParameterName()));
+             *     $route->parameterNames[0] = $tenantParameter;
+             *     $route->middleware('tenant');
+             * });
+             *
+             * To see the default behavior of re-registering the universal routes, check out the reregisterRoute() method in ReregisterRoutesAsTenant.
+             * @see CloneRoutesAsTenant
+             */
+
+            $reregisterRoutes->handle();
+        }
     }
 
     protected function bootEvents()
@@ -163,14 +215,15 @@ class TenancyServiceProvider extends ServiceProvider
     protected function mapRoutes()
     {
         if (file_exists(base_path('routes/tenant.php'))) {
-            Route::namespace(static::$controllerNamespace)
+            RouteFacade::namespace(static::$controllerNamespace)
+                ->middleware('tenant')
                 ->group(base_path('routes/tenant.php'));
         }
     }
 
     protected function makeTenancyMiddlewareHighestPriority()
     {
-        // PreventAccessFromCentralDomains has even higher priority than the identification middleware
+        // PreventAccessFromUnwantedDomains has even higher priority than the identification middleware
         $tenancyMiddleware = array_merge([Middleware\PreventAccessFromUnwantedDomains::class], config('tenancy.identification.middleware'));
 
         foreach (array_reverse($tenancyMiddleware) as $middleware) {

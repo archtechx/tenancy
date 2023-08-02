@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByRequestDataException;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
@@ -13,19 +14,16 @@ beforeEach(function () {
         ],
     ]);
 
-    Route::middleware(InitializeTenancyByRequestData::class)->get('/test', function () {
+    InitializeTenancyByRequestData::$header = 'X-Tenant';
+    InitializeTenancyByRequestData::$cookie = 'X-Tenant';
+    InitializeTenancyByRequestData::$queryParameter = 'tenant';
+
+    Route::middleware(['tenant', InitializeTenancyByRequestData::class])->get('/test', function () {
         return 'Tenant id: ' . tenant('id');
     });
 });
 
-afterEach(function () {
-    InitializeTenancyByRequestData::$header = 'X-Tenant';
-    InitializeTenancyByRequestData::$cookie = 'X-Tenant';
-    InitializeTenancyByRequestData::$queryParameter = 'tenant';
-});
-
 test('header identification works', function () {
-    InitializeTenancyByRequestData::$header = 'X-Tenant';
     $tenant = Tenant::create();
 
     $this
@@ -36,8 +34,6 @@ test('header identification works', function () {
 });
 
 test('query parameter identification works', function () {
-    InitializeTenancyByRequestData::$queryParameter = 'tenant';
-
     $tenant = Tenant::create();
 
     $this
@@ -47,12 +43,16 @@ test('query parameter identification works', function () {
 });
 
 test('cookie identification works', function () {
-    InitializeTenancyByRequestData::$cookie = 'X-Tenant';
     $tenant = Tenant::create();
 
     $this
         ->withoutExceptionHandling()
         ->withUnencryptedCookie('X-Tenant', $tenant->id)
-        ->get('test',)
+        ->get('test')
         ->assertSee($tenant->id);
+});
+
+test('middleware throws exception when tenant data is not provided in the request', function () {
+    pest()->expectException(TenantCouldNotBeIdentifiedByRequestDataException::class);
+    $this->withoutExceptionHandling()->get('test');
 });

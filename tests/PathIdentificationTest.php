@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Exceptions\RouteIsMissingTenantParameterException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByPathException;
@@ -10,6 +11,11 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
 beforeEach(function () {
+    // Make sure the tenant parameter is set to 'tenant'
+    config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_parameter_name' => 'tenant']);
+
+    InitializeTenancyByPath::$onFail = null;
+
     Route::group([
         'prefix' => '/{tenant}',
         'middleware' => InitializeTenancyByPath::class,
@@ -70,9 +76,11 @@ test('onfail logic can be customized', function () {
     pest()
         ->get('/acme/foo/abc/xyz')
         ->assertContent('foo');
+
+    InitializeTenancyByPath::$onFail = null;
 });
 
-test('an exception is thrown when the routes first parameter is not tenant', function () {
+test('an exception is thrown when the route does not have the tenant parameter', function () {
     Route::group([
         // 'prefix' => '/{tenant}', -- intentionally commented
         'middleware' => InitializeTenancyByPath::class,
@@ -139,4 +147,36 @@ test('tenant parameter is set for all routes as the default parameter once the t
 
     expect(route('baz', ['a' => 1, 'b' => 2]))->toBe('http://localhost/acme/baz/1/2'); // assert the full route string
     pest()->get(route('baz', ['a' => 1, 'b' => 2]))->assertOk(); // Assert route don't need tenant parameter
+});
+
+test('tenant parameter does not have to be the first in order to initialize tenancy', function() {
+    Tenant::create([
+        'id' => $tenantId = 'another-tenant',
+    ]);
+
+    Route::get('/another/route/{a}/{tenant}/{b}', function ($a, $b) {
+        return "$a + $b + " . tenant()->getTenantKey();
+    })->middleware(InitializeTenancyByPath::class)->name('tenant-parameter-is-second');
+
+    pest()->get("/another/route/foo/$tenantId/bar")->assertSee("foo + bar + $tenantId");
+});
+
+test('central route can have a parameter with the same name as the tenant parameter', function() {
+    config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_parameter_name' => 'team']);
+    $tenantKey = Tenant::create()->getTenantKey();
+
+    Route::get('/central/route/{team}/{a}/{b}', function ($team, $a, $b) {
+        return "$a + $b + $team";
+    })->middleware('central')->name('central-route');
+
+    pest()->get("/central/route/{$tenantKey}/foo/bar")->assertSee("foo + bar + {$tenantKey}");
+
+    expect(tenancy()->initialized)->toBeFalse();
+
+    // With kernel path identification
+    app(Kernel::class)->pushMiddleware(InitializeTenancyByPath::class);
+
+    pest()->get("/central/route/{$tenantKey}/foo/bar")->assertSee("foo + bar + {$tenantKey}");
+
+    expect(tenancy()->initialized)->toBeFalse();
 });

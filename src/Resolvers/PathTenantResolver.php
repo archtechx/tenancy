@@ -19,6 +19,7 @@ class PathTenantResolver extends Contracts\CachedTenantResolver
         $id = $route->parameter(static::tenantParameterName());
 
         if ($id) {
+            // Forget the tenant parameter so that we don't have to accept it in route action methods
             $route->forgetParameter(static::tenantParameterName());
 
             if ($tenant = tenancy()->find($id)) {
@@ -39,5 +40,10 @@ class PathTenantResolver extends Contracts\CachedTenantResolver
     public static function tenantParameterName(): string
     {
         return config('tenancy.identification.resolvers.' . static::class . '.tenant_parameter_name') ?? 'tenant';
+    }
+
+    public static function tenantRouteNamePrefix(): string
+    {
+        return config('tenancy.identification.resolvers.' . static::class . '.tenant_route_name_prefix') ?? static::tenantParameterName() . '.';
     }
 }
