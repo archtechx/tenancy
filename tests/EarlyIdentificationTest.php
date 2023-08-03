@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Arr;
 use Illuminate\Routing\Route;
-use Stancl\Tenancy\RouteMode;
+use Stancl\Tenancy\Enums\RouteMode;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Event;

@@ -8,8 +8,8 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Stancl\Tenancy\Concerns\UsableWithEarlyIdentification;
-use Stancl\Tenancy\Context;
-use Stancl\Tenancy\RouteMode;
+use Stancl\Tenancy\Enums\Context;
+use Stancl\Tenancy\Enums\RouteMode;
 
 /**
  * todo come up with a better name.

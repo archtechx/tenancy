@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy; // todo new Overrides namespace?
+namespace Stancl\Tenancy\Overrides;
 
 use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\Arr;
+use Stancl\Tenancy\PathIdentificationManager;
 
 /**
  * This class is used in place of the default UrlGenerator when UrlBindingBootstrapper is enabled.

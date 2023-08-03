@@ -6,8 +6,8 @@ namespace Stancl\Tenancy\Features;
 
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\Feature;
+use Stancl\Tenancy\Overrides\Vite;
 use Stancl\Tenancy\Tenancy;
-use Stancl\Tenancy\Vite;
 
 class ViteBundler implements Feature
 {

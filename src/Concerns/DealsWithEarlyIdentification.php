@@ -10,8 +10,8 @@ use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Route as RouteFacade;
-use Stancl\Tenancy\Context;
-use Stancl\Tenancy\RouteMode;
+use Stancl\Tenancy\Enums\Context;
+use Stancl\Tenancy\Enums\RouteMode;
 
 // todo1 Name – maybe DealsWithMiddlewareContexts?
 trait DealsWithEarlyIdentification

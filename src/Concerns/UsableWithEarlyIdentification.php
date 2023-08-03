@@ -7,11 +7,11 @@ namespace Stancl\Tenancy\Concerns;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
-use Stancl\Tenancy\Context;
+use Stancl\Tenancy\Enums\Context;
+use Stancl\Tenancy\Enums\RouteMode;
 use Stancl\Tenancy\Exceptions\MiddlewareNotUsableWithUniversalRoutesException;
 use Stancl\Tenancy\Middleware\IdentificationMiddleware;
 use Stancl\Tenancy\Middleware\PreventAccessFromUnwantedDomains;
-use Stancl\Tenancy\RouteMode;
 
 /**
  * This trait provides methods that check if a middleware's execution should be skipped.

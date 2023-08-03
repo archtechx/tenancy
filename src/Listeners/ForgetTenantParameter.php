@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Listeners;
 
 use Illuminate\Routing\Events\RouteMatched;
+use Stancl\Tenancy\Enums\RouteMode;
 use Stancl\Tenancy\PathIdentificationManager;
-use Stancl\Tenancy\RouteMode;
 
 /**
  * Remove the tenant parameter from the matched route when path identification is used globally.

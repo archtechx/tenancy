@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Illuminate\Support\Facades\Broadcast;
-use Stancl\Tenancy\TenancyBroadcastManager;
+use Stancl\Tenancy\Overrides\TenancyBroadcastManager;
 use Illuminate\Broadcasting\BroadcastManager;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;

@@ -20,7 +20,7 @@ use Stancl\Tenancy\Contracts\Tenant;
 class CacheTagsBootstrapper implements TenancyBootstrapper
 {
     protected ?CacheManager $originalCache = null;
-    public static string $cacheManagerWithTags = \Stancl\Tenancy\CacheManager::class;
+    public static string $cacheManagerWithTags = \Stancl\Tenancy\Overrides\CacheManager::class;
 
     public function __construct(
         protected Application $app

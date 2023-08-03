@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy;
+namespace Stancl\Tenancy\Overrides;
 
 use Illuminate\Foundation\Vite as BaseVite;
 
-class Vite extends BaseVite // todo move to a different directory in v4
+class Vite extends BaseVite
 {
     /**
      * Generate an asset path for the application.

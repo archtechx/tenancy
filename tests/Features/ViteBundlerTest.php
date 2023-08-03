@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Foundation\Vite;
 use Stancl\Tenancy\Tests\Etc\Tenant;
-use Stancl\Tenancy\Vite as StanclVite;
+use Stancl\Tenancy\Overrides\Vite as StanclVite;
 use Stancl\Tenancy\Features\ViteBundler;
 
 test('vite helper uses our custom class', function() {

@@ -9,9 +9,9 @@ use Illuminate\Http\Request;
 use Stancl\Tenancy\Concerns\UsableWithEarlyIdentification;
 use Stancl\Tenancy\Concerns\UsableWithUniversalRoutes;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByRequestDataException;
+use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
 use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
 use Stancl\Tenancy\Tenancy;
-use Stancl\Tenancy\TenancyUrlGenerator;
 
 class InitializeTenancyByRequestData extends IdentificationMiddleware implements UsableWithUniversalRoutes
 {

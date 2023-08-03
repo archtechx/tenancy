@@ -9,8 +9,8 @@ use Illuminate\Config\Repository;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Collection;
+use Stancl\Tenancy\Enums\RouteMode;
 use Stancl\Tenancy\PathIdentificationManager;
-use Stancl\Tenancy\RouteMode;
 
 /**
  * The CloneRoutesAsTenant action clones

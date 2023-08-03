@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use Stancl\Tenancy\Middleware;
 use Stancl\Tenancy\Resolvers;
-use Stancl\Tenancy\RouteMode;
+use Stancl\Tenancy\Enums\RouteMode;
 
 return [
     /**

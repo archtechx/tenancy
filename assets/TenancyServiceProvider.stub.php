@@ -11,7 +11,7 @@ use Stancl\Tenancy\Middleware;
 use Stancl\JobPipeline\JobPipeline;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
-use Stancl\Tenancy\TenancyUrlGenerator;
+use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
 use Illuminate\Support\Facades\Route as RouteFacade;
 use Stancl\Tenancy\Actions\CloneRoutesAsTenant;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;

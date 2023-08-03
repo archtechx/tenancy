@@ -11,12 +11,12 @@ use Illuminate\Support\Facades\URL;
 use Stancl\Tenancy\Concerns\UsableWithEarlyIdentification;
 use Stancl\Tenancy\Concerns\UsableWithUniversalRoutes;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Enums\RouteMode;
 use Stancl\Tenancy\Events\InitializingTenancy;
 use Stancl\Tenancy\Exceptions\RouteIsMissingTenantParameterException;
+use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
-use Stancl\Tenancy\RouteMode;
 use Stancl\Tenancy\Tenancy;
-use Stancl\Tenancy\TenancyUrlGenerator;
 
 /**
  * @see Stancl\Tenancy\Listeners\ForgetTenantParameter

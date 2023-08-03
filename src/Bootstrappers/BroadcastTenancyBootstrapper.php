@@ -10,7 +10,7 @@ use Illuminate\Contracts\Broadcasting\Broadcaster;
 use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\TenancyBroadcastManager;
+use Stancl\Tenancy\Overrides\TenancyBroadcastManager;
 
 class BroadcastTenancyBootstrapper implements TenancyBootstrapper
 {

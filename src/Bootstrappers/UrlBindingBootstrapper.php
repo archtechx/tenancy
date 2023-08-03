@@ -9,7 +9,7 @@ use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\Facades\URL;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\TenancyUrlGenerator;
+use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
 
 /**
  * Makes the app use TenancyUrlGenerator (instead of Illuminate\Routing\UrlGenerator) which:
