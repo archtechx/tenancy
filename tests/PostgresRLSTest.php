@@ -214,7 +214,7 @@ test('queries are correctly scoped using RLS', function() {
     expect(ScopedComment::all()->pluck('text'))
         ->toContain($post1Comment->text)
         ->not()->toContain($post2Comment->text);
-})->group('rls');
+});
 
 test('users created by CreatePostgresUserForTenant are only granted the permissions specified in the static property', function() {
     config(['tenancy.rls.user_permissions' => ['INSERT', 'SELECT', 'UPDATE']]);
