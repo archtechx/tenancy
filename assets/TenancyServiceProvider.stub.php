@@ -171,12 +171,12 @@ class TenancyServiceProvider extends ServiceProvider
         if (InitializeTenancyByPath::inGlobalStack()) {
             TenancyUrlGenerator::$prefixRouteNames = true;
 
-            /** @var CloneRoutesAsTenant $reregisterRoutes */
-            $reregisterRoutes = app(CloneRoutesAsTenant::class);
+            /** @var CloneRoutesAsTenant $cloneRoutes */
+            $cloneRoutes = app(CloneRoutesAsTenant::class);
 
             /**
-             * You can provide a closure for re-registering a specific route, e.g.:
-             * $reregisterRoutes->reregisterUsing('welcome', function () {
+             * You can provide a closure for cloning a specific route, e.g.:
+             * $cloneRoutes->cloneUsing('welcome', function () {
              *      Route::get('/tenant-welcome', fn () => 'Current tenant: ' . tenant()->getTenantKey())
              *          ->middleware(['universal', InitializeTenancyByPath::class])
              *          ->name('tenant.welcome');
@@ -185,17 +185,17 @@ class TenancyServiceProvider extends ServiceProvider
              * To make Livewire v2 (2.12.2+) work with kernel path identification,
              * use this closure to override the livewire.message-localized route:
              *
-             * $reregisterRoutes->reregisterUsing('livewire.message-localized', function (Route $route) {
+             * $cloneRoutes->cloneUsing('livewire.message-localized', function (Route $route) {
              *     $route->setUri(str($route->uri())->replaceFirst('locale', $tenantParameter = PathTenantResolver::tenantParameterName()));
              *     $route->parameterNames[0] = $tenantParameter;
              *     $route->middleware('tenant');
              * });
              *
-             * To see the default behavior of re-registering the universal routes, check out the reregisterRoute() method in ReregisterRoutesAsTenant.
+             * To see the default behavior of re-registering the universal routes, check out the cloneRoute() method in CloneRoutesAsTenant.
              * @see CloneRoutesAsTenant
              */
 
-            $reregisterRoutes->handle();
+            $cloneRoutes->handle();
         }
     }
 

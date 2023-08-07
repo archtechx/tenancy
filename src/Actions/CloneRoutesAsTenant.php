@@ -105,24 +105,27 @@ class CloneRoutesAsTenant
         }
 
         $routesAreUniversalByDefault = $this->config->get('tenancy.default_route_mode') === RouteMode::UNIVERSAL;
-        $routeHasIdentificationMiddleware = tenancy()->routeHasIdentificationMiddleware($route);
         $routeHasPathIdentification = PathIdentificationManager::pathIdentificationOnRoute($route);
         $pathIdentificationMiddlewareInGlobalStack = PathIdentificationManager::pathIdentificationInGlobalStack();
+        $routeHasNonPathIdentificationMiddleware = tenancy()->routeHasIdentificationMiddleware($route) && ! $routeHasPathIdentification;
 
         // Determine if the passed route should get cloned
         // The route should be cloned if it has path identification middleware
         // Or if the route doesn't have identification middleware and path identification middleware
         // Is not used globally or the routes are universal by default
-        $shouldCloneRoute = $routeHasPathIdentification ||
-            (! $routeHasIdentificationMiddleware && ($routesAreUniversalByDefault || $pathIdentificationMiddlewareInGlobalStack));
+        $shouldCloneRoute = ! $routeHasNonPathIdentificationMiddleware &&
+            ($routesAreUniversalByDefault || $routeHasPathIdentification || $pathIdentificationMiddlewareInGlobalStack);
 
         if ($shouldCloneRoute) {
             $newRoute = $this->createNewRoute($route);
-            $routeIsUniversal = tenancy()->routeHasMiddleware($newRoute, 'universal');
+            $routeConsideredUniversal = tenancy()->routeHasMiddleware($newRoute, 'universal') || $routesAreUniversalByDefault;
 
-            // Add the 'tenant' flag to the new route if the route is universal
-            // Or if it isn't universal and it doesn't have the identification middlware (= it isn't "flagged" as tenant by having the MW)
-            if ((! $routeHasPathIdentification && ! $routeIsUniversal) || $routeIsUniversal || $routesAreUniversalByDefault) {
+            if ($routeHasPathIdentification && ! $routeConsideredUniversal && ! tenancy()->routeHasMiddleware($newRoute, 'tenant')) {
+                // Skip adding tenant flag
+                // Non-universal routes with identification middleware are already considered tenant
+                // Also skip adding the flag if the route already has the flag
+                // So that the route only has the 'tenant' middleware group once
+            } else {
                 $newRoute->middleware('tenant');
             }
 

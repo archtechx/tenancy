@@ -321,7 +321,7 @@ test('ReregisterRoutesAsTenant registers prefixed duplicates of universal routes
     config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_parameter_name' => $tenantParameterName = 'team']);
     config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_route_name_prefix' => $tenantRouteNamePrefix = 'team-route.']);
 
-    // Test that routes with controllers as well as routes with closure actions get re-registered correctly
+    // Test that routes with controllers as well as routes with closure actions get cloned correctly
     $universalRoute = RouteFacade::get('/home', $useController ? Controller::class : fn () => tenant() ? 'Tenancy initialized.' : 'Tenancy not initialized.')->middleware($routeMiddleware)->name('home');
     $centralRoute = RouteFacade::get('/central', fn () => true)->name('central');
 
@@ -372,16 +372,16 @@ test('tenant resolver methods return the correct names for configured values', f
     ['tenant_route_name_prefix', 'prefix']
 ]);
 
-test('ReregisterRoutesAsTenant only re-registers routes with path identification by default', function () {
+test('CloneRoutesAsTenant only clones routes with path identification by default', function () {
     app(Kernel::class)->pushMiddleware(InitializeTenancyByPath::class);
 
     $currentRouteCount = fn () => count(RouteFacade::getRoutes()->get());
 
     $initialRouteCount = $currentRouteCount();
 
-    // Path identification is used globally, and this route doesn't use a specific identification middleware, meaning path identification is used and the route should get re-registered
+    // Path identification is used globally, and this route doesn't use a specific identification middleware, meaning path identification is used and the route should get cloned
     RouteFacade::get('/home', fn () => tenant() ? 'Tenancy initialized.' : 'Tenancy not initialized.')->middleware('universal')->name('home');
-    // The route uses a specific identification middleware other than InitializeTenancyByPath – the route shouldn't get re-registered
+    // The route uses a specific identification middleware other than InitializeTenancyByPath – the route shouldn't get cloned
     RouteFacade::get('/home-domain-id', fn () => tenant() ? 'Tenancy initialized.' : 'Tenancy not initialized.')->middleware(['universal', InitializeTenancyByDomain::class])->name('home-domain-id');
 
     expect($currentRouteCount())->toBe($newRouteCount = $initialRouteCount + 2);
@@ -391,7 +391,7 @@ test('ReregisterRoutesAsTenant only re-registers routes with path identification
 
     $reregisterRoutesAction->handle();
 
-    // Only one of the two routes gets re-registered
+    // Only one of the two routes gets cloned
     expect($currentRouteCount())->toBe($newRouteCount + 1);
 });
 
@@ -403,7 +403,7 @@ test('custom callbacks can be used for reregistering universal routes', function
     $currentRouteCount = fn () => count(RouteFacade::getRoutes()->get());
     $initialRouteCount = $currentRouteCount();
 
-    // Skip re-registering the 'home' route
+    // Skip cloning the 'home' route
     $reregisterRoutesAction->cloneUsing($routeName, function (Route $route) {
         return;
     })->handle();
@@ -427,7 +427,7 @@ test('reregistration of specific routes can get skipped', function () {
     $currentRouteCount = fn () => count(RouteFacade::getRoutes()->get());
     $initialRouteCount = $currentRouteCount();
 
-    // Skip re-registering the 'home' route
+    // Skip cloning the 'home' route
     $reregisterRoutesAction->skipRoute($routeName)->handle();
 
     // Expect route count to stay the same because the 'home' route re-registration gets skipped
