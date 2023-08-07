@@ -14,7 +14,7 @@ use Stancl\Tenancy\Database\TenantScope;
 use Illuminate\Database\Schema\Blueprint;
 use Stancl\Tenancy\Tests\Etc\ScopedComment;
 use Stancl\Tenancy\Events\TenancyInitialized;
-use Stancl\Tenancy\Database\Concerns\RlsModel;
+use Stancl\Tenancy\Database\Concerns\RLSModel;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Jobs\DeleteTenantsPostgresUser;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -113,25 +113,25 @@ test('postgres user can get deleted using the job', function() {
 test('correct rls policies get created', function () {
     $tenantModels = tenancy()->getTenantModels();
     $modelTables = collect($tenantModels)->map(fn (Model $model) => $model->getTable());
-    $getRlsPolicies = fn () => DB::select('select * from pg_policies');
-    $getRlsTables = fn () => $modelTables->map(fn ($table) => DB::select('select relname, relrowsecurity, relforcerowsecurity from pg_class WHERE oid = ' . "'$table'::regclass"))->collapse();
+    $getRLSPolicies = fn () => DB::select('select * from pg_policies');
+    $getRLSTables = fn () => $modelTables->map(fn ($table) => DB::select('select relname, relrowsecurity, relforcerowsecurity from pg_class WHERE oid = ' . "'$table'::regclass"))->collapse();
 
     // Drop all existing policies to check if the command creates policies for multiple tables
-    foreach ($getRlsPolicies() as $policy) {
+    foreach ($getRLSPolicies() as $policy) {
         DB::statement("DROP POLICY IF EXISTS {$policy->policyname} ON {$policy->tablename}");
     }
 
-    expect($getRlsPolicies())->toHaveCount(0);
+    expect($getRLSPolicies())->toHaveCount(0);
 
     pest()->artisan('tenants:create-rls-policies');
 
     // Check if all tables with policies are RLS protected (even the ones not directly related to the tenant)
     // Models related to tenant through some model must use the BelongsToPrimaryModel trait
     // For the command to create the policy correctly for the model's table
-    expect($getRlsPolicies())->toHaveCount(count($tenantModels)); // 2
-    expect($getRlsTables())->toHaveCount(count($tenantModels)); // 2
+    expect($getRLSPolicies())->toHaveCount(count($tenantModels)); // 2
+    expect($getRLSTables())->toHaveCount(count($tenantModels)); // 2
 
-    foreach ($getRlsTables() as $table) {
+    foreach ($getRLSTables() as $table) {
         expect($modelTables)->toContain($table->relname);
         expect($table->relforcerowsecurity)->toBeTrue();
     }
@@ -143,12 +143,12 @@ test('global scope is not applied when using rls', function () {
     expect(Post::hasGlobalScope(TenantScope::class))->toBeTrue();
 
     // Clear booted models to forget the global scope and see if it gets applied during the boot
-    RlsPost::clearBootedModels();
-    RlsPost::bootBelongsToTenant();
+    RLSPost::clearBootedModels();
+    RLSPost::bootBelongsToTenant();
 
-    // RlsPost implements the RlsModel interface
+    // RLSPost implements the RLSModel interface
     // The model shouldn't have the global scope
-    expect(RlsPost::hasGlobalScope(TenantScope::class))->toBeFalse();
+    expect(RLSPost::hasGlobalScope(TenantScope::class))->toBeFalse();
 
     config(['tenancy.rls.enabled' => true]);
 
@@ -172,17 +172,17 @@ test('queries are correctly scoped using RLS', function() {
     // Create posts and comments for both tenants
     tenancy()->initialize($tenant);
 
-    $post1 = RlsPost::create(['text' => 'first post']);
+    $post1 = RLSPost::create(['text' => 'first post']);
     $post1Comment = $post1->scoped_comments()->create(['text' => 'first comment']);
 
     tenancy()->initialize($secondTenant);
 
-    $post2 = RlsPost::create(['text' => 'second post']);
+    $post2 = RLSPost::create(['text' => 'second post']);
     $post2Comment = $post2->scoped_comments()->create(['text' => 'second comment']);
 
     tenancy()->initialize($tenant);
 
-    expect(RlsPost::all()->pluck('text'))
+    expect(RLSPost::all()->pluck('text'))
         ->toContain($post1->text)
         ->not()->toContain($post2->text);
 
@@ -192,7 +192,7 @@ test('queries are correctly scoped using RLS', function() {
 
     tenancy()->end();
 
-    expect(RlsPost::all()->pluck('text'))
+    expect(RLSPost::all()->pluck('text'))
         ->toContain($post1->text)
         ->toContain($post2->text);
 
@@ -202,19 +202,19 @@ test('queries are correctly scoped using RLS', function() {
 
     tenancy()->initialize($secondTenant);
 
-    expect(RlsPost::all()->pluck('text'))->toContain($post2->text)->not()->toContain($post1->text);
+    expect(RLSPost::all()->pluck('text'))->toContain($post2->text)->not()->toContain($post1->text);
     expect(ScopedComment::all()->pluck('text'))->toContain($post2Comment->text)->not()->toContain($post1Comment->text);
 
     tenancy()->initialize($tenant);
 
-    expect(RlsPost::all()->pluck('text'))
+    expect(RLSPost::all()->pluck('text'))
         ->toContain($post1->text)
         ->not()->toContain($post2->text);
 
     expect(ScopedComment::all()->pluck('text'))
         ->toContain($post1Comment->text)
         ->not()->toContain($post2Comment->text);
-});
+})->group('rls');
 
 test('users created by CreatePostgresUserForTenant are only granted the permissions specified in the static property', function() {
     config(['tenancy.rls.user_permissions' => ['INSERT', 'SELECT', 'UPDATE']]);
@@ -282,9 +282,9 @@ trait UsesUuidAsPrimaryKey
     }
 }
 /**
- * Post model that implements the RlsModel interface.
+ * Post model that implements the RLSModel interface.
  */
-class RlsPost extends Post implements RlsModel
+class RLSPost extends Post implements RLSModel
 {
     public function getForeignKey()
     {

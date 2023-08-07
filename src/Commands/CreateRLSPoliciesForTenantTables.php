@@ -24,7 +24,7 @@ class CreateRLSPoliciesForTenantTables extends Command
     {
         DB::transaction(function () {
             foreach (tenancy()->getTenantModels() as $model) {
-                $this->applyRlsOnModel($model);
+                $this->applyRLSOnModel($model);
             }
         });
 
@@ -34,7 +34,7 @@ class CreateRLSPoliciesForTenantTables extends Command
     /**
      * Make model use RLS if it belongs to a tenant directly, or through a parent primary model.
      */
-    protected function applyRlsOnModel(Model $model): void
+    protected function applyRLSOnModel(Model $model): void
     {
         $table = $model->getTable();
         $tenantKeyName = tenancy()->tenantKeyColumn();
@@ -44,7 +44,7 @@ class CreateRLSPoliciesForTenantTables extends Command
         if (tenancy()->modelBelongsToTenant($model)) {
             DB::statement("CREATE POLICY {$table}_rls_policy ON {$table} USING ({$tenantKeyName}::TEXT = current_user);");
 
-            $this->enableRls($table);
+            $this->enableRLS($table);
 
             $this->components->info("Created RLS policy for table '$table'");
         }
@@ -69,13 +69,13 @@ class CreateRLSPoliciesForTenantTables extends Command
 
             DB::statement($formattedStatement);
 
-            $this->enableRls($table);
+            $this->enableRLS($table);
 
             $this->components->info("Created RLS policy for table '$table'");
         }
     }
 
-    protected function enableRls(string $table): void
+    protected function enableRLS(string $table): void
     {
         $formattedStatement = DB::select("SELECT format('ALTER TABLE %I', '$table')")[0]->format;
 
