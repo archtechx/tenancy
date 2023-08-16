@@ -298,6 +298,15 @@ test('files can get fetched using the storage url', function() {
     $parsedUrl = Str::of($url)->after($hostname);
 
     expect(file_get_contents(public_path($parsedUrl)))->toBe($tenantKey);
+
+    // Central
+    tenancy()->end();
+    Storage::disk('public')->put($centralFileName = 'central.txt', $centralFileContent = 'central');
+
+    pest()->artisan('storage:link');
+    $url = Storage::disk('public')->url($centralFileName);
+
+    expect(file_get_contents(public_path($url)))->toBe($centralFileContent);
 });
 
 test('create and delete storage symlinks jobs work', function() {

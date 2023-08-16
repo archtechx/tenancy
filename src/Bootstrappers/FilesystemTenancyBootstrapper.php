@@ -109,10 +109,10 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             $diskConfig = $this->app['config']['filesystems.disks.' . $diskName];
 
             // Storage Url
-            $url = $this->originalPaths['disks.url.' . $diskName] ?? null;
+            $url = data_get($this->originalPaths, "disks.url.$diskName");
 
             if ($diskConfig['driver'] === 'local' && ! is_null($url)) {
-                $$this->app['config']["filesystems.disks.$diskName.url"] = $url;
+                $this->app['config']["filesystems.disks.$diskName.url"] = $url;
             }
         }
     }
