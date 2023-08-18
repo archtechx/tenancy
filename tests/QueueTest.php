@@ -110,6 +110,8 @@ test('tenancy is initialized inside queues', function (bool $shouldEndTenancy) {
 
     pest()->artisan('queue:work --once');
 
+    expect(! tenancy()->initialized)->toBe($shouldEndTenancy);
+
     expect(DB::connection('central')->table('failed_jobs')->count())->toBe(0);
 
     expect(pest()->valuestore->get('tenant_id'))->toBe('The current tenant id is: ' . $tenant->id);
@@ -117,7 +119,7 @@ test('tenancy is initialized inside queues', function (bool $shouldEndTenancy) {
     $tenant->run(function () use ($user) {
         expect($user->fresh()->name)->toBe('Bar');
     });
-})->with([true, false]);;
+})->with([true, false]);
 
 test('tenancy is initialized when retrying jobs', function (bool $shouldEndTenancy) {
     withFailedJobs();
@@ -144,11 +146,20 @@ test('tenancy is initialized when retrying jobs', function (bool $shouldEndTenan
 
     pest()->artisan('queue:work --once');
 
+    expect(! tenancy()->initialized)->toBe($shouldEndTenancy);
+
     expect(DB::connection('central')->table('failed_jobs')->count())->toBe(1);
     expect(pest()->valuestore->get('tenant_id'))->toBeNull(); // job failed
 
     pest()->artisan('queue:retry all');
+
+    if ($shouldEndTenancy) {
+        tenancy()->end();
+    }
+
     pest()->artisan('queue:work --once');
+
+    expect(! tenancy()->initialized)->toBe($shouldEndTenancy);
 
     expect(DB::connection('central')->table('failed_jobs')->count())->toBe(0);
 
@@ -180,6 +191,22 @@ test('the tenant used by the job doesnt change when the current tenant changes',
     pest()->artisan('queue:work --once');
 
     expect(pest()->valuestore->get('tenant_id'))->toBe('The current tenant id is: acme');
+});
+
+test('tenant connections do not persist after tenant jobs get processed', function() {
+    withTenantDatabases();
+
+    $tenant = Tenant::create();
+
+    tenancy()->initialize($tenant);
+
+    dispatch(new TestJob(pest()->valuestore));
+
+    tenancy()->end();
+
+    pest()->artisan('queue:work --once');
+
+    expect(collect(DB::select('SHOW FULL PROCESSLIST'))->pluck('db'))->not()->toContain($tenant->database()->getName());
 });
 
 function createValueStore(): void
