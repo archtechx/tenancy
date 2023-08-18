@@ -6,6 +6,7 @@ namespace Stancl\Tenancy\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Stancl\Tenancy\Contracts\TenantResolver;
 use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
 use Stancl\Tenancy\Tenancy;
 
