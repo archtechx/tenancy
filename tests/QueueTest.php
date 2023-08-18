@@ -159,6 +159,7 @@ test('tenancy is initialized when retrying jobs', function (bool $shouldEndTenan
     });
 })->with([true, false]);
 
+// todo0 this test appears to be affected by race conditions/similar
 test('the tenant used by the job doesnt change when the current tenant changes', function () {
     withTenantDatabases();
 

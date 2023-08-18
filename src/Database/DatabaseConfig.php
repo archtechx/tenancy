@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Database;
 
 use Closure;
-use Illuminate\Database;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;

@@ -40,6 +40,8 @@ services:
             test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
             timeout: 10s
             retries: 10
+        tmpfs:
+            - /var/lib/mysql
     mysql2:
         image: mysql:5.7
         environment:
@@ -51,6 +53,8 @@ services:
             test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
             timeout: 10s
             retries: 10
+        tmpfs:
+            - /var/lib/mysql
     postgres:
         image: postgres:11
         environment:
@@ -62,6 +66,8 @@ services:
             interval: 10s
             timeout: 5s
             retries: 5
+        tmpfs:
+            - /var/lib/postgresql/data
     redis:
         image: redis:alpine
         healthcheck:
