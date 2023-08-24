@@ -141,4 +141,17 @@ class TenantAssetTest extends TestCase
         $response->assertNotFound();
     }
 
+    public function test_asset_controller_returns_a_403_when_an_invalid_path_is_provided()
+    {
+        TenantAssetsController::$tenancyMiddleware = InitializeTenancyByRequestData::class;
+
+        $tenant = Tenant::create();
+
+        tenancy()->initialize($tenant);
+        $response = $this->get(tenant_asset('../foo.txt'), [
+            'X-Tenant' => $tenant->id,
+        ]);
+
+        $response->assertForbidden();
+    }
 }
