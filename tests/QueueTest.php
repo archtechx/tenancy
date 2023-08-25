@@ -159,28 +159,23 @@ test('tenancy is initialized when retrying jobs', function (bool $shouldEndTenan
     });
 })->with([true, false]);
 
-// todo0 this test appears to be affected by race conditions/similar
 test('the tenant used by the job doesnt change when the current tenant changes', function () {
     withTenantDatabases();
 
-    $tenant1 = Tenant::create([
-        'id' => 'acme',
-    ]);
+    $tenant1 = Tenant::create();
 
     tenancy()->initialize($tenant1);
 
     dispatch(new TestJob(pest()->valuestore));
 
-    $tenant2 = Tenant::create([
-        'id' => 'foobar',
-    ]);
+    $tenant2 = Tenant::create();
 
     tenancy()->initialize($tenant2);
 
     expect(pest()->valuestore->has('tenant_id'))->toBeFalse();
     pest()->artisan('queue:work --once');
 
-    expect(pest()->valuestore->get('tenant_id'))->toBe('The current tenant id is: acme');
+    expect(pest()->valuestore->get('tenant_id'))->toBe('The current tenant id is: ' . $tenant1->getTenantKey());
 });
 
 function createValueStore(): void
