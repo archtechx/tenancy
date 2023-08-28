@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Actions;
 
 use Closure;
-use Illuminate\Config\Repository;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Collection;
@@ -42,30 +41,16 @@ class CloneRoutesAsTenant
 
     public function __construct(
         protected Router $router,
-        protected Repository $config,
     ) {
     }
 
     public function handle(): void
     {
-        $tenantParameterName = PathIdentificationManager::getTenantParameterName();
-        $routePrefix = '/{' . $tenantParameterName . '}';
+        $this->router
+            ->prefix('/{' . PathIdentificationManager::getTenantParameterName() . '}/')
+            ->group(fn () => $this->getRoutesToClone()->each(fn (Route $route) => $this->cloneRoute($route)));
 
-        /** @var Collection<Route> $routesToClone Only clone non-skipped routes without the tenant parameter. */
-        $routesToClone = collect($this->router->getRoutes()->get())->filter(function (Route $route) use ($tenantParameterName) {
-            return ! (in_array($tenantParameterName, $route->parameterNames()) || in_array($route->getName(), $this->skippedRoutes));
-        });
-
-        if ($this->config->get('tenancy.default_route_mode') !== RouteMode::UNIVERSAL) {
-            // Only clone routes with route-level path identification and universal routes
-            $routesToClone = $routesToClone->where(function (Route $route) {
-                $routeIsUniversal = tenancy()->routeHasMiddleware($route, 'universal');
-
-                return PathIdentificationManager::pathIdentificationOnRoute($route) || $routeIsUniversal;
-            });
-        }
-
-        $this->router->prefix($routePrefix)->group(fn () => $routesToClone->each(fn (Route $route) => $this->cloneRoute($route)));
+        $this->router->getRoutes()->refreshNameLookups();
     }
 
     /**
@@ -88,6 +73,56 @@ class CloneRoutesAsTenant
         return $this;
     }
 
+    protected function getRoutesToClone(): Collection
+    {
+        $tenantParameterName = PathIdentificationManager::getTenantParameterName();
+
+        /**
+         * Clone all routes that:
+         * - don't have the tenant parameter
+         * - aren't in the $skippedRoutes array
+         * - are using path identification (kernel or route-level).
+         *
+         * Non-universal cloned routes will only be available in the tenant context,
+         * universal routes will be available in both contexts.
+         */
+        return collect($this->router->getRoutes()->get())->filter(function (Route $route) use ($tenantParameterName) {
+            if (in_array($tenantParameterName, $route->parameterNames(), true) || in_array($route->getName(), $this->skippedRoutes, true)) {
+                return false;
+            }
+
+            $routeHasPathIdentificationMiddleware = PathIdentificationManager::pathIdentificationOnRoute($route);
+            $pathIdentificationMiddlewareInGlobalStack = PathIdentificationManager::pathIdentificationInGlobalStack();
+            $routeHasNonPathIdentificationMiddleware = tenancy()->routeHasIdentificationMiddleware($route) && ! $routeHasPathIdentificationMiddleware;
+
+            /**
+             * The route should get cloned if:
+             * - it has route-level path identification middleware, OR
+             * - it uses kernel path identification (it doesn't have any route-level identification middleware) and the route is tenant or universal.
+             *
+             * The route is considered tenant if:
+             * - it's flagged as tenant, OR
+             * - it's not flagged as tenant or universal, but it has the identification middleware
+             *
+             * The route is considered universal if it's flagged as universal, and it doesn't have the tenant flag
+             * (it's still considered universal if it has route-level path identification middleware + the universal flag).
+             *
+             * If the route isn't flagged, the context is determined using the default route mode.
+             */
+            $pathIdentificationUsed = (! $routeHasNonPathIdentificationMiddleware) &&
+                ($routeHasPathIdentificationMiddleware || $pathIdentificationMiddlewareInGlobalStack);
+
+            $routeMode = tenancy()->getRouteMode($route);
+            $routeIsUniversalOrTenant = $routeMode === RouteMode::TENANT || $routeMode === RouteMode::UNIVERSAL;
+
+            if ($pathIdentificationUsed && $routeIsUniversalOrTenant) {
+                return true;
+            }
+
+            return false;
+        });
+    }
+
     /**
      * Clone a route using a callback specified in the $cloneRouteUsing property (using the cloneUsing method).
      * If there's no callback specified for the route, use the default way of cloning routes.
@@ -104,33 +139,13 @@ class CloneRoutesAsTenant
             return;
         }
 
-        $routesAreUniversalByDefault = $this->config->get('tenancy.default_route_mode') === RouteMode::UNIVERSAL;
-        $routeHasPathIdentification = PathIdentificationManager::pathIdentificationOnRoute($route);
-        $pathIdentificationMiddlewareInGlobalStack = PathIdentificationManager::pathIdentificationInGlobalStack();
-        $routeHasNonPathIdentificationMiddleware = tenancy()->routeHasIdentificationMiddleware($route) && ! $routeHasPathIdentification;
+        $newRoute = $this->createNewRoute($route);
 
-        // Determine if the passed route should get cloned
-        // The route should be cloned if it has path identification middleware
-        // Or if the route doesn't have identification middleware and path identification middleware
-        // Is not used globally or the routes are universal by default
-        $shouldCloneRoute = ! $routeHasNonPathIdentificationMiddleware &&
-            ($routesAreUniversalByDefault || $routeHasPathIdentification || $pathIdentificationMiddlewareInGlobalStack);
-
-        if ($shouldCloneRoute) {
-            $newRoute = $this->createNewRoute($route);
-            $routeConsideredUniversal = tenancy()->routeHasMiddleware($newRoute, 'universal') || $routesAreUniversalByDefault;
-
-            if ($routeHasPathIdentification && ! $routeConsideredUniversal && ! tenancy()->routeHasMiddleware($newRoute, 'tenant')) {
-                // Skip adding tenant flag
-                // Non-universal routes with identification middleware are already considered tenant
-                // Also skip adding the flag if the route already has the flag
-                // So that the route only has the 'tenant' middleware group once
-            } else {
-                $newRoute->middleware('tenant');
-            }
-
-            $this->copyMiscRouteProperties($route, $newRoute);
+        if (! tenancy()->routeHasMiddleware($route, 'tenant')) {
+            $newRoute->middleware('tenant');
         }
+
+        $this->copyMiscRouteProperties($route, $newRoute);
     }
 
     protected function createNewRoute(Route $route): Route

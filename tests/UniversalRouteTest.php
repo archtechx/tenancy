@@ -169,10 +169,10 @@ test('a route can be universal using path identification', function (array $rout
             : 'Tenancy is not initialized.';
     })->middleware($routeMiddleware);
 
-    /** @var CloneRoutesAsTenant $reregisterRoutesAction */
-    $reregisterRoutesAction = app(CloneRoutesAsTenant::class);
+    /** @var CloneRoutesAsTenant $cloneRoutesAction */
+    $cloneRoutesAction = app(CloneRoutesAsTenant::class);
 
-    $reregisterRoutesAction->handle();
+    $cloneRoutesAction->handle();
 
     $tenantKey = Tenant::create()->getTenantKey();
 
@@ -234,10 +234,10 @@ test('correct exception is thrown when route is universal and tenant could not b
 
     RouteFacade::get('/foo', fn () => tenant() ? 'Tenancy is initialized.' : 'Tenancy is not initialized.')->middleware($routeMiddleware)->name('foo');
 
-    /** @var CloneRoutesAsTenant $reregisterRoutesAction */
-    $reregisterRoutesAction = app(CloneRoutesAsTenant::class);
+    /** @var CloneRoutesAsTenant $cloneRoutesAction */
+    $cloneRoutesAction = app(CloneRoutesAsTenant::class);
 
-    $reregisterRoutesAction->handle();
+    $cloneRoutesAction->handle();
 
     pest()->expectException(TenantCouldNotBeIdentifiedByPathException::class);
     $this->withoutExceptionHandling()->get('http://localhost/non_existent/foo');
@@ -309,7 +309,7 @@ test('a route can be flagged as universal in both route modes', function (RouteM
     'default to central routes' => RouteMode::CENTRAL,
 ]);
 
-test('ReregisterRoutesAsTenant registers prefixed duplicates of universal routes correctly', function (bool $kernelIdentification, bool $useController) {
+test('CloneRoutesAsTenant registers prefixed duplicates of universal routes correctly', function (bool $kernelIdentification, bool $useController) {
     $routeMiddleware = ['universal'];
 
     if ($kernelIdentification) {
@@ -328,10 +328,10 @@ test('ReregisterRoutesAsTenant registers prefixed duplicates of universal routes
     expect($routes = RouteFacade::getRoutes()->get())->toContain($universalRoute);
     expect($routes)->toContain($centralRoute);
 
-    /** @var CloneRoutesAsTenant $reregisterRoutesAction */
-    $reregisterRoutesAction = app(CloneRoutesAsTenant::class);
+    /** @var CloneRoutesAsTenant $cloneRoutesAction */
+    $cloneRoutesAction = app(CloneRoutesAsTenant::class);
 
-    $reregisterRoutesAction->handle();
+    $cloneRoutesAction->handle();
 
     expect($routesAfterRegisteringDuplicates = RouteFacade::getRoutes()->get())
         ->toContain($universalRoute)
@@ -340,6 +340,7 @@ test('ReregisterRoutesAsTenant registers prefixed duplicates of universal routes
     $newRoute = collect($routesAfterRegisteringDuplicates)->filter(fn ($route) => ! in_array($route, $routes))->first();
 
     expect($newRoute->uri())->toBe('{' . $tenantParameterName . '}' . '/' . $universalRoute->uri());
+
     expect(tenancy()->getRouteMiddleware($newRoute))->toBe(array_merge(tenancy()->getRouteMiddleware($universalRoute), ['tenant']));
 
     $tenant = Tenant::create();
@@ -386,51 +387,55 @@ test('CloneRoutesAsTenant only clones routes with path identification by default
 
     expect($currentRouteCount())->toBe($newRouteCount = $initialRouteCount + 2);
 
-    /** @var CloneRoutesAsTenant $reregisterRoutesAction */
-    $reregisterRoutesAction = app(CloneRoutesAsTenant::class);
+    /** @var CloneRoutesAsTenant $cloneRoutesAction */
+    $cloneRoutesAction = app(CloneRoutesAsTenant::class);
 
-    $reregisterRoutesAction->handle();
+    $cloneRoutesAction->handle();
 
     // Only one of the two routes gets cloned
     expect($currentRouteCount())->toBe($newRouteCount + 1);
 });
 
-test('custom callbacks can be used for reregistering universal routes', function () {
-    RouteFacade::get('/home', fn () => tenant() ? 'Tenancy initialized.' : 'Tenancy not initialized.')->middleware('universal')->name($routeName = 'home');
+test('custom callbacks can be used for cloning universal routes', function () {
+    RouteFacade::get('/home', fn () => tenant() ? 'Tenancy initialized.' : 'Tenancy not initialized.')->middleware(['universal', InitializeTenancyByPath::class])->name($routeName = 'home');
 
-    /** @var CloneRoutesAsTenant $reregisterRoutesAction */
-    $reregisterRoutesAction = app(CloneRoutesAsTenant::class);
+    /** @var CloneRoutesAsTenant $cloneRoutesAction */
+    $cloneRoutesAction = app(CloneRoutesAsTenant::class);
     $currentRouteCount = fn () => count(RouteFacade::getRoutes()->get());
     $initialRouteCount = $currentRouteCount();
 
+    $cloneRoutesAction;
+
     // Skip cloning the 'home' route
-    $reregisterRoutesAction->cloneUsing($routeName, function (Route $route) {
+    $cloneRoutesAction->cloneUsing($routeName, function (Route $route) {
         return;
     })->handle();
 
-    // Expect route count to stay the same because the 'home' route re-registration gets skipped
+    // Expect route count to stay the same because the 'home' route cloning gets skipped
     expect($initialRouteCount)->toEqual($currentRouteCount());
 
-    // Modify the 'home' route re-registration so that a different route is registered
-    $reregisterRoutesAction->cloneUsing($routeName, function (Route $route) {
-        RouteFacade::get('/newly-registered-route', fn() => true)->name('new.home');
+    // Modify the 'home' route cloning so that a different route is cloned
+    $cloneRoutesAction->cloneUsing($routeName, function (Route $route) {
+        RouteFacade::get('/cloned-route', fn () => true)->name('new.home');
     })->handle();
 
     expect($currentRouteCount())->toEqual($initialRouteCount + 1);
 });
 
-test('reregistration of specific routes can get skipped', function () {
+test('cloning of specific routes can get skipped', function () {
     RouteFacade::get('/home', fn () => tenant() ? 'Tenancy initialized.' : 'Tenancy not initialized.')->middleware('universal')->name($routeName = 'home');
 
-    /** @var CloneRoutesAsTenant $reregisterRoutesAction */
-    $reregisterRoutesAction = app(CloneRoutesAsTenant::class);
+    /** @var CloneRoutesAsTenant $cloneRoutesAction */
+    $cloneRoutesAction = app(CloneRoutesAsTenant::class);
     $currentRouteCount = fn () => count(RouteFacade::getRoutes()->get());
     $initialRouteCount = $currentRouteCount();
 
     // Skip cloning the 'home' route
-    $reregisterRoutesAction->skipRoute($routeName)->handle();
+    $cloneRoutesAction->skipRoute($routeName);
 
-    // Expect route count to stay the same because the 'home' route re-registration gets skipped
+    $cloneRoutesAction->handle();
+
+    // Expect route count to stay the same because the 'home' route cloning gets skipped
     expect($initialRouteCount)->toEqual($currentRouteCount());
 });
 
@@ -457,6 +462,31 @@ test('identification middleware works with universal routes only when it impleme
     pest()->expectException(MiddlewareNotUsableWithUniversalRoutesException::class);
     $this->withoutExceptionHandling()->get('http://localhost/custom-mw-universal-route');
 });
+
+test('routes except nonuniversal routes with path id mw are given the tenant flag after cloning', function (array $routeMiddleware, array $globalMiddleware) {
+    foreach ($globalMiddleware as $middleware) {
+        if ($middleware === 'universal') {
+            config(['tenancy.default_route_mode' => RouteMode::UNIVERSAL]);
+        } else {
+            app(Kernel::class)->pushMiddleware($middleware);
+        }
+    }
+
+    $route = RouteFacade::get('/home', fn () => tenant() ? 'Tenancy initialized.' : 'Tenancy not initialized.')
+        ->middleware($routeMiddleware)
+        ->name($routeName = 'home');
+
+    app(CloneRoutesAsTenant::class)->handle();
+
+    $clonedRoute = RouteFacade::getRoutes()->getByName('tenant.' . $routeName);
+
+    // Non-universal routes with identification middleware are already considered tenant, so they don't get the tenant flag
+    if (! tenancy()->routeIsUniversal($route) && tenancy()->routeHasIdentificationMiddleware($clonedRoute)) {
+        expect($clonedRoute->middleware())->not()->toContain('tenant');
+    } else {
+        expect($clonedRoute->middleware())->toContain('tenant');
+    }
+})->with('path identification types');
 
 foreach ([
     'domain identification types' => [PreventAccessFromUnwantedDomains::class, InitializeTenancyByDomain::class],

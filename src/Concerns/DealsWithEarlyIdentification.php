@@ -5,42 +5,61 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Concerns;
 
 use Closure;
+use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Route as RouteFacade;
-use Stancl\Tenancy\Enums\Context;
 use Stancl\Tenancy\Enums\RouteMode;
 
 // todo1 Name – maybe DealsWithMiddlewareContexts?
 trait DealsWithEarlyIdentification
 {
     /**
-     * Get route's middleware context (tenant or central).
+     * Get route's middleware context (tenant, central or universal).
      * The context is determined by the route's middleware.
      *
      * If the route has the 'central' middleware, the context is central.
-     * If the route has the 'tenant' middleware, or any tenancy identification middleware, the context is tenant.
+     * If the route has the 'tenant' middleware, or any tenancy identification middleware (and the route isn't flagged as universal), the context is tenant.
      *
      * If the route doesn't have any of the mentioned middleware,
      * the context is determined by the `tenancy.default_route_mode` config.
      */
-    public static function getMiddlewareContext(Route $route): RouteMode
+    public static function getRouteMode(Route $route): RouteMode
     {
         if (static::routeHasMiddleware($route, 'central')) {
             return RouteMode::CENTRAL;
         }
 
-        $defaultRouteMode = config('tenancy.default_route_mode');
-        $routeIsUniversal = $defaultRouteMode === RouteMode::UNIVERSAL || static::routeHasMiddleware($route, 'universal');
+        $routeIsUniversal = static::routeIsUniversal($route);
 
-        // If a route has identification middleware AND the route isn't universal, don't consider the context tenant
-        if (static::routeHasMiddleware($route, 'tenant') || static::routeHasIdentificationMiddleware($route) && ! $routeIsUniversal) {
+        // If the route is flagged as tenant, consider it tenant
+        // If the route has an identification middleware and the route is not universal, consider it tenant
+        if (
+            static::routeHasMiddleware($route, 'tenant') ||
+            (static::routeHasIdentificationMiddleware($route) && ! $routeIsUniversal)
+        ) {
             return RouteMode::TENANT;
         }
 
-        return $defaultRouteMode;
+        // If the route is universal, you have to determine its actual context using
+        // The identification middleware's determineUniversalRouteContextFromRequest
+        if ($routeIsUniversal) {
+            return RouteMode::UNIVERSAL;
+        }
+
+        return config('tenancy.default_route_mode');
+    }
+
+    public static function routeIsUniversal(Route $route): bool
+    {
+        $routeFlaggedAsTenantOrCentral = static::routeHasMiddleware($route, 'tenant') || static::routeHasMiddleware($route, 'central');
+        $routeFlaggedAsUniversal = static::routeHasMiddleware($route, 'universal');
+        $universalFlagUsedInGlobalStack = app(Kernel::class)->hasMiddleware('universal');
+        $defaultRouteModeIsUniversal = config('tenancy.default_route_mode') === RouteMode::UNIVERSAL;
+
+        return ! $routeFlaggedAsTenantOrCentral && ($routeFlaggedAsUniversal || $universalFlagUsedInGlobalStack || $defaultRouteModeIsUniversal);
     }
 
     /**
@@ -93,6 +112,31 @@ trait DealsWithEarlyIdentification
         return in_array($middleware, static::getRouteMiddleware($route));
     }
 
+    public function routeIdentificationMiddleware(Route $route): string|null
+    {
+        foreach (static::getRouteMiddleware($route) as $routeMiddleware) {
+            if (in_array($routeMiddleware, static::middleware())) {
+                return $routeMiddleware;
+            }
+        }
+
+        return null;
+    }
+
+    public static function kernelIdentificationMiddleware(): string|null
+    {
+        /** @var Kernel $kernel */
+        $kernel = app(Kernel::class);
+
+        foreach (static::middleware() as $identificationMiddleware) {
+            if ($kernel->hasMiddleware($identificationMiddleware)) {
+                return $identificationMiddleware;
+            }
+        }
+
+        return null;
+    }
+
     /**
      * Check if a route has identification middleware.
      */
@@ -105,6 +149,14 @@ trait DealsWithEarlyIdentification
         }
 
         return false;
+    }
+
+    /**
+     * Check if route uses kernel identification (identification middleare is in the global stack and the route doesn't have route-level identification middleware).
+     */
+    public static function routeUsesKernelIdentification(Route $route): bool
+    {
+        return ! static::routeHasIdentificationMiddleware($route) && static::kernelIdentificationMiddleware();
     }
 
     /**

@@ -33,9 +33,8 @@ class PreventAccessFromUnwantedDomains
     public function handle(Request $request, Closure $next): mixed
     {
         $route = tenancy()->getRoute($request);
-        $routeIsUniversal = tenancy()->routeHasMiddleware($route, 'universal') || config('tenancy.default_route_mode') === RouteMode::UNIVERSAL;
 
-        if ($this->shouldBeSkipped($route) || $routeIsUniversal) {
+        if ($this->shouldBeSkipped($route) || tenancy()->routeIsUniversal($route)) {
             return $next($request);
         }
 
@@ -52,13 +51,13 @@ class PreventAccessFromUnwantedDomains
 
     protected function accessingTenantRouteFromCentralDomain(Request $request, Route $route): bool
     {
-        return tenancy()->getMiddlewareContext($route) === RouteMode::TENANT // Current route's middleware context is tenant
+        return tenancy()->getRouteMode($route) === RouteMode::TENANT // Current route's middleware context is tenant
             && $this->isCentralDomain($request); // The request comes from a domain that IS present in the configured `tenancy.central_domains`
     }
 
     protected function accessingCentralRouteFromTenantDomain(Request $request, Route $route): bool
     {
-        return tenancy()->getMiddlewareContext($route) === RouteMode::CENTRAL // Current route's middleware context is central
+        return tenancy()->getRouteMode($route) === RouteMode::CENTRAL // Current route's middleware context is central
             && ! $this->isCentralDomain($request); // The request comes from a domain that ISN'T present in the configured `tenancy.central_domains`
     }
 

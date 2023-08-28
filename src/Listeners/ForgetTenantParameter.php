@@ -19,17 +19,16 @@ use Stancl\Tenancy\PathIdentificationManager;
  * We remove the {tenant} parameter from the hydrated route when
  * 1) the InitializeTenancyByPath middleware is in the global stack, AND
  * 2) the matched route does not have identification middleware (so that {tenant} isn't forgotten when using route-level identification), AND
- * 3) the route has tenant middleware context (so that {tenant} doesn't get accidentally removed from central routes).
+ * 3) the route isn't in the central context (so that {tenant} doesn't get accidentally removed from central routes).
  */
 class ForgetTenantParameter
 {
     public function handle(RouteMatched $event): void
     {
-        if (
-            PathIdentificationManager::pathIdentificationInGlobalStack() &&
-            ! tenancy()->routeHasIdentificationMiddleware($event->route) &&
-            tenancy()->getMiddlewareContext($event->route) === RouteMode::TENANT
-        ) {
+        $kernelPathIdentificationUsed = PathIdentificationManager::pathIdentificationInGlobalStack() && ! tenancy()->routeHasIdentificationMiddleware($event->route);
+        $routeModeIsTenant = tenancy()->getRouteMode($event->route) === RouteMode::TENANT;
+
+        if ($kernelPathIdentificationUsed && $routeModeIsTenant) {
             $event->route->forgetParameter(PathIdentificationManager::getTenantParameterName());
         }
     }

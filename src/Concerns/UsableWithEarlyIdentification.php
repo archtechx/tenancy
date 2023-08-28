@@ -29,21 +29,13 @@ trait UsableWithEarlyIdentification
 {
     /**
      * Skip middleware if the route is universal and uses path identification or if the route is universal and the context should be central.
-     * Universal routes using path identification should get re-registered using ReregisterRoutesAsTenant.
+     * Universal routes using path identification should get cloned using CloneRoutesAsTenant.
      *
      * @see \Stancl\Tenancy\Actions\CloneRoutesAsTenant
      */
     protected function shouldBeSkipped(Route $route): bool
     {
-        $routeMiddleware = tenancy()->getRouteMiddleware($route);
-        $universalFlagUsed = in_array('universal', $routeMiddleware);
-        $defaultToUniversalRoutes = config('tenancy.default_route_mode') === RouteMode::UNIVERSAL;
-
-        // Route is universal only if it doesn't have the central/tenant flag
-        $routeIsUniversal = ($universalFlagUsed || $defaultToUniversalRoutes) &&
-            ! (in_array('central', $routeMiddleware) || in_array('tenant', $routeMiddleware));
-
-        if ($routeIsUniversal && $this instanceof IdentificationMiddleware) {
+        if (tenancy()->routeIsUniversal($route) && $this instanceof IdentificationMiddleware) {
             /** @phpstan-ignore-next-line */
             throw_unless($this instanceof UsableWithUniversalRoutes, MiddlewareNotUsableWithUniversalRoutesException::class);
 
@@ -71,10 +63,15 @@ trait UsableWithEarlyIdentification
 
         // Check if this is the identification middleware the route should be using
         // Route-level identification middleware is prioritized
-        $middlewareUsed = tenancy()->routeHasMiddleware($route, static::class) || ! tenancy()->routeHasIdentificationMiddleware($route) && static::inGlobalStack();
+        $globalIdentificationUsed = ! tenancy()->routeHasIdentificationMiddleware($route) && static::inGlobalStack();
+        $routeLevelIdentificationUsed = tenancy()->routeHasMiddleware($route, static::class);
 
         /** @var UsableWithUniversalRoutes $this */
-        return $middlewareUsed && $this->requestHasTenant($request) ? Context::TENANT : Context::CENTRAL;
+        if (($globalIdentificationUsed || $routeLevelIdentificationUsed) && $this->requestHasTenant($request)) {
+            return Context::TENANT;
+        }
+
+        return Context::CENTRAL;
     }
 
     protected function shouldIdentificationMiddlewareBeSkipped(Route $route): bool
@@ -88,10 +85,9 @@ trait UsableWithEarlyIdentification
         if (! $request->attributes->get('_tenancy_kernel_identification_skipped')) {
             if (
                 // Skip identification if the current route is central
-                // The route is central if defaulting is set to central and the route isn't flagged as tenant or it doesn't have identification middleware
-                tenancy()->getMiddlewareContext($route) === RouteMode::CENTRAL
-                // Don't skip identification if the central route is considered universal
-                && (config('tenancy.default_route_mode') !== RouteMode::UNIVERSAL || ! tenancy()->routeHasMiddleware($route, 'universal'))
+                // The route is central if it's flagged as central
+                // Or if it isn't flagged and the default route mode is set to central
+                tenancy()->getRouteMode($route) === RouteMode::CENTRAL
             ) {
                 return true;
             }

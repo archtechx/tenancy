@@ -263,6 +263,14 @@ test('the tenant parameter is only removed from tenant routes when using path id
             ->middleware('tenant')
             ->name('tenant-route');
 
+        RouteFacade::get($pathIdentification ? '/universal-route' : '/universal-route/{tenant?}', [ControllerWithMiddleware::class, 'routeHasTenantParameter'])
+            ->middleware('universal')
+            ->name('universal-route');
+
+        /** @var CloneRoutesAsTenant */
+        $cloneRoutesAction = app(CloneRoutesAsTenant::class);
+        $cloneRoutesAction->handle();
+
         $tenant = Tenant::create();
         $tenantKey = $tenant->getTenantKey();
 
@@ -274,12 +282,24 @@ test('the tenant parameter is only removed from tenant routes when using path id
             // Tenant parameter is removed from tenant routes using kernel path identification (Stancl\Tenancy\Listeners\ForgetTenantParameter)
             $response = pest()->get($tenantKey . '/tenant-route')->assertOk();
             expect((bool) $response->getContent())->toBeFalse();
+
+            // The tenant parameter gets removed from the cloned universal route
+            $response = pest()->get($tenantKey . '/universal-route')->assertOk();
+            expect((bool) $response->getContent())->toBeFalse();
         } else {
             // Tenant parameter is not removed from tenant routes using other kernel identification MW
             $tenant->domains()->create(['domain' => $domain = $tenantKey . '.localhost']);
 
             $response = pest()->get("http://{$domain}/{$tenantKey}/tenant-route")->assertOk();
             expect((bool) $response->getContent())->toBeTrue();
+
+            // The tenant parameter does not get removed from the universal route when accessing it through the central domain
+            $response = pest()->get("http://localhost/universal-route/$tenantKey")->assertOk();
+            expect((bool) $response->getContent())->toBeTrue();
+
+            // The tenant parameter gets removed from the universal route when accessing it through the tenant domain
+            $response = pest()->get("http://{$domain}/universal-route")->assertOk();
+            expect((bool) $response->getContent())->toBeFalse();
         }
     } else {
         RouteFacade::middlewareGroup('tenant', [$pathIdentification ? InitializeTenancyByPath::class : InitializeTenancyByDomain::class]);
@@ -370,7 +390,7 @@ test('route level identification is prioritized over kernel identification', fun
     'default to central routes' => RouteMode::CENTRAL,
 ]);
 
-test('routes with path identification middleware can get prefixed using the reregister action', function() {
+test('routes with path identification middleware can get prefixed using the clone action', function() {
     $tenantKey = Tenant::create()->getTenantKey();
 
     RouteFacade::get('/home', fn () => tenant()?->getTenantKey())->name('home')->middleware(InitializeTenancyByPath::class);

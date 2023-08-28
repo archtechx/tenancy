@@ -191,7 +191,7 @@ class TenancyServiceProvider extends ServiceProvider
              *     $route->middleware('tenant');
              * });
              *
-             * To see the default behavior of re-registering the universal routes, check out the cloneRoute() method in CloneRoutesAsTenant.
+             * To see the default behavior of cloning the universal routes, check out the cloneRoute() method in CloneRoutesAsTenant.
              * @see CloneRoutesAsTenant
              */
 
