@@ -37,7 +37,9 @@ use Stancl\Tenancy\PathIdentificationManager;
 class CloneRoutesAsTenant
 {
     protected array $cloneRouteUsing = [];
-    protected array $skippedRoutes = [];
+    protected array $skippedRoutes = [
+        'stancl.tenancy.asset',
+    ];
 
     public function __construct(
         protected Router $router,
@@ -87,7 +89,11 @@ class CloneRoutesAsTenant
          * universal routes will be available in both contexts.
          */
         return collect($this->router->getRoutes()->get())->filter(function (Route $route) use ($tenantParameterName) {
-            if (in_array($tenantParameterName, $route->parameterNames(), true) || in_array($route->getName(), $this->skippedRoutes, true)) {
+            if (
+                tenancy()->routeHasMiddleware($route, 'tenant') ||
+                in_array($route->getName(), $this->skippedRoutes, true) ||
+                in_array($tenantParameterName, $route->parameterNames(), true)
+            ) {
                 return false;
             }
 

@@ -45,7 +45,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         }
 
         // asset()
-        if ($this->app['config']['tenancy.filesystem.asset_helper_tenancy'] ?? true) {
+        if ($this->app['config']['tenancy.filesystem.asset_helper_tenancy']) {
             if ($this->originalPaths['asset_url']) {
                 $this->app['config']['app.asset_url'] = $this->originalPaths['asset_url'] . "/$suffix";
                 $this->app['url']->setAssetRoot($this->app['config']['app.asset_url']);

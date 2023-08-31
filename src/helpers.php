@@ -35,9 +35,18 @@ if (! function_exists('tenant')) {
 
 if (! function_exists('tenant_asset')) {
     // todo docblock
-    // todo add an option to generate paths respecting the ASSET_URL
     function tenant_asset(string|null $asset): string
     {
+        if ($assetUrl = config('app.asset_url')) {
+            $assetUrl = str($assetUrl)->rtrim('/')->append('/');
+
+            if (tenant()) {
+                $assetUrl .= config('tenancy.filesystem.suffix_base') . tenant()->getTenantKey();
+            }
+
+            return $assetUrl . $asset;
+        }
+
         return route('stancl.tenancy.asset', ['path' => $asset]);
     }
 }
