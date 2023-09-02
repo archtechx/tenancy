@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
-use Exception;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
