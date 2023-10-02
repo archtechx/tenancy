@@ -63,4 +63,46 @@ class UniversalRouteTest extends TestCase
             ->assertSuccessful()
             ->assertSee('acme');
     }
+
+    /** @test */
+    public function universal_route_works_when_middleware_is_inserted_via_controller_middleware()
+    {
+        Route::middlewareGroup('universal', []);
+        config(['tenancy.features' => [UniversalRoutes::class]]);
+
+        Route::get('/foo', [UniversalRouteController::class, 'show']);
+
+        $this->get('http://localhost/foo')
+            ->assertSuccessful()
+            ->assertSee('Tenancy is not initialized.');
+
+        $tenant = Tenant::create([
+            'id' => 'acme',
+        ]);
+        $tenant->domains()->create([
+            'domain' => 'acme.localhost',
+        ]);
+
+        $this->get('http://acme.localhost/foo')
+            ->assertSuccessful()
+            ->assertSee('Tenancy is initialized.');
+    }
+}
+
+class UniversalRouteController
+{
+    public function getMiddleware()
+    {
+        return array_map(fn($middleware) => [
+            'middleware' => $middleware,
+            'options' => [],
+        ], ['universal', InitializeTenancyByDomain::class]);
+    }
+
+    public function show()
+    {
+        return tenancy()->initialized
+            ? 'Tenancy is initialized.'
+            : 'Tenancy is not initialized.';
+    }
 }
