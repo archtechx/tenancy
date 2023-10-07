@@ -86,20 +86,22 @@ class DatabaseManager
     /**
      * Check if a tenant can be created.
      *
+     * @retur bool
      * @throws TenantCannotBeCreatedException
      * @throws DatabaseManagerNotRegisteredException
      * @throws TenantDatabaseAlreadyExistsException
      */
-    public function ensureTenantCanBeCreated(TenantWithDatabase $tenant): void
+    public function ensureTenantCanBeCreated(TenantWithDatabase $tenant): bool
     {
         $manager = $tenant->database()->manager();
 
         if ($manager->databaseExists($database = $tenant->database()->getName())) {
-            throw new TenantDatabaseAlreadyExistsException($database);
+            return false;
         }
 
         if ($manager instanceof ManagesDatabaseUsers && $manager->userExists($username = $tenant->database()->getUsername())) {
             throw new TenantDatabaseUserAlreadyExistsException($username);
         }
+        return true;
     }
 }
