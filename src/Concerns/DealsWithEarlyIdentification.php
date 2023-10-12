@@ -98,8 +98,8 @@ trait DealsWithEarlyIdentification
         return array_unique(array_merge(
             $routeMiddleware,
             $firstLevelUnpackedGroupMiddleware = $unpackGroupMiddleware($routeMiddleware),
-            $thirdLevelUnpackedGroupMiddleware = $unpackGroupMiddleware($firstLevelUnpackedGroupMiddleware),
-            $unpackGroupMiddleware($thirdLevelUnpackedGroupMiddleware)
+            $secondLevelUnpackedGroupMiddleware = $unpackGroupMiddleware($firstLevelUnpackedGroupMiddleware),
+            $unpackGroupMiddleware($secondLevelUnpackedGroupMiddleware)
         ));
     }
 
