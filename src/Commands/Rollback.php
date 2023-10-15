@@ -27,11 +27,7 @@ class Rollback extends RollbackCommand
 
     public function handle(): int
     {
-        foreach (config('tenancy.migration_parameters') as $parameter => $value) {
-            if (! $this->input->hasParameterOption($parameter)) {
-                $this->input->setOption(ltrim($parameter, '-'), $value);
-            }
-        }
+        $this->setParameterDefaults();
 
         if (! $this->confirmToProceed()) {
             return 1;
@@ -54,5 +50,23 @@ class Rollback extends RollbackCommand
     protected static function getTenantCommandName(): string
     {
         return 'tenants:rollback';
+    }
+
+    protected function setParameterDefaults(): void
+    {
+        // Parameters that this command doesn't support, but can be in tenancy.migration_parameters
+        $ignoredParameters = [
+            '--seed',
+            '--seeder',
+            '--isolated',
+            '--schema-path',
+        ];
+
+        foreach (config('tenancy.migration_parameters') as $parameter => $value) {
+            // Only set the default if the option isn't set
+            if (! in_array($parameter, $ignoredParameters) && ! $this->input->hasParameterOption($parameter)) {
+                $this->input->setOption(ltrim($parameter, '-'), $value);
+            }
+        }
     }
 }
