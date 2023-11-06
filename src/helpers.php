@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Broadcast;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Tenancy;
 
@@ -104,5 +105,33 @@ if (! function_exists('tenant_route')) {
         $hostname = parse_url($url, PHP_URL_HOST);
 
         return (string) str($url)->replace($hostname, $domain);
+    }
+}
+
+if (! function_exists('tenant_channel')) {
+    function tenant_channel(string $channelName, Closure $callback, array $options = []): void
+    {
+        // Register '{tenant}.channelName'
+        Broadcast::channel('{tenant}.' . $channelName, fn ($user, $tenantKey, ...$args) => $callback($user, ...$args), $options);
+    }
+}
+
+if (! function_exists('global_channel')) {
+    function global_channel(string $channelName, Closure $callback, array $options = []): void
+    {
+        // Register 'global__channelName'
+        // Global channels are available in both the central and tenant contexts
+        Broadcast::channel('global__' . $channelName, fn ($user, ...$args) => $callback($user, ...$args), $options);
+    }
+}
+
+if (! function_exists('universal_channel')) {
+    function universal_channel(string $channelName, Closure $callback, array $options = []): void
+    {
+        // Register 'channelName'
+        Broadcast::channel($channelName, $callback, $options);
+
+        // Register '{tenant}.channelName'
+        tenant_channel($channelName, $callback, $options);
     }
 }

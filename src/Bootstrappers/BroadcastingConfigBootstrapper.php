@@ -12,7 +12,7 @@ use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Overrides\TenancyBroadcastManager;
 
-class BroadcastTenancyBootstrapper implements TenancyBootstrapper
+class BroadcastingConfigBootstrapper implements TenancyBootstrapper
 {
     /**
      * Tenant properties to be mapped to config (similarly to the TenantConfig feature).

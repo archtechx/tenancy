@@ -6,20 +6,23 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Stancl\JobPipeline\JobPipeline;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Support\Facades\File;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Jobs\CreateDatabase;
-use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Events\TenantDeleted;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Broadcast;
 use Stancl\Tenancy\Events\DeletingTenant;
-use Stancl\Tenancy\Overrides\TenancyBroadcastManager;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Broadcasting\BroadcastManager;
 use Stancl\Tenancy\Events\TenancyInitialized;
@@ -29,20 +32,24 @@ use Stancl\Tenancy\Jobs\RemoveStorageSymlinks;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Tests\Etc\TestingBroadcaster;
 use Stancl\Tenancy\Listeners\DeleteTenantStorage;
+use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Overrides\TenancyBroadcastManager;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Bootstrappers\CacheTagsBootstrapper;
+use Stancl\Tenancy\Bootstrappers\UrlBindingBootstrapper;
 use Stancl\Tenancy\Bootstrappers\UrlTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
-use Stancl\Tenancy\Bootstrappers\UrlBindingBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
-use Stancl\Tenancy\Bootstrappers\BroadcastTenancyBootstrapper;
+use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
+use Stancl\Tenancy\Bootstrappers\BroadcastChannelPrefixBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\BroadcastingConfigBootstrapper;
 use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\Integrations\FortifyRouteTenancyBootstrapper;
-use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
-use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 
 beforeEach(function () {
     $this->mockConsoleOutput = false;
@@ -50,7 +57,7 @@ beforeEach(function () {
     config(['cache.default' => $cacheDriver = 'redis']);
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
     // Reset static properties of classes used in this test file to their default values
-    BroadcastTenancyBootstrapper::$credentialsMap = [];
+    BroadcastingConfigBootstrapper::$credentialsMap = [];
     TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably'];
     UrlTenancyBootstrapper::$rootUrlOverride = null;
 
@@ -70,7 +77,7 @@ afterEach(function () {
     UrlTenancyBootstrapper::$rootUrlOverride = null;
     PrefixCacheTenancyBootstrapper::$tenantCacheStores = [];
     TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably'];
-    BroadcastTenancyBootstrapper::$credentialsMap = [];
+    BroadcastingConfigBootstrapper::$credentialsMap = [];
     TenancyUrlGenerator::$prefixRouteNames = false;
 });
 
@@ -365,8 +372,8 @@ test('local storage public urls are generated correctly', function() {
     expect(File::isDirectory($tenantStoragePath))->toBeFalse();
 });
 
-test('BroadcastTenancyBootstrapper binds TenancyBroadcastManager to BroadcastManager and reverts the binding when tenancy is ended', function() {
-    config(['tenancy.bootstrappers' => [BroadcastTenancyBootstrapper::class]]);
+test('BroadcastingConfigBootstrapper binds TenancyBroadcastManager to BroadcastManager and reverts the binding when tenancy is ended', function() {
+    config(['tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class]]);
 
     expect(app(BroadcastManager::class))->toBeInstanceOf(BroadcastManager::class);
 
@@ -379,14 +386,14 @@ test('BroadcastTenancyBootstrapper binds TenancyBroadcastManager to BroadcastMan
     expect(app(BroadcastManager::class))->toBeInstanceOf(BroadcastManager::class);
 });
 
-test('BroadcastTenancyBootstrapper maps tenant broadcaster credentials to config as specified in the $credentialsMap property and reverts the config after ending tenancy', function() {
+test('BroadcastingConfigBootstrapper maps tenant broadcaster credentials to config as specified in the $credentialsMap property and reverts the config after ending tenancy', function() {
     config([
         'broadcasting.connections.testing.driver' => 'testing',
         'broadcasting.connections.testing.message' => $defaultMessage = 'default',
-        'tenancy.bootstrappers' => [BroadcastTenancyBootstrapper::class],
+        'tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class],
     ]);
 
-    BroadcastTenancyBootstrapper::$credentialsMap = [
+    BroadcastingConfigBootstrapper::$credentialsMap = [
         'broadcasting.connections.testing.message' => 'testing_broadcaster_message',
     ];
 
@@ -407,16 +414,16 @@ test('BroadcastTenancyBootstrapper maps tenant broadcaster credentials to config
     expect(config('broadcasting.connections.testing.message'))->toBe($defaultMessage);
 });
 
-test('BroadcastTenancyBootstrapper makes the app use broadcasters with the correct credentials', function() {
+test('BroadcastingConfigBootstrapper makes the app use broadcasters with the correct credentials', function() {
     config([
         'broadcasting.default' => 'testing',
         'broadcasting.connections.testing.driver' => 'testing',
         'broadcasting.connections.testing.message' => $defaultMessage = 'default',
-        'tenancy.bootstrappers' => [BroadcastTenancyBootstrapper::class],
+        'tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class],
     ]);
 
     TenancyBroadcastManager::$tenantBroadcasters[] = 'testing';
-    BroadcastTenancyBootstrapper::$credentialsMap = [
+    BroadcastingConfigBootstrapper::$credentialsMap = [
         'broadcasting.connections.testing.message' => 'testing_broadcaster_message',
     ];
 
@@ -608,7 +615,7 @@ test('url binding tenancy bootstrapper changes route helper behavior correctly',
     pest()->get("http://localhost/central/home")->assertSee($centralRouteUrl);
     pest()->get("http://localhost/$tenantKey/home")->assertSee($tenantRouteUrl);
     pest()->get("http://localhost/query-string?tenant=$tenantKey")->assertSee($queryStringTenantUrl);
-})->group('string');
+});
 
 test('fortify route tenancy bootstrapper updates fortify config correctly', function() {
     config(['tenancy.bootstrappers' => [FortifyRouteTenancyBootstrapper::class]]);
@@ -648,6 +655,119 @@ test('database tenancy bootstrapper throws an exception if DATABASE_URL is set',
 
     expect(true)->toBe(true);
 })->with(['abc.us-east-1.rds.amazonaws.com', null]);
+
+test('BroadcastChannelPrefixBootstrapper prefixes the channels events are broadcast on while tenancy is initialized', function() {
+    config([
+        'broadcasting.default' => $driver = 'testing',
+        'broadcasting.connections.testing.driver' => $driver,
+    ]);
+
+    // Use custom broadcaster
+    app(BroadcastManager::class)->extend($driver, fn () => new TestingBroadcaster('original broadcaster'));
+
+    config(['tenancy.bootstrappers' => [BroadcastChannelPrefixBootstrapper::class, DatabaseTenancyBootstrapper::class]]);
+
+    Schema::create('users', function (Blueprint $table) {
+        $table->increments('id');
+        $table->string('name');
+        $table->string('email')->unique();
+        $table->string('password');
+        $table->rememberToken();
+        $table->timestamps();
+    });
+
+    universal_channel('users.{userId}', function ($user, $userId) {
+        return User::find($userId)->is($user);
+    });
+
+    $broadcaster = app(BroadcastManager::class)->driver();
+
+    $tenant = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    pest()->artisan('tenants:migrate');
+
+    // Set up the 'testing' broadcaster override
+    // Identical to the default Pusher override (BroadcastChannelPrefixBootstrapper::pusher())
+    // Except for the parent class (TestingBroadcaster instead of PusherBroadcaster)
+    BroadcastChannelPrefixBootstrapper::$broadcasterOverrides['testing'] = function () {
+         return app(BroadcastManager::class)->extend('testing', function ($app, $config) {
+            return new class('tenant broadcaster') extends TestingBroadcaster {
+                protected function formatChannels(array $channels)
+                    {
+                        $formatChannel = function (string $channel) {
+                            $prefixes = ['private-', 'presence-'];
+                            $defaultPrefix = '';
+
+                            foreach ($prefixes as $prefix) {
+                                if (str($channel)->startsWith($prefix)) {
+                                    $defaultPrefix = $prefix;
+                                    break;
+                                }
+                            }
+
+                            // Skip prefixing channels flagged with the central channel prefix
+                            if (! str($channel)->startsWith('global__')) {
+                                $channel = str($channel)->after($defaultPrefix)->prepend($defaultPrefix . tenant()->getTenantKey() . '.');
+                            }
+
+                            return (string) $channel;
+                        };
+
+                        return array_map($formatChannel, parent::formatChannels($channels));
+                    }
+            };
+        });
+    };
+
+    auth()->login($user = User::create(['name' => 'central', 'email' => 'test@central.cz', 'password' => 'test']));
+
+    // The channel names used for testing the formatChannels() method (not real channels)
+    $channelNames = [
+        'channel',
+        'global__channel', // Channels prefixed with 'global__' shouldn't get prefixed with the tenant key
+        'private-user.' . $user->id,
+    ];
+
+    // formatChannels doesn't prefix the channel names until tenancy is initialized
+    expect(invade(app(BroadcastManager::class)->driver())->formatChannels($channelNames))->toEqual($channelNames);
+
+    tenancy()->initialize($tenant);
+
+    $tenantBroadcaster = app(BroadcastManager::class)->driver();
+
+    auth()->login($tenantUser = User::create(['name' => 'tenant', 'email' => 'test@tenant.cz', 'password' => 'test']));
+
+    // The current (tenant) broadcaster isn't the same as the central one
+    expect($tenantBroadcaster->message)->not()->toBe($broadcaster->message);
+    // Tenant broadcaster has the same channels as the central broadcaster
+    expect($tenantBroadcaster->getChannels())->toEqualCanonicalizing($broadcaster->getChannels());
+    // formatChannels prefixes the channel names now
+    expect(invade($tenantBroadcaster)->formatChannels($channelNames))->toEqualCanonicalizing([
+        'global__channel',
+        $tenant->getTenantKey() . '.channel',
+        'private-' . $tenant->getTenantKey() . '.user.' . $tenantUser->id,
+    ]);
+
+    // Initialize another tenant
+    tenancy()->initialize($tenant2);
+
+    auth()->login($tenantUser = User::create(['name' => 'tenant', 'email' => 'test2@tenant.cz', 'password' => 'test']));
+
+    // formatChannels prefixes channels with the second tenant's key now
+    expect(invade(app(BroadcastManager::class)->driver())->formatChannels($channelNames))->toEqualCanonicalizing([
+        'global__channel',
+        $tenant2->getTenantKey() . '.channel',
+        'private-' . $tenant2->getTenantKey() . '.user.' . $tenantUser->id,
+    ]);
+
+    // The bootstrapper reverts to the tenant context – the channel names won't be prefixed anymore
+    tenancy()->end();
+
+    // The current broadcaster is the same as the central one again
+    expect(app(BroadcastManager::class)->driver())->toBe($broadcaster);
+    expect(invade(app(BroadcastManager::class)->driver())->formatChannels($channelNames))->toEqual($channelNames);
+});
 
 function getDiskPrefix(string $disk): string
 {
