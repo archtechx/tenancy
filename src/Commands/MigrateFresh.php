@@ -25,6 +25,7 @@ final class MigrateFresh extends Command
         parent::__construct();
 
         $this->addOption('--drop-views', null, InputOption::VALUE_NONE, 'Drop views along with tenant tables.', null);
+        $this->addOption('--step', null, InputOption::VALUE_NONE, 'Force the migrations to be run so they can be rolled back individually.');
 
         $this->setName('tenants:migrate-fresh');
     }
@@ -47,6 +48,7 @@ final class MigrateFresh extends Command
             $this->info('Migrating.');
             $this->callSilent('tenants:migrate', [
                 '--tenants' => [$tenant->getTenantKey()],
+                '--step' => $this->option('step'),
                 '--force' => true,
             ]);
         });
