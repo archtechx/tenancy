@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Stancl\Tenancy\Contracts\SingleDomainTenant;
 use Stancl\Tenancy\Contracts\Tenant;
 
 class TenantList extends Command
@@ -23,7 +24,9 @@ class TenantList extends Command
 
         foreach ($tenants as $tenant) {
             /** @var Model&Tenant $tenant */
-            $this->components->twoColumnDetail($this->tenantCLI($tenant), $this->domainsCLI($tenant->domains));
+            $domains = $tenant instanceof SingleDomainTenant ? collect([$tenant->domain]) : $tenant->domains?->pluck('domain');
+
+            $this->components->twoColumnDetail($this->tenantCLI($tenant), $this->domainsCLI($domains));
         }
 
         $this->newLine();
@@ -44,6 +47,6 @@ class TenantList extends Command
             return null;
         }
 
-        return "<fg=blue;options=bold>{$domains->pluck('domain')->implode(' / ')}</>";
+        return "<fg=blue;options=bold>{$domains->implode(' / ')}</>";
     }
 }

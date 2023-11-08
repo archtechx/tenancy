@@ -9,7 +9,7 @@ beforeEach(function () {
     config(['tenancy.models.tenant' => DatabaseAndDomainTenant::class]);
 });
 
-test('job delete domains successfully', function () {
+test('job deletes domains successfully', function () {
     $tenant = DatabaseAndDomainTenant::create();
 
     $tenant->domains()->create([

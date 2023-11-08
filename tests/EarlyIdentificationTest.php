@@ -181,7 +181,6 @@ test('early identification works with request data identification', function (st
 ]);
 
 test('early identification works with domain identification', function (string $middleware, string $domain, bool $useKernelIdentification, RouteMode $defaultRouteMode) {
-    config(['tenancy.tenant_model' => Tenant::class]);
     config(['tenancy.default_route_mode' => $defaultRouteMode]);
 
     if ($useKernelIdentification) {
@@ -209,6 +208,10 @@ test('early identification works with domain identification', function (string $
         $routeThatShouldReceiveMiddleware->middleware($defaultToTenantRoutes ? 'central' : 'tenant');
     } elseif (! $defaultToTenantRoutes) {
         $tenantRoute->middleware('tenant');
+    } else {
+        // Route-level identification + defaulting to tenant routes
+        // We still have to apply the tenant middleware to the routes, so they aren't really tenant by default
+        $tenantRoute->middleware([$middleware, PreventAccessFromUnwantedDomains::class]);
     }
 
     $tenant = Tenant::create();
@@ -234,7 +237,7 @@ test('early identification works with domain identification', function (string $
     }
 
     // Expect tenancy is initialized (or not) for the right tenant at the tenant route
-    expect($response->getContent())->toBe('token:' . (tenant()?->getTenantKey() ?? 'central'));
+    expect($response->getContent())->toBe('token:' . tenant()->getTenantKey());
 })->with([
     'domain identification' => ['middleware' => InitializeTenancyByDomain::class, 'domain' => 'foo.test'],
     'subdomain identification' => ['middleware' => InitializeTenancyBySubdomain::class, 'domain' => 'foo'],

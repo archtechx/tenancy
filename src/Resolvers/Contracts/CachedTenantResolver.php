@@ -66,7 +66,7 @@ abstract class CachedTenantResolver implements TenantResolver
      *
      * @return array[]
      */
-    abstract public function getArgsForTenant(Tenant $tenant): array;
+    abstract public function getArgsForTenant(Tenant $tenant): array; // todo@v4 make it clear that this is only used for cache *invalidation*
 
     public static function shouldCache(): bool
     {
