@@ -113,7 +113,7 @@ class DatabaseConfig
         $templateConnection = config("database.connections.{$template}");
 
         return $this->manager()->makeConnectionConfig(
-            array_merge($templateConnection, $this->tenantConfig()), $this->getName()
+            array_merge($this->tenantConfig(), $templateConnection), $this->getName()
         );
     }
 
