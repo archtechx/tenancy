@@ -134,11 +134,79 @@ class TenantAssetTest extends TestCase
         $tenant = Tenant::create();
 
         tenancy()->initialize($tenant);
-        $response = $this->get(tenant_asset(null), [
+
+        $this->withoutExceptionHandling();
+        $this->expectExceptionMessage('Empty path'); // outside tests this is a 404
+
+        $this->get(tenant_asset(null), [
             'X-Tenant' => $tenant->id,
         ]);
-
-        $response->assertNotFound();
     }
 
+    public function test_asset_controller_returns_a_404_when_the_storage_root_doesnt_exist()
+    {
+        TenantAssetsController::$tenancyMiddleware = InitializeTenancyByRequestData::class;
+
+        $tenant = Tenant::create();
+
+        tenancy()->initialize($tenant);
+
+        $storageRoot = storage_path("app/public");
+
+        if (is_dir($storageRoot)) {
+            rmdir(storage_path("app/public"));
+        }
+
+        $this->withoutExceptionHandling();
+        $this->expectExceptionMessage("Storage root doesn't exist"); // outside tests this is a 404
+
+        $this->get(tenant_asset('foo.txt'), [
+            'X-Tenant' => $tenant->id,
+        ]);
+    }
+
+    public function test_asset_controller_returns_a_404_when_accessing_a_nonexistent_file()
+    {
+        TenantAssetsController::$tenancyMiddleware = InitializeTenancyByRequestData::class;
+
+        $tenant = Tenant::create();
+
+        tenancy()->initialize($tenant);
+
+        $storageRoot = storage_path("app/public");
+
+        if (! is_dir($storageRoot)) {
+            mkdir(storage_path("app/public"), recursive: true);
+        }
+
+        $this->withoutExceptionHandling();
+        $this->expectExceptionMessage("Accessing a nonexistent file"); // outside tests this is a 404
+
+        $this->get(tenant_asset('foo.txt'), [
+            'X-Tenant' => $tenant->id,
+        ]);
+    }
+
+    public function test_asset_controller_returns_a_404_when_accessing_a_file_outside_the_storage_root()
+    {
+        TenantAssetsController::$tenancyMiddleware = InitializeTenancyByRequestData::class;
+
+        $tenant = Tenant::create();
+
+        tenancy()->initialize($tenant);
+
+        $storageRoot = storage_path("app/public");
+
+        if (! is_dir($storageRoot)) {
+            mkdir(storage_path("app/public"), recursive: true);
+            file_put_contents(storage_path('app/foo.txt'), 'bar');
+        }
+
+        $this->withoutExceptionHandling();
+        $this->expectExceptionMessage('Accessing a file outside the storage root'); // outside tests this is a 404
+
+        $this->get(tenant_asset('../foo.txt'), [
+            'X-Tenant' => $tenant->id,
+        ]);
+    }
 }

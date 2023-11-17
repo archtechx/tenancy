@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: Support Questions & Other
-    url: https://github.com/stancl/tenancy/blob/3.x/SUPPORT.md
+    url: https://archte.ch/discord
     about: 'If you have a question or need help using the package.'
   - name: Documentation Issue
     url: https://github.com/stancl/tenancy-docs/issues
