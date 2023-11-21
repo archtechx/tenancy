@@ -3,7 +3,8 @@ on: [push, pull_request]
 jobs:
   validate:
     runs-on: ubuntu-latest
-    continue-on-error: true
+    strategy:
+      fail-fast: false
     steps:
     - uses: actions/checkout@v2
     - name: Check for todo0  
