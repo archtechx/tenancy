@@ -2,17 +2,19 @@ on: [push, pull_request]
 
 jobs:
   validate:
+    name: Validate code
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
     steps:
     - uses: actions/checkout@v2
     - name: Check for todo0  
       run: '! grep -r "todo0" --exclude-dir=workflows .'
+      if: always()
     - name: Check for todo1
       run: '! grep -r "todo1" --exclude-dir=workflows .'
+      if: always()
     - name: Check for todo2
       run: '! grep -r "todo2" --exclude-dir=workflows .'
+      if: always()
     - name: Check for skip() in tests
       run: '! grep -r "skip(" --exclude-dir=workflows tests/'
-    
+      if: always()
