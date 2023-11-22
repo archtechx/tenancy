@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Bootstrappers\Integrations;
 
-use Closure;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\DatabaseManager;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
