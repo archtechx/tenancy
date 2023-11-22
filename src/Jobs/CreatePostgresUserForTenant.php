@@ -35,8 +35,11 @@ class CreatePostgresUserForTenant implements ShouldQueue
      */
     public function handle()
     {
+        $centralConnection = config('tenancy.database.central_connection');
+        $centralConnectionPassword = config("database.connections.$centralConnection.password");
+
         $name = $this->tenant->database()->getUsername() ?? $this->tenant->getTenantKey();
-        $password = $this->tenant->database()->getPassword() ?? PostgresRLSBootstrapper::getDefaultPassword();
+        $password = $this->tenant->database()->getPassword() ?? $centralConnectionPassword;
 
         // Create the user only if it doesn't already exist
         if (! count(DB::select('SELECT usename FROM pg_user WHERE usename = $1', [$name])) > 0) {

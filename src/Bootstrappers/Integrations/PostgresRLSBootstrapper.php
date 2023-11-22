@@ -23,11 +23,6 @@ class PostgresRLSBootstrapper implements TenancyBootstrapper
 {
     protected array $originalCentralConnectionConfig;
 
-    /**
-     * Must not return an empty string.
-     */
-    public static string|Closure $defaultPassword = 'password';
-
     public function __construct(
         protected Repository $config,
         protected DatabaseManager $database,
@@ -38,13 +33,14 @@ class PostgresRLSBootstrapper implements TenancyBootstrapper
     public function bootstrap(Tenant $tenant): void
     {
         $centralConnection = $this->config->get('tenancy.database.central_connection');
+        $centralConnectionPassword = $this->config->get("database.connections.$centralConnection.password");
 
         $this->database->purge($centralConnection);
 
         /** @var TenantWithDatabase $tenant */
         $this->config->set([
             'database.connections.' . $centralConnection . '.username' => $tenant->database()->getUsername() ?? $tenant->getTenantKey(),
-            'database.connections.' . $centralConnection . '.password' => $tenant->database()->getPassword() ?? $this->getDefaultPassword(),
+            'database.connections.' . $centralConnection . '.password' => $tenant->database()->getPassword() ?? $centralConnectionPassword,
         ]);
     }
 
@@ -55,10 +51,5 @@ class PostgresRLSBootstrapper implements TenancyBootstrapper
         $this->database->purge($centralConnection);
 
         $this->config->set('database.connections.' . $centralConnection, $this->originalCentralConnectionConfig);
-    }
-
-    public static function getDefaultPassword(): string
-    {
-        return is_string(static::$defaultPassword) ? static::$defaultPassword : (static::$defaultPassword)();
     }
 }

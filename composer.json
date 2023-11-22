@@ -31,7 +31,7 @@
         "league/flysystem-aws-s3-v3": "^3.12.2",
         "doctrine/dbal": "^3.6.0",
         "spatie/valuestore": "^1.2.5",
-        "pestphp/pest": "^1.21",
+        "pestphp/pest": "^2.25",
         "nunomaduro/larastan": "^2.4",
         "spatie/invade": "^1.1"
     },
@@ -60,16 +60,31 @@
         }
     },
     "scripts": {
-        "docker-up": "PHP_VERSION=8.2 docker-compose up -d",
-        "docker-down": "PHP_VERSION=8.2 docker-compose down",
-        "docker-rebuild": "PHP_VERSION=8.2 docker-compose up -d --no-deps --build",
+        "docker-up": [
+            "@putenv PHP_VERSION=8.2",
+            "docker-compose up -d"
+        ],
+        "docker-down": [
+            "@putenv PHP_VERSION=8.2",
+            "docker-compose down"
+        ],
+        "docker-rebuild": [
+            "@putenv PHP_VERSION=8.2",
+            "docker-compose up -d --no-deps --build"
+        ],
+        "test": [
+            "@putenv PHP_VERSION=8.2",
+            "./test --no-coverage"
+        ],
+        "test-full": [
+            "@putenv PHP_VERSION=8.2",
+            "./test"
+        ],
         "docker-m1": "ln -s docker-compose-m1.override.yml docker-compose.override.yml",
         "coverage": "open coverage/phpunit/html/index.html",
         "phpstan": "vendor/bin/phpstan",
         "phpstan-pro": "vendor/bin/phpstan --pro",
-        "cs": "php-cs-fixer fix --config=.php-cs-fixer.php",
-        "test": "PHP_VERSION=8.2 ./test --no-coverage",
-        "test-full": "PHP_VERSION=8.2 ./test"
+        "cs": "php-cs-fixer fix --config=.php-cs-fixer.php"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
