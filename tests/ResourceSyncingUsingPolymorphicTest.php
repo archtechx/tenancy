@@ -43,9 +43,6 @@ beforeEach(function () {
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
-
-    // todo1 Is this cleanup needed?
-    UpdateSyncedResource::$shouldQueue = false; // Global state cleanup
     Event::listen(SyncedResourceSaved::class, UpdateSyncedResource::class);
 
     // Run migrations on central connection

@@ -10,7 +10,7 @@ use Illuminate\Contracts\Routing\UrlGenerator;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
-class UrlTenancyBootstrapper implements TenancyBootstrapper
+class RootUrlBootstrapper implements TenancyBootstrapper
 {
     public static Closure|null $rootUrlOverride = null;
     protected string|null $originalRootUrl = null;

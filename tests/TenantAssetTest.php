@@ -13,7 +13,7 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
-use Stancl\Tenancy\Bootstrappers\UrlBindingBootstrapper;
+use Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper;
 use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
 
 beforeEach(function () {
@@ -22,6 +22,7 @@ beforeEach(function () {
     ]]);
 
     TenancyUrlGenerator::$prefixRouteNames = false;
+    TenancyUrlGenerator::$passTenantParameterToRoutes = true;
 
     /** @var CloneRoutesAsTenant $cloneAction */
     $cloneAction = app(CloneRoutesAsTenant::class);
@@ -78,9 +79,11 @@ test('asset helper returns a link to an external url when asset url is not null'
 
 test('asset helper works correctly with path identification', function (bool $kernelIdentification) {
     TenancyUrlGenerator::$prefixRouteNames = true;
+    TenancyUrlGenerator::$passTenantParameterToRoutes = true;
+
     config(['tenancy.filesystem.asset_helper_tenancy' => true]);
     config(['tenancy.identification.default_middleware' => InitializeTenancyByPath::class]);
-    config(['tenancy.bootstrappers' => array_merge([UrlBindingBootstrapper::class], config('tenancy.bootstrappers'))]);
+    config(['tenancy.bootstrappers' => array_merge([UrlGeneratorBootstrapper::class], config('tenancy.bootstrappers'))]);
 
     $tenantAssetRoute = Route::prefix('{tenant}')->get('/tenant_helper', function () {
         return tenant_asset('foo');

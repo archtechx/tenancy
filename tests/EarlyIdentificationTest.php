@@ -116,10 +116,6 @@ test('early identification works with path identification', function (bool $useK
         ->assertOk()
         ->assertContent($tenantPost->title . '-' . $tenantComment->comment);
     assertTenancyInitializedInEarlyIdentificationRequest();
-
-    // Tenant routes that use path identification receive the tenant parameter automatically
-    // (setDefaultTenantForRouteParametersWhenInitializingTenancy() in Stancl\Tenancy\Middleware\InitializeTenancyByPath)
-    expect(route('tenant-route'))->toBe(route('tenant-route', ['tenant' => $tenant->getTenantKey()]));
 })->with([
     'route-level identification' => false,
     'kernel identification' => true,

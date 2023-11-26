@@ -13,8 +13,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Route as RouteFacade;
 use Stancl\Tenancy\Enums\RouteMode;
 
-// todo1 Name – maybe DealsWithMiddlewareContexts?
-trait DealsWithEarlyIdentification
+trait DealsWithRouteContexts
 {
     /**
      * Get route's middleware context (tenant, central or universal).

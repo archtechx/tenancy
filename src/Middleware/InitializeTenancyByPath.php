@@ -6,13 +6,9 @@ namespace Stancl\Tenancy\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\URL;
 use Stancl\Tenancy\Concerns\UsableWithEarlyIdentification;
 use Stancl\Tenancy\Concerns\UsableWithUniversalRoutes;
-use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Enums\RouteMode;
-use Stancl\Tenancy\Events\InitializingTenancy;
 use Stancl\Tenancy\Exceptions\RouteIsMissingTenantParameterException;
 use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
@@ -49,8 +45,6 @@ class InitializeTenancyByPath extends IdentificationMiddleware implements Usable
         // We don't want to initialize tenancy if the tenant is
         // simply injected into some route controller action.
         if (in_array(PathTenantResolver::tenantParameterName(), $route->parameterNames())) {
-            $this->setDefaultTenantForRouteParametersWhenInitializingTenancy();
-
             return $this->initializeTenancy(
                 $request,
                 $next,
@@ -59,18 +53,6 @@ class InitializeTenancyByPath extends IdentificationMiddleware implements Usable
         } else {
             throw new RouteIsMissingTenantParameterException;
         }
-    }
-
-    protected function setDefaultTenantForRouteParametersWhenInitializingTenancy(): void
-    {
-        Event::listen(InitializingTenancy::class, function (InitializingTenancy $event) {
-            /** @var Tenant $tenant */
-            $tenant = $event->tenancy->tenant;
-
-            URL::defaults([
-                PathTenantResolver::tenantParameterName() => $tenant->getTenantKey(),
-            ]);
-        });
     }
 
     /**

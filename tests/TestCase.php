@@ -14,9 +14,10 @@ use Stancl\Tenancy\Bootstrappers\BroadcastChannelPrefixBootstrapper;
 use Stancl\Tenancy\Facades\GlobalCache;
 use Stancl\Tenancy\TenancyServiceProvider;
 use Stancl\Tenancy\Facades\Tenancy as TenancyFacade;
-use Stancl\Tenancy\Bootstrappers\UrlTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\RootUrlBootstrapper;
 use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastingConfigBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
@@ -113,7 +114,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'tenancy.bootstrappers' => [
                 DatabaseTenancyBootstrapper::class,
                 FilesystemTenancyBootstrapper::class,
-                UrlTenancyBootstrapper::class,
+                RootUrlBootstrapper::class,
             ],
             'queue.connections.central' => [
                 'driver' => 'sync',
@@ -128,7 +129,8 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         $app->singleton(BroadcastingConfigBootstrapper::class);
         $app->singleton(BroadcastChannelPrefixBootstrapper::class);
         $app->singleton(MailTenancyBootstrapper::class);
-        $app->singleton(UrlTenancyBootstrapper::class);
+        $app->singleton(RootUrlBootstrapper::class);
+        $app->singleton(UrlGeneratorBootstrapper::class);
     }
 
     protected function getPackageProviders($app)

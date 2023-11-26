@@ -21,7 +21,7 @@ use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
  * @see TenancyUrlGenerator
  * @see \Stancl\Tenancy\Resolvers\PathTenantResolver
  */
-class UrlBindingBootstrapper implements TenancyBootstrapper
+class UrlGeneratorBootstrapper implements TenancyBootstrapper
 {
     public function __construct(
         protected Application $app,
@@ -54,6 +54,8 @@ class UrlBindingBootstrapper implements TenancyBootstrapper
                 $urlGenerator->getRequest(),
                 $app['config']->get('app.asset_url'),
             );
+
+            $newGenerator->defaults($urlGenerator->getDefaultParameters());
 
             $newGenerator->setSessionResolver(function () {
                 return $this->app['session'] ?? null;

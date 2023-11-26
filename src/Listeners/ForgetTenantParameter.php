@@ -11,12 +11,13 @@ use Stancl\Tenancy\PathIdentificationManager;
 /**
  * Remove the tenant parameter from the matched route when path identification is used globally.
  *
- * The tenant parameter gets forgotten using PathTenantResolver so that the route actions don't have to accept it.
- * Then, tenancy gets initialized, and URL::defaults() is used to give the tenant parameter to the next matched route.
- * But with kernel identification, the route gets matched AFTER the point when URL::defaults() is used,
- * and because of that, the matched route gets the tenant parameter again, so we forget the parameter again on RouteMatched.
+ * While initializing tenancy, we forget the tenant parameter (in PathTenantResolver),
+ * so that the route actions don't have to accept it.
  *
- * We remove the {tenant} parameter from the hydrated route when
+ * With kernel identification, tenancy gets initialized before the route gets matched.
+ * The matched route gets the tenant parameter again, so we have to forget the parameter again on RouteMatched.
+ *
+ * We remove the {tenant} parameter from the matched route when
  * 1) the InitializeTenancyByPath middleware is in the global stack, AND
  * 2) the matched route does not have identification middleware (so that {tenant} isn't forgotten when using route-level identification), AND
  * 3) the route isn't in the central context (so that {tenant} doesn't get accidentally removed from central routes).
