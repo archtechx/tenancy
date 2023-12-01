@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Concerns;
 use Closure;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Arr;
@@ -81,6 +82,12 @@ trait DealsWithRouteContexts
     public static function getRouteMiddleware(Route $route): array
     {
         $routeMiddleware = $route->middleware();
+        $controllerClass = $route->getControllerClass();
+
+        if ($controllerClass && is_a($controllerClass, HasMiddleware::class, true)) {
+            $routeMiddleware = array_merge($routeMiddleware, $route->controllerMiddleware());
+        }
+
         $middlewareGroups = RouteFacade::getMiddlewareGroups();
         $unpackGroupMiddleware = function (array $middleware) use ($middlewareGroups) {
             $innerMiddleware = [];

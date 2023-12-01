@@ -5,12 +5,14 @@ declare(strict_types=1);
 use Stancl\Tenancy\Tenancy;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
+use Stancl\Tenancy\Enums\RouteMode;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Contracts\Http\Kernel;
+use Stancl\Tenancy\Actions\CloneRoutesAsTenant;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Route as RouteFacade;
-use Stancl\Tenancy\Actions\CloneRoutesAsTenant;
+use Stancl\Tenancy\Tests\Etc\HasMiddlewareController;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\IdentificationMiddleware;
 use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
@@ -24,7 +26,6 @@ use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByPathException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 use Stancl\Tenancy\Exceptions\MiddlewareNotUsableWithUniversalRoutesException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByRequestDataException;
-use Stancl\Tenancy\Enums\RouteMode;
 
 test('a route can be universal using domain identification', function (array $routeMiddleware, array $globalMiddleware) {
     foreach ($globalMiddleware as $middleware) {
@@ -42,6 +43,10 @@ test('a route can be universal using domain identification', function (array $ro
             : 'Tenancy is not initialized.';
     })->middleware($routeMiddleware);
 
+    config(['tenancy.static_identification_middleware' => $routeMiddleware]);
+
+    RouteFacade::get('/bar', [HasMiddlewareController::class, 'index']);
+
     $tenant = Tenant::create();
 
     $tenant->domains()->create([
@@ -53,6 +58,16 @@ test('a route can be universal using domain identification', function (array $ro
         ->assertSee('Tenancy is not initialized.');
 
     pest()->get("http://{$tenantDomain}/foo")
+        ->assertSuccessful()
+        ->assertSee('Tenancy is initialized.');
+
+    tenancy()->end();
+
+    pest()->get("http://localhost/bar")
+        ->assertSuccessful()
+        ->assertSee('Tenancy is not initialized.');
+
+    pest()->get("http://{$tenantDomain}/bar")
         ->assertSuccessful()
         ->assertSee('Tenancy is initialized.');
 })->with('domain identification types');
@@ -72,6 +87,10 @@ test('a route can be universal using subdomain identification', function (array 
             : 'Tenancy is not initialized.';
     })->middleware($routeMiddleware);
 
+    config(['tenancy.static_identification_middleware' => $routeMiddleware]);
+
+    RouteFacade::get('/bar', [HasMiddlewareController::class, 'index']);
+
     $tenant = Tenant::create();
     $tenantKey = $tenant->getTenantKey();
 
@@ -84,6 +103,16 @@ test('a route can be universal using subdomain identification', function (array 
         ->assertSee('Tenancy is not initialized.');
 
     pest()->get("http://{$tenantKey}.localhost/foo")
+        ->assertSuccessful()
+        ->assertSee('Tenancy is initialized.');
+
+    tenancy()->end();
+
+    pest()->get("http://localhost/bar")
+        ->assertSuccessful()
+        ->assertSee('Tenancy is not initialized.');
+
+    pest()->get("http://{$tenantKey}.localhost/bar")
         ->assertSuccessful()
         ->assertSee('Tenancy is initialized.');
 })->with('subdomain identification types');
@@ -102,6 +131,10 @@ test('a route can be universal using domainOrSubdomain identification', function
             ? 'Tenancy is initialized.'
             : 'Tenancy is not initialized.';
     })->middleware($routeMiddleware);
+
+    config(['tenancy.static_identification_middleware' => $routeMiddleware]);
+
+    RouteFacade::get('/bar', [HasMiddlewareController::class, 'index']);
 
     $tenant = Tenant::create();
 
@@ -122,8 +155,26 @@ test('a route can be universal using domainOrSubdomain identification', function
         ->assertSuccessful()
         ->assertSee('Tenancy is initialized.');
 
+    tenancy()->end();
+
     // Subdomain identification
     pest()->get("http://{$tenantSubdomain}.localhost/foo")
+        ->assertSuccessful()
+        ->assertSee('Tenancy is initialized.');
+
+    tenancy()->end();
+
+    pest()->get("http://localhost/bar")
+        ->assertSuccessful()
+        ->assertSee('Tenancy is not initialized.');
+
+    pest()->get("http://{$tenantDomain}/bar")
+        ->assertSuccessful()
+        ->assertSee('Tenancy is initialized.');
+
+    tenancy()->end();
+
+    pest()->get("http://{$tenantSubdomain}.localhost/bar")
         ->assertSuccessful()
         ->assertSee('Tenancy is initialized.');
 })->with('domainOrSubdomain identification types');
@@ -143,6 +194,10 @@ test('a route can be universal using request data identification', function (arr
             : 'Tenancy is not initialized.';
     })->middleware($routeMiddleware);
 
+    config(['tenancy.static_identification_middleware' => $routeMiddleware]);
+
+    RouteFacade::get('/bar', [HasMiddlewareController::class, 'index']);
+
     $tenantKey = Tenant::create()->getTenantKey();
 
     pest()->get("http://localhost/foo")
@@ -150,6 +205,16 @@ test('a route can be universal using request data identification', function (arr
         ->assertSee('Tenancy is not initialized.');
 
     pest()->get("http://localhost/foo?tenant={$tenantKey}")
+        ->assertSuccessful()
+        ->assertSee('Tenancy is initialized.');
+
+    tenancy()->end();
+
+    pest()->get("http://localhost/bar")
+        ->assertSuccessful()
+        ->assertSee('Tenancy is not initialized.');
+
+    pest()->get("http://localhost/bar?tenant={$tenantKey}")
         ->assertSuccessful()
         ->assertSee('Tenancy is initialized.');
 })->with('request data identification types');
@@ -169,6 +234,10 @@ test('a route can be universal using path identification', function (array $rout
             : 'Tenancy is not initialized.';
     })->middleware($routeMiddleware);
 
+    config(['tenancy.static_identification_middleware' => $routeMiddleware]);
+
+    RouteFacade::get('/bar', [HasMiddlewareController::class, 'index']);
+
     /** @var CloneRoutesAsTenant $cloneRoutesAction */
     $cloneRoutesAction = app(CloneRoutesAsTenant::class);
 
@@ -181,6 +250,16 @@ test('a route can be universal using path identification', function (array $rout
         ->assertSee('Tenancy is not initialized.');
 
     pest()->get("http://localhost/{$tenantKey}/foo")
+        ->assertSuccessful()
+        ->assertSee('Tenancy is initialized.');
+
+    tenancy()->end();
+
+    pest()->get("http://localhost/bar")
+        ->assertSuccessful()
+        ->assertSee('Tenancy is not initialized.');
+
+    pest()->get("http://localhost/{$tenantKey}/bar")
         ->assertSuccessful()
         ->assertSee('Tenancy is initialized.');
 })->with('path identification types');
@@ -322,11 +401,16 @@ test('CloneRoutesAsTenant registers prefixed duplicates of universal routes corr
     config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_route_name_prefix' => $tenantRouteNamePrefix = 'team-route.']);
 
     // Test that routes with controllers as well as routes with closure actions get cloned correctly
-    $universalRoute = RouteFacade::get('/home', $useController ? Controller::class : fn () => tenant() ? 'Tenancy initialized.' : 'Tenancy not initialized.')->middleware($routeMiddleware)->name('home');
+    $universalRoute = RouteFacade::get('/home', $useController ? Controller::class : fn () => tenant() ? 'Tenancy is initialized.' : 'Tenancy is not initialized.')->middleware($routeMiddleware)->name('home');
     $centralRoute = RouteFacade::get('/central', fn () => true)->name('central');
 
-    expect($routes = RouteFacade::getRoutes()->get())->toContain($universalRoute);
-    expect($routes)->toContain($centralRoute);
+    config(['tenancy.static_identification_middleware' => $routeMiddleware]);
+
+    $universalRoute2 = RouteFacade::get('/bar', [HasMiddlewareController::class, 'index'])->name('second-home');
+
+    expect($routes = RouteFacade::getRoutes()->get())->toContain($universalRoute)
+        ->toContain($universalRoute2)
+        ->toContain($centralRoute);
 
     /** @var CloneRoutesAsTenant $cloneRoutesAction */
     $cloneRoutesAction = app(CloneRoutesAsTenant::class);
@@ -337,19 +421,26 @@ test('CloneRoutesAsTenant registers prefixed duplicates of universal routes corr
         ->toContain($universalRoute)
         ->toContain($centralRoute);
 
-    $newRoute = collect($routesAfterRegisteringDuplicates)->filter(fn ($route) => ! in_array($route, $routes))->first();
+    $newRoutes = collect($routesAfterRegisteringDuplicates)->filter(fn ($route) => ! in_array($route, $routes));
 
-    expect($newRoute->uri())->toBe('{' . $tenantParameterName . '}' . '/' . $universalRoute->uri());
+    expect($newRoutes->first()->uri())->toBe('{' . $tenantParameterName . '}' . '/' . $universalRoute->uri());
+    expect($newRoutes->last()->uri())->toBe('{' . $tenantParameterName . '}' . '/' . $universalRoute2->uri());
 
-    expect(tenancy()->getRouteMiddleware($newRoute))->toBe(array_merge(tenancy()->getRouteMiddleware($universalRoute), ['tenant']));
+    expect(tenancy()->getRouteMiddleware($newRoutes->first()))->toBe(array_merge(tenancy()->getRouteMiddleware($universalRoute), ['tenant']));
+    expect(tenancy()->getRouteMiddleware($newRoutes->last()))->toBe(array_merge(tenancy()->getRouteMiddleware($universalRoute2), ['tenant']));
 
     $tenant = Tenant::create();
 
-    pest()->get(route($centralRouteName = $universalRoute->getName()))->assertSee('Tenancy not initialized.');
-    pest()->get(route($tenantRouteName = $newRoute->getName(), [$tenantParameterName => $tenant->getTenantKey()]))->assertSee('Tenancy initialized.');
+    pest()->get(route($centralRouteName = $universalRoute->getName()))->assertSee('Tenancy is not initialized.');
+    pest()->get(route($centralRouteName2 = $universalRoute2->getName()))->assertSee('Tenancy is not initialized.');
+    pest()->get(route($tenantRouteName = $newRoutes->first()->getName(), [$tenantParameterName => $tenant->getTenantKey()]))->assertSee('Tenancy is initialized.');
+    tenancy()->end();
+    pest()->get(route($tenantRouteName2 = $newRoutes->last()->getName(), [$tenantParameterName => $tenant->getTenantKey()]))->assertSee('Tenancy is initialized.');
 
     expect($tenantRouteName)->toBe($tenantRouteNamePrefix . $universalRoute->getName());
+    expect($tenantRouteName2)->toBe($tenantRouteNamePrefix . $universalRoute2->getName());
     expect($centralRouteName)->toBe($universalRoute->getName());
+    expect($centralRouteName2)->toBe($universalRoute2->getName());
 })->with([
     'kernel identification' => true,
     'route-level identification' => false,
@@ -519,7 +610,7 @@ class Controller extends BaseController
 {
     public function __invoke()
     {
-        return tenant() ? 'Tenancy initialized.' : 'Tenancy not initialized.';
+        return tenant() ? 'Tenancy is initialized.' : 'Tenancy is not initialized.';
     }
 }
 
