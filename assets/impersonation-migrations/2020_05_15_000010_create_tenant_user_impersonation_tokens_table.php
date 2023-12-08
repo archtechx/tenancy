@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('token', 128)->primary();
             $table->string(Tenancy::tenantKeyColumn());
             $table->string('user_id');
+            $table->boolean('remember');
             $table->string('auth_guard');
             $table->string('redirect_url');
             $table->timestamp('created_at');

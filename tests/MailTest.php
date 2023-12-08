@@ -12,9 +12,14 @@ use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
 
 beforeEach(function() {
     config(['mail.default' => 'smtp']);
+    MailTenancyBootstrapper::$credentialsMap = [];
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+});
+
+afterEach(function () {
+    MailTenancyBootstrapper::$credentialsMap = [];
 });
 
 // Initialize tenancy as $tenant and assert that the smtp mailer's transport has the correct password

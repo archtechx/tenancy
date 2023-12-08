@@ -24,6 +24,7 @@ class UserImpersonation implements Feature
                 'user_id' => $userId,
                 'redirect_url' => $redirectUrl,
                 'auth_guard' => $authGuard,
+                'remember' => $remember,
             ]);
         });
     }
@@ -44,7 +45,7 @@ class UserImpersonation implements Feature
 
         abort_unless($tokenTenantId === $currentTenantId, 403);
 
-        Auth::guard($token->auth_guard)->loginUsingId($token->user_id);
+        Auth::guard($token->auth_guard)->loginUsingId($token->user_id, $token->remember);
 
         $token->delete();
 
