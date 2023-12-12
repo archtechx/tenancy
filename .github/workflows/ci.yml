@@ -117,4 +117,4 @@ jobs:
       - name: Install composer dependencies
         run: composer install
       - name: Run phpstan
-        run: vendor/bin/phpstan analyse --xdebug
+        run: vendor/bin/phpstan analyse
