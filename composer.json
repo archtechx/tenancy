@@ -32,7 +32,7 @@
         "doctrine/dbal": "^3.6.0",
         "spatie/valuestore": "^1.2.5",
         "pestphp/pest": "^1.21",
-        "nunomaduro/larastan": "^2.4",
+        "larastan/larastan": "^2.4",
         "spatie/invade": "^1.1"
     },
     "autoload": {
