@@ -178,7 +178,7 @@ test('broadcasting channel helpers register channels correctly', function() {
 
     expect($getChannels())->toBeEmpty();
 
-    // Central channel prefixes the channel name with 'global__'
+    // Global channel helper prefixes the channel name with 'global__'
     global_channel($channelName, $channelClosure);
 
     // Channel prefixed with 'global__' found

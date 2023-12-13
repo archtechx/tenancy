@@ -804,7 +804,7 @@ test('BroadcastChannelPrefixBootstrapper prefixes the channels events are broadc
                                 }
                             }
 
-                            // Skip prefixing channels flagged with the central channel prefix
+                            // Skip prefixing channels flagged with the global channel prefix
                             if (! str($channel)->startsWith('global__')) {
                                 $channel = str($channel)->after($defaultPrefix)->prepend($defaultPrefix . tenant()->getTenantKey() . '.');
                             }

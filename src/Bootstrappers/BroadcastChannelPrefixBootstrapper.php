@@ -101,7 +101,7 @@ class BroadcastChannelPrefixBootstrapper implements TenancyBootstrapper
                                 }
                             }
 
-                            // Give the tenant prefix to channels that aren't flagged as central
+                            // Give the tenant prefix to channels that aren't flagged as global
                             if (! str($channel)->startsWith('global__')) {
                                 $channel = str($channel)->after($defaultPrefix)->prepend($defaultPrefix . tenant()->getTenantKey() . '.');
                             }
@@ -143,7 +143,7 @@ class BroadcastChannelPrefixBootstrapper implements TenancyBootstrapper
                                 }
                             }
 
-                            // Give the tenant prefix to channels that aren't flagged as central
+                            // Give the tenant prefix to channels that aren't flagged as global
                             if (! str($channel)->startsWith('global__')) {
                                 $channel = str($channel)->after($defaultPrefix)->prepend($defaultPrefix . tenant()->getTenantKey() . '.');
                             }
