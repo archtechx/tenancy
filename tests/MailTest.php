@@ -54,6 +54,18 @@ test('mailer transport uses the correct credentials', function() {
     assertMailerTransportUsesPassword($newTenantPassword);
     tenancy()->end();
 
+    // Assert nested tenant properties can be mapped to mail config (e.g. using dot notation)
+    // Add 'mail' JSON column to tenants table where smtp_password will be stored
+    pest()->artisan('tenants:migrate', [
+        '--path' => __DIR__ . '/Etc/mail_migrations',
+        '--realpath' => true,
+    ])->assertExitCode(0);
+
+    MailTenancyBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'mail.smtp_password'];
+    tenancy()->initialize($tenant = Tenant::create(['mail' => ['smtp_password' => $nestedTenantPassword = 'nested']]));
+    assertMailerTransportUsesPassword($nestedTenantPassword);
+    tenancy()->end();
+
     // Assert mailer uses the default password after tenancy ends
     assertMailerTransportUsesPassword($defaultPassword);
 });

@@ -16,7 +16,8 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
      *
      * For example:
      * [
-     *     'config.key.name' => 'tenant_property',
+     *     'config.key.username' => 'tenant_property',
+     *     'config.key.password' => 'nested.tenant_property',
      * ]
      */
     public static array $credentialsMap = [];
@@ -60,9 +61,9 @@ class MailTenancyBootstrapper implements TenancyBootstrapper
     protected function setConfig(Tenant $tenant): void
     {
         foreach (static::$credentialsMap as $configKey => $storageKey) {
-            $override = $tenant->$storageKey;
+            $override = data_get($tenant, $storageKey);
 
-            if (array_key_exists($storageKey, $tenant->getAttributes())) {
+            if ($override !== null) {
                 $this->originalConfig[$configKey] ??= $this->config->get($configKey);
 
                 $this->config->set($configKey, $override);
