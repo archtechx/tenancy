@@ -10,7 +10,6 @@ use Stancl\Tenancy\Concerns\UsableWithEarlyIdentification;
 use Stancl\Tenancy\Concerns\UsableWithUniversalRoutes;
 use Stancl\Tenancy\Enums\RouteMode;
 use Stancl\Tenancy\Exceptions\RouteIsMissingTenantParameterException;
-use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 use Stancl\Tenancy\Tenancy;
 
@@ -37,9 +36,6 @@ class InitializeTenancyByPath extends IdentificationMiddleware implements Usable
         if ($this->shouldBeSkipped($route)) {
             return $next($request);
         }
-
-        // Used with *route-level* identification, takes precedence over what may have been configured for global stack middleware
-        TenancyUrlGenerator::$prefixRouteNames = true;
 
         // Only initialize tenancy if the route has the tenant parameter.
         // We don't want to initialize tenancy if the tenant is
