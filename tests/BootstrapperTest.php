@@ -788,8 +788,8 @@ test('BroadcastChannelPrefixBootstrapper prefixes the channels events are broadc
     // Set up the 'testing' broadcaster override
     // Identical to the default Pusher override (BroadcastChannelPrefixBootstrapper::pusher())
     // Except for the parent class (TestingBroadcaster instead of PusherBroadcaster)
-    BroadcastChannelPrefixBootstrapper::$broadcasterOverrides['testing'] = function () {
-         return app(BroadcastManager::class)->extend('testing', function ($app, $config) {
+    BroadcastChannelPrefixBootstrapper::$broadcasterOverrides['testing'] = function (BroadcastManager $broadcastManager) {
+         $broadcastManager->extend('testing', function ($app, $config) {
             return new class('tenant broadcaster') extends TestingBroadcaster {
                 protected function formatChannels(array $channels)
                     {

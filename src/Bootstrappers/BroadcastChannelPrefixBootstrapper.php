@@ -49,7 +49,7 @@ class BroadcastChannelPrefixBootstrapper implements TenancyBootstrapper
             // Delete the cached broadcaster, so that the manager uses the new one
             $this->broadcastManager->purge($broadcaster);
 
-            $broadcasterOverride();
+            $broadcasterOverride($this->broadcastManager);
 
             // Get the overriden broadcaster
             $newBroadcaster = $this->broadcastManager->driver($broadcaster);
@@ -83,10 +83,8 @@ class BroadcastChannelPrefixBootstrapper implements TenancyBootstrapper
      */
     public static function pusher(Closure|null $override = null): void
     {
-        static::$broadcasterOverrides['pusher'] = $override ?? function () {
-            $broadcastManager = app(BroadcastManager::class);
-
-            return $broadcastManager->extend('pusher', function ($app, $config) use ($broadcastManager) {
+        static::$broadcasterOverrides['pusher'] = $override ?? function (BroadcastManager $broadcastManager): void {
+            $broadcastManager->extend('pusher', function ($app, $config) use ($broadcastManager) {
                 return new class($broadcastManager->pusher($config)) extends PusherBroadcaster {
                     protected function formatChannels(array $channels)
                     {
@@ -125,10 +123,8 @@ class BroadcastChannelPrefixBootstrapper implements TenancyBootstrapper
      */
     public static function ably(Closure|null $override = null): void
     {
-        static::$broadcasterOverrides['ably'] = $override ?? function () {
-            $broadcastManager = app(BroadcastManager::class);
-
-            return $broadcastManager->extend('ably', function ($app, $config) use ($broadcastManager) {
+        static::$broadcasterOverrides['ably'] = $override ?? function (BroadcastManager $broadcastManager): void {
+            $broadcastManager->extend('ably', function ($app, $config) use ($broadcastManager) {
                 return new class($broadcastManager->ably($config)) extends AblyBroadcaster {
                     protected function formatChannels(array $channels)
                     {
