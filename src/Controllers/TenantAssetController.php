@@ -4,12 +4,20 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Controllers;
 
-use Illuminate\Routing\Controller;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
-class TenantAssetController extends Controller // todo@docs this was renamed from TenantAssetsController
+class TenantAssetController implements HasMiddleware // todo@docs this was renamed from TenantAssetsController
 {
+    public static function middleware()
+    {
+        return [
+            new Middleware(tenancy()->defaultMiddleware()),
+        ];
+    }
+
     /**
      * @throws \Symfony\Component\HttpKernel\Exception\NotFoundHttpException
      */

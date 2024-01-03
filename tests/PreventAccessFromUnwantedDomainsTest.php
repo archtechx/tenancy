@@ -212,10 +212,6 @@ test('placement of domain identification and access prevention middleware can ge
     pest()->get("http://localhost/central-route")->assertOk();
     expect(tenancy()->initialized)->toBeFalse();
 })->with([
-    'kernel identification, route-level access prevention' => [
-        'global_middleware' => [InitializeTenancyBySubdomain::class],
-        'route_middleware' => [PreventAccessFromUnwantedDomains::class],
-    ],
     'route-level identification, kernel access prevention' => [
         'global_middleware' => [PreventAccessFromUnwantedDomains::class],
         'route_middleware' => [InitializeTenancyBySubdomain::class],

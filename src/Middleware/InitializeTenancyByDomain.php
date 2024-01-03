@@ -31,11 +31,6 @@ class InitializeTenancyByDomain extends IdentificationMiddleware implements Usab
             return $next($request);
         }
 
-        if (in_array($request->getHost(), config('tenancy.central_domains', []), true)) {
-            // Always bypass tenancy initialization when host is in central domains
-            return $next($request);
-        }
-
         return $this->initializeTenancy(
             $request,
             $next,

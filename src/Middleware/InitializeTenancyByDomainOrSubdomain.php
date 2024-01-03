@@ -15,15 +15,10 @@ class InitializeTenancyByDomainOrSubdomain extends InitializeTenancyBySubdomain
 {
     use UsableWithEarlyIdentification;
 
-    /** @return \Illuminate\Http\Response|mixed */
+    /** @return Response|mixed */
     public function handle(Request $request, Closure $next): mixed
     {
         if ($this->shouldBeSkipped(tenancy()->getRoute($request))) {
-            return $next($request);
-        }
-
-        if (in_array($request->getHost(), config('tenancy.central_domains', []), true)) {
-            // Always bypass tenancy initialization when host is in central domains
             return $next($request);
         }
 
