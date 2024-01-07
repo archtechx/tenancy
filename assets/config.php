@@ -60,6 +60,7 @@ return [
             Middleware\InitializeTenancyByDomainOrSubdomain::class,
             Middleware\InitializeTenancyByPath::class,
             Middleware\InitializeTenancyByRequestData::class,
+            Middleware\InitializeTenancyByOriginHeader::class,
         ],
 
         /**

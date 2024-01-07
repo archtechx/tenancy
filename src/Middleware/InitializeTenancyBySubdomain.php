@@ -35,7 +35,7 @@ class InitializeTenancyBySubdomain extends InitializeTenancyByDomain
             return $next($request);
         }
 
-        $subdomain = $this->makeSubdomain($request->getHost());
+        $subdomain = $this->makeSubdomain($this->getDomain($request));
 
         if (is_object($subdomain) && $subdomain instanceof Exception) {
             $onFail = static::$onFail ?? function ($e) {

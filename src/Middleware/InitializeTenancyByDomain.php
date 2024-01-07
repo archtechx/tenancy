@@ -31,10 +31,12 @@ class InitializeTenancyByDomain extends IdentificationMiddleware implements Usab
             return $next($request);
         }
 
+        $domain = $this->getDomain($request);
+
         return $this->initializeTenancy(
             $request,
             $next,
-            $request->getHost()
+            $domain
         );
     }
 
@@ -44,6 +46,11 @@ class InitializeTenancyByDomain extends IdentificationMiddleware implements Usab
      */
     public function requestHasTenant(Request $request): bool
     {
-        return ! in_array($request->host(), config('tenancy.central_domains'));
+        return ! in_array($this->getDomain($request), config('tenancy.central_domains'));
+    }
+
+    public function getDomain(Request $request): string
+    {
+        return $request->getHost();
     }
 }

@@ -22,7 +22,7 @@ class InitializeTenancyByDomainOrSubdomain extends InitializeTenancyBySubdomain
             return $next($request);
         }
 
-        $domain = $request->getHost();
+        $domain = $this->getDomain($request);
 
         if ($this->isSubdomain($domain)) {
             $domain = $this->makeSubdomain($domain);

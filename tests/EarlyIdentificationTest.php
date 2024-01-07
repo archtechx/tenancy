@@ -19,6 +19,7 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 use Stancl\Tenancy\Tests\Etc\EarlyIdentification\Models\Post;
 use Stancl\Tenancy\Middleware\PreventAccessFromUnwantedDomains;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomainOrSubdomain;
+use Stancl\Tenancy\Middleware\InitializeTenancyByOriginHeader;
 use Stancl\Tenancy\Tests\Etc\EarlyIdentification\ControllerWithMiddleware;
 use Stancl\Tenancy\Tests\Etc\EarlyIdentification\ControllerWithRouteMiddleware;
 
@@ -169,6 +170,46 @@ test('early identification works with request data identification', function (st
     'using request cookie parameter' => 'cookie',
 // Creates a matrix (multiple with())
 ])->with([
+    'route-level identification' => false,
+    'kernel identification' => true,
+])->with([
+    'default to tenant routes' => RouteMode::TENANT,
+    'default to central routes' => RouteMode::CENTRAL,
+]);
+test('early identification works with origin identification', function (bool $useKernelIdentification, RouteMode $defaultRouteMode) {
+    $identificationMiddleware = InitializeTenancyByOriginHeader::class;
+
+    if ($useKernelIdentification) {
+        $controller = ControllerWithMiddleware::class;
+        app(Kernel::class)->pushMiddleware($identificationMiddleware);
+    } else {
+        $controller = ControllerWithRouteMiddleware::class;
+        RouteFacade::middlewareGroup('tenant', [$identificationMiddleware]);
+    }
+
+    config(['tenancy.default_route_mode' => $defaultRouteMode]);
+
+    $tenantRouteMiddleware = 'tenant';
+
+    // If defaulting to tenant routes
+    // With kernel identification, we make the tenant route have no MW
+    // And with route-level identification, we make the route have only the identification middleware
+    if ($defaultRouteMode === RouteMode::TENANT) {
+        $tenantRouteMiddleware = $useKernelIdentification ? null : $identificationMiddleware;
+    }
+
+    RouteFacade::post('/tenant-route', [$controller, 'index'])->middleware($tenantRouteMiddleware);
+
+    $tenant = Tenant::create();
+
+    $tenant->domains()->create(['domain' => 'foo']);
+
+    $tenantKey = $tenant->getTenantKey();
+
+    $response = pest()->post('/tenant-route', headers: ['Origin' => 'foo.localhost']);
+
+    $response->assertOk()->assertSee('token:' . $tenantKey);
+})->with([
     'route-level identification' => false,
     'kernel identification' => true,
 ])->with([
