@@ -21,6 +21,7 @@ use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\MicrosoftSQLDatabaseManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledMicrosoftSQLServerDatabaseManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLDatabaseManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLSchemaManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\SQLiteDatabaseManager;
@@ -478,7 +479,8 @@ dataset('database_managers', [
     ['sqlite', SQLiteDatabaseManager::class],
     ['pgsql', PostgreSQLDatabaseManager::class],
     ['pgsql', PostgreSQLSchemaManager::class],
-    ['sqlsrv', MicrosoftSQLDatabaseManager::class]
+    ['sqlsrv', MicrosoftSQLDatabaseManager::class],
+    ['sqlsrv', PermissionControlledMicrosoftSQLServerDatabaseManager::class]
 ]);
 
 function createUsersTable()

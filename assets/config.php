@@ -187,10 +187,11 @@ return [
             'sqlsrv' => Stancl\Tenancy\Database\TenantDatabaseManagers\MicrosoftSQLDatabaseManager::class,
 
             /**
-             * Use this database manager for MySQL to have a DB user created for each tenant database.
+             * Use these database managers to have a DB user created for each tenant database.
              * You can customize the grants given to these users by changing the $grants property.
              */
             // 'mysql' => Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager::class,
+            // 'sqlsrv' => Stancl\Tenancy\TenantDatabaseManagers\PermissionControlledMicrosoftSQLServerDatabaseManager::class,
 
             /**
              * Disable the pgsql manager above, and enable the one below if you
