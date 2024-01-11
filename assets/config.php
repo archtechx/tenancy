@@ -128,7 +128,7 @@ return [
         // Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper::class,
         // Stancl\Tenancy\Bootstrappers\RootUrlBootstrapper::class,
         // Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper::class,
-        // Stancl\Tenancy\Bootstrappers\Integrations\FortifyRouteTenancyBootstrapper,
+        // Stancl\Tenancy\Bootstrappers\Integrations\FortifyRouteTenancyBootstrapper::class,
         // Stancl\Tenancy\Bootstrappers\SessionTenancyBootstrapper::class,
         // Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper::class, // Queueing mail requires using QueueTenancyBootstrapper with $forceRefresh set to true
         // Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
