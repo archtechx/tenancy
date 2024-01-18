@@ -196,10 +196,12 @@ class CommandsTest extends TestCase
     {
         $tenantId1 = Tenant::create()->getTenantKey();
         $tenantId2 = Tenant::create()->getTenantKey();
+        $tenantId3 = Tenant::create()->getTenantKey();
         Artisan::call('tenants:migrate-fresh');
 
         $this->artisan("tenants:run foo --tenants=$tenantId1 --tenants=$tenantId2 --argument='a=foo' --option='b=bar' --option='c=xyz'")
             ->expectsOutput('Tenant: ' . $tenantId1)
-            ->expectsOutput('Tenant: ' . $tenantId2);
+            ->expectsOutput('Tenant: ' . $tenantId2)
+            ->doesntExpectOutput('Tenant: ' . $tenantId3);
     }
 }
