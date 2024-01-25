@@ -21,7 +21,7 @@ trait DealsWithModels
     /**
      * Discover all models in the directories configured in 'tenancy.rls.model_directories'.
      */
-    public static function getModels(): array
+    public function getModels(): array
     {
         if (static::$modelDiscoveryOverride) {
             return (static::$modelDiscoveryOverride)();
@@ -49,17 +49,17 @@ trait DealsWithModels
     /**
      * Filter all models retrieved by static::getModels() to get only the models that belong to tenants.
      */
-    public static function getTenantModels(): array
+    public function getTenantModels(): array
     {
-        return array_filter(static::getModels(), fn (Model $model) => static::modelBelongsToTenant($model) || static::modelBelongsToTenantIndirectly($model));
+        return array_filter($this->getModels(), fn (Model $model) => $this->modelBelongsToTenant($model) || $this->modelBelongsToTenantIndirectly($model));
     }
 
-    public static function modelBelongsToTenant(Model $model): bool
+    public function modelBelongsToTenant(Model $model): bool
     {
         return in_array(BelongsToTenant::class, class_uses_recursive($model::class));
     }
 
-    public static function modelBelongsToTenantIndirectly(Model $model): bool
+    public function modelBelongsToTenantIndirectly(Model $model): bool
     {
         return in_array(BelongsToPrimaryModel::class, class_uses_recursive($model::class));
     }
