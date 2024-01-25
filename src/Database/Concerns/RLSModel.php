@@ -10,7 +10,7 @@ namespace Stancl\Tenancy\Database\Concerns;
  *
  * Used with Postgres RLS (single-database tenancy).
  *
- * @see \Stancl\Tenancy\Database\Concerns\BelongsToTenant
+ * @see BelongsToTenant
  */
 interface RLSModel
 {

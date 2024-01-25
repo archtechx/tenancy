@@ -58,7 +58,7 @@ if (! function_exists('global_cache')) {
      * @param  dynamic  key|key,default|data,expiration|null
      * @return mixed|\Illuminate\Cache\CacheManager
      *
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     function global_cache(): mixed
     {
