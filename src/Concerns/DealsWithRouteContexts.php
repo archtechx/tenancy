@@ -20,33 +20,31 @@ trait DealsWithRouteContexts
      * Get route's middleware context (tenant, central or universal).
      * The context is determined by the route's middleware.
      *
+     * If the route has the 'universal' middleware, the context is universal,
+     * and the route is accessible from both contexts.
+     * The universal flag has the highest priority.
+     *
      * If the route has the 'central' middleware, the context is central.
-     * If the route has the 'tenant' middleware, or any tenancy identification middleware (and the route isn't flagged as universal), the context is tenant.
+     * If the route has the 'tenant' middleware, or any tenancy identification middleware, the context is tenant.
      *
      * If the route doesn't have any of the mentioned middleware,
      * the context is determined by the `tenancy.default_route_mode` config.
      */
     public static function getRouteMode(Route $route): RouteMode
     {
+        // If the route is universal, you have to determine its actual context using
+        // the identification middleware's determineUniversalRouteContextFromRequest
+        if (static::routeIsUniversal($route)) {
+            return RouteMode::UNIVERSAL;
+        }
+
         if (static::routeHasMiddleware($route, 'central')) {
             return RouteMode::CENTRAL;
         }
 
-        $routeIsUniversal = static::routeIsUniversal($route);
-
-        // If the route is flagged as tenant, consider it tenant
-        // If the route has an identification middleware and the route is not universal, consider it tenant
-        if (
-            static::routeHasMiddleware($route, 'tenant') ||
-            (static::routeHasIdentificationMiddleware($route) && ! $routeIsUniversal)
-        ) {
+        // If the route is flagged as tenant or it has identification middleware, consider it tenant
+        if (static::routeHasMiddleware($route, 'tenant') || static::routeHasIdentificationMiddleware($route)) {
             return RouteMode::TENANT;
-        }
-
-        // If the route is universal, you have to determine its actual context using
-        // The identification middleware's determineUniversalRouteContextFromRequest
-        if ($routeIsUniversal) {
-            return RouteMode::UNIVERSAL;
         }
 
         return config('tenancy.default_route_mode');
@@ -54,12 +52,11 @@ trait DealsWithRouteContexts
 
     public static function routeIsUniversal(Route $route): bool
     {
-        $routeFlaggedAsTenantOrCentral = static::routeHasMiddleware($route, 'tenant') || static::routeHasMiddleware($route, 'central');
         $routeFlaggedAsUniversal = static::routeHasMiddleware($route, 'universal');
         $universalFlagUsedInGlobalStack = app(Kernel::class)->hasMiddleware('universal');
         $defaultRouteModeIsUniversal = config('tenancy.default_route_mode') === RouteMode::UNIVERSAL;
 
-        return ! $routeFlaggedAsTenantOrCentral && ($routeFlaggedAsUniversal || $universalFlagUsedInGlobalStack || $defaultRouteModeIsUniversal);
+        return $routeFlaggedAsUniversal || $universalFlagUsedInGlobalStack || $defaultRouteModeIsUniversal;
     }
 
     /**

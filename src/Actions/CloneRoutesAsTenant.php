@@ -118,10 +118,10 @@ class CloneRoutesAsTenant
             $pathIdentificationUsed = (! $routeHasNonPathIdentificationMiddleware) &&
                 ($routeHasPathIdentificationMiddleware || $pathIdentificationMiddlewareInGlobalStack);
 
-            $routeMode = tenancy()->getRouteMode($route);
-            $routeIsUniversalOrTenant = $routeMode === RouteMode::TENANT || $routeMode === RouteMode::UNIVERSAL;
-
-            if ($pathIdentificationUsed && $routeIsUniversalOrTenant) {
+            if (
+                $pathIdentificationUsed &&
+                (tenancy()->getRouteMode($route) === RouteMode::UNIVERSAL || tenancy()->routeHasMiddleware($route, 'clone'))
+            ) {
                 return true;
             }
 
@@ -167,7 +167,11 @@ class CloneRoutesAsTenant
         // Add original route middleware to ensure there's no duplicate middleware
         unset($newRoute->action['middleware']);
 
-        $newRoute->middleware(tenancy()->getRouteMiddleware($route));
+        // Exclude `universal` and `clone` middleware from the new route -- it should specifically be a tenant route
+        $newRoute->middleware(array_filter(
+            tenancy()->getRouteMiddleware($route),
+            fn (string $middleware) => ! in_array($middleware, ['universal', 'clone'])
+        ));
 
         if ($routeName && ! $route->named($tenantRouteNamePrefix . '*')) {
             // Clear the route name so that `name()` sets the route name instead of suffixing it

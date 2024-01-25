@@ -27,9 +27,10 @@ class ForgetTenantParameter
     public function handle(RouteMatched $event): void
     {
         $kernelPathIdentificationUsed = PathIdentificationManager::pathIdentificationInGlobalStack() && ! tenancy()->routeHasIdentificationMiddleware($event->route);
-        $routeModeIsTenant = tenancy()->getRouteMode($event->route) === RouteMode::TENANT;
+        $routeMode = tenancy()->getRouteMode($event->route);
+        $routeModeIsTenantOrUniversal = $routeMode === RouteMode::TENANT || ($routeMode === RouteMode::UNIVERSAL && $event->route->hasParameter(PathIdentificationManager::getTenantParameterName()));
 
-        if ($kernelPathIdentificationUsed && $routeModeIsTenant) {
+        if ($kernelPathIdentificationUsed && $routeModeIsTenantOrUniversal) {
             $event->route->forgetParameter(PathIdentificationManager::getTenantParameterName());
         }
     }

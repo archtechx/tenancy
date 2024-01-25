@@ -430,18 +430,6 @@ test('route level identification is prioritized over kernel identification', fun
     'default to central routes' => RouteMode::CENTRAL,
 ]);
 
-test('routes with path identification middleware can get prefixed using the clone action', function() {
-    $tenantKey = Tenant::create()->getTenantKey();
-
-    RouteFacade::get('/home', fn () => tenant()?->getTenantKey())->name('home')->middleware(InitializeTenancyByPath::class);
-
-    pest()->get("http://localhost/$tenantKey/home")->assertNotFound();
-
-    app(CloneRoutesAsTenant::class)->handle();
-
-    pest()->get("http://localhost/$tenantKey/home")->assertOk();
-});
-
 function assertTenancyInitializedInEarlyIdentificationRequest(bool $expect = true): void
 {
     expect(app()->make('additionalMiddlewareRunsInTenantContext'))->toBe($expect); // Assert that middleware added in the controller constructor runs in tenant context

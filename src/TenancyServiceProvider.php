@@ -138,6 +138,7 @@ class TenancyServiceProvider extends ServiceProvider
             return $instance;
         });
 
+        Route::middlewareGroup('clone', []);
         Route::middlewareGroup('universal', []);
         Route::middlewareGroup('tenant', []);
         Route::middlewareGroup('central', []);

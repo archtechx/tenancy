@@ -231,7 +231,7 @@ class DatabaseConfig
         $databaseManagers = config('tenancy.database.managers');
 
         if (! array_key_exists($driver, $databaseManagers)) {
-            throw new Exceptions\DatabaseManagerNotRegisteredException($driver);
+            throw new DatabaseManagerNotRegisteredException($driver);
         }
 
         return app($databaseManagers[$driver]);

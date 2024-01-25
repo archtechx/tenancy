@@ -9,7 +9,7 @@ class HasMiddlewareController implements HasMiddleware
 {
     public static function middleware()
     {
-        return array_map(fn (string $middleware) => new Middleware($middleware), config('tenancy.static_identification_middleware'));
+        return array_map(fn (string $middleware) => new Middleware($middleware), config('tenancy._tests.static_identification_middleware'));
     }
 
     public function index()

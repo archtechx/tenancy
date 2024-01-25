@@ -8,8 +8,8 @@ use Closure;
 use Illuminate\Http\Request;
 use Stancl\Tenancy\Concerns\UsableWithEarlyIdentification;
 use Stancl\Tenancy\Concerns\UsableWithUniversalRoutes;
-use Stancl\Tenancy\Enums\RouteMode;
 use Stancl\Tenancy\Exceptions\RouteIsMissingTenantParameterException;
+use Stancl\Tenancy\PathIdentificationManager;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 use Stancl\Tenancy\Tenancy;
 
@@ -52,17 +52,10 @@ class InitializeTenancyByPath extends IdentificationMiddleware implements Usable
     }
 
     /**
-     * Path identification request has a tenant if the middleware context is tenant.
-     *
-     * With path identification, we can just check the MW context because we're cloning the universal routes,
-     * and the routes are flagged with the 'tenant' MW group (= their MW context is tenant).
-     *
-     * With other identification middleware, we have to determine the context differently because we only have one
-     * truly universal route available ('truly universal' because with path identification, applying 'universal' to a route just means that
-     * it should get cloned, whereas with other ID MW, it means that the route you apply the 'universal' flag to will be accessible in both contexts).
+     * Request has tenant if the request's route has the tenant parameter.
      */
     public function requestHasTenant(Request $request): bool
     {
-        return tenancy()->getRouteMode(tenancy()->getRoute($request)) === RouteMode::TENANT;
+        return tenancy()->getRoute($request)->hasParameter(PathIdentificationManager::getTenantParameterName());
     }
 }
