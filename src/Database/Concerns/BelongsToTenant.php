@@ -22,7 +22,7 @@ trait BelongsToTenant
     public static function bootBelongsToTenant(): void
     {
         // If 'tenancy.rls.enabled' is true or this model implements RLSModel
-        // Scope queries using Postgres RLS instead of TenantScope
+        // Postgres RLS is used for scoping, so we don't enable the scope used with single-database tenancy.
         if (! (config('tenancy.rls.enabled') || (new static) instanceof RLSModel)) {
             static::addGlobalScope(new TenantScope);
         }
