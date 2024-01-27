@@ -61,6 +61,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'database.redis.cache.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
             'database.redis.default.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
             'database.redis.options.prefix' => 'foo',
+            'database.redis.client' => 'predis',
             'database.connections.central' => [
                 'driver' => 'mysql',
                 'url' => env('DATABASE_URL'),
