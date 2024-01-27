@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        fail-fast: false
+        fail-fast: false # temporary
         include:
         - laravel: 9
           php: "8.0"
