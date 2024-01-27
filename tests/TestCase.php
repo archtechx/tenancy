@@ -80,6 +80,8 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 ]) : [],
             ],
             'database.connections.sqlite.database' => ':memory:',
+            'database.connections.mysql.charset' => 'utf8mb4',
+            'database.connections.mysql.collation' => 'utf8mb4_unicode_ci',
             'database.connections.mysql.host' => env('TENANCY_TEST_MYSQL_HOST', '127.0.0.1'),
             'database.connections.pgsql.host' => env('TENANCY_TEST_PGSQL_HOST', '127.0.0.1'),
             'tenancy.filesystem.disks' => [
