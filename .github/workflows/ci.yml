@@ -14,8 +14,8 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
-        fail-fast: false # temporary
         include:
         - laravel: 9
           php: "8.0"
