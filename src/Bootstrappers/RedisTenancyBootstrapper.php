@@ -26,10 +26,11 @@ class RedisTenancyBootstrapper implements TenancyBootstrapper
     {
         foreach ($this->prefixedConnections() as $connection) {
             $prefix = $this->config['tenancy.redis.prefix_base'] . $tenant->getTenantKey();
+            $suffix = $this->config['tenancy.redis.suffix'] ?? '_';
             $client = Redis::connection($connection)->client();
 
             $this->originalPrefixes[$connection] = $client->getOption($client::OPT_PREFIX);
-            $client->setOption($client::OPT_PREFIX, $prefix);
+            $client->setOption($client::OPT_PREFIX, $prefix.$suffix);
         }
     }
 
