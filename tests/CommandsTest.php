@@ -295,11 +295,13 @@ test('migrate fresh command works', function () {
 test('run command with array of tenants works', function () {
     $tenantId1 = Tenant::create()->getTenantKey();
     $tenantId2 = Tenant::create()->getTenantKey();
+    $tenantId3 = Tenant::create()->getTenantKey();
     Artisan::call('tenants:migrate-fresh');
 
     pest()->artisan("tenants:run --tenants=$tenantId1 --tenants=$tenantId2 'foo foo --b=bar --c=xyz'")
         ->expectsOutputToContain('Tenant: ' . $tenantId1)
         ->expectsOutputToContain('Tenant: ' . $tenantId2)
+        ->doesntExpectOutput('Tenant: ' . $tenantId3)
         ->assertExitCode(0);
 });
 

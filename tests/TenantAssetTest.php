@@ -145,9 +145,76 @@ test('test asset controller returns a 404 when no path is provided', function ()
 
     tenancy()->initialize($tenant);
 
+    $this->withoutExceptionHandling();
+    pest()->expectExceptionMessage('Empty path'); // outside tests this is a 404
+
     pest()->get(tenant_asset(null), [
         'X-Tenant' => $tenant->id,
     ])->assertNotFound();
+});
+
+test('tenant asset controller returns a 404 when the storage root doesnt exist', function () {
+    config(['tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class]);
+
+    $tenant = Tenant::create();
+
+    tenancy()->initialize($tenant);
+
+    $storageRoot = storage_path("app/public");
+
+    if (is_dir($storageRoot)) {
+        rmdir(storage_path("app/public"));
+    }
+
+    $this->withoutExceptionHandling();
+    pest()->expectExceptionMessage("Storage root doesn't exist"); // outside tests this is a 404
+
+    pest()->get(tenant_asset('foo.txt'), [
+        'X-Tenant' => $tenant->id,
+    ]);
+});
+
+test('tenant asset controller returns a 404 when accessing a nonexistent file', function () {
+    config(['tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class]);
+
+    $tenant = Tenant::create();
+
+    tenancy()->initialize($tenant);
+
+    $storageRoot = storage_path("app/public");
+
+    if (! is_dir($storageRoot)) {
+        mkdir(storage_path("app/public"), recursive: true);
+    }
+
+    $this->withoutExceptionHandling();
+    pest()->expectExceptionMessage("Accessing a nonexistent file"); // outside tests this is a 404
+
+    pest()->get(tenant_asset('foo.txt'), [
+        'X-Tenant' => $tenant->id,
+    ]);
+});
+
+test('test asset controller returns a 404 when accessing a file outside the storage root', function () {
+    config(['tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class]);
+
+    $tenant = Tenant::create();
+
+    tenancy()->initialize($tenant);
+
+    $storageRoot = storage_path("app/public");
+
+    if (! is_dir($storageRoot)) {
+        mkdir(storage_path("app/public"), recursive: true);
+        file_put_contents(storage_path('app/foo.txt'), 'bar');
+    }
+
+    $this->withoutExceptionHandling();
+    pest()->expectExceptionMessage('Accessing a file outside the storage root'); // outside tests this is a 404
+
+    pest()->get(tenant_asset('../foo.txt'), [
+        'X-Tenant' => $tenant->id,
+    ]);
 });
 
 function getEnvironmentSetUp($app)

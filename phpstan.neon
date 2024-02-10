@@ -51,6 +51,10 @@ parameters:
         - '#Method Stancl\\Tenancy\\Tenancy::cachedResolvers\(\) should return array#'
         - '#Access to an undefined property Stancl\\Tenancy\\Middleware\\IdentificationMiddleware\:\:\$tenancy#'
         - '#Access to an undefined property Stancl\\Tenancy\\Middleware\\IdentificationMiddleware\:\:\$resolver#'
+        -
+            message: '#string\|false#'
+            paths:
+                - src/Controllers/TenantAssetController.php
 
     checkMissingIterableValueType: false
     checkGenericClassInNonGenericObjectType: false # later we may want to enable this
