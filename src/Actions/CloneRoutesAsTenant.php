@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Stancl\Tenancy\Enums\RouteMode;
 use Stancl\Tenancy\PathIdentificationManager;
 
@@ -48,9 +49,7 @@ class CloneRoutesAsTenant
 
     public function handle(): void
     {
-        $this->router
-            ->prefix('/{' . PathIdentificationManager::getTenantParameterName() . '}/')
-            ->group(fn () => $this->getRoutesToClone()->each(fn (Route $route) => $this->cloneRoute($route)));
+        $this->getRoutesToClone()->each(fn (Route $route) => $this->cloneRoute($route));
 
         $this->router->getRoutes()->refreshNameLookups();
     }
@@ -145,40 +144,41 @@ class CloneRoutesAsTenant
             return;
         }
 
-        $newRoute = $this->createNewRoute($route);
-
-        if (! tenancy()->routeHasMiddleware($route, 'tenant')) {
-            $newRoute->middleware('tenant');
-        }
-
-        $this->copyMiscRouteProperties($route, $newRoute);
+        $this->copyMiscRouteProperties($route, $this->createNewRoute($route));
     }
 
     protected function createNewRoute(Route $route): Route
     {
         $method = strtolower($route->methods()[0]);
-        $routeName = $route->getName();
-        $tenantRouteNamePrefix = PathIdentificationManager::getTenantRouteNamePrefix();
+        $uri = $route->getPrefix() ? Str::after($route->uri(), $route->getPrefix()) : $route->uri();
+
+        $newRouteAction = collect($route->action)->tap(function (Collection $action) use ($route) {
+            /** @var array $routeMiddleware */
+            $routeMiddleware = $action->get('middleware') ?? [];
+
+            // Make the new route have the same middleware as the original route
+            // Add the 'tenant' middleware to the new route
+            // Exclude `universal` and `clone` middleware from the new route (it should only be flagged as tenant)
+            $newRouteMiddleware = collect($routeMiddleware)
+                ->merge(['tenant']) // Add 'tenant' flag
+                ->filter(fn (string $middleware) => ! in_array($middleware, ['universal', 'clone']))
+                ->toArray();
+
+            $tenantRouteNamePrefix = PathIdentificationManager::getTenantRouteNamePrefix();
+
+            // Make sure the route name has the tenant route name prefix
+            $newRouteNamePrefix = $route->getName()
+                ? $tenantRouteNamePrefix . Str::after($route->getName(), $tenantRouteNamePrefix)
+                : null;
+
+            return $action
+                ->put('as', $newRouteNamePrefix)
+                ->put('middleware', $newRouteMiddleware)
+                ->put('prefix', '/{' . PathIdentificationManager::getTenantParameterName() . '}/' . $route->getPrefix());
+        })->toArray();
 
         /** @var Route $newRoute */
-        $newRoute = $this->router->$method($route->uri(), $route->action);
-
-        // Delete middleware from the new route and
-        // Add original route middleware to ensure there's no duplicate middleware
-        unset($newRoute->action['middleware']);
-
-        // Exclude `universal` and `clone` middleware from the new route -- it should specifically be a tenant route
-        $newRoute->middleware(array_filter(
-            tenancy()->getRouteMiddleware($route),
-            fn (string $middleware) => ! in_array($middleware, ['universal', 'clone'])
-        ));
-
-        if ($routeName && ! $route->named($tenantRouteNamePrefix . '*')) {
-            // Clear the route name so that `name()` sets the route name instead of suffixing it
-            unset($newRoute->action['as']);
-
-            $newRoute->name($tenantRouteNamePrefix . $routeName);
-        }
+        $newRoute = $this->router->$method($uri, $newRouteAction);
 
         return $newRoute;
     }

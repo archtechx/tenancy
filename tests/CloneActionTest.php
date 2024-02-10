@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route as RouteFacade;
 use Stancl\Tenancy\Tests\Etc\HasMiddlewareController;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
+use Stancl\Tenancy\PathIdentificationManager;
 
 test('a route can be universal using path identification', function (array $routeMiddleware, array $globalMiddleware) {
     foreach ($globalMiddleware as $middleware) {
@@ -243,6 +244,29 @@ test('routes with the clone flag get cloned without making the routes universal'
     // The cloned route is a tenant route
     pest()->get(route('tenant.' . $routeName, ['tenant' => $tenant]))->assertSee('Tenancy initialized.');
 })->with([InitializeTenancyByPath::class, CustomInitializeTenancyByPath::class]);
+
+test('the clone action prefixes already prefixed routes correctly', function () {
+    RouteFacade::get('/home', fn () => tenant() ? 'Tenancy initialized.' : 'Tenancy not initialized.')
+        ->middleware(['universal', InitializeTenancyByPath::class])
+        ->name($routeName = 'home')
+        ->prefix($prefix = 'prefix');
+
+    app(CloneRoutesAsTenant::class)->handle();
+
+    $clonedRoute = RouteFacade::getRoutes()->getByName($clonedRouteName = 'tenant.' . $routeName);
+
+    $clonedRouteUrl = route($clonedRouteName, ['tenant' => $tenant = Tenant::create()]);
+
+    // The cloned route is prefixed correctly
+    expect($clonedRoute->getPrefix())->toBe('{tenant}/' . $prefix);
+
+    expect($clonedRouteUrl)
+        ->toContain('/' . $tenant->getTenantKey() . '/' . $prefix . '/home')
+        ->not()->toContain($prefix . '/' . $tenant->getTenantKey() . '/' . $prefix . '/home');
+
+    // The cloned route is accessible
+    pest()->get($clonedRouteUrl)->assertSee('Tenancy initialized.');
+});
 
 class CustomInitializeTenancyByPath extends InitializeTenancyByPath
 {
