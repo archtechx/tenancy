@@ -8,12 +8,10 @@ use Illuminate\Routing\Route;
 use Stancl\Tenancy\Enums\RouteMode;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Contracts\Http\Kernel;
-use Stancl\Tenancy\Actions\CloneRoutesAsTenant;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Route as RouteFacade;
 use Stancl\Tenancy\Tests\Etc\HasMiddlewareController;
-use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\IdentificationMiddleware;
 use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
@@ -416,47 +414,5 @@ class Controller extends BaseController
     public function __invoke()
     {
         return tenant() ? 'Tenancy is initialized.' : 'Tenancy is not initialized.';
-    }
-
-    /** @test */
-    public function universal_route_works_when_middleware_is_inserted_via_controller_middleware()
-    {
-        Route::middlewareGroup('universal', []);
-        config(['tenancy.features' => [UniversalRoutes::class]]);
-
-        Route::get('/foo', [UniversalRouteController::class, 'show']);
-
-        $this->get('http://localhost/foo')
-            ->assertSuccessful()
-            ->assertSee('Tenancy is not initialized.');
-
-        $tenant = Tenant::create([
-            'id' => 'acme',
-        ]);
-        $tenant->domains()->create([
-            'domain' => 'acme.localhost',
-        ]);
-
-        $this->get('http://acme.localhost/foo')
-            ->assertSuccessful()
-            ->assertSee('Tenancy is initialized.');
-    }
-}
-
-class UniversalRouteController
-{
-    public function getMiddleware()
-    {
-        return array_map(fn($middleware) => [
-            'middleware' => $middleware,
-            'options' => [],
-        ], ['universal', InitializeTenancyByDomain::class]);
-    }
-
-    public function show()
-    {
-        return tenancy()->initialized
-            ? 'Tenancy is initialized.'
-            : 'Tenancy is not initialized.';
     }
 }
