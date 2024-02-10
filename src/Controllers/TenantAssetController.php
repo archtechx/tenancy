@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Controllers;
 
+use Exception;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Exception;
 use Throwable;
 
 class TenantAssetController implements HasMiddleware // todo@docs this was renamed from TenantAssetsController
