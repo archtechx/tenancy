@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Controllers;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Exception;
 use Throwable;
 
 class TenantAssetController implements HasMiddleware // todo@docs this was renamed from TenantAssetsController
