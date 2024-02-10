@@ -57,7 +57,8 @@ class TenantAssetController implements HasMiddleware // todo@docs this was renam
         $this->abortIf(! str($attemptedPath)->startsWith($allowedRoot), 'Accessing a file outside the storage root');
     }
 
-    protected function abortIf($condition, $exceptionMessage): void
+    /** @return void|never */
+    protected function abortIf(bool $condition, string $exceptionMessage = ''): void
     {
         if ($condition) {
             if (app()->runningUnitTests()) {
