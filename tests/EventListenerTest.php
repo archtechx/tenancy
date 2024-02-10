@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-use Illuminate\Events\CallQueuedListener;
+use Stancl\JobPipeline\JobPipeline;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
-use Stancl\JobPipeline\JobPipeline;
-use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
-use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
-use Stancl\Tenancy\Events\BootstrappingTenancy;
-use Stancl\Tenancy\Events\CreatingDatabase;
-use Stancl\Tenancy\Events\CreatingTenant;
-use Stancl\Tenancy\Events\TenancyInitialized;
-use Stancl\Tenancy\Events\TenantCreated;
-use Stancl\Tenancy\Events\UpdatingDomain;
 use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Jobs\MigrateDatabase;
+use Illuminate\Events\CallQueuedListener;
+use Stancl\Tenancy\Events\CreatingTenant;
+use Stancl\Tenancy\Events\UpdatingDomain;
+use Stancl\Tenancy\Events\CreatingDatabase;
+use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Events\BootstrappingTenancy;
 use Stancl\Tenancy\Listeners\QueueableListener;
-use Stancl\Tenancy\Tests\Etc\Tenant;
+use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 
 beforeEach(function () {
     FooListener::$shouldQueue = false;

@@ -2,23 +2,43 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Listeners;
+namespace Stancl\Tenancy\ResourceSyncing\Listeners;
 
+use Closure;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Pivot;
-use Illuminate\Support\Arr;
-use Stancl\Tenancy\Contracts\Syncable;
-use Stancl\Tenancy\Contracts\SyncMaster;
+use Illuminate\Queue\SerializesModels;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\TenantCollection;
-use Stancl\Tenancy\Events\SyncedResourceChangedInForeignDatabase;
-use Stancl\Tenancy\Events\SyncedResourceSaved;
-use Stancl\Tenancy\Exceptions\ModelNotSyncMasterException;
+use Stancl\Tenancy\Listeners\QueueableListener;
+use Stancl\Tenancy\ResourceSyncing\Events\SyncedResourceSaved;
+use Stancl\Tenancy\ResourceSyncing\Events\SyncedResourceSavedInForeignDatabase;
+use Stancl\Tenancy\ResourceSyncing\ModelNotSyncMasterException;
+use Stancl\Tenancy\ResourceSyncing\ParsesCreationAttributes;
+use Stancl\Tenancy\ResourceSyncing\Syncable;
+use Stancl\Tenancy\ResourceSyncing\SyncMaster;
 use Stancl\Tenancy\Tenancy;
 
-class UpdateSyncedResource extends QueueableListener
+class UpdateOrCreateSyncedResource extends QueueableListener
 {
+    use SerializesModels, ParsesCreationAttributes;
+
     public static bool $shouldQueue = false;
+
+    /**
+     * This static property allows you to scope the "get model query"
+     * that's responsible for finding the resources that should get synced (in the getModel() method).
+     *
+     * For example, to include soft deleted records while syncing (excluded by default), you can use this closure:
+     *
+     * UpdateOrCreateSyncedResource::$scopeGetModelQuery = function (Builder $query) {
+     *     if ($query->hasMacro('withTrashed')) {
+     *        $query->withTrashed();
+     *     }
+     * };
+     */
+    public static Closure|null $scopeGetModelQuery = null;
 
     public function handle(SyncedResourceSaved $event): void
     {
@@ -55,20 +75,20 @@ class UpdateSyncedResource extends QueueableListener
 
     protected function updateResourceInCentralDatabaseAndGetTenants(SyncedResourceSaved $event, array $syncedAttributes): TenantCollection
     {
-        /** @var (Model&SyncMaster)|null $centralModel */
-        $centralModel = $event->model->getCentralModelName()::where($event->model->getGlobalIdentifierKeyName(), $event->model->getGlobalIdentifierKey())
-            ->first();
+        $centralModelClass = $event->model->getCentralModelName();
+
+        $centralModel = $this->getModel($centralModelClass, $event->model);
 
         // We disable events for this call, to avoid triggering this event & listener again.
-        $event->model->getCentralModelName()::withoutEvents(function () use (&$centralModel, $syncedAttributes, $event) {
+        $centralModelClass::withoutEvents(function () use (&$centralModel, $syncedAttributes, $event, $centralModelClass) {
             if ($centralModel) {
                 $centralModel->update($syncedAttributes);
-                event(new SyncedResourceChangedInForeignDatabase($event->model, null));
             } else {
-                // If the resource doesn't exist at all in the central DB,we create
-                $centralModel = $event->model->getCentralModelName()::create($this->getAttributesForCreation($event->model));
-                event(new SyncedResourceChangedInForeignDatabase($event->model, null));
+                // If the resource doesn't exist at all in the central DB, we create it
+                $centralModel = $centralModelClass::create($this->parseCreationAttributes($event->model));
             }
+
+            event(new SyncedResourceSavedInForeignDatabase($centralModel, null));
         });
 
         // If the model was just created, the mapping of the tenant to the user likely doesn't exist, so we create it.
@@ -104,8 +124,8 @@ class UpdateSyncedResource extends QueueableListener
     protected function updateResourceInTenantDatabases(TenantCollection $tenants, SyncedResourceSaved $event, array $syncedAttributes): void
     {
         tenancy()->runForMultiple($tenants, function ($tenant) use ($event, $syncedAttributes) {
-            // Forget instance state and find the model,
-            // again in the current tenant's context.
+            // Forget instance state and find the model again,
+            // in the current tenant's context.
 
             /** @var Model&Syncable $eventModel */
             $eventModel = $event->model;
@@ -117,8 +137,7 @@ class UpdateSyncedResource extends QueueableListener
                 $localModelClass = get_class($eventModel);
             }
 
-            /** @var Model|null */
-            $localModel = $localModelClass::firstWhere($event->model->getGlobalIdentifierKeyName(), $event->model->getGlobalIdentifierKey());
+            $localModel = $this->getModel($localModelClass, $eventModel);
 
             // Also: We're syncing attributes, not columns, which is
             // why we're using Eloquent instead of direct DB queries.
@@ -128,53 +147,23 @@ class UpdateSyncedResource extends QueueableListener
                 if ($localModel) {
                     $localModel->update($syncedAttributes);
                 } else {
-                    $localModel = $localModelClass::create($this->getAttributesForCreation($eventModel));
+                    $localModel = $localModelClass::create($this->parseCreationAttributes($eventModel));
                 }
 
-                event(new SyncedResourceChangedInForeignDatabase($localModel, $tenant));
+                event(new SyncedResourceSavedInForeignDatabase($localModel, $tenant));
             });
         });
     }
 
-    protected function getAttributesForCreation(Model&Syncable $model): array
+    protected function getModel(string $modelClass, Syncable $eventModel): Model|null
     {
-        if (! $model->getSyncedCreationAttributes()) {
-            // Creation attributes are not specified so create the model as 1:1 copy
-            // exclude the "primary key" because we want primary key to handle by the target model to avoid duplication errors
-            $attributes = $model->getAttributes();
-            unset($attributes[$model->getKeyName()]);
+        /** @var Builder */
+        $query = $modelClass::where($eventModel->getGlobalIdentifierKeyName(), $eventModel->getGlobalIdentifierKey());
 
-            return $attributes;
+        if (static::$scopeGetModelQuery) {
+            (static::$scopeGetModelQuery)($query);
         }
 
-        if (Arr::isAssoc($model->getSyncedCreationAttributes())) {
-            // Developer provided the default values (key => value) or mix of default values and attribute names (values only)
-            // We will merge the default values with provided attributes and sync attributes
-            [$attributeNames, $defaultValues] = $this->getAttributeNamesAndDefaultValues($model);
-            $attributes = $model->only(array_merge($model->getSyncedAttributeNames(), $attributeNames));
-
-            return array_merge($attributes, $defaultValues);
-        }
-
-        // Developer provided the attribute names, so we'll use them to pick model attributes
-        return $model->only($model->getSyncedCreationAttributes());
-    }
-
-    /**
-     * Split the attribute names (sequential index items) and default values (key => values).
-     */
-    protected function getAttributeNamesAndDefaultValues(Model&Syncable $model): array
-    {
-        $syncedCreationAttributes = $model->getSyncedCreationAttributes() ?? [];
-
-        $attributes = Arr::where($syncedCreationAttributes, function ($value, $key) {
-            return is_numeric($key);
-        });
-
-        $defaultValues = Arr::where($syncedCreationAttributes, function ($value, $key) {
-            return is_string($key);
-        });
-
-        return [$attributes, $defaultValues];
+        return $query->first();
     }
 }

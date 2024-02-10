@@ -7,14 +7,16 @@ namespace App\Providers;
 use Illuminate\Routing\Route;
 use Stancl\Tenancy\Jobs;
 use Stancl\Tenancy\Events;
+use Stancl\Tenancy\ResourceSyncing;
 use Stancl\Tenancy\Listeners;
 use Stancl\Tenancy\Middleware;
 use Stancl\JobPipeline\JobPipeline;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
-use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
-use Illuminate\Support\Facades\Route as RouteFacade;
 use Stancl\Tenancy\Actions\CloneRoutesAsTenant;
+use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
+use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Route as RouteFacade;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 
@@ -108,18 +110,29 @@ class TenancyServiceProvider extends ServiceProvider
             Events\RevertedToCentralContext::class => [],
 
             // Resource syncing
-            Events\SyncedResourceSaved::class => [
-                Listeners\UpdateSyncedResource::class,
+            ResourceSyncing\Events\SyncedResourceSaved::class => [
+                ResourceSyncing\Listeners\UpdateOrCreateSyncedResource::class,
             ],
+            ResourceSyncing\Events\SyncMasterDeleted::class => [
+                ResourceSyncing\Listeners\DeleteResourcesInTenants::class,
+            ],
+            ResourceSyncing\Events\SyncMasterRestored::class => [
+                ResourceSyncing\Listeners\RestoreResourcesInTenants::class,
+            ],
+            ResourceSyncing\Events\CentralResourceAttachedToTenant::class => [
+                ResourceSyncing\Listeners\CreateTenantResource::class,
+            ],
+            ResourceSyncing\Events\CentralResourceDetachedFromTenant::class => [
+                ResourceSyncing\Listeners\DeleteResourceInTenant::class,
+            ],
+            // Fired only when a synced resource is changed in a different DB than the origin DB (to avoid infinite loops)
+            ResourceSyncing\Events\SyncedResourceSavedInForeignDatabase::class => [],
 
             // Storage symlinks
             Events\CreatingStorageSymlink::class => [],
             Events\StorageSymlinkCreated::class => [],
             Events\RemovingStorageSymlink::class => [],
             Events\StorageSymlinkRemoved::class => [],
-
-            // Fired only when a synced resource is changed in a different DB than the origin DB (to avoid infinite loops)
-            Events\SyncedResourceChangedInForeignDatabase::class => [],
         ];
     }
 
@@ -150,6 +163,16 @@ class TenancyServiceProvider extends ServiceProvider
 
         $this->makeTenancyMiddlewareHighestPriority();
         $this->overrideUrlInTenantContext();
+
+        /**
+         * Include soft deleted resources in synced resource queries.
+         *
+         * ResourceSyncing\Listeners\UpdateOrCreateSyncedResource::$scopeGetModelQuery = function (Builder $query) {
+         *     if ($query->hasMacro('withTrashed')) {
+         *         $query->withTrashed();
+         *     }
+         * };
+         */
 
         /**
          * To make Livewire v3 work with Tenancy, make the update route universal.

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Events;
+namespace Stancl\Tenancy\ResourceSyncing\Events;
 
 use Illuminate\Database\Eloquent\Model;
-use Stancl\Tenancy\Contracts\Syncable;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
+use Stancl\Tenancy\ResourceSyncing\Syncable;
 
 class SyncedResourceSaved
 {

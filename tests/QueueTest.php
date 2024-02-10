@@ -25,6 +25,7 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Listeners\QueueableListener;
 
 beforeEach(function () {
     $this->mockConsoleOutput = false;
@@ -117,7 +118,30 @@ test('tenancy is initialized inside queues', function (bool $shouldEndTenancy) {
     $tenant->run(function () use ($user) {
         expect($user->fresh()->name)->toBe('Bar');
     });
-})->with([true, false]);;
+})->with([true, false]);
+
+test('changing the shouldQueue static property in parent class affects child classes unless the property is redefined', function () {
+    // Parent – $shouldQueue is true
+    expect(app(ShouldQueueListener::class)->shouldQueue(new stdClass()))->toBeTrue();
+
+    // Child – $shouldQueue is redefined and set to false
+    expect(app(ShouldNotQueueListener::class)->shouldQueue(new stdClass()))->toBeFalse();
+
+    // Child – inherits $shouldQueue from ShouldQueueListener (true)
+    expect(app(InheritedQueueListener::class)->shouldQueue(new stdClass()))->toBeTrue();
+
+    // Update $shouldQueue of InheritedQueueListener's parent to see if it affects the child
+    ShouldQueueListener::$shouldQueue = false;
+
+    // Parent's $shouldQueue changed to false
+    expect(app(InheritedQueueListener::class)->shouldQueue(new stdClass()))->toBeFalse();
+
+    ShouldQueueListener::$shouldQueue = true;
+
+    // Parent's $shouldQueue changed back to true
+    // Child's $shouldQueue is still false because it was redefined
+    expect(app(ShouldNotQueueListener::class)->shouldQueue(new stdClass()))->toBeFalse();
+});
 
 test('tenancy is initialized when retrying jobs', function (bool $shouldEndTenancy) {
     withFailedJobs();
@@ -252,5 +276,33 @@ class TestJob implements ShouldQueue
         if ($userName = $this->valuestore->get('userName')) {
             $this->user->update(['name' => $userName]);
         }
+    }
+}
+
+class ShouldQueueListener extends QueueableListener
+{
+    public static bool $shouldQueue = true;
+
+    public function handle()
+    {
+        return static::$shouldQueue;
+    }
+}
+
+class ShouldNotQueueListener extends ShouldQueueListener
+{
+    public static bool $shouldQueue = false;
+
+    public function handle()
+    {
+        return static::$shouldQueue;
+    }
+}
+
+class InheritedQueueListener extends ShouldQueueListener
+{
+    public function handle()
+    {
+        return static::$shouldQueue;
     }
 }
