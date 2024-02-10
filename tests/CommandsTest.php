@@ -41,7 +41,7 @@ beforeEach(function () {
         ],
         'tenancy.filesystem.suffix_base' => 'tenant-',
         'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
-        'tenancy.filesystem.url_override.public' => 'public-%tenant_id%'
+        'tenancy.filesystem.url_override.public' => 'public-%tenant%'
     ]);
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);

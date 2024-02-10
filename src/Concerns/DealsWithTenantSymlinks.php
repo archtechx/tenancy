@@ -30,7 +30,7 @@ trait DealsWithTenantSymlinks
 
         foreach ($diskUrls as $disk => $publicPath) {
             $storagePath = str_replace('%storage_path%', $suffixBase . $tenantKey, $disks[$disk]);
-            $publicPath = str_replace('%tenant_id%', (string) $tenantKey, $publicPath);
+            $publicPath = str_replace('%tenant%', (string) $tenantKey, $publicPath);
 
             tenancy()->central(function () use ($symlinks, $publicPath, $storagePath) {
                 $symlinks->push([public_path($publicPath) => storage_path($storagePath)]);

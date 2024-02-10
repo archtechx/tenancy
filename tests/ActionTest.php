@@ -26,7 +26,7 @@ test('create storage symlinks action works', function() {
         ],
         'tenancy.filesystem.suffix_base' => 'tenant-',
         'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
-        'tenancy.filesystem.url_override.public' => 'public-%tenant_id%'
+        'tenancy.filesystem.url_override.public' => 'public-%tenant%'
     ]);
 
     /** @var Tenant $tenant */
@@ -50,7 +50,7 @@ test('remove storage symlinks action works', function() {
         ],
         'tenancy.filesystem.suffix_base' => 'tenant-',
         'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
-        'tenancy.filesystem.url_override.public' => 'public-%tenant_id%'
+        'tenancy.filesystem.url_override.public' => 'public-%tenant%'
     ]);
 
     /** @var Tenant $tenant */

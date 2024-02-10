@@ -83,7 +83,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
                 $this->originalPaths['disks']['url'][$disk] = $diskConfig['url'] ?? null;
 
                 if ($url = str_replace(
-                    '%tenant_id%',
+                    '%tenant%',
                     (string) $tenant->getTenantKey(),
                     $this->app['config']["tenancy.filesystem.url_override.{$disk}"] ?? ''
                 )) {
