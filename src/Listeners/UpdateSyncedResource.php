@@ -16,8 +16,6 @@ use Stancl\Tenancy\Events\SyncedResourceSaved;
 use Stancl\Tenancy\Exceptions\ModelNotSyncMasterException;
 use Stancl\Tenancy\Tenancy;
 
-// todo@v4 review all code related to resource syncing
-
 class UpdateSyncedResource extends QueueableListener
 {
     public static bool $shouldQueue = false;

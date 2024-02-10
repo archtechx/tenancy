@@ -62,11 +62,13 @@ abstract class CachedTenantResolver implements TenantResolver
     }
 
     /**
-     * Get all the arg combinations for resolve() that can be used to find this tenant.
+     * Get all possible argument combinations for resolve() which can be used for caching the tenant.
+     *
+     * This is used during tenant cache invalidation.
      *
      * @return array[]
      */
-    abstract public function getArgsForTenant(Tenant $tenant): array; // todo@v4 make it clear that this is only used for cache *invalidation*
+    abstract public function getArgsForTenant(Tenant $tenant): array;
 
     public static function shouldCache(): bool
     {

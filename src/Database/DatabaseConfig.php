@@ -162,10 +162,7 @@ class DatabaseConfig
     }
 
     /**
-     * Purge host database connection.
-     *
-     * It's possible database has previous tenant connection.
-     * This will clean up the previous connection before creating it for the current tenant.
+     * Purge the previous tenant connection before opening it for another tenant.
      */
     public function purgeHostConnection(): void
     {
@@ -205,7 +202,7 @@ class DatabaseConfig
     public function manager(): Contracts\TenantDatabaseManager
     {
         // Laravel caches the previous PDO connection, so we purge it to be able to change the connection details
-        $this->purgeHostConnection(); // todo come up with a better name
+        $this->purgeHostConnection();
 
         // Create the tenant host connection config
         $tenantHostConnectionName = $this->getTenantHostConnectionName();
