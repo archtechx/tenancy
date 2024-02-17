@@ -18,6 +18,8 @@ jobs:
         include:
         - laravel: "^10.0"
           php: "8.2"
+        - laravel: "^11.0"
+          php: "8.3"
 
     steps:
       - name: Checkout
@@ -28,7 +30,7 @@ jobs:
           composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
           composer update --prefer-dist --no-interaction
       - name: Run tests
-        run: ./vendor/bin/pest
+        run: COLUMNS=200 ./vendor/bin/pest --compact --colors=always
         env:
           DB_PASSWORD: password
           DB_USERNAME: root
@@ -41,7 +43,7 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
         with:
-          token: 24382d15-84e7-4a55-bea4-c4df96a24a9b
+          token: 24382d15-84e7-4a55-bea4-c4df96a24a9b # todo it's fine if this is here in plaintext, but move this to GH secrets eventually
 
     services:
       postgres:

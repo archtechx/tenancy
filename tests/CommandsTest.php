@@ -93,24 +93,6 @@ test('migrate command works with tenants option', function () {
     expect(Schema::hasTable('users'))->toBeTrue();
 });
 
-test('migrate command loads schema state', function () {
-    $tenant = Tenant::create();
-
-    expect(Schema::hasTable('schema_users'))->toBeFalse();
-    expect(Schema::hasTable('users'))->toBeFalse();
-
-    Artisan::call('tenants:migrate --schema-path="tests/Etc/tenant-schema.dump"');
-
-    expect(Schema::hasTable('schema_users'))->toBeFalse();
-    expect(Schema::hasTable('users'))->toBeFalse();
-
-    tenancy()->initialize($tenant);
-
-    // Check for both tables to see if missing migrations also get executed
-    expect(Schema::hasTable('schema_users'))->toBeTrue();
-    expect(Schema::hasTable('users'))->toBeTrue();
-});
-
 test('migrate command only throws exceptions if skip-failing is not passed', function() {
     Tenant::create();
 
@@ -151,6 +133,37 @@ test('migrate command does not stop after the first failure if skip-failing is p
     expect($migratedTenants)->toBe(2);
 });
 
+test('the tenants migrate command uses the schema dump correctly', function (bool $schemaPathAsConfig) {
+    $artisanCommand = 'tenants:migrate';
+
+    if ($schemaPathAsConfig) {
+        // The schema dump path can be configured in 'tenancy.migration_parameters.--schema-path'
+        // The tenants:migrate command will use the schema dump located at that path by default
+        config(['tenancy.migration_parameters.--schema-path' => 'tests/Etc/tenant-schema.dump']);
+    } else {
+        // The schema dump path can be passed as an option to the tenants:migrate command
+        $artisanCommand .= ' --schema-path="tests/Etc/tenant-schema.dump"';
+    }
+
+    $tenant = Tenant::create();
+
+    Artisan::call($artisanCommand);
+
+    // 'example' is a table included in the tests/Etc/tenant-schema dump
+    // 'users' is a table created by the migrations
+    // The tables weren't created in the central database
+    expect(Schema::hasTable('example'))->toBeFalse();
+    expect(Schema::hasTable('users'))->toBeFalse();
+
+    tenancy()->initialize($tenant);
+
+    // Both the table from the schema dump and the table from actual migrations
+    // Were created in the tenant database
+    expect(Schema::hasTable('example'))->toBeTrue();
+    expect(Schema::hasTable('users'))->toBeTrue();
+})->with([true, false])
+    ->skip(fn () => str(app()->version())->startsWith('10.'), 'todo@l10 drop laravel 10 support before release');
+
 test('dump command works', function () {
     $tenant = Tenant::create();
     $schemaPath = 'tests/Etc/tenant-schema-test.dump';
@@ -188,26 +201,6 @@ test('dump command generates dump at the path specified in the tenancy migration
     Artisan::call("tenants:dump --tenant='$tenant->id'");
 
     expect($schemaPath)->toBeFile();
-});
-
-test('migrate command correctly uses the schema dump located at the configured schema path by default', function () {
-    config(['tenancy.migration_parameters.--schema-path' => 'tests/Etc/tenant-schema.dump']);
-    $tenant = Tenant::create();
-
-    expect(Schema::hasTable('schema_users'))->toBeFalse();
-    expect(Schema::hasTable('users'))->toBeFalse();
-
-    Artisan::call('tenants:migrate');
-
-    expect(Schema::hasTable('schema_users'))->toBeFalse();
-    expect(Schema::hasTable('users'))->toBeFalse();
-
-    tenancy()->initialize($tenant);
-
-    // schema_users is a table included in the tests/Etc/tenant-schema dump
-    // Check for both tables to see if missing migrations also get executed
-    expect(Schema::hasTable('schema_users'))->toBeTrue();
-    expect(Schema::hasTable('users'))->toBeTrue();
 });
 
 test('rollback command works', function () {

@@ -5,6 +5,7 @@ vendor/
 .vscode/
 .idea
 psysh
+.phpunit.cache
 .phpunit.result.cache
 phpunit_var_*.xml
 coverage/

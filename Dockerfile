@@ -1,7 +1,7 @@
-# add amd64 platform to support Mac M1
-FROM --platform=linux/amd64 shivammathur/node:latest-amd64
+FROM shivammathur/node:latest
+SHELL ["/bin/bash", "-c"]
 
-ARG PHP_VERSION=8.2
+ARG PHP_VERSION=8.3
 
 WORKDIR /var/www/html
 
@@ -9,13 +9,18 @@ WORKDIR /var/www/html
 ENV TZ=Europe/London
 ENV LANG=en_GB.UTF-8
 
-# install MYSSQL ODBC Driver
+# install MSSQL ODBC driver (1/2)
 RUN apt-get update \
     && apt-get install -y gnupg2 \
     && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
     && curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list > /etc/apt/sources.list.d/mssql-release.list \
-    && apt-get update \
-    && ACCEPT_EULA=Y apt-get install -y unixodbc-dev=2.3.7 unixodbc=2.3.7 odbcinst1debian2=2.3.7 odbcinst=2.3.7 msodbcsql17
+    && apt-get update
+
+# install MSSQL ODBC driver (2/2)
+RUN if [[ $(uname -m) == "arm64" || $(uname -m) == "aarch64" ]]; \
+    then ACCEPT_EULA=Y apt-get install -y unixodbc-dev msodbcsql18; \
+    else ACCEPT_EULA=Y apt-get install -y unixodbc-dev=2.3.7 unixodbc=2.3.7 odbcinst1debian2=2.3.7 odbcinst=2.3.7 msodbcsql17; \
+    fi
 
 # set PHP version
 RUN update-alternatives --set php /usr/bin/php$PHP_VERSION \

@@ -44,7 +44,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             '--realpath' => true,
         ]);
 
-        // Laravel 6.x support
+        // Laravel 6.x support todo clean up
         $testResponse = class_exists('Illuminate\Testing\TestResponse') ? 'Illuminate\Testing\TestResponse' : 'Illuminate\Foundation\Testing\TestResponse';
         $testResponse::macro('assertContent', function ($content) {
             $assertClass = class_exists('Illuminate\Testing\Assert') ? 'Illuminate\Testing\Assert' : 'Illuminate\Foundation\Testing\Assert';
@@ -68,9 +68,11 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
         $app['config']->set([
             'database.default' => 'central',
+            'cache.default' => 'redis',
             'database.redis.cache.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
             'database.redis.default.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
             'database.redis.options.prefix' => 'foo',
+            'database.redis.client' => 'predis',
             'database.connections.central' => [
                 'driver' => 'mysql',
                 'url' => env('DATABASE_URL'),
@@ -91,11 +93,14 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 ]) : [],
             ],
             'database.connections.sqlite.database' => ':memory:',
+            'database.connections.mysql.charset' => 'utf8mb4',
+            'database.connections.mysql.collation' => 'utf8mb4_unicode_ci',
             'database.connections.mysql.host' => env('TENANCY_TEST_MYSQL_HOST', '127.0.0.1'),
             'database.connections.sqlsrv.username' => env('TENANCY_TEST_SQLSRV_USERNAME', 'sa'),
             'database.connections.sqlsrv.password' => env('TENANCY_TEST_SQLSRV_PASSWORD', 'P@ssword'),
             'database.connections.sqlsrv.host' => env('TENANCY_TEST_SQLSRV_HOST', '127.0.0.1'),
             'database.connections.sqlsrv.database' => null,
+            'database.connections.sqlsrv.trust_server_certificate' => true,
             'database.connections.pgsql.host' => env('TENANCY_TEST_PGSQL_HOST', '127.0.0.1'),
             'tenancy.filesystem.disks' => [
                 'local',

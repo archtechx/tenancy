@@ -1,3 +1,4 @@
 #!/bin/bash
 
-docker-compose exec -T test vendor/bin/pest "$@"
+# --columns doesn't seem to work at the moment, so we're setting it using an environment variable
+docker-compose exec -e COLUMNS=$(tput cols) -T test vendor/bin/pest "$@"

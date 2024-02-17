@@ -4,11 +4,13 @@
 
 php-cs-fixer will fix code style violations in your pull requests.
 
+To run it locally, use `composer cs`.
+
 ## Running tests
 
 Run `composer docker-up` to start the containers. Then run `composer test` to run the tests.
 
-If you need to pass additional flags to phpunit, use `./test --foo` instead of `composer test --foo`. Composer scripts unfortunately don't pass CLI arguments.
+If you need to pass additional flags to phpunit, use `composer test --`, e.g. `composer test -- --filter="foo"`. Alternatively, you can use `./test --filter="foo"`
 
 If you want to run a specific test (or test file), you can also use `./t 'name of the test'`. This is equivalent to `./test --no-coverage --filter 'name of the test'` (`--no-coverage` speeds up the execution time).
 

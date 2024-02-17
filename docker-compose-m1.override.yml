@@ -1,7 +1,9 @@
 services:
   mysql:
-    platform: linux/amd64
+    # platform: linux/amd64 # either one works
+    image: arm64v8/mysql
   mysql2:
-    platform: linux/amd64
+    # platform: linux/amd64 # either one works
+    image: arm64v8/mysql
   mssql:
     image: mcr.microsoft.com/azure-sql-edge

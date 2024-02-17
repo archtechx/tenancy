@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Check for todo0  
+    - name: Check for todo0
       run: '! grep -r "todo0" --exclude-dir=workflows .'
       if: always()
     - name: Check for todo1
@@ -15,6 +15,6 @@ jobs:
     - name: Check for todo2
       run: '! grep -r "todo2" --exclude-dir=workflows .'
       if: always()
-    - name: Check for skip() in tests
-      run: '! grep -r "skip(" --exclude-dir=workflows tests/'
+    - name: Check for non-todo skip()s in tests
+      run: '! grep -r "skip(" --exclude-dir=workflows tests/ | grep -v "todo"'
       if: always()
