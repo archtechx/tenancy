@@ -18,35 +18,57 @@ class DatabaseConfig
     /** The tenant whose database we're dealing with. */
     public Tenant&Model $tenant;
 
-    /** Database username generator (can be set by the developer.) */
-    public static Closure|null $usernameGenerator = null;
+    /** Additional config for the database connection, specific to this tenant. */
+    public array $tenantConfig;
 
-    /** Database password generator (can be set by the developer.) */
-    public static Closure|null $passwordGenerator = null;
+    /**
+     * Database username generator (can be set by the developer.).
+     *
+     * @var Closure(Model&Tenant): string
+     */
+    public static Closure $usernameGenerator;
 
-    /** Database name generator (can be set by the developer.) */
-    public static Closure|null $databaseNameGenerator = null;
+    /**
+     * Database password generator (can be set by the developer.).
+     *
+     * @var Closure(Model&Tenant): string
+     */
+    public static Closure $passwordGenerator;
+
+    /**
+     * Database name generator (can be set by the developer.).
+     *
+     * @var Closure(Model&Tenant): string
+     */
+    public static Closure $databaseNameGenerator;
 
     public static function __constructStatic(): void
     {
-        static::$usernameGenerator = static::$usernameGenerator ?? function (Model&Tenant $tenant) {
-            return Str::random(16);
-        };
+        if (! isset(static::$usernameGenerator)) {
+            static::$usernameGenerator = function () {
+                return Str::random(16);
+            };
+        }
 
-        static::$passwordGenerator = static::$passwordGenerator ?? function (Model&Tenant $tenant) {
-            return Hash::make(Str::random(32));
-        };
+        if (! isset(static::$passwordGenerator)) {
+            static::$passwordGenerator = function () {
+                return Hash::make(Str::random(32));
+            };
+        }
 
-        static::$databaseNameGenerator = static::$databaseNameGenerator ?? function (Model&Tenant $tenant) {
-            return config('tenancy.database.prefix') . $tenant->getTenantKey() . config('tenancy.database.suffix');
-        };
+        if (! isset(static::$databaseNameGenerator)) {
+            static::$databaseNameGenerator = function (Model&Tenant $tenant) {
+                return config('tenancy.database.prefix') . $tenant->getTenantKey() . config('tenancy.database.suffix');
+            };
+        }
     }
 
-    public function __construct(Model&Tenant $tenant)
+    public function __construct(Model&Tenant $tenant, array $databaseConfig)
     {
         static::__constructStatic();
 
         $this->tenant = $tenant;
+        $this->tenantConfig = $databaseConfig;
     }
 
     public static function generateDatabaseNamesUsing(Closure $databaseNameGenerator): void
@@ -134,7 +156,7 @@ class DatabaseConfig
         $templateConnection = $this->getTemplateConnection();
 
         return $this->manager()->makeConnectionConfig(
-            array_merge($templateConnection, $this->tenantConfig()),
+            array_merge($templateConnection, $this->tenantConfig),
             $this->getName()
         );
     }
@@ -144,7 +166,7 @@ class DatabaseConfig
      */
     public function hostConnection(): array
     {
-        $config = $this->tenantConfig();
+        $config = $this->tenantConfig;
         $templateConnection = $this->getTemplateConnection();
 
         if ($this->connectionDriverManager($this->getTemplateConnectionDriver()) instanceof Contracts\ManagesDatabaseUsers) {
@@ -167,32 +189,6 @@ class DatabaseConfig
     public function purgeHostConnection(): void
     {
         DB::purge($this->getTenantHostConnectionName());
-    }
-
-    /**
-     * Additional config for the database connection, specific to this tenant.
-     */
-    public function tenantConfig(): array
-    {
-        $dbConfig = array_filter(array_keys($this->tenant->getAttributes()), function ($key) {
-            return Str::startsWith($key, $this->tenant->internalPrefix() . 'db_');
-        });
-
-        // Remove DB name because we set that separately
-        if (($pos = array_search($this->tenant->internalPrefix() . 'db_name', $dbConfig)) !== false) {
-            unset($dbConfig[$pos]);
-        }
-
-        // Remove DB connection because that's not used inside the array
-        if (($pos = array_search($this->tenant->internalPrefix() . 'db_connection', $dbConfig)) !== false) {
-            unset($dbConfig[$pos]);
-        }
-
-        return array_reduce($dbConfig, function ($config, $key) {
-            return array_merge($config, [
-                Str::substr($key, strlen($this->tenant->internalPrefix() . 'db_')) => $this->tenant->getAttribute($key),
-            ]);
-        }, []);
     }
 
     /** Get the TenantDatabaseManager for this tenant's connection.

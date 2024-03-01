@@ -41,10 +41,6 @@ parameters:
             paths:
                 - src/Bootstrappers/FilesystemTenancyBootstrapper.php
         -
-            message: '#Trying to invoke Closure\|null but it might not be a callable#'
-            paths:
-                - src/Database/DatabaseConfig.php
-        -
             message: '#Unable to resolve the template type (TMapWithKeysKey|TMapWithKeysValue) in call to method#'
             paths:
                 - src/Concerns/DealsWithTenantSymlinks.php

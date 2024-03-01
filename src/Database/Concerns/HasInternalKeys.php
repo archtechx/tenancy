@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Database\Concerns;
 
+/**
+ * @mixin \Illuminate\Database\Eloquent\Model
+ */
 trait HasInternalKeys
 {
     /** Get the internal prefix. */
