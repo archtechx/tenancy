@@ -41,7 +41,7 @@ class TenantDump extends DumpCommand
             return 1;
         }
 
-        $tenant->run(fn () => parent::handle($connections, $dispatcher));
+        tenancy()->run($tenant, fn () => parent::handle($connections, $dispatcher));
 
         return 0;
     }

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\ResourceSyncing;
 
-use Stancl\Tenancy\Contracts\Tenant;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\Relations\MorphPivot;
+use Illuminate\Database\Eloquent\Relations\Pivot;
+use Stancl\Tenancy\Contracts\Tenant;
 
 /**
  * Used on pivot models.
@@ -31,7 +31,7 @@ trait TriggerSyncingEvents
              * @var static&Pivot $pivot
              * @var SyncMaster|null $centralResource
              * @var (Tenant&Model)|null $tenant
-            */
+             */
             [$centralResource, $tenant] = $pivot->getCentralResourceAndTenant();
 
             if ($tenant && $centralResource?->shouldSync()) {
@@ -44,7 +44,7 @@ trait TriggerSyncingEvents
              * @var static&Pivot $pivot
              * @var SyncMaster|null $centralResource
              * @var (Tenant&Model)|null $tenant
-            */
+             */
             [$centralResource, $tenant] = $pivot->getCentralResourceAndTenant();
 
             if ($tenant && $centralResource?->shouldSync()) {

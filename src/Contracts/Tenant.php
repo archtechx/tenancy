@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Contracts;
 
-use Closure;
-
 /**
  * @see \Stancl\Tenancy\Database\Models\Tenant
  *
@@ -24,7 +22,4 @@ interface Tenant
 
     /** Set the value of an internal key. */
     public function setInternal(string $key, mixed $value): static;
-
-    /** Run a callback in this tenant's environment. */
-    public function run(Closure $callback): mixed;
 }

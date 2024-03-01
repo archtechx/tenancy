@@ -22,7 +22,7 @@ class CreateTenantResource extends QueueableListener
     {
         $tenantResourceClass = $event->centralResource->getTenantModelName();
 
-        $event->tenant->run(function () use ($event, $tenantResourceClass) {
+        tenancy()->run($event->tenant, function () use ($event, $tenantResourceClass) {
             // Prevent $tenantResourceClass::create() from firing the SyncedResourceSaved event
             // Manually fire the SyncedResourceSavedInForeignDatabase event instead
             $tenantResourceClass::withoutEvents(function () use ($event, $tenantResourceClass) {

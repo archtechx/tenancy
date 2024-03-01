@@ -13,21 +13,14 @@ trait TenantRun
      * Run a callback in this tenant's context.
      *
      * This method is atomic and safely reverts to the previous context.
+     *
+     * @template T
+     * @param Closure(Tenant): T $callback
+     * @return T
      */
     public function run(Closure $callback): mixed
     {
         /** @var Tenant $this */
-        $originalTenant = tenant();
-
-        tenancy()->initialize($this);
-        $result = $callback($this);
-
-        if ($originalTenant) {
-            tenancy()->initialize($originalTenant);
-        } else {
-            tenancy()->end();
-        }
-
-        return $result;
+        return tenancy()->run($this, $callback);
     }
 }

@@ -18,6 +18,6 @@ class DeleteResourceInTenant extends QueueableListener
 
     public function handle(CentralResourceDetachedFromTenant $event): void
     {
-        $event->tenant->run(fn () => $this->deleteSyncedResource($event->centralResource, true));
+        tenancy()->run($event->tenant, fn () => $this->deleteSyncedResource($event->centralResource, true));
     }
 }

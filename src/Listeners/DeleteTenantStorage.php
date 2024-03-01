@@ -11,6 +11,6 @@ class DeleteTenantStorage
 {
     public function handle(DeletingTenant $event): void
     {
-        File::deleteDirectory($event->tenant->run(fn () => storage_path()));
+        File::deleteDirectory(tenancy()->run($event->tenant, fn () => storage_path()));
     }
 }

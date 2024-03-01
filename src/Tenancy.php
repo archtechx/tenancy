@@ -59,6 +59,31 @@ class Tenancy
         event(new Events\TenancyInitialized($this));
     }
 
+    /**
+     * Run a callback in the current tenant's context.
+     *
+     * This method is atomic and safely reverts to the previous context.
+     *
+     * @template T
+     * @param Closure(Tenant): T $callback
+     * @return T
+     */
+    public function run(Tenant $tenant, Closure $callback): mixed
+    {
+        $originalTenant = $this->tenant;
+
+        $this->initialize($tenant);
+        $result = $callback($tenant);
+
+        if ($originalTenant) {
+            $this->initialize($originalTenant);
+        } else {
+            $this->end();
+        }
+
+        return $result;
+    }
+
     public function end(): void
     {
         if (! $this->initialized) {
