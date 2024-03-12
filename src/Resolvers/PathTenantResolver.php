@@ -51,6 +51,8 @@ class PathTenantResolver extends Contracts\CachedTenantResolver
         // todo@samuel: fix the coupling here. when this is called from the cachedresolver, $args are the tenant key. when it's called from within this class, $args are a Route instance
         // the logic shouldn't have to be coupled to where it's being called from
 
+        // todo@samuel also make the tenant column configurable
+
         // $args[0] can be either a Route instance with the tenant key as a parameter
         // Or the tenant key
         $args = [$args[0] instanceof Route ? $args[0]->parameter(static::tenantParameterName()) : $args[0]];
