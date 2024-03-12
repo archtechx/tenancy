@@ -1,13 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" backupGlobals="false" bootstrap="vendor/autoload.php" colors="true" processIsolation="false" stopOnFailure="false" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.0/phpunit.xsd" cacheDirectory=".phpunit.cache" backupStaticProperties="false">
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" backupGlobals="false" bootstrap="vendor/autoload.php" colors="true" processIsolation="false" stopOnFailure="false" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.0/phpunit.xsd" cacheDirectory=".phpunit.cache" backupStaticProperties="false">
   <coverage>
-    <include>
-      <directory suffix=".php">./src</directory>
-    </include>
-    <exclude>
-      <file>./src/routes.php</file>
-      <file>./src/Vite.php</file>
-    </exclude>
     <report>
       <clover outputFile="coverage/phpunit/clover.xml"/>
       <html outputDirectory="coverage/phpunit/html" lowUpperBound="35" highLowerBound="70"/>
@@ -29,4 +22,13 @@
     <env name="AWS_DEFAULT_REGION" value="us-west-2"/>
   </php>
   <logging/>
+  <source>
+    <include>
+      <directory suffix=".php">./src</directory>
+    </include>
+    <exclude>
+      <file>./src/routes.php</file>
+      <file>./src/Vite.php</file>
+    </exclude>
+  </source>
 </phpunit>

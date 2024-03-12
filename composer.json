@@ -12,15 +12,15 @@
     "require": {
         "php": "^8.0",
         "ext-json": "*",
-        "illuminate/support": "^9.0|^10.0",
+        "illuminate/support": "^9.0|^10.0|^11.0",
         "facade/ignition-contracts": "^1.0.2",
         "ramsey/uuid": "^4.7.3",
         "stancl/jobpipeline": "^1.6.2",
         "stancl/virtualcolumn": "^1.3.1"
     },
     "require-dev": {
-        "laravel/framework": "^9.0|^10.0",
-        "orchestra/testbench": "^7.0|^8.0",
+        "laravel/framework": "^9.0|^10.0|^11.0",
+        "orchestra/testbench": "^7.0|^8.0|^9.0",
         "league/flysystem-aws-s3-v3": "^3.12.2",
         "doctrine/dbal": "^3.6.0",
         "spatie/valuestore": "^1.3.2"

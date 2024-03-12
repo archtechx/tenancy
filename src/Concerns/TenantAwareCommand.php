@@ -10,8 +10,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 trait TenantAwareCommand
 {
-    /** @return int */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $tenants = $this->getTenants();
         $exitCode = 0;
