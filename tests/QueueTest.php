@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
-use Closure;
 use Exception;
-use Illuminate\Support\Str;
 use Illuminate\Bus\Queueable;
 use Spatie\Valuestore\Valuestore;
 use Illuminate\Support\Facades\DB;
@@ -25,7 +23,6 @@ use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use PDO;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
@@ -59,6 +56,7 @@ class QueueTest extends TestCase
 
     public function tearDown(): void
     {
+        parent::tearDown();
         $this->valuestore->flush();
     }
 
