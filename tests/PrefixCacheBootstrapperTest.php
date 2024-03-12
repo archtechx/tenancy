@@ -74,7 +74,7 @@ test('correct cache prefix is used in all contexts', function () {
 
     expect(cache($tenantOnePrefix . 'key'))->toBe('tenantone-value');
     expect(cache($tenantTwoPrefix . 'key'))->toBe('tenanttwo-value');
-})->skip(fn () => str(app()->version())->startsWith('10.'), 'todo@l10 drop laravel 10 support before release');
+});
 
 test('cache is persisted when reidentification is used', function () {
     $tenant1 = Tenant::create();
@@ -148,7 +148,7 @@ test('cache base prefix is customizable', function () {
         ->toBe(cache()->store('redis2')->getPrefix()) // Non-default store gets prefixed correctly too
         ->toBe(app('cache')->getPrefix())
         ->toBe(app('cache.store')->getPrefix());
-})->skip(fn () => str(app()->version())->startsWith('10.'), 'todo@l10 drop laravel 10 support before release');
+});
 
 test('cache is prefixed correctly when using a repository injected in a singleton', function () {
     $this->app->singleton(CacheService::class);
@@ -280,7 +280,7 @@ test('non default stores get prefixed too when specified in tenantCacheStores', 
         ->toBe(cache()->store('redis2')->getPrefix()); // Non-default store
 
     tenancy()->end();
-})->skip(fn () => str(app()->version())->startsWith('10.'), 'todo@l10 drop laravel 10 support before release');
+});
 
 test('cache store prefix generation can be customized', function() {
     // Use custom prefix generator
@@ -302,7 +302,7 @@ test('cache store prefix generation can be customized', function() {
         ->toBe(app('cache.store')->getPrefix());
 
     tenancy()->end();
-})->skip(fn () => str(app()->version())->startsWith('10.'), 'todo@l10 drop laravel 10 support before release');
+});
 
 test('stores get prefixed using the default way if no prefix generator is specified', function() {
     $originalPrefix = config('cache.prefix');
@@ -321,4 +321,4 @@ test('stores get prefixed using the default way if no prefix generator is specif
         ->toBe(cache()->store('redis2')->getPrefix());
 
     tenancy()->end();
-})->skip(fn () => str(app()->version())->startsWith('10.'), 'todo@l10 drop laravel 10 support before release');
+});

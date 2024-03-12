@@ -161,8 +161,7 @@ test('the tenants migrate command uses the schema dump correctly', function (boo
     // Were created in the tenant database
     expect(Schema::hasTable('example'))->toBeTrue();
     expect(Schema::hasTable('users'))->toBeTrue();
-})->with([true, false])
-    ->skip(fn () => str(app()->version())->startsWith('10.'), 'todo@l10 drop laravel 10 support before release');
+})->with([true, false]);
 
 test('dump command works', function () {
     $tenant = Tenant::create();
