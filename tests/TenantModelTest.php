@@ -68,11 +68,7 @@ class TenantModelTest extends TestCase
     {
         Schema::drop('domains');
         Schema::table('tenants', function (Blueprint $table) {
-            $table->dropColumn('id');
-        });
-
-        Schema::table('tenants', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->bigIncrements('id')->change();
         });
 
         unset(app()[UniqueIdentifierGenerator::class]);
