@@ -305,7 +305,7 @@ test('database credentials can be provided to PermissionControlledMySQLDatabaseM
     $password = Str::random('8');
     $mysql2DB = DB::connection('mysql2');
     $mysql2DB->statement("CREATE USER `{$username}`@`%` IDENTIFIED BY '{$password}';");
-    $mysql2DB->statement("GRANT ALL PRIVILEGES ON *.* TO `{$username}`@`%` identified by '{$password}' WITH GRANT OPTION;");
+    $mysql2DB->statement("GRANT ALL PRIVILEGES ON *.* TO `{$username}`@`%` WITH GRANT OPTION;");
     $mysql2DB->statement("FLUSH PRIVILEGES;");
 
     DB::purge('mysql2'); // forget the mysql2 connection so that it uses the new credentials the next time
@@ -350,7 +350,7 @@ test('tenant database can be created by using the username and password from ten
     $password = Str::random('8');
     $mysqlDB = DB::connection('mysql');
     $mysqlDB->statement("CREATE USER `{$username}`@`%` IDENTIFIED BY '{$password}';");
-    $mysqlDB->statement("GRANT ALL PRIVILEGES ON *.* TO `{$username}`@`%` identified by '{$password}' WITH GRANT OPTION;");
+    $mysqlDB->statement("GRANT ALL PRIVILEGES ON *.* TO `{$username}`@`%` WITH GRANT OPTION;");
     $mysqlDB->statement("FLUSH PRIVILEGES;");
 
     DB::purge('mysql2'); // forget the mysql2 connection so that it uses the new credentials the next time
