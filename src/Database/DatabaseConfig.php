@@ -214,7 +214,7 @@ class DatabaseConfig
     }
 
     /**
-     * todo come up with a better name
+     * todo@name come up with a better name
      * Get database manager class from the given connection config's driver.
      *
      * @throws DatabaseManagerNotRegisteredException

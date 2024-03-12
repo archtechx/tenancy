@@ -8,11 +8,10 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Stancl\Tenancy\Concerns\UsableWithEarlyIdentification;
-use Stancl\Tenancy\Enums\Context;
 use Stancl\Tenancy\Enums\RouteMode;
 
 /**
- * todo come up with a better name.
+ * todo@name come up with a better name.
  *
  * Prevents accessing central domains in the tenant context/tenant domains in the central context.
  * The access isn't prevented if the request is trying to access a route flagged as 'universal',

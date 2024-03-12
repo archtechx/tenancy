@@ -35,7 +35,7 @@ if (! function_exists('tenant')) {
 }
 
 if (! function_exists('tenant_asset')) {
-    // todo docblock
+    // todo@docblock
     function tenant_asset(string|null $asset): string
     {
         if ($assetUrl = config('app.asset_url')) {

@@ -22,11 +22,11 @@ class Tenancy
      */
     public Tenant|null $tenant = null;
 
-    // todo docblock
+    // todo@docblock
     public ?Closure $getBootstrappersUsing = null;
 
     /** Is tenancy fully initialized? */
-    public bool $initialized = false; // todo document the difference between $tenant being set and $initialized being true (e.g. end of initialize() method)
+    public bool $initialized = false; // todo@docs document the difference between $tenant being set and $initialized being true (e.g. end of initialize() method)
 
     /** Initialize tenancy for the passed tenant. */
     public function initialize(Tenant|int|string $tenant): void
@@ -92,7 +92,7 @@ class Tenancy
 
         event(new Events\EndingTenancy($this));
 
-        // todo find a way to refactor these two methods
+        // todo@samuel find a way to refactor these two methods
 
         event(new Events\TenancyEnded($this));
 

@@ -200,7 +200,7 @@ return [
             // 'pgsql' => Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLSchemaManager::class, // Separate by schema instead of database
         ],
 
-        // todo docblock
+        // todo@docblock
         'drop_tenant_databases_on_migrate_fresh' => false,
     ],
 

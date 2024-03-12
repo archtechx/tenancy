@@ -44,7 +44,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             '--realpath' => true,
         ]);
 
-        // Laravel 6.x support todo clean up
+        // Laravel 6.x support todo@refactor clean up
         $testResponse = class_exists('Illuminate\Testing\TestResponse') ? 'Illuminate\Testing\TestResponse' : 'Illuminate\Foundation\Testing\TestResponse';
         $testResponse::macro('assertContent', function ($content) {
             $assertClass = class_exists('Illuminate\Testing\Assert') ? 'Illuminate\Testing\Assert' : 'Illuminate\Foundation\Testing\Assert';
@@ -129,8 +129,8 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'tenancy.models.tenant' => Tenant::class, // Use test tenant w/ DBs & domains
         ]);
 
-        $app->singleton(RedisTenancyBootstrapper::class); // todo (Samuel) use proper approach eg config for singleton registration
-        $app->singleton(PrefixCacheTenancyBootstrapper::class); // todo (Samuel) use proper approach eg config for singleton registration
+        $app->singleton(RedisTenancyBootstrapper::class); // todo@samuel use proper approach eg config for singleton registration
+        $app->singleton(PrefixCacheTenancyBootstrapper::class); // todo@samuel use proper approach eg config for singleton registration
         $app->singleton(BroadcastingConfigBootstrapper::class);
         $app->singleton(BroadcastChannelPrefixBootstrapper::class);
         $app->singleton(MailTenancyBootstrapper::class);

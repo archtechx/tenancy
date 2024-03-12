@@ -11,7 +11,7 @@ use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
 /**
- * todo name.
+ * todo@name rename?
  *
  * Separate tenant cache using tagging.
  * This is the legacy approach. Some things, like dependency injection, won't work properly with this bootstrapper.

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Stancl\Tenancy\Contracts\Tenant;
 
-// todo move all resource syncing-related things to a separate namespace?
+// todo@move move all resource syncing-related things to a separate namespace?
 
 /**
  * @property-read Tenant[]|Collection $tenants
