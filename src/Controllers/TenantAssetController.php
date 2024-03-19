@@ -16,7 +16,7 @@ class TenantAssetController implements HasMiddleware // todo@docs this was renam
 {
     /**
      * Used for adding custom headers to the response.
-     * todo@tests add a test for this
+     * todo@tests add a test for this.
      *
      * @var (Closure(Request): array)|null
      */
