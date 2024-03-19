@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Controllers;
 
+use Closure;
 use Exception;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -12,22 +14,42 @@ use Throwable;
 
 class TenantAssetController implements HasMiddleware // todo@docs this was renamed from TenantAssetsController
 {
+    /**
+     * Used for adding custom headers to the response.
+     * todo@tests add a test for this
+     *
+     * @var (Closure(Request): array)|null
+     */
+    public static Closure|null $headers;
+
+    /**
+     * Additional middleware to be used on the route to this controller.
+     *
+     * @var array<string>
+     */
+    public static array $middleware = [];
+
     public static function middleware()
     {
         return [
-            new Middleware(tenancy()->defaultMiddleware()),
+            new Middleware(array_merge(
+                tenancy()->defaultMiddleware(),
+                static::$middleware,
+            )),
         ];
     }
 
     /**
      * @throws \Symfony\Component\HttpKernel\Exception\NotFoundHttpException
      */
-    public function __invoke(string $path = null): BinaryFileResponse
+    public function __invoke(Request $request, string $path = null): BinaryFileResponse
     {
         $this->validatePath($path);
 
         try {
-            return response()->file(storage_path("app/public/$path"));
+            $headers = isset(static::$headers) ? (static::$headers)($request) : [];
+
+            return response()->file(storage_path("app/public/$path"), $headers);
         } catch (Throwable) {
             abort(404);
         }
