@@ -16,7 +16,6 @@ class TenantAssetController implements HasMiddleware // todo@docs this was renam
 {
     /**
      * Used for adding custom headers to the response.
-     * todo@tests add a test for this
      *
      * @var (Closure(Request): array)|null
      */
@@ -33,7 +32,7 @@ class TenantAssetController implements HasMiddleware // todo@docs this was renam
     {
         return [
             new Middleware(array_merge(
-                tenancy()->defaultMiddleware(),
+                [tenancy()->defaultMiddleware()],
                 static::$middleware,
             )),
         ];

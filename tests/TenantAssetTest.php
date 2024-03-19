@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -14,6 +15,7 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper;
+use Stancl\Tenancy\Controllers\TenantAssetController;
 use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
 
 beforeEach(function () {
@@ -113,6 +115,30 @@ test('asset helper works correctly with path identification', function (bool $ke
     'kernel identification' => true,
     'route-level identification' => false,
 ]);
+
+test('TenantAssetController headers are configurable', function () {
+    TenantAssetController::$headers = function (Request $request) {
+        return ['X-Foo' => 'Bar'];
+    };
+
+    $tenant = Tenant::create();
+    tenancy()->initialize($tenant);
+    $tenant->createDomain('foo.localhost');
+
+    $filename = 'testfile' . pest()->randomString(10);
+    Storage::disk('public')->put($filename, 'bar');
+
+    $this->withoutExceptionHandling();
+
+    $response = pest()->get("http://foo.localhost/tenancy/assets/$filename", [
+        'X-Tenant' => $tenant->id,
+    ]);
+
+    $response->assertSuccessful();
+    $response->assertHeader('X-Foo', 'Bar');
+
+    TenantAssetController::$headers = null; // reset static property
+});
 
 test('global asset helper returns the same url regardless of tenancy initialization', function () {
     $original = global_asset('foobar');
