@@ -11,6 +11,8 @@ use Illuminate\Session\SessionManager;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
+// todo@rename this should be DB-specific
+
 /**
  * This resets the database connection used by the database session driver.
  *
