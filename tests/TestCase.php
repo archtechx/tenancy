@@ -118,9 +118,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             ],
             'tenancy.central_domains' => ['localhost', '127.0.0.1'],
             'tenancy.bootstrappers' => [
-                DatabaseTenancyBootstrapper::class,
-                FilesystemTenancyBootstrapper::class,
-                RootUrlBootstrapper::class,
+                DatabaseTenancyBootstrapper::class, // todo@tests find why some tests are failing without this (especially 'the tenant connection is fully removed')
             ],
             'queue.connections.central' => [
                 'driver' => 'sync',
