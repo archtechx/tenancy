@@ -21,20 +21,25 @@ class PathTenantResolver extends Contracts\CachedTenantResolver
     /** @var string|null */
     public static $cacheStore = null; // default
 
+    /** @var string */
+    public static $resolvingColumn = 'id'; // default
+
     public function resolveWithoutCache(...$args): Tenant
     {
         /** @var Route $route */
         $route = $args[0];
 
-        if ($id = $route->parameter(static::$tenantParameterName)) {
+        $resolvingColumn = static::$resolvingColumn;
+
+        if ($value = $route->parameter(static::$tenantParameterName)) {
             $route->forgetParameter(static::$tenantParameterName);
 
-            if ($tenant = tenancy()->find($id)) {
+            if ($tenant = tenancy()->where($resolvingColumn, $value)->first()) {
                 return $tenant;
             }
         }
 
-        throw new TenantCouldNotBeIdentifiedByPathException($id);
+        throw new TenantCouldNotBeIdentifiedByPathException($resolvingColumn, $value);
     }
 
     public function resolved(Tenant $tenant, ...$args): void

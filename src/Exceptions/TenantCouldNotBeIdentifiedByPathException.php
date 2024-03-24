@@ -11,9 +11,9 @@ use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
 
 class TenantCouldNotBeIdentifiedByPathException extends TenantCouldNotBeIdentifiedException implements ProvidesSolution
 {
-    public function __construct($tenant_id)
+    public function __construct($resolvingColumn, $value)
     {
-        parent::__construct("Tenant could not be identified on path with tenant_id: $tenant_id");
+        parent::__construct("Tenant could not be identified on path with tenant_$resolvingColumn: $value");
     }
 
     public function getSolution(): Solution
