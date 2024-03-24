@@ -116,6 +116,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 '--realpath' => true,
                 '--force' => true,
             ],
+            'tenancy.central_domains' => ['localhost', '127.0.0.1'],
             'tenancy.bootstrappers' => [
                 DatabaseTenancyBootstrapper::class,
                 FilesystemTenancyBootstrapper::class,

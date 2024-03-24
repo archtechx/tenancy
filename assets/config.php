@@ -37,8 +37,7 @@ return [
      * Only relevant if you're using the domain or subdomain identification middleware.
      */
     'central_domains' => [
-        '127.0.0.1',
-        'localhost',
+        str(env('APP_URL'))->after('://')->before('/')->toString(),
     ],
 
     'identification' => [
@@ -121,17 +120,28 @@ return [
      * To configure their behavior, see the config keys below.
      */
     'bootstrappers' => [
+        // Basic Laravel features
         Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper::class,
+        Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper::class,
+        // Stancl\Tenancy\Bootstrappers\CacheTagsBootstrapper::class, // Alternative to PrefixCacheTenancyBootstrapper
         Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper::class,
+        // Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
+
+        // Support for edge cases
+        Stancl\Tenancy\Bootstrappers\SessionTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\BatchTenancyBootstrapper::class,
-        // Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper::class,
+
+        // Configurable bootstrappers
         // Stancl\Tenancy\Bootstrappers\RootUrlBootstrapper::class,
         // Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper::class,
+        // Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper::class, // Note: Queueing mail requires using QueueTenancyBootstrapper with $forceRefresh set to true
+        // Stancl\Tenancy\Bootstrappers\BroadcastingConfigBootstrapper::class,
+        // Stancl\Tenancy\Bootstrappers\BroadcastingChannelPrefixBootstrapper::class,
+
+        // Integration bootstrappers
         // Stancl\Tenancy\Bootstrappers\Integrations\FortifyRouteTenancyBootstrapper::class,
-        // Stancl\Tenancy\Bootstrappers\SessionTenancyBootstrapper::class,
-        // Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper::class, // Queueing mail requires using QueueTenancyBootstrapper with $forceRefresh set to true
-        // Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
+        // Stancl\Tenancy\Bootstrappers\Integrations\ScoutTenancyBootstrapper::class,
     ],
 
 

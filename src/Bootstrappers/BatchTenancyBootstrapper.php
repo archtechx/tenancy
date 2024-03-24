@@ -10,6 +10,7 @@ use Illuminate\Database\DatabaseManager;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
+// todo add docblock
 class BatchTenancyBootstrapper implements TenancyBootstrapper
 {
     /**

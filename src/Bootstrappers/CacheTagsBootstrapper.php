@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Cache;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
+// todo@rename some bootstrappers end in TenancyBootstrapper and others don't - make this consistent or make the difference clear
+
 /**
  * todo@name rename?
  *

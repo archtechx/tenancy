@@ -30,14 +30,18 @@ class SessionTenancyBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant): void
     {
-        $this->resetDatabaseHandler();
+        if ($this->config->get('session.driver') === 'database') {
+            $this->resetDatabaseHandler();
+        }
     }
 
     public function revert(): void
     {
-        // When ending tenancy, this runs *before* the DatabaseTenancyBootstrapper, so DB tenancy
-        // is still bootstrapped. For that reason, we have to explicitly use the central connection
-        $this->resetDatabaseHandler(config('tenancy.database.central_connection'));
+        if ($this->config->get('session.driver') === 'database') {
+            // When ending tenancy, this runs *before* the DatabaseTenancyBootstrapper, so DB tenancy
+            // is still bootstrapped. For that reason, we have to explicitly use the central connection
+            $this->resetDatabaseHandler(config('tenancy.database.central_connection'));
+        }
     }
 
     protected function resetDatabaseHandler(string $defaultConnection = null): void
