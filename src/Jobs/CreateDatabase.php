@@ -12,12 +12,16 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\DatabaseManager;
+use Stancl\Tenancy\Database\Exceptions\TenantDatabaseAlreadyExistsException;
+use Stancl\Tenancy\Database\Exceptions\TenantDatabaseUserAlreadyExistsException;
 use Stancl\Tenancy\Events\CreatingDatabase;
 use Stancl\Tenancy\Events\DatabaseCreated;
 
 class CreateDatabase implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public static bool $ignoreExisting = false;
 
     public function __construct(
         protected TenantWithDatabase&Model $tenant,
@@ -34,10 +38,17 @@ class CreateDatabase implements ShouldQueue
         }
 
         $this->tenant->database()->makeCredentials();
-        $databaseManager->ensureTenantCanBeCreated($this->tenant);
-        $this->tenant->database()->manager()->createDatabase($this->tenant);
 
-        event(new DatabaseCreated($this->tenant));
+        try {
+            $databaseManager->ensureTenantCanBeCreated($this->tenant);
+            $this->tenant->database()->manager()->createDatabase($this->tenant);
+
+            event(new DatabaseCreated($this->tenant));
+        } catch (TenantDatabaseAlreadyExistsException | TenantDatabaseUserAlreadyExistsException $e) {
+            if (! static::$ignoreExisting) {
+                throw $e;
+            }
+        }
 
         return true;
     }
