@@ -12,14 +12,14 @@ use Illuminate\Routing\Controllers\Middleware;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
-class TenantAssetController implements HasMiddleware // todo@docs this was renamed from TenantAssetsController
+class TenantAssetController implements HasMiddleware
 {
     /**
      * Used for adding custom headers to the response.
      *
-     * @var (Closure(Request): array)|null
+     * @var (Closure(Request): array)|array
      */
-    public static Closure|null $headers;
+    public static Closure|array $headers = [];
 
     /**
      * Additional middleware to be used on the route to this controller.
@@ -30,12 +30,13 @@ class TenantAssetController implements HasMiddleware // todo@docs this was renam
 
     public static function middleware()
     {
-        return [
-            new Middleware(array_merge(
+        return array_map(
+            fn ($middleware) => new Middleware($middleware),
+            array_merge(
                 [tenancy()->defaultMiddleware()],
                 static::$middleware,
-            )),
-        ];
+            ),
+        );
     }
 
     /**
@@ -46,7 +47,9 @@ class TenantAssetController implements HasMiddleware // todo@docs this was renam
         $this->validatePath($path);
 
         try {
-            $headers = isset(static::$headers) ? (static::$headers)($request) : [];
+            $headers = static::$headers instanceof Closure
+                ? (static::$headers)($request)
+                : static::$headers;
 
             return response()->file(storage_path("app/public/$path"), $headers);
         } catch (Throwable) {

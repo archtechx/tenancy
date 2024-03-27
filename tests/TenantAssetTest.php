@@ -25,6 +25,7 @@ beforeEach(function () {
 
     TenancyUrlGenerator::$prefixRouteNames = false;
     TenancyUrlGenerator::$passTenantParameterToRoutes = true;
+    TenantAssetController::$headers = [];
 
     /** @var CloneRoutesAsTenant $cloneAction */
     $cloneAction = app(CloneRoutesAsTenant::class);
@@ -137,7 +138,7 @@ test('TenantAssetController headers are configurable', function () {
     $response->assertSuccessful();
     $response->assertHeader('X-Foo', 'Bar');
 
-    TenantAssetController::$headers = null; // reset static property
+    TenantAssetController::$headers = []; // reset static property
 });
 
 test('global asset helper returns the same url regardless of tenancy initialization', function () {
