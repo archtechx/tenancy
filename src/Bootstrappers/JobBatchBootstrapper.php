@@ -10,8 +10,10 @@ use Illuminate\Database\DatabaseManager;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
-// todo add docblock
-class BatchTenancyBootstrapper implements TenancyBootstrapper
+/**
+ * Adds support for running queued tenant jobs in batches.
+ */
+class JobBatchBootstrapper implements TenancyBootstrapper
 {
     /**
      * The previous database connection instance.

@@ -11,18 +11,18 @@ use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\CacheTagsBootstrapper;
-use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 
 beforeEach(function () {
     config(['cache.default' => $cacheDriver = 'redis']);
-    PrefixCacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
+    CacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
 afterEach(function () {
-    PrefixCacheTenancyBootstrapper::$tenantCacheStores = [];
+    CacheTenancyBootstrapper::$tenantCacheStores = [];
 });
 
 test('global cache manager stores data in global cache', function (string $bootstrapper) {
@@ -57,7 +57,7 @@ test('global cache manager stores data in global cache', function (string $boots
     expect(cache('def'))->toBe('ghi');
 })->with([
     CacheTagsBootstrapper::class,
-    PrefixCacheTenancyBootstrapper::class,
+    CacheTenancyBootstrapper::class,
 ]);
 
 test('the global_cache helper supports the same syntax as the cache helper', function (string $bootstrapper) {
@@ -77,5 +77,5 @@ test('the global_cache helper supports the same syntax as the cache helper', fun
     expect(cache('foo'))->toBe(null); // tenant cache is not affected
 })->with([
     CacheTagsBootstrapper::class,
-    PrefixCacheTenancyBootstrapper::class,
+    CacheTenancyBootstrapper::class,
 ]);

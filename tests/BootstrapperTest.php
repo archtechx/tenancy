@@ -38,7 +38,7 @@ use Stancl\Tenancy\Overrides\TenancyBroadcastManager;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Bootstrappers\CacheTagsBootstrapper;
 use Illuminate\Routing\Exceptions\UrlGenerationException;
-use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\MailConfigBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper;
 use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
@@ -46,15 +46,15 @@ use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastingConfigBootstrapper;
-use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastChannelPrefixBootstrapper;
-use Stancl\Tenancy\Bootstrappers\Integrations\FortifyRouteTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\Integrations\FortifyRouteBootstrapper;
 
 beforeEach(function () {
     $this->mockConsoleOutput = false;
 
     config(['cache.default' => $cacheDriver = 'redis']);
-    PrefixCacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
+    CacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
     // Reset static properties of classes used in this test file to their default values
     BroadcastingConfigBootstrapper::$credentialsMap = [];
     TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably'];
@@ -74,7 +74,7 @@ beforeEach(function () {
 afterEach(function () {
     // Reset static properties of classes used in this test file to their default values
     RootUrlBootstrapper::$rootUrlOverride = null;
-    PrefixCacheTenancyBootstrapper::$tenantCacheStores = [];
+    CacheTenancyBootstrapper::$tenantCacheStores = [];
     TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably'];
     BroadcastingConfigBootstrapper::$credentialsMap = [];
     TenancyUrlGenerator::$prefixRouteNames = false;
@@ -148,7 +148,7 @@ test('cache data is separated', function (string $bootstrapper) {
     expect(Cache::get('foo'))->toBe('central');
 })->with([
     CacheTagsBootstrapper::class,
-    PrefixCacheTenancyBootstrapper::class,
+    CacheTenancyBootstrapper::class,
 ]);
 
 test('redis data is separated', function () {
@@ -453,7 +453,7 @@ test('BroadcastingConfigBootstrapper makes the app use broadcasters with the cor
 });
 
 test('MailTenancyBootstrapper maps tenant mail credentials to config as specified in the $credentialsMap property and makes the mailer use tenant credentials', function() {
-    MailTenancyBootstrapper::$credentialsMap = [
+    MailConfigBootstrapper::$credentialsMap = [
         'mail.mailers.smtp.username' => 'smtp_username',
         'mail.mailers.smtp.password' => 'smtp_password'
     ];
@@ -462,7 +462,7 @@ test('MailTenancyBootstrapper maps tenant mail credentials to config as specifie
         'mail.default' => 'smtp',
         'mail.mailers.smtp.username' => $defaultUsername = 'default username',
         'mail.mailers.smtp.password' => 'no password',
-        'tenancy.bootstrappers' => [MailTenancyBootstrapper::class],
+        'tenancy.bootstrappers' => [MailConfigBootstrapper::class],
     ]);
 
     $tenant = Tenant::create(['smtp_password' => $password = 'testing password']);
@@ -479,11 +479,11 @@ test('MailTenancyBootstrapper maps tenant mail credentials to config as specifie
 });
 
 test('MailTenancyBootstrapper reverts the config and mailer credentials to default when tenancy ends', function() {
-    MailTenancyBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'smtp_password'];
+    MailConfigBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'smtp_password'];
     config([
         'mail.default' => 'smtp',
         'mail.mailers.smtp.password' => $defaultPassword = 'no password',
-        'tenancy.bootstrappers' => [MailTenancyBootstrapper::class],
+        'tenancy.bootstrappers' => [MailConfigBootstrapper::class],
     ]);
 
     tenancy()->initialize(Tenant::create(['smtp_password' => $tenantPassword = 'testing password']));
@@ -676,7 +676,7 @@ test('url generator bootstrapper can make route helper generate links with the t
 });
 
 test('fortify route tenancy bootstrapper updates fortify config correctly', function() {
-    config(['tenancy.bootstrappers' => [FortifyRouteTenancyBootstrapper::class]]);
+    config(['tenancy.bootstrappers' => [FortifyRouteBootstrapper::class]]);
 
     $originalFortifyHome = config('fortify.home');
     $originalFortifyRedirects = config('fortify.redirects');
@@ -697,10 +697,10 @@ test('fortify route tenancy bootstrapper updates fortify config correctly', func
         return true;
     })->name($pathIdWelcomeRouteName = 'path.welcome');
 
-    FortifyRouteTenancyBootstrapper::$fortifyHome = $homeRouteName;
+    FortifyRouteBootstrapper::$fortifyHome = $homeRouteName;
 
     // Make login redirect to the central welcome route
-    FortifyRouteTenancyBootstrapper::$fortifyRedirectMap['login'] = [
+    FortifyRouteBootstrapper::$fortifyRedirectMap['login'] = [
         'route_name' => $welcomeRouteName,
         'context' => Context::CENTRAL,
     ];
@@ -717,7 +717,7 @@ test('fortify route tenancy bootstrapper updates fortify config correctly', func
     expect(config('fortify.redirects'))->toBe($originalFortifyRedirects);
 
     // Making a route's context will pass the tenant parameter to the route
-    FortifyRouteTenancyBootstrapper::$fortifyRedirectMap['login']['context'] = Context::TENANT;
+    FortifyRouteBootstrapper::$fortifyRedirectMap['login']['context'] = Context::TENANT;
 
     tenancy()->initialize($tenant);
 
@@ -725,8 +725,8 @@ test('fortify route tenancy bootstrapper updates fortify config correctly', func
 
     // Make the home and login route accept the tenant as a route parameter
     // To confirm that tenant route parameter gets filled automatically too (path identification works as well as query string)
-    FortifyRouteTenancyBootstrapper::$fortifyHome = $pathIdHomeRouteName;
-    FortifyRouteTenancyBootstrapper::$fortifyRedirectMap['login']['route_name'] = $pathIdWelcomeRouteName;
+    FortifyRouteBootstrapper::$fortifyHome = $pathIdHomeRouteName;
+    FortifyRouteBootstrapper::$fortifyRedirectMap['login']['route_name'] = $pathIdWelcomeRouteName;
 
     tenancy()->end();
 

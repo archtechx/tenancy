@@ -16,7 +16,7 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  *
  * Works with path and query string identification.
  */
-class FortifyRouteTenancyBootstrapper implements TenancyBootstrapper
+class FortifyRouteBootstrapper implements TenancyBootstrapper
 {
     /**
      * Make Fortify actions redirect to custom routes.

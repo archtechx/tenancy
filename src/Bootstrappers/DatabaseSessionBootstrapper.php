@@ -11,15 +11,13 @@ use Illuminate\Session\SessionManager;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
-// todo@rename this should be DB-specific
-
 /**
  * This resets the database connection used by the database session driver.
  *
  * It runs each time tenancy is initialized or ended.
  * That way the session driver always uses the current DB connection.
  */
-class SessionTenancyBootstrapper implements TenancyBootstrapper
+class DatabaseSessionBootstrapper implements TenancyBootstrapper
 {
     public function __construct(
         protected Repository $config,

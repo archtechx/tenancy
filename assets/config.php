@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Stancl\Tenancy\Middleware;
 use Stancl\Tenancy\Resolvers;
+use Stancl\Tenancy\Bootstrappers;
 use Stancl\Tenancy\Enums\RouteMode;
 use Stancl\Tenancy\UniqueIdentifierGenerators;
 
@@ -129,27 +130,27 @@ return [
      */
     'bootstrappers' => [
         // Basic Laravel features
-        Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper::class,
-        Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper::class,
-        // Stancl\Tenancy\Bootstrappers\CacheTagsBootstrapper::class, // Alternative to PrefixCacheTenancyBootstrapper
-        Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper::class,
-        Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper::class,
-        // Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
+        Bootstrappers\DatabaseTenancyBootstrapper::class,
+        Bootstrappers\CacheTenancyBootstrapper::class,
+        // Bootstrappers\CacheTagsBootstrapper::class, // Alternative to PrefixCacheTenancyBootstrapper
+        Bootstrappers\FilesystemTenancyBootstrapper::class,
+        Bootstrappers\QueueTenancyBootstrapper::class,
+        // Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
 
         // Support for edge cases
-        Stancl\Tenancy\Bootstrappers\SessionTenancyBootstrapper::class,
-        Stancl\Tenancy\Bootstrappers\BatchTenancyBootstrapper::class,
+        Bootstrappers\DatabaseSessionBootstrapper::class,
+        Bootstrappers\JobBatchBootstrapper::class,
 
         // Configurable bootstrappers
-        // Stancl\Tenancy\Bootstrappers\RootUrlBootstrapper::class,
-        // Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper::class,
-        // Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper::class, // Note: Queueing mail requires using QueueTenancyBootstrapper with $forceRefresh set to true
-        // Stancl\Tenancy\Bootstrappers\BroadcastingConfigBootstrapper::class,
-        // Stancl\Tenancy\Bootstrappers\BroadcastingChannelPrefixBootstrapper::class,
+        // Bootstrappers\RootUrlBootstrapper::class,
+        // Bootstrappers\UrlGeneratorBootstrapper::class,
+        // Bootstrappers\MailTenancyBootstrapper::class, // Note: Queueing mail requires using QueueTenancyBootstrapper with $forceRefresh set to true
+        // Bootstrappers\BroadcastingConfigBootstrapper::class,
+        // Bootstrappers\BroadcastingChannelPrefixBootstrapper::class,
 
         // Integration bootstrappers
-        // Stancl\Tenancy\Bootstrappers\Integrations\FortifyRouteTenancyBootstrapper::class,
-        // Stancl\Tenancy\Bootstrappers\Integrations\ScoutTenancyBootstrapper::class,
+        // Bootstrappers\Integrations\FortifyRouteTenancyBootstrapper::class,
+        // Bootstrappers\Integrations\ScoutTenancyBootstrapper::class,
     ],
 
     /**
@@ -295,7 +296,7 @@ return [
     'redis' => [
         'prefix_base' => 'tenant', // Each key in Redis will be prepended by this prefix_base, followed by the tenant id.
         'prefixed_connections' => [ // Redis connections whose keys are prefixed, to separate one tenant's keys from another.
-            // 'default',
+            'default',
         ],
     ],
 

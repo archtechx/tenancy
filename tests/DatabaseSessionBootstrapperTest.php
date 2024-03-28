@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
-use Stancl\Tenancy\Bootstrappers\SessionTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\DatabaseSessionBootstrapper;
 use Stancl\Tenancy\Events;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Jobs\CreateDatabase;
@@ -48,7 +48,7 @@ test('central helper can be used in tenant requests', function (bool $enabled, b
     if ($enabled) {
         config()->set(
             'tenancy.bootstrappers',
-            array_merge(config('tenancy.bootstrappers'), [SessionTenancyBootstrapper::class]),
+            array_merge(config('tenancy.bootstrappers'), [DatabaseSessionBootstrapper::class]),
         );
     }
 
@@ -101,7 +101,7 @@ test('tenant run helper can be used on central requests', function (bool $enable
     if ($enabled) {
         config()->set(
             'tenancy.bootstrappers',
-            array_merge(config('tenancy.bootstrappers'), [SessionTenancyBootstrapper::class]),
+            array_merge(config('tenancy.bootstrappers'), [DatabaseSessionBootstrapper::class]),
         );
     }
 

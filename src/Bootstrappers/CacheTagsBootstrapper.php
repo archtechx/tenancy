@@ -10,14 +10,11 @@ use Illuminate\Support\Facades\Cache;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
-// todo@rename some bootstrappers end in TenancyBootstrapper and others don't - make this consistent or make the difference clear
-
 /**
- * todo@name rename?
- *
  * Separate tenant cache using tagging.
+ *
  * This is the legacy approach. Some things, like dependency injection, won't work properly with this bootstrapper.
- * PrefixCacheTenancyBootstrapper is the recommended bootstrapper for cache separation.
+ * CacheTenancyBootstrapper is the recommended bootstrapper for cache separation.
  */
 class CacheTagsBootstrapper implements TenancyBootstrapper
 {

@@ -2,7 +2,7 @@
 
 use Illuminate\Bus\BatchRepository;
 use Illuminate\Support\Facades\Event;
-use Stancl\Tenancy\Bootstrappers\BatchTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\JobBatchBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
@@ -14,7 +14,7 @@ beforeEach(function () {
     config([
         'tenancy.bootstrappers' => [
             DatabaseTenancyBootstrapper::class,
-            BatchTenancyBootstrapper::class,
+            JobBatchBootstrapper::class,
         ],
     ]);
 

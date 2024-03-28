@@ -12,7 +12,10 @@ use Illuminate\Support\Facades\Cache;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
-class PrefixCacheTenancyBootstrapper implements TenancyBootstrapper
+/**
+ * Makes cache tenant-aware by applying a prefix.
+ */
+class CacheTenancyBootstrapper implements TenancyBootstrapper
 {
     protected string|null $originalPrefix = null;
     public static array $tenantCacheStores = []; // E.g. ['redis']

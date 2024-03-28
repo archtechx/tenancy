@@ -9,7 +9,7 @@ use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
-class MailTenancyBootstrapper implements TenancyBootstrapper
+class MailConfigBootstrapper implements TenancyBootstrapper
 {
     /**
      * Tenant properties to be mapped to config (similarly to the TenantConfig feature).

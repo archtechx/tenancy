@@ -8,19 +8,19 @@ use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\MailConfigBootstrapper;
 
 beforeEach(function() {
     config(['mail.default' => 'smtp']);
-    config(['tenancy.bootstrappers' => [MailTenancyBootstrapper::class]]);
-    MailTenancyBootstrapper::$credentialsMap = [];
+    config(['tenancy.bootstrappers' => [MailConfigBootstrapper::class]]);
+    MailConfigBootstrapper::$credentialsMap = [];
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
 afterEach(function () {
-    MailTenancyBootstrapper::$credentialsMap = [];
+    MailConfigBootstrapper::$credentialsMap = [];
 });
 
 // Initialize tenancy as $tenant and assert that the smtp mailer's transport has the correct password
@@ -36,7 +36,7 @@ test('mailer transport uses the correct credentials', function() {
     withTenantDatabases();
 
     config(['mail.default' => 'smtp', 'mail.mailers.smtp.password' => $defaultPassword = 'DEFAULT']);
-    MailTenancyBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'smtp_password'];
+    MailConfigBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'smtp_password'];
 
     tenancy()->initialize($tenant = Tenant::create());
     assertMailerTransportUsesPassword($defaultPassword); // $tenant->smtp_password is not set, so the default password should be used
@@ -61,7 +61,7 @@ test('mailer transport uses the correct credentials', function() {
         '--realpath' => true,
     ])->assertExitCode(0);
 
-    MailTenancyBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'mail.smtp_password'];
+    MailConfigBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'mail.smtp_password'];
     tenancy()->initialize($tenant = Tenant::create(['mail' => ['smtp_password' => $nestedTenantPassword = 'nested']]));
     assertMailerTransportUsesPassword($nestedTenantPassword);
     tenancy()->end();

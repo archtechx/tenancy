@@ -8,7 +8,7 @@ use Illuminate\Contracts\Config\Repository;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
-class ScoutTenancyBootstrapper implements TenancyBootstrapper
+class ScoutPrefixBootstrapper implements TenancyBootstrapper
 {
     protected ?string $originalScoutPrefix = null;
 
@@ -19,7 +19,7 @@ class ScoutTenancyBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant): void
     {
-        if ($this->originalScoutPrefix !== null) {
+        if ($this->originalScoutPrefix === null) {
             $this->originalScoutPrefix = $this->config->get('scout.prefix');
         }
 

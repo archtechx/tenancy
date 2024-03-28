@@ -15,13 +15,13 @@ use Stancl\Tenancy\Facades\GlobalCache;
 use Stancl\Tenancy\TenancyServiceProvider;
 use Stancl\Tenancy\Facades\Tenancy as TenancyFacade;
 use Stancl\Tenancy\Bootstrappers\RootUrlBootstrapper;
-use Stancl\Tenancy\Bootstrappers\MailTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\MailConfigBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastingConfigBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
-use Stancl\Tenancy\Bootstrappers\PrefixCacheTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
@@ -129,10 +129,10 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         ]);
 
         $app->singleton(RedisTenancyBootstrapper::class); // todo@samuel use proper approach eg config for singleton registration
-        $app->singleton(PrefixCacheTenancyBootstrapper::class); // todo@samuel use proper approach eg config for singleton registration
+        $app->singleton(CacheTenancyBootstrapper::class); // todo@samuel use proper approach eg config for singleton registration
         $app->singleton(BroadcastingConfigBootstrapper::class);
         $app->singleton(BroadcastChannelPrefixBootstrapper::class);
-        $app->singleton(MailTenancyBootstrapper::class);
+        $app->singleton(MailConfigBootstrapper::class);
         $app->singleton(RootUrlBootstrapper::class);
         $app->singleton(UrlGeneratorBootstrapper::class);
     }
