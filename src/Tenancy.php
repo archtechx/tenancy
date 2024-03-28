@@ -137,10 +137,10 @@ class Tenancy
     /**
      * Try to find a tenant using an ID.
      */
-    public static function find(int|string $id): Tenant|null
+    public static function find(int|string $id, string $column = null): (Tenant&Model)|null
     {
-        /** @var (Tenant&Model)|null */
-        $tenant = static::model()->where(static::model()->getTenantKeyName(), $id)->first();
+        /** @var (Tenant&Model)|null $tenant */
+        $tenant = static::model()->firstWhere($column ?? static::model()->getTenantKeyName(), $id);
 
         return $tenant;
     }

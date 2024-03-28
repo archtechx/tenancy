@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Routing\Route;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 
+// todo a lot of duplicate logic with PathTenantResolver, ideally remove this class
 class PathIdentificationManager
 {
     public static Closure|null $tenantParameterName = null;

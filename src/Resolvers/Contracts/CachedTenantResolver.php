@@ -6,7 +6,9 @@ namespace Stancl\Tenancy\Resolvers\Contracts;
 
 use Illuminate\Contracts\Cache\Factory;
 use Illuminate\Contracts\Cache\Repository;
+use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Contracts\TenantResolver;
 
 abstract class CachedTenantResolver implements TenantResolver
@@ -19,13 +21,21 @@ abstract class CachedTenantResolver implements TenantResolver
         $this->cache = $cache->store(static::cacheStore());
     }
 
+    /**
+     * Resolve a tenant using some value passed from the middleware.
+     *
+     * @throws TenantCouldNotBeIdentifiedException
+     */
     public function resolve(mixed ...$args): Tenant
     {
         if (! static::shouldCache()) {
-            return $this->resolveWithoutCache(...$args);
+            $tenant = $this->resolveWithoutCache(...$args);
+            $this->resolved($tenant, ...$args);
+
+            return $tenant;
         }
 
-        $key = $this->getCacheKey(...$args);
+        $key = $this->formatCacheKey(...$args);
 
         if ($tenant = $this->cache->get($key)) {
             $this->resolved($tenant, ...$args);
@@ -35,44 +45,51 @@ abstract class CachedTenantResolver implements TenantResolver
 
         $tenant = $this->resolveWithoutCache(...$args);
         $this->cache->put($key, $tenant, static::cacheTTL());
+        $this->resolved($tenant, ...$args);
 
         return $tenant;
     }
 
-    public function invalidateCache(Tenant $tenant): void
+    /**
+     * Invalidate this resolver's cache for a tenant.
+     */
+    public function invalidateCache(Tenant&Model $tenant): void
     {
         if (! static::shouldCache()) {
             return;
         }
 
-        foreach ($this->getArgsForTenant($tenant) as $args) {
-            $this->cache->forget($this->getCacheKey(...$args));
+        foreach ($this->getPossibleCacheKeys($tenant) as $key) {
+            $this->cache->forget($key);
         }
     }
 
-    public function getCacheKey(mixed ...$args): string
+    public function formatCacheKey(mixed ...$args): string
     {
         return '_tenancy_resolver:' . static::class . ':' . json_encode($args);
     }
 
+    /**
+     * Resolve a tenant using $args passed from middleware, without using cache.
+     *
+     * @throws TenantCouldNotBeIdentifiedException
+     */
     abstract public function resolveWithoutCache(mixed ...$args): Tenant;
 
+    /**
+     * Called after a tenant has been resolved from cache or without cache.
+     *
+     * Used for side effects like removing the tenant parameter from the request route.
+     */
     public function resolved(Tenant $tenant, mixed ...$args): void
     {
     }
 
-    /**
-     * Get all possible argument combinations for resolve() which can be used for caching the tenant.
-     *
-     * This is used during tenant cache invalidation.
-     *
-     * @return array[]
-     */
-    abstract public function getArgsForTenant(Tenant $tenant): array;
+    abstract public function getPossibleCacheKeys(Tenant&Model $tenant): array;
 
     public static function shouldCache(): bool
     {
-        return config('tenancy.identification.resolvers.' . static::class . '.cache') ?? false;
+        return (config('tenancy.identification.resolvers.' . static::class . '.cache') ?? false) && static::cacheTTL() > 0;
     }
 
     public static function cacheTTL(): int

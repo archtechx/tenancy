@@ -39,7 +39,7 @@ class InitializeTenancyByPath extends IdentificationMiddleware implements Usable
 
         // Only initialize tenancy if the route has the tenant parameter.
         // We don't want to initialize tenancy if the tenant is
-        // simply injected into some route controller action.
+        // simply injected into some central route action.
         if (in_array(PathTenantResolver::tenantParameterName(), $route->parameterNames())) {
             return $this->initializeTenancy(
                 $request,

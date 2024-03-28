@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Resolvers;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Routing\Route;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Exceptions\TenantColumnNotWhitelistedException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByPathException;
-use Stancl\Tenancy\PathIdentificationManager;
 
 class PathTenantResolver extends Contracts\CachedTenantResolver
 {
@@ -16,26 +17,30 @@ class PathTenantResolver extends Contracts\CachedTenantResolver
         /** @var Route $route */
         $route = $args[0];
 
-        /** @var string $id */
-        $id = $route->parameter(static::tenantParameterName());
+        /** @var string $key */
+        $key = $route->parameter(static::tenantParameterName());
+        $column = $route->bindingFieldFor(static::tenantParameterName()) ?? static::tenantModelColumn();
 
-        if ($id) {
-            // Forget the tenant parameter so that we don't have to accept it in route action methods
-            $route->forgetParameter(static::tenantParameterName());
+        if ($column !== static::tenantModelColumn() && ! in_array($column, static::allowedExtraModelColumns())) {
+            throw new TenantColumnNotWhitelistedException($key);
+        }
 
-            if ($tenant = tenancy()->find($id)) {
+        if ($key) {
+            if ($tenant = tenancy()->find($key, $column)) {
+                /** @var Tenant $tenant */
                 return $tenant;
             }
         }
 
-        throw new TenantCouldNotBeIdentifiedByPathException($id);
+        throw new TenantCouldNotBeIdentifiedByPathException($key);
     }
 
-    public function getArgsForTenant(Tenant $tenant): array
+    public function getPossibleCacheKeys(Tenant&Model $tenant): array
     {
-        return [
-            [$tenant->getTenantKey()],
-        ];
+        $columns = array_unique(array_merge(static::allowedExtraModelColumns(), [static::tenantModelColumn()]));
+        $columnValuePairs = array_map(fn ($column) => [$column, $tenant->getAttribute($column)], $columns);
+
+        return array_map(fn ($columnValuePair) => $this->formatCacheKey(...$columnValuePair), $columnValuePairs);
     }
 
     public function resolved(Tenant $tenant, mixed ...$args): void
@@ -43,21 +48,22 @@ class PathTenantResolver extends Contracts\CachedTenantResolver
         /** @var Route $route */
         $route = $args[0];
 
-        $route->forgetParameter(PathIdentificationManager::getTenantParameterName());
+        // Forget the tenant parameter so that we don't have to accept it in route action methods
+        $route->forgetParameter(static::tenantParameterName());
     }
 
-    public function getCacheKey(mixed ...$args): string
+    public function formatCacheKey(mixed ...$args): string
     {
-        // todo@samuel fix the coupling here. when this is called from the cachedresolver, $args are the tenant key. when it's called from within this class, $args are a Route instance
-        // the logic shouldn't have to be coupled to where it's being called from
+        // When called in resolve(), $args contains the route
+        // When called in getPossibleCacheKeys(), $args contains the column-value pair
+        if ($args[0] instanceof Route) {
+            $column = $args[0]->bindingFieldFor(static::tenantParameterName()) ?? static::tenantModelColumn();
+            $value = $args[0]->parameter(static::tenantParameterName());
+        } else {
+            [$column, $value] = $args;
+        }
 
-        // todo@samuel also make the tenant column configurable
-
-        // $args[0] can be either a Route instance with the tenant key as a parameter
-        // Or the tenant key
-        $args = [$args[0] instanceof Route ? $args[0]->parameter(static::tenantParameterName()) : $args[0]];
-
-        return '_tenancy_resolver:' . static::class . ':' . json_encode($args);
+        return parent::formatCacheKey($column, $value);
     }
 
     public static function tenantParameterName(): string
@@ -68,5 +74,16 @@ class PathTenantResolver extends Contracts\CachedTenantResolver
     public static function tenantRouteNamePrefix(): string
     {
         return config('tenancy.identification.resolvers.' . static::class . '.tenant_route_name_prefix') ?? static::tenantParameterName() . '.';
+    }
+
+    public static function tenantModelColumn(): string
+    {
+        return config('tenancy.identification.resolvers.' . static::class . '.tenant_model_column') ?? tenancy()->model()->getTenantKeyName();
+    }
+
+    /** @return string[] */
+    public static function allowedExtraModelColumns(): array
+    {
+        return config('tenancy.identification.resolvers.' . static::class . '.allowed_extra_model_columns') ?? [];
     }
 }

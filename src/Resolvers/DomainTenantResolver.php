@@ -56,21 +56,22 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
         }
     }
 
-    public function getArgsForTenant(Tenant $tenant): array
+    public function getPossibleCacheKeys(Tenant&Model $tenant): array
     {
         if ($tenant instanceof SingleDomainTenant) {
-            /** @var SingleDomainTenant&Model $tenant */
-            return [
-                [$tenant->getOriginal('domain')], // Previous domain
-                [$tenant->domain], // Current domain
-            ];
+            $domains = array_filter([
+                $tenant->getOriginal('domain'), // Previous domain
+                $tenant->domain, // Current domain
+            ]);
+        } else {
+            /** @var Tenant&Model $tenant */
+            $tenant->unsetRelation('domains');
+
+            $domains = $tenant->domains->map(function (Domain&Model $domain) {
+                return $domain->domain;
+            })->toArray();
         }
 
-        /** @var Tenant&Model $tenant */
-        $tenant->unsetRelation('domains');
-
-        return $tenant->domains->map(function (Domain&Model $domain) {
-            return [$domain->domain];
-        })->toArray();
+        return array_map(fn (string $domain) => $this->formatCacheKey($domain), $domains);
     }
 }

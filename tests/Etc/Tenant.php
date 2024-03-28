@@ -16,5 +16,12 @@ use Stancl\Tenancy\Database\Models;
  */
 class Tenant extends Models\Tenant implements TenantWithDatabase
 {
+    public static array $extraCustomColumns = [];
+
     use HasDatabase, HasDomains, HasPending, MaintenanceMode;
+
+    public static function getCustomColumns(): array
+    {
+        return array_merge(parent::getCustomColumns(), static::$extraCustomColumns);
+    }
 }

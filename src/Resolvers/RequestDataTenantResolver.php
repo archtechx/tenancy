@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Resolvers;
 
+use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByRequestDataException;
 
@@ -26,10 +27,10 @@ class RequestDataTenantResolver extends Contracts\CachedTenantResolver
         throw new TenantCouldNotBeIdentifiedByRequestDataException($payload);
     }
 
-    public function getArgsForTenant(Tenant $tenant): array
+    public function getPossibleCacheKeys(Tenant&Model $tenant): array
     {
         return [
-            [$tenant->getTenantKey()],
+            $this->formatCacheKey($tenant->getTenantKey()),
         ];
     }
 }

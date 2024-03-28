@@ -2,12 +2,15 @@
 
 declare(strict_types=1);
 
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 use Illuminate\Support\Facades\Route as RouteFacade;
+use Illuminate\Support\Facades\Schema;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\PathIdentificationManager;
 use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
@@ -74,7 +77,7 @@ test('cache is invalidated when the tenant is updated', function (string $resolv
 
     expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenantKey))))->toBeTrue();
 
-    expect(DB::getQueryLog())->not()->toBeEmpty(); // Cache was invalidated, so the tenant was retrievevd from the DB
+    expect(DB::getQueryLog())->not()->toBeEmpty(); // Cache was invalidated, so the tenant was retrieved from the DB
 })->with([
     DomainTenantResolver::class,
     PathTenantResolver::class,
@@ -109,6 +112,7 @@ test('cache is invalidated when a tenants domain is changed', function () {
 
 test('PathTenantResolver forgets the tenant route parameter when the tenant is resolved from cache', function() {
     config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.cache' => true]);
+    DB::enableQueryLog();
 
     Tenant::create(['id' => 'foo']);
 
@@ -125,6 +129,136 @@ test('PathTenantResolver forgets the tenant route parameter when the tenant is r
     DB::flushQueryLog();
     pest()->get("/foo")->assertSee('No tenant parameter');
     pest()->assertEmpty(DB::getQueryLog()); // resolved from cache
+});
+
+test('PathTenantResolver properly separates cache for each tenant column', function () {
+    config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.cache' => true]);
+    config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.allowed_extra_model_columns' => ['slug']]);
+    Tenant::$extraCustomColumns = ['slug'];
+    DB::enableQueryLog();
+
+    Schema::table('tenants', function (Blueprint $table) {
+        $table->string('slug')->unique();
+    });
+
+    $t1 = Tenant::create(['id' => 'foo', 'slug' => 'bar']);
+    $t2 = Tenant::create(['id' => 'bar', 'slug' => 'foo']);
+
+    RouteFacade::get('x/{tenant}/a', function () {
+        return tenant()->getTenantKey();
+    })->middleware(InitializeTenancyByPath::class);
+
+    RouteFacade::get('x/{tenant:slug}/b', function () {
+        return tenant()->getTenantKey();
+    })->middleware(InitializeTenancyByPath::class);
+
+    DB::flushQueryLog();
+
+    $redisKeys = fn () => array_map(
+        fn (string $key) => str($key)->after('PathTenantResolver:')->toString(),
+        Redis::connection('cache')->keys('*')
+    );
+
+    pest()->get("/x/foo/a")->assertSee('foo');
+    expect(count(DB::getRawQueryLog()))->toBe(1);
+    expect(DB::getRawQueryLog()[0]['raw_query'])->toBe("select * from `tenants` where `id` = 'foo' limit 1");
+    expect($redisKeys())->toEqualCanonicalizing([
+        '["id","foo"]',
+    ]);
+
+    pest()->get("/x/bar/b")->assertSee('foo');
+    expect(count(DB::getRawQueryLog()))->toBe(2);
+    expect(DB::getRawQueryLog()[1]['raw_query'])->toBe("select * from `tenants` where `slug` = 'bar' limit 1");
+    expect($redisKeys())->toEqualCanonicalizing([
+        '["id","foo"]',
+        '["slug","bar"]',
+    ]);
+
+    // Test if cache hits
+    pest()->get("/x/foo/a")->assertSee('foo');
+    expect(count(DB::getRawQueryLog()))->toBe(2); // unchanged
+    expect(count($redisKeys()))->toBe(2); // unchanged
+
+    pest()->get("/x/bar/b")->assertSee('foo');
+    expect(count(DB::getRawQueryLog()))->toBe(2); // unchanged
+    expect(count($redisKeys()))->toBe(2); // unchanged
+
+    // Make requests for a tenant that has reversed values for the columns
+    pest()->get("/x/bar/a")->assertSee('bar');
+    expect(count(DB::getRawQueryLog()))->toBe(3); // +1
+    expect(DB::getRawQueryLog()[2]['raw_query'])->toBe("select * from `tenants` where `id` = 'bar' limit 1");
+    expect($redisKeys())->toEqualCanonicalizing([
+        '["id","foo"]',
+        '["slug","bar"]',
+        '["id","bar"]', // added
+    ]);
+
+    pest()->get("/x/foo/b")->assertSee('bar');
+    expect(count(DB::getRawQueryLog()))->toBe(4);
+    expect(DB::getRawQueryLog()[3]['raw_query'])->toBe("select * from `tenants` where `slug` = 'foo' limit 1");
+    expect($redisKeys())->toEqualCanonicalizing([
+        '["id","foo"]',
+        '["slug","bar"]',
+        '["id","bar"]',
+        '["slug","foo"]', // added
+    ]);
+
+    // Test if cache hits for the tenant with reversed values
+    pest()->get("/x/bar/a")->assertSee('bar');
+    expect(count(DB::getRawQueryLog()))->toBe(4); // unchanged
+    expect(count($redisKeys()))->toBe(4); // unchanged
+
+    pest()->get("/x/foo/b")->assertSee('bar');
+    expect(count(DB::getRawQueryLog()))->toBe(4); // unchanged
+    expect(count($redisKeys()))->toBe(4); // unchanged
+
+    // Try to resolve the previous tenant again, confirming the cache values for the new tenant are properly separated from the previous tenant
+    pest()->get("/x/foo/a")->assertSee('foo');
+    pest()->get("/x/foo/b")->assertSee('bar');
+    pest()->get("/x/bar/a")->assertSee('bar');
+    pest()->get("/x/bar/b")->assertSee('foo');
+    expect(count(DB::getRawQueryLog()))->toBe(4); // unchanged
+    expect(count($redisKeys()))->toBe(4); // unchanged
+
+    $t1->update(['random_value' => 'just to clear cache']);
+    expect($redisKeys())->toEqualCanonicalizing([
+        // '["id","foo"]', // these two have been removed
+        // '["slug","bar"]',
+        '["id","bar"]',
+        '["slug","foo"]',
+    ]);
+
+    $t2->update(['random_value' => 'just to clear cache']);
+    expect($redisKeys())->toBe([]);
+
+    DB::flushQueryLog();
+
+    // Cache gets repopulated
+    pest()->get("/x/foo/a")->assertSee('foo');
+    expect(count(DB::getRawQueryLog()))->toBe(1);
+    expect(count($redisKeys()))->toBe(1);
+
+    pest()->get("/x/foo/b")->assertSee('bar');
+    expect(count(DB::getRawQueryLog()))->toBe(2);
+    expect(count($redisKeys()))->toBe(2);
+
+    pest()->get("/x/bar/a")->assertSee('bar');
+    expect(count(DB::getRawQueryLog()))->toBe(3);
+    expect(count($redisKeys()))->toBe(3);
+
+    pest()->get("/x/bar/b")->assertSee('foo');
+    expect(count(DB::getRawQueryLog()))->toBe(4);
+    expect(count($redisKeys()))->toBe(4);
+
+    // After which, the cache becomes active again
+    pest()->get("/x/foo/a")->assertSee('foo');
+    pest()->get("/x/foo/b")->assertSee('bar');
+    pest()->get("/x/bar/a")->assertSee('bar');
+    pest()->get("/x/bar/b")->assertSee('foo');
+    expect(count(DB::getRawQueryLog()))->toBe(4); // unchanged
+    expect(count($redisKeys()))->toBe(4); // unchanged
+
+    Tenant::$extraCustomColumns = []; // reset
 });
 
 /**

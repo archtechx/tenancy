@@ -3,8 +3,11 @@
 declare(strict_types=1);
 
 use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Stancl\Tenancy\Exceptions\RouteIsMissingTenantParameterException;
+use Stancl\Tenancy\Exceptions\TenantColumnNotWhitelistedException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByPathException;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
@@ -15,6 +18,7 @@ beforeEach(function () {
     config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_parameter_name' => 'tenant']);
 
     InitializeTenancyByPath::$onFail = null;
+    Tenant::$extraCustomColumns = [];
 
     Route::group([
         'prefix' => '/{tenant}',
@@ -159,4 +163,85 @@ test('central route can have a parameter with the same name as the tenant parame
     pest()->get("/central/route/{$tenantKey}/foo/bar")->assertSee("foo + bar + {$tenantKey}");
 
     expect(tenancy()->initialized)->toBeFalse();
+});
+
+test('the tenant model column can be customized in the config', function () {
+    config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_model_column' => 'slug']);
+    Tenant::$extraCustomColumns = ['slug'];
+
+    Schema::table('tenants', function (Blueprint $table) {
+        $table->string('slug')->unique();
+    });
+
+    $tenant = Tenant::create([
+        'slug' => 'acme',
+    ]);
+
+    Route::get('/{tenant}/foo', function () {
+        return tenant()->getTenantKey();
+    })->middleware(InitializeTenancyByPath::class);
+
+    $this->withoutExceptionHandling();
+    pest()->get('/acme/foo')->assertSee($tenant->getTenantKey());
+    expect(fn () => pest()->get($tenant->id . '/foo'))->toThrow(TenantCouldNotBeIdentifiedByPathException::class);
+
+    Tenant::$extraCustomColumns = []; // static property reset
+});
+
+test('the tenant model column can be customized in the route definition', function () {
+    Tenant::$extraCustomColumns = ['slug'];
+    config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.allowed_extra_model_columns' => ['slug']]);
+
+    Schema::table('tenants', function (Blueprint $table) {
+        $table->string('slug')->unique();
+    });
+
+    $tenant = Tenant::create([
+        'slug' => 'acme',
+    ]);
+
+    Route::get('/{tenant}/foo', function () {
+        return tenant()->getTenantKey();
+    })->middleware(InitializeTenancyByPath::class);
+
+    Route::get('/{tenant:slug}/bar', function () {
+        return tenant()->getTenantKey();
+    })->middleware(InitializeTenancyByPath::class);
+
+    $this->withoutExceptionHandling();
+
+    // No binding field defined
+    pest()->get($tenant->getTenantKey() . '/foo')->assertSee($tenant->getTenantKey());
+    expect(fn () => pest()->get('/acme/foo'))->toThrow(TenantCouldNotBeIdentifiedByPathException::class);
+
+    // Binding field defined
+    pest()->get('/acme/bar')->assertSee($tenant->getTenantKey());
+    expect(fn () => pest()->get($tenant->id . '/bar'))->toThrow(TenantCouldNotBeIdentifiedByPathException::class);
+
+    Tenant::$extraCustomColumns = []; // static property reset
+});
+
+test('any extra model column needs to be whitelisted', function () {
+    Tenant::$extraCustomColumns = ['slug'];
+
+    Schema::table('tenants', function (Blueprint $table) {
+        $table->string('slug')->unique();
+    });
+
+    $tenant = Tenant::create([
+        'slug' => 'acme',
+    ]);
+
+    Route::get('/{tenant:slug}/foo', function () {
+        return tenant()->getTenantKey();
+    })->middleware(InitializeTenancyByPath::class);
+
+    $this->withoutExceptionHandling();
+    expect(fn () => pest()->get('/acme/foo'))->toThrow(TenantColumnNotWhitelistedException::class);
+
+    // After whitelisting the column it works
+    config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.allowed_extra_model_columns' => ['slug']]);
+    pest()->get('/acme/foo')->assertSee($tenant->getTenantKey());
+
+    Tenant::$extraCustomColumns = []; // static property reset
 });

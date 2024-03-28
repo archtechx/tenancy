@@ -52,7 +52,7 @@ return [
          *
          * If you use multiple forms of identification, you can set this to the "main" approach you use.
          */
-        'default_middleware' => Middleware\InitializeTenancyByDomain::class,// todo@identification add this to a 'tenancy' mw group
+        'default_middleware' => Middleware\InitializeTenancyByDomain::class,
 
         /**
          * All of the identification middleware used by the package.
@@ -100,19 +100,21 @@ return [
             Resolvers\DomainTenantResolver::class => [
                 'cache' => false,
                 'cache_ttl' => 3600, // seconds
-                'cache_store' => null, // default
+                'cache_store' => null, // null = default
             ],
             Resolvers\PathTenantResolver::class => [
                 'tenant_parameter_name' => 'tenant',
+                'tenant_model_column' => null, // null = tenant key
+                'allowed_extra_model_columns' => [], // used with binding route fields
 
                 'cache' => false,
                 'cache_ttl' => 3600, // seconds
-                'cache_store' => null, // default
+                'cache_store' => null, // null = default
             ],
             Resolvers\RequestDataTenantResolver::class => [
                 'cache' => false,
                 'cache_ttl' => 3600, // seconds
-                'cache_store' => null, // default
+                'cache_store' => null, // null = default
             ],
         ],
 
@@ -148,25 +150,6 @@ return [
         // Integration bootstrappers
         // Stancl\Tenancy\Bootstrappers\Integrations\FortifyRouteTenancyBootstrapper::class,
         // Stancl\Tenancy\Bootstrappers\Integrations\ScoutTenancyBootstrapper::class,
-    ],
-
-
-    /**
-     * Pending tenants config.
-     * This is useful if you're looking for a way to always have a tenant ready to be used.
-     */
-    'pending' => [
-        /**
-         * If disabled, pending tenants will be excluded from all tenant queries.
-         * You can still use ::withPending(), ::withoutPending() and ::onlyPending() to include or exclude the pending tenants regardless of this setting.
-         * Note: when disabled, this will also ignore pending tenants when running the tenant commands (migration, seed, etc.)
-         */
-        'include_in_queries' => true,
-        /**
-         * Defines how many pending tenants you want to have ready in the pending tenant pool.
-         * This depends on the volume of tenants you're creating.
-         */
-        'count' => env('TENANCY_PENDING_COUNT', 5),
     ],
 
     /**
@@ -347,6 +330,24 @@ return [
      * To override the default route mode, apply the middleware of another route mode ('central', 'tenant', 'universal') to the route.
      */
     'default_route_mode' => RouteMode::CENTRAL,
+
+    /**
+     * Pending tenants config.
+     * This is useful if you're looking for a way to always have a tenant ready to be used.
+     */
+    'pending' => [
+        /**
+         * If disabled, pending tenants will be excluded from all tenant queries.
+         * You can still use ::withPending(), ::withoutPending() and ::onlyPending() to include or exclude the pending tenants regardless of this setting.
+         * Note: when disabled, this will also ignore pending tenants when running the tenant commands (migration, seed, etc.)
+         */
+        'include_in_queries' => true,
+        /**
+         * Defines how many pending tenants you want to have ready in the pending tenant pool.
+         * This depends on the volume of tenants you're creating.
+         */
+        'count' => env('TENANCY_PENDING_COUNT', 5),
+    ],
 
     /**
      * Parameters used by the tenants:migrate command.

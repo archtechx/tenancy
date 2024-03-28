@@ -93,7 +93,7 @@ test('cache is invalidated when a single domain tenants domain is updated', func
     DB::flushQueryLog();
     expect($tenant->is(app(DomainTenantResolver::class)->resolve('baz')))->toBeTrue();
     pest()->assertNotEmpty(DB::getQueryLog()); // resolving using current subdomain for the first time
-    
+
     DB::flushQueryLog();
     expect($tenant->is(app(DomainTenantResolver::class)->resolve('baz')))->toBeTrue();
     pest()->assertEmpty(DB::getQueryLog()); // resolving using current subdomain for the second time

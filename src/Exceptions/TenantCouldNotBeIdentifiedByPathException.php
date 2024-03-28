@@ -11,7 +11,7 @@ class TenantCouldNotBeIdentifiedByPathException extends TenantCouldNotBeIdentifi
     public function __construct(int|string $tenant_id)
     {
         $this
-            ->tenantCouldNotBeIdentified("on path with tenant id: $tenant_id")
+            ->tenantCouldNotBeIdentified("on path with tenant key: $tenant_id")
             ->title('Tenant could not be identified on this path')
             ->description('Did you forget to create a tenant for this path?');
     }
