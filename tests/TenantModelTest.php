@@ -17,8 +17,10 @@ use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Tests\Etc\Tenant;
-use Stancl\Tenancy\UUIDGenerator;
+use Stancl\Tenancy\UniqueIdentifierGenerators\UUIDGenerator;
 use Stancl\Tenancy\Exceptions\TenancyNotInitializedException;
+use Stancl\Tenancy\UniqueIdentifierGenerators\RandomHexGenerator;
+use Stancl\Tenancy\UniqueIdentifierGenerators\RandomStringGenerator;
 
 test('created event is dispatched', function () {
     Event::fake([TenantCreated::class]);
@@ -67,6 +69,45 @@ test('autoincrement ids are supported', function () {
 
     expect($tenant1->id)->toBe(1);
     expect($tenant2->id)->toBe(2);
+});
+
+test('hex ids are supported', function () {
+    app()->bind(UniqueIdentifierGenerator::class, RandomHexGenerator::class);
+
+    RandomHexGenerator::$bytes = 6;
+    $tenant1 = Tenant::create();
+    expect($tenant1->id)->toBeString();
+    expect(strlen($tenant1->id))->toBe(12);
+
+    RandomHexGenerator::$bytes = 8;
+    $tenant2 = Tenant::create();
+    expect($tenant2->id)->toBeString();
+    expect(strlen($tenant2->id))->toBe(16);
+
+    RandomHexGenerator::$bytes = 6; // reset
+});
+
+test('random string ids are supported', function () {
+    app()->bind(UniqueIdentifierGenerator::class, RandomStringGenerator::class);
+
+    RandomStringGenerator::$length = 8;
+    $tenant1 = Tenant::create();
+    expect($tenant1->id)->toBeString();
+    expect(strlen($tenant1->id))->toBe(8);
+
+    RandomStringGenerator::$length = 12;
+    $tenant2 = Tenant::create();
+    expect($tenant2->id)->toBeString();
+    expect(strlen($tenant2->id))->toBe(12);
+
+    RandomStringGenerator::$length = 8; // reset
+});
+
+// todo@deprecation remove this after deleting the class
+test('referencing the old uuid generator throws an exception', function () {
+    $tenant = Tenant::create();
+    expect(fn() => app(\Stancl\Tenancy\UUIDGenerator::class)->generate($tenant))
+        ->toThrow(Exception::class, 'Tenancy update note: UUIDGenerator has been renamed to Stancl\Tenancy\UniqueIdentifierGenerators\UUIDGenerator. Please update your config/tenancy.php');
 });
 
 test('custom tenant model can be used', function () {

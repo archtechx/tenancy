@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
+use Exception;
 use Illuminate\Database\Eloquent\Model;
-use Ramsey\Uuid\Uuid;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 
-// todo@move move to separate namespace
-
+// todo@deprecation remove after 2024-04-12
 class UUIDGenerator implements UniqueIdentifierGenerator
 {
     public static function generate(Model $model): string
     {
-        return Uuid::uuid4()->toString();
+        throw new Exception('Tenancy update note: UUIDGenerator has been renamed to Stancl\Tenancy\UniqueIdentifierGenerators\UUIDGenerator. Please update your config/tenancy.php');
     }
 }

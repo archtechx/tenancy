@@ -51,6 +51,7 @@ parameters:
             message: '#string\|false#'
             paths:
                 - src/Controllers/TenantAssetController.php
+        - '#expects int<1, max>, int given#'
 
     checkMissingIterableValueType: false
     checkGenericClassInNonGenericObjectType: false # later we may want to enable this

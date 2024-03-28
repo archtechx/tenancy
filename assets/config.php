@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Stancl\Tenancy\Middleware;
 use Stancl\Tenancy\Resolvers;
 use Stancl\Tenancy\Enums\RouteMode;
+use Stancl\Tenancy\UniqueIdentifierGenerators;
 
 return [
     /**
@@ -24,11 +25,16 @@ return [
         /**
          * Used for generating tenant IDs.
          *
-         *   - Feel free to override this with a custom class that implements the UniqueIdentifierGenerator interface.
-         *   - To use autoincrement IDs, set this to null and update the `tenants` table migration to use an autoincrement column.
-         *     SECURITY NOTE: Keep in mind that autoincrement IDs come with *potential* enumeration issues (such as tenant storage URLs).
+         * - Feel free to override this with a custom class that implements the UniqueIdentifierGenerator interface.
+         * - To use autoincrement IDs, set this to null and update the `tenants` table migration to use an autoincrement column.
+         *
+         * SECURITY NOTE: Keep in mind that autoincrement IDs come with potential enumeration issues (such as tenant storage URLs).
+         *
+         * @see \Stancl\Tenancy\UniqueIdentifierGenerators\UUIDGenerator
+         * @see \Stancl\Tenancy\UniqueIdentifierGenerators\RandomHexGenerator
+         * @see \Stancl\Tenancy\UniqueIdentifierGenerators\RandomStringGenerator
          */
-        'id_generator' => Stancl\Tenancy\UUIDGenerator::class,
+        'id_generator' => UniqueIdentifierGenerators\UUIDGenerator::class,
     ],
 
     /**
