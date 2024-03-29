@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Commands;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Database\Console\DumpCommand;
+use Illuminate\Filesystem\Filesystem;
 use Stancl\Tenancy\Contracts\Tenant;
 use Symfony\Component\Console\Input\InputOption;
 
@@ -41,7 +42,19 @@ class TenantDump extends DumpCommand
             return 1;
         }
 
+        // Prevent the parent command from pruning the central migrations folder
+        $prune = $this->option('prune');
+        $this->input->setOption('prune', false);
+
         tenancy()->run($tenant, fn () => parent::handle($connections, $dispatcher));
+
+        if ($prune) {
+            (new Filesystem)->deleteDirectory(
+                database_path('migrations/tenant'), preserve: true
+            );
+
+            $this->components->info('Tenant migrations pruned.');
+        }
 
         return 0;
     }

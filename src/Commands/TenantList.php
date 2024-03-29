@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\Contracts\SingleDomainTenant;
 use Stancl\Tenancy\Contracts\Tenant;
