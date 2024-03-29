@@ -50,7 +50,8 @@ class TenantDump extends DumpCommand
 
         if ($prune) {
             (new Filesystem)->deleteDirectory(
-                database_path('migrations/tenant'), preserve: true
+                database_path('migrations/tenant'),
+                preserve: true
             );
 
             $this->components->info('Tenant migrations pruned.');
