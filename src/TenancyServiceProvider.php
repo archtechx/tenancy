@@ -95,8 +95,8 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\CreatePendingTenants::class,
         ]);
 
-        $this->app->extend(FreshCommand::class, function () {
-            return new Commands\MigrateFreshOverride;
+        $this->app->extend(FreshCommand::class, function ($_, $app) {
+            return new Commands\MigrateFreshOverride($app['migrator']);
         });
 
         $this->publishes([
