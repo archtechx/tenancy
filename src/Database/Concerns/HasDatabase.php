@@ -20,7 +20,7 @@ trait HasDatabase
         /** @var TenantWithDatabase&Model $this */
         $databaseConfig = [];
 
-        foreach ($this->getAttributes() as $key => $value) {
+        foreach (array_keys($this->getAttributes()) as $key) {
             if (str($key)->startsWith($this->internalPrefix() . 'db_')) {
                 if ($key === $this->internalPrefix() . 'db_name') {
                     // Remove DB name because we set that separately
@@ -32,7 +32,9 @@ trait HasDatabase
                     continue;
                 }
 
-                $databaseConfig[str($key)->after($this->internalPrefix() . 'db_')->toString()] = $value;
+                // We use getAttribute() instead of getting the value directly from the attributes array
+                // to support encrypted columns and any other types of casts.
+                $databaseConfig[str($key)->after($this->internalPrefix() . 'db_')->toString()] = $this->getAttribute($key);
             }
         }
 
