@@ -81,9 +81,7 @@ abstract class CachedTenantResolver implements TenantResolver
      *
      * Used for side effects like removing the tenant parameter from the request route.
      */
-    public function resolved(Tenant $tenant, mixed ...$args): void
-    {
-    }
+    public function resolved(Tenant $tenant, mixed ...$args): void {}
 
     abstract public function getPossibleCacheKeys(Tenant&Model $tenant): array;
 

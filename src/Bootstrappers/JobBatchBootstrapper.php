@@ -23,8 +23,7 @@ class JobBatchBootstrapper implements TenancyBootstrapper
     public function __construct(
         protected DatabaseBatchRepository $batchRepository,
         protected DatabaseManager $databaseManager
-    ) {
-    }
+    ) {}
 
     public function bootstrap(Tenant $tenant): void
     {

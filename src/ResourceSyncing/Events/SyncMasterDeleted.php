@@ -12,6 +12,5 @@ class SyncMasterDeleted
     public function __construct(
         public SyncMaster&Model $centralResource,
         public bool $forceDelete = false,
-    ) {
-    }
+    ) {}
 }

@@ -24,8 +24,7 @@ class CacheTenancyBootstrapper implements TenancyBootstrapper
     public function __construct(
         protected ConfigRepository $config,
         protected CacheManager $cacheManager,
-    ) {
-    }
+    ) {}
 
     public function bootstrap(Tenant $tenant): void
     {

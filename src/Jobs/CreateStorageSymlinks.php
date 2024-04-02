@@ -18,8 +18,7 @@ class CreateStorageSymlinks implements ShouldQueue
 
     public function __construct(
         public Tenant $tenant,
-    ) {
-    }
+    ) {}
 
     public function handle(): void
     {

@@ -25,8 +25,7 @@ class TenantConfig implements Feature
 
     public function __construct(
         protected Repository $config,
-    ) {
-    }
+    ) {}
 
     public function bootstrap(Tenancy $tenancy): void
     {

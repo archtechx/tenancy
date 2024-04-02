@@ -11,8 +11,7 @@ class UseCentralConnection
 {
     public function __construct(
         protected DatabaseManager $database,
-    ) {
-    }
+    ) {}
 
     public function handle(TenancyEvent $event): void
     {

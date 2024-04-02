@@ -10,6 +10,5 @@ abstract class TenancyEvent
 {
     public function __construct(
         public Tenancy $tenancy,
-    ) {
-    }
+    ) {}
 }

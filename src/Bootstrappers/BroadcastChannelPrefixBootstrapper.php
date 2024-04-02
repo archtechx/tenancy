@@ -37,8 +37,7 @@ class BroadcastChannelPrefixBootstrapper implements TenancyBootstrapper
     public function __construct(
         protected Application $app,
         protected BroadcastManager $broadcastManager,
-    ) {
-    }
+    ) {}
 
     public function bootstrap(Tenant $tenant): void
     {

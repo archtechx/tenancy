@@ -19,8 +19,7 @@ class DatabaseManager
         protected Application $app,
         protected BaseDatabaseManager $database,
         protected Repository $config,
-    ) {
-    }
+    ) {}
 
     /** Connect to a tenant's database. */
     public function connectToTenant(TenantWithDatabase $tenant): void

@@ -7,6 +7,4 @@ namespace Stancl\Tenancy\Contracts;
 /**
  * @property string|null $domain
  */
-interface SingleDomainTenant extends Tenant
-{
-}
+interface SingleDomainTenant extends Tenant {}

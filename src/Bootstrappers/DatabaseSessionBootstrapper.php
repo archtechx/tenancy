@@ -23,8 +23,7 @@ class DatabaseSessionBootstrapper implements TenancyBootstrapper
         protected Repository $config,
         protected Container $container,
         protected SessionManager $session,
-    ) {
-    }
+    ) {}
 
     public function bootstrap(Tenant $tenant): void
     {

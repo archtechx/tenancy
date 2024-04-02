@@ -44,8 +44,7 @@ class CloneRoutesAsTenant
 
     public function __construct(
         protected Router $router,
-    ) {
-    }
+    ) {}
 
     public function handle(): void
     {

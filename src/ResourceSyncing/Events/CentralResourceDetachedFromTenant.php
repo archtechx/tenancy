@@ -13,6 +13,5 @@ class CentralResourceDetachedFromTenant
     public function __construct(
         public SyncMaster&Model $centralResource,
         public TenantWithDatabase $tenant,
-    ) {
-    }
+    ) {}
 }

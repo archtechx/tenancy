@@ -18,8 +18,7 @@ class RootUrlBootstrapper implements TenancyBootstrapper
     public function __construct(
         protected UrlGenerator $urlGenerator,
         protected Repository $config,
-    ) {
-    }
+    ) {}
 
     public function bootstrap(Tenant $tenant): void
     {

@@ -60,8 +60,7 @@ class FortifyRouteBootstrapper implements TenancyBootstrapper
 
     public function __construct(
         protected Repository $config,
-    ) {
-    }
+    ) {}
 
     public function bootstrap(Tenant $tenant): void
     {

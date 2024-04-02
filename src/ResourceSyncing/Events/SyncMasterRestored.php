@@ -11,6 +11,5 @@ class SyncMasterRestored
 {
     public function __construct(
         public SyncMaster&Model $centralResource
-    ) {
-    }
+    ) {}
 }
