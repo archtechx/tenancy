@@ -6,7 +6,7 @@ namespace Stancl\Tenancy\Bootstrappers;
 
 use Closure;
 use Illuminate\Config\Repository;
-use Illuminate\Contracts\Routing\UrlGenerator;
+use Illuminate\Routing\UrlGenerator;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
@@ -26,7 +26,7 @@ class RootUrlBootstrapper implements TenancyBootstrapper
         $this->originalRootUrl = $this->urlGenerator->to('/');
 
         if (static::$rootUrlOverride) {
-            $newRootUrl = (static::$rootUrlOverride)($tenant);
+            $newRootUrl = (static::$rootUrlOverride)($tenant, $this->originalRootUrl);
 
             $this->urlGenerator->forceRootUrl($newRootUrl);
             $this->config->set('app.url', $newRootUrl);

@@ -50,11 +50,15 @@ use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastChannelPrefixBootstrapper;
 use Stancl\Tenancy\Bootstrappers\Integrations\FortifyRouteBootstrapper;
 
+// todo refactor this file -- too much stuff happening here
+
 beforeEach(function () {
     $this->mockConsoleOutput = false;
 
-    config(['cache.default' => $cacheDriver = 'redis']);
-    CacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
+    config([
+        'cache.default' => 'redis',
+        'tenancy.cache.stores' => ['redis'],
+    ]);
     // Reset static properties of classes used in this test file to their default values
     BroadcastingConfigBootstrapper::$credentialsMap = [];
     TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably'];
@@ -74,7 +78,6 @@ beforeEach(function () {
 afterEach(function () {
     // Reset static properties of classes used in this test file to their default values
     RootUrlBootstrapper::$rootUrlOverride = null;
-    CacheTenancyBootstrapper::$tenantCacheStores = [];
     TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably'];
     BroadcastingConfigBootstrapper::$credentialsMap = [];
     TenancyUrlGenerator::$prefixRouteNames = false;

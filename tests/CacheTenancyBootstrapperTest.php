@@ -19,9 +19,9 @@ beforeEach(function () {
         ],
         'cache.default' => $cacheDriver = 'redis',
         'cache.stores.' . $secondCacheDriver = 'redis2' => config('cache.stores.redis'),
+        'tenancy.cache.stores' => [$cacheDriver, $secondCacheDriver],
     ]);
 
-    CacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver, $secondCacheDriver];
     CacheTenancyBootstrapper::$prefixGenerator = null;
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
@@ -29,7 +29,6 @@ beforeEach(function () {
 });
 
 afterEach(function () {
-    CacheTenancyBootstrapper::$tenantCacheStores = [];
     CacheTenancyBootstrapper::$prefixGenerator = null;
 });
 
@@ -180,7 +179,7 @@ test('cache is prefixed correctly when using a repository injected in a singleto
 
 test('specific central cache store can be used inside a service', function () {
     // Make sure 'redis' (the default store) is the only prefixed store
-    CacheTenancyBootstrapper::$tenantCacheStores = ['redis'];
+    config(['tenancy.cache.stores' => ['redis']]);
     // Name of the non-default, central cache store that we'll use using cache()->store($cacheStore)
     $cacheStore = 'redis2';
 
@@ -217,7 +216,7 @@ test('specific central cache store can be used inside a service', function () {
 
 test('only the stores specified in tenantCacheStores get prefixed', function () {
     // Make sure the currently used store ('redis') is the only store in $tenantCacheStores
-    CacheTenancyBootstrapper::$tenantCacheStores = [$prefixedStore = 'redis'];
+    config(['tenancy.cache.stores' => [$prefixedStore = 'redis']]);
 
     $centralValue = 'central-value';
     $assertStoreIsNotPrefixed = function (string $unprefixedStore) use ($prefixedStore, $centralValue) {

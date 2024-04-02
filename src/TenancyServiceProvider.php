@@ -130,7 +130,7 @@ class TenancyServiceProvider extends ServiceProvider
         $this->app->singleton('globalUrl', function ($app) {
             if ($app->bound(FilesystemTenancyBootstrapper::class)) {
                 $instance = clone $app['url'];
-                $instance->setAssetRoot($app[FilesystemTenancyBootstrapper::class]->originalPaths['asset_url']);
+                $instance->setAssetRoot($app[FilesystemTenancyBootstrapper::class]->originalAssetUrl);
             } else {
                 $instance = $app['url'];
             }

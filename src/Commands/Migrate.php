@@ -30,7 +30,7 @@ class Migrate extends MigrateCommand
     {
         parent::__construct($migrator, $dispatcher);
 
-        $this->addOption('skip-failing');
+        $this->addOption('skip-failing', description: 'Continue execution if migration fails for a tenant');
 
         $this->specifyParameters();
     }
@@ -49,19 +49,21 @@ class Migrate extends MigrateCommand
 
         foreach ($this->getTenants() as $tenant) {
             try {
-                $tenant->run(function ($tenant) {
-                    $this->line("Tenant: {$tenant->getTenantKey()}");
+                $this->components->info("Migrating tenant {$tenant->getTenantKey()}");
 
+                $tenant->run(function ($tenant) {
                     event(new MigratingDatabase($tenant));
                     // Migrate
                     parent::handle();
 
                     event(new DatabaseMigrated($tenant));
                 });
-            } catch (TenantDatabaseDoesNotExistException|QueryException $th) {
+            } catch (TenantDatabaseDoesNotExistException|QueryException $e) {
                 if (! $this->option('skip-failing')) {
-                    throw $th;
+                    throw $e;
                 }
+
+                $this->components->warn("Migration failed for tenant {$tenant->getTenantKey()}: {$e->getMessage()}");
             }
         }
 

@@ -68,8 +68,8 @@
         "phpstan": "vendor/bin/phpstan",
         "phpstan-pro": "vendor/bin/phpstan --pro",
         "cs": "php-cs-fixer fix --config=.php-cs-fixer.php",
-        "test": "./test --no-coverage --color=always",
-        "test-full": "./test --color=always"
+        "test": "./test --no-coverage",
+        "test-full": "./test"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,

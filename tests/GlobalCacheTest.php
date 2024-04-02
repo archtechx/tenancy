@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Stancl\Tenancy\Overrides\CacheManager;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Events\TenancyEnded;
@@ -14,15 +13,13 @@ use Stancl\Tenancy\Bootstrappers\CacheTagsBootstrapper;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 
 beforeEach(function () {
-    config(['cache.default' => $cacheDriver = 'redis']);
-    CacheTenancyBootstrapper::$tenantCacheStores = [$cacheDriver];
+    config([
+        'cache.default' => 'redis',
+        'tenancy.cache.stores' => ['redis'],
+    ]);
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
-});
-
-afterEach(function () {
-    CacheTenancyBootstrapper::$tenantCacheStores = [];
 });
 
 test('global cache manager stores data in global cache', function (string $bootstrapper) {

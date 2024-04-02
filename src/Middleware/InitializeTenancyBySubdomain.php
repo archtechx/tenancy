@@ -37,7 +37,7 @@ class InitializeTenancyBySubdomain extends InitializeTenancyByDomain
 
         $subdomain = $this->makeSubdomain($this->getDomain($request));
 
-        if (is_object($subdomain) && $subdomain instanceof Exception) {
+        if ($subdomain instanceof Exception) {
             $onFail = static::$onFail ?? function ($e) {
                 throw $e;
             };
@@ -46,7 +46,7 @@ class InitializeTenancyBySubdomain extends InitializeTenancyByDomain
         }
 
         // If a Response instance was returned, we return it immediately.
-        if (is_object($subdomain) && $subdomain instanceof Response) {
+        if ($subdomain instanceof Response) {
             return $subdomain;
         }
 

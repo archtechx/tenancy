@@ -31,7 +31,7 @@ class Tenancy
     /** Initialize tenancy for the passed tenant. */
     public function initialize(Tenant|int|string $tenant): void
     {
-        if (! is_object($tenant)) {
+        if (! $tenant instanceof Tenant) {
             $tenantId = $tenant;
             $tenant = $this->find($tenantId);
 

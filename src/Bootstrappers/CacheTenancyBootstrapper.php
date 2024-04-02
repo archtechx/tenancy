@@ -17,9 +17,9 @@ use Stancl\Tenancy\Contracts\Tenant;
  */
 class CacheTenancyBootstrapper implements TenancyBootstrapper
 {
-    protected string|null $originalPrefix = null;
-    public static array $tenantCacheStores = []; // E.g. ['redis']
     public static Closure|null $prefixGenerator = null;
+
+    protected string|null $originalPrefix = null;
 
     public function __construct(
         protected ConfigRepository $config,
@@ -33,7 +33,7 @@ class CacheTenancyBootstrapper implements TenancyBootstrapper
 
         $prefix = $this->generatePrefix($tenant);
 
-        foreach (static::$tenantCacheStores as $store) {
+        foreach ($this->config->get('tenancy.cache.stores') as $store) {
             $this->setCachePrefix($store, $prefix);
 
             // Now that the store uses the passed prefix
@@ -44,7 +44,7 @@ class CacheTenancyBootstrapper implements TenancyBootstrapper
 
     public function revert(): void
     {
-        foreach (static::$tenantCacheStores as $store) {
+        foreach ($this->config->get('tenancy.cache.stores') as $store) {
             $this->setCachePrefix($store, $this->originalPrefix);
         }
     }

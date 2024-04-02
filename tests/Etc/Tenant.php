@@ -8,7 +8,6 @@ use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Database\Concerns\HasPending;
-use Stancl\Tenancy\Database\Concerns\MaintenanceMode;
 use Stancl\Tenancy\Database\Models;
 
 /**
@@ -18,7 +17,7 @@ class Tenant extends Models\Tenant implements TenantWithDatabase
 {
     public static array $extraCustomColumns = [];
 
-    use HasDatabase, HasDomains, HasPending, MaintenanceMode;
+    use HasDatabase, HasDomains, HasPending;
 
     public static function getCustomColumns(): array
     {

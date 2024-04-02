@@ -40,10 +40,6 @@ parameters:
             message: '#Illuminate\\Routing\\UrlGenerator#'
             paths:
                 - src/Bootstrappers/FilesystemTenancyBootstrapper.php
-        -
-            message: '#Unable to resolve the template type (TMapWithKeysKey|TMapWithKeysValue) in call to method#'
-            paths:
-                - src/Concerns/DealsWithTenantSymlinks.php
         - '#Method Stancl\\Tenancy\\Tenancy::cachedResolvers\(\) should return array#'
         - '#Access to an undefined property Stancl\\Tenancy\\Middleware\\IdentificationMiddleware\:\:\$tenancy#'
         - '#Access to an undefined property Stancl\\Tenancy\\Middleware\\IdentificationMiddleware\:\:\$resolver#'

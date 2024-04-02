@@ -10,6 +10,10 @@ use Stancl\Tenancy\Middleware\CheckTenantForMaintenanceMode;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
+beforeEach(function () {
+    config(['tenancy.models.tenant' => MaintenanceTenant::class]);
+});
+
 test('tenants can be in maintenance mode', function () {
     Route::get('/foo', function () {
         return 'bar';

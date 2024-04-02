@@ -205,19 +205,29 @@ return [
     ],
 
     /**
-     * Cache tenancy config. Used by the custom CacheManager and the PrefixCacheTenancyBootstrapper.
+     * Cache tenancy config. Used by the CacheTenancyBootstrapper, the CacheTagsBootstrapper, and the custom CacheManager.
      *
      * This works for all Cache facade calls, cache() helper
      * calls and direct calls to injected cache stores.
      *
-     * Each key in cache will have a tag applied on it. This tag is used to
-     * scope the cache both when writing to it and when reading from it.
+     * CacheTenancyBootstrapper:
+     *   A prefix is applied *GLOBALLY*, using the `cache.prefix` config. This separates
+     *   one tenant's cache from another's. The list of stores is used for refreshing
+     *   them so that they re-load the prefix from the `cache.prefix` configuration.
+     *
+     * CacheTagsBootstrapper:
+     *   Each key in cache will have a tag applied on it. This tag is used to
+     *   scope the cache both when writing to it and when reading from it.
      *
      * You can clear cache selectively by specifying the tag.
      */
     'cache' => [
+        'prefix_base' => 'tenant', // This prefix_base, followed by the tenant_id, will form a cache prefix that will be used for every cache key.
+        'stores' => [
+            env('CACHE_STORE'),
+        ],
+
         'tag_base' => 'tenant', // This tag_base, followed by the tenant_id, will form a tag that will be applied on each cache call.
-        'prefix_base' => 'tenant_', // This prefix_base, followed by the tenant_id, will form a cache prefix that will be used for every cache key.
     ],
 
     /**
@@ -297,6 +307,7 @@ return [
         'prefix_base' => 'tenant', // Each key in Redis will be prepended by this prefix_base, followed by the tenant id.
         'prefixed_connections' => [ // Redis connections whose keys are prefixed, to separate one tenant's keys from another.
             'default',
+            // 'cache', // Enable this if you want to scope cache using RedisTenancyBootstrapper
         ],
     ],
 

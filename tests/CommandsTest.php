@@ -24,6 +24,7 @@ use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
 
 beforeEach(function () {
@@ -298,6 +299,8 @@ test('run command with array of tenants works', function () {
 });
 
 test('link command works', function() {
+    config(['tenancy.bootstrappers' => [FilesystemTenancyBootstrapper::class]]);
+
     $tenantId1 = Tenant::create()->getTenantKey();
     $tenantId2 = Tenant::create()->getTenantKey();
     pest()->artisan('tenants:link')
@@ -318,6 +321,8 @@ test('link command works', function() {
 });
 
 test('link command works with a specified tenant', function() {
+    config(['tenancy.bootstrappers' => [FilesystemTenancyBootstrapper::class]]);
+
     $tenantKey = Tenant::create()->getTenantKey();
 
     pest()->artisan('tenants:link', [

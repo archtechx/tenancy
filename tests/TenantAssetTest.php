@@ -16,6 +16,8 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper;
 use Stancl\Tenancy\Controllers\TenantAssetController;
+use Stancl\Tenancy\Events\TenancyEnded;
+use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
 
 beforeEach(function () {
@@ -32,6 +34,7 @@ beforeEach(function () {
     $cloneAction->handle(Route::getRoutes()->getByName('stancl.tenancy.asset'));
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
 test('asset can be accessed using the url returned by the tenant asset helper', function () {
@@ -68,6 +71,9 @@ test('asset helper returns a link to tenant asset controller when asset url is n
     tenancy()->initialize($tenant);
 
     expect(asset('foo'))->toBe(route('stancl.tenancy.asset', ['path' => 'foo']));
+
+    tenancy()->end();
+    expect(asset('foo'))->toBe('http://localhost/foo');
 });
 
 test('asset helper returns a link to an external url when asset url is not null', function () {
@@ -78,6 +84,9 @@ test('asset helper returns a link to an external url when asset url is not null'
     tenancy()->initialize($tenant);
 
     expect(asset('foo'))->toBe("https://an-s3-bucket/tenant{$tenant->id}/foo");
+
+    tenancy()->end();
+    expect(asset('foo'))->toBe('https://an-s3-bucket/foo');
 });
 
 test('asset helper works correctly with path identification', function (bool $kernelIdentification) {
@@ -243,14 +252,3 @@ test('test asset controller returns a 404 when accessing a file outside the stor
         'X-Tenant' => $tenant->id,
     ]);
 });
-
-function getEnvironmentSetUp($app)
-{
-    $app->booted(function () {
-        if (file_exists(base_path('routes/tenant.php'))) {
-            Route::middleware(['web'])
-                ->namespace(pest()->app['config']['tenancy.tenant_route_namespace'] ?? 'App\Http\Controllers')
-                ->group(base_path('routes/tenant.php'));
-        }
-    });
-}

@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\Route as RouteFacade;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 
+// todo update all the docblock sections here, including the Livewire references
+
 class TenancyServiceProvider extends ServiceProvider
 {
     // By default, no namespace is used to support the callable array syntax.
@@ -66,6 +68,7 @@ class TenancyServiceProvider extends ServiceProvider
                     return $event->tenant;
                 })->shouldBeQueued(false), // `false` by default, but you probably want to make this `true` for production.
             ],
+
             Events\TenantMaintenanceModeEnabled::class => [],
             Events\TenantMaintenanceModeDisabled::class => [],
 
@@ -137,17 +140,21 @@ class TenancyServiceProvider extends ServiceProvider
 
     protected function overrideUrlInTenantContext(): void
     {
-        /**
-         * Example of CLI tenant URL root override:
-         *
-         * RootUrlBootstrapper::$rootUrlOverride = function (Tenant $tenant) {
-         *     $baseUrl = env('APP_URL');
-         *     $scheme = str($baseUrl)->before('://');
-         *     $hostname = str($baseUrl)->after($scheme . '://');
-         *
-         *     return $scheme . '://' . $tenant->getTenantKey() . '.' . $hostname;
-         * };
-         */
+        // Import your tenant model!
+        // \Stancl\Tenancy\Bootstrappers\RootUrlBootstrapper::$rootUrlOverride = function (Tenant $tenant, string $originalRootUrl) {
+        //     $tenantDomain = $tenant instanceof \Stancl\Tenancy\Contracts\SingleDomainTenant
+        //         ? $tenant->domain
+        //         : $tenant->domains->first()->domain;
+        //
+        //     $scheme = str($originalRootUrl)->before('://');
+        //
+        //     // If you're using subdomain identification:
+        //     // $originalDomain = str($originalRootUrl)->after($scheme . '://');
+        //     // return $scheme . '://' . $tenantDomain . '.' . $originalDomain . '/';
+        //
+        //     // If you're using domain identification:
+        //     return $scheme . '://' . $tenantDomain . '/';
+        // };
     }
 
     public function register()
@@ -239,7 +246,7 @@ class TenancyServiceProvider extends ServiceProvider
     {
         $this->app->booted(function () {
             if (file_exists(base_path('routes/tenant.php'))) {
-            RouteFacade::namespace(static::$controllerNamespace)
+                RouteFacade::namespace(static::$controllerNamespace)
                     ->middleware('tenant')
                     ->group(base_path('routes/tenant.php'));
             }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Concerns;
 
-use Illuminate\Support\Collection;
+use Exception;
 use Stancl\Tenancy\Contracts\Tenant;
 
 trait DealsWithTenantSymlinks
@@ -13,31 +13,44 @@ trait DealsWithTenantSymlinks
      * Get all possible tenant symlinks, existing or not (array of ['public path' => 'storage path']).
      *
      * Tenants can have a symlink for each disk registered in the tenancy.filesystem.url_override config.
-     *
      * This is used for creating all possible tenant symlinks and removing all existing tenant symlinks.
+     * The same storage path can be symlinked to multiple public paths, which is why the public path
+     * is the Collection key.
      *
-     * @return Collection<string, string>
+     * @return array<string, string>
      */
-    protected function possibleTenantSymlinks(Tenant $tenant): Collection
+    protected function possibleTenantSymlinks(Tenant $tenant): array
     {
-        $diskUrls = config('tenancy.filesystem.url_override');
-        $disks = config('tenancy.filesystem.root_override');
-        $suffixBase = config('tenancy.filesystem.suffix_base');
+        $disks = config('filesystems.disks');
+        $urlOverrides = config('tenancy.filesystem.url_override');
+        $rootOverrides = config('tenancy.filesystem.root_override');
+
         $tenantKey = $tenant->getTenantKey();
+        $tenantStoragePath = tenancy()->run($tenant, fn () => storage_path());
 
-        /** @var Collection<array<string, string>> $symlinks */
-        $symlinks = collect([]);
+        /** @var array<string, string> $symlinks */
+        $symlinks = [];
 
-        foreach ($diskUrls as $disk => $publicPath) {
-            $storagePath = str_replace('%storage_path%', $suffixBase . $tenantKey, $disks[$disk]);
+        foreach ($urlOverrides as $disk => $publicPath) {
+            if (! isset($disks[$disk])) {
+                continue;
+            }
+
+            if (! isset($rootOverrides[$disk])) {
+                continue;
+            }
+
+            if ($disks[$disk]['driver'] !== 'local') {
+                throw new Exception("Disk $disk is not a local disk. Only local disks can be symlinked.");
+            }
+
             $publicPath = str_replace('%tenant%', (string) $tenantKey, $publicPath);
+            $storagePath = str_replace('%storage_path%', $tenantStoragePath, $rootOverrides[$disk]);
 
-            tenancy()->central(function () use ($symlinks, $publicPath, $storagePath) {
-                $symlinks->push([public_path($publicPath) => storage_path($storagePath)]);
-            });
+            $symlinks[public_path($publicPath)] = $storagePath;
         }
 
-        return $symlinks->mapWithKeys(fn ($item) => $item); // [[a => b], [c => d]] -> [a => b, c => d]
+        return $symlinks;
     }
 
     /** Determine if the provided path is an existing symlink. */
