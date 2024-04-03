@@ -21,8 +21,11 @@ class Tinker extends BaseTinker
     public function handle()
     {
         // ?: to support empty strings so that the original argument (`include`) can be reached even with a falsy tenant argument
-        tenancy()->initialize($this->argument('tenant') ?: tenancy()->model()::first());
 
-        parent::handle();
+        /** @var \Stancl\Tenancy\Contracts\Tenant|string|int $tenantKey */
+        $tenantKey = $this->argument('tenant') ?: tenancy()->model()::first();
+        tenancy()->initialize($tenantKey);
+
+        return parent::handle();
     }
 }
