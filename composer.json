@@ -18,6 +18,7 @@
         "php": "^8.2",
         "ext-json": "*",
         "illuminate/support": "^10.1|^11.0",
+        "laravel/tinker": "^2.0",
         "facade/ignition-contracts": "^1.0.2",
         "spatie/ignition": "^1.4",
         "ramsey/uuid": "^4.7.3",
