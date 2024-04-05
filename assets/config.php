@@ -144,13 +144,13 @@ return [
         // Configurable bootstrappers
         // Bootstrappers\RootUrlBootstrapper::class,
         // Bootstrappers\UrlGeneratorBootstrapper::class,
-        // Bootstrappers\MailTenancyBootstrapper::class, // Note: Queueing mail requires using QueueTenancyBootstrapper with $forceRefresh set to true
+        // Bootstrappers\MailConfigBootstrapper::class, // Note: Queueing mail requires using QueueTenancyBootstrapper with $forceRefresh set to true
         // Bootstrappers\BroadcastingConfigBootstrapper::class,
-        // Bootstrappers\BroadcastingChannelPrefixBootstrapper::class,
+        // Bootstrappers\BroadcastChannelPrefixBootstrapper::class,
 
         // Integration bootstrappers
-        // Bootstrappers\Integrations\FortifyRouteTenancyBootstrapper::class,
-        // Bootstrappers\Integrations\ScoutTenancyBootstrapper::class,
+        // Bootstrappers\Integrations\FortifyRouteBootstrapper::class,
+        // Bootstrappers\Integrations\ScoutPrefixBootstrapper::class,
     ],
 
     /**
