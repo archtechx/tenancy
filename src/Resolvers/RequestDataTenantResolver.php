@@ -20,7 +20,7 @@ class RequestDataTenantResolver extends Contracts\CachedTenantResolver
     {
         $payload = (string) $args[0];
 
-        if ($payload && $tenant = tenancy()->find($payload)) {
+        if ($payload && $tenant = tenancy()->find($payload, withRelations: true)) {
             return $tenant;
         }
 

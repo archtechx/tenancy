@@ -26,7 +26,7 @@ class PathTenantResolver extends Contracts\CachedTenantResolver
         }
 
         if ($key) {
-            if ($tenant = tenancy()->find($key, $column)) {
+            if ($tenant = tenancy()->find($key, $column, withRelations: true)) {
                 /** @var Tenant $tenant */
                 return $tenant;
             }

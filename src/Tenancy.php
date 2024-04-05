@@ -28,6 +28,11 @@ class Tenancy
     /** Is tenancy fully initialized? */
     public bool $initialized = false; // todo@docs document the difference between $tenant being set and $initialized being true (e.g. end of initialize() method)
 
+    /**
+     * List of relations to eager load when fetching a tenant via tenancy()->find().
+     */
+    public static array $findWith = [];
+
     /** Initialize tenancy for the passed tenant. */
     public function initialize(Tenant|int|string $tenant): void
     {
@@ -136,10 +141,10 @@ class Tenancy
     /**
      * Try to find a tenant using an ID.
      */
-    public static function find(int|string $id, string $column = null): (Tenant&Model)|null
+    public static function find(int|string $id, string $column = null, bool $withRelations = false): (Tenant&Model)|null
     {
         /** @var (Tenant&Model)|null $tenant */
-        $tenant = static::model()->firstWhere($column ?? static::model()->getTenantKeyName(), $id);
+        $tenant = static::model()->with($withRelations ? static::$findWith : [])->firstWhere($column ?? static::model()->getTenantKeyName(), $id);
 
         return $tenant;
     }
@@ -219,6 +224,16 @@ class Tenancy
         });
 
         return array_keys($cachedResolvers);
+    }
+
+    public static function invalidateResolverCache(Tenant&Model $tenant): void
+    {
+        foreach (static::cachedResolvers() as $resolver) {
+            /** @var Resolvers\Contracts\CachedTenantResolver $resolver */
+            $resolver = app($resolver);
+
+            $resolver->invalidateCache($tenant);
+        }
     }
 
     /**

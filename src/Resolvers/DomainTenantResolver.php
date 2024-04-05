@@ -10,6 +10,7 @@ use Stancl\Tenancy\Contracts\Domain;
 use Stancl\Tenancy\Contracts\SingleDomainTenant;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
+use Stancl\Tenancy\Tenancy;
 
 class DomainTenantResolver extends Contracts\CachedTenantResolver
 {
@@ -21,15 +22,16 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
         $domain = $args[0];
 
         /** @var Tenant&Model $tenantModel */
-        $tenantModel = config('tenancy.models.tenant')::make();
+        $tenantModel = tenancy()->model();
 
         if ($tenantModel instanceof SingleDomainTenant) {
             $tenant = $tenantModel->newQuery()
+                ->with(Tenancy::$findWith)
                 ->firstWhere('domain', $domain);
         } else {
             $tenant = $tenantModel->newQuery()
                 ->whereHas('domains', fn (Builder $query) => $query->where('domain', $domain))
-                ->with('domains')
+                ->with(array_unique(array_merge(Tenancy::$findWith, ['domains'])))
                 ->first();
         }
 
