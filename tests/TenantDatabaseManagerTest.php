@@ -2,30 +2,30 @@
 
 declare(strict_types=1);
 
-use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Stancl\JobPipeline\JobPipeline;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
-use Stancl\JobPipeline\JobPipeline;
-use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
-use Stancl\Tenancy\Database\Contracts\StatefulTenantDatabaseManager;
-use Stancl\Tenancy\Database\DatabaseManager;
 use Stancl\Tenancy\Events\TenancyEnded;
-use Stancl\Tenancy\Events\TenancyInitialized;
-use Stancl\Tenancy\Events\TenantCreated;
-use Stancl\Tenancy\Database\Exceptions\TenantDatabaseAlreadyExistsException;
 use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Events\TenantCreated;
+use Illuminate\Database\Schema\Blueprint;
+use Stancl\Tenancy\Database\DatabaseManager;
+use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Database\TenantDatabaseManagers\MicrosoftSQLDatabaseManager;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Database\Contracts\StatefulTenantDatabaseManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\MySQLDatabaseManager;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\SQLiteDatabaseManager;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLSchemaManager;
+use Stancl\Tenancy\Database\Exceptions\TenantDatabaseAlreadyExistsException;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLDatabaseManager;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\MicrosoftSQLDatabaseManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledMicrosoftSQLServerDatabaseManager;
-use Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLDatabaseManager;
-use Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLSchemaManager;
-use Stancl\Tenancy\Database\TenantDatabaseManagers\SQLiteDatabaseManager;
-use Stancl\Tenancy\Tests\Etc\Tenant;
 
 beforeEach(function () {
     SQLiteDatabaseManager::$path = null;
@@ -96,7 +96,7 @@ test('dbs can be created when another driver is used for the central db', functi
 
 test('the tenant connection is fully removed', function () {
     config([
-        'tenancy.boostrappers' => [
+        'tenancy.bootstrappers' => [
             DatabaseTenancyBootstrapper::class,
         ],
     ]);
@@ -145,8 +145,8 @@ test('db name is prefixed with db path when sqlite is used', function () {
 
 test('schema manager uses schema to separate tenant dbs', function () {
     config([
-        'tenancy.database.managers.pgsql' => \Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLSchemaManager::class,
-        'tenancy.boostrappers' => [
+        'tenancy.database.managers.pgsql' => PostgreSQLSchemaManager::class,
+        'tenancy.bootstrappers' => [
             DatabaseTenancyBootstrapper::class,
         ],
     ]);
