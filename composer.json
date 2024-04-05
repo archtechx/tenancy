@@ -24,7 +24,8 @@
         "ramsey/uuid": "^4.7.3",
         "stancl/jobpipeline": "2.0.0-rc2",
         "stancl/virtualcolumn": "dev-master",
-        "spatie/invade": "^1.1"
+        "spatie/invade": "^1.1",
+        "laravel/prompts": "^0.1.17"
     },
     "require-dev": {
         "laravel/framework": "^10.1|^11.2",

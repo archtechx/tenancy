@@ -21,6 +21,20 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
     {
         $domain = $args[0];
 
+        $tenant = static::findTenantByDomain($domain);
+
+        /** @var (Tenant&Model)|null $tenant */
+        if ($tenant) {
+            static::setCurrentDomain($tenant, $domain);
+
+            return $tenant;
+        }
+
+        throw new TenantCouldNotBeIdentifiedOnDomainException($domain);
+    }
+
+    public static function findTenantByDomain(string $domain): (Tenant&Model)|null
+    {
         /** @var Tenant&Model $tenantModel */
         $tenantModel = tenancy()->model();
 
@@ -36,13 +50,8 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
         }
 
         /** @var (Tenant&Model)|null $tenant */
-        if ($tenant) {
-            $this->setCurrentDomain($tenant, $domain);
 
-            return $tenant;
-        }
-
-        throw new TenantCouldNotBeIdentifiedOnDomainException($domain);
+        return $tenant;
     }
 
     public function resolved(Tenant $tenant, mixed ...$args): void
@@ -50,7 +59,7 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
         $this->setCurrentDomain($tenant, $args[0]);
     }
 
-    protected function setCurrentDomain(Tenant $tenant, string $domain): void
+    protected static function setCurrentDomain(Tenant $tenant, string $domain): void
     {
         /** @var Tenant&Model $tenant */
         if (! $tenant instanceof SingleDomainTenant) {
