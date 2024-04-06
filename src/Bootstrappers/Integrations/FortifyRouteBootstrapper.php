@@ -34,7 +34,7 @@ class FortifyRouteBootstrapper implements TenancyBootstrapper
      *
      * For example:
      *
-     * FortifyRouteTenancyBootstrapper::$fortifyRedirectMap = [
+     * FortifyRouteBootstrapper::$fortifyRedirectMap = [
      *     // On logout, redirect the user to the "bye" route in the central app
      *     'logout' => [
      *         'route_name' => 'bye',
@@ -46,7 +46,7 @@ class FortifyRouteBootstrapper implements TenancyBootstrapper
      *        'route_name' => 'welcome',
      *        'context' => Context::TENANT,
      *     ],
-     *];
+     * ];
      */
     public static array $fortifyRedirectMap = [];
 

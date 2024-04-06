@@ -319,6 +319,41 @@ test('files can get fetched using the storage url', function() {
     expect(file_get_contents(public_path($url)))->toBe($centralFileContent);
 });
 
+test('storage_path helper does not change if suffix_storage_path is off', function() {
+    $originalStoragePath = storage_path();
+
+    // todo@tests https://github.com/tenancy-for-laravel/v4/pull/44#issue-2228530362
+
+    config([
+        'tenancy.bootstrappers' => [FilesystemTenancyBootstrapper::class],
+        'tenancy.filesystem.suffix_storage_path' => false,
+    ]);
+
+    tenancy()->initialize(Tenant::create());
+
+    $this->assertEquals($originalStoragePath, storage_path());
+});
+
+test('links to storage disks with a configured root are suffixed if not overridden', function() {
+    config([
+        'filesystems.disks.public.root' => 'http://sample-s3-url.com/my-app',
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.filesystem.root_override.public' => null,
+        'tenancy.filesystem.url_override.public' => null,
+    ]);
+
+    $tenant = Tenant::create();
+
+    $expectedStoragePath = storage_path() . '/tenant' . $tenant->getTenantKey(); // /tenant = suffix base
+
+    tenancy()->initialize($tenant);
+
+    // Check suffixing logic
+    expect(storage_path())->toEqual($expectedStoragePath);
+});
+
 test('create and delete storage symlinks jobs work', function() {
     Event::listen(
         TenantCreated::class,

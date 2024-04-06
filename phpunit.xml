@@ -15,7 +15,7 @@
     <env name="APP_ENV" value="testing"/>
     <env name="APP_KEY" value="base64:uYVmTs9lrQbXWfHgSSiG0VZMjc2KG/fBbjV1i1JDVos="/>
     <env name="BCRYPT_ROUNDS" value="4"/>
-    <env name="CACHE_DRIVER" value="redis"/>
+    <env name="CACHE_STORE" value="redis"/>
     <env name="MAIL_DRIVER" value="array"/>
     <env name="QUEUE_CONNECTION" value="sync"/>
     <env name="SESSION_DRIVER" value="array"/>

@@ -232,18 +232,43 @@ test('seed command works', function () {
     });
 });
 
-test('database connection is switched to default', function () {
-    databaseConnectionSwitchedToDefault();
-});
+test('database connection is switched to default after running commands', function (bool $initializeTenancy) {
+    $tenant = Tenant::create();
 
-test('database connection is switched to default when tenancy has been initialized', function () {
-    tenancy()->initialize(Tenant::create());
+    if ($initializeTenancy) {
+        tenancy()->initialize($tenant);
+    }
 
-    databaseConnectionSwitchedToDefault();
-});
+    $originalDBName = DB::connection()->getDatabaseName();
+
+    Artisan::call('tenants:migrate');
+    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
+
+    Artisan::call('tenants:seed', ['--class' => ExampleSeeder::class]);
+    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
+
+    Artisan::call('tenants:rollback');
+    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
+
+    Artisan::call('tenants:migrate', ['--tenants' => [$tenant->getTenantKey()]]);
+
+    pest()->artisan("tenants:run --tenants={$tenant->getTenantKey()} 'foo foo --b=bar --c=xyz'");
+
+    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
+})->with([
+    'tenancy initialized' => true,
+    'tenancy not initialized' => false,
+]);
 
 test('run command works', function () {
-    runCommandWorks();
+    $id = Tenant::create()->getTenantKey();
+
+    Artisan::call('tenants:migrate', ['--tenants' => [$id]]);
+
+    pest()->artisan("tenants:run --tenants=$id 'foo foo --b=bar --c=xyz'")
+        ->expectsOutput("User's name is Test user")
+        ->expectsOutput('foo')
+        ->expectsOutput('xyz');
 });
 
 test('install command works', function () {
@@ -404,35 +429,3 @@ test('migrate fresh command only deletes tenant databases if drop_tenant_databas
         expect($tenantHasDatabase($tenant))->toBe($shouldHaveDBAfterMigrateFresh);
     }
 })->with([true, false]);
-
-// todo@tests
-function runCommandWorks(): void
-{
-    $id = Tenant::create()->getTenantKey();
-
-    Artisan::call('tenants:migrate', ['--tenants' => [$id]]);
-
-    pest()->artisan("tenants:run --tenants=$id 'foo foo --b=bar --c=xyz' ")
-        ->expectsOutput("User's name is Test user")
-        ->expectsOutput('foo')
-        ->expectsOutput('xyz');
-}
-
-// todo@tests
-function databaseConnectionSwitchedToDefault()
-{
-    $originalDBName = DB::connection()->getDatabaseName();
-
-    Artisan::call('tenants:migrate');
-    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
-
-    Artisan::call('tenants:seed', ['--class' => ExampleSeeder::class]);
-    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
-
-    Artisan::call('tenants:rollback');
-    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
-
-    runCommandWorks();
-
-    expect(DB::connection()->getDatabaseName())->toBe($originalDBName);
-}
