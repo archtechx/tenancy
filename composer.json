@@ -25,7 +25,7 @@
         "stancl/jobpipeline": "2.0.0-rc2",
         "stancl/virtualcolumn": "dev-master",
         "spatie/invade": "^1.1",
-        "laravel/prompts": "^0.1.17"
+        "laravel/prompts": "^0.1.9"
     },
     "require-dev": {
         "laravel/framework": "^10.1|^11.2",
