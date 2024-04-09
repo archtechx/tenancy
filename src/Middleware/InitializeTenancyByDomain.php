@@ -45,7 +45,7 @@ class InitializeTenancyByDomain extends IdentificationMiddleware implements Usab
      */
     public function requestHasTenant(Request $request): bool
     {
-        return ! in_array($this->getDomain($request), config('tenancy.central_domains'));
+        return ! in_array($this->getDomain($request), config('tenancy.identification.central_domains'));
     }
 
     public function getDomain(Request $request): string

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Closure;
+use Exception;
 use Illuminate\Cache\CacheManager;
-use Illuminate\Cache\Repository;
+use Illuminate\Contracts\Cache\Store;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Session\CacheBasedSessionHandler;
+use Illuminate\Session\SessionManager;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
@@ -17,70 +19,136 @@ use Stancl\Tenancy\Contracts\Tenant;
  */
 class CacheTenancyBootstrapper implements TenancyBootstrapper
 {
+    /** @var Closure(Tenant, string): string */
     public static Closure|null $prefixGenerator = null;
 
-    protected string|null $originalPrefix = null;
+    /** @var array<string, string> */
+    protected array $originalPrefixes = [];
 
     public function __construct(
         protected ConfigRepository $config,
-        protected CacheManager $cacheManager,
+        protected CacheManager $cache,
+        protected SessionManager $session,
     ) {}
 
     public function bootstrap(Tenant $tenant): void
     {
-        $this->originalPrefix = $this->config->get('cache.prefix');
+        foreach ($this->getCacheStores() as $name) {
+            $store = $this->cache->driver($name)->getStore();
 
-        $prefix = $this->generatePrefix($tenant);
+            $this->originalPrefixes[$name] = $store->getPrefix();
+            $this->setCachePrefix($store, $this->generatePrefix($tenant, $name));
+        }
 
-        foreach ($this->config->get('tenancy.cache.stores') as $store) {
-            $this->setCachePrefix($store, $prefix);
+        if ($this->shouldScopeSessions()) {
+            $name = $this->getSessionCacheStoreName();
+            $handler = $this->session->driver()->getHandler();
 
-            // Now that the store uses the passed prefix
-            // Set the configured prefix back to the default one
-            $this->config->set('cache.prefix', $this->originalPrefix);
+            if ($handler instanceof CacheBasedSessionHandler) {
+                // The CacheBasedSessionHandler is constructed with a *clone* of
+                // an existing cache store, so we need to set the prefix separately.
+                $store = $handler->getCache()->getStore();
+
+                // We also don't need to set the original prefix, since the cache store
+                // is implicitly added to the configured cache stores when session scoping
+                // is enabled.
+
+                $this->setCachePrefix($store, $this->generatePrefix($tenant, $name));
+            }
         }
     }
 
     public function revert(): void
     {
-        foreach ($this->config->get('tenancy.cache.stores') as $store) {
-            $this->setCachePrefix($store, $this->originalPrefix);
+        foreach ($this->getCacheStores() as $name) {
+            $store = $this->cache->driver($name)->getStore();
+
+            $this->setCachePrefix($store, $this->originalPrefixes[$name]);
+        }
+
+        if ($this->shouldScopeSessions()) {
+            $name = $this->getSessionCacheStoreName();
+            $handler = $this->session->driver()->getHandler();
+
+            if ($handler instanceof CacheBasedSessionHandler) {
+                $store = $handler->getCache()->getStore();
+
+                $this->setCachePrefix($store, $this->originalPrefixes[$name]);
+            }
         }
     }
 
-    protected function setCachePrefix(string $driver, string|null $prefix): void
+    protected function getSessionCacheStoreName(): string
     {
-        $this->config->set('cache.prefix', $prefix);
-
-        // Refresh driver's store to make the driver use the current prefix
-        $this->refreshStore($driver);
-
-        // It is needed when a call to the facade has been made before bootstrapping tenancy
-        // The facade has its own cache, separate from the container
-        Cache::clearResolvedInstances();
+        return $this->config->get('session.store') ?? $this->config->get('session.driver');
     }
 
-    public function generatePrefix(Tenant $tenant): string
+    protected function shouldScopeSessions(): bool
     {
-        $defaultPrefix = $this->originalPrefix . $this->config->get('tenancy.cache.prefix_base') . $tenant->getTenantKey();
-
-        return static::$prefixGenerator ? (static::$prefixGenerator)($tenant) : $defaultPrefix;
+        // We don't want to scope sessions if:
+        //   1. The user has disabled session scoping via this bootstrapper, AND
+        //   2. The session driver hasn't been instantiated yet (if this is the case,
+        //      it will be instantiated later by cloning an existing cache store
+        //      that will have already been prefixed in this bootstrapper).
+        return $this->config->get('tenancy.cache.scope_sessions', true)
+            && count($this->session->getDrivers()) !== 0;
     }
 
-    public static function generatePrefixUsing(Closure $prefixGenerator): void
+    /** @return string[] */
+    protected function getCacheStores(): array
     {
-        static::$prefixGenerator = $prefixGenerator;
+        $names = $this->config->get('tenancy.cache.stores');
+
+        if (
+            $this->config->get('tenancy.cache.scope_sessions', true) &&
+            in_array($this->config->get('session.driver'), ['redis', 'memcached', 'dynamodb', 'apc'], true)
+        ) {
+            $names[] = $this->getSessionCacheStoreName();
+        }
+
+        $names = array_unique($names);
+
+        return array_filter($names, function ($name) {
+            $store = $this->config->get("cache.stores.{$name}");
+
+            if ($store === null || $store['driver'] === 'file') {
+                return false;
+            }
+
+            if ($store['driver'] === 'array') {
+                throw new Exception('Cache store [' . $name . '] is not supported by this bootstrapper.');
+            }
+
+            return true;
+        });
+    }
+
+    protected function setCachePrefix(Store $store, string|null $prefix): void
+    {
+        if (! method_exists($store, 'setPrefix')) {
+            throw new Exception('Cache store [' . get_class($store) . '] does not support setting a prefix.');
+        }
+
+        $store->setPrefix($prefix);
+    }
+
+    public function generatePrefix(Tenant $tenant, string $store): string
+    {
+        return static::$prefixGenerator
+            ? (static::$prefixGenerator)($tenant, $store)
+            : $this->originalPrefixes[$store] . str($this->config->get('tenancy.cache.prefix'))
+                ->replace('%tenant%', (string) $tenant->getTenantKey())->toString();
     }
 
     /**
-     * Refresh cache driver's store.
+     * Set a custom prefix generator.
+     *
+     * The first argument is the tenant, the second argument is the cache store name.
+     *
+     * @param Closure(Tenant, string): string $prefixGenerator
      */
-    protected function refreshStore(string $driver): void
+    public static function generatePrefixUsing(Closure $prefixGenerator): void
     {
-        $newStore = $this->cacheManager->resolve($driver)->getStore();
-        /** @var Repository $repository */
-        $repository = $this->cacheManager->driver($driver);
-
-        $repository->setStore($newStore);
+        static::$prefixGenerator = $prefixGenerator;
     }
 }

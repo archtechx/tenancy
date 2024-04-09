@@ -22,6 +22,8 @@ If you're developing some feature and you encounter `SQLSTATE[23000]: Integrity 
 
 To fix this, simply delete the database memory by shutting down containers and starting them again: `composer docker-down && composer docker-up`.
 
+Same thing for `SQLSTATE[HY000]: General error: 1615 Prepared statement needs to be re-prepared`.
+
 ### Docker on M1
 
 Run `composer docker-m1` to symlink `docker-compose-m1.override.yml` to `docker-compose.override.yml`. This will reconfigure a few services in the docker compose config to be compatible with M1.

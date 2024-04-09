@@ -20,7 +20,7 @@ beforeEach(function () {
 });
 
 test('tenant can be identified by subdomain', function () {
-    config(['tenancy.central_domains' => ['localhost']]);
+    config(['tenancy.identification.central_domains' => ['localhost']]);
 
     $tenant = CombinedTenant::create([
         'id' => 'acme',
@@ -41,7 +41,7 @@ test('tenant can be identified by subdomain', function () {
 });
 
 test('tenant can be identified by domain', function () {
-    config(['tenancy.central_domains' => []]);
+    config(['tenancy.identification.central_domains' => []]);
 
     $tenant = CombinedTenant::create([
         'id' => 'acme',

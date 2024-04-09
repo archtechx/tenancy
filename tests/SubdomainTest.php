@@ -87,7 +87,7 @@ test('oninvalidsubdomain logic can be customized', function () {
 });
 
 test('we cant use a subdomain that doesnt belong to our central domains', function () {
-    config(['tenancy.central_domains' => [
+    config(['tenancy.identification.central_domains' => [
         '127.0.0.1',
         // not 'localhost'
     ]]);

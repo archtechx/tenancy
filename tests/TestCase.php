@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
+use Aws\DynamoDb\DynamoDbClient;
 use PDO;
 use Dotenv\Dotenv;
-use Stancl\Tenancy\Tenancy;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Artisan;
 use Stancl\Tenancy\Bootstrappers\BroadcastChannelPrefixBootstrapper;
 use Stancl\Tenancy\Facades\GlobalCache;
 use Stancl\Tenancy\TenancyServiceProvider;
@@ -34,6 +35,46 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
         Redis::connection('default')->flushdb();
         Redis::connection('cache')->flushdb();
+        Artisan::call('cache:clear memcached'); // flush memcached
+        Artisan::call('cache:clear file'); // flush file cache
+        apcu_clear_cache(); // flush APCu cache
+
+        // re-create dynamodb `cache` table
+        $dynamodb = new DynamoDbClient([
+            'region' => 'us-east-1',
+            'version' => 'latest',
+            'endpoint' => 'http://dynamodb:8000',
+            'credentials' => [
+                'key' => env('TENANCY_TEST_DYNAMODB_KEY', 'DUMMYIDEXAMPLE'),
+                'secret' => env('TENANCY_TEST_DYNAMODB_KEY', 'DUMMYEXAMPLEKEY'),
+            ],
+        ]);
+
+        try {
+            $dynamodb->deleteTable([
+                'TableName' => 'cache',
+            ]);
+        } catch (\Throwable) {}
+
+        $dynamodb->createTable([
+            'TableName' => 'cache',
+            'KeySchema' => [
+                [
+                    'AttributeName' => 'key', // Partition key
+                    'KeyType' => 'HASH',
+                ]
+            ],
+            'AttributeDefinitions' => [
+                [
+                    'AttributeName' => 'key',
+                    'AttributeType' => 'S', // String
+                ]
+            ],
+            'ProvisionedThroughput' => [
+                'ReadCapacityUnits' => 100,
+                'WriteCapacityUnits' => 100,
+            ],
+        ]);
 
         file_put_contents(database_path('central.sqlite'), '');
         pest()->artisan('migrate:fresh', [
@@ -67,10 +108,18 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         $app['config']->set([
             'database.default' => 'central',
             'cache.default' => 'redis',
-            'database.redis.cache.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
-            'database.redis.default.host' => env('TENANCY_TEST_REDIS_HOST', '127.0.0.1'),
+            'session.driver' => 'redis',
+            'database.redis.cache.host' => env('TENANCY_TEST_REDIS_HOST', 'redis'),
+            'database.redis.default.host' => env('TENANCY_TEST_REDIS_HOST', 'redis'),
             'database.redis.options.prefix' => 'foo',
             'database.redis.client' => 'predis',
+            'cache.stores.memcached.servers.0.host' => env('TENANCY_TEST_MEMCACHED_HOST', 'memcached'),
+            'cache.stores.dynamodb.key' => env('TENANCY_TEST_DYNAMODB_KEY', 'DUMMYIDEXAMPLE'),
+            'cache.stores.dynamodb.secret' => env('TENANCY_TEST_DYNAMODB_SECRET', 'DUMMYEXAMPLEKEY'),
+            'cache.stores.dynamodb.endpoint' => 'http://dynamodb:8000',
+            'cache.stores.dynamodb.region' => 'us-east-1',
+            'cache.stores.dynamodb.table' => 'cache',
+            'cache.stores.apc' => ['driver' => 'apc'],
             'database.connections.central' => [
                 'driver' => 'mysql',
                 'url' => env('DATABASE_URL'),
@@ -114,7 +163,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 '--realpath' => true,
                 '--force' => true,
             ],
-            'tenancy.central_domains' => ['localhost', '127.0.0.1'],
+            'tenancy.identification.central_domains' => ['localhost', '127.0.0.1'],
             'tenancy.bootstrappers' => [],
             'queue.connections.central' => [
                 'driver' => 'sync',

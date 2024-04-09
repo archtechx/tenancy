@@ -9,7 +9,7 @@ use Stancl\Tenancy\Tests\Etc\Tenant;
 
 beforeEach(function () {
     config([
-        'tenancy.central_domains' => [
+        'tenancy.identification.central_domains' => [
             'localhost',
         ],
     ]);

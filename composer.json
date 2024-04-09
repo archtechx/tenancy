@@ -17,7 +17,7 @@
     "require": {
         "php": "^8.2",
         "ext-json": "*",
-        "illuminate/support": "^10.1|^11.0",
+        "illuminate/support": "^10.1|^11.3",
         "laravel/tinker": "^2.0",
         "facade/ignition-contracts": "^1.0.2",
         "spatie/ignition": "^1.4",
@@ -28,14 +28,15 @@
         "laravel/prompts": "^0.1.9"
     },
     "require-dev": {
-        "laravel/framework": "^10.1|^11.2",
+        "laravel/framework": "^10.1|^11.3",
         "orchestra/testbench": "^8.0|^9.0",
         "league/flysystem-aws-s3-v3": "^3.12.2",
         "doctrine/dbal": "^3.6.0",
         "spatie/valuestore": "^1.2.5",
         "pestphp/pest": "^2.0",
         "larastan/larastan": "^2.4",
-        "spatie/invade": "^1.1"
+        "spatie/invade": "^1.1",
+        "aws/aws-sdk-php-laravel": "~3.0"
     },
     "autoload": {
         "psr-4": {

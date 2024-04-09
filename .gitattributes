@@ -3,15 +3,22 @@
 
 # Ignore all test and documentation with "export-ignore".
 /.github export-ignore
-/art export-ignore
-/tests export-ignore
 /.gitattributes export-ignore
 /.gitignore export-ignore
 /.styleci.yml export-ignore
-/docker-compose.yml export-ignore
-/Dockerfile export-ignore
-/test export-ignore
-/phpunit.xml export-ignore
 /.editorconfig export-ignore
 /.coverage.xml export-ignore
+/art export-ignore
 /coverage export-ignore
+/CONTRIBUTING.md export-ignore
+/INTERNAL.md export-ignore
+/SUPPORT.md export-ignore
+/docker-compose.yml export-ignore
+/docker-compose-override.yml export-ignore
+/docker-compose-m1.override.yml export-ignore
+/Dockerfile export-ignore
+/doctum export-ignore
+/phpunit.xml export-ignore
+/t export-ignore
+/test export-ignore
+/tests export-ignore

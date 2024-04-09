@@ -117,6 +117,16 @@ class Tenancy
         return array_map('app', $resolve($this->tenant));
     }
 
+    /**
+     * Check if a bootstrapper is being used.
+     *
+     * @param class-string<TenancyBootstrapper> $bootstrapper
+     */
+    public function usingBootstrapper(string $bootstrapper): bool
+    {
+        return in_array($bootstrapper, static::getBootstrappers(), true);
+    }
+
     public static function query(): Builder
     {
         return static::model()->query();

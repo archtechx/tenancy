@@ -39,7 +39,7 @@ use Stancl\Tenancy\Tests\Etc\Tenant;
 
     // Sessions table for central database
     pest()->artisan('migrate', [
-        '--path' => __DIR__ . '/Etc/session_migrations',
+        '--path' => __DIR__ . '/../Etc/session_migrations',
         '--realpath' => true,
     ])->assertExitCode(0);
  });
@@ -58,7 +58,7 @@ test('central helper can be used in tenant requests', function (bool $enabled, b
 
     // run for tenants
     pest()->artisan('tenants:migrate', [
-        '--path' => __DIR__ . '/Etc/session_migrations',
+        '--path' => __DIR__ . '/../Etc/session_migrations',
         '--realpath' => true,
     ])->assertExitCode(0);
 
@@ -109,7 +109,7 @@ test('tenant run helper can be used on central requests', function (bool $enable
 
     // run for tenants
     pest()->artisan('tenants:migrate', [
-        '--path' => __DIR__ . '/Etc/session_migrations',
+        '--path' => __DIR__ . '/../Etc/session_migrations',
         '--realpath' => true,
     ])->assertExitCode(0);
 

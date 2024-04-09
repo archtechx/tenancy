@@ -89,6 +89,18 @@ jobs:
           - 6379/tcp
         options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
+      memcached:
+        image: memcached
+        ports:
+          - 11211/tcp
+        # options: --health-cmd="/bin/nc -z 127.0.0.1 11211" --health-interval=10s --health-timeout=5s --health-retries=3 # TODO: Add a working health check
+
+      dynamodb:
+        image: amazon/dynamodb-local:latest
+        ports:
+          - 8000/tcp
+        # options: --health-cmd="/bin/nc -z 127.0.0.1 8000" --health-interval=10s --health-timeout=5s --health-retries=3 # TODO: Add a working health check
+
   php-cs-fixer:
     name: Code style (php-cs-fixer)
     runs-on: ubuntu-latest

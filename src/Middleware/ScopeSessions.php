@@ -12,6 +12,9 @@ class ScopeSessions
 {
     public static string $tenantIdKey = '_tenant_id';
 
+    /** @var Closure(Request): mixed */
+    public static Closure|null $onFail = null;
+
     /** @return \Illuminate\Http\Response|mixed */
     public function handle(Request $request, Closure $next): mixed
     {
@@ -23,7 +26,9 @@ class ScopeSessions
             $request->session()->put(static::$tenantIdKey, tenant()->getTenantKey());
         } else {
             if ($request->session()->get(static::$tenantIdKey) !== tenant()->getTenantKey()) {
-                abort(403);
+                return static::$onFail !== null
+                    ? (static::$onFail)($request)
+                    : abort(403);
             }
         }
 

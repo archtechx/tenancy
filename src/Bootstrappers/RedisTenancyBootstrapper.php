@@ -25,7 +25,7 @@ class RedisTenancyBootstrapper implements TenancyBootstrapper
     public function bootstrap(Tenant $tenant): void
     {
         foreach ($this->prefixedConnections() as $connection) {
-            $prefix = $this->config['tenancy.redis.prefix_base'] . $tenant->getTenantKey();
+            $prefix = str($this->config['tenancy.redis.prefix'])->replace('%tenant%', (string) $tenant->getTenantKey())->toString();
             $client = Redis::connection($connection)->client();
 
             /** @var string $originalPrefix */

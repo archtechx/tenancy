@@ -38,16 +38,16 @@ return [
         'id_generator' => UniqueIdentifierGenerators\UUIDGenerator::class,
     ],
 
-    /**
-     * The list of domains hosting your central app.
-     *
-     * Only relevant if you're using the domain or subdomain identification middleware.
-     */
-    'central_domains' => [
-        str(env('APP_URL'))->after('://')->before('/')->toString(),
-    ],
-
     'identification' => [
+        /**
+         * The list of domains hosting your central app.
+         *
+         * Only relevant if you're using the domain or subdomain identification middleware.
+         */
+        'central_domains' => [ // todo@docs this was moved into the identification section
+            str(env('APP_URL'))->after('://')->before('/')->toString(),
+        ],
+
         /**
          * The default middleware used for tenant identification.
          *
@@ -222,10 +222,17 @@ return [
      * You can clear cache selectively by specifying the tag.
      */
     'cache' => [
-        'prefix_base' => 'tenant', // This prefix_base, followed by the tenant_id, will form a cache prefix that will be used for every cache key.
+        'prefix' => 'tenant_%tenant%_', // This format, with the %tenant% replaced by the tenant key, and prepended by the original store prefix, will form a cache prefix that will be used for every cache key.
         'stores' => [
             env('CACHE_STORE'),
         ],
+
+        /*
+         * Should sessions be tenant-aware (only used when your session driver is cache-based).
+         *
+         * Note: This will implicitly add your configured session store to the list of prefixed stores above.
+         */
+        'scope_sessions' => true,
 
         'tag_base' => 'tenant', // This tag_base, followed by the tenant_id, will form a tag that will be applied on each cache call.
     ],
@@ -273,6 +280,20 @@ return [
             'public' => 'public-%tenant%',
         ],
 
+        /*
+         * Should the `file` cache driver be tenant-aware.
+         *
+         * When this is enabled, cache files will be stored in storage/{tenant}/framework/cache.
+         */
+        'scope_cache' => true,
+
+        /*
+         * Should the `file` session driver be tenant-aware.
+         *
+         * When this is enabled, session files will be stored in storage/{tenant}/framework/sessions.
+         */
+        'scope_sessions' => true,
+
         /**
          * Should storage_path() be suffixed.
          *
@@ -304,7 +325,7 @@ return [
      * either using the Redis facade or by injecting it as a dependency.
      */
     'redis' => [
-        'prefix_base' => 'tenant', // Each key in Redis will be prepended by this prefix_base, followed by the tenant id.
+        'prefix' => 'tenant_%tenant%_', // Each key in Redis will be prepended by this prefix format, with %tenant% replaced by the tenant key.
         'prefixed_connections' => [ // Redis connections whose keys are prefixed, to separate one tenant's keys from another.
             'default',
             // 'cache', // Enable this if you want to scope cache using RedisTenancyBootstrapper

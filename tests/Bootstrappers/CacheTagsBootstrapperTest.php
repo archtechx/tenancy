@@ -7,11 +7,14 @@ use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Bootstrappers\CacheTagsBootstrapper;
+use Stancl\Tenancy\Events\TenancyEnded;
+use Stancl\Tenancy\Listeners\RevertToCentralContext;
 
 beforeEach(function () {
     config(['tenancy.bootstrappers' => [CacheTagsBootstrapper::class]]);
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
 test('default tag is automatically applied', function () {
@@ -48,7 +51,7 @@ test('exception is thrown when more than one argument is passed to tags method',
     cache()->tags(1, 2);
 });
 
-test('tags separate cache well enough', function () {
+test('tags separate cache properly', function () {
     $tenant1 = Tenant::create();
     tenancy()->initialize($tenant1);
 

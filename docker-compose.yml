@@ -8,12 +8,18 @@ services:
         depends_on:
             mysql:
                 condition: service_healthy
+            mysql2:
+                condition: service_healthy
             postgres:
                 condition: service_healthy
             redis:
                 condition: service_healthy
-            # mssql:
-            #    condition: service_healthy
+            mssql:
+               condition: service_healthy
+            memcached:
+                condition: service_healthy
+            dynamodb:
+                condition: service_healthy
         volumes:
             - .:/var/www/html:delegated
         environment:
@@ -68,22 +74,34 @@ services:
             retries: 5
         tmpfs:
             - /var/lib/postgresql/data
+    mssql:
+        image: mcr.microsoft.com/mssql/server:2019-latest
+        environment:
+          - ACCEPT_EULA=Y
+          - SA_PASSWORD=P@ssword # todo reuse env from above
+        healthcheck: # https://github.com/Microsoft/mssql-docker/issues/133#issuecomment-1995615432
+            test: timeout 1 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/1433'
+            interval: 10s
+            timeout: 10s
+            retries: 10
     redis:
         image: redis:alpine
         healthcheck:
             test: ["CMD", "redis-cli", "ping"]
             interval: 1s
             timeout: 3s
-            retries: 30
-    mssql:
-        image: mcr.microsoft.com/mssql/server:2019-latest
-        ports:
-            - 1433:1433
-        environment:
-          - ACCEPT_EULA=Y
-          - SA_PASSWORD=P@ssword # todo reuse values from env above
+            retries: 20
+    memcached:
+        image: memcached:alpine
         healthcheck:
-            test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P P@ssword -Q "SELECT 1" -b -o /dev/null
-            interval: 10s
-            timeout: 10s
-            retries: 10
+            test: ["CMD-SHELL", "echo version | nc localhost 11211 | grep -q VERSION"]
+            interval: 1s
+            timeout: 3s
+            retries: 20
+    dynamodb:
+        image: amazon/dynamodb-local:latest
+        healthcheck:
+            test: ["CMD-SHELL", "cat < /dev/null > /dev/tcp/127.0.0.1/8000"]
+            interval: 1s
+            timeout: 3s
+            retries: 20

@@ -29,19 +29,17 @@ RUN update-alternatives --set php /usr/bin/php$PHP_VERSION \
     && update-alternatives --set phpize /usr/bin/phpize$PHP_VERSION \
     && update-alternatives --set php-config /usr/bin/php-config$PHP_VERSION
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends libhiredis0.14 libjemalloc2 liblua5.1-0 lua-bitop lua-cjson redis redis-server redis-tools
-
-RUN pecl install redis-5.3.7 sqlsrv pdo_sqlsrv pcov \
-    && printf "; priority=20\nextension=redis.so\n" > /etc/php/$PHP_VERSION/mods-available/redis.ini \
-    && printf "; priority=20\nextension=sqlsrv.so\n" > /etc/php/$PHP_VERSION/mods-available/sqlsrv.ini \
-    && printf "; priority=30\nextension=pdo_sqlsrv.so\n" > /etc/php/$PHP_VERSION/mods-available/pdo_sqlsrv.ini \
-    && printf "; priority=40\nextension=pcov.so\n" > /etc/php/$PHP_VERSION/mods-available/pcov.ini \
-    && phpenmod -v $PHP_VERSION redis sqlsrv pdo_sqlsrv pcov
-
 # install composer
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
 # set the system timezone
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
-    && echo $TZ > /etc/timezone
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# install PHP extensions
+RUN pecl install redis && printf "; priority=20\nextension=redis.so\n" > /etc/php/$PHP_VERSION/mods-available/redis.ini && phpenmod -v $PHP_VERSION redis
+RUN pecl install pdo_sqlsrv && printf "; priority=30\nextension=pdo_sqlsrv.so\n" > /etc/php/$PHP_VERSION/mods-available/pdo_sqlsrv.ini && phpenmod -v $PHP_VERSION pdo_sqlsrv
+RUN pecl install pcov && printf "; priority=40\nextension=pcov.so\n" > /etc/php/$PHP_VERSION/mods-available/pcov.ini && phpenmod -v $PHP_VERSION pcov
+
+RUN apt-get install -y --no-install-recommends libmemcached-dev zlib1g-dev
+RUN pecl install memcached && printf "; priority=50\nextension=memcached.so\n" > /etc/php/$PHP_VERSION/mods-available/memcached.ini && phpenmod -v $PHP_VERSION memcached
+RUN pecl install apcu && printf "; priority=60\nextension=apcu.so\napc.enable_cli=1\n" > /etc/php/$PHP_VERSION/mods-available/apcu.ini && phpenmod -v $PHP_VERSION apcu

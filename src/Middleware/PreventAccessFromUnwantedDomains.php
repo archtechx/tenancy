@@ -51,20 +51,20 @@ class PreventAccessFromUnwantedDomains
     protected function accessingTenantRouteFromCentralDomain(Request $request, Route $route): bool
     {
         return tenancy()->getRouteMode($route) === RouteMode::TENANT // Current route's middleware context is tenant
-            && $this->isCentralDomain($request); // The request comes from a domain that IS present in the configured `tenancy.central_domains`
+            && $this->isCentralDomain($request); // The request comes from a domain that IS present in the configured `tenancy.identification.central_domains`
     }
 
     protected function accessingCentralRouteFromTenantDomain(Request $request, Route $route): bool
     {
         return tenancy()->getRouteMode($route) === RouteMode::CENTRAL // Current route's middleware context is central
-            && ! $this->isCentralDomain($request); // The request comes from a domain that ISN'T present in the configured `tenancy.central_domains`
+            && ! $this->isCentralDomain($request); // The request comes from a domain that ISN'T present in the configured `tenancy.identification.central_domains`
     }
 
     /**
-     * Check if the request's host name is present in the configured `tenancy.central_domains`.
+     * Check if the request's host name is present in the configured `tenancy.identification.central_domains`.
      */
     protected function isCentralDomain(Request $request): bool
     {
-        return in_array($request->getHost(), config('tenancy.central_domains'), true);
+        return in_array($request->getHost(), config('tenancy.identification.central_domains'), true);
     }
 }

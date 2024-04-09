@@ -6,6 +6,7 @@ namespace Stancl\Tenancy\Bootstrappers;
 
 use Illuminate\Foundation\Application;
 use Illuminate\Routing\UrlGenerator;
+use Illuminate\Session\FileSessionHandler;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
@@ -37,6 +38,9 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         $this->storagePath($suffix);
         $this->assetHelper($suffix);
         $this->forgetDisks();
+        $this->scopeCache($suffix);
+        $this->scopeSessions($suffix);
+        // todo@docs update fs docs
 
         foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
             $this->diskRoot($disk, $tenant);
@@ -55,6 +59,8 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         $this->storagePath(false);
         $this->assetHelper(false);
         $this->forgetDisks();
+        $this->scopeCache(false);
+        $this->scopeSessions(false);
 
         foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
             $this->diskRoot($disk, false);
@@ -76,8 +82,13 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         if ($suffix === false) {
             $this->app->useStoragePath($this->originalStoragePath);
         } else {
-            $this->app->useStoragePath($this->originalStoragePath . "/{$suffix}");
+            $this->app->useStoragePath($this->tenantStoragePath($suffix));
         }
+    }
+
+    protected function tenantStoragePath(string $suffix): string
+    {
+        return $this->originalStoragePath . "/{$suffix}";
     }
 
     protected function assetHelper(string|false $suffix): void
@@ -125,7 +136,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             // This is executed if the disk is in tenancy.filesystem.disks AND has a root_override
             // This behavior is used for local disks.
             $newRoot = str($override)
-                ->replace('%storage_path%', storage_path())
+                ->replace('%storage_path%', $this->tenantStoragePath($suffix))
                 ->replace('%original_storage_path%', $this->originalStoragePath)
                 ->replace('%tenant%', (string) $tenant->getTenantKey())
                 ->toString();
@@ -154,6 +165,72 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         } else {
             $this->originalDisks[$disk]['url'] ??= $diskConfig['url'] ?? null;
             $this->app['config']["filesystems.disks.{$disk}.url"] = url($override);
+        }
+    }
+
+    public function scopeCache(string|false $suffix): void
+    {
+        if (! $this->app['config']['tenancy.filesystem.scope_cache']) {
+            return;
+        }
+
+        $storagePath = $suffix
+            ? $this->tenantStoragePath($suffix)
+            : $this->originalStoragePath;
+
+        $stores = array_filter($this->app['config']['tenancy.cache.stores'], function ($name) {
+            $store = $this->app['config']["cache.stores.{$name}"];
+
+            if ($store === null) {
+                return false;
+            }
+
+            return $store['driver'] === 'file';
+        });
+
+        foreach ($stores as $name) {
+            $path = $storagePath . '/framework/cache/data';
+            $this->app['config']["cache.stores.{$name}.path"] = $path;
+            $this->app['config']["cache.stores.{$name}.lock_path"] = $path;
+
+            /** @var \Illuminate\Cache\FileStore $store */
+            $store = $this->app['cache']->store($name)->getStore();
+            $store->setDirectory($path);
+            $store->setLockDirectory($path);
+        }
+    }
+
+    public function scopeSessions(string|false $suffix): void
+    {
+        if (! $this->app['config']['tenancy.filesystem.scope_sessions']) {
+            return;
+        }
+
+        $path = $suffix
+            ? $this->tenantStoragePath($suffix) . '/framework/sessions'
+            : $this->originalStoragePath . '/framework/sessions';
+
+        if (! is_dir($path)) {
+            // Create tenant framework/sessions directory if it does not exist
+            mkdir($path, 0755, true);
+        }
+
+        $this->app['config']['session.files'] = $path;
+
+        /** @var \Illuminate\Session\SessionManager $sessionManager */
+        $sessionManager = $this->app['session'];
+
+        // Since this bootstrapper runs much earlier than the StartSession middleware, this doesn't execute
+        // on the average tenant request. It only executes when the context is switched *after* original
+        // middleware initialization.
+        if (isset($sessionManager->getDrivers()['file'])) {
+            $handler = new FileSessionHandler(
+                $this->app->make('files'),
+                $path,
+                $this->app['config']->get('session.lifetime'),
+            );
+
+            $sessionManager->getDrivers()['file']->setHandler($handler);
         }
     }
 }

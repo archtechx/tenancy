@@ -37,6 +37,10 @@ test('global cache manager stores data in global cache', function (string $boots
     cache(['def' => 'ghi'], 10);
     expect(cache('def'))->toBe('ghi');
 
+    // different stores, same underlying connection. the prefix is set ON THE STORE
+    expect(cache()->store()->getStore() === GlobalCache::store()->getStore())->toBeFalse();
+    expect(cache()->store()->getStore()->connection() === GlobalCache::store()->getStore()->connection())->toBeTrue();
+
     tenancy()->end();
     expect(GlobalCache::get('abc'))->toBe('xyz');
     expect(GlobalCache::get('foo'))->toBe('bar');
@@ -62,6 +66,10 @@ test('the global_cache helper supports the same syntax as the cache helper', fun
 
     $tenant = Tenant::create();
     $tenant->enter();
+
+    // different stores, same underlying connection. the prefix is set ON THE STORE
+    expect(cache()->store()->getStore() === global_cache()->store()->getStore())->toBeFalse();
+    expect(cache()->store()->getStore()->connection() === global_cache()->store()->getStore()->connection())->toBeTrue();
 
     expect(cache('foo'))->toBe(null); // tenant cache is empty
 

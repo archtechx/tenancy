@@ -10,7 +10,7 @@ beforeEach(function () {
     InitializeTenancyByOriginHeader::$onFail = null;
 
     config([
-        'tenancy.central_domains' => [
+        'tenancy.identification.central_domains' => [
             'localhost',
         ],
     ]);
