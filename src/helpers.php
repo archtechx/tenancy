@@ -20,7 +20,7 @@ if (! function_exists('tenant')) {
      *
      * @return Tenant|null|mixed
      */
-    function tenant(string $key = null): mixed
+    function tenant(?string $key = null): mixed
     {
         if (! app()->bound(Tenant::class)) {
             return null;

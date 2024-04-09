@@ -4,6 +4,7 @@ use PhpCsFixer\Config;
 use PhpCsFixer\Finder;
 
 $rules = [
+    'nullable_type_declaration_for_default_null_value' => true,
     'single_line_empty_body' => true,
     'array_syntax' => ['syntax' => 'short'],
     'binary_operator_spaces' => [

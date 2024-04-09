@@ -74,12 +74,12 @@ class Install extends Command
      */
     protected function step(
         string $name,
-        Closure $task = null,
+        ?Closure $task = null,
         bool $unless = false,
-        string $warning = null,
-        string $file = null,
-        string $tag = null,
-        array $files = null,
+        ?string $warning = null,
+        ?string $file = null,
+        ?string $tag = null,
+        ?array $files = null,
         bool $newLineBefore = false,
         bool $newLineAfter = false,
     ): void {

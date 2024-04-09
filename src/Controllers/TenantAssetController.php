@@ -42,7 +42,7 @@ class TenantAssetController implements HasMiddleware
     /**
      * @throws \Symfony\Component\HttpKernel\Exception\NotFoundHttpException
      */
-    public function __invoke(Request $request, string $path = null): BinaryFileResponse
+    public function __invoke(Request $request, ?string $path = null): BinaryFileResponse
     {
         $this->validatePath($path);
 
