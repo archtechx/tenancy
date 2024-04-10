@@ -312,7 +312,7 @@ return [
          * leave asset() helper tenancy disabled and explicitly use tenant_asset() calls in places
          * where you want to use tenant-specific assets (product images, avatars, etc).
          */
-        'asset_helper_tenancy' => false,
+        'asset_helper_tenancy' => false, // todo@rename asset_helper_override?
     ],
 
     /**
