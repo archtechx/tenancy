@@ -40,7 +40,6 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         $this->forgetDisks();
         $this->scopeCache($suffix);
         $this->scopeSessions($suffix);
-        // todo@docs update fs docs
 
         foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
             $this->diskRoot($disk, $tenant);

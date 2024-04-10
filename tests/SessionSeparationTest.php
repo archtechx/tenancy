@@ -24,6 +24,8 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\PreventAccessFromUnwantedDomains;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
+// todo@tests write similar low-level tests for the cache bootstrapper? including the database driver in a single-db setup
+
 beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
@@ -192,6 +194,7 @@ test('apc sessions are separated using the cache bootstrapper', function (bool $
     ]);
 
     $allApcuKeys = fn () => array_column(apcu_cache_info()['cache_list'], 'info');
+    expect($allApcuKeys())->toHaveCount(0);
 
     $tenant = Tenant::create();
     Route::middleware(StartSession::class, InitializeTenancyByPath::class)->get('/{tenant}/foo', fn () => 'bar');
