@@ -5,7 +5,7 @@ ARG PHP_VERSION=8.3
 
 WORKDIR /var/www/html
 
-# our default timezone and langauge
+# our default timezone and language
 ENV TZ=Europe/London
 ENV LANG=en_GB.UTF-8
 
