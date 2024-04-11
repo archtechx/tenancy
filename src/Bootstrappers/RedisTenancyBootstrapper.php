@@ -29,10 +29,10 @@ class RedisTenancyBootstrapper implements TenancyBootstrapper
             $client = Redis::connection($connection)->client();
 
             /** @var string $originalPrefix */
-            $originalPrefix = $client->getOption($client::OPT_PREFIX);
+            $originalPrefix = $client->getOption(\Redis::OPT_PREFIX);
 
             $this->originalPrefixes[$connection] = $originalPrefix;
-            $client->setOption($client::OPT_PREFIX, $prefix);
+            $client->setOption(\Redis::OPT_PREFIX, $prefix);
         }
     }
 
@@ -41,7 +41,7 @@ class RedisTenancyBootstrapper implements TenancyBootstrapper
         foreach ($this->prefixedConnections() as $connection) {
             $client = Redis::connection($connection)->client();
 
-            $client->setOption($client::OPT_PREFIX, $this->originalPrefixes[$connection]);
+            $client->setOption(\Redis::OPT_PREFIX, $this->originalPrefixes[$connection]);
         }
 
         $this->originalPrefixes = [];
