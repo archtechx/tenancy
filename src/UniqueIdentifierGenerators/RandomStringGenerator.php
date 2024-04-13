@@ -12,7 +12,7 @@ use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
  * Generates a cryptographically secure random string for the tenant key.
  *
  * To customize the string length, change the static `$length` property.
- * The number of unique combinations is 36 ^ string length.
+ * The number of unique combinations is 61 ^ string length.
  */
 class RandomStringGenerator implements UniqueIdentifierGenerator
 {
