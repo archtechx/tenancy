@@ -159,7 +159,7 @@ test('early identification works with request data identification', function (st
     $response = match ($type) {
         'header' => pest()->get('/tenant-route', ['X-Tenant' => $tenantKey]),
         'queryParameter' => pest()->get("/tenant-route?tenant={$tenantKey}"),
-        'cookie' => pest()->withUnencryptedCookie('X-Tenant', $tenantKey)
+        'cookie' => pest()->withUnencryptedCookie('tenant', $tenantKey)
             ->get('/tenant-route'),
     };
 

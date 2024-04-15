@@ -18,7 +18,7 @@ class InitializeTenancyByRequestData extends IdentificationMiddleware implements
     use UsableWithEarlyIdentification;
 
     public static string $header = 'X-Tenant';
-    public static string $cookie = 'X-Tenant';
+    public static string $cookie = 'tenant';
     public static string $queryParameter = 'tenant';
     public static ?Closure $onFail = null;
 

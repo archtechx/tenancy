@@ -36,6 +36,7 @@ class InitializeTenancyByDomainOrSubdomain extends InitializeTenancyBySubdomain
             }
 
             // If a Response instance was returned, we return it immediately.
+            // todo@samuel when does this execute?
             if ($domain instanceof Response) {
                 return $domain;
             }

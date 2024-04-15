@@ -99,7 +99,7 @@ return [
          */
         'resolvers' => [
             Resolvers\DomainTenantResolver::class => [
-                'cache' => false,
+                'cache' => false, // todo@tests find why some tests fail when these are set to true
                 'cache_ttl' => 3600, // seconds
                 'cache_store' => null, // null = default
             ],
