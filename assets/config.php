@@ -44,7 +44,7 @@ return [
          *
          * Only relevant if you're using the domain or subdomain identification middleware.
          */
-        'central_domains' => [ // todo@docs this was moved into the identification section
+        'central_domains' => [
             str(env('APP_URL'))->after('://')->before('/')->toString(),
         ],
 
@@ -87,6 +87,7 @@ return [
             Middleware\InitializeTenancyByDomainOrSubdomain::class,
         ],
 
+        // todo@lukas docblock
         'path_identification_middleware' => [
             Middleware\InitializeTenancyByPath::class,
         ],
@@ -132,7 +133,7 @@ return [
         // Basic Laravel features
         Bootstrappers\DatabaseTenancyBootstrapper::class,
         Bootstrappers\CacheTenancyBootstrapper::class,
-        // Bootstrappers\CacheTagsBootstrapper::class, // Alternative to PrefixCacheTenancyBootstrapper
+        // Bootstrappers\CacheTagsBootstrapper::class, // Alternative to CacheTenancyBootstrapper
         Bootstrappers\FilesystemTenancyBootstrapper::class,
         Bootstrappers\QueueTenancyBootstrapper::class,
         // Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
@@ -343,8 +344,8 @@ return [
     'features' => [
         // Stancl\Tenancy\Features\UserImpersonation::class,
         // Stancl\Tenancy\Features\TelescopeTags::class,
-        // Stancl\Tenancy\Features\TenantConfig::class, // https://tenancyforlaravel.com/docs/v3/features/tenant-config
-        // Stancl\Tenancy\Features\CrossDomainRedirect::class, // https://tenancyforlaravel.com/docs/v3/features/cross-domain-redirect
+        // Stancl\Tenancy\Features\TenantConfig::class,
+        // Stancl\Tenancy\Features\CrossDomainRedirect::class,
         // Stancl\Tenancy\Features\ViteBundler::class,
     ],
 
