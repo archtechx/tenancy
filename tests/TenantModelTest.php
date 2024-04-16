@@ -103,13 +103,6 @@ test('random string ids are supported', function () {
     RandomStringGenerator::$length = 8; // reset
 });
 
-// todo@deprecation remove this after deleting the class
-test('referencing the old uuid generator throws an exception', function () {
-    $tenant = Tenant::create();
-    expect(fn() => app(\Stancl\Tenancy\UUIDGenerator::class)->generate($tenant))
-        ->toThrow(Exception::class, 'Tenancy update note: UUIDGenerator has been renamed to Stancl\Tenancy\UniqueIdentifierGenerators\UUIDGenerator. Please update your config/tenancy.php');
-});
-
 test('custom tenant model can be used', function () {
     $tenant = MyTenant::create();
 
