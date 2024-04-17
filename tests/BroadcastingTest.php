@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-use Illuminate\Broadcasting\Broadcasters\NullBroadcaster;
+use Illuminate\Support\Collection;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Stancl\Tenancy\Events\TenancyEnded;
@@ -14,10 +15,10 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Tests\Etc\TestingBroadcaster;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Overrides\TenancyBroadcastManager;
+use Illuminate\Broadcasting\Broadcasters\NullBroadcaster;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastingConfigBootstrapper;
 use Illuminate\Contracts\Broadcasting\Broadcaster as BroadcasterContract;
-use Illuminate\Support\Collection;
 
 beforeEach(function () {
     withTenantDatabases();

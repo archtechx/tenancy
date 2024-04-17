@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-use Stancl\Tenancy\Database\Concerns\HasDomains;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Jobs\DeleteDomains;
 
 beforeEach(function () {
-    config(['tenancy.models.tenant' => DatabaseAndDomainTenant::class]);
+    config(['tenancy.models.tenant' => Tenant::class]);
 });
 
 test('job deletes domains successfully', function () {
-    $tenant = DatabaseAndDomainTenant::create();
+    $tenant = Tenant::create();
 
     $tenant->domains()->create([
         'domain' => 'foo.localhost',
@@ -21,12 +21,7 @@ test('job deletes domains successfully', function () {
 
     expect($tenant->domains()->count())->toBe(2);
 
-    (new DeleteDomains($tenant))->handle();
+    (new DeleteDomains($tenant->refresh()))->handle();
 
     expect($tenant->refresh()->domains()->count())->toBe(0);
 });
-
-class DatabaseAndDomainTenant extends \Stancl\Tenancy\Tests\Etc\Tenant
-{
-    use HasDomains;
-}

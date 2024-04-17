@@ -1,14 +1,15 @@
 <?php
 
+use Illuminate\Support\Facades\URL;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\URL;
-use Stancl\Tenancy\Bootstrappers\RootUrlBootstrapper;
-use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Bootstrappers\RootUrlBootstrapper;
+use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 
 beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
@@ -64,4 +65,3 @@ test('root url bootstrapper overrides the root url when tenancy gets initialized
     expect(URL::to('/'))->toBe($baseUrl);
     expect(config('app.url'))->toBe($baseUrl);
 });
-

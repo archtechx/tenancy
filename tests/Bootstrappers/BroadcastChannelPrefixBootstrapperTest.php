@@ -1,19 +1,20 @@
 <?php
 
-use Illuminate\Broadcasting\BroadcastManager;
-use Illuminate\Database\Schema\Blueprint;
+use Stancl\JobPipeline\JobPipeline;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
-use Stancl\JobPipeline\JobPipeline;
-use Stancl\Tenancy\Bootstrappers\BroadcastChannelPrefixBootstrapper;
-use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Events\TenancyEnded;
-use Stancl\Tenancy\Events\TenancyInitialized;
-use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Events\TenantCreated;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Broadcasting\BroadcastManager;
+use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\Etc\TestingBroadcaster;
+use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\BroadcastChannelPrefixBootstrapper;
 
 beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
@@ -139,4 +140,3 @@ test('BroadcastChannelPrefixBootstrapper prefixes the channels events are broadc
     expect(app(BroadcastManager::class)->driver())->toBe($broadcaster);
     expect(invade(app(BroadcastManager::class)->driver())->formatChannels($channelNames))->toEqual($channelNames);
 });
-

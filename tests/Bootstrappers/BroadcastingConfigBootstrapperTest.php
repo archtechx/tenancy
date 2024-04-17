@@ -1,14 +1,15 @@
 <?php
 
-use Illuminate\Broadcasting\BroadcastManager;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
-use Stancl\Tenancy\Bootstrappers\BroadcastingConfigBootstrapper;
 use Stancl\Tenancy\Events\TenancyEnded;
+use Illuminate\Broadcasting\BroadcastManager;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Tests\Etc\TestingBroadcaster;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Overrides\TenancyBroadcastManager;
-use Stancl\Tenancy\Tests\Etc\TestingBroadcaster;
+use Stancl\Tenancy\Bootstrappers\BroadcastingConfigBootstrapper;
 
 beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
@@ -102,4 +103,3 @@ test('BroadcastingConfigBootstrapper makes the app use broadcasters with the cor
 
     expect(invade(app(BroadcastManager::class)->driver())->message)->toBe($defaultMessage);
 });
-

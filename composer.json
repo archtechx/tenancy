@@ -65,6 +65,7 @@
     "scripts": {
         "docker-up": "docker-compose up -d",
         "docker-down": "docker-compose down",
+        "docker-restart": "docker-compose down && docker-compose up -d",
         "docker-rebuild": "PHP_VERSION=8.3 docker-compose up -d --no-deps --build",
         "docker-m1": "ln -s docker-compose-m1.override.yml docker-compose.override.yml",
         "coverage": "open coverage/phpunit/html/index.html",

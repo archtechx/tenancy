@@ -1,20 +1,21 @@
 <?php
 
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
 use Stancl\JobPipeline\JobPipeline;
-use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
-use Stancl\Tenancy\Events\DeletingTenant;
+use Illuminate\Support\Facades\File;
+use Stancl\Tenancy\Tests\Etc\Tenant;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
+use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Events\TenantDeleted;
+use Stancl\Tenancy\Events\DeletingTenant;
+use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Jobs\CreateStorageSymlinks;
 use Stancl\Tenancy\Jobs\RemoveStorageSymlinks;
-use Stancl\Tenancy\Listeners\DeleteTenantStorage;
-use Stancl\Tenancy\Events\TenancyEnded;
-use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Listeners\DeleteTenantStorage;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 
 beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);

@@ -2,6 +2,7 @@
 
 use Illuminate\Routing\Route;
 use Stancl\Tenancy\Enums\RouteMode;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Contracts\Http\Kernel;
 use Stancl\Tenancy\Actions\CloneRoutesAsTenant;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
@@ -9,7 +10,6 @@ use Illuminate\Support\Facades\Route as RouteFacade;
 use Stancl\Tenancy\Tests\Etc\HasMiddlewareController;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
-use Stancl\Tenancy\PathIdentificationManager;
 
 test('a route can be universal using path identification', function (array $routeMiddleware, array $globalMiddleware) {
     foreach ($globalMiddleware as $middleware) {

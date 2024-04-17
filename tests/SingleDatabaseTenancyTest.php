@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
-use Stancl\Tenancy\Database\Concerns\BelongsToPrimaryModel;
+use Stancl\Tenancy\Database\Models\Tenant;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
+use Stancl\Tenancy\Database\Concerns\BelongsToPrimaryModel;
 use Stancl\Tenancy\Database\Concerns\HasScopedValidationRules;
-use Stancl\Tenancy\Tests\Etc\Tenant as TestTenant;
 
 beforeEach(function () {
     Schema::create('posts', function (Blueprint $table) {
@@ -31,12 +31,12 @@ beforeEach(function () {
         $table->foreign('post_id')->references('id')->on('posts')->onUpdate('cascade')->onDelete('cascade');
     });
 
-    config(['tenancy.models.tenant' => Tenant::class]);
+    config(['tenancy.models.tenant' => SingleDatabaseTenant::class]);
 });
 
 test('primary models are scoped to the current tenant', function () {
     // acme context
-    tenancy()->initialize($acme = Tenant::create([
+    tenancy()->initialize($acme = SingleDatabaseTenant::create([
         'id' => 'acme',
     ]));
 
@@ -52,7 +52,7 @@ test('primary models are scoped to the current tenant', function () {
 
     // ======================================
     // foobar context
-    tenancy()->initialize(Tenant::create([
+    tenancy()->initialize(SingleDatabaseTenant::create([
         'id' => 'foobar',
     ]));
 
@@ -85,7 +85,7 @@ test('primary models are scoped to the current tenant', function () {
 });
 
 test('secondary models ARE scoped to the current tenant when accessed directly and parent relationship trait is used', function () {
-    $acme = Tenant::create([
+    $acme = SingleDatabaseTenant::create([
         'id' => 'acme',
     ]);
 
@@ -97,7 +97,7 @@ test('secondary models ARE scoped to the current tenant when accessed directly a
         expect(ScopedComment::count())->toBe(1);
     });
 
-    $foobar = Tenant::create([
+    $foobar = SingleDatabaseTenant::create([
         'id' => 'foobar',
     ]);
 
@@ -119,7 +119,7 @@ test('secondary models ARE scoped to the current tenant when accessed directly a
 test('secondary models are scoped correctly', function () {
     // Secondary models are scoped to the current tenant when accessed via primary model
     // acme context
-    tenancy()->initialize($acme = Tenant::create([
+    tenancy()->initialize($acme = SingleDatabaseTenant::create([
         'id' => 'acme',
     ]));
 
@@ -128,7 +128,7 @@ test('secondary models are scoped correctly', function () {
 
     // ================
     // foobar context
-    tenancy()->initialize(Tenant::create([
+    tenancy()->initialize(SingleDatabaseTenant::create([
         'id' => 'foobar',
     ]));
 
@@ -161,7 +161,7 @@ test('global models are not scoped at all', function () {
     GlobalResource::create(['text' => 'First']);
     GlobalResource::create(['text' => 'Second']);
 
-    $acme = Tenant::create([
+    $acme = SingleDatabaseTenant::create([
         'id' => 'acme',
     ]);
 
@@ -176,7 +176,7 @@ test('global models are not scoped at all', function () {
 });
 
 test('tenant id and relationship is auto added when creating primary resources in tenant context', function () {
-    tenancy()->initialize($acme = Tenant::create([
+    tenancy()->initialize($acme = SingleDatabaseTenant::create([
         'id' => 'acme',
     ]));
 
@@ -208,9 +208,11 @@ test('tenant id column name can be customized', function () {
         $table->foreign('team_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
     });
 
-    tenancy()->initialize($acme = Tenant::create([
+    $acme = SingleDatabaseTenant::create([
         'id' => 'acme',
-    ]));
+    ]);
+
+    tenancy()->initialize($acme);
 
     $post = Post::create(['text' => 'Foo']);
 
@@ -218,7 +220,7 @@ test('tenant id column name can be customized', function () {
 
     // ======================================
     // foobar context
-    tenancy()->initialize($foobar = Tenant::create([
+    tenancy()->initialize($foobar = SingleDatabaseTenant::create([
         'id' => 'foobar',
     ]));
 
@@ -248,7 +250,7 @@ test('the model returned by the tenant helper has unique and exists validation r
         $table->unique(['tenant_id', 'slug']);
     });
 
-    tenancy()->initialize($acme = Tenant::create([
+    tenancy()->initialize($acme = SingleDatabaseTenant::create([
         'id' => 'acme',
     ]));
 
@@ -278,7 +280,7 @@ test('the model returned by the tenant helper has unique and exists validation r
     expect($existsFails)->toBeFalse();
 });
 
-class Tenant extends TestTenant
+class SingleDatabaseTenant extends Tenant
 {
     use HasScopedValidationRules;
 }

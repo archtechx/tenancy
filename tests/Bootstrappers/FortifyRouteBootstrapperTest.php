@@ -1,13 +1,14 @@
 <?php
 
+use Stancl\Tenancy\Enums\Context;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
-use Stancl\Tenancy\Bootstrappers\Integrations\FortifyRouteBootstrapper;
-use Stancl\Tenancy\Enums\Context;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Bootstrappers\Integrations\FortifyRouteBootstrapper;
 
 beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);

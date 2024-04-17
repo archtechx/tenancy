@@ -64,8 +64,8 @@ test('autoincrement ids are supported', function () {
 
     unset(app()[UniqueIdentifierGenerator::class]);
 
-    $tenant1 = Tenant::create();
-    $tenant2 = Tenant::create();
+    $tenant1 = MyTenant::create();
+    $tenant2 = MyTenant::create();
 
     expect($tenant1->id)->toBe(1);
     expect($tenant2->id)->toBe(2);
@@ -200,8 +200,7 @@ test('currentOrFail method throws an exception if there is no currently initiali
     expect(fn() => Tenant::currentOrFail())->toThrow(TenancyNotInitializedException::class);
 });
 
-
-class MyTenant extends Tenant
+class MyTenant extends Stancl\Tenancy\Database\Models\Tenant
 {
     protected $table = 'tenants';
 }

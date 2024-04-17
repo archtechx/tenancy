@@ -15,12 +15,9 @@ class DeleteDomains
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected TenantWithDatabase&Model $tenant;
-
-    public function __construct(TenantWithDatabase&Model $tenant)
-    {
-        $this->tenant = $tenant;
-    }
+    public function __construct(
+        protected TenantWithDatabase&Model $tenant,
+    ) {}
 
     public function handle(): void
     {

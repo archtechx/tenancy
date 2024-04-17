@@ -1,18 +1,19 @@
 <?php
 
-use Illuminate\Routing\Exceptions\UrlGenerationException;
 use Illuminate\Routing\UrlGenerator;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
-use Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper;
-use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
-use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
-use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
-use Stancl\Tenancy\Resolvers\PathTenantResolver;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Resolvers\PathTenantResolver;
+use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
+use Illuminate\Routing\Exceptions\UrlGenerationException;
+use Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper;
+use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 
 beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);

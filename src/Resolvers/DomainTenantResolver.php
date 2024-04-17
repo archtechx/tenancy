@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Resolvers;
 
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
-use Stancl\Tenancy\Contracts\Domain;
-use Stancl\Tenancy\Contracts\SingleDomainTenant;
-use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 use Stancl\Tenancy\Tenancy;
+use Stancl\Tenancy\Contracts\Domain;
+use Stancl\Tenancy\Contracts\Tenant;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use Stancl\Tenancy\Contracts\SingleDomainTenant;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 
 class DomainTenantResolver extends Contracts\CachedTenantResolver
 {
@@ -69,12 +71,14 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
 
     public function getPossibleCacheKeys(Tenant&Model $tenant): array
     {
+        $domains = [];
+
         if ($tenant instanceof SingleDomainTenant) {
             $domains = array_filter([
                 $tenant->getOriginal('domain'), // Previous domain
                 $tenant->domain, // Current domain
             ]);
-        } else {
+        } elseif (method_exists($tenant, 'domains') && $tenant->domains() instanceof Relation) {
             /** @var Tenant&Model $tenant */
             $tenant->unsetRelation('domains');
 

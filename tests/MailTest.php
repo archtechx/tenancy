@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Mail\MailManager;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
