@@ -184,13 +184,13 @@ class TenancyServiceProvider extends ServiceProvider
          * To make Livewire v3 work with Tenancy, make the update route universal.
          *
          * Livewire::setUpdateRoute(function ($handle) {
-         *     return Route::post('/livewire/update', $handle)->middleware(['web', 'universal']);
+         *     return RouteFacade::post('/livewire/update', $handle)->middleware(['web', 'universal']);
          * });
          *
          * If using domain identification, also make the script route universal.
          *
          * app(FrontendAssets::class)->setScriptRoute(function ($handle) {
-         *    return Route::get('/livewire/livewire.js', $handle)->middleware(['universal']);
+         *    return RouteFacade::get('/livewire/livewire.js', $handle)->middleware(['universal']);
          * });
          */
 
@@ -207,7 +207,7 @@ class TenancyServiceProvider extends ServiceProvider
             /**
              * You can provide a closure for cloning a specific route, e.g.:
              * $cloneRoutes->cloneUsing('welcome', function () {
-             *      Route::get('/tenant-welcome', fn () => 'Current tenant: ' . tenant()->getTenantKey())
+             *      RouteFacade::get('/tenant-welcome', fn () => 'Current tenant: ' . tenant()->getTenantKey())
              *          ->middleware(['universal', InitializeTenancyByPath::class])
              *          ->name('tenant.welcome');
              * });
