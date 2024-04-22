@@ -6,7 +6,7 @@ namespace Stancl\Tenancy\Listeners;
 
 use Illuminate\Routing\Events\RouteMatched;
 use Stancl\Tenancy\Enums\RouteMode;
-use Stancl\Tenancy\PathIdentificationManager;
+use Stancl\Tenancy\Resolvers\PathTenantResolver;
 
 /**
  * Remove the tenant parameter from the matched route when path identification is used globally.
@@ -26,12 +26,13 @@ class ForgetTenantParameter
 {
     public function handle(RouteMatched $event): void
     {
-        $kernelPathIdentificationUsed = PathIdentificationManager::pathIdentificationInGlobalStack() && ! tenancy()->routeHasIdentificationMiddleware($event->route);
+        $pathIdentificationInGlobalStack = tenancy()->globalStackHasMiddleware(config('tenancy.identification.path_identification_middleware'));
+        $kernelPathIdentificationUsed = $pathIdentificationInGlobalStack && ! tenancy()->routeHasIdentificationMiddleware($event->route);
         $routeMode = tenancy()->getRouteMode($event->route);
-        $routeModeIsTenantOrUniversal = $routeMode === RouteMode::TENANT || ($routeMode === RouteMode::UNIVERSAL && $event->route->hasParameter(PathIdentificationManager::getTenantParameterName()));
+        $routeModeIsTenantOrUniversal = $routeMode === RouteMode::TENANT || ($routeMode === RouteMode::UNIVERSAL && $event->route->hasParameter(PathTenantResolver::tenantParameterName()));
 
         if ($kernelPathIdentificationUsed && $routeModeIsTenantOrUniversal) {
-            $event->route->forgetParameter(PathIdentificationManager::getTenantParameterName());
+            $event->route->forgetParameter(PathTenantResolver::tenantParameterName());
         }
     }
 }

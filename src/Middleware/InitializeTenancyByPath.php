@@ -7,16 +7,14 @@ namespace Stancl\Tenancy\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Stancl\Tenancy\Concerns\UsableWithEarlyIdentification;
-use Stancl\Tenancy\Concerns\UsableWithUniversalRoutes;
 use Stancl\Tenancy\Exceptions\RouteIsMissingTenantParameterException;
-use Stancl\Tenancy\PathIdentificationManager;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 use Stancl\Tenancy\Tenancy;
 
 /**
  * @see Stancl\Tenancy\Listeners\ForgetTenantParameter
  */
-class InitializeTenancyByPath extends IdentificationMiddleware implements UsableWithUniversalRoutes
+class InitializeTenancyByPath extends IdentificationMiddleware
 {
     use UsableWithEarlyIdentification;
 
@@ -55,6 +53,6 @@ class InitializeTenancyByPath extends IdentificationMiddleware implements Usable
      */
     public function requestHasTenant(Request $request): bool
     {
-        return tenancy()->getRoute($request)->hasParameter(PathIdentificationManager::getTenantParameterName());
+        return tenancy()->getRoute($request)->hasParameter(PathTenantResolver::tenantParameterName());
     }
 }

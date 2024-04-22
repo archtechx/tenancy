@@ -10,7 +10,7 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Enums\RouteMode;
-use Stancl\Tenancy\PathIdentificationManager;
+use Stancl\Tenancy\Resolvers\PathTenantResolver;
 
 /**
  * The CloneRoutesAsTenant action clones
@@ -75,7 +75,7 @@ class CloneRoutesAsTenant
 
     protected function getRoutesToClone(): Collection
     {
-        $tenantParameterName = PathIdentificationManager::getTenantParameterName();
+        $tenantParameterName = PathTenantResolver::tenantParameterName();
 
         /**
          * Clone all routes that:
@@ -95,9 +95,10 @@ class CloneRoutesAsTenant
                 return false;
             }
 
-            $routeHasPathIdentificationMiddleware = PathIdentificationManager::pathIdentificationOnRoute($route);
-            $pathIdentificationMiddlewareInGlobalStack = PathIdentificationManager::pathIdentificationInGlobalStack();
+            $pathIdentificationMiddleware = config('tenancy.identification.path_identification_middleware');
+            $routeHasPathIdentificationMiddleware = tenancy()->routeHasMiddleware($route, $pathIdentificationMiddleware);
             $routeHasNonPathIdentificationMiddleware = tenancy()->routeHasIdentificationMiddleware($route) && ! $routeHasPathIdentificationMiddleware;
+            $pathIdentificationMiddlewareInGlobalStack = tenancy()->globalStackHasMiddleware($pathIdentificationMiddleware);
 
             /**
              * The route should get cloned if:
@@ -163,7 +164,7 @@ class CloneRoutesAsTenant
                 ->filter(fn (string $middleware) => ! in_array($middleware, ['universal', 'clone']))
                 ->toArray();
 
-            $tenantRouteNamePrefix = PathIdentificationManager::getTenantRouteNamePrefix();
+            $tenantRouteNamePrefix = PathTenantResolver::tenantRouteNamePrefix();
 
             // Make sure the route name has the tenant route name prefix
             $newRouteNamePrefix = $route->getName()
@@ -173,7 +174,7 @@ class CloneRoutesAsTenant
             return $action
                 ->put('as', $newRouteNamePrefix)
                 ->put('middleware', $newRouteMiddleware)
-                ->put('prefix', '/{' . PathIdentificationManager::getTenantParameterName() . '}/' . $route->getPrefix());
+                ->put('prefix', '/{' . PathTenantResolver::tenantParameterName() . '}/' . $route->getPrefix());
         })->toArray();
 
         /** @var Route $newRoute */

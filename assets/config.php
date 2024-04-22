@@ -87,7 +87,17 @@ return [
             Middleware\InitializeTenancyByDomainOrSubdomain::class,
         ],
 
-        // todo@lukas docblock
+        /**
+         * Identification middleware tenancy recognizes as path identification middleware.
+         *
+         * This is used during determining whether whether a path identification is used
+         * during operations specific to path identification, e.g. forgetting the tenant parameter in ForgetTenantParameter.
+         *
+         * If you're using a custom path identification middleware, add it here.
+         *
+         * @see \Stancl\Tenancy\Actions\CloneRoutesAsTenant
+         * @see \Stancl\Tenancy\Listeners\ForgetTenantParameter
+         */
         'path_identification_middleware' => [
             Middleware\InitializeTenancyByPath::class,
         ],

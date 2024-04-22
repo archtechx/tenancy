@@ -193,12 +193,11 @@ class TenancyServiceProvider extends ServiceProvider
          *    return RouteFacade::get('/livewire/livewire.js', $handle)->middleware(['universal']);
          * });
          */
-
         if (InitializeTenancyByRequestData::inGlobalStack()) {
             TenancyUrlGenerator::$prefixRouteNames = false;
         }
 
-        if (InitializeTenancyByPath::inGlobalStack()) {
+        if (tenancy()->globalStackHasMiddleware(config('tenancy.identification.path_identification_middleware'))) {
             TenancyUrlGenerator::$prefixRouteNames = true;
 
             /** @var CloneRoutesAsTenant $cloneRoutes */

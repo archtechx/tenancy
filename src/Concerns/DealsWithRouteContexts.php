@@ -14,6 +14,9 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Route as RouteFacade;
 use Stancl\Tenancy\Enums\RouteMode;
 
+/**
+ * @mixin \Stancl\Tenancy\Tenancy
+ */
 trait DealsWithRouteContexts
 {
     /**
@@ -107,46 +110,14 @@ trait DealsWithRouteContexts
     }
 
     /**
-     * Check if the passed route has the passed middleware
-     * three layers deep – explained in the annotation of getRouteMiddleware().
+     * Checks whether any of the passed middleware are present in the route's middleware stack.
      */
-    public static function routeHasMiddleware(Route $route, string $middleware): bool
+    public static function routeHasMiddleware(Route $route, string|array $middlewares): bool
     {
-        return in_array($middleware, static::getRouteMiddleware($route));
-    }
+        $routeMiddleware = static::getRouteMiddleware($route);
 
-    public function routeIdentificationMiddleware(Route $route): string|null
-    {
-        foreach (static::getRouteMiddleware($route) as $routeMiddleware) {
-            if (in_array($routeMiddleware, static::middleware())) {
-                return $routeMiddleware;
-            }
-        }
-
-        return null;
-    }
-
-    public static function kernelIdentificationMiddleware(): string|null
-    {
-        /** @var Kernel $kernel */
-        $kernel = app(Kernel::class);
-
-        foreach (static::middleware() as $identificationMiddleware) {
-            if ($kernel->hasMiddleware($identificationMiddleware)) {
-                return $identificationMiddleware;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Check if a route has identification middleware.
-     */
-    public static function routeHasIdentificationMiddleware(Route $route): bool
-    {
-        foreach (static::getRouteMiddleware($route) as $middleware) {
-            if (in_array($middleware, static::middleware())) {
+        foreach (Arr::wrap($middlewares) as $middleware) {
+            if (in_array($middleware, $routeMiddleware)) {
                 return true;
             }
         }
@@ -155,22 +126,34 @@ trait DealsWithRouteContexts
     }
 
     /**
-     * Check if route uses kernel identification (identification middleare is in the global stack and the route doesn't have route-level identification middleware).
+     * Check if a route has identification middleware.
      */
-    public static function routeUsesKernelIdentification(Route $route): bool
+    public static function routeHasIdentificationMiddleware(Route $route): bool
     {
-        return ! static::routeHasIdentificationMiddleware($route) && static::kernelIdentificationMiddleware();
+        return static::routeHasMiddleware($route, static::middleware());
     }
 
     /**
-     * Check if a route uses domain identification.
+     * Check if route uses kernel identification (identification middleware is in the global stack and the route doesn't have route-level identification middleware).
      */
-    public static function routeHasDomainIdentificationMiddleware(Route $route): bool
+    public static function routeUsesKernelIdentification(Route $route): bool
     {
-        $routeMiddleware = static::getRouteMiddleware($route);
+        return ! static::routeHasIdentificationMiddleware($route) &&
+            tenancy()->globalStackHasMiddleware(static::middleware());
+    }
 
-        foreach (config('tenancy.identification.domain_identification_middleware') as $middleware) {
-            if (in_array($middleware, $routeMiddleware)) {
+    /**
+     * Checks whether any of the passed middleware are present in the global middleware stack.
+     *
+     * @param class-string|array $identificationMiddleware
+     */
+    public static function globalStackHasMiddleware(string|array $identificationMiddleware = []): bool
+    {
+        /** @var Kernel $kernel */
+        $kernel = app(Kernel::class);
+
+        foreach (Arr::wrap($identificationMiddleware) as $middleware) {
+            if ($kernel->hasMiddleware($middleware)) {
                 return true;
             }
         }

@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Resolvers;
 
-use Stancl\Tenancy\Tenancy;
-use Stancl\Tenancy\Contracts\Domain;
-use Stancl\Tenancy\Contracts\Tenant;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
-use Stancl\Tenancy\Contracts\SingleDomainTenant;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Stancl\Tenancy\Contracts\Domain;
+use Stancl\Tenancy\Contracts\SingleDomainTenant;
+use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
+use Stancl\Tenancy\Tenancy;
 
 class DomainTenantResolver extends Contracts\CachedTenantResolver
 {

@@ -7,13 +7,12 @@ namespace Stancl\Tenancy\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Stancl\Tenancy\Concerns\UsableWithEarlyIdentification;
-use Stancl\Tenancy\Concerns\UsableWithUniversalRoutes;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByRequestDataException;
 use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
 use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
 use Stancl\Tenancy\Tenancy;
 
-class InitializeTenancyByRequestData extends IdentificationMiddleware implements UsableWithUniversalRoutes
+class InitializeTenancyByRequestData extends IdentificationMiddleware
 {
     use UsableWithEarlyIdentification;
 

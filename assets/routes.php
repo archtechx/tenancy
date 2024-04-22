@@ -3,14 +3,14 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
-use Stancl\Tenancy\PathIdentificationManager;
 use Stancl\Tenancy\Controllers\TenantAssetController;
+use Stancl\Tenancy\Resolvers\PathTenantResolver;
 
 Route::get('/tenancy/assets/{path?}', TenantAssetController::class)
     ->where('path', '(.*)')
     ->name('stancl.tenancy.asset');
 
-Route::prefix('/{' . PathIdentificationManager::getTenantParameterName() . '}/')->get('/tenancy/assets/{path?}', TenantAssetController::class)
+Route::prefix('/{' . PathTenantResolver::tenantParameterName() . '}/')->get('/tenancy/assets/{path?}', TenantAssetController::class)
     ->where('path', '(.*)')
     ->middleware('tenant')
-    ->name(PathIdentificationManager::getTenantRouteNamePrefix() . 'stancl.tenancy.asset');
+    ->name(PathTenantResolver::tenantRouteNamePrefix() . 'stancl.tenancy.asset');

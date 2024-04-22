@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Concerns;
 
-use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Stancl\Tenancy\Enums\Context;
 use Stancl\Tenancy\Enums\RouteMode;
-use Stancl\Tenancy\Exceptions\MiddlewareNotUsableWithUniversalRoutesException;
 use Stancl\Tenancy\Middleware\IdentificationMiddleware;
 use Stancl\Tenancy\Middleware\PreventAccessFromUnwantedDomains;
 
@@ -28,6 +26,19 @@ use Stancl\Tenancy\Middleware\PreventAccessFromUnwantedDomains;
 trait UsableWithEarlyIdentification
 {
     /**
+     * Determine if the tenant is present in the incoming request.
+     *
+     * Because universal routes can be in any context (central/tenant),
+     * we use this to determine the context. We can't just check for
+     * the route's middleware to determine the route's context.
+     *
+     * For example, route '/foo' has the 'universal' and InitializeTenancyByRequestData middleware.
+     * When visiting the route, we should determine the context by the presence of the tenant payload.
+     * The context is tenant if the tenant parameter is present (e.g. '?tenant=foo'), otherwise the context is central.
+     */
+    abstract public function requestHasTenant(Request $request): bool;
+
+    /**
      * Skip middleware if the route is universal and uses path identification or if the route is universal and the context should be central.
      * Universal routes using path identification should get cloned using CloneRoutesAsTenant.
      *
@@ -36,9 +47,6 @@ trait UsableWithEarlyIdentification
     protected function shouldBeSkipped(Route $route): bool
     {
         if (tenancy()->routeIsUniversal($route) && $this instanceof IdentificationMiddleware) {
-            /** @phpstan-ignore-next-line */
-            throw_unless($this instanceof UsableWithUniversalRoutes, MiddlewareNotUsableWithUniversalRoutesException::class);
-
             return $this->determineUniversalRouteContextFromRequest(request()) === Context::CENTRAL;
         }
 
@@ -51,10 +59,11 @@ trait UsableWithEarlyIdentification
         // Now that we're sure the MW isn't used in the global MW stack, we determine whether to skip it
         if ($this instanceof PreventAccessFromUnwantedDomains) {
             // Skip access prevention if the route directly uses a non-domain identification middleware
-            return tenancy()->routeHasIdentificationMiddleware($route) && ! tenancy()->routeHasDomainIdentificationMiddleware($route);
+            return tenancy()->routeHasIdentificationMiddleware($route) &&
+                ! tenancy()->routeHasMiddleware($route, config('tenancy.identification.domain_identification_middleware'));
         }
 
-        return $this->shouldIdentificationMiddlewareBeSkipped($route);
+        return $this->shouldSkipIdentificationMiddleware($route);
     }
 
     protected function determineUniversalRouteContextFromRequest(Request $request): Context
@@ -66,7 +75,6 @@ trait UsableWithEarlyIdentification
         $globalIdentificationUsed = ! tenancy()->routeHasIdentificationMiddleware($route) && static::inGlobalStack();
         $routeLevelIdentificationUsed = tenancy()->routeHasMiddleware($route, static::class);
 
-        /** @var UsableWithUniversalRoutes $this */
         if (($globalIdentificationUsed || $routeLevelIdentificationUsed) && $this->requestHasTenant($request)) {
             return Context::TENANT;
         }
@@ -74,9 +82,9 @@ trait UsableWithEarlyIdentification
         return Context::CENTRAL;
     }
 
-    protected function shouldIdentificationMiddlewareBeSkipped(Route $route): bool
+    protected function shouldSkipIdentificationMiddleware(Route $route): bool
     {
-        if (! static::inGlobalStack()) {
+        if (! tenancy()->globalStackHasMiddleware(static::class)) {
             return false;
         }
 
@@ -109,6 +117,6 @@ trait UsableWithEarlyIdentification
 
     public static function inGlobalStack(): bool
     {
-        return app(Kernel::class)->hasMiddleware(static::class);
+        return tenancy()->globalStackHasMiddleware(static::class);
     }
 }

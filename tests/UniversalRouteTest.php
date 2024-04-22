@@ -21,7 +21,6 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 use Stancl\Tenancy\Middleware\PreventAccessFromUnwantedDomains;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomainOrSubdomain;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
-use Stancl\Tenancy\Exceptions\MiddlewareNotUsableWithUniversalRoutesException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByRequestDataException;
 
 test('a route can be universal using domain identification', function (array $routeMiddleware, array $globalMiddleware) {
@@ -321,29 +320,6 @@ test('tenant resolver methods return the correct names for configured values', f
     ['tenant_route_name_prefix', 'prefix']
 ]);
 
-test('identification middleware works with universal routes only when it implements MiddlewareUsableWithUniversalRoutes', function () {
-    $tenantKey = Tenant::create()->getTenantKey();
-    $routeAction = fn () => tenancy()->initialized ? $tenantKey : 'Tenancy is not initialized.';
-
-    // Route with the package's request data identification middleware – implements MiddlewareUsableWithUniversalRoutes
-    RouteFacade::get('/universal-route', $routeAction)->middleware(['universal', InitializeTenancyByRequestData::class]);
-
-    // Routes with custom request data identification middleware – does not implement MiddlewareUsableWithUniversalRoutes
-    RouteFacade::get('/custom-mw-universal-route', $routeAction)->middleware(['universal', CustomMiddleware::class]);
-    RouteFacade::get('/custom-mw-tenant-route', $routeAction)->middleware(['tenant', CustomMiddleware::class]);
-
-    // Ensure the custom identification middleware works with non-universal routes
-    // This is tested here because this is the only test where the custom MW is used
-    // No exception is thrown for this request since the route uses the TENANT middleware, not the UNIVERSAL middleware
-    pest()->get('http://localhost/custom-mw-tenant-route?tenant=' . $tenantKey)->assertOk()->assertSee($tenantKey);
-
-    pest()->get('http://localhost/universal-route')->assertOk();
-    pest()->get('http://localhost/universal-route?tenant=' . $tenantKey)->assertOk()->assertSee($tenantKey);
-
-    pest()->expectException(MiddlewareNotUsableWithUniversalRoutesException::class);
-    $this->withoutExceptionHandling()->get('http://localhost/custom-mw-universal-route');
-});
-
 foreach ([
     'domain identification types' => [PreventAccessFromUnwantedDomains::class, InitializeTenancyByDomain::class],
     'subdomain identification types' => [PreventAccessFromUnwantedDomains::class, InitializeTenancyBySubdomain::class],
@@ -368,45 +344,6 @@ foreach ([
             'global_middleware' => ['universal'],
         ],
     ]);
-}
-
-class CustomMiddleware extends IdentificationMiddleware
-{
-    use UsableWithEarlyIdentification;
-
-    public static string $header = 'X-Tenant';
-    public static string $cookie = 'X-Tenant';
-    public static string $queryParameter = 'tenant';
-
-    public function __construct(
-        protected Tenancy $tenancy,
-        protected RequestDataTenantResolver $resolver,
-    ) {
-    }
-
-    /** @return \Illuminate\Http\Response|mixed */
-    public function handle(Request $request, Closure $next): mixed
-    {
-        if ($this->shouldBeSkipped(tenancy()->getRoute($request))) {
-            // Allow accessing central route in kernel identification
-            return $next($request);
-        }
-
-        return $this->initializeTenancy($request, $next, $this->getPayload($request));
-    }
-
-    protected function getPayload(Request $request): string|array|null
-    {
-        if (static::$header && $request->hasHeader(static::$header)) {
-            return $request->header(static::$header);
-        } elseif (static::$queryParameter && $request->has(static::$queryParameter)) {
-            return $request->get(static::$queryParameter);
-        } elseif (static::$cookie && $request->hasCookie(static::$cookie)) {
-            return $request->cookie(static::$cookie);
-        }
-
-        return null;
-    }
 }
 
 class Controller extends BaseController

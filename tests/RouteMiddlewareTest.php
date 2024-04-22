@@ -74,7 +74,7 @@ test('domain identification middleware is configurable', function() {
 
     config(['tenancy.identification.domain_identification_middleware' => []]);
 
-    expect(tenancy()->routeHasDomainIdentificationMiddleware($route))->toBeFalse();
+    expect(tenancy()->routeHasMiddleware($route, config('tenancy.identification.domain_identification_middleware')))->toBeFalse();
 
     // Set domain identification middleware list back to default
     config(['tenancy.identification.domain_identification_middleware' => [
@@ -83,5 +83,5 @@ test('domain identification middleware is configurable', function() {
         InitializeTenancyByDomainOrSubdomain::class,
     ]]);
 
-    expect(tenancy()->routeHasDomainIdentificationMiddleware($route))->toBeTrue();
+    expect(tenancy()->routeHasMiddleware($route, config('tenancy.identification.domain_identification_middleware')))->toBeTrue();
 });

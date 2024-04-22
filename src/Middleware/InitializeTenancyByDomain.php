@@ -7,11 +7,10 @@ namespace Stancl\Tenancy\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Stancl\Tenancy\Concerns\UsableWithEarlyIdentification;
-use Stancl\Tenancy\Concerns\UsableWithUniversalRoutes;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 use Stancl\Tenancy\Tenancy;
 
-class InitializeTenancyByDomain extends IdentificationMiddleware implements UsableWithUniversalRoutes
+class InitializeTenancyByDomain extends IdentificationMiddleware
 {
     use UsableWithEarlyIdentification;
 

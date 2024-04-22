@@ -6,7 +6,7 @@ namespace Stancl\Tenancy\Overrides;
 
 use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\Arr;
-use Stancl\Tenancy\PathIdentificationManager;
+use Stancl\Tenancy\Resolvers\PathTenantResolver;
 
 /**
  * This class is used in place of the default UrlGenerator when UrlGeneratorBootstrapper is enabled.
@@ -104,7 +104,7 @@ class TenancyUrlGenerator extends UrlGenerator
      */
     protected function prefixRouteName(string $name): string
     {
-        $tenantPrefix = PathIdentificationManager::getTenantRouteNamePrefix();
+        $tenantPrefix = PathTenantResolver::tenantRouteNamePrefix();
 
         if (static::$prefixRouteNames && ! str($name)->startsWith($tenantPrefix)) {
             $name = str($name)->after($tenantPrefix)->prepend($tenantPrefix)->toString();
@@ -118,6 +118,6 @@ class TenancyUrlGenerator extends UrlGenerator
      */
     protected function addTenantParameter(array $parameters): array
     {
-        return tenant() && static::$passTenantParameterToRoutes ? array_merge($parameters, [PathIdentificationManager::getTenantParameterName() => tenant()->getTenantKey()]) : $parameters;
+        return tenant() && static::$passTenantParameterToRoutes ? array_merge($parameters, [PathTenantResolver::tenantParameterName() => tenant()->getTenantKey()]) : $parameters;
     }
 }

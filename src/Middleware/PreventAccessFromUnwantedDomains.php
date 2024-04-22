@@ -67,4 +67,10 @@ class PreventAccessFromUnwantedDomains
     {
         return in_array($request->getHost(), config('tenancy.identification.central_domains'), true);
     }
+
+    // todo@samuel
+    public function requestHasTenant(Request $request): bool
+    {
+        return false;
+    }
 }

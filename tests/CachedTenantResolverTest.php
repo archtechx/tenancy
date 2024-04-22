@@ -286,7 +286,7 @@ function getResolverArgument(string $resolver, string $tenantKey): string|Route
         // Make the 'tenant' route parameter the tenant key
         // Setting the parameter on the $route->parameters property is required
         // Because $route->setParameter() throws an exception when $route->parameters is not set yet
-        $route->parameters[PathIdentificationManager::getTenantParameterName()] = $tenantKey;
+        $route->parameters[PathTenantResolver::tenantParameterName()] = $tenantKey;
 
         // Return the route instance with the tenant key as the 'tenant' parameter
         return $route;
