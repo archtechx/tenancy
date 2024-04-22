@@ -312,10 +312,8 @@ test('detaching central users from tenants or vice versa force deletes the synce
 test('attaching tenant to central resource works correctly even when using a single pivot table for multiple models', function () {
     config(['tenancy.models.tenant' => MorphTenant::class]);
 
-    $tenant1 = MorphTenant::create();
-    $tenant2 = MorphTenant::create();
+    [$tenant1, $tenant2] = createTenantsAndRunMigrations();
 
-    migrateUsersTableForTenants();
     migrateCompaniesTableForTenants();
 
     // Use BaseCentralUser and BaseTenantUser in this test
@@ -407,8 +405,7 @@ test('attaching tenant to central resource works correctly even when using a sin
 test('attaching central resource to tenant works correctly even when using a single pivot table for multiple models', function () {
     config(['tenancy.models.tenant' => MorphTenant::class]);
 
-    $tenant1 = MorphTenant::create();
-    migrateUsersTableForTenants();
+    [$tenant1, $tenant2] = createTenantsAndRunMigrations();
 
     // Use BaseCentralUser and BaseTenantUser in this test
     // These models use the polymorphic relationship for tenants(), which is the default
@@ -449,7 +446,6 @@ test('attaching central resource to tenant works correctly even when using a sin
     expect(DB::table('tenant_resources')->count())->toBe(0);
 
     // Test that the company resource can use the same pivot as the user resource
-    $tenant2 = MorphTenant::create();
     migrateCompaniesTableForTenants();
     expect($tenant2->companies()->count())->toBe(0);
     expect(DB::table('tenant_resources')->count())->toBe(0);
@@ -470,7 +466,7 @@ test('attaching central resource to tenant works correctly even when using a sin
     // And with the correct attributes
     expect($centralCompany?->getAttributes())->toEqualCanonicalizing($tenantCompany->getAttributes());
 
-    // The pivot table got created
+    // The pivot record got created
     expect(DB::table('tenant_resources')->count())->toBe(1);
 
     // Tenants are accessible from the central resource using the relationship method
@@ -828,8 +824,44 @@ test('resources are synced only when the shouldSync method returns true', functi
     false,
 ]);
 
-test('deleting SyncMaster automatically deletes its Syncables', function () {
-    [$tenant1] = createTenantsAndRunMigrations();
+test('deleting SyncMaster automatically deletes its Syncables', function (bool $morphPivot) {
+    $centralUserModel = CentralUser::class;
+    $tenantUserModel = TenantUser::class;
+
+    if ($morphPivot) {
+        config(['tenancy.models.tenant' => MorphTenant::class]);
+        // Use base models if the tenant model uses a polymorphic pivot (which is the default in a real app)
+        $centralUserModel = BaseCentralUser::class;
+        $tenantUserModel = BaseTenantUser::class;
+    }
+
+    [$tenant] = createTenantsAndRunMigrations();
+
+    $syncMaster = $centralUserModel::create([
+        'global_id' => 'cascade_user',
+        'name' => 'Central user',
+        'email' => 'central@localhost',
+        'password' => 'password',
+        'role' => 'cascade_user',
+    ]);
+
+    $syncMaster->tenants()->attach($tenant);
+
+    $syncMaster->delete();
+
+    // Deleting SyncMaster deletes pivot records with the SyncMaster's global ID
+    expect(DB::select("SELECT * FROM tenant_users WHERE tenant_id = ?", [$tenant->getTenantKey()]))->toHaveCount(0);
+
+    tenancy()->initialize($tenant);
+
+    expect($tenantUserModel::firstWhere('global_id', 'cascade_user'))->toBeNull(); // Delete has cascaded
+})->with([
+    'polymorphic pivot' => true,
+    'basic pivot' => false,
+]);
+
+test('tenant pivot records are deleted along with the tenants to which they belong to', function() {
+    [$tenant] = createTenantsAndRunMigrations();
 
     $syncMaster = CentralUser::create([
         'global_id' => 'cascade_user',
@@ -839,13 +871,12 @@ test('deleting SyncMaster automatically deletes its Syncables', function () {
         'role' => 'cascade_user',
     ]);
 
-    $syncMaster->tenants()->attach($tenant1);
+    $syncMaster->tenants()->attach($tenant);
 
-    $syncMaster->delete();
+    $tenant->delete();
 
-    tenancy()->initialize($tenant1);
-
-    expect(TenantUser::firstWhere('global_id', 'cascade_user'))->toBeNull(); // Delete cascaded
+    // Deleting tenant deletes its pivot records
+    expect(DB::select("SELECT * FROM tenant_users WHERE tenant_id = ?", [$tenant->getTenantKey()]))->toHaveCount(0);
 });
 
 test('trashed resources are synced correctly', function () {
@@ -1148,7 +1179,9 @@ test('resource creation works correctly when central resource provides defaults 
  */
 function createTenantsAndRunMigrations(): array
 {
-    [$tenant1, $tenant2] = [Tenant::create(), Tenant::create()];
+    $tenantModel = tenancy()->model();
+
+    [$tenant1, $tenant2] = [$tenantModel::create(), $tenantModel::create()];
 
     migrateUsersTableForTenants();
 
