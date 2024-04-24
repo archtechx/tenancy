@@ -14,6 +14,8 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Route as RouteFacade;
 use Stancl\Tenancy\Enums\RouteMode;
 
+// todo@refactor move this logic to some dedicated static class?
+
 /**
  * @mixin \Stancl\Tenancy\Tenancy
  */
@@ -166,7 +168,7 @@ trait DealsWithRouteContexts
      * If the route isn't directly available on the request,
      * find the route that matches the passed request.
      */
-    public function getRoute(Request $request): Route
+    public static function getRoute(Request $request): Route
     {
         /** @var ?Route $route */
         $route = $request->route();

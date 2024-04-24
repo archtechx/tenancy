@@ -10,6 +10,7 @@ use Stancl\Tenancy\Enums\Context;
 use Stancl\Tenancy\Enums\RouteMode;
 use Stancl\Tenancy\Middleware\IdentificationMiddleware;
 use Stancl\Tenancy\Middleware\PreventAccessFromUnwantedDomains;
+use Stancl\Tenancy\Tenancy;
 
 /**
  * This trait provides methods that check if a middleware's execution should be skipped.
@@ -46,7 +47,7 @@ trait UsableWithEarlyIdentification
      */
     protected function shouldBeSkipped(Route $route): bool
     {
-        if (tenancy()->routeIsUniversal($route) && $this instanceof IdentificationMiddleware) {
+        if (Tenancy::routeIsUniversal($route) && $this instanceof IdentificationMiddleware) {
             return $this->determineUniversalRouteContextFromRequest(request()) === Context::CENTRAL;
         }
 
@@ -59,8 +60,8 @@ trait UsableWithEarlyIdentification
         // Now that we're sure the MW isn't used in the global MW stack, we determine whether to skip it
         if ($this instanceof PreventAccessFromUnwantedDomains) {
             // Skip access prevention if the route directly uses a non-domain identification middleware
-            return tenancy()->routeHasIdentificationMiddleware($route) &&
-                ! tenancy()->routeHasMiddleware($route, config('tenancy.identification.domain_identification_middleware'));
+            return Tenancy::routeHasIdentificationMiddleware($route) &&
+                ! Tenancy::routeHasMiddleware($route, config('tenancy.identification.domain_identification_middleware'));
         }
 
         return $this->shouldSkipIdentificationMiddleware($route);
@@ -68,7 +69,7 @@ trait UsableWithEarlyIdentification
 
     protected function determineUniversalRouteContextFromRequest(Request $request): Context
     {
-        $route = tenancy()->getRoute($request);
+        $route = Tenancy::getRoute($request);
 
         // Check if this is the identification middleware the route should be using
         // Route-level identification middleware is prioritized
@@ -84,7 +85,7 @@ trait UsableWithEarlyIdentification
 
     protected function shouldSkipIdentificationMiddleware(Route $route): bool
     {
-        if (! tenancy()->globalStackHasMiddleware(static::class)) {
+        if (! static::inGlobalStack()) {
             return false;
         }
 
@@ -95,13 +96,13 @@ trait UsableWithEarlyIdentification
                 // Skip identification if the current route is central
                 // The route is central if it's flagged as central
                 // Or if it isn't flagged and the default route mode is set to central
-                tenancy()->getRouteMode($route) === RouteMode::CENTRAL
+                Tenancy::getRouteMode($route) === RouteMode::CENTRAL
             ) {
                 return true;
             }
 
             // Skip kernel identification if the route uses route-level identification
-            if (tenancy()->routeHasIdentificationMiddleware($route)) {
+            if (Tenancy::routeHasIdentificationMiddleware($route)) {
                 // Remember that it was attempted to identify a tenant using kernel identification
                 // By making the $kernelIdentificationSkipped property of the current Tenancy instance true
                 // So that the next identification middleware gets executed (= route-level identification MW doesn't get skipped)
@@ -117,6 +118,6 @@ trait UsableWithEarlyIdentification
 
     public static function inGlobalStack(): bool
     {
-        return tenancy()->globalStackHasMiddleware(static::class);
+        return Tenancy::globalStackHasMiddleware(static::class);
     }
 }
