@@ -62,7 +62,7 @@ services:
         tmpfs:
             - /var/lib/mysql
     postgres:
-        image: postgres:11
+        image: postgres:16
         environment:
             POSTGRES_PASSWORD: password
             POSTGRES_USER: root # superuser name

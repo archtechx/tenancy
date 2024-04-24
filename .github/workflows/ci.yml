@@ -22,13 +22,35 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
       - name: Install Composer dependencies
         run: |
           composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
           composer update --prefer-dist --no-interaction
       - name: Run tests
-        run: COLUMNS=200 ./vendor/bin/pest --compact --colors=always
+        if: ${{ ! env.ACT }}
+        run: COLUMNS=200 ./vendor/bin/pest -v --compact --colors=always
+        env:
+          DB_PASSWORD: password
+          DB_USERNAME: root
+          DB_DATABASE: main
+          TENANCY_TEST_MYSQL_HOST: mysql
+          TENANCY_TEST_PGSQL_HOST: postgres
+          TENANCY_TEST_REDIS_HOST: redis
+          TENANCY_TEST_SQLSRV_HOST: mssql
+      - name: Run tests (via act, no filter)
+        if: ${{ env.ACT && ! github.event.inputs.FILTER }}
+        run: COLUMNS=200 ./vendor/bin/pest -v --compact --colors=always
+        env:
+          DB_PASSWORD: password
+          DB_USERNAME: root
+          DB_DATABASE: main
+          TENANCY_TEST_MYSQL_HOST: mysql
+          TENANCY_TEST_PGSQL_HOST: postgres
+          TENANCY_TEST_REDIS_HOST: redis
+          TENANCY_TEST_SQLSRV_HOST: mssql
+      - name: Run tests (via act, FILTERED)
+        if: ${{ env.ACT && github.event.inputs.FILTER }}
+        run: COLUMNS=200 ./vendor/bin/pest -v --filter ${{ github.event.inputs.FILTER }} --compact --colors=always
         env:
           DB_PASSWORD: password
           DB_USERNAME: root
@@ -39,6 +61,7 @@ jobs:
           TENANCY_TEST_SQLSRV_HOST: mssql
 
       - name: Upload coverage to Codecov
+        if: ${{ !env.ACT }}
         uses: codecov/codecov-action@v2
         with:
           token: 24382d15-84e7-4a55-bea4-c4df96a24a9b # todo it's fine if this is here in plaintext, but move this to GH secrets eventually

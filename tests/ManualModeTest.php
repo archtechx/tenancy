@@ -29,7 +29,7 @@ test('manual tenancy initialization works', function () {
     pest()->assertArrayNotHasKey('tenant', config('database.connections'));
 
     tenancy()->initialize($tenant);
-    
+
     // Trigger creation of the tenant connection
     createUsersTable();
 

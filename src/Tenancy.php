@@ -9,13 +9,14 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Traits\Macroable;
 use Stancl\Tenancy\Concerns\DealsWithRouteContexts;
+use Stancl\Tenancy\Concerns\ManagesRLSPolicies;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByIdException;
 
 class Tenancy
 {
-    use Macroable, DealsWithRouteContexts;
+    use Macroable, DealsWithRouteContexts, ManagesRLSPolicies;
 
     /**
      * The current tenant.

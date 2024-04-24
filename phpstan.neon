@@ -48,6 +48,14 @@ parameters:
             paths:
                 - src/Controllers/TenantAssetController.php
         - '#expects int<1, max>, int given#'
+        -
+            message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:tenant\(\)#'
+            paths:
+                - src/RLS/PolicyManagers/TraitRLSManager.php
+        -
+            message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:getRelationshipToPrimaryModel\(\)#'
+            paths:
+                - src/RLS/PolicyManagers/TraitRLSManager.php
 
     checkMissingIterableValueType: false
     checkGenericClassInNonGenericObjectType: false # later we may want to enable this

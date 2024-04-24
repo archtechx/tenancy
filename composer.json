@@ -73,7 +73,9 @@
         "phpstan-pro": "vendor/bin/phpstan --pro",
         "cs": "php-cs-fixer fix --config=.php-cs-fixer.php",
         "test": "./test --no-coverage",
-        "test-full": "./test"
+        "test-full": "./test",
+        "act": "act -j tests --matrix 'laravel:^11.0'",
+        "act-input": "act -j tests --matrix 'laravel:^11.0' --input"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,

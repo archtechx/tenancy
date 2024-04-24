@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Stancl\Tenancy\Tenancy;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Route;
 use Stancl\Tenancy\Enums\RouteMode;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Contracts\Http\Kernel;

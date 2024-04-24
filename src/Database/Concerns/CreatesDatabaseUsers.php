@@ -17,8 +17,9 @@ trait CreatesDatabaseUsers
 
     public function deleteDatabase(TenantWithDatabase $tenant): bool
     {
-        parent::deleteDatabase($tenant);
+        // Some DB engines require the user to be deleted before the database (e.g. Postgres)
+        $this->deleteUser($tenant->database());
 
-        return $this->deleteUser($tenant->database());
+        return parent::deleteDatabase($tenant);
     }
 }

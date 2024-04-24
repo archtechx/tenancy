@@ -25,6 +25,8 @@ use Stancl\Tenancy\Database\Exceptions\TenantDatabaseAlreadyExistsException;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLDatabaseManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\MicrosoftSQLDatabaseManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledPostgreSQLSchemaManager;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledPostgreSQLDatabaseManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledMicrosoftSQLServerDatabaseManager;
 
 beforeEach(function () {
@@ -302,7 +304,7 @@ test('database credentials can be provided to PermissionControlledMySQLDatabaseM
 
     // Create a new random database user with privileges to use with mysql2 connection
     $username = 'dbuser' . Str::random(4);
-    $password = Str::random('8');
+    $password = Str::random(8);
     $mysql2DB = DB::connection('mysql2');
     $mysql2DB->statement("CREATE USER `{$username}`@`%` IDENTIFIED BY '{$password}';");
     $mysql2DB->statement("GRANT ALL PRIVILEGES ON *.* TO `{$username}`@`%` WITH GRANT OPTION;");
@@ -347,7 +349,7 @@ test('tenant database can be created by using the username and password from ten
 
     // Create a new random database user with privileges to use with `mysql` connection
     $username = 'dbuser' . Str::random(4);
-    $password = Str::random('8');
+    $password = Str::random(8);
     $mysqlDB = DB::connection('mysql');
     $mysqlDB->statement("CREATE USER `{$username}`@`%` IDENTIFIED BY '{$password}';");
     $mysqlDB->statement("GRANT ALL PRIVILEGES ON *.* TO `{$username}`@`%` WITH GRANT OPTION;");
@@ -461,6 +463,7 @@ test('partial tenant connection templates get merged into the central connection
     ]);
 
     $name = 'foo' . Str::random(8);
+
     $tenant = Tenant::create([
         'tenancy_db_name' => $name,
     ]);
@@ -479,6 +482,8 @@ dataset('database_managers', [
     ['sqlite', SQLiteDatabaseManager::class],
     ['pgsql', PostgreSQLDatabaseManager::class],
     ['pgsql', PostgreSQLSchemaManager::class],
+    ['pgsql', PermissionControlledPostgreSQLDatabaseManager::class],
+    ['pgsql', PermissionControlledPostgreSQLSchemaManager::class],
     ['sqlsrv', MicrosoftSQLDatabaseManager::class],
     ['sqlsrv', PermissionControlledMicrosoftSQLServerDatabaseManager::class]
 ]);

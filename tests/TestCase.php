@@ -4,23 +4,24 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
-use Aws\DynamoDb\DynamoDbClient;
 use PDO;
 use Dotenv\Dotenv;
+use Aws\DynamoDb\DynamoDbClient;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Artisan;
-use Stancl\Tenancy\Bootstrappers\BroadcastChannelPrefixBootstrapper;
 use Stancl\Tenancy\Facades\GlobalCache;
 use Stancl\Tenancy\TenancyServiceProvider;
 use Stancl\Tenancy\Facades\Tenancy as TenancyFacade;
 use Stancl\Tenancy\Bootstrappers\RootUrlBootstrapper;
 use Stancl\Tenancy\Bootstrappers\MailConfigBootstrapper;
+use Stancl\Tenancy\Bootstrappers\PostgresRLSBootstrapper;
+use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastingConfigBootstrapper;
-use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\BroadcastChannelPrefixBootstrapper;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
@@ -77,6 +78,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         ]);
 
         file_put_contents(database_path('central.sqlite'), '');
+
         pest()->artisan('migrate:fresh', [
             '--force' => true,
             '--path' => __DIR__ . '/../assets/migrations',
@@ -177,6 +179,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         $app->singleton(CacheTenancyBootstrapper::class); // todo@samuel use proper approach eg config for singleton registration
         $app->singleton(BroadcastingConfigBootstrapper::class);
         $app->singleton(BroadcastChannelPrefixBootstrapper::class);
+        $app->singleton(PostgresRLSBootstrapper::class);
         $app->singleton(MailConfigBootstrapper::class);
         $app->singleton(RootUrlBootstrapper::class);
         $app->singleton(UrlGeneratorBootstrapper::class);

@@ -105,7 +105,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         if (tenancy()->initialized) {
             // Tenancy is already initialized
             if (tenant()->getTenantKey() === $tenantId) {
-                // It's initialized for the same tenant (e.g. dispatchNow was used, or the previous job also ran for this tenant)
+                // It's initialized for the same tenant (e.g. dispatchSync was used, or the previous job also ran for this tenant)
                 return;
             }
         }

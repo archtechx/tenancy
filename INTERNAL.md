@@ -10,3 +10,9 @@
 1. Tag a new image: `docker tag tenancy-test archtechx/tenancy:latest`
 1. Push the image: `docker push archtechx/tenancy:latest`
 1. Optional: Rebuild the image again locally for arm64: `composer docker-rebuild`
+
+## Debugging GitHub Actions
+
+The `ci.yml` workflow includes support for [act](https://github.com/nektos/act).
+
+To run all tests using act, run `composer act`. To run only certain tests using act, use `composer act-input "FILTER='some test name'"` or `composer act -- --input "FILTER='some test name'"`.

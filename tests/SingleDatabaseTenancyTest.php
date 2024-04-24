@@ -8,6 +8,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Validator;
 use Stancl\Tenancy\Database\Models\Tenant;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 use Stancl\Tenancy\Database\Concerns\BelongsToPrimaryModel;
 use Stancl\Tenancy\Database\Concerns\HasScopedValidationRules;
@@ -40,12 +41,12 @@ test('primary models are scoped to the current tenant', function () {
         'id' => 'acme',
     ]));
 
-    $post = Post::create(['text' => 'Foo']);
+    $post = SingleDatabasePost::create(['text' => 'Foo']);
 
     expect($post->tenant_id)->toBe('acme');
     expect($post->tenant->id)->toBe('acme');
 
-    $post = Post::first();
+    $post = SingleDatabasePost::first();
 
     expect($post->tenant_id)->toBe('acme');
     expect($post->tenant->id)->toBe('acme');
@@ -56,12 +57,12 @@ test('primary models are scoped to the current tenant', function () {
         'id' => 'foobar',
     ]));
 
-    $post = Post::create(['text' => 'Bar']);
+    $post = SingleDatabasePost::create(['text' => 'Bar']);
 
     expect($post->tenant_id)->toBe('foobar');
     expect($post->tenant->id)->toBe('foobar');
 
-    $post = Post::first();
+    $post = SingleDatabasePost::first();
 
     expect($post->tenant_id)->toBe('foobar');
     expect($post->tenant->id)->toBe('foobar');
@@ -71,17 +72,17 @@ test('primary models are scoped to the current tenant', function () {
 
     tenancy()->initialize($acme);
 
-    $post = Post::first();
+    $post = SingleDatabasePost::first();
     expect($post->tenant_id)->toBe('acme');
     expect($post->tenant->id)->toBe('acme');
 
     // Assert foobar models are inaccessible in acme context
-    expect(Post::count())->toBe(1);
+    expect(SingleDatabasePost::count())->toBe(1);
 
     // Primary models are not scoped in the central context
     tenancy()->end();
 
-    expect(Post::count())->toBe(2);
+    expect(SingleDatabasePost::count())->toBe(2);
 });
 
 test('secondary models ARE scoped to the current tenant when accessed directly and parent relationship trait is used', function () {
@@ -90,10 +91,10 @@ test('secondary models ARE scoped to the current tenant when accessed directly a
     ]);
 
     $acme->run(function () {
-        $post = Post::create(['text' => 'Foo']);
-        $post->scoped_comments()->create(['text' => 'Comment Text']);
+        $post = SingleDatabasePost::create(['text' => 'Foo']);
+        $post->comments()->create(['text' => 'Comment Text']);
 
-        expect(Post::count())->toBe(1);
+        expect(SingleDatabasePost::count())->toBe(1);
         expect(ScopedComment::count())->toBe(1);
     });
 
@@ -102,14 +103,16 @@ test('secondary models ARE scoped to the current tenant when accessed directly a
     ]);
 
     $foobar->run(function () {
-        expect(Post::count())->toBe(0);
+        expect(SingleDatabasePost::count())->toBe(0);
         expect(ScopedComment::count())->toBe(0);
 
-        $post = Post::create(['text' => 'Bar']);
-        $post->scoped_comments()->create(['text' => 'Comment Text 2']);
+        $post = SingleDatabasePost::create(['text' => 'Bar']);
+        $post->comments()->create(['text' => 'Comment Text 2']);
 
-        expect(Post::count())->toBe(1);
+        expect(SingleDatabasePost::count())->toBe(1);
         expect(ScopedComment::count())->toBe(1);
+        // whereas...
+        expect(Comment::count())->toBe(2);
     });
 
     // Global context
@@ -123,7 +126,7 @@ test('secondary models are scoped correctly', function () {
         'id' => 'acme',
     ]));
 
-    $post = Post::create(['text' => 'Foo']);
+    $post = SingleDatabasePost::create(['text' => 'Foo']);
     $post->comments()->create(['text' => 'Comment text']);
 
     // ================
@@ -132,24 +135,24 @@ test('secondary models are scoped correctly', function () {
         'id' => 'foobar',
     ]));
 
-    $post = Post::create(['text' => 'Bar']);
+    $post = SingleDatabasePost::create(['text' => 'Bar']);
     $post->comments()->create(['text' => 'Comment text 2']);
 
     // ================
     // acme context again
     tenancy()->initialize($acme);
-    expect(Post::count())->toBe(1);
-    expect(Post::first()->comments->count())->toBe(1);
+    expect(SingleDatabasePost::count())->toBe(1);
+    expect(SingleDatabasePost::first()->comments->count())->toBe(1);
 
     // Secondary models are not scoped to the current tenant when accessed directly
     expect(tenant('id'))->toBe('acme');
 
-    expect(Comment::count())->toBe(2);
+    expect(BaseComment::count())->toBe(2);
 
     // secondary models are not scoped in the central context
     tenancy()->end();
 
-    expect(Comment::count())->toBe(2);
+    expect(BaseComment::count())->toBe(2);
 });
 
 test('global models are not scoped at all', function () {
@@ -180,7 +183,7 @@ test('tenant id and relationship is auto added when creating primary resources i
         'id' => 'acme',
     ]));
 
-    $post = Post::create(['text' => 'Foo']);
+    $post = SingleDatabasePost::create(['text' => 'Foo']);
 
     expect($post->tenant_id)->toBe('acme');
     expect($post->relationLoaded('tenant'))->toBeTrue();
@@ -191,7 +194,7 @@ test('tenant id and relationship is auto added when creating primary resources i
 test('tenant id is not auto added when creating primary resources in central context', function () {
     pest()->expectException(QueryException::class);
 
-    Post::create(['text' => 'Foo']);
+    SingleDatabasePost::create(['text' => 'Foo']);
 });
 
 test('tenant id column name can be customized', function () {
@@ -214,7 +217,7 @@ test('tenant id column name can be customized', function () {
 
     tenancy()->initialize($acme);
 
-    $post = Post::create(['text' => 'Foo']);
+    $post = SingleDatabasePost::create(['text' => 'Foo']);
 
     expect($post->team_id)->toBe('acme');
 
@@ -224,11 +227,11 @@ test('tenant id column name can be customized', function () {
         'id' => 'foobar',
     ]));
 
-    $post = Post::create(['text' => 'Bar']);
+    $post = SingleDatabasePost::create(['text' => 'Bar']);
 
     expect($post->team_id)->toBe('foobar');
 
-    $post = Post::first();
+    $post = SingleDatabasePost::first();
 
     expect($post->team_id)->toBe('foobar');
 
@@ -237,11 +240,11 @@ test('tenant id column name can be customized', function () {
 
     tenancy()->initialize($acme);
 
-    $post = Post::first();
+    $post = SingleDatabasePost::first();
     expect($post->team_id)->toBe('acme');
 
     // Assert foobar models are inaccessible in acme context
-    expect(Post::count())->toBe(1);
+    expect(SingleDatabasePost::count())->toBe(1);
 });
 
 test('the model returned by the tenant helper has unique and exists validation rules', function () {
@@ -254,7 +257,7 @@ test('the model returned by the tenant helper has unique and exists validation r
         'id' => 'acme',
     ]));
 
-    Post::create(['text' => 'Foo', 'slug' => 'foo']);
+    SingleDatabasePost::create(['text' => 'Foo', 'slug' => 'foo']);
     $data = ['text' => 'Foo 2', 'slug' => 'foo'];
 
     $uniqueFails = Validator::make($data, [
@@ -285,38 +288,40 @@ class SingleDatabaseTenant extends Tenant
     use HasScopedValidationRules;
 }
 
-class Post extends Model
+class SingleDatabasePost extends Model
 {
     use BelongsToTenant;
 
     protected $guarded = [];
 
+    public $table = 'posts';
+
     public $timestamps = false;
 
     public function comments()
     {
-        return $this->hasMany(Comment::class);
-    }
-
-    public function scoped_comments()
-    {
-        return $this->hasMany(Comment::class);
+        return $this->hasMany(BaseComment::class, 'post_id');
     }
 }
 
-class Comment extends Model
+class BaseComment extends Model
 {
     protected $guarded = [];
+
+    protected $table = 'comments';
 
     public $timestamps = false;
 
     public function post()
     {
-        return $this->belongsTo(Post::class);
+        return $this->belongsTo(SingleDatabasePost::class);
     }
 }
 
-class ScopedComment extends Comment
+// accessed via the comments() relationship (same table as BaseComment)
+// however, when used directly, the model scopes queries to the current tenant
+// unlike BaseComment
+class ScopedComment extends BaseComment
 {
     use BelongsToPrimaryModel;
 
@@ -325,6 +330,11 @@ class ScopedComment extends Comment
     public function getRelationshipToPrimaryModel(): string
     {
         return 'post';
+    }
+
+    public function post(): BelongsTo
+    {
+        return $this->belongsTo(SingleDatabasePost::class);
     }
 }
 

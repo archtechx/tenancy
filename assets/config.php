@@ -162,6 +162,8 @@ return [
         // Integration bootstrappers
         // Bootstrappers\Integrations\FortifyRouteBootstrapper::class,
         // Bootstrappers\Integrations\ScoutPrefixBootstrapper::class,
+
+        // Bootstrappers\PostgresRLSBootstrapper::class,
     ],
 
     /**
@@ -213,6 +215,35 @@ return [
 
         // todo@docblock
         'drop_tenant_databases_on_migrate_fresh' => false,
+    ],
+
+    /**
+     * Requires PostgreSQL with single-database tenancy.
+     */
+    'rls' => [
+        /**
+         * The RLS manager responsible for generating queries for creating policies.
+         *
+         * @see Stancl\Tenancy\RLS\PolicyManagers\TableRLSManager
+         * @see Stancl\Tenancy\RLS\PolicyManagers\TraitRLSManager
+         */
+        'manager' => Stancl\Tenancy\RLS\PolicyManagers\TableRLSManager::class,
+
+        /**
+         * Credentials for the tenant database user (one user for *all* tenants, not for each tenant).
+         */
+        'user' => [
+            'username' => env('TENANCY_RLS_USERNAME'),
+            'password' => env('TENANCY_RLS_PASSWORD'),
+        ],
+
+        /**
+         * Postgres session variable used to store the current tenant key.
+         *
+         * The variable name has to include a namespace – for example, 'my.'.
+         * The namespace is required because the global one is reserved for the server configuration
+         */
+        'session_variable_name' => 'my.current_tenant',
     ],
 
     /**

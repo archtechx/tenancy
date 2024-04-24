@@ -13,18 +13,23 @@ use Stancl\Tenancy\Events\DatabaseCreated;
 use Stancl\Tenancy\Database\DatabaseManager;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
+use Stancl\Tenancy\Database\Contracts\ManagesDatabaseUsers;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\MySQLDatabaseManager;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLSchemaManager;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLDatabaseManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\MicrosoftSQLDatabaseManager;
 use Stancl\Tenancy\Database\Exceptions\TenantDatabaseUserAlreadyExistsException;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledPostgreSQLSchemaManager;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledPostgreSQLDatabaseManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledMicrosoftSQLServerDatabaseManager;
 
 beforeEach(function () {
     config([
         'tenancy.database.managers.mysql' => PermissionControlledMySQLDatabaseManager::class,
         'tenancy.database.managers.sqlsrv' => PermissionControlledMicrosoftSQLServerDatabaseManager::class,
+        'tenancy.database.managers.pgsql' => PermissionControlledPostgreSQLDatabaseManager::class,
         'tenancy.database.suffix' => '',
         'tenancy.database.template_tenant_connection' => 'mysql',
     ]);
@@ -36,12 +41,20 @@ beforeEach(function () {
         'SHOW VIEW', 'TRIGGER', 'UPDATE',
     ];
 
+    PermissionControlledMicrosoftSQLServerDatabaseManager::$grants = [
+        'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'EXECUTE',
+    ];
+
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
     })->toListener());
 });
 
-test('users are created when permission controlled manager is used', function (string $connection) {
+test('users are created when permission controlled manager is used', function (string $connection, string|null $manager = null) {
+    if ($manager) {
+        config(["tenancy.database.managers.{$connection}" => $manager]);
+    }
+
     config([
         'database.default' => $connection,
         'tenancy.database.template_tenant_connection' => $connection,
@@ -69,11 +82,17 @@ test('users are created when permission controlled manager is used', function (s
         expect((bool) DB::select("SELECT dp.name as username FROM sys.database_principals dp WHERE dp.name = '{$username}'"))->toBeTrue();
     }
 })->with([
-    'mysql',
-    'sqlsrv',
+    ['mysql'],
+    ['sqlsrv'],
+    ['pgsql', PermissionControlledPostgreSQLDatabaseManager::class],
+    ['pgsql', PermissionControlledPostgreSQLSchemaManager::class],
 ]);
 
-test('a tenants database cannot be created when the user already exists', function (string $connection) {
+test('a tenants database cannot be created when the user already exists', function (string $connection, string|null $manager = null) {
+    if ($manager) {
+        config(["tenancy.database.managers.{$connection}" => $manager]);
+    }
+
     config([
         'database.default' => $connection,
         'tenancy.database.template_tenant_connection' => $connection,
@@ -103,8 +122,10 @@ test('a tenants database cannot be created when the user already exists', functi
     expect($manager2->databaseExists($tenant2->database()->getName()))->toBeFalse();
     Event::assertNotDispatched(DatabaseCreated::class);
 })->with([
-    'mysql',
-    'sqlsrv',
+    ['mysql'],
+    ['sqlsrv'],
+    ['pgsql', PermissionControlledPostgreSQLDatabaseManager::class],
+    ['pgsql', PermissionControlledPostgreSQLSchemaManager::class],
 ]);
 
 test('correct grants are given to users using mysql', function () {
@@ -119,6 +140,33 @@ test('correct grants are given to users using mysql', function () {
     $query = DB::connection('mysql')->select("SHOW GRANTS FOR `{$tenant->database()->getUsername()}`@`%`")[1];
     expect($query->{"Grants for {$user}@%"})->toStartWith('GRANT CREATE, ALTER, ALTER ROUTINE ON'); // @mysql because that's the hostname within the docker network
 });
+
+test('permissions for new tables are granted to users using pgsql', function (string $manager) {
+    config([
+        'database.default' => 'pgsql',
+        'tenancy.database.template_tenant_connection' => 'pgsql',
+        'tenancy.database.managers.pgsql' => $manager,
+    ]);
+
+    Tenant::create(['tenancy_db_username' => $username = 'user' . Str::random(8)]);
+
+    $grantCount = fn () => count(DB::select("SELECT * FROM information_schema.table_privileges WHERE grantee = '{$username}'"));
+
+    expect($grantCount())->toBe(0);
+
+    Event::listen(TenancyInitialized::class, function (TenancyInitialized $event) {
+        app(DatabaseManager::class)->connectToTenant($event->tenancy->tenant);
+    });
+
+    // Run tenants:migrate to create tables to confirm
+    // that the user will be granted privileges for newly created tables
+    pest()->artisan('tenants:migrate');
+
+    expect($grantCount())->not()->toBe(0);
+})->with([
+    PermissionControlledPostgreSQLDatabaseManager::class,
+    PermissionControlledPostgreSQLSchemaManager::class
+]);
 
 test('correct grants are given to users using sqlsrv', function () {
     config([
@@ -141,10 +189,11 @@ test('correct grants are given to users using sqlsrv', function () {
     ));
 });
 
-test('having existing databases without users and switching to permission controlled mysql manager doesnt break existing dbs', function () {
+test('having existing databases without users and switching to permission controlled manager doesnt break existing dbs', function (string $driver, string $manager, string $permissionControlledManager, string $defaultUser) {
     config([
-        'tenancy.database.managers.mysql' => MySQLDatabaseManager::class,
-        'tenancy.database.template_tenant_connection' => 'mysql',
+        'database.default' => $driver,
+        'tenancy.database.managers.' . $driver => $manager,
+        'tenancy.database.template_tenant_connection' => $driver,
         'tenancy.bootstrappers' => [
             DatabaseTenancyBootstrapper::class,
         ],
@@ -156,44 +205,20 @@ test('having existing databases without users and switching to permission contro
         'id' => 'foo' . Str::random(10),
     ]);
 
-    expect($tenant->database()->manager() instanceof MySQLDatabaseManager)->toBeTrue();
+    expect($tenant->database()->manager() instanceof $manager)->toBeTrue();
 
     tenancy()->initialize($tenant); // check if everything works
     tenancy()->end();
 
-    config(['tenancy.database.managers.mysql' => PermissionControlledMySQLDatabaseManager::class]);
+    config(['tenancy.database.managers.' . $driver => $permissionControlledManager]);
 
     tenancy()->initialize($tenant); // check if everything works
 
-    expect($tenant->database()->manager() instanceof PermissionControlledMySQLDatabaseManager)->toBeTrue();
-    expect(config('database.connections.tenant.username'))->toBe('root');
-});
-
-test('having existing databases without users and switching to permission controlled sqlsrv manager doesnt break existing dbs', function () {
-    config([
-        'database.default' => 'sqlsrv',
-        'tenancy.database.managers.sqlsrv' => MicrosoftSQLDatabaseManager::class,
-        'tenancy.database.template_tenant_connection' => 'sqlsrv',
-        'tenancy.bootstrappers' => [
-            DatabaseTenancyBootstrapper::class,
-        ],
-    ]);
-
-    Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
-
-    $tenant = Tenant::create([
-        'id' => 'foo' . Str::random(10),
-    ]);
-
-    expect($tenant->database()->manager() instanceof MicrosoftSQLDatabaseManager)->toBeTrue();
-
-    tenancy()->initialize($tenant); // check if everything works
-    tenancy()->end();
-
-    config(['tenancy.database.managers.sqlsrv' => PermissionControlledMicrosoftSQLServerDatabaseManager::class]);
-
-    tenancy()->initialize($tenant); // check if everything works
-
-    expect($tenant->database()->manager() instanceof PermissionControlledMicrosoftSQLServerDatabaseManager)->toBeTrue();
-    expect(config('database.connections.tenant.username'))->toBe('sa'); // default user for the sqlsrv connection
-});
+    expect($tenant->database()->manager() instanceof $permissionControlledManager)->toBeTrue();
+    expect(config('database.connections.tenant.username'))->toBe($defaultUser);
+})->with([
+    ['mysql', MySQLDatabaseManager::class, PermissionControlledMySQLDatabaseManager::class, 'root'],
+    ['pgsql', PostgreSQLDatabaseManager::class, PermissionControlledPostgreSQLDatabaseManager::class, 'root'],
+    ['pgsql', PostgreSQLSchemaManager::class, PermissionControlledPostgreSQLSchemaManager::class, 'root'],
+    ['sqlsrv', MicrosoftSQLDatabaseManager::class, PermissionControlledMicrosoftSQLServerDatabaseManager::class, 'sa'],
+]);
