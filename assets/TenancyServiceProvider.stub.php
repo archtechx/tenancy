@@ -20,8 +20,6 @@ use Illuminate\Support\Facades\Route as RouteFacade;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 
-// todo update all the docblock sections here, including the Livewire references
-
 class TenancyServiceProvider extends ServiceProvider
 {
     // By default, no namespace is used to support the callable array syntax.
@@ -140,21 +138,24 @@ class TenancyServiceProvider extends ServiceProvider
 
     protected function overrideUrlInTenantContext(): void
     {
-        // Import your tenant model!
-        // \Stancl\Tenancy\Bootstrappers\RootUrlBootstrapper::$rootUrlOverride = function (Tenant $tenant, string $originalRootUrl) {
-        //     $tenantDomain = $tenant instanceof \Stancl\Tenancy\Contracts\SingleDomainTenant
-        //         ? $tenant->domain
-        //         : $tenant->domains->first()->domain;
-        //
-        //     $scheme = str($originalRootUrl)->before('://');
-        //
-        //     // If you're using subdomain identification:
-        //     // $originalDomain = str($originalRootUrl)->after($scheme . '://');
-        //     // return $scheme . '://' . $tenantDomain . '.' . $originalDomain . '/';
-        //
-        //     // If you're using domain identification:
-        //     return $scheme . '://' . $tenantDomain . '/';
-        // };
+        /**
+         * Import your tenant model!
+         *
+         * \Stancl\Tenancy\Bootstrappers\RootUrlBootstrapper::$rootUrlOverride = function (Tenant $tenant, string $originalRootUrl) {
+         *     $tenantDomain = $tenant instanceof \Stancl\Tenancy\Contracts\SingleDomainTenant
+         *         ? $tenant->domain
+         *         : $tenant->domains->first()->domain;
+         *
+         *     $scheme = str($originalRootUrl)->before('://');
+         *
+         *     // If you're using subdomain identification:
+         *     // $originalDomain = str($originalRootUrl)->after($scheme . '://');
+         *     // return $scheme . '://' . $tenantDomain . '.' . $originalDomain . '/';
+         *
+         *     // If you're using domain identification:
+         *     return $scheme . '://' . $tenantDomain . '/';
+         * };
+         */
     }
 
     public function register()
@@ -199,32 +200,6 @@ class TenancyServiceProvider extends ServiceProvider
 
         if (tenancy()->globalStackHasMiddleware(config('tenancy.identification.path_identification_middleware'))) {
             TenancyUrlGenerator::$prefixRouteNames = true;
-
-            /** @var CloneRoutesAsTenant $cloneRoutes */
-            $cloneRoutes = app(CloneRoutesAsTenant::class);
-
-            /**
-             * You can provide a closure for cloning a specific route, e.g.:
-             * $cloneRoutes->cloneUsing('welcome', function () {
-             *      RouteFacade::get('/tenant-welcome', fn () => 'Current tenant: ' . tenant()->getTenantKey())
-             *          ->middleware(['universal', InitializeTenancyByPath::class])
-             *          ->name('tenant.welcome');
-             * });
-             *
-             * To make Livewire v2 (2.12.2+) work with kernel path identification,
-             * use this closure to override the livewire.message-localized route:
-             *
-             * $cloneRoutes->cloneUsing('livewire.message-localized', function (Route $route) {
-             *     $route->setUri(str($route->uri())->replaceFirst('locale', $tenantParameter = PathTenantResolver::tenantParameterName()));
-             *     $route->parameterNames[0] = $tenantParameter;
-             *     $route->middleware('tenant');
-             * });
-             *
-             * To see the default behavior of cloning the universal routes, check out the cloneRoute() method in CloneRoutesAsTenant.
-             * @see CloneRoutesAsTenant
-             */
-
-            $cloneRoutes->handle();
         }
     }
 
@@ -249,7 +224,36 @@ class TenancyServiceProvider extends ServiceProvider
                     ->middleware('tenant')
                     ->group(base_path('routes/tenant.php'));
             }
+
+            // Delete this condition when using route-level path identification
+            if (tenancy()->globalStackHasMiddleware(config('tenancy.identification.path_identification_middleware'))) {
+                $this->cloneRoutes();
+            }
         });
+    }
+
+    /**
+     * Clone universal routes as tenant.
+     *
+     * @see CloneRoutesAsTenant
+     */
+    protected function cloneRoutes(): void
+    {
+        /** @var CloneRoutesAsTenant $cloneRoutes */
+        $cloneRoutes = $this->app->make(CloneRoutesAsTenant::class);
+
+        /**
+         * You can provide a closure for cloning a specific route, e.g.:
+         * $cloneRoutes->cloneUsing('welcome', function () {
+         *      RouteFacade::get('/tenant-welcome', fn () => 'Current tenant: ' . tenant()->getTenantKey())
+         *          ->middleware(['universal', InitializeTenancyByPath::class])
+         *          ->name('tenant.welcome');
+         * });
+         *
+         * To see the default behavior of cloning the universal routes, check out the cloneRoute() method in CloneRoutesAsTenant.
+         */
+
+        $cloneRoutes->handle();
     }
 
     protected function makeTenancyMiddlewareHighestPriority()

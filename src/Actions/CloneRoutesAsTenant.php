@@ -174,7 +174,7 @@ class CloneRoutesAsTenant
             return $action
                 ->put('as', $newRouteNamePrefix)
                 ->put('middleware', $newRouteMiddleware)
-                ->put('prefix', '/{' . PathTenantResolver::tenantParameterName() . '}/' . $route->getPrefix());
+                ->put('prefix', $route->getPrefix() . '/{' . PathTenantResolver::tenantParameterName() . '}');
         })->toArray();
 
         /** @var Route $newRoute */

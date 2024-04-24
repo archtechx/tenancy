@@ -258,11 +258,13 @@ test('the clone action prefixes already prefixed routes correctly', function () 
     $clonedRouteUrl = route($clonedRouteName, ['tenant' => $tenant = Tenant::create()]);
 
     // The cloned route is prefixed correctly
-    expect($clonedRoute->getPrefix())->toBe('{tenant}/' . $prefix);
+    expect($clonedRoute->getPrefix())->toBe("{$prefix}/{tenant}");
 
     expect($clonedRouteUrl)
-        ->toContain('/' . $tenant->getTenantKey() . '/' . $prefix . '/home')
-        ->not()->toContain($prefix . '/' . $tenant->getTenantKey() . '/' . $prefix . '/home');
+        // Original prefix does not occur in the cloned route's URL
+        ->not()->toContain("/{$prefix}/{$tenant->getTenantKey()}/{$prefix}")
+        // Route is prefixed correctly
+        ->toBe("http://localhost/{$prefix}/{$tenant->getTenantKey()}/home");
 
     // The cloned route is accessible
     pest()->get($clonedRouteUrl)->assertSee('Tenancy initialized.');
