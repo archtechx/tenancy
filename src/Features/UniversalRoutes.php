@@ -23,13 +23,15 @@ class UniversalRoutes implements Feature
     public function bootstrap(Tenancy $tenancy): void
     {
         foreach (static::$identificationMiddlewares as $middleware) {
-            $middleware::$onFail = function ($exception, $request, $next) {
-                if (static::routeHasMiddleware($request->route(), static::$middlewareGroup)) {
-                    return $next($request);
-                }
+            if (is_null($middleware::$onFail)) {
+                $middleware::$onFail = function ($exception, $request, $next) {
+                    if (static::routeHasMiddleware($request->route(), static::$middlewareGroup)) {
+                        return $next($request);
+                    }
 
-                throw $exception;
-            };
+                    throw $exception;
+                };
+            }
         }
     }
 
