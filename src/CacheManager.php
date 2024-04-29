@@ -32,6 +32,10 @@ class CacheManager extends BaseCacheManager
             return $this->store()->tags(array_merge($tags, $names));
         }
 
-        return $this->store()->tags($tags)->$method(...$parameters);
+        if ($this->store()->supportsTags()) {
+            return $this->store()->tags($tags)->$method(...$parameters);
+        }
+
+        return $this->store()->$method(...$parameters);
     }
 }
