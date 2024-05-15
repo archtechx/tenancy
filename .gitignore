@@ -5,6 +5,7 @@ vendor/
 .idea
 psysh
 .phpunit.result.cache
+.phpunit.cache
 phpunit_var_*.xml
 coverage/
 clover.xml
