@@ -13,7 +13,7 @@ use Stancl\Tenancy\Database\Exceptions\NoConnectionSetException;
 interface StatefulTenantDatabaseManager extends TenantDatabaseManager
 {
     /** Get the DB connection used by the tenant database manager. */
-    public function database(): Connection; // todo@name rename to connection()
+    public function database(): Connection; // todo@dbRefactor rename to connection()
 
     /**
      * Set the DB connection that should be used by the tenant database manager.

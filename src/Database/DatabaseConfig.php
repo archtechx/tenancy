@@ -13,6 +13,7 @@ use Stancl\Tenancy\Database\Contracts\TenantWithDatabase as Tenant;
 use Stancl\Tenancy\Database\Exceptions\DatabaseManagerNotRegisteredException;
 use Stancl\Tenancy\Database\Exceptions\NoConnectionSetException;
 
+// todo@dbRefactor refactor host connection logic to make customizing the host connection easier
 class DatabaseConfig
 {
     /** The tenant whose database we're dealing with. */
