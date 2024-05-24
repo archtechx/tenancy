@@ -42,5 +42,6 @@ class RedirectTest extends TestCase
 
         $this->assertSame('http://foo.localhost/abcdef/as/df', tenant_route('foo.localhost', 'foo', ['a' => 'as', 'b' => 'df']));
         $this->assertSame('http://foo.localhost/abcdef', tenant_route('foo.localhost', 'foo', []));
+        $this->assertSame('foo.localhost/abcdef', tenant_route('foo.localhost', 'foo', [], false));
     }
 }

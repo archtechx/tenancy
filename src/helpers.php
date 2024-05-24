@@ -61,7 +61,7 @@ if (! function_exists('tenant_route')) {
     {
         // replace first occurance of hostname fragment with $domain
         $url = route($route, $parameters, $absolute);
-        $hostname = parse_url($url, PHP_URL_HOST);
+        $hostname = parse_url($url, PHP_URL_HOST) ?? '';
         $position = strpos($url, $hostname);
 
         return substr_replace($url, $domain, $position, strlen($hostname));
