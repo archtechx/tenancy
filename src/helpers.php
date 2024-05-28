@@ -93,9 +93,9 @@ if (! function_exists('global_cache')) {
 }
 
 if (! function_exists('tenant_route')) {
-    function tenant_route(string $domain, string $route, array $parameters = [], bool $absolute = true): string
+    function tenant_route(string $domain, string $route, array $parameters = []): string
     {
-        $url = route($route, $parameters, $absolute);
+        $url = route($route, $parameters, absolute: true);
 
         /**
          * The original hostname in the generated route.
