@@ -1,10 +1,9 @@
-version: '2.4'
 services:
     test:
         build:
             context: .
             args:
-              PHP_VERSION: ${PHP_VERSION:-8.2}
+              PHP_VERSION: ${PHP_VERSION:-8.3}
         depends_on:
             mysql:
                 condition: service_healthy
