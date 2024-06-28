@@ -1,5 +1,5 @@
 # add amd64 platform to support Mac M1
-FROM --platform=linux/amd64 shivammathur/node:latest-amd64
+FROM --platform=linux/amd64 shivammathur/node:jammy-amd64
 
 ARG PHP_VERSION=8.1
 
