@@ -17,6 +17,9 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
     /** @var array */
     public $originalPaths = [];
 
+    /** @var callable */
+    protected static $tenantKeyResolver;
+
     public function __construct(Application $app)
     {
         $this->app = $app;
@@ -33,9 +36,16 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         });
     }
 
+    public static function resolveTenantKeyUsing(callable $tenantKeyResolver): void
+    {
+        static::$tenantKeyResolver = $tenantKeyResolver;
+    }
+
     public function bootstrap(Tenant $tenant)
     {
-        $suffix = $this->app['config']['tenancy.filesystem.suffix_base'] . $tenant->getTenantKey();
+        $tenantKey = static::$tenantKeyResolver ? (static::$tenantKeyResolver)($tenant) : $tenant->getTenantKey();
+
+        $suffix = $this->app['config']['tenancy.filesystem.suffix_base'] . $tenantKey;
 
         // storage_path()
         if ($this->app['config']['tenancy.filesystem.suffix_storage_path'] ?? true) {
