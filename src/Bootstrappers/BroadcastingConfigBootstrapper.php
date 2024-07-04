@@ -37,6 +37,12 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
             'broadcasting.connections.pusher.app_id' => 'pusher_app_id',
             'broadcasting.connections.pusher.options.cluster' => 'pusher_cluster',
         ],
+        'reverb' => [
+            'broadcasting.connections.reverb.key' => 'reverb_key',
+            'broadcasting.connections.reverb.secret' => 'reverb_secret',
+            'broadcasting.connections.reverb.app_id' => 'reverb_app_id',
+            'broadcasting.connections.reverb.options.cluster' => 'reverb_cluster',
+        ],
         'ably' => [
             'broadcasting.connections.ably.key' => 'ably_key',
             'broadcasting.connections.ably.public' => 'ably_public',
