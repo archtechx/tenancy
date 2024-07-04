@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Contracts;
 
 use Exception;
-use Spatie\Ignition\Contracts\BaseSolution;
-use Spatie\Ignition\Contracts\ProvidesSolution;
+use Spatie\ErrorSolutions\Contracts\BaseSolution;
+use Spatie\ErrorSolutions\Contracts\ProvidesSolution;
 
 abstract class TenantCouldNotBeIdentifiedException extends Exception implements ProvidesSolution
 {

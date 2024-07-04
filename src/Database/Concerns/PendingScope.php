@@ -52,7 +52,7 @@ class PendingScope implements Scope
                 return $builder->withoutPending();
             }
 
-            return $builder->withoutGlobalScope($this);
+            return $builder->withoutGlobalScope(static::class);
         });
     }
 
@@ -64,7 +64,7 @@ class PendingScope implements Scope
     protected function addWithoutPending(Builder $builder)
     {
         $builder->macro('withoutPending', function (Builder $builder) {
-            $builder->withoutGlobalScope($this)
+            $builder->withoutGlobalScope(static::class)
                 ->whereNull($builder->getModel()->getColumnForQuery('pending_since'))
                 ->orWhereNull($builder->getModel()->getDataColumn());
 
@@ -80,7 +80,7 @@ class PendingScope implements Scope
     protected function addOnlyPending(Builder $builder)
     {
         $builder->macro('onlyPending', function (Builder $builder) {
-            $builder->withoutGlobalScope($this)->whereNotNull($builder->getModel()->getColumnForQuery('pending_since'));
+            $builder->withoutGlobalScope(static::class)->whereNotNull($builder->getModel()->getColumnForQuery('pending_since'));
 
             return $builder;
         });

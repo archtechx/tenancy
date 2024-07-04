@@ -22,7 +22,7 @@ class ParentModelScope implements Scope
     public function extend(Builder $builder): void
     {
         $builder->macro('withoutParentModel', function (Builder $builder) {
-            return $builder->withoutGlobalScope($this);
+            return $builder->withoutGlobalScope(static::class);
         });
     }
 }

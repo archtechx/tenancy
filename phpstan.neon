@@ -29,10 +29,6 @@ parameters:
             paths:
                 - src/Features/TelescopeTags.php
         -
-            message: '#Parameter \#1 \$key of method Illuminate\\Cache\\Repository::put\(\) expects#'
-            paths:
-                - src/helpers.php
-        -
             message: '#PHPDoc tag \@param has invalid value \(dynamic#'
             paths:
                 - src/helpers.php
