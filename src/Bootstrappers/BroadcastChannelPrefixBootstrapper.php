@@ -80,10 +80,10 @@ class BroadcastChannelPrefixBootstrapper implements TenancyBootstrapper
      * extends PusherBroadcaster, and overrides the formatChannels() method,
      * such that e.g. 'private-channel' becomes 'private-tenantKey.channel'.
      */
-    public static function pusher(Closure|null $override = null): void
+    public static function pusher(Closure|null $override = null, string $driver = 'pusher'): void
     {
-        static::$broadcasterOverrides['pusher'] = $override ?? function (BroadcastManager $broadcastManager): void {
-            $broadcastManager->extend('pusher', function ($app, $config) use ($broadcastManager) {
+        static::$broadcasterOverrides[$driver] = $override ?? function (BroadcastManager $broadcastManager) use ($driver): void {
+            $broadcastManager->extend($driver, function ($app, $config) use ($broadcastManager) {
                 return new class($broadcastManager->pusher($config)) extends PusherBroadcaster {
                     protected function formatChannels(array $channels)
                     {
@@ -111,6 +111,19 @@ class BroadcastChannelPrefixBootstrapper implements TenancyBootstrapper
                 };
             });
         };
+    }
+
+    /**
+     * Set the closure that overrides the 'reverb' broadcaster.
+     *
+     * By default, override the 'reverb' broadcaster with a broadcaster that
+     * extends PusherBroadcaster, and overrides the formatChannels() method,
+     * such that e.g. 'private-channel' becomes 'private-tenantKey.channel'.
+     */
+    public static function reverb(Closure|null $override = null): void
+    {
+        // Reverb reuses Pusher classes, but changes the name to 'reverb'
+        static::pusher($override, driver: 'reverb');
     }
 
     /**
