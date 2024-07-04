@@ -187,12 +187,6 @@ class TenancyServiceProvider extends ServiceProvider
          * Livewire::setUpdateRoute(function ($handle) {
          *     return RouteFacade::post('/livewire/update', $handle)->middleware(['web', 'universal']);
          * });
-         *
-         * If using domain identification, also make the script route universal.
-         *
-         * app(FrontendAssets::class)->setScriptRoute(function ($handle) {
-         *    return RouteFacade::get('/livewire/livewire.js', $handle)->middleware(['universal']);
-         * });
          */
         if (InitializeTenancyByRequestData::inGlobalStack()) {
             TenancyUrlGenerator::$prefixRouteNames = false;
