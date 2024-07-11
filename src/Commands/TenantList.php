@@ -36,9 +36,9 @@ class TenantList extends Command
             ->cursor()
             ->each(function (Tenant $tenant) {
                 if ($tenant->domains) {
-                    $this->line("[Tenant] {$tenant->getTenantKeyName()}: {$tenant->getTenantKey()} @ " . implode('; ', $tenant->domains->pluck('domain')->toArray() ?? []));
+                    $this->line("[{$tenant->getTenantName()}] {$tenant->getTenantKeyName()}: {$tenant->getTenantKey()} @ " . implode('; ', $tenant->domains->pluck('domain')->toArray() ?? []));
                 } else {
-                    $this->line("[Tenant] {$tenant->getTenantKeyName()}: {$tenant->getTenantKey()}");
+                    $this->line("[{$tenant->getTenantName()}] {$tenant->getTenantKeyName()}: {$tenant->getTenantKey()}");
                 }
             });
     }

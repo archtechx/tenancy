@@ -51,7 +51,7 @@ class Seed extends SeedCommand
         }
 
         tenancy()->runForMultiple($this->option('tenants'), function ($tenant) {
-            $this->line("Tenant: {$tenant->getTenantKey()}");
+            $this->line("Tenant: {$tenant->getTenantName()}");
 
             event(new SeedingDatabase($tenant));
 

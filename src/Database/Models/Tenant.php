@@ -48,7 +48,12 @@ class Tenant extends Model implements Contracts\Tenant
     {
         return new TenantCollection($models);
     }
-
+	
+    public function getTenantName(): string
+    {
+        return $this->getAttribute('name') ?? $this->getTenantKey();
+    }
+	
     protected $dispatchesEvents = [
         'saving' => Events\SavingTenant::class,
         'saved' => Events\TenantSaved::class,

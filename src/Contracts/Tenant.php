@@ -27,4 +27,7 @@ interface Tenant
 
     /** Run a callback in this tenant's environment. */
     public function run(callable $callback);
+	
+    /** Get the human readable name of the tenant. */
+    public function getTenantName(): string;
 }
