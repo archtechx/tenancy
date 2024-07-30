@@ -19,6 +19,7 @@ use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Route as RouteFacade;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
+use Stancl\Tenancy\Bootstrappers\Integrations\FortifyRouteBootstrapper;
 
 class TenancyServiceProvider extends ServiceProvider
 {
@@ -189,6 +190,7 @@ class TenancyServiceProvider extends ServiceProvider
          * });
          */
         if (InitializeTenancyByRequestData::inGlobalStack()) {
+            FortifyRouteBootstrapper::$fortifyHome = 'dashboard';
             TenancyUrlGenerator::$prefixRouteNames = false;
         }
 
