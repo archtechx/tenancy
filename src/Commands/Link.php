@@ -42,6 +42,9 @@ class Link extends Command
         return 0;
     }
 
+    /**
+     * @param LazyCollection<covariant int|string, \Stancl\Tenancy\Contracts\Tenant&\Illuminate\Database\Eloquent\Model> $tenants
+     */
     protected function removeLinks(LazyCollection $tenants): void
     {
         (new RemoveStorageSymlinksAction)($tenants);
@@ -49,6 +52,9 @@ class Link extends Command
         $this->components->info('The links have been removed.');
     }
 
+    /**
+     * @param LazyCollection<covariant int|string, \Stancl\Tenancy\Contracts\Tenant&\Illuminate\Database\Eloquent\Model> $tenants
+     */
     protected function createLinks(LazyCollection $tenants): void
     {
         (new CreateStorageSymlinksAction)(

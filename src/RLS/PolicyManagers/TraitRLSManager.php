@@ -72,6 +72,9 @@ class TraitRLSManager implements RLSPolicyManager
         SQL;
     }
 
+    /**
+     * @param BelongsTo<Model, Model> $parentRelationship
+     */
     protected function generateIndirectRLSPolicyQuery(Model $model, BelongsTo $parentRelationship): string
     {
         $table = $model->getTable();

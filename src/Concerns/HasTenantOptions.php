@@ -22,11 +22,17 @@ trait HasTenantOptions
         ], parent::getOptions());
     }
 
+    /**
+     * @return LazyCollection<int, \Stancl\Tenancy\Contracts\Tenant&\Illuminate\Database\Eloquent\Model>
+     */
     protected function getTenants(?array $tenantKeys = null): LazyCollection
     {
         return $this->getTenantsQuery($tenantKeys)->cursor();
     }
 
+    /**
+     * @return Builder<\Stancl\Tenancy\Contracts\Tenant&\Illuminate\Database\Eloquent\Model>
+     */
     protected function getTenantsQuery(?array $tenantKeys = null): Builder
     {
         return tenancy()->query()

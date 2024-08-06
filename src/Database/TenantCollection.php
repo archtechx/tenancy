@@ -14,6 +14,8 @@ use Stancl\Tenancy\Contracts\Tenant;
  * @method Tenant[] toArray()
  * @method Tenant offsetGet($key)
  * @method Tenant first()
+ *
+ * @extends Collection<int|string, Tenant&\Illuminate\Database\Eloquent\Model>
  */
 class TenantCollection extends Collection
 {

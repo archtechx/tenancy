@@ -41,6 +41,9 @@ class TenantList extends Command
     }
 
     /** Generate the visual CLI output for the domain names. */
+    /**
+     * @param Collection<int|string, string>|null $domains
+     */
     protected function domainsCLI(?Collection $domains): ?string
     {
         if (! $domains) {

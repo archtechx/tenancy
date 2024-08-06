@@ -13,14 +13,14 @@ trait ParallelCommand
 {
     public const MAX_PROCESSES = 24;
 
-    abstract protected function childHandle(...$args): bool;
+    abstract protected function childHandle(mixed ...$args): bool;
 
     public function addProcessesOption(): void
     {
         $this->addOption('processes', 'p', InputOption::VALUE_OPTIONAL, 'How many processes to spawn. Maximum value: ' . static::MAX_PROCESSES . ', recommended value: core count', 1);
     }
 
-    protected function forkProcess(...$args): int
+    protected function forkProcess(mixed ...$args): int
     {
         $pid = pcntl_fork();
 
@@ -53,14 +53,25 @@ trait ParallelCommand
         return $processes;
     }
 
+    /**
+     * @return Collection<int, Collection<int, \Stancl\Tenancy\Contracts\Tenant&\Illuminate\Database\Eloquent\Model>>>
+     */
     protected function getTenantChunks(): Collection
     {
         $idCol = tenancy()->model()->getTenantKeyName();
         $tenants = tenancy()->model()->orderBy($idCol, 'asc')->pluck($idCol);
 
-        return $tenants->chunk(ceil($tenants->count() / $this->getProcesses()));
+        return $tenants->chunk((int) ceil($tenants->count() / $this->getProcesses()))->map(function ($chunk) {
+            $chunk = array_values($chunk->all());
+
+            /** @var Collection<int, \Stancl\Tenancy\Contracts\Tenant&\Illuminate\Database\Eloquent\Model> $chunk */
+            return $chunk;
+        });
     }
 
+    /**
+     * @param array|ArrayAccess<int, mixed>|null $args
+     */
     protected function runConcurrently(array|ArrayAccess|null $args = null): int
     {
         $processes = $this->getProcesses();

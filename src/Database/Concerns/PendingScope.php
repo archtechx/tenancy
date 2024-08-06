@@ -20,6 +20,8 @@ class PendingScope implements Scope
     /**
      * Apply the scope to a given Eloquent query builder.
      *
+     * @param Builder<\Stancl\Tenancy\Contracts\Tenant&Model> $builder
+     *
      * @return void
      */
     public function apply(Builder $builder, Model $model)
@@ -32,6 +34,8 @@ class PendingScope implements Scope
     /**
      * Extend the query builder with the needed functions.
      *
+     * @param Builder<\Stancl\Tenancy\Contracts\Tenant&Model> $builder
+     *
      * @return void
      */
     public function extend(Builder $builder)
@@ -42,6 +46,8 @@ class PendingScope implements Scope
     }
     /**
      * Add the with-pending extension to the builder.
+     *
+     * @param Builder<\Stancl\Tenancy\Contracts\Tenant&Model> $builder
      *
      * @return void
      */
@@ -59,6 +65,8 @@ class PendingScope implements Scope
     /**
      * Add the without-pending extension to the builder.
      *
+     * @param Builder<\Stancl\Tenancy\Contracts\Tenant&Model> $builder
+     *
      * @return void
      */
     protected function addWithoutPending(Builder $builder)
@@ -74,6 +82,8 @@ class PendingScope implements Scope
 
     /**
      * Add the only-pending extension to the builder.
+     *
+     * @param Builder<\Stancl\Tenancy\Contracts\Tenant&Model> $builder
      *
      * @return void
      */

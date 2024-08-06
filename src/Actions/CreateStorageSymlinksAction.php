@@ -16,6 +16,9 @@ class CreateStorageSymlinksAction
 {
     use DealsWithTenantSymlinks;
 
+    /**
+     * @param Tenant|Collection<covariant int|string, Tenant&\Illuminate\Database\Eloquent\Model>|LazyCollection<covariant int|string, Tenant&\Illuminate\Database\Eloquent\Model> $tenants
+     */
     public function __invoke(Tenant|Collection|LazyCollection $tenants, bool $relativeLink = false, bool $force = false): void
     {
         $tenants = $tenants instanceof Tenant ? collect([$tenants]) : $tenants;

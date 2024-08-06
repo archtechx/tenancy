@@ -73,6 +73,9 @@ class CloneRoutesAsTenant
         return $this;
     }
 
+    /**
+     * @return Collection<int, Route>
+     */
     protected function getRoutesToClone(): Collection
     {
         $tenantParameterName = PathTenantResolver::tenantParameterName();

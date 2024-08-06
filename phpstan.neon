@@ -14,8 +14,11 @@ parameters:
         - Illuminate\Database\Eloquent\Model
 
     ignoreErrors:
+        -
+            identifier: missingType.iterableValue
         - '#Cannot access offset (.*?) on Illuminate\\Contracts\\Foundation\\Application#'
         - '#Cannot access offset (.*?) on Illuminate\\Contracts\\Config\\Repository#'
+        - '#Call to an undefined method(.*?)Tenant\:\:run\(\).#'
         -
             message: '#Call to an undefined (method|static method) Illuminate\\Database\\Eloquent\\(Model|Builder)#'
             paths:
@@ -23,7 +26,10 @@ parameters:
                 - src/Commands/ClearPendingTenants.php
                 - src/Database/Concerns/PendingScope.php
                 - src/Database/ParentModelScope.php
-        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:withPending\(\)#'
+        -
+            message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder<Illuminate\\Database\\Eloquent\\Model&Stancl\\Tenancy\\Contracts\\Tenant>\:\:withPending\(\)#'
+            paths:
+                - src/Concerns/HasTenantOptions.php
         -
             message: '#invalid type Laravel\\Telescope\\IncomingEntry#'
             paths:
@@ -53,6 +59,4 @@ parameters:
             paths:
                 - src/RLS/PolicyManagers/TraitRLSManager.php
 
-    checkMissingIterableValueType: false
-    checkGenericClassInNonGenericObjectType: false # later we may want to enable this
     treatPhpDocTypesAsCertain: false

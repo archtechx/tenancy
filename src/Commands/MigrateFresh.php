@@ -38,14 +38,18 @@ class MigrateFresh extends BaseCommand
 
         if ($this->getProcesses() > 1) {
             return $this->runConcurrently($this->getTenantChunks()->map(function ($chunk) {
-                return $this->getTenants(array_values($chunk->all()));
+                return $this->getTenants($chunk->all());
             }));
         }
 
         tenancy()->runForMultiple($this->getTenants(), function ($tenant) use (&$success) {
             $this->components->info("Tenant: {$tenant->getTenantKey()}");
-            $this->components->task('Dropping tables', fn () => $success = $success && $this->wipeDB());
-            $this->components->task('Migrating', fn () => $success = $success && $this->migrateTenant($tenant));
+            $this->components->task('Dropping tables', function () use (&$success) {
+                $success = $success && $this->wipeDB();
+            });
+            $this->components->task('Migrating', function () use ($tenant, &$success) {
+                $success = $success && $this->migrateTenant($tenant);
+            });
         });
 
         return $success ? 0 : 1;
@@ -69,13 +73,16 @@ class MigrateFresh extends BaseCommand
         ]) === 0;
     }
 
-    protected function childHandle(...$args): bool
+    protected function childHandle(mixed ...$args): bool
     {
         $chunk = $args[0];
 
         return $this->migrateFreshTenants($chunk);
     }
 
+    /**
+     * @param LazyCollection<covariant int|string, \Stancl\Tenancy\Contracts\Tenant&\Illuminate\Database\Eloquent\Model> $tenants
+     */
     protected function migrateFreshTenants(LazyCollection $tenants): bool
     {
         $success = true;

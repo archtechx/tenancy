@@ -42,7 +42,7 @@ class Rollback extends RollbackCommand
 
         if ($this->getProcesses() > 1) {
             return $this->runConcurrently($this->getTenantChunks()->map(function ($chunk) {
-                return $this->getTenants(array_values($chunk->all()));
+                return $this->getTenants($chunk->all());
             }));
         }
 
@@ -54,13 +54,16 @@ class Rollback extends RollbackCommand
         return 'tenants:rollback';
     }
 
-    protected function childHandle(...$args): bool
+    protected function childHandle(mixed ...$args): bool
     {
         $chunk = $args[0];
 
         return $this->rollbackTenants($chunk);
     }
 
+    /**
+     * @param LazyCollection<covariant int|string, \Stancl\Tenancy\Contracts\Tenant&\Illuminate\Database\Eloquent\Model> $tenants
+     */
     protected function rollbackTenants(LazyCollection $tenants): bool
     {
         $success = true;

@@ -64,7 +64,7 @@ class InitializeTenancyByRequestData extends IdentificationMiddleware
         } elseif (static::$cookie && $request->hasCookie(static::$cookie)) {
             $payload = $request->cookie(static::$cookie);
 
-            if ($payload) {
+            if ($payload && is_string($payload)) {
                 $payload = $this->getTenantFromCookie($payload);
             }
         } else {

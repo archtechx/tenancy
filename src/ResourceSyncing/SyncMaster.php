@@ -16,6 +16,9 @@ use Stancl\Tenancy\Contracts\Tenant;
  */
 interface SyncMaster extends Syncable
 {
+    /**
+     * @return BelongsToMany<Tenant&Model>
+     */
     public function tenants(): BelongsToMany;
 
     public function getTenantModelName(): string;

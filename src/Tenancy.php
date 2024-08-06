@@ -128,6 +128,9 @@ class Tenancy
         return in_array($bootstrapper, static::getBootstrappers(), true);
     }
 
+    /**
+     * @return Builder<Tenant&Model>
+     */
     public static function query(): Builder
     {
         return static::model()->query();

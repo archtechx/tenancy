@@ -11,6 +11,9 @@ use Stancl\Tenancy\Tenancy;
 
 class TenantScope implements Scope
 {
+    /**
+     * @param Builder<Model> $builder
+     */
     public function apply(Builder $builder, Model $model)
     {
         if (! tenancy()->initialized) {
@@ -20,6 +23,9 @@ class TenantScope implements Scope
         $builder->where($model->qualifyColumn(Tenancy::tenantKeyColumn()), tenant()->getTenantKey());
     }
 
+    /**
+     * @param Builder<Model> $builder
+     */
     public function extend(Builder $builder): void
     {
         $builder->macro('withoutTenancy', function (Builder $builder) {

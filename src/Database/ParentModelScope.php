@@ -10,6 +10,9 @@ use Illuminate\Database\Eloquent\Scope;
 
 class ParentModelScope implements Scope
 {
+    /**
+     * @param Builder<Model> $builder
+     */
     public function apply(Builder $builder, Model $model): void
     {
         if (! tenancy()->initialized) {
@@ -19,6 +22,9 @@ class ParentModelScope implements Scope
         $builder->whereHas($builder->getModel()->getRelationshipToPrimaryModel());
     }
 
+    /**
+     * @param Builder<Model> $builder
+     */
     public function extend(Builder $builder): void
     {
         $builder->macro('withoutParentModel', function (Builder $builder) {

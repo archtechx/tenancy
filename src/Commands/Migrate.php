@@ -52,20 +52,23 @@ class Migrate extends MigrateCommand
 
         if ($this->getProcesses() > 1) {
             return $this->runConcurrently($this->getTenantChunks()->map(function ($chunk) {
-                return $this->getTenants(array_values($chunk->all()));
+                return $this->getTenants($chunk->all());
             }));
         }
 
         return $this->migrateTenants($this->getTenants()) ? 0 : 1;
     }
 
-    protected function childHandle(...$args): bool
+    protected function childHandle(mixed ...$args): bool
     {
         $chunk = $args[0];
 
         return $this->migrateTenants($chunk);
     }
 
+    /**
+     * @param LazyCollection<covariant int|string, \Stancl\Tenancy\Contracts\Tenant&\Illuminate\Database\Eloquent\Model> $tenants
+     */
     protected function migrateTenants(LazyCollection $tenants): bool
     {
         $success = true;
