@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Contracts;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use \Illuminate\Database\Eloquent\Model;
 
 /**
  * @property-read Tenant $tenant
