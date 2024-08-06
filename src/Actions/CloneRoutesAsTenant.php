@@ -150,9 +150,10 @@ class CloneRoutesAsTenant
     protected function createNewRoute(Route $route): Route
     {
         $method = strtolower($route->methods()[0]);
-        $uri = $route->getPrefix() ? Str::after($route->uri(), $route->getPrefix()) : $route->uri();
+        $prefix = trim($route->getPrefix() ?? '', '/');
+        $uri = $route->getPrefix() ? Str::after($route->uri(), $prefix) : $route->uri();
 
-        $newRouteAction = collect($route->action)->tap(function (Collection $action) use ($route) {
+        $newRouteAction = collect($route->action)->tap(function (Collection $action) use ($route, $prefix) {
             /** @var array $routeMiddleware */
             $routeMiddleware = $action->get('middleware') ?? [];
 
@@ -174,7 +175,7 @@ class CloneRoutesAsTenant
             return $action
                 ->put('as', $newRouteNamePrefix)
                 ->put('middleware', $newRouteMiddleware)
-                ->put('prefix', $route->getPrefix() . '/{' . PathTenantResolver::tenantParameterName() . '}');
+                ->put('prefix', $prefix . '/{' . PathTenantResolver::tenantParameterName() . '}');
         })->toArray();
 
         /** @var Route $newRoute */
