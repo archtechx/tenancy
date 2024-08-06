@@ -16,6 +16,8 @@ parameters:
     ignoreErrors:
         -
             identifier: missingType.iterableValue
+        - '#Return type(.*?) of method Stancl\\Tenancy\\Database\\Models\\Tenant\:\:newCollection\(\) should be compatible with return type#'
+        - '#Method Stancl\\Tenancy\\Database\\Models\\Tenant\:\:newCollection\(\) should return#'
         - '#Cannot access offset (.*?) on Illuminate\\Contracts\\Foundation\\Application#'
         - '#Cannot access offset (.*?) on Illuminate\\Contracts\\Config\\Repository#'
         - '#Call to an undefined method(.*?)Tenant\:\:run\(\).#'

@@ -63,6 +63,10 @@ class Tenant extends Model implements Contracts\Tenant
         return static::current() ?? throw new TenancyNotInitializedException;
     }
 
+    /**
+     * @param array<self> $models
+     * @return TenantCollection<int|string, self>
+     */
     public function newCollection(array $models = []): TenantCollection
     {
         return new TenantCollection($models);

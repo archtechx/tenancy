@@ -27,9 +27,16 @@ class Domain extends Model implements Contracts\Domain
 
     protected $guarded = [];
 
+    /**
+     * @return BelongsTo<Tenant&Model, $this>
+     */
     public function tenant(): BelongsTo
     {
-        return $this->belongsTo(config('tenancy.models.tenant'), Tenancy::tenantKeyColumn());
+        /** @var class-string<Tenant&Model> $tenantModel */
+        $tenantModel = config('tenancy.models.tenant');
+
+        /** @var BelongsTo<Model&Tenant, $this> */
+        return $this->belongsTo($tenantModel, Tenancy::tenantKeyColumn());
     }
 
     protected $dispatchesEvents = [

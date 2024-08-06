@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 interface Domain
 {
     /**
-     * @return BelongsTo<Tenant&Model, Model>
+     * @return BelongsTo<Tenant&Model, $this&Model>
      */
     public function tenant(): BelongsTo;
 }
