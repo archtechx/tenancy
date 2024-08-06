@@ -104,7 +104,7 @@ jobs:
         env:
           ACCEPT_EULA: Y
           SA_PASSWORD: P@ssword
-        options: --health-cmd "echo quit | /opt/mssql-tools/bin/sqlcmd -S 127.0.0.1 -l 1 -U sa -P P@ssword"
+        options: --health-cmd "echo quit | /opt/mssql-tools18/bin/sqlcmd -C -S 127.0.0.1 -l 1 -U sa -P P@ssword"
 
       redis:
         image: redis
