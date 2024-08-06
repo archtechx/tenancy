@@ -6,21 +6,28 @@ namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Database\Console\Migrations\RollbackCommand;
 use Illuminate\Database\Migrations\Migrator;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\LazyCollection;
 use Stancl\Tenancy\Concerns\DealsWithMigrations;
 use Stancl\Tenancy\Concerns\ExtendsLaravelCommand;
 use Stancl\Tenancy\Concerns\HasTenantOptions;
+use Stancl\Tenancy\Concerns\ParallelCommand;
+use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
 use Stancl\Tenancy\Events\DatabaseRolledBack;
 use Stancl\Tenancy\Events\RollingBackDatabase;
 
 class Rollback extends RollbackCommand
 {
-    use HasTenantOptions, DealsWithMigrations, ExtendsLaravelCommand;
+    use HasTenantOptions, DealsWithMigrations, ExtendsLaravelCommand, ParallelCommand;
 
     protected $description = 'Rollback migrations for tenant(s).';
 
     public function __construct(Migrator $migrator)
     {
         parent::__construct($migrator);
+
+        $this->addProcessesOption();
+        $this->addOption('skip-failing', description: 'Continue execution if migration fails for a tenant');
 
         $this->specifyTenantSignature();
     }
@@ -33,23 +40,56 @@ class Rollback extends RollbackCommand
             return 1;
         }
 
-        tenancy()->runForMultiple($this->getTenants(), function ($tenant) {
-            $this->components->info("Tenant: {$tenant->getTenantKey()}");
+        if ($this->getProcesses() > 1) {
+            return $this->runConcurrently($this->getTenantChunks()->map(function ($chunk) {
+                return $this->getTenants(array_values($chunk->all()));
+            }));
+        }
 
-            event(new RollingBackDatabase($tenant));
-
-            // Rollback
-            parent::handle();
-
-            event(new DatabaseRolledBack($tenant));
-        });
-
-        return 0;
+        return $this->rollbackTenants($this->getTenants()) ? 0 : 1;
     }
 
     protected static function getTenantCommandName(): string
     {
         return 'tenants:rollback';
+    }
+
+    protected function childHandle(...$args): bool
+    {
+        $chunk = $args[0];
+
+        return $this->rollbackTenants($chunk);
+    }
+
+    protected function rollbackTenants(LazyCollection $tenants): bool
+    {
+        $success = true;
+
+        foreach ($tenants as $tenant) {
+            try {
+                $this->components->info("Tenant {$tenant->getTenantKey()}");
+
+                $tenant->run(function ($tenant) use (&$success) {
+                    event(new RollingBackDatabase($tenant));
+
+                    // Rollback
+                    if (parent::handle() !== 0) {
+                        $success = false;
+                    }
+
+                    event(new DatabaseRolledBack($tenant));
+                });
+            } catch (TenantDatabaseDoesNotExistException|QueryException $e) {
+                $this->components->error("Rollback failed for tenant {$tenant->getTenantKey()}: {$e->getMessage()}");
+                $success = false;
+
+                if (! $this->option('skip-failing')) {
+                    throw $e;
+                }
+            }
+        }
+
+        return $success;
     }
 
     protected function setParameterDefaults(): void

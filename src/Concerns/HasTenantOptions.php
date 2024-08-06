@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Concerns;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\LazyCollection;
 use Stancl\Tenancy\Database\Concerns\PendingScope;
 use Symfony\Component\Console\Input\InputOption;
@@ -21,16 +22,23 @@ trait HasTenantOptions
         ], parent::getOptions());
     }
 
-    protected function getTenants(): LazyCollection
+    protected function getTenants(?array $tenantKeys = null): LazyCollection
+    {
+        return $this->getTenantsQuery($tenantKeys)->cursor();
+    }
+
+    protected function getTenantsQuery(?array $tenantKeys = null): Builder
     {
         return tenancy()->query()
+            ->when($tenantKeys, function ($query) use ($tenantKeys) {
+                $query->whereIn(tenancy()->model()->getTenantKeyName(), $tenantKeys);
+            })
             ->when($this->option('tenants'), function ($query) {
                 $query->whereIn(tenancy()->model()->getTenantKeyName(), $this->option('tenants'));
             })
             ->when(tenancy()->model()::hasGlobalScope(PendingScope::class), function ($query) {
                 $query->withPending(config('tenancy.pending.include_in_queries') ?: $this->option('with-pending'));
-            })
-            ->cursor();
+            });
     }
 
     public function __construct()
