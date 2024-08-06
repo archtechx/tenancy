@@ -26,7 +26,7 @@ trait ParallelCommand
 
         if ($pid === -1) {
             return -1;
-        } else if ($pid) {
+        } elseif ($pid) {
             // Parent
             return $pid;
         } else {
@@ -42,12 +42,12 @@ trait ParallelCommand
         $processes = (int) $this->input->getOption('processes');
 
         if (($processes < 0) || ($processes > static::MAX_PROCESSES)) {
-            $this->components->error("Maximum value for processes is " . static::MAX_PROCESSES);
+            $this->components->error('Maximum value for processes is ' . static::MAX_PROCESSES);
             exit(1);
         }
 
         if ($processes > 1 && ! function_exists('pcntl_fork')) {
-            $this->components->error("The pcntl extension is required for parallel migrations to work.");
+            $this->components->error('The pcntl extension is required for parallel migrations to work.');
         }
 
         return $processes;
@@ -57,10 +57,11 @@ trait ParallelCommand
     {
         $idCol = tenancy()->model()->getTenantKeyName();
         $tenants = tenancy()->model()->orderBy($idCol, 'asc')->pluck($idCol);
+
         return $tenants->chunk(ceil($tenants->count() / $this->getProcesses()));
     }
 
-    protected function runConcurrently(array|ArrayAccess $args = null): int
+    protected function runConcurrently(array|ArrayAccess|null $args = null): int
     {
         $processes = $this->getProcesses();
         $success = true;
