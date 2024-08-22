@@ -10,9 +10,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 /**
  * @property-read Tenant[]|Collection $tenants
  */
-interface SyncMaster extends Syncable
+interface SyncMaster extends BaseSyncable
 {
     public function tenants(): BelongsToMany;
 
     public function getTenantModelName(): string;
+
+    public function getTenantModelFillable(): array;
 }

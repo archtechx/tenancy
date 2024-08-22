@@ -603,6 +603,11 @@ class CentralUser extends Model implements SyncMaster
         return ResourceUser::class;
     }
 
+    public function getTenantModelFillable(): array
+    {
+        return (new ResourceUser)->getFillable();
+    }
+
     public function getGlobalIdentifierKey()
     {
         return $this->getAttribute($this->getGlobalIdentifierKeyName());
@@ -649,6 +654,11 @@ class ResourceUser extends Model implements Syncable
     public function getCentralModelName(): string
     {
         return CentralUser::class;
+    }
+
+    public function getCentralModelFillable(): array
+    {
+        return (new CentralUser)->getFillable();
     }
 
     public function getSyncedAttributeNames(): array

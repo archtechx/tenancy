@@ -60,7 +60,7 @@ class UpdateSyncedResource extends QueueableListener
             } else {
                 // If the resource doesn't exist at all in the central DB,we create
                 // the record with all attributes, not just the synced ones.
-                $centralModel = $event->model->getCentralModelName()::create($event->model->getAttributes());
+                $centralModel = $event->model->getCentralModelName()::create($event->model->only($event->model->getCentralModelFillable()));
                 event(new SyncedResourceChangedInForeignDatabase($event->model, null));
             }
         });
@@ -113,7 +113,7 @@ class UpdateSyncedResource extends QueueableListener
                     $localModel->update($syncedAttributes);
                 } else {
                     // When creating, we use all columns, not just the synced ones.
-                    $localModel = $localModelClass::create($eventModel->getAttributes());
+                    $localModel = $localModelClass::create($eventModel->only($eventModel->getTenantModelFillable()));
                 }
 
                 event(new SyncedResourceChangedInForeignDatabase($localModel, $tenant));

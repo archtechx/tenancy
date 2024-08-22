@@ -4,15 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Contracts;
 
-interface Syncable
+interface Syncable extends BaseSyncable
 {
-    public function getGlobalIdentifierKeyName(): string;
-
-    public function getGlobalIdentifierKey();
-
-    public function getCentralModelName(): string;
-
-    public function getSyncedAttributeNames(): array;
-
-    public function triggerSyncEvent();
+    public function getCentralModelFillable(): array;
 }
