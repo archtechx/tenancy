@@ -158,7 +158,7 @@ class Tenancy
 
             $this->initialize($tenant);
 
-            if (! $callback($tenant)) {
+            if ($callback($tenant) === false) {
                 break;
             };
         }
