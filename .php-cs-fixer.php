@@ -140,5 +140,6 @@ $finder = Finder::create()
 return (new Config())
     ->setFinder($finder)
     ->setRules($rules)
+    ->setParallelConfig(PhpCsFixer\Runner\Parallel\ParallelConfigFactory::detect())
     ->setRiskyAllowed(true)
     ->setUsingCache(true);

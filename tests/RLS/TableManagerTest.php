@@ -535,9 +535,7 @@ test('table rls manager generates relationship trees with tables related to the 
 })->with([true, false]);
 
 test('table rls manager generates queries correctly', function() {
-    $sessionVariableName = config('tenancy.rls.session_variable_name');
-
-    expect(app(TableRLSManager::class)->generateQueries())->toEqualCanonicalizing([
+    expect(array_values(app(TableRLSManager::class)->generateQueries()))->toEqualCanonicalizing([
         <<<SQL
         CREATE POLICY authors_rls_policy ON authors USING (
             tenant_id::text = current_setting('my.current_tenant')

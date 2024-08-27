@@ -130,7 +130,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install php-cs-fixer
-        run: composer global require friendsofphp/php-cs-fixer
+        run: composer global require friendsofphp/php-cs-fixer:3.62.0
       - name: Run php-cs-fixer
         run: $HOME/.composer/vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php
       - name: Commit changes from php-cs-fixer

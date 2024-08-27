@@ -98,14 +98,14 @@ test('CloneRoutesAsTenant registers prefixed duplicates of universal routes corr
     // Universal flag is excluded from the route middleware
     expect(tenancy()->getRouteMiddleware($newRoutes->first()))
         ->toEqualCanonicalizing(
-            array_filter(array_merge(tenancy()->getRouteMiddleware($universalRoute), ['tenant']),
-            fn($middleware) => $middleware !== 'universal')
+            array_values(array_filter(array_merge(tenancy()->getRouteMiddleware($universalRoute), ['tenant']),
+            fn($middleware) => $middleware !== 'universal'))
         );
 
     // Universal flag is provided statically in the route's controller, so we cannot exclude it
     expect(tenancy()->getRouteMiddleware($newRoutes->last()))
         ->toEqualCanonicalizing(
-            array_merge(tenancy()->getRouteMiddleware($universalRoute2), ['tenant'])
+            array_values(array_merge(tenancy()->getRouteMiddleware($universalRoute2), ['tenant']))
         );
 
     $tenant = Tenant::create();
@@ -236,7 +236,7 @@ test('routes with the clone flag get cloned without making the routes universal'
 
     $clonedRoute = RouteFacade::getRoutes()->getByName('tenant.' . $routeName);
 
-    expect($clonedRoute->middleware())->toEqualCanonicalizing(['tenant', $identificationMiddleware]);
+    expect(array_values($clonedRoute->middleware()))->toEqualCanonicalizing(['tenant', $identificationMiddleware]);
 
     // The original route is not accessible
     pest()->get(route($routeName))->assertServerError();
