@@ -137,6 +137,12 @@ class TenancyServiceProvider extends ServiceProvider
         ];
     }
 
+    /**
+     * Set \Stancl\Tenancy\Bootstrappers\RootUrlBootstrapper::$rootUrlOverride here
+     * to override the root URL used in CLI while in tenant context.
+     *
+     * @see \Stancl\Tenancy\Bootstrappers\RootUrlBootstrapper
+     */
     protected function overrideUrlInTenantContext(): void
     {
         /**
@@ -149,12 +155,12 @@ class TenancyServiceProvider extends ServiceProvider
          *
          *     $scheme = str($originalRootUrl)->before('://');
          *
-         *     // If you're using subdomain identification:
-         *     // $originalDomain = str($originalRootUrl)->after($scheme . '://');
-         *     // return $scheme . '://' . $tenantDomain . '.' . $originalDomain . '/';
-         *
          *     // If you're using domain identification:
          *     return $scheme . '://' . $tenantDomain . '/';
+         *
+         *     // If you're using subdomain identification:
+         *     $originalDomain = str($originalRootUrl)->after($scheme . '://');
+         *     return $scheme . '://' . $tenantDomain . '.' . $originalDomain . '/';
          * };
          */
     }
