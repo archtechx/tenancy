@@ -7,7 +7,6 @@ namespace Stancl\Tenancy\Bootstrappers;
 use Closure;
 use Illuminate\Config\Repository;
 use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Routing\UrlGenerator;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
