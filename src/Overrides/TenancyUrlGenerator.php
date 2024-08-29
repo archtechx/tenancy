@@ -53,7 +53,24 @@ class TenancyUrlGenerator extends UrlGenerator
     {
         [$name, $parameters] = $this->prepareRouteInputs($name, Arr::wrap($parameters));
 
-        return parent::route($name, $parameters, $absolute);
+        $url = parent::route($name, $parameters, $absolute);
+
+        if (isset($parameters[PathTenantResolver::tenantParameterName()])) {
+            // Ensure the tenant key is present in the URL just once
+            // This is necessary when using UrlGeneratorBootstrapper with RootUrlBootstrapper
+            $tenantId = $parameters[PathTenantResolver::tenantParameterName()];
+            $afterTenant = str($url)->afterLast($tenantId)->toString();
+            $beforeTenant = str($url)->before($tenantId)->toString();
+
+            if (! $absolute && str(url('/'))->contains($tenantId)) {
+                // If the URL should be relative and the tenant key is already present in the full URL, don't add it again
+                return $afterTenant;
+            }
+
+            return $beforeTenant . $tenantId . $afterTenant;
+        }
+
+        return $url;
     }
 
     /**
