@@ -44,17 +44,24 @@ class RootUrlBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant): void
     {
-        $shouldRunInTests = ! app()->runningUnitTests() || static::$rootUrlOverrideInTests;
-        $shouldRun = $this->app->runningInConsole() && $shouldRunInTests && static::$rootUrlOverride;
-
-        if ($shouldRun) {
-            $this->originalRootUrl = $this->app['url']->to('/');
-
-            $newRootUrl = (static::$rootUrlOverride)($tenant, $this->originalRootUrl);
-
-            $this->app['url']->forceRootUrl($newRootUrl);
-            $this->config->set('app.url', $newRootUrl);
+        if (static::$rootUrlOverride === null) {
+            return;
         }
+
+        if (! $this->app->runningInConsole()) {
+            return;
+        }
+
+        if (app()->runningUnitTests() && ! static::$rootUrlOverrideInTests) {
+            return;
+        }
+
+        $this->originalRootUrl = $this->app['url']->to('/');
+
+        $newRootUrl = (static::$rootUrlOverride)($tenant, $this->originalRootUrl);
+
+        $this->app['url']->forceRootUrl($newRootUrl);
+        $this->config->set('app.url', $newRootUrl);
     }
 
     public function revert(): void
