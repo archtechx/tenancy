@@ -54,7 +54,9 @@ class Install extends Command
 
         $this->components->info('✨️ Tenancy for Laravel successfully installed.');
 
-        $this->askForSupport();
+        if (! $this->option('no-interaction')) {
+            $this->askForSupport();
+        }
 
         return 0;
     }
