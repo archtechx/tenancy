@@ -1,4 +1,4 @@
 #!/bin/bash
 
 cat vendor/laravel/framework/src/Illuminate/Foundation/Application.php | grep 'const VERSION'
-docker-compose exec -T test vendor/bin/phpunit "$@"
+docker compose exec -T test vendor/bin/phpunit "$@"
