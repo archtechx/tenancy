@@ -192,7 +192,8 @@ class DatabaseConfig
         DB::purge($this->getTenantHostConnectionName());
     }
 
-    /** Get the TenantDatabaseManager for this tenant's connection.
+    /**
+     * Get the TenantDatabaseManager for this tenant's connection.
      *
      * @throws NoConnectionSetException|DatabaseManagerNotRegisteredException
      */
