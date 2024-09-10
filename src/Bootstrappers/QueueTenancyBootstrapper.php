@@ -102,6 +102,11 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             return;
         }
 
+        if (tenant() && $previousTenant && $previousTenant->is(tenant())) {
+            // dispatchNow() was used and the tenant in the job is the same as the previous tenant
+            return;
+        }
+
         if (tenant() && $previousTenant && $previousTenant->isNot(tenant())) {
             // Revert back to the previous tenant (since Tenancy v3.8.5 this should should *likely* not happen)
             tenancy()->initialize($previousTenant);
