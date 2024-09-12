@@ -14,7 +14,7 @@ abstract class TenantDatabaseManager implements StatefulTenantDatabaseManager
     /** The database connection to the server. */
     protected string $connection;
 
-    public function database(): Connection
+    public function connection(): Connection
     {
         if (! isset($this->connection)) {
             throw new NoConnectionSetException(static::class);

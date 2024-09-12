@@ -332,7 +332,7 @@ test('database credentials can be provided to PermissionControlledMySQLDatabaseM
     /** @var PermissionControlledMySQLDatabaseManager $manager */
     $manager = $tenant->database()->manager();
 
-    expect($manager->database()->getConfig('username'))->toBe($username); // user created for the HOST connection
+    expect($manager->connection()->getConfig('username'))->toBe($username); // user created for the HOST connection
     expect($manager->userExists($usernameForNewDB))->toBeTrue();
     expect($manager->databaseExists($name))->toBeTrue();
 });
@@ -371,7 +371,7 @@ test('tenant database can be created by using the username and password from ten
     /** @var MySQLDatabaseManager $manager */
     $manager = $tenant->database()->manager();
 
-    expect($manager->database()->getConfig('username'))->toBe($username); // user created for the HOST connection
+    expect($manager->connection()->getConfig('username'))->toBe($username); // user created for the HOST connection
     expect($manager->databaseExists($name))->toBeTrue();
 });
 
@@ -417,7 +417,7 @@ test('the tenant connection template can be specified either by name or as a con
     /** @var MySQLDatabaseManager $manager */
     $manager = $tenant->database()->manager();
     expect($manager->databaseExists($name))->toBeTrue();
-    expect($manager->database()->getConfig('host'))->toBe('mysql');
+    expect($manager->connection()->getConfig('host'))->toBe('mysql');
 
     config([
         'tenancy.database.template_tenant_connection' => [
@@ -446,7 +446,7 @@ test('the tenant connection template can be specified either by name or as a con
     /** @var MySQLDatabaseManager $manager */
     $manager = $tenant->database()->manager();
     expect($manager->databaseExists($name))->toBeTrue(); // tenant connection works
-    expect($manager->database()->getConfig('host'))->toBe('mysql2');
+    expect($manager->connection()->getConfig('host'))->toBe('mysql2');
 });
 
 test('partial tenant connection templates get merged into the central connection template', function () {
@@ -471,8 +471,8 @@ test('partial tenant connection templates get merged into the central connection
     /** @var MySQLDatabaseManager $manager */
     $manager = $tenant->database()->manager();
     expect($manager->databaseExists($name))->toBeTrue(); // tenant connection works
-    expect($manager->database()->getConfig('host'))->toBe('mysql2');
-    expect($manager->database()->getConfig('url'))->toBeNull();
+    expect($manager->connection()->getConfig('host'))->toBe('mysql2');
+    expect($manager->connection()->getConfig('url'))->toBeNull();
 });
 
 // Datasets

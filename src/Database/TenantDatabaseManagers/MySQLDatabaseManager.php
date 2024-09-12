@@ -11,19 +11,19 @@ class MySQLDatabaseManager extends TenantDatabaseManager
     public function createDatabase(TenantWithDatabase $tenant): bool
     {
         $database = $tenant->database()->getName();
-        $charset = $this->database()->getConfig('charset');
-        $collation = $this->database()->getConfig('collation');
+        $charset = $this->connection()->getConfig('charset');
+        $collation = $this->connection()->getConfig('collation');
 
-        return $this->database()->statement("CREATE DATABASE `{$database}` CHARACTER SET `$charset` COLLATE `$collation`");
+        return $this->connection()->statement("CREATE DATABASE `{$database}` CHARACTER SET `$charset` COLLATE `$collation`");
     }
 
     public function deleteDatabase(TenantWithDatabase $tenant): bool
     {
-        return $this->database()->statement("DROP DATABASE `{$tenant->database()->getName()}`");
+        return $this->connection()->statement("DROP DATABASE `{$tenant->database()->getName()}`");
     }
 
     public function databaseExists(string $name): bool
     {
-        return (bool) $this->database()->select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$name'");
+        return (bool) $this->connection()->select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$name'");
     }
 }

@@ -83,7 +83,7 @@ class CreateUserWithRLSPolicies extends Command
         $manager->setConnection($tenantModel->database()->getTenantHostConnectionName());
 
         // Set the database name (= central schema name/search_path in this case), username, and password
-        $tenantModel->setInternal('db_name', $manager->database()->getConfig('search_path'));
+        $tenantModel->setInternal('db_name', $manager->connection()->getConfig('search_path'));
         $tenantModel->setInternal('db_username', $username);
         $tenantModel->setInternal('db_password', $password);
 

@@ -23,11 +23,11 @@ class PermissionControlledPostgreSQLSchemaManager extends PostgreSQLSchemaManage
         // Central database name
         $database = DB::connection(config('tenancy.database.central_connection'))->getDatabaseName();
 
-        $this->database()->statement("GRANT CONNECT ON DATABASE {$database} TO \"{$username}\"");
-        $this->database()->statement("GRANT USAGE, CREATE ON SCHEMA \"{$schema}\" TO \"{$username}\"");
-        $this->database()->statement("GRANT USAGE ON ALL SEQUENCES IN SCHEMA \"{$schema}\" TO \"{$username}\"");
+        $this->connection()->statement("GRANT CONNECT ON DATABASE {$database} TO \"{$username}\"");
+        $this->connection()->statement("GRANT USAGE, CREATE ON SCHEMA \"{$schema}\" TO \"{$username}\"");
+        $this->connection()->statement("GRANT USAGE ON ALL SEQUENCES IN SCHEMA \"{$schema}\" TO \"{$username}\"");
 
-        $tables = $this->database()->select("SELECT table_name FROM information_schema.tables WHERE table_schema = '{$schema}'");
+        $tables = $this->connection()->select("SELECT table_name FROM information_schema.tables WHERE table_schema = '{$schema}'");
 
         // Grant permissions to any existing tables. This is used with RLS
         // todo@samuel refactor this along with the todo in TenantDatabaseManager
@@ -36,7 +36,7 @@ class PermissionControlledPostgreSQLSchemaManager extends PostgreSQLSchemaManage
             $tableName = $table->table_name;
 
             /** @var string $primaryKey */
-            $primaryKey = $this->database()->selectOne(<<<SQL
+            $primaryKey = $this->connection()->selectOne(<<<SQL
                 SELECT column_name
                 FROM information_schema.key_column_usage
                 WHERE table_name = '{$tableName}'
@@ -44,11 +44,11 @@ class PermissionControlledPostgreSQLSchemaManager extends PostgreSQLSchemaManage
             SQL)->column_name;
 
             // Grant all permissions for all existing tables
-            $this->database()->statement("GRANT ALL ON \"{$schema}\".\"{$tableName}\" TO \"{$username}\"");
+            $this->connection()->statement("GRANT ALL ON \"{$schema}\".\"{$tableName}\" TO \"{$username}\"");
 
             // Grant permission to reference the primary key for the table
             // The previous query doesn't grant the references privilege, so it has to be granted here
-            $this->database()->statement("GRANT REFERENCES (\"{$primaryKey}\") ON \"{$schema}\".\"{$tableName}\" TO \"{$username}\"");
+            $this->connection()->statement("GRANT REFERENCES (\"{$primaryKey}\") ON \"{$schema}\".\"{$tableName}\" TO \"{$username}\"");
         }
 
         return true;

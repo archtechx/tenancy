@@ -26,7 +26,7 @@ class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager impl
         $hostname = $databaseConfig->connection()['host'];
         $password = $databaseConfig->getPassword();
 
-        $this->database()->statement("CREATE USER `{$username}`@`%` IDENTIFIED BY '{$password}'");
+        $this->connection()->statement("CREATE USER `{$username}`@`%` IDENTIFIED BY '{$password}'");
 
         $grants = implode(', ', static::$grants);
 
@@ -36,24 +36,24 @@ class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager impl
             $grantQuery = "GRANT $grants ON `$database`.* TO `$username`@`%` IDENTIFIED BY '$password'";
         }
 
-        return $this->database()->statement($grantQuery);
+        return $this->connection()->statement($grantQuery);
     }
 
     protected function isVersion8(): bool
     {
-        $versionSelect = (string) $this->database()->raw('select version()')->getValue($this->database()->getQueryGrammar());
-        $version = $this->database()->select($versionSelect)[0]->{'version()'};
+        $versionSelect = (string) $this->connection()->raw('select version()')->getValue($this->connection()->getQueryGrammar());
+        $version = $this->connection()->select($versionSelect)[0]->{'version()'};
 
         return version_compare($version, '8.0.0') >= 0;
     }
 
     public function deleteUser(DatabaseConfig $databaseConfig): bool
     {
-        return $this->database()->statement("DROP USER IF EXISTS '{$databaseConfig->getUsername()}'");
+        return $this->connection()->statement("DROP USER IF EXISTS '{$databaseConfig->getUsername()}'");
     }
 
     public function userExists(string $username): bool
     {
-        return (bool) $this->database()->select("SELECT count(*) FROM mysql.user WHERE user = '$username'")[0]->{'count(*)'};
+        return (bool) $this->connection()->select("SELECT count(*) FROM mysql.user WHERE user = '$username'")[0]->{'count(*)'};
     }
 }
