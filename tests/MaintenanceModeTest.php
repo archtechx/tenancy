@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Tests;
 
+use Illuminate\Support\Facades\Event;
+use Stancl\Tenancy\Events\TenantGoingInMaintenanceMode;
+use Stancl\Tenancy\Events\TenantWentInMaintenanceMode;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Illuminate\Foundation\Http\Exceptions\MaintenanceModeException;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +21,8 @@ class MaintenanceModeTest extends TestCase
     /** @test */
     public function tenant_can_be_in_maintenance_mode()
     {
+        Event::fake([TenantGoingInMaintenanceMode::class, TenantWentInMaintenanceMode::class]);
+
         Route::get('/foo', function () {
             return 'bar';
         })->middleware([InitializeTenancyByDomain::class, CheckTenantForMaintenanceMode::class]);
@@ -32,7 +37,13 @@ class MaintenanceModeTest extends TestCase
 
         tenancy()->end(); // flush stored tenant instance
 
+        Event::assertNotDispatched(TenantGoingInMaintenanceMode::class);
+        Event::assertNotDispatched(TenantWentInMaintenanceMode::class);
+
         $tenant->putDownForMaintenance();
+
+        Event::assertDispatched(TenantGoingInMaintenanceMode::class);
+        Event::assertDispatched(TenantWentInMaintenanceMode::class);
 
         $this->expectException(HttpException::class);
         $this->withoutExceptionHandling()
