@@ -10,7 +10,7 @@ use Stancl\Tenancy\Events\TenantWentInMaintenanceMode;
 
 trait MaintenanceMode
 {
-    public function putDownForMaintenance($data = [])
+    public function putDownForMaintenance($data = []): void
     {
         event(new TenantGoingInMaintenanceMode($this));
 
