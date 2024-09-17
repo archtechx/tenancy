@@ -26,7 +26,7 @@ class CacheManager extends BaseCacheManager
                 throw new \Exception("Method tags() takes exactly 1 argument. $count passed.");
             }
 
-            $names = $parameters[0];
+            $names = array_values($parameters)[0];
             $names = (array) $names; // cache()->tags('foo') https://laravel.com/docs/5.7/cache#removing-tagged-cache-items
 
             return $this->store()->tags(array_merge($tags, $names));
