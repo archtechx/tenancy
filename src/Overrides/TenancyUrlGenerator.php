@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Overrides;
 
+use BackedEnum;
 use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\Arr;
+use InvalidArgumentException;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 
 /**
@@ -51,7 +53,11 @@ class TenancyUrlGenerator extends UrlGenerator
      */
     public function route($name, $parameters = [], $absolute = true)
     {
-        [$name, $parameters] = $this->prepareRouteInputs($name, Arr::wrap($parameters));
+        if ($name instanceof BackedEnum && ! is_string($name = $name->value)) { // @phpstan-ignore function.impossibleType
+            throw new InvalidArgumentException('Attribute [name] expects a string backed enum.');
+        }
+
+        [$name, $parameters] = $this->prepareRouteInputs($name, Arr::wrap($parameters)); // @phpstan-ignore argument.type
 
         return parent::route($name, $parameters, $absolute);
     }
@@ -62,7 +68,11 @@ class TenancyUrlGenerator extends UrlGenerator
      */
     public function temporarySignedRoute($name, $expiration, $parameters = [], $absolute = true)
     {
-        [$name, $parameters] = $this->prepareRouteInputs($name, Arr::wrap($parameters));
+        if ($name instanceof BackedEnum && ! is_string($name = $name->value)) { // @phpstan-ignore function.impossibleType
+            throw new InvalidArgumentException('Attribute [name] expects a string backed enum.');
+        }
+
+        [$name, $parameters] = $this->prepareRouteInputs($name, Arr::wrap($parameters)); // @phpstan-ignore argument.type
 
         return parent::temporarySignedRoute($name, $expiration, $parameters, $absolute);
     }

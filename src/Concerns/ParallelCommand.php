@@ -80,8 +80,12 @@ trait ParallelCommand
         // We use the logical core count as it should work best for I/O bound code
         return match (PHP_OS_FAMILY) {
             'Windows' => (int) getenv('NUMBER_OF_PROCESSORS'),
-            'Linux' => substr_count(file_get_contents('/proc/cpuinfo'), 'processor'),
+            'Linux' => substr_count(
+                file_get_contents('/proc/cpuinfo') ?: throw new Exception('Could not open /proc/cpuinfo for core count detection, please specify -p manually.'),
+                'processor',
+            ),
             'Darwin', 'BSD' => $this->sysctlGetLogicalCoreCount(PHP_OS_FAMILY === 'Darwin'),
+            default => throw new Exception('Core count detection not implemented for ' . PHP_OS_FAMILY . ', please specify -p manually.'),
         };
     }
 
@@ -111,8 +115,8 @@ trait ParallelCommand
         }
 
         if ($processes > 1 && ! function_exists('pcntl_fork')) {
-            exit(1);
             $this->components->error('The pcntl extension is required for parallel migrations to work.');
+            exit(1);
         }
 
         return $processes;
@@ -143,7 +147,7 @@ trait ParallelCommand
         $success = true;
         $pids = [];
 
-        if (count($args) < $processes) {
+        if ($args !== null && count($args) < $processes) {
             $processes = count($args);
         }
 
