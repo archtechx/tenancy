@@ -142,9 +142,9 @@ class CreateUserWithRLSPolicies extends Command
 
             $this->components->bulletList($createdPolicies);
 
-            $this->components->info('RLS policies updated successfully.');
+            $this->components->success('RLS policies updated successfully.');
         } else {
-            $this->components->info('All RLS policies are up to date.');
+            $this->components->success('All RLS policies are up to date.');
         }
     }
 
