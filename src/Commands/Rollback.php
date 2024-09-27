@@ -15,6 +15,7 @@ use Stancl\Tenancy\Concerns\ParallelCommand;
 use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
 use Stancl\Tenancy\Events\DatabaseRolledBack;
 use Stancl\Tenancy\Events\RollingBackDatabase;
+use Symfony\Component\Console\Output\OutputInterface as OI;
 
 class Rollback extends RollbackCommand
 {
@@ -42,7 +43,7 @@ class Rollback extends RollbackCommand
 
         if ($this->getProcesses() > 1) {
             return $this->runConcurrently($this->getTenantChunks()->map(function ($chunk) {
-                return $this->getTenants($chunk->all());
+                return $this->getTenants($chunk);
             }));
         }
 
@@ -70,14 +71,29 @@ class Rollback extends RollbackCommand
 
         foreach ($tenants as $tenant) {
             try {
-                $this->components->info("Tenant {$tenant->getTenantKey()}");
+                $this->components->info("Rolling back tenant {$tenant->getTenantKey()}");
 
                 $tenant->run(function ($tenant) use (&$success) {
                     event(new RollingBackDatabase($tenant));
 
-                    // Rollback
-                    if (parent::handle() !== 0) {
-                        $success = false;
+                    $verbosity = (int) $this->output->getVerbosity();
+
+                    if ($this->runningConcurrently) {
+                        // The output gets messy when multiple processes are writing to the same stdout
+                        $this->output->setVerbosity(OI::VERBOSITY_QUIET);
+                    }
+
+                    try {
+                        // Rollback
+                        if (parent::handle() !== 0) {
+                            $success = false;
+                        }
+                    } finally {
+                        $this->output->setVerbosity($verbosity);
+                    }
+
+                    if ($this->runningConcurrently) {
+                        $this->components->success("Rolled back tenant {$tenant->getTenantKey()}");
                     }
 
                     event(new DatabaseRolledBack($tenant));

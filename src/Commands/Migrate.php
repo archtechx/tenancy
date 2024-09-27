@@ -16,6 +16,7 @@ use Stancl\Tenancy\Concerns\ParallelCommand;
 use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
 use Stancl\Tenancy\Events\DatabaseMigrated;
 use Stancl\Tenancy\Events\MigratingDatabase;
+use Symfony\Component\Console\Output\OutputInterface as OI;
 
 class Migrate extends MigrateCommand
 {
@@ -52,7 +53,7 @@ class Migrate extends MigrateCommand
 
         if ($this->getProcesses() > 1) {
             return $this->runConcurrently($this->getTenantChunks()->map(function ($chunk) {
-                return $this->getTenants($chunk->all());
+                return $this->getTenants($chunk);
             }));
         }
 
@@ -80,9 +81,25 @@ class Migrate extends MigrateCommand
                 $tenant->run(function ($tenant) use (&$success) {
                     event(new MigratingDatabase($tenant));
 
-                    // Migrate
-                    if (parent::handle() !== 0) {
-                        $success = false;
+                    $verbosity = (int) $this->output->getVerbosity();
+
+                    if ($this->runningConcurrently) {
+                        // The output gets messy when multiple processes are writing to the same stdout
+                        $this->output->setVerbosity(OI::VERBOSITY_QUIET);
+                    }
+
+                    try {
+                        // Migrate
+                        if (parent::handle() !== 0) {
+                            $success = false;
+                        }
+                    } finally {
+                        $this->output->setVerbosity($verbosity);
+                    }
+
+                    if ($this->runningConcurrently) {
+                        // todo@cli the Migrating info above always has extra spaces, and the success below does WHEN there is work that got done by the block above. same in Rollback
+                        $this->components->success("Migrated tenant {$tenant->getTenantKey()}");
                     }
 
                     event(new DatabaseMigrated($tenant));
