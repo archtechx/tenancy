@@ -60,7 +60,7 @@ trait ParallelCommand
         $size->cdata = FFI::sizeof($cores);
 
         // perflevel0 refers to P-cores on M-series, and the entire CPU on Intel Macs
-        if ($darwin && $ffi->sysctlbyname('hw.xperflevel0.logicalcpu', FFI::addr($cores), FFI::addr($size), null, 0) === 0) {
+        if ($darwin && $ffi->sysctlbyname('hw.perflevel0.logicalcpu', FFI::addr($cores), FFI::addr($size), null, 0) === 0) {
             return $size->cdata;
         } else if ($darwin) {
             // Reset the size in case the pointer got written to (likely shouldn't happen)
