@@ -68,7 +68,7 @@ trait ParallelCommand
         }
 
         // This should return the total number of logical cores on any BSD-based system
-        if ($ffi->sysctlbyname('hw.ncpu', FFI::addr($cores), FFI::addr($size), null, 0) == -1) {
+        if ($ffi->sysctlbyname('hw.ncpu', FFI::addr($cores), FFI::addr($size), null, 0) !== 0) {
             return -1;
         }
 
@@ -104,7 +104,7 @@ trait ParallelCommand
             $processes = (int) $processes;
         }
 
-        if ($processes < 0) { // can come from sysctlGetLogicalCoreCount()
+        if ($processes < 1) {
             $this->components->error('Minimum value for processes is 1. Try specifying -p manually.');
             exit(1);
         }
