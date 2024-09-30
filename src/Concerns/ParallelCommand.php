@@ -14,7 +14,7 @@ use Symfony\Component\Console\Input\InputOption;
 
 trait ParallelCommand
 {
-    public const MAX_PROCESSES = 32;
+    public const MAX_PROCESSES = 24;
     protected bool $runningConcurrently = false;
 
     abstract protected function childHandle(mixed ...$args): bool;
@@ -26,6 +26,14 @@ trait ParallelCommand
             'p',
             InputOption::VALUE_OPTIONAL,
             'How many processes to spawn. Maximum value: ' . static::MAX_PROCESSES . ', recommended value: core count (use just -p)',
+            -1,
+        );
+
+        $this->addOption(
+            'forceProcesses',
+            'P',
+            InputOption::VALUE_OPTIONAL,
+            'Same as --processes but without a maximum value. Use at your own risk',
             -1,
         );
     }
@@ -91,7 +99,12 @@ trait ParallelCommand
 
     protected function getProcesses(): int
     {
-        $processes = $this->input->getOption('processes');
+        $processes = $this->input->getOption('forceProcesses');
+        $forceProcesses = $processes !== -1;
+
+        if ($processes === -1) {
+            $processes = $this->input->getOption('processes');
+        }
 
         if ($processes === null) {
             // This is used when the option is set but *without* a value (-p).
@@ -109,8 +122,8 @@ trait ParallelCommand
             exit(1);
         }
 
-        if ($processes > static::MAX_PROCESSES) {
-            $this->components->error('Maximum value for processes is ' . static::MAX_PROCESSES);
+        if ($processes > static::MAX_PROCESSES && ! $forceProcesses) {
+            $this->components->error('Maximum value for processes is ' . static::MAX_PROCESSES . ' provided value: ' . $processes);
             exit(1);
         }
 
