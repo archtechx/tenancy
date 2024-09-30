@@ -25,21 +25,21 @@ class DatabaseConfig
     /**
      * Database username generator (can be set by the developer.).
      *
-     * @var Closure(Model&Tenant): string
+     * @var Closure(Model&Tenant, self): string
      */
     public static Closure $usernameGenerator;
 
     /**
      * Database password generator (can be set by the developer.).
      *
-     * @var Closure(Model&Tenant): string
+     * @var Closure(Model&Tenant, self): string
      */
     public static Closure $passwordGenerator;
 
     /**
      * Database name generator (can be set by the developer.).
      *
-     * @var Closure(Model&Tenant): string
+     * @var Closure(Model&Tenant, self): string
      */
     public static Closure $databaseNameGenerator;
 
@@ -58,8 +58,14 @@ class DatabaseConfig
         }
 
         if (! isset(static::$databaseNameGenerator)) {
-            static::$databaseNameGenerator = function (Model&Tenant $tenant) {
-                return config('tenancy.database.prefix') . $tenant->getTenantKey() . config('tenancy.database.suffix');
+            static::$databaseNameGenerator = function (Model&Tenant $tenant, self $self) {
+                $suffix = config('tenancy.database.suffix');
+
+                if (! $suffix && $self->getTemplateConnection()['driver'] === 'sqlite') {
+                    $suffix = '.sqlite';
+                }
+
+                return config('tenancy.database.prefix') . $tenant->getTenantKey() . $suffix;
             };
         }
     }
@@ -89,7 +95,7 @@ class DatabaseConfig
 
     public function getName(): string
     {
-        return $this->tenant->getInternal('db_name') ?? (static::$databaseNameGenerator)($this->tenant);
+        return $this->tenant->getInternal('db_name') ?? (static::$databaseNameGenerator)($this->tenant, $this);
     }
 
     public function getUsername(): ?string
@@ -110,8 +116,8 @@ class DatabaseConfig
         $this->tenant->setInternal('db_name', $this->getName());
 
         if ($this->connectionDriverManager($this->getTemplateConnectionDriver()) instanceof Contracts\ManagesDatabaseUsers) {
-            $this->tenant->setInternal('db_username', $this->getUsername() ?? (static::$usernameGenerator)($this->tenant));
-            $this->tenant->setInternal('db_password', $this->getPassword() ?? (static::$passwordGenerator)($this->tenant));
+            $this->tenant->setInternal('db_username', $this->getUsername() ?? (static::$usernameGenerator)($this->tenant, $this));
+            $this->tenant->setInternal('db_password', $this->getPassword() ?? (static::$passwordGenerator)($this->tenant, $this));
         }
 
         if ($this->tenant->exists) {
