@@ -112,7 +112,7 @@ if (! function_exists('tenant_channel')) {
     function tenant_channel(string $channelName, Closure $callback, array $options = []): void
     {
         // Register '{tenant}.channelName'
-        Broadcast::channel('{tenant}.' . $channelName, fn ($user, $tenantKey, ...$args) => $callback($user, ...$args), $options);
+        Broadcast::channel('{tenant}.' . $channelName, $callback, $options);
     }
 }
 
@@ -121,17 +121,6 @@ if (! function_exists('global_channel')) {
     {
         // Register 'global__channelName'
         // Global channels are available in both the central and tenant contexts
-        Broadcast::channel('global__' . $channelName, fn ($user, ...$args) => $callback($user, ...$args), $options);
-    }
-}
-
-if (! function_exists('universal_channel')) {
-    function universal_channel(string $channelName, Closure $callback, array $options = []): void
-    {
-        // Register 'channelName'
-        Broadcast::channel($channelName, $callback, $options);
-
-        // Register '{tenant}.channelName'
-        tenant_channel($channelName, $callback, $options);
+        Broadcast::channel('global__' . $channelName, $callback, $options);
     }
 }
