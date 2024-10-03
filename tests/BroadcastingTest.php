@@ -136,9 +136,11 @@ test('broadcasting channel helpers register channels correctly', function() {
 
     // Tenant channel registered – its name is correctly prefixed ("{tenant}.user.{userId}")
     $tenantChannelClosure = $getChannels()->first(fn ($closure, $name) => $name === "{tenant}.$channelName");
-    expect($tenantChannelClosure)
-        ->not()->toBeNull() // Channel registered
-        ->not()->toBe($centralChannelClosure); // The tenant channel closure is different – after the auth user, it accepts the tenant ID
+    expect($tenantChannelClosure)->toBe($centralChannelClosure);
+
+    // todo: fix tests from below here as the closure is now NOT modified, the $tenant parameter is expected (when additional parameters are used) and kept
+    // and the universal_channel() helper was removed (get rid of tests related to testing the helper's behavior, but tests which use universal channels should
+    // be kept -- the two channels should just be registered by hand per docs instead of using the now removed helper)
 
     // The tenant channels are prefixed with '{tenant}.'
     // They accept the tenant key, but their closures only run in tenant context when tenancy is initialized
