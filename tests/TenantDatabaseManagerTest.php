@@ -145,6 +145,36 @@ test('db name is prefixed with db path when sqlite is used', function () {
     expect(database_path('foodb'))->toBe(config('database.connections.tenant.database'));
 });
 
+test('sqlite databases use the WAL journal mode by default', function (bool|null $wal) {
+    $expected = $wal ? 'wal' : 'delete';
+    if ($wal !== null) {
+        SQLiteDatabaseManager::$WAL = $wal;
+    } else {
+        // default behavior
+        $expected = 'wal';
+    }
+
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    $tenant = Tenant::create([
+        'tenancy_db_connection' => 'sqlite',
+    ]);
+
+    $dbPath = database_path($tenant->database()->getName());
+
+    expect(file_exists($dbPath))->toBeTrue();
+
+    $db = new PDO('sqlite:' . $dbPath);
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    expect($db->query('pragma journal_mode')->fetch(PDO::FETCH_ASSOC)['journal_mode'])->toBe($expected);
+
+    // cleanup
+    SQLiteDatabaseManager::$WAL = true;
+})->with([true, false, null]);
+
 test('schema manager uses schema to separate tenant dbs', function () {
     config([
         'tenancy.database.managers.pgsql' => PostgreSQLSchemaManager::class,

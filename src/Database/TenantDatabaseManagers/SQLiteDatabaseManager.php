@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Database\TenantDatabaseManagers;
 
+use AssertionError;
+use PDO;
 use Stancl\Tenancy\Database\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Throwable;
@@ -15,10 +17,30 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
      */
     public static string|null $path = null;
 
+    /**
+     * Should the WAL journal mode be used for newly created databases.
+     *
+     * @see https://www.sqlite.org/pragma.html#pragma_journal_mode
+     */
+    public static bool $WAL = true;
+
     public function createDatabase(TenantWithDatabase $tenant): bool
     {
         try {
-            return (bool) file_put_contents($this->getPath($tenant->database()->getName()), '');
+            if (file_put_contents($path = $this->getPath($tenant->database()->getName()), '') === false) {
+                return false;
+            }
+
+            if (static::$WAL) {
+                $pdo = new PDO('sqlite:' . $path);
+                $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+                assert($pdo->query("pragma journal_mode = wal")->fetch(PDO::FETCH_ASSOC)['journal_mode'] === 'wal', "Unable to set journal mode to wal.");
+            }
+
+            return true;
+        } catch (AssertionError $e) {
+            throw $e;
         } catch (Throwable) {
             return false;
         }
