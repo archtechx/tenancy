@@ -27,4 +27,7 @@ RUN docker-php-ext-install pdo_pgsql && docker-php-ext-enable pdo_pgsql
 RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
 RUN echo "apc.enable_cli=1" >> "$PHP_INI_DIR/php.ini"
 
+# Only used on GHA
+COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
+
 WORKDIR /var/www/html
