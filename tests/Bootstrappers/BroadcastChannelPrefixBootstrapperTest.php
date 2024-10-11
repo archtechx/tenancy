@@ -48,10 +48,6 @@ test('BroadcastChannelPrefixBootstrapper prefixes the channels events are broadc
         $table->timestamps();
     });
 
-    universal_channel('users.{userId}', function ($user, $userId) {
-        return User::find($userId)->is($user);
-    });
-
     $broadcaster = app(BroadcastManager::class)->driver();
 
     $tenant = Tenant::create();
