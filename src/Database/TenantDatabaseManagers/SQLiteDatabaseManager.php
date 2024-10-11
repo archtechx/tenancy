@@ -35,6 +35,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
                 $pdo = new PDO('sqlite:' . $path);
                 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
+                // @phpstan-ignore-next-line method.nonObject
                 assert($pdo->query('pragma journal_mode = wal')->fetch(PDO::FETCH_ASSOC)['journal_mode'] === 'wal', 'Unable to set journal mode to wal.');
             }
 
