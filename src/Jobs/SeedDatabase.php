@@ -33,6 +33,7 @@ class SeedDatabase implements ShouldQueue
     {
         Artisan::call('tenants:seed', [
             '--tenants' => [$this->tenant->getTenantKey()],
+            '--force' => true,
         ]);
     }
 }
