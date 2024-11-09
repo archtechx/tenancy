@@ -9,8 +9,8 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Stancl\Tenancy\Concerns\UsableWithEarlyIdentification;
-use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
+use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 
 class InitializeTenancyByDomainOrSubdomain extends InitializeTenancyBySubdomain
 {
