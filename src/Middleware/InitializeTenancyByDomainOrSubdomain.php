@@ -8,8 +8,9 @@ use Closure;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
 use Stancl\Tenancy\Concerns\UsableWithEarlyIdentification;
+use Stancl\Tenancy\Resolvers\DomainTenantResolver;
+use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
 
 class InitializeTenancyByDomainOrSubdomain extends InitializeTenancyBySubdomain
 {
@@ -23,34 +24,46 @@ class InitializeTenancyByDomainOrSubdomain extends InitializeTenancyBySubdomain
         }
 
         $domain = $this->getDomain($request);
+        $subdomain = null;
 
-        if ($this->isSubdomain($domain)) {
-            $domain = $this->makeSubdomain($domain);
+        if (DomainTenantResolver::isSubdomain($domain)) {
+            $subdomain = $this->makeSubdomain($domain);
 
-            if ($domain instanceof Exception) {
+            if ($subdomain instanceof Exception) {
                 $onFail = static::$onFail ?? function ($e) {
                     throw $e;
                 };
 
-                return $onFail($domain, $request, $next);
-            }
-
-            // If a Response instance was returned, we return it immediately.
-            // todo@samuel when does this execute?
-            if ($domain instanceof Response) {
-                return $domain;
+                return $onFail($subdomain, $request, $next);
             }
         }
 
-        return $this->initializeTenancy(
-            $request,
-            $next,
-            $domain
-        );
-    }
+        try {
+            $this->tenancy->initialize(
+                $this->resolver->resolve($subdomain ?? $domain)
+            );
+        } catch (TenantCouldNotBeIdentifiedException $e) {
+            if ($subdomain) {
+                try {
+                    $this->tenancy->initialize(
+                        $this->resolver->resolve($domain)
+                    );
+                } catch (TenantCouldNotBeIdentifiedException $e) {
+                    $onFail = static::$onFail ?? function ($e) {
+                        throw $e;
+                    };
 
-    protected function isSubdomain(string $hostname): bool
-    {
-        return Str::endsWith($hostname, config('tenancy.identification.central_domains'));
+                    return $onFail($e, $request, $next);
+                }
+            } else {
+                $onFail = static::$onFail ?? function ($e) {
+                    throw $e;
+                };
+
+                return $onFail($e, $request, $next);
+            }
+        }
+
+        return $next($request);
     }
 }

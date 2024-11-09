@@ -71,6 +71,7 @@
         "docker-m1": "ln -s docker-compose-m1.override.yml docker-compose.override.yml",
         "testbench-unlink": "rm ./vendor/orchestra/testbench-core/laravel/vendor",
         "testbench-link": "ln -s vendor ./vendor/orchestra/testbench-core/laravel/vendor",
+        "testbench-repair": "mkdir -p ./vendor/orchestra/testbench-core/laravel/storage/framework/sessions && mkdir -p ./vendor/orchestra/testbench-core/laravel/storage/framework/views && mkdir -p ./vendor/orchestra/testbench-core/laravel/storage/framework/cache",
         "coverage": "open coverage/phpunit/html/index.html",
         "phpstan": "vendor/bin/phpstan",
         "phpstan-pro": "vendor/bin/phpstan --pro",

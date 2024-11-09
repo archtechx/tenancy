@@ -6,62 +6,56 @@ use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomainOrSubdomain;
 use Stancl\Tenancy\Database\Models;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 
 beforeEach(function () {
     Route::group([
         'middleware' => InitializeTenancyByDomainOrSubdomain::class,
     ], function () {
-        Route::get('/foo/{a}/{b}', function ($a, $b) {
-            return "$a + $b";
+        Route::get('/test', function () {
+            return tenant('id');
         });
     });
-
-    config(['tenancy.models.tenant' => CombinedTenant::class]);
 });
 
 test('tenant can be identified by subdomain', function () {
     config(['tenancy.identification.central_domains' => ['localhost']]);
 
-    $tenant = CombinedTenant::create([
-        'id' => 'acme',
-    ]);
-
-    $tenant->domains()->create([
-        'domain' => 'foo',
-    ]);
+    $tenant = Tenant::create(['id' => 'acme']);
+    $tenant->domains()->create(['domain' => 'foo']);
 
     expect(tenancy()->initialized)->toBeFalse();
 
-    pest()
-        ->get('http://foo.localhost/foo/abc/xyz')
-        ->assertSee('abc + xyz');
-
-    expect(tenancy()->initialized)->toBeTrue();
-    expect(tenant('id'))->toBe('acme');
+    pest()->get('http://foo.localhost/test')->assertSee('acme');
 });
 
 test('tenant can be identified by domain', function () {
     config(['tenancy.identification.central_domains' => []]);
 
-    $tenant = CombinedTenant::create([
-        'id' => 'acme',
-    ]);
-
-    $tenant->domains()->create([
-        'domain' => 'foobar.localhost',
-    ]);
+    $tenant = Tenant::create(['id' => 'acme']);
+    $tenant->domains()->create(['domain' => 'foobar.localhost']);
 
     expect(tenancy()->initialized)->toBeFalse();
 
-    pest()
-        ->get('http://foobar.localhost/foo/abc/xyz')
-        ->assertSee('abc + xyz');
-
-    expect(tenancy()->initialized)->toBeTrue();
-    expect(tenant('id'))->toBe('acme');
+    pest()->get('http://foobar.localhost/test')->assertSee('acme');
 });
 
-class CombinedTenant extends Models\Tenant
-{
-    use HasDomains;
-}
+test('domain records can be either in domain syntax or subdomain syntax', function () {
+    config(['tenancy.identification.central_domains' => ['localhost']]);
+
+    $foo = Tenant::create(['id' => 'foo']);
+    $foo->domains()->create(['domain' => 'foo']);
+
+    $bar = Tenant::create(['id' => 'bar']);
+    $bar->domains()->create(['domain' => 'bar.localhost']);
+
+    expect(tenancy()->initialized)->toBeFalse();
+
+    // Subdomain format
+    pest()->get('http://foo.localhost/test')->assertSee('foo');
+
+    tenancy()->end();
+
+    // Domain format
+    pest()->get('http://bar.localhost/test')->assertSee('bar');
+});
