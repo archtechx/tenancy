@@ -9,6 +9,7 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\DatabaseManager as BaseDatabaseManager;
 use Stancl\Tenancy\Contracts\TenantCannotBeCreatedException;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\SQLiteDatabaseManager;
 
 /**
  * @internal Class is subject to breaking changes in minor and patch versions.
@@ -71,7 +72,9 @@ class DatabaseManager
         $manager = $tenant->database()->manager();
 
         if ($manager->databaseExists($database = $tenant->database()->getName())) {
-            throw new Exceptions\TenantDatabaseAlreadyExistsException($database);
+            if (! $manager instanceof SQLiteDatabaseManager || ! SQLiteDatabaseManager::isInMemory($database)) {
+                throw new Exceptions\TenantDatabaseAlreadyExistsException($database);
+            }
         }
 
         if ($manager instanceof Contracts\ManagesDatabaseUsers) {
