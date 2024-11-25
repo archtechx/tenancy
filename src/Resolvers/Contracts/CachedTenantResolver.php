@@ -34,18 +34,23 @@ abstract class CachedTenantResolver implements TenantResolver
             return $this->resolveWithoutCache(...$args);
         }
 
-        $key = $this->getCacheKey(...$args);
-
-        if ($tenant = $this->cache->get($key)) {
+        if ($tenant = $this->cache->get($this->getCacheKey(...$args))) {
             $this->resolved($tenant, ...$args);
 
             return $tenant;
         }
 
-        $tenant = $this->resolveWithoutCache(...$args);
-        $this->cache->put($key, $tenant, static::$cacheTTL);
+        $this->writeCache(...$args);
 
         return $tenant;
+    }
+
+    public function writeCache(...$args): void
+    {
+        $key = $this->getCacheKey(...$args);
+        $tenant = $this->resolveWithoutCache(...$args);
+
+        $this->cache->put($key, $tenant, static::$cacheTTL);
     }
 
     public function invalidateCache(Tenant $tenant): void
