@@ -1,4 +1,4 @@
 #!/bin/bash
 
 # --columns doesn't seem to work at the moment, so we're setting it using an environment variable
-docker-compose exec -e COLUMNS=$(tput cols) -T test vendor/bin/pest --colors=always "$@"
+docker compose exec -e COLUMNS=$(tput cols) -T test vendor/bin/pest --colors=always "$@"

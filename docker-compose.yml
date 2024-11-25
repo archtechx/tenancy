@@ -2,8 +2,6 @@ services:
     test:
         build:
             context: .
-            args:
-              PHP_VERSION: ${PHP_VERSION:-8.3}
         depends_on:
             mysql:
                 condition: service_healthy
@@ -20,7 +18,7 @@ services:
             dynamodb:
                 condition: service_healthy
         volumes:
-            - .:/var/www/html:delegated
+            - .:/var/www/html:cached
         environment:
             DOCKER: 1
             DB_PASSWORD: password

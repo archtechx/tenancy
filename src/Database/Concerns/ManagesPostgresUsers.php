@@ -30,7 +30,7 @@ trait ManagesPostgresUsers
         $createUser = ! $this->userExists($username);
 
         if ($createUser) {
-            $this->database()->statement("CREATE USER \"{$username}\" LOGIN PASSWORD '{$password}'");
+            $this->connection()->statement("CREATE USER \"{$username}\" LOGIN PASSWORD '{$password}'");
         }
 
         $this->grantPermissions($databaseConfig);
@@ -46,38 +46,38 @@ trait ManagesPostgresUsers
         $username = $databaseConfig->getUsername();
 
         // Tenant host connection config
-        $connectionName = $this->database()->getConfig('name');
-        $centralDatabase = $this->database()->getConfig('database');
+        $connectionName = $this->connection()->getConfig('name');
+        $centralDatabase = $this->connection()->getConfig('database');
 
         // Set the DB/schema name to the tenant DB/schema name
         config()->set(
             "database.connections.{$connectionName}",
-            $this->makeConnectionConfig($this->database()->getConfig(), $databaseConfig->getName()),
+            $this->makeConnectionConfig($this->connection()->getConfig(), $databaseConfig->getName()),
         );
 
         // Connect to the tenant DB/schema
-        $this->database()->reconnect();
+        $this->connection()->reconnect();
 
         // Delete all database objects owned by the user (privileges, tables, views, etc.)
         // Postgres users cannot be deleted unless we delete all objects owned by it first
-        $this->database()->statement("DROP OWNED BY \"{$username}\"");
+        $this->connection()->statement("DROP OWNED BY \"{$username}\"");
 
         // Delete the user
-        $userDeleted = $this->database()->statement("DROP USER \"{$username}\"");
+        $userDeleted = $this->connection()->statement("DROP USER \"{$username}\"");
 
         config()->set(
             "database.connections.{$connectionName}",
-            $this->makeConnectionConfig($this->database()->getConfig(), $centralDatabase),
+            $this->makeConnectionConfig($this->connection()->getConfig(), $centralDatabase),
         );
 
         // Reconnect to the central database
-        $this->database()->reconnect();
+        $this->connection()->reconnect();
 
         return $userDeleted;
     }
 
     public function userExists(string $username): bool
     {
-        return (bool) $this->database()->selectOne("SELECT usename FROM pg_user WHERE usename = '{$username}'");
+        return (bool) $this->connection()->selectOne("SELECT usename FROM pg_user WHERE usename = '{$username}'");
     }
 }

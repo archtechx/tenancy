@@ -38,7 +38,7 @@ class MigrateFresh extends BaseCommand
 
         if ($this->getProcesses() > 1) {
             return $this->runConcurrently($this->getTenantChunks()->map(function ($chunk) {
-                return $this->getTenants($chunk->all());
+                return $this->getTenants($chunk);
             }));
         }
 
@@ -81,6 +81,8 @@ class MigrateFresh extends BaseCommand
     }
 
     /**
+     * Only used when running concurrently.
+     *
      * @param LazyCollection<covariant int|string, \Stancl\Tenancy\Contracts\Tenant&\Illuminate\Database\Eloquent\Model> $tenants
      */
     protected function migrateFreshTenants(LazyCollection $tenants): bool
@@ -89,6 +91,8 @@ class MigrateFresh extends BaseCommand
 
         foreach ($tenants as $tenant) {
             try {
+                $this->components->info("Migrating (fresh) tenant {$tenant->getTenantKey()}");
+
                 $tenant->run(function ($tenant) use (&$success) {
                     $this->components->info("Wiping database of tenant {$tenant->getTenantKey()}", OI::VERBOSITY_VERY_VERBOSE);
                     if ($this->wipeDB()) {
@@ -105,6 +109,8 @@ class MigrateFresh extends BaseCommand
                         $success = false;
                         $this->components->error("Migrating database of tenant {$tenant->getTenantKey()} failed!");
                     }
+
+                    $this->components->success("Migrated (fresh) tenant {$tenant->getTenantKey()}");
                 });
             } catch (TenantDatabaseDoesNotExistException|QueryException $e) {
                 $this->components->error("Migration failed for tenant {$tenant->getTenantKey()}: {$e->getMessage()}");

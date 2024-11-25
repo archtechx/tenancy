@@ -38,6 +38,12 @@ test('origin identification works', function () {
 });
 
 test('tenant routes are not accessible on central domains while using origin identification', function () {
+    $tenant = Tenant::create();
+
+    $tenant->domains()->create([
+        'domain' => 'foo',
+    ]);
+
     pest()
         ->withHeader('Origin', 'localhost')
         ->post('home')
@@ -53,4 +59,51 @@ test('onfail logic can be customized', function() {
         ->withHeader('Origin', 'bar.localhost') // 'bar'/'bar.localhost' is not an existing tenant domain
         ->post('home')
         ->assertSee('onFail message');
+});
+
+test('origin identification can be used with universal routes', function () {
+    $tenant = Tenant::create();
+
+    $tenant->domains()->create([
+        'domain' => 'foo',
+    ]);
+
+    Route::post('/universal', function () {
+        return response(tenant('id') ?? 'central');
+    })->middleware([InitializeTenancyByOriginHeader::class, 'universal'])->name('universal');
+
+    pest()
+        ->withHeader('Origin', 'foo.localhost')
+        ->post('universal')
+        ->assertSee($tenant->id);
+
+    tenancy()->end();
+
+    pest()
+        ->withHeader('Origin', 'localhost')
+        ->post('universal')
+        ->assertSee('central');
+
+    pest()
+        // no header
+        ->post('universal')
+        ->assertSee('central');
+});
+
+test('origin identification can be used with both domains and subdomains', function () {
+    $foo = Tenant::create();
+    $foo->domains()->create(['domain' => 'foo']);
+
+    $bar = Tenant::create();
+    $bar->domains()->create(['domain' => 'bar.localhost']);
+
+    pest()
+        ->withHeader('Origin', 'foo.localhost')
+        ->post('home')
+        ->assertSee($foo->id);
+
+    pest()
+        ->withHeader('Origin', 'bar.localhost')
+        ->post('home')
+        ->assertSee($bar->id);
 });

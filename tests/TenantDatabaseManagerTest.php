@@ -145,6 +145,36 @@ test('db name is prefixed with db path when sqlite is used', function () {
     expect(database_path('foodb'))->toBe(config('database.connections.tenant.database'));
 });
 
+test('sqlite databases use the WAL journal mode by default', function (bool|null $wal) {
+    $expected = $wal ? 'wal' : 'delete';
+    if ($wal !== null) {
+        SQLiteDatabaseManager::$WAL = $wal;
+    } else {
+        // default behavior
+        $expected = 'wal';
+    }
+
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    $tenant = Tenant::create([
+        'tenancy_db_connection' => 'sqlite',
+    ]);
+
+    $dbPath = database_path($tenant->database()->getName());
+
+    expect(file_exists($dbPath))->toBeTrue();
+
+    $db = new PDO('sqlite:' . $dbPath);
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    expect($db->query('pragma journal_mode')->fetch(PDO::FETCH_ASSOC)['journal_mode'])->toBe($expected);
+
+    // cleanup
+    SQLiteDatabaseManager::$WAL = true;
+})->with([true, false, null]);
+
 test('schema manager uses schema to separate tenant dbs', function () {
     config([
         'tenancy.database.managers.pgsql' => PostgreSQLSchemaManager::class,
@@ -332,7 +362,7 @@ test('database credentials can be provided to PermissionControlledMySQLDatabaseM
     /** @var PermissionControlledMySQLDatabaseManager $manager */
     $manager = $tenant->database()->manager();
 
-    expect($manager->database()->getConfig('username'))->toBe($username); // user created for the HOST connection
+    expect($manager->connection()->getConfig('username'))->toBe($username); // user created for the HOST connection
     expect($manager->userExists($usernameForNewDB))->toBeTrue();
     expect($manager->databaseExists($name))->toBeTrue();
 });
@@ -371,7 +401,7 @@ test('tenant database can be created by using the username and password from ten
     /** @var MySQLDatabaseManager $manager */
     $manager = $tenant->database()->manager();
 
-    expect($manager->database()->getConfig('username'))->toBe($username); // user created for the HOST connection
+    expect($manager->connection()->getConfig('username'))->toBe($username); // user created for the HOST connection
     expect($manager->databaseExists($name))->toBeTrue();
 });
 
@@ -417,7 +447,7 @@ test('the tenant connection template can be specified either by name or as a con
     /** @var MySQLDatabaseManager $manager */
     $manager = $tenant->database()->manager();
     expect($manager->databaseExists($name))->toBeTrue();
-    expect($manager->database()->getConfig('host'))->toBe('mysql');
+    expect($manager->connection()->getConfig('host'))->toBe('mysql');
 
     config([
         'tenancy.database.template_tenant_connection' => [
@@ -446,7 +476,7 @@ test('the tenant connection template can be specified either by name or as a con
     /** @var MySQLDatabaseManager $manager */
     $manager = $tenant->database()->manager();
     expect($manager->databaseExists($name))->toBeTrue(); // tenant connection works
-    expect($manager->database()->getConfig('host'))->toBe('mysql2');
+    expect($manager->connection()->getConfig('host'))->toBe('mysql2');
 });
 
 test('partial tenant connection templates get merged into the central connection template', function () {
@@ -471,8 +501,8 @@ test('partial tenant connection templates get merged into the central connection
     /** @var MySQLDatabaseManager $manager */
     $manager = $tenant->database()->manager();
     expect($manager->databaseExists($name))->toBeTrue(); // tenant connection works
-    expect($manager->database()->getConfig('host'))->toBe('mysql2');
-    expect($manager->database()->getConfig('url'))->toBeNull();
+    expect($manager->connection()->getConfig('host'))->toBe('mysql2');
+    expect($manager->connection()->getConfig('url'))->toBeNull();
 });
 
 // Datasets

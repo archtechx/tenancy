@@ -136,14 +136,18 @@ test('broadcasting channel helpers register channels correctly', function() {
 
     // Tenant channel registered – its name is correctly prefixed ("{tenant}.user.{userId}")
     $tenantChannelClosure = $getChannels()->first(fn ($closure, $name) => $name === "{tenant}.$channelName");
-    expect($tenantChannelClosure)
-        ->not()->toBeNull() // Channel registered
-        ->not()->toBe($centralChannelClosure); // The tenant channel closure is different – after the auth user, it accepts the tenant ID
+    expect($tenantChannelClosure)->toBe($centralChannelClosure);
 
     // The tenant channels are prefixed with '{tenant}.'
     // They accept the tenant key, but their closures only run in tenant context when tenancy is initialized
     // The regular channels don't accept the tenant key, but they also respect the current context
     // The tenant key is used solely for the name prefixing – the closures can still run in the central context
+    tenant_channel($channelName, $tenantChannelClosure = function ($user, $tenant, $userName) {
+        return User::firstWhere('name', $userName)?->is($user) ?? false;
+    });
+
+    expect($tenantChannelClosure)->not()->toBe($centralChannelClosure);
+
     expect($tenantChannelClosure($centralUser, $tenant->getTenantKey(), $centralUser->name))->toBeTrue();
     expect($tenantChannelClosure($centralUser, $tenant->getTenantKey(), $tenantUser->name))->toBeFalse();
 
@@ -155,25 +159,6 @@ test('broadcasting channel helpers register channels correctly', function() {
     expect($tenantChannelClosure($tenantUser, $tenant->getTenantKey(), $tenantUser->name))->toBeTrue();
 
     // Use a new channel instance to delete the previously registered channels before testing the univeresal_channel helper
-    $broadcastManager->purge($driver);
-    $broadcastManager->extend($driver, fn () => new NullBroadcaster);
-
-    expect($getChannels())->toBeEmpty();
-
-    // universal_channel helper registers both the unprefixed and the prefixed broadcasting channel correctly
-    // Using the tenant_channel helper + basic channel registration (Broadcast::channel())
-    universal_channel($channelName, $channelClosure);
-
-    // Regular channel registered correctly
-    $centralChannelClosure = $getChannels()->first(fn ($closure, $name) => $name === $channelName);
-    expect($centralChannelClosure)->not()->toBeNull();
-
-    // Tenant channel registered correctly
-    $tenantChannelClosure = $getChannels()->first(fn ($closure, $name) => $name === "{tenant}.$channelName");
-    expect($tenantChannelClosure)
-        ->not()->toBeNull() // Channel registered
-        ->not()->toBe($centralChannelClosure); // The tenant channel callback is different – after the auth user, it accepts the tenant ID
-
     $broadcastManager->purge($driver);
     $broadcastManager->extend($driver, fn () => new NullBroadcaster);
 

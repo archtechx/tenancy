@@ -16,6 +16,7 @@ parameters:
     ignoreErrors:
         -
             identifier: missingType.iterableValue
+        - '#FFI#'
         - '#Return type(.*?) of method Stancl\\Tenancy\\Database\\Models\\Tenant\:\:newCollection\(\) should be compatible with return type#'
         - '#Method Stancl\\Tenancy\\Database\\Models\\Tenant\:\:newCollection\(\) should return#'
         - '#Cannot access offset (.*?) on Illuminate\\Contracts\\Foundation\\Application#'

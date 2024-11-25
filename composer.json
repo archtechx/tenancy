@@ -4,6 +4,7 @@
     "keywords": [
         "laravel",
         "multi-tenancy",
+        "multitenancy",
         "multi-database",
         "tenancy"
     ],
@@ -25,7 +26,7 @@
         "stancl/jobpipeline": "2.0.0-rc2",
         "stancl/virtualcolumn": "dev-master",
         "spatie/invade": "^1.1",
-        "laravel/prompts": "^0.1.9"
+        "laravel/prompts": "0.*"
     },
     "require-dev": {
         "laravel/framework": "^10.1|^11.3",
@@ -63,11 +64,14 @@
         }
     },
     "scripts": {
-        "docker-up": "docker-compose up -d",
-        "docker-down": "docker-compose down",
-        "docker-restart": "docker-compose down && docker-compose up -d",
-        "docker-rebuild": "PHP_VERSION=8.3 docker-compose up -d --no-deps --build",
+        "docker-up": "docker compose up -d",
+        "docker-down": "docker compose down",
+        "docker-restart": "docker compose down && docker compose up -d",
+        "docker-rebuild": "PHP_VERSION=8.3 docker compose up -d --no-deps --build",
         "docker-m1": "ln -s docker-compose-m1.override.yml docker-compose.override.yml",
+        "testbench-unlink": "rm ./vendor/orchestra/testbench-core/laravel/vendor",
+        "testbench-link": "ln -s vendor ./vendor/orchestra/testbench-core/laravel/vendor",
+        "testbench-repair": "mkdir -p ./vendor/orchestra/testbench-core/laravel/storage/framework/sessions && mkdir -p ./vendor/orchestra/testbench-core/laravel/storage/framework/views && mkdir -p ./vendor/orchestra/testbench-core/laravel/storage/framework/cache",
         "coverage": "open coverage/phpunit/html/index.html",
         "phpstan": "vendor/bin/phpstan",
         "phpstan-pro": "vendor/bin/phpstan --pro",

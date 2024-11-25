@@ -1,45 +1,33 @@
-FROM shivammathur/node:latest
-SHELL ["/bin/bash", "-c"]
-
 ARG PHP_VERSION=8.3
 
-WORKDIR /var/www/html
+FROM php:${PHP_VERSION}-cli-bookworm
+SHELL ["/bin/bash", "-c"]
 
-# our default timezone and language
-ENV TZ=Europe/London
-ENV LANG=en_GB.UTF-8
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git unzip libzip-dev libicu-dev libmemcached-dev zlib1g-dev libssl-dev sqlite3 libsqlite3-dev libpq-dev mariadb-client
 
-# install MSSQL ODBC driver (1/2)
-RUN apt-get update \
-    && apt-get install -y gnupg2 \
-    && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-    && curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list > /etc/apt/sources.list.d/mssql-release.list \
-    && apt-get update
+RUN apt-get install -y gnupg2 \
+    && curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
+    && curl https://packages.microsoft.com/config/debian/12/prod.list > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y unixodbc-dev msodbcsql18
 
-# install MSSQL ODBC driver (2/2)
-RUN if [[ $(uname -m) == "arm64" || $(uname -m) == "aarch64" ]]; \
-    then ACCEPT_EULA=Y apt-get install -y unixodbc-dev msodbcsql18; \
-    else ACCEPT_EULA=Y apt-get install -y unixodbc-dev=2.3.7 unixodbc=2.3.7 odbcinst1debian2=2.3.7 odbcinst=2.3.7 msodbcsql17; \
-    fi
+RUN apt autoremove && apt clean
 
-# set PHP version
-RUN update-alternatives --set php /usr/bin/php$PHP_VERSION \
-    && update-alternatives --set phar /usr/bin/phar$PHP_VERSION \
-    && update-alternatives --set phar.phar /usr/bin/phar.phar$PHP_VERSION \
-    && update-alternatives --set phpize /usr/bin/phpize$PHP_VERSION \
-    && update-alternatives --set php-config /usr/bin/php-config$PHP_VERSION
+RUN pecl install apcu && docker-php-ext-enable apcu
+RUN pecl install pcov && docker-php-ext-enable pcov
+RUN pecl install redis && docker-php-ext-enable redis
+RUN pecl install memcached && docker-php-ext-enable memcached
+RUN pecl install pdo_sqlsrv && docker-php-ext-enable pdo_sqlsrv
+RUN docker-php-ext-install zip && docker-php-ext-enable zip
+RUN docker-php-ext-install intl && docker-php-ext-enable intl
+RUN docker-php-ext-install pdo_mysql && docker-php-ext-enable pdo_mysql
+RUN docker-php-ext-install pdo_pgsql && docker-php-ext-enable pdo_pgsql
 
-# install composer
+RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
+RUN echo "apc.enable_cli=1" >> "$PHP_INI_DIR/php.ini"
+
+# Only used on GHA
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
-# set the system timezone
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
-# install PHP extensions
-RUN pecl install redis && printf "; priority=20\nextension=redis.so\n" > /etc/php/$PHP_VERSION/mods-available/redis.ini && phpenmod -v $PHP_VERSION redis
-RUN pecl install pdo_sqlsrv && printf "; priority=30\nextension=pdo_sqlsrv.so\n" > /etc/php/$PHP_VERSION/mods-available/pdo_sqlsrv.ini && phpenmod -v $PHP_VERSION pdo_sqlsrv
-RUN pecl install pcov && printf "; priority=40\nextension=pcov.so\n" > /etc/php/$PHP_VERSION/mods-available/pcov.ini && phpenmod -v $PHP_VERSION pcov
-
-RUN apt-get install -y --no-install-recommends libmemcached-dev zlib1g-dev
-RUN pecl install memcached && printf "; priority=50\nextension=memcached.so\n" > /etc/php/$PHP_VERSION/mods-available/memcached.ini && phpenmod -v $PHP_VERSION memcached
-RUN pecl install apcu && printf "; priority=60\nextension=apcu.so\napc.enable_cli=1\n" > /etc/php/$PHP_VERSION/mods-available/apcu.ini && phpenmod -v $PHP_VERSION apcu
+WORKDIR /var/www/html

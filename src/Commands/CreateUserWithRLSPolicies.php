@@ -83,7 +83,7 @@ class CreateUserWithRLSPolicies extends Command
         $manager->setConnection($tenantModel->database()->getTenantHostConnectionName());
 
         // Set the database name (= central schema name/search_path in this case), username, and password
-        $tenantModel->setInternal('db_name', $manager->database()->getConfig('search_path'));
+        $tenantModel->setInternal('db_name', $manager->connection()->getConfig('search_path'));
         $tenantModel->setInternal('db_username', $username);
         $tenantModel->setInternal('db_password', $password);
 
@@ -142,9 +142,9 @@ class CreateUserWithRLSPolicies extends Command
 
             $this->components->bulletList($createdPolicies);
 
-            $this->components->info('RLS policies updated successfully.');
+            $this->components->success('RLS policies updated successfully.');
         } else {
-            $this->components->info('All RLS policies are up to date.');
+            $this->components->success('All RLS policies are up to date.');
         }
     }
 

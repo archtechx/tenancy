@@ -8,9 +8,9 @@ use Closure;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
 use Stancl\Tenancy\Concerns\UsableWithEarlyIdentification;
 use Stancl\Tenancy\Exceptions\NotASubdomainException;
+use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 
 class InitializeTenancyBySubdomain extends InitializeTenancyByDomain
 {
@@ -57,20 +57,16 @@ class InitializeTenancyBySubdomain extends InitializeTenancyByDomain
         );
     }
 
-    /** @return string|Response|Exception|mixed */
+    /** @return string|Exception */
     protected function makeSubdomain(string $hostname)
     {
         $parts = explode('.', $hostname);
 
-        $isLocalhost = count($parts) === 1;
         $isIpAddress = count(array_filter($parts, 'is_numeric')) === count($parts);
-
-        // If we're on localhost or an IP address, then we're not visiting a subdomain.
         $isACentralDomain = in_array($hostname, config('tenancy.identification.central_domains'), true);
-        $notADomain = $isLocalhost || $isIpAddress;
-        $thirdPartyDomain = ! Str::endsWith($hostname, config('tenancy.identification.central_domains'));
+        $thirdPartyDomain = ! DomainTenantResolver::isSubdomain($hostname);
 
-        if ($isACentralDomain || $notADomain || $thirdPartyDomain) {
+        if ($isACentralDomain || $isIpAddress || $thirdPartyDomain) {
             return new NotASubdomainException($hostname);
         }
 

@@ -12,6 +12,7 @@ use Stancl\Tenancy\Contracts\SingleDomainTenant;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 use Stancl\Tenancy\Tenancy;
+use Illuminate\Support\Str;
 
 class DomainTenantResolver extends Contracts\CachedTenantResolver
 {
@@ -53,6 +54,11 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
         /** @var (Tenant&Model)|null $tenant */
 
         return $tenant;
+    }
+
+    public static function isSubdomain(string $domain): bool
+    {
+        return Str::endsWith($domain, config('tenancy.identification.central_domains'));
     }
 
     public function resolved(Tenant $tenant, mixed ...$args): void
