@@ -73,19 +73,14 @@ trait HasPending
     }
 
     /** Try to pull a tenant from the pool of pending tenants. */
-    public static function pullPendingFromPool(bool $firstOrCreate = false, array $attributes = []): ?Tenant
+    public static function pullPendingFromPool(bool $firstOrCreate = true, array $attributes = []): ?Tenant
     {
-        if (! static::onlyPending()->exists()) {
-            if (! $firstOrCreate) {
-                return null;
-            }
-
-            static::createPending($attributes);
-        }
-
-        // A pending tenant is surely available at this point
-        /** @var Model&Tenant $tenant */
+        /** @var (Model&Tenant)|null $tenant */
         $tenant = static::onlyPending()->first();
+
+        if ($tenant === null) {
+            return $firstOrCreate ? static::create($attributes) : null;
+        }
 
         event(new PullingPendingTenant($tenant));
 

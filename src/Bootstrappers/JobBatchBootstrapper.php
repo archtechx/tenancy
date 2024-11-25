@@ -27,6 +27,7 @@ class JobBatchBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant): void
     {
+        // todo@revisit
         // Update batch repository connection to use the tenant connection
         $this->previousConnection = $this->batchRepository->getConnection();
         $this->batchRepository->setConnection($this->databaseManager->connection('tenant'));
