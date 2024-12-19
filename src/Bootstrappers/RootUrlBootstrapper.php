@@ -37,9 +37,10 @@ class RootUrlBootstrapper implements TenancyBootstrapper
 
     /**
      * You may want to selectively enable or disable this bootstrapper in specific tests.
-     * For instance, when using `Livewire::test()` this bootstrapper may cause problems,
-     * while in tests that are generating URLs in things like mails the bootstrapper should
-     * be used just like in any queued job.
+     * For instance, when using `Livewire::test()` this bootstrapper can cause problems,
+     * due to an internal Livewire route, so you may want to disable it, while in tests
+     * that are generating URLs in things like mails, the bootstrapper should be used
+     * just like in any queued job.
      */
     public static bool $rootUrlOverrideInTests = false;
 
