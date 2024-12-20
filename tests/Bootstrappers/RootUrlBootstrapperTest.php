@@ -85,19 +85,17 @@ test('root url bootstrapper can be used with url generator bootstrapper', functi
         return true;
     })->name('tenant.home')->middleware(InitializeTenancyByPath::class);
 
-    $rootUrlOverride = function (Tenant $tenant, string $originalRootUrl) {
-        return str($originalRootUrl)->beforeLast($tenant->getTenantKey())->toString() . '/' . $tenant->getTenantKey();
+    $rootUrlOverride = function (Tenant $tenant) {
+        return 'http://localhost/' . $tenant->getTenantKey();
     };
 
-    $tenant = Tenant::create();
-
-    $tenantUrl = $rootUrlOverride($tenant, url('/'));
+    $tenant = Tenant::create(['id' => 'acme']);
 
     RootUrlBootstrapper::$rootUrlOverride = $rootUrlOverride;
 
-    expect(route('home'))->toBe(url('/'));
+    expect(route('home'))->toBe('http://localhost');
 
     tenancy()->initialize($tenant);
 
-    expect(route('home'))->toBe($tenantUrl);
+    expect(route('home'))->toBe('http://localhost/acme');
 });
