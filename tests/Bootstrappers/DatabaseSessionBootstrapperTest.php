@@ -93,8 +93,14 @@ test('central helper can be used in tenant requests', function (bool $enabled, b
         }
     }
 })->with([
-    ['enabled' => false, 'shouldThrow' => true],
-    ['enabled' => true, 'shouldThrow' => false],
+    [
+        false, // Disabled
+        true // Should throw
+    ],
+    [
+        true, // Enabled
+        false // Should not throw
+    ],
 ]);
 
 test('tenant run helper can be used on central requests', function (bool $enabled, bool $shouldThrow) {
@@ -140,6 +146,12 @@ test('tenant run helper can be used on central requests', function (bool $enable
         }
     }
 })->with([
-    ['enabled' => false, 'shouldThrow' => true],
-    ['enabled' => true, 'shouldThrow' => false],
+    [
+        false, // Disabled
+        true // Should throw
+    ],
+    [
+        true, // Enabled
+        false // Should not throw
+    ],
 ]);

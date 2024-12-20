@@ -180,8 +180,8 @@ test('kernel PreventAccessFromUnwantedDomains does not get skipped when route le
 ]);
 
 test('placement of domain identification and access prevention middleware can get mixed', function (
-    array $globalMiddleware,
     array $routeMiddleware,
+    array $globalMiddleware,
     array $centralRouteMiddleware
 ) {
     config([
@@ -214,16 +214,16 @@ test('placement of domain identification and access prevention middleware can ge
     expect(tenancy()->initialized)->toBeFalse();
 })->with([
     'route-level identification, kernel access prevention' => [
-        'global_middleware' => [PreventAccessFromUnwantedDomains::class],
-        'route_middleware' => [InitializeTenancyBySubdomain::class],
+        [InitializeTenancyBySubdomain::class], // Route middleware
+        [PreventAccessFromUnwantedDomains::class], // Global middleware
     ],
     'kernel identification, kernel access prevention' => [
-        'global_middleware' => [PreventAccessFromUnwantedDomains::class, InitializeTenancyBySubdomain::class],
-        'route_middleware' => [],
+        [], // Route middleware
+        [PreventAccessFromUnwantedDomains::class, InitializeTenancyBySubdomain::class], // Global middleware
     ],
     'route-level identification, route-level access prevention' => [
-        'global_middleware' => [],
-        'route_middleware' => [PreventAccessFromUnwantedDomains::class, InitializeTenancyBySubdomain::class],
+        [PreventAccessFromUnwantedDomains::class, InitializeTenancyBySubdomain::class], // Route middleware
+        [], // Global middleware
     ],
 // Creates a matrix (multiple with())
 ])->with([

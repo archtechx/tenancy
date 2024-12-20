@@ -22,18 +22,32 @@ use Stancl\Tenancy\Enums\RouteMode;
 trait DealsWithRouteContexts
 {
     /**
-     * Get route's middleware context (tenant, central or universal).
-     * The context is determined by the route's middleware.
+     * Get the middleware context of a route (tenant, central, or universal).
      *
      * If the route has the 'universal' middleware, the context is universal,
      * and the route is accessible from both contexts.
+     *
      * The universal flag has the highest priority.
      *
-     * If the route has the 'central' middleware, the context is central.
-     * If the route has the 'tenant' middleware, or any tenancy identification middleware, the context is tenant.
+     * If you want a universal route to be accessible from the tenant context,
+     * you still have to provide an identification middleware either using
+     * route-level middleware or in the global middleware stack.
      *
-     * If the route doesn't have any of the mentioned middleware,
+     * If the 'tenant' group has identification middleware, you can use it in
+     * combination with the 'universal' flag, the route will still be universal.
+     *
+     * If the route has the 'tenant' middleware, or any tenancy identification
+     * middleware, the context is tenant (assuming the route doesn't also have
+     * the 'universal' flag).
+     *
+     * If the route has the 'central' middleware, the context is central.
+     *
+     * If the route doesn't have any of the mentioned flags/middleware,
      * the context is determined by the `tenancy.default_route_mode` config.
+     *
+     * If the default route mode is tenant, all unflagged routes will be tenant by default,
+     * but they will still have to have an identification midddleware (route-level
+     * or global) to be accessible. Same applies for universal default route mode.
      */
     public static function getRouteMode(Route $route): RouteMode
     {

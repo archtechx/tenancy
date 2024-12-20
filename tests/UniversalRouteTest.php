@@ -327,20 +327,20 @@ foreach ([
 ] as $datasetName => $middleware) {
     dataset($datasetName, [
         'kernel identification' => [
-            'route_middleware' => ['universal'],
-            'global_middleware' => $middleware,
+            ['universal'], // Route middleware
+            $middleware, // Global middleware
         ],
         'route-level identification' => [
-            'route_middleware' => ['universal', ...$middleware],
-            'global_middleware' => [],
+            ['universal', ...$middleware], // Route middleware
+            [], // Global middleware
         ],
         'kernel identification + defaulting to universal routes' => [
-            'route_middleware' => [],
-            'global_middleware' => ['universal', ...$middleware],
+            [], // Route middleware
+            ['universal', ...$middleware], // Global middleware
         ],
         'route-level identification + defaulting to universal routes' => [
-            'route_middleware' => $middleware,
-            'global_middleware' => ['universal'],
+            $middleware, // Route middleware
+            ['universal'], // Global middleware
         ],
     ]);
 }

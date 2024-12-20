@@ -15,6 +15,7 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Exceptions\NotASubdomainException;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 use Stancl\Tenancy\Tests\Etc\EarlyIdentification\Models\Post;
 use Stancl\Tenancy\Middleware\PreventAccessFromUnwantedDomains;
@@ -22,6 +23,7 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByDomainOrSubdomain;
 use Stancl\Tenancy\Middleware\InitializeTenancyByOriginHeader;
 use Stancl\Tenancy\Tests\Etc\EarlyIdentification\ControllerWithMiddleware;
 use Stancl\Tenancy\Tests\Etc\EarlyIdentification\ControllerWithRouteMiddleware;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 
 beforeEach(function () {
     config()->set([
@@ -34,6 +36,30 @@ beforeEach(function () {
         ]);
     });
 });
+
+dataset('identification_middleware', [
+    InitializeTenancyByDomain::class,
+    InitializeTenancyBySubdomain::class,
+    InitializeTenancyByDomainOrSubdomain::class,
+    InitializeTenancyByPath::class,
+    InitializeTenancyByRequestData::class,
+]);
+
+dataset('domain_identification_middleware', [
+    InitializeTenancyByDomain::class,
+    InitializeTenancyBySubdomain::class,
+    InitializeTenancyByDomainOrSubdomain::class,
+]);
+
+dataset('default_route_modes', [
+    RouteMode::TENANT,
+    RouteMode::CENTRAL,
+]);
+
+dataset('global_and_route_level_identification', [
+    false, // Route-level identification
+    true, // Global identification
+]);
 
 test('early identification works with path identification', function (bool $useKernelIdentification, RouteMode $defaultRouteMode) {
     $identificationMiddleware = InitializeTenancyByPath::class;
@@ -117,14 +143,8 @@ test('early identification works with path identification', function (bool $useK
         ->assertOk()
         ->assertContent($tenantPost->title . '-' . $tenantComment->comment);
     assertTenancyInitializedInEarlyIdentificationRequest();
-})->with([
-    'route-level identification' => false,
-    'kernel identification' => true,
-// Creates a matrix (multiple with())
-])->with([
-    'default to tenant routes' => RouteMode::TENANT,
-    'default to central routes' => RouteMode::CENTRAL,
-]);
+})->with('global_and_route_level_identification')
+  ->with('default_route_modes');
 
 test('early identification works with request data identification', function (string $type, bool $useKernelIdentification, RouteMode $defaultRouteMode) {
     $identificationMiddleware = InitializeTenancyByRequestData::class;
@@ -168,14 +188,8 @@ test('early identification works with request data identification', function (st
     'using request header parameter' => 'header',
     'using request query parameter' => 'queryParameter',
     'using request cookie parameter' => 'cookie',
-// Creates a matrix (multiple with())
-])->with([
-    'route-level identification' => false,
-    'kernel identification' => true,
-])->with([
-    'default to tenant routes' => RouteMode::TENANT,
-    'default to central routes' => RouteMode::CENTRAL,
-]);
+])->with('global_and_route_level_identification')->with('default_route_modes');
+
 test('early identification works with origin identification', function (bool $useKernelIdentification, RouteMode $defaultRouteMode) {
     $identificationMiddleware = InitializeTenancyByOriginHeader::class;
 
@@ -209,85 +223,111 @@ test('early identification works with origin identification', function (bool $us
     $response = pest()->post('/tenant-route', headers: ['Origin' => 'foo.localhost']);
 
     $response->assertOk()->assertSee('token:' . $tenantKey);
-})->with([
-    'route-level identification' => false,
-    'kernel identification' => true,
-])->with([
-    'default to tenant routes' => RouteMode::TENANT,
-    'default to central routes' => RouteMode::CENTRAL,
-]);
+})->with('global_and_route_level_identification')->with('default_route_modes');
 
-test('early identification works with domain identification', function (string $middleware, string $domain, bool $useKernelIdentification, RouteMode $defaultRouteMode) {
-    config(['tenancy.default_route_mode' => $defaultRouteMode]);
+test('early identification works with domain identification', function (string $middleware, bool $useKernelIdentification) {
+    $tenant = Tenant::create();
+
+    // Create domain and a subdomain for the tenant
+    $tenant->createDomain('foo.test');
+    $tenant->createDomain('foo');
 
     if ($useKernelIdentification) {
-        $controller = ControllerWithMiddleware::class;
         app(Kernel::class)->pushMiddleware($middleware);
         app(Kernel::class)->pushMiddleware(PreventAccessFromUnwantedDomains::class);
+
+        RouteFacade::get('/tenant-route', [ControllerWithMiddleware::class, 'index'])->middleware('tenant');
     } else {
-        $controller = ControllerWithRouteMiddleware::class;
-        RouteFacade::middlewareGroup('tenant', [$middleware, PreventAccessFromUnwantedDomains::class]);
+        RouteFacade::get('/tenant-route', [ControllerWithRouteMiddleware::class, 'index'])->middleware([$middleware, PreventAccessFromUnwantedDomains::class]);
     }
 
-    // Tenant route
-    $tenantRoute = RouteFacade::get('/tenant-route', [$controller, 'index']);
+    $domainUrl = 'http://foo.test/tenant-route';
+    $subdomainUrl = str(config('app.url'))->replaceFirst('://', "://foo.")->toString() . '/tenant-route';
 
-    // Central route
-    $centralRoute = RouteFacade::get('/central-route', function () {
-        return 'central route';
+    $tenantUrls = Arr::wrap(match ($middleware) {
+        InitializeTenancyByDomain::class => $domainUrl,
+        InitializeTenancyBySubdomain::class => $subdomainUrl,
+        InitializeTenancyByDomainOrSubdomain::class => [$domainUrl, $subdomainUrl], // Domain or subdomain -- try visiting both
     });
 
-    $defaultToTenantRoutes = $defaultRouteMode === RouteMode::TENANT;
+    foreach ($tenantUrls as $url) {
+        $response = pest()->get($url);
 
-    // Test defaulting to route mode (central/tenant context)
-    if ($useKernelIdentification) {
-        $routeThatShouldReceiveMiddleware = $defaultToTenantRoutes ? $centralRoute : $tenantRoute;
-        $routeThatShouldReceiveMiddleware->middleware($defaultToTenantRoutes ? 'central' : 'tenant');
-    } elseif (! $defaultToTenantRoutes) {
-        $tenantRoute->middleware('tenant');
-    } else {
-        // Route-level identification + defaulting to tenant routes
-        // We still have to apply the tenant middleware to the routes, so they aren't really tenant by default
-        $tenantRoute->middleware([$middleware, PreventAccessFromUnwantedDomains::class]);
+        $response->assertOk();
+
+        assertTenancyInitializedInEarlyIdentificationRequest();
+
+        // Expect tenancy is initialized (or not) for the right tenant at the tenant route
+        expect($response->getContent())->toBe('token:' . tenant()->getTenantKey());
     }
+})->with('domain_identification_middleware')
+  ->with('global_and_route_level_identification');
+
+test('using different default route modes works with global domain identification', function(string $middleware, RouteMode $defaultRouteMode) {
+    config(['tenancy.default_route_mode' => $defaultRouteMode]);
 
     $tenant = Tenant::create();
 
-    $tenant->domains()->create([
-        'domain' => $domain,
-    ]);
+    // Create domain and a subdomain for the tenant
+    $tenant->createDomain('foo.test');
+    $tenant->createDomain('foo');
 
-    if ($domain === 'foo') {
-        $domain = 'foo.localhost';
+    // Create central and tenant routes, without any identification middleware or tags
+    $centralRoute = RouteFacade::get('/central-route', fn () => 'central route');
+    RouteFacade::get('/tenant-route', [ControllerWithMiddleware::class, 'index']);
+
+    // Add the domain identification middleware to the kernel MW
+    app(Kernel::class)->pushMiddleware($middleware);
+    app(Kernel::class)->pushMiddleware(PreventAccessFromUnwantedDomains::class);
+
+    $domainUrl = 'http://foo.test/tenant-route';
+    $subdomainUrl = str(config('app.url'))->replaceFirst('://', "://foo.")->toString() . '/tenant-route';
+
+    $tenantUrls = Arr::wrap(match ($middleware) {
+        InitializeTenancyByDomain::class => $domainUrl,
+        InitializeTenancyBySubdomain::class => $subdomainUrl,
+        InitializeTenancyByDomainOrSubdomain::class => [$domainUrl, $subdomainUrl], // Domain or subdomain -- try visiting both
+    });
+
+    if ($defaultRouteMode === RouteMode::TENANT) {
+        // When defaulting to tenant routes and using kernel identification,
+        // the central route should not be accessible if not flagged as central.
+
+        // Since central-route is considered tenant by default, and there's tenant ID MW,
+        // expect that an exception specific to that ID MW to be thrown when trying to access the route.
+        $exception = match ($middleware) {
+            InitializeTenancyByDomain::class => TenantCouldNotBeIdentifiedOnDomainException::class,
+            InitializeTenancyBySubdomain::class => NotASubdomainException::class,
+            InitializeTenancyByDomainOrSubdomain::class => NotASubdomainException::class,
+        };
+
+        expect(fn () => $this->withoutExceptionHandling()->get('http://localhost/central-route'))->toThrow($exception);
+
+        // Flagging the central route as central should make it accessible,
+        // even if the default route mode is tenant
+        $centralRoute = $centralRoute->middleware('central');
+
+        pest()->get('http://localhost/central-route')->assertOk()->assertSee('central route');
     }
 
-    pest()->get('http://localhost/central-route')->assertOk()->assertContent('central route'); // Central route is accessible
+    foreach ($tenantUrls as $url) {
+        $response = pest()->get($url);
 
-    $response = pest()->get("http://{$domain}/tenant-route");
+        // If the default route mode is tenant, only the tenant route should be accessible
+        // and tenancy should be initialized using early identification for the correct tenant
+        if ($defaultRouteMode === RouteMode::TENANT) {
+            $response->assertOk();
 
-    if ($defaultToTenantRoutes === $useKernelIdentification || $useKernelIdentification) {
-        $response->assertOk();
-        assertTenancyInitializedInEarlyIdentificationRequest();
-    } elseif (! $defaultToTenantRoutes) {
-        $response->assertNotFound();
-        assertTenancyInitializedInEarlyIdentificationRequest(false);
+            assertTenancyInitializedInEarlyIdentificationRequest();
+
+            // Expect tenancy is initialized for the right tenant at the tenant route
+            expect($response->getContent())->toBe('token:' . tenant()->getTenantKey());
+        } else {
+            $response->assertNotFound();
+        }
     }
-
-    // Expect tenancy is initialized (or not) for the right tenant at the tenant route
-    expect($response->getContent())->toBe('token:' . tenant()->getTenantKey());
-})->with([
-    'domain identification' => ['middleware' => InitializeTenancyByDomain::class, 'domain' => 'foo.test'],
-    'subdomain identification' => ['middleware' => InitializeTenancyBySubdomain::class, 'domain' => 'foo'],
-    'domainOrSubdomain identification using domain' => ['middleware' => InitializeTenancyByDomainOrSubdomain::class, 'domain' => 'foo.test'],
-    'domainOrSubdomain identification using subdomain' => ['middleware' => InitializeTenancyByDomainOrSubdomain::class, 'domain' => 'foo'],
-// Creates a matrix (multiple with())
-])->with([
-    'route-level identification' => false,
-    'kernel identification' => true,
-])->with([
-    'default to tenant routes' => RouteMode::TENANT,
-    'default to central routes' => RouteMode::CENTRAL,
-]);
+})->with('domain_identification_middleware')
+  ->with('default_route_modes');
 
 test('the tenant parameter is only removed from tenant routes when using path identification', function (bool $kernelIdentification, bool $pathIdentification) {
     if ($kernelIdentification) {
@@ -373,62 +413,97 @@ test('the tenant parameter is only removed from tenant routes when using path id
         }
     }
 })->with([
-    'kernel path identification' => ['kernelIdentification' => true, 'pathIdentification' => true],
-    'route-level path identification' => ['kernelIdentification' => false, 'pathIdentification' => true],
-    'kernel domain identification' => ['kernelIdentification' => true, 'pathIdentification' => false],
-    'route-level domain identification' => ['kernelIdentification' => false, 'pathIdentification' => false],
+    'kernel path identification' => [
+        true, // Kernel identification
+        true // Path identification
+    ],
+    'route-level path identification' => [
+        false, // Kernel identification
+        true // Path identification
+    ],
+    'kernel domain identification' => [
+        true,
+        false // Path identification
+    ],
+    'route-level domain identification' => [
+        false, // Kernel identification
+        false // Path identification
+    ],
 ]);
 
-test('route level identification is prioritized over kernel identification', function (
-    string|array $kernelIdentificationMiddleware,
-    string|array $routeIdentificationMiddleware,
-    string $routeUri,
-    string $domainToVisit,
-    string|null $domain = null,
+test('route level domain identification is prioritized over kernel identification', function (
+    string $kernelIdentificationMiddleware,
+    string $routeIdentificationMiddleware,
     RouteMode $defaultRouteMode,
 ) {
     $tenant = Tenant::create();
-    $domainToVisit = str_replace('{tenantKey}', $tenant->getTenantKey(), $domainToVisit);
 
     config(['tenancy.default_route_mode' => $defaultRouteMode]);
 
-    if ($domain) {
-        $tenant->domains()->create(['domain' => str_replace('{tenantKey}', $tenant->getTenantKey(), $domain)]);
+    // Subdomain
+    $tenant->createDomain($subdomain = $tenant->getTenantKey());
+    $tenant->createDomain($domain = $subdomain . '.test');
+
+    app(Kernel::class)->pushMiddleware(PreventAccessFromUnwantedDomains::class)->pushMiddleware($kernelIdentificationMiddleware);
+
+    // We're testing *non-early* route-level identification so that we can assert that early kernel identification got skipped
+    // Also, ignore the defaulting when the identification MW is applied directly on the route
+    // Because the route is automatically considered tenant if it has identification middleware (unless it also has the 'universal' middleware)
+    RouteFacade::get('tenant-route', [ControllerWithMiddleware::class, 'index'])
+        ->middleware([PreventAccessFromUnwantedDomains::class, $routeIdentificationMiddleware]);
+
+    $domainIdUrl = "http://{$domain}/tenant-route";
+    $subdomainIdUrl = str(config('app.url'))->replaceFirst('://', "://{$subdomain}.")->append("/tenant-route")->toString();
+
+    $urlsToVisit = Arr::wrap(match ($routeIdentificationMiddleware) {
+        InitializeTenancyByDomain::class => $domainIdUrl,
+        InitializeTenancyBySubdomain::class => $subdomainIdUrl,
+        InitializeTenancyByDomainOrSubdomain::class => [$domainIdUrl, $subdomainIdUrl], // Domain or subdomain -- try visiting both
+    });
+
+    foreach ($urlsToVisit as $url) {
+        pest()->get($url)->assertOk();
+
+        // Kernel (early) identification skipped
+        expect(app()->make('controllerRunsInTenantContext'))->toBeFalse();
+    }
+})->with('identification_middleware')
+  ->with('domain_identification_middleware')
+  ->with('default_route_modes');
+
+test('route level path and request data identification is prioritized over kernel identification', function (
+    string $kernelIdentificationMiddleware,
+    string $routeIdentificationMiddleware,
+    RouteMode $defaultRouteMode,
+) {
+    $tenant = Tenant::create();
+    config(['tenancy.default_route_mode' => $defaultRouteMode]);
+
+    if (in_array($kernelIdentificationMiddleware, config('tenancy.identification.domain_identification_middleware'))) {
+        // If a domain identification middleware is used, the prevent access MW is used too
+        app(Kernel::class)->pushMiddleware(PreventAccessFromUnwantedDomains::class);
     }
 
-    foreach (Arr::wrap($kernelIdentificationMiddleware) as $identificationMiddleware) {
-        app(Kernel::class)->pushMiddleware($identificationMiddleware);
-    }
+    app(Kernel::class)->pushMiddleware($kernelIdentificationMiddleware);
 
     // We're testing *non-early* route-level identification so that we can assert that early kernel identification got skipped
     // Also, ignore the defaulting when the identification MW is applied directly on the route
     // The route is automatically considered tenant if it has identification middleware (unless it also has the 'universal' middleware)
-    RouteFacade::get($routeUri, [ControllerWithMiddleware::class, 'index'])->middleware($routeIdentificationMiddleware);
+    $route = RouteFacade::get('/tenant-route', [ControllerWithMiddleware::class, 'index'])->middleware($routeIdentificationMiddleware)->name('tenant-route');
 
-    pest()->get($domainToVisit)->assertOk();
+    if ($routeIdentificationMiddleware === InitializeTenancyByPath::class) {
+        $route = $route->prefix('{tenant}');
+    }
+
+    pest()->get(route('tenant-route', ['tenant' => $tenant->getTenantKey()]))->assertOk();
 
     // Kernel (early) identification skipped
     expect(app()->make('controllerRunsInTenantContext'))->toBeFalse();
-})->with([
-    'kernel request data identification mw' => ['kernelMiddleware' => InitializeTenancyByRequestData::class],
-    'kernel path identification mw' => ['kernelMiddleware' => InitializeTenancyByPath::class],
-    'kernel domain identification mw' => ['kernelMiddleware' => [PreventAccessFromUnwantedDomains::class, InitializeTenancyByDomain::class]],
-    'kernel subdomain identification mw' => ['kernelMiddleware' => [PreventAccessFromUnwantedDomains::class, InitializeTenancyBySubdomain::class]],
-    'kernel domainOrSubdomain identification mw using domain' => ['kernelMiddleware' => [PreventAccessFromUnwantedDomains::class, InitializeTenancyByDomainOrSubdomain::class]],
-    'kernel domainOrSubdomain identification mw using subdomain' => ['kernelMiddleware' => [PreventAccessFromUnwantedDomains::class, InitializeTenancyByDomainOrSubdomain::class]],
-// Creates a matrix (multiple with())
-])->with([
-    'route level request data identification mw' => ['routeLevelMiddleware' => InitializeTenancyByRequestData::class, 'routeUri' => '/tenant-route', 'domainToVisit' => 'http://localhost/tenant-route?tenant={tenantKey}', 'domain' => null],
-    'route level path identification mw' => ['routeLevelMiddleware' => InitializeTenancyByPath::class, 'routeUri' => '/{tenant}/tenant-route', 'domainToVisit' => 'http://localhost/{tenantKey}/tenant-route', 'domain' => null],
-    'route level domain identification mw' => ['routeLevelMiddleware' => [PreventAccessFromUnwantedDomains::class, InitializeTenancyByDomain::class], 'routeUri' => '/tenant-route', 'domainToVisit' => 'http://{tenantKey}.test/tenant-route', 'domain' => '{tenantKey}.test'],
-    'route level subdomain identification mw' => ['routeLevelMiddleware' => [PreventAccessFromUnwantedDomains::class, InitializeTenancyBySubdomain::class], 'routeUri' => '/tenant-route', 'domainToVisit' => 'http://{tenantKey}.localhost/tenant-route', 'domain' => '{tenantKey}'],
-    'route level domainOrSubdomain identification mw using domain' => ['routeLevelMiddleware' => [PreventAccessFromUnwantedDomains::class, InitializeTenancyByDomainOrSubdomain::class], 'routeUri' => '/tenant-route', 'domainToVisit' => 'http://{tenantKey}.test/tenant-route', 'domain' => '{tenantKey}.test'],
-    'route level domainOrSubdomain identification mw using subdomain' => ['routeLevelMiddleware' => [PreventAccessFromUnwantedDomains::class, InitializeTenancyByDomainOrSubdomain::class], 'routeUri' => '/tenant-route', 'domainToVisit' => 'http://{tenantKey}.localhost/tenant-route', 'domain' => '{tenantKey}'],
-])
-->with([
-    'default to tenant routes' => RouteMode::TENANT,
-    'default to central routes' => RouteMode::CENTRAL,
-]);
+})->with('identification_middleware')
+  ->with([
+    'route level request data identification' => InitializeTenancyByRequestData::class,
+    'route level path identification' => InitializeTenancyByPath::class,
+])->with('default_route_modes');
 
 function assertTenancyInitializedInEarlyIdentificationRequest(bool $expect = true): void
 {
