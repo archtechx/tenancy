@@ -72,7 +72,7 @@ test('root url bootstrapper overrides the root url when tenancy gets initialized
 });
 
 test('root url bootstrapper can be used with url generator bootstrapper', function() {
-    config(['tenancy.bootstrappers' => [RootUrlBootstrapper::class, UrlGeneratorBootstrapper::class]]);
+    config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class, RootUrlBootstrapper::class]]);
 
     TenancyUrlGenerator::$prefixRouteNames = true;
     TenancyUrlGenerator::$passTenantParameterToRoutes = true;
@@ -98,4 +98,5 @@ test('root url bootstrapper can be used with url generator bootstrapper', functi
     tenancy()->initialize($tenant);
 
     expect(route('home'))->toBe('http://localhost/acme');
+    expect(url('/'))->toBe('http://localhost/acme');
 });
