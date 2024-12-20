@@ -17,7 +17,7 @@ use Stancl\Tenancy\Contracts\Tenant;
 interface SyncMaster extends Syncable
 {
     /**
-     * @return BelongsToMany<Tenant&Model>
+     * @return BelongsToMany<Tenant&Model, self&Model>
      */
     public function tenants(): BelongsToMany;
 
