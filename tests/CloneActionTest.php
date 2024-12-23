@@ -331,19 +331,19 @@ class CustomInitializeTenancyByPath extends InitializeTenancyByPath
 
 dataset('path identification types', [
     'kernel identification' => [
-        'route_middleware' => ['universal'],
-        'global_middleware' => [InitializeTenancyByPath::class],
+        ['universal'], // Route middleware
+        [InitializeTenancyByPath::class], // Global Global middleware
     ],
     'route-level identification' => [
-        'route_middleware' => ['universal', InitializeTenancyByPath::class],
-        'global_middleware' => [],
+        ['universal', InitializeTenancyByPath::class], // Route middleware
+        [], // Global middleware
     ],
     'kernel identification + defaulting to universal routes' => [
-        'route_middleware' => [],
-        'global_middleware' => ['universal', InitializeTenancyByPath::class],
+        [], // Route middleware
+        ['universal', InitializeTenancyByPath::class], // Global middleware
     ],
     'route-level identification + defaulting to universal routes' => [
-        'route_middleware' => [InitializeTenancyByPath::class],
-        'global_middleware' => ['universal'],
+        [InitializeTenancyByPath::class],  // Route middleware
+        ['universal'], // Global middleware
     ],
 ]);

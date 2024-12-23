@@ -123,11 +123,11 @@ test('single domain tenant can be identified by domain or subdomain', function (
     expect(tenant('id'))->toBe($tenant->id);
 })->with([
     [
-        'domain' => 'acme.localhost',
-        'identification middleware' => [PreventAccessFromUnwantedDomains::class, InitializeTenancyByDomain::class],
+        'acme.localhost', // Domain
+        [PreventAccessFromUnwantedDomains::class, InitializeTenancyByDomain::class], // Identification middleware
     ],
     [
-        'subdomain' => 'acme',
-        'identification middleware' => [PreventAccessFromUnwantedDomains::class, InitializeTenancyBySubdomain::class],
+        'acme', // Subdomain
+        [PreventAccessFromUnwantedDomains::class, InitializeTenancyBySubdomain::class], // Identification middleware
     ],
 ]);
