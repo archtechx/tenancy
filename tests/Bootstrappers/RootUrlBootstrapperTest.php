@@ -72,31 +72,40 @@ test('root url bootstrapper overrides the root url when tenancy gets initialized
 });
 
 test('root url bootstrapper can be used with url generator bootstrapper', function() {
+    /**
+     * Order matters when combining these two bootstrappers.
+     * Before overriding the URL generator's root URL, we need to bind TenancyUrlGenerator.
+     * Otherwise (when using RootUrlBootstrapper BEFORE UrlGeneratorBootstrapper),
+     * the original URL generator's root URL will be changed, and only after that will the TenancyUrlGenerator bound,
+     * ultimately making the root URL override pointless.
+     */
     config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class, RootUrlBootstrapper::class]]);
 
     TenancyUrlGenerator::$prefixRouteNames = true;
     TenancyUrlGenerator::$passTenantParameterToRoutes = true;
+    RootUrlBootstrapper::$rootUrlOverride = fn (Tenant $tenant, string $originalRootUrl) => $originalRootUrl . '/' . $tenant->getTenantKey();
 
-    Route::get('/', function () {
-        return true;
-    })->name('home');
+    Route::get('/home', fn () => 'home')->name('home');
+    Route::get('/{tenant}/home', fn () => 'tenant.home')->name('tenant.home')->middleware(InitializeTenancyByPath::class);
 
-    Route::get('/{tenant}', function () {
-        return true;
-    })->name('tenant.home')->middleware(InitializeTenancyByPath::class);
+    expect(url('/home'))->toBe('http://localhost/home');
 
-    $rootUrlOverride = function (Tenant $tenant) {
-        return 'http://localhost/' . $tenant->getTenantKey();
-    };
+    expect(route('home'))->toBe('http://localhost/home');
+    expect(route('home', absolute: false))->toBe('/home');
 
-    $tenant = Tenant::create(['id' => 'acme']);
+    tenancy()->initialize(Tenant::create(['id' => 'acme']));
 
-    RootUrlBootstrapper::$rootUrlOverride = $rootUrlOverride;
+    // The url() helper should generate the full URL containing the tenant key
+    expect(url('/home'))->toBe('http://localhost/acme/home');
 
-    expect(route('home'))->toBe('http://localhost');
-
-    tenancy()->initialize($tenant);
-
-    expect(route('home'))->toBe('http://localhost/acme');
-    expect(url('/'))->toBe('http://localhost/acme');
+    /**
+     * The absolute path should return the correct absolute path, containing just one tenant key,
+     * and the relative path should still be /home.
+     *
+     * We use string manipulation in the route() method override for this to behave correctly.
+     *
+     * @see TenancyUrlGenerator
+     */
+    expect(route('home'))->toBe('http://localhost/acme/home');
+    expect(route('home', absolute: false))->toBe('/home');
 });
