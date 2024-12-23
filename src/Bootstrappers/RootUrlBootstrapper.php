@@ -59,7 +59,7 @@ class RootUrlBootstrapper implements TenancyBootstrapper
             return;
         }
 
-        if (app()->runningUnitTests() && ! static::$rootUrlOverrideInTests) {
+        if ($this->app->runningUnitTests() && ! static::$rootUrlOverrideInTests) {
             return;
         }
 
