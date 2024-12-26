@@ -280,7 +280,7 @@ class TestJob implements ShouldQueue
     /** @var User|null */
     protected $user;
 
-    public function __construct(Valuestore $valuestore, User $user = null)
+    public function __construct(Valuestore $valuestore, ?User $user = null)
     {
         $this->valuestore = $valuestore;
         $this->user = $user;
