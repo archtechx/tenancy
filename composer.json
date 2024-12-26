@@ -16,7 +16,7 @@
         }
     ],
     "require": {
-        "php": "^8.2",
+        "php": "^8.4",
         "ext-json": "*",
         "illuminate/support": "^10.1|^11.3",
         "laravel/tinker": "^2.0",

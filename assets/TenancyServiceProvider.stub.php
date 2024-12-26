@@ -195,10 +195,11 @@ class TenancyServiceProvider extends ServiceProvider
          *     return RouteFacade::post('/livewire/update', $handle)->middleware(['web', 'universal']);
          * });
          */
-        if (InitializeTenancyByRequestData::inGlobalStack()) {
-            FortifyRouteBootstrapper::$fortifyHome = 'dashboard';
-            TenancyUrlGenerator::$prefixRouteNames = false;
-        }
+
+        // if (InitializeTenancyByRequestData::inGlobalStack()) {
+        //     FortifyRouteBootstrapper::$fortifyHome = 'dashboard';
+        //     TenancyUrlGenerator::$prefixRouteNames = false;
+        // }
 
         if (tenancy()->globalStackHasMiddleware(config('tenancy.identification.path_identification_middleware'))) {
             TenancyUrlGenerator::$prefixRouteNames = true;
