@@ -59,37 +59,7 @@ class TenancyUrlGenerator extends UrlGenerator
 
         [$name, $parameters] = $this->prepareRouteInputs($name, Arr::wrap($parameters)); // @phpstan-ignore argument.type
 
-        $url = parent::route($name, $parameters, $absolute);
-
-        if (isset($parameters[PathTenantResolver::tenantParameterName()])) {
-            /**
-             * Ensure the tenant key appears in the final URL only once.
-             * This adjustment is necessary when RootUrlBootstrapper is enabled (and used as intended).
-             *
-             * When RootUrlBootstrapper adds the tenant key to the root URL:
-             * - The root URL includes the tenant key (http://localhost/tenantfoo).
-             * - Passing the tenant key as a parameter to `parent::route()` adds it again, causing duplication.
-             *
-             * To fix this:
-             * - For relative URLs: Include only the part AFTER the tenant key.
-             * - For absolute URLs: Rebuild the URL so that the tenant key is included exactly once.
-             */
-            $tenantKey = $parameters[PathTenantResolver::tenantParameterName()];
-
-            // Separate the URL into parts before the first and after the last tenant key
-            $urlBeforeTenantKey = str($url)->before($tenantKey)->toString(); // e.g. "http://localhost/"
-            $urlAfterTenantKey = str($url)->afterLast($tenantKey)->toString(); // e.g. "/home"
-
-            if (! $absolute && str(url('/'))->contains($tenantKey)) {
-                // For relative URLs, return only the part after the tenant key
-                return $urlAfterTenantKey;
-            }
-
-            // Reconstruct the URL with the tenant key appearing exactly once
-            return $urlBeforeTenantKey . $tenantKey . $urlAfterTenantKey;
-        }
-
-        return $url;
+        return parent::route($name, $parameters, $absolute);
     }
 
     /**
