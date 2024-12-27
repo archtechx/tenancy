@@ -148,9 +148,8 @@ return [
         Bootstrappers\QueueTenancyBootstrapper::class,
         // Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
 
-        // Support for edge cases
+        // Adds support for the database session driver
         Bootstrappers\DatabaseSessionBootstrapper::class,
-        Bootstrappers\JobBatchBootstrapper::class,
 
         // Configurable bootstrappers
         // Bootstrappers\RootUrlBootstrapper::class,
