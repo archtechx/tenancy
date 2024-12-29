@@ -13,7 +13,7 @@ use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 // todo@move move all resource syncing-related things to a separate namespace?
 
 /**
- * @property-read Tenant[]|Collection $tenants
+ * @property-read Tenant[]|Collection<Tenant> $tenants
  */
 interface SyncMaster extends Syncable
 {
