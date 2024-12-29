@@ -14,7 +14,7 @@ use Symfony\Component\Console\Input\InputOption;
 
 trait ParallelCommand
 {
-    public const MAX_PROCESSES = 24;
+    public const int MAX_PROCESSES = 24;
     protected bool $runningConcurrently = false;
 
     abstract protected function childHandle(mixed ...$args): bool;
