@@ -17,12 +17,12 @@ abstract class QueueableListener implements ShouldQueue
     {
         if (static::$shouldQueue) {
             return true;
-        } else {
-            // The listener is not queued so we manually
-            // pass the event to the handle() method.
-            $this->handle($event);
-
-            return false;
         }
+
+        // The listener is not queued so we manually
+        // pass the event to the handle() method.
+        $this->handle($event);
+
+        return false;
     }
 }

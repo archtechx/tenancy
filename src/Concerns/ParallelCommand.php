@@ -48,15 +48,17 @@ trait ParallelCommand
 
         if ($pid === -1) {
             return -1;
-        } elseif ($pid) {
+        }
+
+        if ($pid) {
             // Parent
             return $pid;
-        } else {
-            // Child
-            DB::reconnect();
-
-            exit($this->childHandle(...$args) ? 0 : 1);
         }
+
+        // Child
+        DB::reconnect();
+
+        exit($this->childHandle(...$args) ? 0 : 1);
     }
 
     protected function sysctlGetLogicalCoreCount(bool $darwin): int
@@ -70,7 +72,9 @@ trait ParallelCommand
         // perflevel0 refers to P-cores on M-series, and the entire CPU on Intel Macs
         if ($darwin && $ffi->sysctlbyname('hw.perflevel0.logicalcpu', FFI::addr($cores), FFI::addr($size), null, 0) === 0) {
             return $cores->cdata;
-        } else if ($darwin) {
+        }
+
+        if ($darwin) {
             // Reset the size in case the pointer got written to (likely shouldn't happen)
             $size->cdata = FFI::sizeof($cores);
         }

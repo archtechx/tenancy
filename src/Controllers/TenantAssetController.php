@@ -88,12 +88,12 @@ class TenantAssetController implements HasMiddleware
             if (app()->runningUnitTests()) {
                 // Makes testing the cause of the failure in validatePath() easier
                 throw new Exception($exceptionMessage);
-            } else {
-                // We always use 404 to avoid leaking information about the cause of the error
-                // e.g. when someone is trying to access a nonexistent file outside of the allowed
-                // root folder, we don't want to let the user know whether such a file exists or not.
-                abort(404);
             }
+
+            // We always use 404 to avoid leaking information about the cause of the error
+            // e.g. when someone is trying to access a nonexistent file outside of the allowed
+            // root folder, we don't want to let the user know whether such a file exists or not.
+            abort(404);
         }
     }
 }
