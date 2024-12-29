@@ -128,7 +128,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         }
 
         // Revert back to the previous tenant
-        if (tenant() && $previousTenant && $previousTenant->isNot(tenant())) {
+        if (tenant() && $previousTenant?->isNot(tenant())) {
             tenancy()->initialize($previousTenant);
         }
 
