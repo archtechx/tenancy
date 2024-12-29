@@ -13,6 +13,6 @@ class RouteIsMissingTenantParameterException extends Exception
     {
         $parameter = PathTenantResolver::tenantParameterName();
 
-        parent::__construct("The route's first argument is not the tenant id (configured paramter name: $parameter).");
+        parent::__construct("The route's first argument is not the tenant id (configured parameter name: $parameter).");
     }
 }
