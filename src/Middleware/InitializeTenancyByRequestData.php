@@ -96,9 +96,7 @@ class InitializeTenancyByRequestData extends IdentificationMiddleware
 
                 if (
                     is_array($data) &&
-                    isset($data['iv']) &&
-                    isset($data['value']) &&
-                    isset($data['mac'])
+                    isset($data['iv'], $data['value'], $data['mac'])
                 ) {
                     // We can confidently assert that the cookie is encrypted. If this call were to fail, this method would just
                     // return null and the cookie payload would get skipped.
