@@ -81,7 +81,7 @@ class Migrate extends MigrateCommand
                 $tenant->run(function ($tenant) use (&$success) {
                     event(new MigratingDatabase($tenant));
 
-                    $verbosity = (int) $this->output->getVerbosity();
+                    $verbosity = $this->output->getVerbosity();
 
                     if ($this->runningConcurrently) {
                         // The output gets messy when multiple processes are writing to the same stdout

@@ -76,7 +76,7 @@ class Rollback extends RollbackCommand
                 $tenant->run(function ($tenant) use (&$success) {
                     event(new RollingBackDatabase($tenant));
 
-                    $verbosity = (int) $this->output->getVerbosity();
+                    $verbosity = $this->output->getVerbosity();
 
                     if ($this->runningConcurrently) {
                         // The output gets messy when multiple processes are writing to the same stdout
