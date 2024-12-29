@@ -30,7 +30,7 @@ class UserImpersonation implements Feature
     }
 
     /** Impersonate a user and get an HTTP redirect response. */
-    public static function makeResponse(string|ImpersonationToken $token, ?int $ttl = null): RedirectResponse
+    public static function makeResponse(#[\SensitiveParameter] string|ImpersonationToken $token, ?int $ttl = null): RedirectResponse
     {
         /** @var ImpersonationToken $token */
         $token = $token instanceof ImpersonationToken ? $token : ImpersonationToken::findOrFail($token);
