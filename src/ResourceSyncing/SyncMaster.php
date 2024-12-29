@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
 // todo@move move all resource syncing-related things to a separate namespace?
 
@@ -23,9 +24,9 @@ interface SyncMaster extends Syncable
 
     public function getTenantModelName(): string;
 
-    public function triggerDetachEvent(Tenant&Model $tenant): void;
+    public function triggerDetachEvent(TenantWithDatabase&Model $tenant): void;
 
-    public function triggerAttachEvent(Tenant&Model $tenant): void;
+    public function triggerAttachEvent(TenantWithDatabase&Model $tenant): void;
 
     public function triggerDeleteEvent(bool $forceDelete = false): void;
 

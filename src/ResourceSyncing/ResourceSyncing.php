@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
+use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\ResourceSyncing\Events\CentralResourceAttachedToTenant;
 use Stancl\Tenancy\ResourceSyncing\Events\CentralResourceDetachedFromTenant;
 use Stancl\Tenancy\ResourceSyncing\Events\SyncedResourceSaved;
@@ -78,7 +79,7 @@ trait ResourceSyncing
     }
 
     /** Default implementation for \Stancl\Tenancy\ResourceSyncing\SyncMaster */
-    public function triggerAttachEvent(Tenant&Model $tenant): void
+    public function triggerAttachEvent(TenantWithDatabase&Model $tenant): void
     {
         if ($this instanceof SyncMaster) {
             /** @var SyncMaster&Model $this */
@@ -87,7 +88,7 @@ trait ResourceSyncing
     }
 
     /** Default implementation for \Stancl\Tenancy\ResourceSyncing\SyncMaster */
-    public function triggerDetachEvent(Tenant&Model $tenant): void
+    public function triggerDetachEvent(TenantWithDatabase&Model $tenant): void
     {
         if ($this instanceof SyncMaster) {
             /** @var SyncMaster&Model $this */
