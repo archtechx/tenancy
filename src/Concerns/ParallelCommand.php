@@ -113,7 +113,7 @@ trait ParallelCommand
         if ($processes === null) {
             // This is used when the option is set but *without* a value (-p).
             $processes = $this->getLogicalCoreCount();
-        } else if ((int) $processes === -1) {
+        } elseif ((int) $processes === -1) {
             // Default value we set for the option -- this is used when the option is *not set*.
             $processes = 1;
         } else {

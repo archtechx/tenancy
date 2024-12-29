@@ -7,7 +7,6 @@ namespace Stancl\Tenancy\ResourceSyncing;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\ResourceSyncing\Events\CentralResourceAttachedToTenant;

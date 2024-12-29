@@ -35,7 +35,7 @@ class TraitRLSManager implements RLSPolicyManager
      */
     public static bool $implicitRLS = false;
 
-    /** @var array<class-string<\Illuminate\Database\Eloquent\Model>> */
+    /** @var array<class-string<Model>> */
     public static array $excludedModels = [];
 
     public function generateQueries(): array
@@ -99,7 +99,7 @@ class TraitRLSManager implements RLSPolicyManager
      * Models are either discovered in the directories specified in static::$modelDirectories (by default),
      * or by a custom closure specified in static::$modelDiscoveryOverride.
      *
-     * @return array<\Illuminate\Database\Eloquent\Model>
+     * @return array<Model>
      */
     public function getModels(): array
     {
