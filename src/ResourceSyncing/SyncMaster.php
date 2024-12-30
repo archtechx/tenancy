@@ -7,18 +7,17 @@ namespace Stancl\Tenancy\ResourceSyncing;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
 // todo@move move all resource syncing-related things to a separate namespace?
 
 /**
- * @property-read Tenant[]|Collection<Tenant> $tenants
+ * @property-read TenantWithDatabase[]|Collection<TenantWithDatabase> $tenants
  */
 interface SyncMaster extends Syncable
 {
     /**
-     * @return BelongsToMany<Tenant&Model, self&Model>
+     * @return BelongsToMany<TenantWithDatabase&Model, self&Model>
      */
     public function tenants(): BelongsToMany;
 
