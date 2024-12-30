@@ -78,6 +78,34 @@ beforeEach(function () {
     });
 });
 
+test('rls command succeeds when a view is in the database', function (string $manager) {
+    DB::statement("
+        CREATE VIEW post_comments AS
+        SELECT
+            comments.id AS comment_id,
+            posts.id AS post_id
+        FROM comments
+        INNER JOIN posts
+            ON posts.id = comments.post_id
+    ");
+
+    // Inherit RLS rules from joined tables
+    DB::statement("ALTER VIEW post_comments SET (security_invoker = on)");
+
+    config(['tenancy.rls.manager' => $manager]);
+
+    try {
+        pest()->artisan('tenants:rls');
+
+        pest()->assertTrue(true);
+    } catch (\Exception $e) {
+        pest()->assertTrue(false);
+    }
+})->with([
+    TableRLSManager::class,
+    TraitRLSManager::class,
+]);
+
 test('postgres user gets created using the rls command', function(string $manager) {
     config(['tenancy.rls.manager' => $manager]);
 
