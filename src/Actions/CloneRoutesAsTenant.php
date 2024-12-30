@@ -120,14 +120,8 @@ class CloneRoutesAsTenant
             $pathIdentificationUsed = (! $routeHasNonPathIdentificationMiddleware) &&
                 ($routeHasPathIdentificationMiddleware || $pathIdentificationMiddlewareInGlobalStack);
 
-            if (
-                $pathIdentificationUsed &&
-                (tenancy()->getRouteMode($route) === RouteMode::UNIVERSAL || tenancy()->routeHasMiddleware($route, 'clone'))
-            ) {
-                return true;
-            }
-
-            return false;
+            return $pathIdentificationUsed &&
+                (tenancy()->getRouteMode($route) === RouteMode::UNIVERSAL || tenancy()->routeHasMiddleware($route, 'clone'));
         });
     }
 

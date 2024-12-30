@@ -30,7 +30,7 @@ if (! function_exists('tenant')) {
             return app(Tenant::class);
         }
 
-        return optional(app(Tenant::class))->getAttribute($key) ?? null;
+        return app(Tenant::class)?->getAttribute($key);
     }
 }
 

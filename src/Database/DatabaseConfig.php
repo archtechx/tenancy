@@ -100,12 +100,12 @@ class DatabaseConfig
 
     public function getUsername(): ?string
     {
-        return $this->tenant->getInternal('db_username') ?? null;
+        return $this->tenant->getInternal('db_username');
     }
 
     public function getPassword(): ?string
     {
-        return $this->tenant->getInternal('db_password') ?? null;
+        return $this->tenant->getInternal('db_password');
     }
 
     /**

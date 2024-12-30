@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphPivot;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
 /**
  * Used on pivot models.
@@ -30,7 +31,7 @@ trait TriggerSyncingEvents
             /**
              * @var static&Pivot $pivot
              * @var SyncMaster|null $centralResource
-             * @var (Tenant&Model)|null $tenant
+             * @var (TenantWithDatabase&Model)|null $tenant
              */
             [$centralResource, $tenant] = $pivot->getCentralResourceAndTenant();
 
@@ -43,7 +44,7 @@ trait TriggerSyncingEvents
             /**
              * @var static&Pivot $pivot
              * @var SyncMaster|null $centralResource
-             * @var (Tenant&Model)|null $tenant
+             * @var (TenantWithDatabase&Model)|null $tenant
              */
             [$centralResource, $tenant] = $pivot->getCentralResourceAndTenant();
 

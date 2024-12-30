@@ -50,7 +50,7 @@ class BroadcastChannelPrefixBootstrapper implements TenancyBootstrapper
 
             $broadcasterOverride($this->broadcastManager);
 
-            // Get the overriden broadcaster
+            // Get the overridden broadcaster
             $newBroadcaster = $this->broadcastManager->driver($broadcaster);
 
             // Register the original broadcaster's channels in the new broadcaster
@@ -64,7 +64,7 @@ class BroadcastChannelPrefixBootstrapper implements TenancyBootstrapper
     {
         // Revert to the original broadcasters
         foreach ($this->originalBroadcasters as $name => $broadcaster) {
-            // Delete the cached (overriden) broadcaster
+            // Delete the cached (overridden) broadcaster
             $this->broadcastManager->purge($name);
 
             // Make manager return the original broadcaster instance

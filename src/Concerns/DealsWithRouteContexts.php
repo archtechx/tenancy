@@ -46,7 +46,7 @@ trait DealsWithRouteContexts
      * the context is determined by the `tenancy.default_route_mode` config.
      *
      * If the default route mode is tenant, all unflagged routes will be tenant by default,
-     * but they will still have to have an identification midddleware (route-level
+     * but they will still have to have an identification middleware (route-level
      * or global) to be accessible. Same applies for universal default route mode.
      */
     public static function getRouteMode(Route $route): RouteMode

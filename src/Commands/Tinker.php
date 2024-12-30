@@ -47,7 +47,7 @@ class Tinker extends BaseTinker
                 /** @var string $tenantKey */
                 $tenantKey = search(
                     'Enter the tenant key:',
-                    fn (string $search) => strlen($search) > 0
+                    fn (string $search) => $search !== ''
                         ? tenancy()->model()::where(tenancy()->model()->getTenantKeyName(), 'like', "$search%")->pluck(tenancy()->model()->getTenantKeyName())->all()
                         : []
                 );
@@ -57,7 +57,7 @@ class Tinker extends BaseTinker
                 /** @var string $domain */
                 $domain = search(
                     'Enter the tenant domain:',
-                    fn (string $search) => strlen($search) > 0
+                    fn (string $search) => $search !== ''
                         ? config('tenancy.models.domain')::where('domain', 'like', "$search%")->pluck('domain')->all()
                         : []
                 );

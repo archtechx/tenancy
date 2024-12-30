@@ -66,6 +66,7 @@ class CreateUserWithRLSPolicies extends Command
     protected function makeDatabaseConfig(
         PermissionControlledPostgreSQLSchemaManager $manager,
         string $username,
+        #[\SensitiveParameter]
         string $password,
     ): DatabaseConfig {
         /** @var TenantWithDatabase $tenantModel */

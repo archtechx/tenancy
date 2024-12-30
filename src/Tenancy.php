@@ -141,9 +141,7 @@ class Tenancy
         /** @var class-string<Tenant&Model> $class */
         $class = config('tenancy.models.tenant');
 
-        $model = new $class;
-
-        return $model;
+        return new $class;
     }
 
     /** Name of the column used to relate models to tenants. */
