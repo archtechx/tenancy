@@ -78,6 +78,30 @@ beforeEach(function () {
     });
 });
 
+// Regression test for https://github.com/archtechx/tenancy/pull/1280
+test('rls command doesnt fail when a view is in the database', function (string $manager) {
+    DB::statement("
+        CREATE VIEW post_comments AS
+        SELECT
+            comments.id AS comment_id,
+            posts.id AS post_id
+        FROM comments
+        INNER JOIN posts
+            ON posts.id = comments.post_id
+    ");
+
+    // Inherit RLS rules from joined tables
+    DB::statement("ALTER VIEW post_comments SET (security_invoker = on)");
+
+    config(['tenancy.rls.manager' => $manager]);
+
+    // throws an exception without the patch
+    pest()->artisan('tenants:rls');
+})->with([
+    TableRLSManager::class,
+    TraitRLSManager::class,
+])->throwsNoExceptions();
+
 test('postgres user gets created using the rls command', function(string $manager) {
     config(['tenancy.rls.manager' => $manager]);
 
