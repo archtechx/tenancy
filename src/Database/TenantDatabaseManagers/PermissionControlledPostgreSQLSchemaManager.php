@@ -27,7 +27,7 @@ class PermissionControlledPostgreSQLSchemaManager extends PostgreSQLSchemaManage
         $this->connection()->statement("GRANT USAGE, CREATE ON SCHEMA \"{$schema}\" TO \"{$username}\"");
         $this->connection()->statement("GRANT USAGE ON ALL SEQUENCES IN SCHEMA \"{$schema}\" TO \"{$username}\"");
 
-        $tables = $this->connection()->select("SELECT table_name FROM information_schema.tables WHERE table_schema = '{$schema}'");
+        $tables = $this->connection()->select("SELECT table_name FROM information_schema.tables WHERE table_schema = '{$schema}' AND table_type = 'BASE TABLE'");
 
         // Grant permissions to any existing tables. This is used with RLS
         // todo@samuel refactor this along with the todo in TenantDatabaseManager
