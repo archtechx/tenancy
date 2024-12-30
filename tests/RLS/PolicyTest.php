@@ -78,7 +78,8 @@ beforeEach(function () {
     });
 });
 
-test('rls command succeeds when a view is in the database', function (string $manager) {
+// Regression test for https://github.com/archtechx/tenancy/pull/1280
+test('rls command doesnt fail when a view is in the database', function (string $manager) {
     DB::statement("
         CREATE VIEW post_comments AS
         SELECT
@@ -94,17 +95,12 @@ test('rls command succeeds when a view is in the database', function (string $ma
 
     config(['tenancy.rls.manager' => $manager]);
 
-    try {
-        pest()->artisan('tenants:rls');
-
-        pest()->assertTrue(true);
-    } catch (\Exception $e) {
-        pest()->assertTrue(false);
-    }
+    // throws an exception without the patch
+    pest()->artisan('tenants:rls');
 })->with([
     TableRLSManager::class,
     TraitRLSManager::class,
-]);
+])->throwsNoExceptions();
 
 test('postgres user gets created using the rls command', function(string $manager) {
     config(['tenancy.rls.manager' => $manager]);
