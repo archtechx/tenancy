@@ -23,5 +23,5 @@ jobs:
       - name: Run tests
         run: |
           cd tenancy-queue-tester
-          ./setup.sh
+          TENANCY_VERSION=${VERSION_PREFIX}#${GITHUB_SHA} ./setup.sh
           TENANCY_VERSION=${VERSION_PREFIX}#${GITHUB_SHA} ./test.sh
