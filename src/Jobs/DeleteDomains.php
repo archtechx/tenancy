@@ -21,6 +21,6 @@ class DeleteDomains
 
     public function handle(): void
     {
-        $this->tenant->domains->each->delete();
+        $this->tenant->domains?->each->delete();
     }
 }
