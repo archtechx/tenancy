@@ -4,7 +4,7 @@ OUTPUT :=
 
 ifeq ($(OS),Windows_NT)
 	OUTPUT = lib/noattach.dll
-	CCFLAGS = -shared
+	CCFLAGS = -shared -Wl,--exclude-libs,ALL
 	CC = clang
 else
 	UNAME := $(shell uname)
