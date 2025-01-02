@@ -16,3 +16,7 @@
 The `ci.yml` workflow includes support for [act](https://github.com/nektos/act).
 
 To run all tests using act, run `composer act`. To run only certain tests using act, use `composer act-input "FILTER='some test name'"` or `composer act -- --input "FILTER='some test name'"`.
+
+Helpful note: GHA doesn't mount the project at /var/www/html like the docker compose setup does. This can be observed in act where the inner container's filesystem structure will match the host.
+
+Also, for debugging act you can just add a job that does `sleep 1h` and then `docker ps` + `docker exec -it <id> bash`.

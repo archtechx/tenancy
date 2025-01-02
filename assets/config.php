@@ -389,6 +389,7 @@ return [
         // Stancl\Tenancy\Features\TenantConfig::class,
         // Stancl\Tenancy\Features\CrossDomainRedirect::class,
         // Stancl\Tenancy\Features\ViteBundler::class,
+        // Stancl\Tenancy\Features\DisallowSqliteAttach::class,
     ],
 
     /**
