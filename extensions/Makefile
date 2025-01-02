@@ -1,5 +1,7 @@
 .PHONY: all headers
 
+OUTPUT :=
+
 ifeq ($(OS),Windows_NT)
 	OUTPUT = lib/noattach.dll
 	CCFLAGS = -shared

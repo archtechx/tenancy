@@ -51,7 +51,15 @@ jobs:
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         git add lib/
-        git commit -m "Auto-build: Update output files [skip ci]" || echo "No changes to commit"
+        git commit -m "Auto-build: Update extensions [skip ci]" || echo "No changes to commit"
+
+    - name: Push files (Unix)
+      if: runner.os != 'Windows'
+      run: |
         for attempt in {1..3}; do
           git pull --rebase && git push && break || sleep 5
         done
+
+    - name: Push files (Windows)
+      if: runner.os == 'Windows'
+      run: git pull --rebase && git push
