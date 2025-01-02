@@ -56,7 +56,7 @@ jobs:
         cd extensions
         docker run --platform linux/arm64 \
           -v .:/extensions \
-          debian:slim \
+          debian:bookworm-slim \
           bash -c "apt-get update && apt-get install -y make gcc && cd /extensions && make"
 
     - name: Commit output files
