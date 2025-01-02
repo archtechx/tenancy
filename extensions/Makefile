@@ -21,6 +21,8 @@ else
 	endif
 endif
 
+$(info OUTPUT=$(OUTPUT))
+
 all: $(OUTPUT)
 
 headers:
