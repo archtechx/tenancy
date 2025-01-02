@@ -46,8 +46,12 @@ jobs:
       if: runner.os == 'Linux' && matrix.arch == 'ARM64'
       uses: docker/setup-qemu-action@v3
 
-    - name: Build C files
-      if: runner.os != 'Linux' || matrix.arch != 'ARM64'
+    - name: Build C files (Native Windows)
+      if: runner.os == 'Windows'
+      run: cd extensions && make
+
+    - name: Build C files (Native Linux)
+      if: runner.os == 'Linux' && matrix.arch == 'X64'
       run: cd extensions && make
 
     - name: Build C files (Linux cross-compilation)
@@ -58,6 +62,20 @@ jobs:
           -v .:/extensions \
           debian:bookworm-slim \
           bash -c "apt-get update && apt-get install -y make gcc && cd /extensions && make"
+
+    - name: Build C files (Native macOS ARM64)
+      if: matrix.os == 'macos-latest' && matrix.arch == 'ARM64'
+      run: cd extensions && make
+
+    - name: Build C files (macOS cross-compilation)
+      if: matrix.os == 'macos-latest' && matrix.arch == 'X64'
+      run: |
+          cd extensions
+          brew install llvm
+          export CC=/opt/homebrew/opt/llvm/bin/clang
+          export CFLAGS="-target x86_64-apple-darwin"
+          export LDFLAGS="-target x86_64-apple-darwin"
+          make
 
     - name: Commit output files
       shell: bash
