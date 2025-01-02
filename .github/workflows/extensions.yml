@@ -1,0 +1,51 @@
+name: Build extensions
+
+on:
+  push:
+    branches:
+      - '*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+      max-parallel: 1
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Change working directory to extensions/
+      run: cd extensions
+
+    - name: Download SQLite headers (Unix)
+      if: runner.os != 'Windows'
+      run: make headers
+
+    - name: Download SQLite headers (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        curl.exe -L https://www.sqlite.org/2024/sqlite-amalgamation-3470200.zip -o sqlite-src.zip
+        Expand-Archive -Path sqlite-src.zip -DestinationPath .
+        Copy-Item sqlite-amalgamation-3470200\sqlite3.h .
+        Copy-Item sqlite-amalgamation-3470200\sqlite3ext.h .
+
+    - name: Build C files
+      run: |
+        make
+
+    - name: Commit output files
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add lib/
+        git commit -m "Auto-build: Update output files" || echo "No changes to commit"
+        git push
