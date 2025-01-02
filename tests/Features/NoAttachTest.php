@@ -27,9 +27,11 @@ test('sqlite ATTACH statements can be blocked', function (bool $disallow) {
     }
 
     if (php_uname('m') == 'aarch64') {
-        DisallowSqliteAttach::$extensionPath = '/var/www/html/extensions/lib/arm/noattach.so';
+        // Escape testbench prison. Can't hardcode /var/www/html/extensions/... here
+        // since GHA doesn't mount the filesystem on the container's workdir
+        DisallowSqliteAttach::$extensionPath = realpath(base_path('../../../../extensions/lib/arm/noattach.so'));
     } else {
-        DisallowSqliteAttach::$extensionPath = '/var/www/html/extensions/lib/noattach.so';
+        DisallowSqliteAttach::$extensionPath = realpath(base_path('../../../../extensions/lib/noattach.so'));
     }
 
     if ($disallow) config(['tenancy.features' => [DisallowSqliteAttach::class]]);
