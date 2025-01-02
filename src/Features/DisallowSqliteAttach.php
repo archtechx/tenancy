@@ -22,7 +22,9 @@ class DisallowSqliteAttach implements Feature
         // Handle any already resolved connections
         foreach (DB::getConnections() as $connection) {
             if ($connection instanceof SQLiteConnection) {
-                if (! $this->loadExtension($connection->getPdo())) return;
+                if (! $this->loadExtension($connection->getPdo())) {
+                    return;
+                }
             }
         }
 
@@ -41,7 +43,9 @@ class DisallowSqliteAttach implements Feature
             static::$loadExtensionSupported = method_exists($pdo, 'loadExtension');
         }
 
-        if (static::$loadExtensionSupported === false) return false;
+        if (static::$loadExtensionSupported === false) {
+            return false;
+        }
 
         $suffix = match (PHP_OS_FAMILY) {
             'Linux' => '.so',
@@ -54,7 +58,9 @@ class DisallowSqliteAttach implements Feature
         $arm = $arch === 'aarch64' || $arch === 'arm64';
 
         static::$extensionPath ??= realpath(base_path('vendor/stancl/tenancy/src/extensions/lib/' . ($arm ? 'arm/' : '') . 'noattach' . $suffix));
-        if (static::$extensionPath === false) return false;
+        if (static::$extensionPath === false) {
+            return false;
+        }
 
         $pdo->loadExtension(static::$extensionPath);
 
