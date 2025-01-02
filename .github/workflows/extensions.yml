@@ -42,12 +42,22 @@ jobs:
         Copy-Item sqlite-amalgamation-3470200\sqlite3.h .
         Copy-Item sqlite-amalgamation-3470200\sqlite3ext.h .
 
-    - name: Debug uname -m
-      if: runner.os != 'Windows'
-      run: uname -m
+    - name: Set up QEMU (Linux cross-compilation)
+      if: runner.os == 'Linux' && matrix.arch == 'ARM64'
+      uses: docker/setup-qemu-action@v3
 
     - name: Build C files
+      if: ! (runner.os == 'Linux' && matrix.arch == 'ARM64')
       run: cd extensions && make
+
+    - name: Build C files (Linux cross-compilation)
+      if: runner.os == 'Linux' && matrix.arch == 'ARM64'
+      run:
+        cd extensions
+        docker run --platform linux/arm64 \
+          -v .:/extensions \
+          debian:slim \
+          bash -c "apt-get update && apt-get install -y make gcc && cd /extensions && make"
 
     - name: Commit output files
       shell: bash

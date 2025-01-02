@@ -4,11 +4,11 @@ OUTPUT :=
 
 ifeq ($(OS),Windows_NT)
 	OUTPUT = lib/noattach.dll
-	CCFLAGS = -shared -Wl,--exclude-libs,ALL
+	CCFLAGS += -shared -Wl,--exclude-libs,ALL
 	CC = clang
 else
 	UNAME := $(shell uname)
-	CCFLAGS = -fPIC -Os -shared
+	CCFLAGS += -fPIC -Os -shared
 	ifeq ($(UNAME),Darwin)
 		ifeq ($(shell uname -m),arm64)
 			OUTPUT = lib/arm/noattach.dylib
