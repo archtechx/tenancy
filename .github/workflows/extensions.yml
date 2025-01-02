@@ -50,6 +50,7 @@ jobs:
       run: cd extensions && make
 
     - name: Commit output files
+      shell: bash
       run: |
         cd extensions
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
