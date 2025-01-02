@@ -62,7 +62,7 @@ class DisallowSqliteAttach implements Feature
             return false;
         }
 
-        $pdo->loadExtension(static::$extensionPath);
+        $pdo->loadExtension(static::$extensionPath); // @phpstan-ignore method.notFound
 
         return true;
     }
