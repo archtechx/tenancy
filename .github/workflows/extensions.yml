@@ -57,8 +57,14 @@ jobs:
       if: runner.os != 'Windows'
       run: |
         for attempt in {1..3}; do
-          git pull --rebase && git push && break || sleep 5
+          git pull --rebase && git push && exit 0 || {
+            echo "Attempt $attempt failed. Retrying in 5 seconds..."
+            sleep 5
+          }
         done
+
+        echo "Failed to push changes after 3 attempts."
+        exit 1
 
     - name: Push files (Windows)
       if: runner.os == 'Windows'
