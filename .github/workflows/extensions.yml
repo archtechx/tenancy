@@ -15,13 +15,13 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            arch: X64
+            arch: x64
           - os: ubuntu-latest
             arch: ARM64
           - os: windows-latest
-            arch: X64
+            arch: x64
           - os: macos-latest
-            arch: X64
+            arch: x64
           - os: macos-latest
             arch: ARM64
     runs-on: ${{ matrix.os }}
@@ -51,7 +51,7 @@ jobs:
       run: cd extensions && make
 
     - name: Build C files (Native Linux)
-      if: runner.os == 'Linux' && matrix.arch == 'X64'
+      if: runner.os == 'Linux' && matrix.arch == 'x64'
       run: cd extensions && make
 
     - name: Build C files (Linux cross-compilation)
@@ -68,7 +68,7 @@ jobs:
       run: cd extensions && make
 
     - name: Build C files (macOS cross-compilation)
-      if: matrix.os == 'macos-latest' && matrix.arch == 'X64'
+      if: matrix.os == 'macos-latest' && matrix.arch == 'x64'
       run: |
           cd extensions
           brew install llvm
