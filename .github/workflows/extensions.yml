@@ -42,29 +42,12 @@ jobs:
         Copy-Item sqlite-amalgamation-3470200\sqlite3.h .
         Copy-Item sqlite-amalgamation-3470200\sqlite3ext.h .
 
-    - name: Debug PATH
-      if: runner.os == 'Windows'
-      run: |
-        where gcc
-        gcc --version
-        where clang
-        clang --versino
-        & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-        echo $env:PATH
-        where cl
-
     - name: Debug uname -m
       if: runner.os != 'Windows'
       run: uname -m
 
-    - name: Build C files (Unix)
-      if: runner.os != 'Windows'
+    - name: Build C files
       run: cd extensions && make
-
-    - name: Build C files (Windows)
-      if: runner.os == 'Windows'
-      run: |
-        "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" && cd extensions && make
 
     - name: Commit output files
       run: |
