@@ -60,8 +60,7 @@ jobs:
     - name: Build C files (Windows)
       if: runner.os == 'Windows'
       run: |
-        & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-        cd extensions && make
+        "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" && cd extensions && make
 
     - name: Commit output files
       run: |
