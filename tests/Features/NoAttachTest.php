@@ -26,7 +26,11 @@ test('sqlite ATTACH statements can be blocked', function (bool $disallow) {
         symlink(base_path('vendor'), '/var/www/html/vendor');
     }
 
-    DisallowSqliteAttach::$extensionPath = '/var/www/html/extensions/lib/arm/noattach.so';
+    if (php_uname('m') == 'aarch64') {
+        DisallowSqliteAttach::$extensionPath = '/var/www/html/extensions/lib/arm/noattach.so';
+    } else {
+        DisallowSqliteAttach::$extensionPath = '/var/www/html/extensions/lib/noattach.so';
+    }
 
     if ($disallow) config(['tenancy.features' => [DisallowSqliteAttach::class]]);
 
@@ -87,7 +91,7 @@ test('sqlite ATTACH statements can be blocked', function (bool $disallow) {
         expect(fn () => pest()->post($tenant->id . '/tenant-sqli', [
             'q1' => 'ATTACH DATABASE "' . $tempdb2 . '" as baz',
             'q2' => 'SELECT * from bar.secrets',
-        ])->json())->toThrow(QueryException::class);
+        ])->json())->toThrow(QueryException::class, 'not authorized');
     } else {
         expect(pest()->post($tenant->id . '/tenant-sqli', [
             'q1' => 'ATTACH DATABASE "' . $tempdb2 . '" as baz',
