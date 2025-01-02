@@ -75,7 +75,7 @@ jobs:
           export CC=/opt/homebrew/opt/llvm/bin/clang
           export CFLAGS="-target x86_64-apple-darwin"
           export LDFLAGS="-target x86_64-apple-darwin"
-          make
+          make ARCH=x86_64
 
     - name: Commit output files
       shell: bash

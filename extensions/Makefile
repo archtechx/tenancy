@@ -9,14 +9,15 @@ ifeq ($(OS),Windows_NT)
 else
 	UNAME := $(shell uname)
 	CCFLAGS += -fPIC -Os -shared
+	ARCH := $(if $(ARCH),$(ARCH),$(shell uname -m))
 	ifeq ($(UNAME),Darwin)
-		ifeq ($(shell uname -m),arm64)
+		ifeq ($(ARCH),arm64)
 			OUTPUT = lib/arm/noattach.dylib
 		else
 			OUTPUT = lib/noattach.dylib
 		endif
 	else
-		ifeq ($(shell uname -m),aarch64)
+		ifeq ($(ARCH),aarch64)
 			OUTPUT = lib/arm/noattach.so
 		else
 			OUTPUT = lib/noattach.so
