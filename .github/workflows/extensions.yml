@@ -2,8 +2,8 @@ name: Build extensions
 
 on:
   push:
-    branches:
-      - '*'
+    paths:
+      - 'extensions/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
