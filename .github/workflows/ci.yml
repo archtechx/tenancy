@@ -1,4 +1,4 @@
-name: Tests
+name: CI
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
