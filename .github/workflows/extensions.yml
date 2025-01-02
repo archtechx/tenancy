@@ -52,7 +52,7 @@ jobs:
 
     - name: Build C files (Linux cross-compilation)
       if: runner.os == 'Linux' && matrix.arch == 'ARM64'
-      run:
+      run: |
         cd extensions
         docker run --platform linux/arm64 \
           -v .:/extensions \
