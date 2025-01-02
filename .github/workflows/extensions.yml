@@ -13,14 +13,21 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-      max-parallel: 1
+        include:
+          - os: ubuntu-latest
+            arch: X64
+          - os: ubuntu-arm64-latest
+            arch: ARM64
+          - os: windows-latest
+            arch: X64
+          - os: macos-latest
+            arch: X64
+          - os: macos-latest-xlarge
+            arch: ARM64
     runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
 
     - name: Download SQLite headers (Unix)
       if: runner.os != 'Windows'
@@ -36,14 +43,15 @@ jobs:
         Copy-Item sqlite-amalgamation-3470200\sqlite3ext.h .
 
     - name: Build C files
-      run: cd extensions && make
+      run: cd extensions && make VERBOSE=1
 
     - name: Commit output files
-      if: matrix.os == 'ubuntu-latest'
       run: |
         cd extensions
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         git add lib/
-        git commit -m "Auto-build: Update output files" || echo "No changes to commit"
-        git push
+        git commit -m "Auto-build: Update output files [skip ci]" || echo "No changes to commit"
+        for attempt in {1..3}; do
+          git pull --rebase && git push && break || sleep 5
+        done
