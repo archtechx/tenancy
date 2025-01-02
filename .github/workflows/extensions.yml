@@ -45,6 +45,10 @@ jobs:
     - name: Debug PATH
       if: runner.os == 'Windows'
       run: |
+        where gcc
+        gcc --version
+        where clang
+        clang --versino
         & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
         echo $env:PATH
         where cl

@@ -1,11 +1,12 @@
 .PHONY: all headers
 
-OUTPUT :=
-
 ifeq ($(OS),Windows_NT)
 	OUTPUT = lib/noattach.dll
+	CCFLAGS = -shared
+	CC = clang
 else
 	UNAME := $(shell uname)
+	CCFLAGS = -fPIC -Os -shared
 	ifeq ($(UNAME),Darwin)
 		ifeq ($(shell uname -m),arm64)
 			OUTPUT = lib/arm/noattach.dylib
@@ -32,9 +33,5 @@ headers:
 	cp sqlite-amalgamation-3470200/*.h .
 
 $(OUTPUT): noattach.c
-ifeq ($(OS),Windows_NT)
-	cl /LD /Fe:$(OUTPUT) $<
-else
 	# We don't link against libsqlite3 since PHP statically links its own libsqlite3.
-	$(CC) -fPIC -Os -shared -o $@ $<
-endif
+	$(CC) $(CCFLAGS) -o $@ $<
