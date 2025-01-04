@@ -6,7 +6,6 @@ CCFLAGS += -shared -Os
 
 ifeq ($(OS),Windows_NT)
 	OUTPUT = lib/noattach.dll
-	CCFLAGS += -Wl,--exclude-libs,ALL
 	CC = clang
 else
 	UNAME := $(shell uname)
