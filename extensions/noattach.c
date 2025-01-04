@@ -13,10 +13,10 @@ __declspec(dllexport)
 int sqlite3_noattach_init(sqlite3 *db, char **pzErrMsg, const sqlite3_api_routines *pApi) {
     SQLITE_EXTENSION_INIT2(pApi);
 
-    int rc = sqlite3_set_authorizer(db, deny_attach_authorizer, 0);
-    if (rc != SQLITE_OK) {
+    if (sqlite3_set_authorizer(db, deny_attach_authorizer, 0) != SQLITE_OK) {
         *pzErrMsg = sqlite3_mprintf("Tenancy: Failed to set authorizer");
+        return SQLITE_ERROR;
+    } else {
+        return SQLITE_OK;
     }
-
-    return rc;
 }
