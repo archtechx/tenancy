@@ -2,13 +2,15 @@
 
 OUTPUT :=
 
+CCFLAGS += -shared -Os
+
 ifeq ($(OS),Windows_NT)
 	OUTPUT = lib/noattach.dll
-	CCFLAGS += -shared -Wl,--exclude-libs,ALL
+	CCFLAGS += -Wl,--exclude-libs,ALL
 	CC = clang
 else
 	UNAME := $(shell uname)
-	CCFLAGS += -fPIC -Os -shared
+	CCFLAGS += -fPIC
 	ARCH := $(if $(ARCH),$(ARCH),$(shell uname -m))
 	ifeq ($(UNAME),Darwin)
 		ifeq ($(ARCH),arm64)
