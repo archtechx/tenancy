@@ -80,6 +80,10 @@ class Tenancy
         $this->initialize($tenant);
         $result = $callback($tenant);
 
+        if ($result instanceof \Illuminate\Foundation\Bus\PendingDispatch) { // #1277
+            $result = null;
+        }
+
         if ($originalTenant) {
             $this->initialize($originalTenant);
         } else {

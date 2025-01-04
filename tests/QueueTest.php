@@ -6,15 +6,12 @@ use Illuminate\Bus\Queueable;
 use Spatie\Valuestore\Valuestore;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Tests\Etc\User;
-use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Schema;
 use Stancl\Tenancy\Events\TenancyEnded;
-use Stancl\Tenancy\Jobs\CreateDatabase;
 use Illuminate\Queue\InteractsWithQueue;
-use Stancl\Tenancy\Events\TenantCreated;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
@@ -227,6 +224,23 @@ test('tenant connections do not persist after tenant jobs get processed', functi
     pest()->artisan('queue:work --once');
 
     expect(collect(DB::select('SHOW FULL PROCESSLIST'))->pluck('db'))->not()->toContain($tenant->database()->getName());
+});
+
+// Regression test for #1277
+test('dispatching a job from a tenant run arrow function dispatches it immediately', function () {
+    withTenantDatabases();
+
+    $tenant = Tenant::create();
+
+    $result = $tenant->run(fn () => dispatch(new TestJob(pest()->valuestore)));
+    expect($result)->toBe(null);
+
+    expect(tenant())->toBe(null);
+    expect(pest()->valuestore->has('tenant_id'))->toBeFalse();
+    pest()->artisan('queue:work --once');
+    expect(tenant())->toBe(null);
+
+    expect(pest()->valuestore->get('tenant_id'))->toBe('The current tenant id is: ' . $tenant->getTenantKey());
 });
 
 function createValueStore(): void
