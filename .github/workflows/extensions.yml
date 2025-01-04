@@ -1,0 +1,102 @@
+name: Build extensions
+
+on:
+  push:
+    paths:
+      - 'extensions/**'
+      - '.github/workflows/extensions.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            arch: x64
+          - os: ubuntu-latest
+            arch: ARM64
+          - os: windows-latest
+            arch: x64
+          - os: macos-latest
+            arch: x64
+          - os: macos-latest
+            arch: ARM64
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download SQLite headers (Unix)
+      if: runner.os != 'Windows'
+      run: cd extensions && make headers
+
+    - name: Download SQLite headers (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        cd extensions
+        curl.exe -L https://www.sqlite.org/2024/sqlite-amalgamation-3470200.zip -o sqlite-src.zip
+        Expand-Archive -Path sqlite-src.zip -DestinationPath .
+        Copy-Item sqlite-amalgamation-3470200\sqlite3.h .
+        Copy-Item sqlite-amalgamation-3470200\sqlite3ext.h .
+
+    - name: Set up QEMU (Linux cross-compilation)
+      if: runner.os == 'Linux' && matrix.arch == 'ARM64'
+      uses: docker/setup-qemu-action@v3
+
+    - name: Build C files (Native Windows)
+      if: runner.os == 'Windows'
+      run: cd extensions && make -B
+
+    - name: Build C files (Native Linux)
+      if: runner.os == 'Linux' && matrix.arch == 'x64'
+      run: cd extensions && make -B
+
+    - name: Build C files (Linux cross-compilation)
+      if: runner.os == 'Linux' && matrix.arch == 'ARM64'
+      run: |
+        cd extensions
+        docker run --platform linux/arm64 \
+          -v .:/extensions \
+          debian:bookworm-slim \
+          bash -c "apt-get update && apt-get install -y make gcc && cd /extensions && make"
+
+    - name: Build C files (Native macOS ARM64)
+      if: matrix.os == 'macos-latest' && matrix.arch == 'ARM64'
+      run: cd extensions && make -B
+
+    - name: Build C files (macOS cross-compilation)
+      if: matrix.os == 'macos-latest' && matrix.arch == 'x64'
+      run: |
+          cd extensions
+          brew install llvm
+          export CC=/opt/homebrew/opt/llvm/bin/clang
+          export CFLAGS="-target x86_64-apple-darwin"
+          export LDFLAGS="-target x86_64-apple-darwin"
+          make -B ARCH=x86_64
+
+    - name: Commit output files
+      shell: bash
+      run: |
+        cd extensions
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add lib/*.{so,dylib,dll} lib/arm/*.{so,dylib}
+        git commit -m "Auto-build: Update extensions [skip ci]" || echo "No changes to commit"
+
+    - name: Push files
+      shell: bash
+      run: |
+        CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+        for attempt in {1..3}; do
+          git pull --rebase origin $CURRENT_BRANCH && git push origin $CURRENT_BRANCH && exit 0 || {
+            echo "Attempt $attempt failed. Retrying in 5 seconds..."
+            sleep 5
+          }
+        done
+
+        echo "Failed to push changes after 3 attempts."
+        exit 1
