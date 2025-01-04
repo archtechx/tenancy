@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'extensions/**'
+      - '.github/workflows/extensions.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
