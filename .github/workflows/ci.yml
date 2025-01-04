@@ -136,8 +136,8 @@ jobs:
       - name: Commit changes from php-cs-fixer
         uses: EndBug/add-and-commit@v5
         with:
-          author_name: "PHP CS Fixer"
-          author_email: "phpcsfixer@example.com"
+          author_name: "github-actions[bot]"
+          author_email: "github-actions[bot]@users.noreply.github.com"
           message: Fix code style (php-cs-fixer)
 
   phpstan:
