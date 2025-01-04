@@ -48,11 +48,11 @@ jobs:
 
     - name: Build C files (Native Windows)
       if: runner.os == 'Windows'
-      run: cd extensions && make
+      run: cd extensions && make -B
 
     - name: Build C files (Native Linux)
       if: runner.os == 'Linux' && matrix.arch == 'x64'
-      run: cd extensions && make
+      run: cd extensions && make -B
 
     - name: Build C files (Linux cross-compilation)
       if: runner.os == 'Linux' && matrix.arch == 'ARM64'
@@ -65,7 +65,7 @@ jobs:
 
     - name: Build C files (Native macOS ARM64)
       if: matrix.os == 'macos-latest' && matrix.arch == 'ARM64'
-      run: cd extensions && make
+      run: cd extensions && make -B
 
     - name: Build C files (macOS cross-compilation)
       if: matrix.os == 'macos-latest' && matrix.arch == 'x64'
@@ -75,7 +75,7 @@ jobs:
           export CC=/opt/homebrew/opt/llvm/bin/clang
           export CFLAGS="-target x86_64-apple-darwin"
           export LDFLAGS="-target x86_64-apple-darwin"
-          make ARCH=x86_64
+          make -B ARCH=x86_64
 
     - name: Commit output files
       shell: bash
