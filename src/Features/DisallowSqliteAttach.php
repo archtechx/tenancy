@@ -43,24 +43,21 @@ class DisallowSqliteAttach implements Feature
             static::$loadExtensionSupported = method_exists($pdo, 'loadExtension');
         }
 
-        if (static::$loadExtensionSupported === false) {
-            return false;
-        }
+        if (static::$loadExtensionSupported === false) return false;
+        if (static::$extensionPath === false) return false;
 
         $suffix = match (PHP_OS_FAMILY) {
-            'Linux' => '.so',
-            'Windows' => '.dll',
-            'Darwin' => '.dylib',
+            'Linux' => 'so',
+            'Windows' => 'dll',
+            'Darwin' => 'dylib',
             default => throw new Exception("The DisallowSqliteAttach feature doesn't support your operating system: " . PHP_OS_FAMILY),
         };
 
         $arch = php_uname('m');
         $arm = $arch === 'aarch64' || $arch === 'arm64';
 
-        static::$extensionPath ??= realpath(base_path('vendor/stancl/tenancy/src/extensions/lib/' . ($arm ? 'arm/' : '') . 'noattach' . $suffix));
-        if (static::$extensionPath === false) {
-            return false;
-        }
+        static::$extensionPath ??= realpath(base_path('vendor/stancl/tenancy/extensions/lib/' . ($arm ? 'arm/' : '') . 'noattach.' . $suffix));
+        if (static::$extensionPath === false) return false;
 
         $pdo->loadExtension(static::$extensionPath); // @phpstan-ignore method.notFound
 
