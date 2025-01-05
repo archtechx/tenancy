@@ -35,7 +35,7 @@
         "doctrine/dbal": "^3.6.0",
         "spatie/valuestore": "^1.2.5",
         "pestphp/pest": "^2.0",
-        "larastan/larastan": "^2.4",
+        "larastan/larastan": "^3.0",
         "spatie/invade": "^1.1",
         "aws/aws-sdk-php-laravel": "~3.0"
     },
@@ -75,7 +75,7 @@
         "coverage": "open coverage/phpunit/html/index.html",
         "phpstan": "vendor/bin/phpstan --memory-limit=256M",
         "phpstan-pro": "vendor/bin/phpstan --memory-limit=256M --pro",
-        "cs": "php-cs-fixer fix --config=.php-cs-fixer.php",
+        "cs": "PHP_CS_FIXER_IGNORE_ENV=1 php-cs-fixer fix --config=.php-cs-fixer.php",
         "test": "./test --no-coverage",
         "test-full": "./test",
         "act": "act -j tests --matrix 'laravel:^11.0'",

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Queue\SerializesModels;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\TenantCollection;
 use Stancl\Tenancy\Listeners\QueueableListener;
 use Stancl\Tenancy\ResourceSyncing\Events\SyncedResourceSaved;
@@ -93,7 +94,7 @@ class UpdateOrCreateSyncedResource extends QueueableListener
 
         // If the model was just created, the mapping of the tenant to the user likely doesn't exist, so we create it.
         $currentTenantMapping = function ($model) use ($event) {
-            /** @var Tenant */
+            /** @var TenantWithDatabase */
             $tenant = $event->tenant;
 
             return ((string) $model->pivot->getAttribute(Tenancy::tenantKeyColumn())) === ((string) $tenant->getTenantKey());
@@ -105,7 +106,7 @@ class UpdateOrCreateSyncedResource extends QueueableListener
             // Here we should call TenantPivot, but we call general Pivot, so that this works
             // even if people use their own pivot model that is not based on our TenantPivot
             Pivot::withoutEvents(function () use ($centralModel, $event) {
-                /** @var Tenant */
+                /** @var TenantWithDatabase */
                 $tenant = $event->tenant;
 
                 $centralModel->tenants()->attach($tenant->getTenantKey());

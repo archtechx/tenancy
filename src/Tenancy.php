@@ -7,6 +7,7 @@ namespace Stancl\Tenancy;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Bus\PendingDispatch;
 use Illuminate\Support\Traits\Macroable;
 use Stancl\Tenancy\Concerns\DealsWithRouteContexts;
 use Stancl\Tenancy\Concerns\ManagesRLSPolicies;
@@ -71,7 +72,7 @@ class Tenancy
      *
      * @template T
      * @param Closure(Tenant): T $callback
-     * @return T
+     * @return (T is PendingDispatch ? null : T)
      */
     public function run(Tenant $tenant, Closure $callback): mixed
     {
@@ -80,7 +81,7 @@ class Tenancy
         $this->initialize($tenant);
         $result = $callback($tenant);
 
-        if ($result instanceof \Illuminate\Foundation\Bus\PendingDispatch) { // #1277
+        if ($result instanceof PendingDispatch) { // #1277
             $result = null;
         }
 

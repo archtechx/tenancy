@@ -10,6 +10,7 @@ use Stancl\Tenancy\Database\TenantDatabaseManagers\TenantDatabaseManager;
 /**
  * @method \Illuminate\Database\Connection database()
  * @mixin TenantDatabaseManager
+ * @phpstan-require-extends TenantDatabaseManager
  */
 trait ManagesPostgresUsers
 {
@@ -40,8 +41,6 @@ trait ManagesPostgresUsers
 
     public function deleteUser(DatabaseConfig $databaseConfig): bool
     {
-        /** @var TenantDatabaseManager $this */
-
         // Tenant DB username
         $username = $databaseConfig->getUsername();
 

@@ -14,8 +14,8 @@ parameters:
         - Illuminate\Database\Eloquent\Model
 
     ignoreErrors:
-        -
-            identifier: missingType.iterableValue
+        - identifier: trait.unused
+        - identifier: missingType.iterableValue
         - '#FFI#'
         - '#Return type(.*?) of method Stancl\\Tenancy\\Database\\Models\\Tenant\:\:newCollection\(\) should be compatible with return type#'
         - '#Method Stancl\\Tenancy\\Database\\Models\\Tenant\:\:newCollection\(\) should return#'

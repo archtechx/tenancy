@@ -56,7 +56,7 @@ trait TriggerSyncingEvents
 
     public function getCentralResourceAndTenant(): array
     {
-        /** @var static&Pivot $this */
+        /** @var $this&Pivot $this */
         $parent = $this->pivotParent;
 
         if ($parent instanceof Tenant) {
@@ -79,7 +79,7 @@ trait TriggerSyncingEvents
      */
     protected function getResourceClass(): string
     {
-        /** @var Pivot|MorphPivot|((Pivot|MorphPivot)&PivotWithRelation) $this */
+        /** @var $this&(Pivot|MorphPivot|((Pivot|MorphPivot)&PivotWithRelation)) $this */
         if ($this instanceof PivotWithRelation) {
             return $this->getRelatedModel()::class;
         }

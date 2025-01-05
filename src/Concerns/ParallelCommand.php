@@ -136,7 +136,7 @@ trait ParallelCommand
     }
 
     /**
-     * @return Collection<int, array<int, \Stancl\Tenancy\Contracts\Tenant&\Illuminate\Database\Eloquent\Model>>>
+     * @return Collection<int, array<int, \Stancl\Tenancy\Contracts\Tenant&\Illuminate\Database\Eloquent\Model>>
      */
     protected function getTenantChunks(): Collection
     {

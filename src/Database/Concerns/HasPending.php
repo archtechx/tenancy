@@ -17,9 +17,9 @@ use Stancl\Tenancy\Events\PullingPendingTenant;
 /**
  * @property ?Carbon $pending_since
  *
- * @method static static|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder withPending(bool $withPending = true)
- * @method static static|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder onlyPending()
- * @method static static|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder withoutPending()
+ * @method static static|\Illuminate\Database\Eloquent\Builder<static>|\Illuminate\Database\Query\Builder withPending(bool $withPending = true)
+ * @method static static|\Illuminate\Database\Eloquent\Builder<static>|\Illuminate\Database\Query\Builder onlyPending()
+ * @method static static|\Illuminate\Database\Eloquent\Builder<static>|\Illuminate\Database\Query\Builder withoutPending()
  */
 trait HasPending
 {

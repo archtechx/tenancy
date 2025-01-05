@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Database\Concerns;
 
 use Closure;
+use Illuminate\Foundation\Bus\PendingDispatch;
 use Stancl\Tenancy\Contracts\Tenant;
 
+/**
+ * @phpstan-require-implements Tenant
+ */
 trait TenantRun
 {
     /**
@@ -16,11 +20,10 @@ trait TenantRun
      *
      * @template T
      * @param Closure(Tenant): T $callback
-     * @return T
+     * @return (T is PendingDispatch ? null : T)
      */
     public function run(Closure $callback): mixed
     {
-        /** @var Tenant $this */
         return tenancy()->run($this, $callback);
     }
 }

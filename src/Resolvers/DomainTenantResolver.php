@@ -84,7 +84,6 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
                 $tenant->domain, // Current domain
             ]);
         } elseif (method_exists($tenant, 'domains') && $tenant->domains() instanceof Relation) {
-            /** @var Tenant&Model $tenant */
             $tenant->unsetRelation('domains');
 
             $domains = $tenant->domains->map(function (Domain&Model $domain) {

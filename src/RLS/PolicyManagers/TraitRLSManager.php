@@ -14,7 +14,7 @@ use Symfony\Component\Finder\SplFileInfo;
 
 class TraitRLSManager implements RLSPolicyManager
 {
-    /** @var Closure: array<\Illuminate\Database\Eloquent\Model> */
+    /** @var Closure(): array<Model> */
     public static Closure|null $modelDiscoveryOverride = null;
 
     /**
