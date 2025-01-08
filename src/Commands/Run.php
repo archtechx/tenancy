@@ -24,7 +24,7 @@ class Run extends Command
         /** @var string $commandName */
         $commandName = $this->argument('commandname');
 
-        $stringInput = (new StringInput($commandName));
+        $stringInput = new StringInput($commandName);
 
         tenancy()->runForMultiple($this->getTenants(), function ($tenant) use ($stringInput) {
             $this->components->info("Tenant: {$tenant->getTenantKey()}");
