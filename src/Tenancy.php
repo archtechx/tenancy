@@ -204,8 +204,10 @@ class Tenancy
         // Wrap string in array
         $tenants = is_string($tenants) ? [$tenants] : $tenants;
 
-        // Use all tenants if $tenants is falsy
-        $tenants = $tenants ?: $this->model()->cursor(); // todo@phpstan phpstan thinks this isn't needed, but tests fail without it
+        // If $tenants is falsy by this point (e.g. an empty array) there's no work to be done
+        if (! $tenants) {
+            return;
+        }
 
         $originalTenant = $this->tenant;
 
