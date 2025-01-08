@@ -7,8 +7,8 @@ namespace Stancl\Tenancy\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\Kernel;
 use Stancl\Tenancy\Concerns\HasTenantOptions;
-use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Input\StringInput;
+use Symfony\Component\Console\Output\ConsoleOutput;
 
 class Run extends Command
 {
