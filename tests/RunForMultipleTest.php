@@ -37,7 +37,7 @@ test('runForMultiple runs the passed closure for the right tenants', function() 
     };
 
     // tenancy()->runForMultiple([], ...) shouldn't do anything
-    // No users should be created -- the closure should not be run at all
+    // No users should be created -- the closure should not run at all
     tenancy()->runForMultiple([], $createUser('none'));
     // Try the same with an empty collection -- the result should be the same for any traversable
     tenancy()->runForMultiple(collect(), $createUser('none'));
