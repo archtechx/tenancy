@@ -124,7 +124,7 @@ class CreateUserWithRLSPolicies extends Command
                 }
 
                 // Create RLS policy if the table doesn't have it or if the --force option is used
-                $createPolicy = $dropPolicy || !$tableRLSPolicy || $this->option('force');
+                $createPolicy = $dropPolicy || ! $tableRLSPolicy || $this->option('force');
 
                 if ($createPolicy) {
                     DB::statement($policyQuery);
@@ -138,7 +138,7 @@ class CreateUserWithRLSPolicies extends Command
             }
         }
 
-        if (!empty($createdPolicies)) {
+        if (! empty($createdPolicies)) {
             $managerName = str($rlsPolicyManager::class)->afterLast('\\')->toString();
 
             $this->components->info("RLS policies created for tables (using {$managerName}):");
