@@ -105,34 +105,36 @@ class CreateUserWithRLSPolicies extends Command
 
         $createdPolicies = [];
 
-        foreach ($rlsQueries as $table => $query) {
-            [$hash, $policyQuery] = $this->hashPolicy($query);
-            $expectedName = $table . '_rls_policy_' . $hash;
+        foreach ($rlsQueries as $table => $queries) {
+            foreach ($queries as $type => $query) {
+                [$hash, $policyQuery] = $this->hashPolicy($query);
+                $expectedName = $table .'_'.$type.'_rls_policy_' . $hash;
 
-            $tableRLSPolicy = $this->findTableRLSPolicy($table);
-            $olderPolicyExists = $tableRLSPolicy && $tableRLSPolicy->policyname !== $expectedName;
+                $tableRLSPolicy = $this->findTableRLSPolicy($table,$type);
+                $olderPolicyExists = $tableRLSPolicy && $tableRLSPolicy->policyname !== $expectedName;
 
-            // Drop the policy if an outdated version exists
-            // or if it exists (even in the current form) and the --force option is used
-            $dropPolicy = $olderPolicyExists || ($tableRLSPolicy && $this->option('force'));
+                // Drop the policy if an outdated version exists
+                // or if it exists (even in the current form) and the --force option is used
+                $dropPolicy = $olderPolicyExists || ($tableRLSPolicy && $this->option('force'));
 
-            if ($tableRLSPolicy && $dropPolicy) {
-                DB::statement("DROP POLICY {$tableRLSPolicy->policyname} ON {$table}");
+                if ($tableRLSPolicy && $dropPolicy) {
+                    DB::statement("DROP POLICY {$tableRLSPolicy->policyname} ON {$table}");
 
-                $this->components->info("RLS policy for table '{$table}' dropped.");
-            }
+                    $this->components->info("RLS policy for table '{$table}' for '{$type}' dropped.");
+                }
 
-            // Create RLS policy if the table doesn't have it or if the --force option is used
-            $createPolicy = $dropPolicy || ! $tableRLSPolicy || $this->option('force');
+                // Create RLS policy if the table doesn't have it or if the --force option is used
+                $createPolicy = $dropPolicy || ! $tableRLSPolicy || $this->option('force');
 
-            if ($createPolicy) {
-                DB::statement($policyQuery);
+                if ($createPolicy) {
+                    DB::statement($policyQuery);
 
-                $this->enableRLS($table);
+                    $this->enableRLS($table);
 
-                $createdPolicies[] = $table . " ($hash)";
-            } else {
-                $this->components->info("Table '{$table}' already has an up to date RLS policy.");
+                    $createdPolicies[] = $table . " ($hash)";
+                } else {
+                    $this->components->info("Table '{$table}' for '{$type}' already has an up to date RLS policy.");
+                }
             }
         }
 
@@ -143,9 +145,9 @@ class CreateUserWithRLSPolicies extends Command
 
             $this->components->bulletList($createdPolicies);
 
-            $this->components->success('RLS policies updated successfully.');
+            $this->components->info('RLS policies updated successfully.');
         } else {
-            $this->components->success('All RLS policies are up to date.');
+            $this->components->info('All RLS policies are up to date.');
         }
     }
 
@@ -155,7 +157,7 @@ class CreateUserWithRLSPolicies extends Command
         return DB::selectOne(<<<SQL
             SELECT * FROM pg_policies
             WHERE tablename = '{$table}'
-            AND policyname LIKE '{$table}_rls_policy%';
+            AND policyname LIKE '{$table}_{$type}_rls_policy%';
         SQL);
     }
 

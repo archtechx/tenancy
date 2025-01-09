@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\RLS\PolicyManagers;
 
+use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\DatabaseManager;
 use Stancl\Tenancy\Database\Exceptions\RecursiveRelationshipException;
 
@@ -13,15 +14,20 @@ class TableRLSManager implements RLSPolicyManager
     public static bool $scopeByDefault = true;
 
     public function __construct(
-        protected DatabaseManager $database
+        protected DatabaseManager $database,
+        protected Repository $config
     ) {}
 
     public function generateQueries(array $trees = []): array
     {
         $queries = [];
+        $centralUserName = $this->database->getConfig('username');
 
         foreach ($trees ?: $this->shortestPaths() as $table => $path) {
-            $queries[$table] = $this->generateQuery($table, $path);
+            $queries[$table] =[
+                'tenant' => $this->generateQuery($table, $path),
+                'central' => "CREATE POLICY {$table}_central_rls_policy ON {$table} AS PERMISSIVE TO {$centralUserName} USING (true);"
+            ];
         }
 
         return $queries;
@@ -209,8 +215,9 @@ class TableRLSManager implements RLSPolicyManager
     /** Generates a query that creates a row-level security policy for the passed table. */
     protected function generateQuery(string $table, array $path): string
     {
+        $role = $this->config->get('tenancy.rls.user.username');
         // Generate the SQL conditions recursively
-        $query = "CREATE POLICY {$table}_rls_policy ON {$table} USING (\n";
+        $query = "CREATE POLICY {$table}_tenant_rls_policy ON {$table} TO {$role} USING (\n";
         $sessionTenantKey = config('tenancy.rls.session_variable_name');
 
         foreach ($path as $index => $relation) {
@@ -242,11 +249,9 @@ class TableRLSManager implements RLSPolicyManager
         // -1 because the last item is the tenant table reference which is not a nested where
         for ($i = count($path) - 1; $i > 0; $i--) {
             $query .= str_repeat(' ', $i * 4) . ")\n";
-        }
+        } // closing for CREATE POLICY
 
-        $query .= ');'; // closing for CREATE POLICY
-
-        return $query;
+        return $query . ');';
     }
 
     protected function getComment(string $tableName, string $columnName): string|null
