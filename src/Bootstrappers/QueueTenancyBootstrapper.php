@@ -25,16 +25,6 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
     protected $queue;
 
     /**
-     * Don't persist the same tenant across multiple jobs even if they have the same tenant ID.
-     *
-     * This is useful when you're changing the tenant's state (e.g. properties in the `data` column) and want the next job to initialize tenancy again
-     * with the new data. Features like the Tenant Config are only executed when tenancy is initialized, so the re-initialization is needed in some cases.
-     *
-     * @var bool
-     */
-    public static $forceRefresh = false;
-
-    /**
      * The normal constructor is only executed after tenancy is bootstrapped.
      * However, we're registering a hook to initialize tenancy. Therefore,
      * we need to register the hook at service provider execution time.
@@ -68,9 +58,10 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             static::initializeTenancyForQueue($event->payload()['tenant_id'] ?? null);
         });
 
-        // If we're running tests, we make sure to clean up after any artisan('queue:work') calls
         $revertToPreviousState = function ($event) use (&$previousTenant) {
-            static::revertToPreviousState($event, $previousTenant);
+            static::revertToPreviousState($event->job->payload()['tenant_id'] ?? null, $previousTenant);
+
+            $previousTenant = null;
         };
 
         $dispatcher->listen(JobProcessed::class, $revertToPreviousState); // artisan('queue:work') which succeeds
@@ -79,61 +70,25 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
 
     protected static function initializeTenancyForQueue(string|int|null $tenantId): void
     {
-        if ($tenantId === null) {
-            // The job is not tenant-aware
-            if (tenancy()->initialized) {
-                // Tenancy was initialized, so we revert back to the central context
-                tenancy()->end();
-            }
-
+        if (! $tenantId) {
             return;
         }
-
-        if (static::$forceRefresh) {
-            // Re-initialize tenancy between all jobs
-            if (tenancy()->initialized) {
-                tenancy()->end();
-            }
-
-            /** @var Tenant $tenant */
-            $tenant = tenancy()->find($tenantId);
-            tenancy()->initialize($tenant);
-
-            return;
-        }
-
-        if (tenancy()->initialized) {
-            // Tenancy is already initialized
-            if (tenant()->getTenantKey() === $tenantId) {
-                // It's initialized for the same tenant (e.g. dispatchSync was used, or the previous job also ran for this tenant)
-                return;
-            }
-        }
-
-        // Tenancy was either not initialized, or initialized for a different tenant.
-        // Therefore, we initialize it for the correct tenant.
 
         /** @var Tenant $tenant */
         $tenant = tenancy()->find($tenantId);
         tenancy()->initialize($tenant);
     }
 
-    protected static function revertToPreviousState(JobProcessed|JobFailed $event, ?Tenant &$previousTenant): void
+    protected static function revertToPreviousState(string|int|null $tenantId, ?Tenant $previousTenant): void
     {
-        $tenantId = $event->job->payload()['tenant_id'] ?? null;
-
-        // The job was not tenant-aware
+        // The job was not tenant-aware so no context switch was done
         if (! $tenantId) {
             return;
         }
 
-        // Revert back to the previous tenant
-        if (tenant() && $previousTenant?->isNot(tenant())) {
-            tenancy()->initialize($previousTenant);
-        }
-
-        // End tenancy
-        if (tenant() && (! $previousTenant)) {
+        // End tenancy when there's no previous tenant
+        // (= when running in a queue worker, not dispatchSync)
+        if (tenant() && ! $previousTenant) {
             tenancy()->end();
         }
     }
@@ -149,16 +104,6 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         }
     }
 
-    public function bootstrap(Tenant $tenant): void
-    {
-        //
-    }
-
-    public function revert(): void
-    {
-        //
-    }
-
     public function getPayload(string $connection): array
     {
         if (! tenancy()->initialized) {
@@ -169,10 +114,11 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             return [];
         }
 
-        $id = tenant()->getTenantKey();
-
         return [
-            'tenant_id' => $id,
+            'tenant_id' => tenant()->getTenantKey(),
         ];
     }
+
+    public function bootstrap(Tenant $tenant): void {}
+    public function revert(): void {}
 }
