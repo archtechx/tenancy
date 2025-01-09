@@ -108,9 +108,9 @@ class CreateUserWithRLSPolicies extends Command
         foreach ($rlsQueries as $table => $queries) {
             foreach ($queries as $type => $query) {
                 [$hash, $policyQuery] = $this->hashPolicy($query);
-                $expectedName = $table .'_'.$type.'_rls_policy_' . $hash;
+                $expectedName = $table . '_' . $type . '_rls_policy_' . $hash;
 
-                $tableRLSPolicy = $this->findTableRLSPolicy($table,$type);
+                $tableRLSPolicy = $this->findTableRLSPolicy($table, $type);
                 $olderPolicyExists = $tableRLSPolicy && $tableRLSPolicy->policyname !== $expectedName;
 
                 // Drop the policy if an outdated version exists

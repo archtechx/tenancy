@@ -24,9 +24,9 @@ class TableRLSManager implements RLSPolicyManager
         $centralUserName = $this->database->getConfig('username');
 
         foreach ($trees ?: $this->shortestPaths() as $table => $path) {
-            $queries[$table] =[
+            $queries[$table] = [
                 'tenant' => $this->generateQuery($table, $path),
-                'central' => "CREATE POLICY {$table}_central_rls_policy ON {$table} AS PERMISSIVE TO {$centralUserName} USING (true);"
+                'central' => "CREATE POLICY {$table}_central_rls_policy ON {$table} AS PERMISSIVE TO {$centralUserName} USING (true);",
             ];
         }
 
