@@ -225,7 +225,7 @@ test('the tenant used by the job doesnt change when the current tenant changes',
     expect(pest()->valuestore->get('tenant_id'))->toBe('The current tenant id is: ' . $tenant1->getTenantKey());
 })->with('queue_bootstrappers');
 
-// todo0 confirm if this should be passing with the persistent bootstrapper
+// todo0 false positive -- remove after reproducing original issue
 test('tenant connections do not persist after tenant jobs get processed', function (string $bootstrapper) {
     withQueueBootstrapper($bootstrapper);
     withTenantDatabases();

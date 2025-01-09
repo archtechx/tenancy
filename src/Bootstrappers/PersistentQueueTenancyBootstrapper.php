@@ -63,6 +63,10 @@ class PersistentQueueTenancyBootstrapper implements TenancyBootstrapper
             if ($runningTests) {
                 static::revertToPreviousState($event, $previousTenant);
             }
+
+            // If we're not running tests, we remain in the tenant's context. This makes other JobProcessed
+            // listeners able to deserialize the job, including with SerializesModels, since the tenant connection
+            // remains open.
         };
 
         $dispatcher->listen(JobProcessed::class, $revertToPreviousState); // artisan('queue:work') which succeeds
@@ -81,27 +85,10 @@ class PersistentQueueTenancyBootstrapper implements TenancyBootstrapper
             return;
         }
 
-        if (true) { // todo0 refactor
-            // Re-initialize tenancy between all jobs
-            if (tenancy()->initialized) {
-                tenancy()->end();
-            }
-
-            tenancy()->initialize(tenancy()->find($tenantId));
-
-            return;
-        }
-
-        if (tenancy()->initialized) {
-            // Tenancy is already initialized
-            if (tenant()->getTenantKey() === $tenantId) {
-                // It's initialized for the same tenant (e.g. dispatchNow was used, or the previous job also ran for this tenant)
-                return;
-            }
-        }
-
-        // Tenancy was either not initialized, or initialized for a different tenant.
-        // Therefore, we initialize it for the correct tenant.
+        // Re-initialize tenancy between all jobs even if the tenant is the same
+        // so that we don't work with an outdated tenant() instance in case it
+        // was updated outside the queue worker.
+        tenancy()->end();
         tenancy()->initialize(tenancy()->find($tenantId));
     }
 
@@ -136,16 +123,6 @@ class PersistentQueueTenancyBootstrapper implements TenancyBootstrapper
         }
     }
 
-    public function bootstrap(Tenant $tenant): void
-    {
-        //
-    }
-
-    public function revert(): void
-    {
-        //
-    }
-
     public function getPayload(string $connection)
     {
         if (! tenancy()->initialized) {
@@ -156,10 +133,11 @@ class PersistentQueueTenancyBootstrapper implements TenancyBootstrapper
             return [];
         }
 
-        $id = tenant()->getTenantKey();
-
         return [
-            'tenant_id' => $id,
+            'tenant_id' => tenant()->getTenantKey(),
         ];
     }
+
+    public function bootstrap(Tenant $tenant): void {}
+    public function revert(): void {}
 }
