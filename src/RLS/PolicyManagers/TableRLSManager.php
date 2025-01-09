@@ -249,9 +249,11 @@ class TableRLSManager implements RLSPolicyManager
         // -1 because the last item is the tenant table reference which is not a nested where
         for ($i = count($path) - 1; $i > 0; $i--) {
             $query .= str_repeat(' ', $i * 4) . ")\n";
-        } // closing for CREATE POLICY
+        }
 
-        return $query . ');';
+        $query .= ');'; // closing for CREATE POLICY
+
+        return $query;
     }
 
     protected function getComment(string $tableName, string $columnName): string|null

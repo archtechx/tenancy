@@ -108,9 +108,9 @@ class CreateUserWithRLSPolicies extends Command
         foreach ($rlsQueries as $table => $queries) {
             foreach ($queries as $type => $query) {
                 [$hash, $policyQuery] = $this->hashPolicy($query);
-                $expectedName = $table .'_'.$type.'_rls_policy_' . $hash;
+                $expectedName = $table . '_' . $type . '_rls_policy_' . $hash;
 
-                $tableRLSPolicy = $this->findTableRLSPolicy($table,$type);
+                $tableRLSPolicy = $this->findTableRLSPolicy($table, $type);
                 $olderPolicyExists = $tableRLSPolicy && $tableRLSPolicy->policyname !== $expectedName;
 
                 // Drop the policy if an outdated version exists
@@ -124,7 +124,7 @@ class CreateUserWithRLSPolicies extends Command
                 }
 
                 // Create RLS policy if the table doesn't have it or if the --force option is used
-                $createPolicy = $dropPolicy || ! $tableRLSPolicy || $this->option('force');
+                $createPolicy = $dropPolicy || !$tableRLSPolicy || $this->option('force');
 
                 if ($createPolicy) {
                     DB::statement($policyQuery);
@@ -138,7 +138,7 @@ class CreateUserWithRLSPolicies extends Command
             }
         }
 
-        if (! empty($createdPolicies)) {
+        if (!empty($createdPolicies)) {
             $managerName = str($rlsPolicyManager::class)->afterLast('\\')->toString();
 
             $this->components->info("RLS policies created for tables (using {$managerName}):");
@@ -152,7 +152,7 @@ class CreateUserWithRLSPolicies extends Command
     }
 
     /** @return \stdClass|null */
-    protected function findTableRLSPolicy(string $table): object|null
+    protected function findTableRLSPolicy(string $table, string $type): object|null
     {
         return DB::selectOne(<<<SQL
             SELECT * FROM pg_policies
