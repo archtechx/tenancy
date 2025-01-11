@@ -59,9 +59,11 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         });
 
         $revertToPreviousState = function ($event) use (&$previousTenant) {
+            // In queue worker context, this reverts to the central context.
+            // In dispatchSync context, this reverts to the previous tenant's context.
+            // There's no need to reset $previousTenant here since it's always first
+            // set in the above listeners and the app is reverted back to that context.
             static::revertToPreviousState($event->job->payload()['tenant_id'] ?? null, $previousTenant);
-
-            $previousTenant = null;
         };
 
         $dispatcher->listen(JobProcessed::class, $revertToPreviousState); // artisan('queue:work') which succeeds

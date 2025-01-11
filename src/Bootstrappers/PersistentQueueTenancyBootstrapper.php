@@ -29,7 +29,7 @@ class PersistentQueueTenancyBootstrapper implements TenancyBootstrapper
      * However, we're registering a hook to initialize tenancy. Therefore,
      * we need to register the hook at service provider execution time.
      */
-    public static function __constructStatic(Application $app)
+    public static function __constructStatic(Application $app): void
     {
         static::setUpJobListener($app->make(Dispatcher::class), $app->runningUnitTests());
     }
@@ -42,7 +42,7 @@ class PersistentQueueTenancyBootstrapper implements TenancyBootstrapper
         $this->setUpPayloadGenerator();
     }
 
-    protected static function setUpJobListener($dispatcher, $runningTests)
+    protected static function setUpJobListener(Dispatcher $dispatcher, bool $runningTests): void
     {
         $previousTenant = null;
 
@@ -61,7 +61,9 @@ class PersistentQueueTenancyBootstrapper implements TenancyBootstrapper
         // If we're running tests, we make sure to clean up after any artisan('queue:work') calls
         $revertToPreviousState = function ($event) use (&$previousTenant, $runningTests) {
             if ($runningTests) {
-                static::revertToPreviousState($event, $previousTenant);
+                static::revertToPreviousState($event->job->payload()['tenant_id'] ?? null, $previousTenant);
+
+                // We don't need to reset $previousTenant since the value will be set again when a job is processed.
             }
 
             // If we're not running tests, we remain in the tenant's context. This makes other JobProcessed
@@ -73,7 +75,7 @@ class PersistentQueueTenancyBootstrapper implements TenancyBootstrapper
         $dispatcher->listen(JobFailed::class, $revertToPreviousState); // artisan('queue:work') which fails
     }
 
-    protected static function initializeTenancyForQueue($tenantId)
+    protected static function initializeTenancyForQueue(string|int|null $tenantId): void
     {
         if (! $tenantId) {
             // The job is not tenant-aware
@@ -89,13 +91,14 @@ class PersistentQueueTenancyBootstrapper implements TenancyBootstrapper
         // so that we don't work with an outdated tenant() instance in case it
         // was updated outside the queue worker.
         tenancy()->end();
-        tenancy()->initialize(tenancy()->find($tenantId));
+
+        /** @var Tenant $tenant */
+        $tenant = tenancy()->find($tenantId);
+        tenancy()->initialize($tenant);
     }
 
-    protected static function revertToPreviousState($event, &$previousTenant)
+    protected static function revertToPreviousState(string|int|null $tenantId, ?Tenant $previousTenant): void
     {
-        $tenantId = $event->job->payload()['tenant_id'] ?? null;
-
         // The job was not tenant-aware
         if (! $tenantId) {
             return;
@@ -112,7 +115,7 @@ class PersistentQueueTenancyBootstrapper implements TenancyBootstrapper
         }
     }
 
-    protected function setUpPayloadGenerator()
+    protected function setUpPayloadGenerator(): void
     {
         $bootstrapper = &$this;
 
@@ -123,7 +126,7 @@ class PersistentQueueTenancyBootstrapper implements TenancyBootstrapper
         }
     }
 
-    public function getPayload(string $connection)
+    public function getPayload(string $connection): array
     {
         if (! tenancy()->initialized) {
             return [];
