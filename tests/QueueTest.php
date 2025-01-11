@@ -225,24 +225,6 @@ test('the tenant used by the job doesnt change when the current tenant changes',
     expect(pest()->valuestore->get('tenant_id'))->toBe('The current tenant id is: ' . $tenant1->getTenantKey());
 })->with('queue_bootstrappers');
 
-// todo0 false positive -- remove after reproducing original issue
-test('tenant connections do not persist after tenant jobs get processed', function (string $bootstrapper) {
-    withQueueBootstrapper($bootstrapper);
-    withTenantDatabases();
-
-    $tenant = Tenant::create();
-
-    tenancy()->initialize($tenant);
-
-    dispatch(new TestJob(pest()->valuestore));
-
-    tenancy()->end();
-
-    pest()->artisan('queue:work --once');
-
-    expect(collect(DB::select('SHOW FULL PROCESSLIST'))->pluck('db'))->not()->toContain($tenant->database()->getName());
-})->with('queue_bootstrappers');
-
 // Regression test for #1277
 test('dispatching a job from a tenant run arrow function dispatches it immediately', function (string $bootstrapper) {
     withQueueBootstrapper($bootstrapper);
