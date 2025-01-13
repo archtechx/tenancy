@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Bootstrappers;
 
+use Illuminate\Cache\CacheManager;
 use Illuminate\Config\Repository;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
-use Illuminate\Cache\CacheManager;
 
 class DatabaseCacheBootstrapper implements TenancyBootstrapper
 {
