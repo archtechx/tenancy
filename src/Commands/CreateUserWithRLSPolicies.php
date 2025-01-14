@@ -22,6 +22,8 @@ class CreateUserWithRLSPolicies extends Command
 
     protected $description = "Creates RLS policies for all tables related to the tenant table. Also creates the RLS user if it doesn't exist yet";
 
+    public static bool $forceRls = true;
+
     public function handle(PermissionControlledPostgreSQLSchemaManager $manager): int
     {
         $username = config('tenancy.rls.user.username');
@@ -49,14 +51,16 @@ class CreateUserWithRLSPolicies extends Command
         // Enable RLS scoping on the table (without this, queries won't be scoped using RLS)
         DB::statement("ALTER TABLE {$table} ENABLE ROW LEVEL SECURITY");
 
-        /**
-         * Force RLS scoping on the table, so that the table owner users
-         * don't bypass the scoping – table owners bypass RLS by default.
-         *
-         * E.g. when using a custom implementation where you create tables as the RLS user,
-         * the queries won't be scoped for the RLS user unless we force the RLS scoping using this query.
-         */
-        DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
+        if (static::$forceRls) {
+            /**
+             * Force RLS scoping on the table, so that the table owner users
+             * don't bypass the scoping – table owners bypass RLS by default.
+             *
+             * E.g. when using a custom implementation where you create tables as the RLS user,
+             * the queries won't be scoped for the RLS user unless we force the RLS scoping using this query.
+             */
+            DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
+        }
     }
 
     /**
