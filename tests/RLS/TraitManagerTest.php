@@ -268,10 +268,7 @@ test('queries are correctly scoped using RLS with trait rls manager', function (
 
     expect(fn () => DB::statement("INSERT INTO comments (text, post_id) VALUES ('third comment', {$post1->id})"))
         ->toThrow(QueryException::class);
-})->with(
-    [true, false],
-    [true, false],
-);
+})->with([true, false])->with([true, false]);
 
 test('trait rls manager generates queries correctly', function() {
     /** @var TraitRLSManager $manager */

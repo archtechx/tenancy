@@ -222,7 +222,4 @@ test('queries will stop working when the tenant session variable is not set', fu
         INSERT INTO posts (text, tenant_id, author_id)
         VALUES ('post2', ?, ?)
     SQL, [$tenant->id, $authorId]))->toThrow(QueryException::class);
-})->with(
-    [TableRLSManager::class, TraitRLSManager::class],
-    [true, false]
-);
+})->with([TableRLSManager::class, TraitRLSManager::class])->with([true, false]);
