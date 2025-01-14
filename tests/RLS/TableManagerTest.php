@@ -540,12 +540,12 @@ test('table rls manager generates relationship trees with tables related to the 
 test('user without BYPASSRLS can only query owned tables if forceRls is true', function(bool $forceRls) {
     CreateUserWithRLSPolicies::$forceRls = $forceRls;
 
+    // Drop all tables created in beforeEach
+    DB::statement("DROP TABLE authors, categories, posts, comments, reactions, articles;");
+
     try {
         DB::statement("DROP OWNED BY administrator;");
         DB::statement("DROP USER IF EXISTS administrator;");
-
-        // Drop all tables created in beforeEach
-        DB::statement("DROP TABLE authors, categories, posts, comments, reactions;");
     } catch (\Throwable $th) {
     }
 
