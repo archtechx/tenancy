@@ -19,6 +19,7 @@ use Stancl\Tenancy\RLS\PolicyManagers\TraitRLSManager;
 use Stancl\Tenancy\Bootstrappers\PostgresRLSBootstrapper;
 
 beforeEach(function () {
+    CreateUserWithRLSPolicies::$forceRls = true;
     TraitRLSManager::$excludedModels = [Article::class];
     TraitRLSManager::$modelDirectories = [__DIR__ . '/Etc'];
 
@@ -183,7 +184,9 @@ test('rls command recreates policies if the force option is passed', function (s
     TraitRLSManager::class,
 ]);
 
-test('queries will stop working when the tenant session variable is not set', function(string $manager) {
+test('queries will stop working when the tenant session variable is not set', function(string $manager, bool $forceRls) {
+    CreateUserWithRLSPolicies::$forceRls = $forceRls;
+
     config(['tenancy.rls.manager' => $manager]);
 
     $sessionVariableName = config('tenancy.rls.session_variable_name');
@@ -215,7 +218,7 @@ test('queries will stop working when the tenant session variable is not set', fu
         INSERT INTO posts (text, tenant_id, author_id)
         VALUES ('post2', ?, ?)
     SQL, [$tenant->id, $authorId]))->toThrow(QueryException::class);
-})->with([
-    TableRLSManager::class,
-    TraitRLSManager::class,
-]);
+})->with(
+    [TableRLSManager::class, TraitRLSManager::class],
+    [true, false]
+);

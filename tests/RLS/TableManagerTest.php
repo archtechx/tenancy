@@ -21,6 +21,7 @@ use Stancl\Tenancy\Bootstrappers\PostgresRLSBootstrapper;
 use Stancl\Tenancy\Database\Exceptions\RecursiveRelationshipException;
 
 beforeEach(function () {
+    CreateUserWithRLSPolicies::$forceRls = true;
     TableRLSManager::$scopeByDefault = true;
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
@@ -158,7 +159,9 @@ test('correct rls policies get created with the correct hash using table manager
     }
 });
 
-test('queries are correctly scoped using RLS', function() {
+test('queries are correctly scoped using RLS', function(bool $forceRls) {
+    CreateUserWithRLSPolicies::$forceRls = $forceRls;
+
     // 3-levels deep relationship
     Schema::create('notes', function (Blueprint $table) {
         $table->id();
@@ -319,7 +322,7 @@ test('queries are correctly scoped using RLS', function() {
 
     expect(fn () => DB::statement("INSERT INTO notes (text, comment_id) VALUES ('baz', {$post1Comment->id})"))
         ->toThrow(QueryException::class);
-});
+})->with([true, false]);
 
 test('table rls manager generates relationship trees with tables related to the tenants table', function (bool $scopeByDefault) {
     TableRLSManager::$scopeByDefault = $scopeByDefault;
@@ -534,6 +537,74 @@ test('table rls manager generates relationship trees with tables related to the 
     ]);
 })->with([true, false]);
 
+test('user without BYPASSRLS can only query owned tables if forceRls is true', function(bool $forceRls) {
+    CreateUserWithRLSPolicies::$forceRls = $forceRls;
+
+    try {
+        DB::statement("DROP OWNED BY administrator;");
+        DB::statement("DROP USER IF EXISTS administrator;");
+
+        // Drop all tables created in beforeEach
+        DB::statement("DROP TABLE authors, categories, posts, comments, reactions;");
+    } catch (\Throwable $th) {
+    }
+
+    // Create new central user (without superuser and bypassrls privileges)
+    DB::statement("CREATE USER administrator WITH ENCRYPTED PASSWORD 'password'");
+    DB::statement("ALTER USER administrator CREATEDB");
+    DB::statement("ALTER USER administrator CREATEROLE");
+
+    // Grant privileges to the new central user
+    DB::statement("GRANT ALL PRIVILEGES ON DATABASE main to administrator");
+    DB::statement("GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO administrator");
+    DB::statement("GRANT ALL ON SCHEMA public TO administrator");
+    DB::statement("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO administrator");
+    DB::statement("GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO administrator");
+
+    config(['database.connections.central' => array_merge(
+        config('database.connections.pgsql'),
+        ['username' => 'administrator', 'password' => 'password']
+    )]);
+
+    DB::reconnect();
+
+    Schema::create('orders', function (Blueprint $table) {
+        $table->id();
+        $table->string('name');
+
+        $table->string('tenant_id')->comment('rls');
+        $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
+
+        $table->timestamps();
+    });
+
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    // Create RLS policy for the orders table
+    pest()->artisan('tenants:rls');
+
+    tenancy()->initialize($tenant1);
+
+    Order::create(['name' => 'order1', 'tenant_id' => $tenant1->getTenantKey()]);
+    expect(Order::first())->not()->toBeNull();
+
+    tenancy()->initialize($tenant2);
+
+    expect(Order::first())->toBeNull(); // RLS works
+
+    tenancy()->end();
+
+    if ($forceRls) {
+        // RLS is forced, so by default, not even the table owner should not be able to query the table protected by the RLS policy
+        // "unrecognized configuration parameter" = the my.current_tenant session variable isn't set -- the RLS policy is working
+        expect(fn () => Order::first())->toThrow(QueryException::class, 'unrecognized configuration parameter');
+    } else {
+        // RLS is not forced, so the table owner should be able to query the table, bypassing the RLS policy
+        expect(Order::first())->not()->toBeNull();
+    }
+})->with([true, false]);
+
 test('table rls manager generates queries correctly', function() {
     expect(array_values(app(TableRLSManager::class)->generateQueries()))->toEqualCanonicalizing([
         <<<SQL
@@ -698,6 +769,11 @@ class Category extends Model
 }
 
 class Author extends Model
+{
+    protected $guarded = [];
+}
+
+class Order extends Model
 {
     protected $guarded = [];
 }
