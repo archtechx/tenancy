@@ -25,3 +25,5 @@ jobs:
           cd tenancy-queue-tester
           TENANCY_VERSION=${VERSION_PREFIX}#${GITHUB_SHA} ./setup.sh
           ./test.sh
+          ./alternative_config.sh
+          PERSISTENT=1 ./test.sh
