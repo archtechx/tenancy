@@ -543,11 +543,8 @@ test('user without BYPASSRLS can only query owned tables if forceRls is true', f
     // Drop all tables created in beforeEach
     DB::statement("DROP TABLE authors, categories, posts, comments, reactions, articles;");
 
-    try {
-        DB::statement("DROP OWNED BY administrator;");
-        DB::statement("DROP USER IF EXISTS administrator;");
-    } catch (\Throwable $th) {
-    }
+    DB::statement("DROP OWNED BY administrator;");
+    DB::statement("DROP USER IF EXISTS administrator;");
 
     // Create new central user (without superuser and bypassrls privileges)
     DB::statement("CREATE USER administrator WITH ENCRYPTED PASSWORD 'password'");
