@@ -600,8 +600,9 @@ test('user without BYPASSRLS can only query owned tables if forceRls is true', f
     tenancy()->end();
 
     if ($forceRls) {
-        // RLS is forced, so by default, not even the table owner should not be able to query the table protected by the RLS policy
-        // "unrecognized configuration parameter" = the my.current_tenant session variable isn't set -- the RLS policy is working
+        // RLS is forced, so by default, not even the table owner should be able to query the table protected by the RLS policy.
+        // The RLS policy is not being bypassed, 'unrecognized configuration parameter' means
+        // that the my.current_tenant session variable isn't set.
         expect(fn () => Order::first())->toThrow(QueryException::class, 'unrecognized configuration parameter');
     } else {
         // RLS is not forced, so the table owner should be able to query the table, bypassing the RLS policy
