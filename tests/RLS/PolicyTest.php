@@ -79,6 +79,10 @@ beforeEach(function () {
     });
 });
 
+afterEach(function () {
+    CreateUserWithRLSPolicies::$forceRls = true;
+});
+
 // Regression test for https://github.com/archtechx/tenancy/pull/1280
 test('rls command doesnt fail when a view is in the database', function (string $manager) {
     DB::statement("

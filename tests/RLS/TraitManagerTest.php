@@ -78,6 +78,10 @@ beforeEach(function () {
     });
 });
 
+afterEach(function () {
+    CreateUserWithRLSPolicies::$forceRls = true;
+});
+
 test('correct rls policies get created with the correct hash using trait manager', function () {
     $manager = app(TraitRLSManager::class);
 

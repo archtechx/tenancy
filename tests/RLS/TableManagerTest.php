@@ -107,6 +107,10 @@ beforeEach(function () {
     });
 });
 
+afterEach(function () {
+    CreateUserWithRLSPolicies::$forceRls = true;
+});
+
 test('correct rls policies get created with the correct hash using table manager', function() {
     $manager = app(config('tenancy.rls.manager'));
 
