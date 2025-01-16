@@ -70,7 +70,7 @@ trait ParallelCommand
         // perflevel0 refers to P-cores on M-series, and the entire CPU on Intel Macs
         if ($darwin && $ffi->sysctlbyname('hw.perflevel0.logicalcpu', FFI::addr($cores), FFI::addr($size), null, 0) === 0) {
             return $cores->cdata;
-        } else if ($darwin) {
+        } elseif ($darwin) {
             // Reset the size in case the pointer got written to (likely shouldn't happen)
             $size->cdata = FFI::sizeof($cores);
         }
@@ -109,7 +109,7 @@ trait ParallelCommand
         if ($processes === null) {
             // This is used when the option is set but *without* a value (-p).
             $processes = $this->getLogicalCoreCount();
-        } else if ((int) $processes === -1) {
+        } elseif ((int) $processes === -1) {
             // Default value we set for the option -- this is used when the option is *not set*.
             $processes = 1;
         } else {
