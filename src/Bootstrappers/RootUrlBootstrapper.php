@@ -42,7 +42,7 @@ class RootUrlBootstrapper implements TenancyBootstrapper
      * that are generating URLs in things like mails, the bootstrapper should be used
      * just like in any queued job.
      */
-    public static bool $rootUrlOverrideInTests = false;
+    public static bool $rootUrlOverrideInTests = true;
 
     public function __construct(
         protected Repository $config,
