@@ -7,7 +7,6 @@ namespace Stancl\Tenancy\Bootstrappers;
 use Closure;
 use Illuminate\Config\Repository;
 use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Routing\UrlGenerator;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
@@ -36,28 +35,46 @@ class RootUrlBootstrapper implements TenancyBootstrapper
 
     protected string|null $originalRootUrl = null;
 
+    /**
+     * You may want to selectively enable or disable this bootstrapper in specific tests.
+     * For instance, when using `Livewire::test()` this bootstrapper can cause problems,
+     * due to an internal Livewire route, so you may want to disable it, while in tests
+     * that are generating URLs in things like mails, the bootstrapper should be used
+     * just like in any queued job.
+     */
+    public static bool $rootUrlOverrideInTests = false;
+
     public function __construct(
-        protected UrlGenerator $urlGenerator,
         protected Repository $config,
         protected Application $app,
     ) {}
 
     public function bootstrap(Tenant $tenant): void
     {
-        if ($this->app->runningInConsole() && static::$rootUrlOverride) {
-            $this->originalRootUrl = $this->urlGenerator->to('/');
-
-            $newRootUrl = (static::$rootUrlOverride)($tenant, $this->originalRootUrl);
-
-            $this->urlGenerator->forceRootUrl($newRootUrl);
-            $this->config->set('app.url', $newRootUrl);
+        if (static::$rootUrlOverride === null) {
+            return;
         }
+
+        if (! $this->app->runningInConsole()) {
+            return;
+        }
+
+        if ($this->app->runningUnitTests() && ! static::$rootUrlOverrideInTests) {
+            return;
+        }
+
+        $this->originalRootUrl = $this->app['url']->to('/');
+
+        $newRootUrl = (static::$rootUrlOverride)($tenant, $this->originalRootUrl);
+
+        $this->app['url']->forceRootUrl($newRootUrl);
+        $this->config->set('app.url', $newRootUrl);
     }
 
     public function revert(): void
     {
         if ($this->originalRootUrl) {
-            $this->urlGenerator->forceRootUrl($this->originalRootUrl);
+            $this->app['url']->forceRootUrl($this->originalRootUrl);
             $this->config->set('app.url', $this->originalRootUrl);
         }
     }

@@ -37,7 +37,7 @@ class UrlGeneratorBootstrapper implements TenancyBootstrapper
 
     public function revert(): void
     {
-        $this->app->bind('url', fn () => $this->originalUrlGenerator);
+        $this->app->extend('url', fn () => $this->originalUrlGenerator);
     }
 
     /**
@@ -47,24 +47,22 @@ class UrlGeneratorBootstrapper implements TenancyBootstrapper
      */
     protected function useTenancyUrlGenerator(): void
     {
-        $this->app->extend('url', function (UrlGenerator $urlGenerator, Application $app) {
-            $newGenerator = new TenancyUrlGenerator(
-                $app['router']->getRoutes(),
-                $urlGenerator->getRequest(),
-                $app['config']->get('app.asset_url'),
-            );
+        $newGenerator = new TenancyUrlGenerator(
+            $this->app['router']->getRoutes(),
+            $this->originalUrlGenerator->getRequest(),
+            $this->app['config']->get('app.asset_url'),
+        );
 
-            $newGenerator->defaults($urlGenerator->getDefaultParameters());
+        $newGenerator->defaults($this->originalUrlGenerator->getDefaultParameters());
 
-            $newGenerator->setSessionResolver(function () {
-                return $this->app['session'] ?? null;
-            });
-
-            $newGenerator->setKeyResolver(function () {
-                return $this->app->make('config')->get('app.key');
-            });
-
-            return $newGenerator;
+        $newGenerator->setSessionResolver(function () {
+            return $this->app['session'] ?? null;
         });
+
+        $newGenerator->setKeyResolver(function () {
+            return $this->app->make('config')->get('app.key');
+        });
+
+        $this->app->extend('url', fn () => $newGenerator);
     }
 }
