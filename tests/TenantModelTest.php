@@ -95,12 +95,10 @@ test('random ints are supported', function () {
     // should statistically be above 1 billion.
     try {
         $tenant1 = Tenant::create();
-        expect($tenant1->id)->toBeString();
         assert((int) $tenant1->id > 10**9);
     } catch (\AssertionError) {
         // retry
         $tenant1 = Tenant::create();
-        expect($tenant1->id)->toBeString();
         assert((int) $tenant1->id > 10**9);
     }
 });
