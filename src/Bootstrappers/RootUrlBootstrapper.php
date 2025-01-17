@@ -41,8 +41,10 @@ class RootUrlBootstrapper implements TenancyBootstrapper
      * due to an internal Livewire route, so you may want to disable it, while in tests
      * that are generating URLs in things like mails, the bootstrapper should be used
      * just like in any queued job.
+     *
+     * todo@revisit
      */
-    public static bool $rootUrlOverrideInTests = false;
+    public static bool $rootUrlOverrideInTests = true;
 
     public function __construct(
         protected Repository $config,
