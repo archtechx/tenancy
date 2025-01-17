@@ -11,5 +11,5 @@ interface UniqueIdentifierGenerator
     /**
      * Generate a unique identifier for a model.
      */
-    public static function generate(Model $model): string;
+    public static function generate(Model $model): string|int;
 }

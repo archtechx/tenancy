@@ -5,16 +5,17 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\UniqueIdentifierGenerators;
 
 use Illuminate\Database\Eloquent\Model;
-use Ramsey\Uuid\Uuid;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 
 /**
- * Generates a UUID for the tenant key.
+ * Generates a cryptographically secure random integer for the tenant key.
+ *
+ * The integer is generated in range (0, PHP_INT_MAX).
  */
-class UUIDGenerator implements UniqueIdentifierGenerator
+class RandomIntGenerator implements UniqueIdentifierGenerator
 {
     public static function generate(Model $model): string|int
     {
-        return Uuid::uuid4()->toString();
+        return random_int(0, PHP_INT_MAX);
     }
 }

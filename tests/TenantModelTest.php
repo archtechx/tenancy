@@ -20,6 +20,7 @@ use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\UniqueIdentifierGenerators\UUIDGenerator;
 use Stancl\Tenancy\Exceptions\TenancyNotInitializedException;
 use Stancl\Tenancy\UniqueIdentifierGenerators\RandomHexGenerator;
+use Stancl\Tenancy\UniqueIdentifierGenerators\RandomIntGenerator;
 use Stancl\Tenancy\UniqueIdentifierGenerators\RandomStringGenerator;
 
 test('created event is dispatched', function () {
@@ -85,6 +86,23 @@ test('hex ids are supported', function () {
     expect(strlen($tenant2->id))->toBe(16);
 
     RandomHexGenerator::$bytes = 6; // reset
+});
+
+test('random ints are supported', function () {
+    app()->bind(UniqueIdentifierGenerator::class, RandomIntGenerator::class);
+
+    // No good way to test this besides asserting that at least one of two ids
+    // should statistically be above 1 billion.
+    try {
+        $tenant1 = Tenant::create();
+        expect($tenant1->id)->toBeString();
+        assert((int) $tenant1->id > 10**9);
+    } catch (\AssertionError) {
+        // retry
+        $tenant1 = Tenant::create();
+        expect($tenant1->id)->toBeString();
+        assert((int) $tenant1->id > 10**9);
+    }
 });
 
 test('random string ids are supported', function () {
