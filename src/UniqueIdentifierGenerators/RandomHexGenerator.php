@@ -18,7 +18,7 @@ class RandomHexGenerator implements UniqueIdentifierGenerator
 {
     public static int $bytes = 6;
 
-    public static function generate(Model $model): string
+    public static function generate(Model $model): string|int
     {
         return bin2hex(random_bytes(static::$bytes));
     }

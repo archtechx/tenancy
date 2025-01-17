@@ -18,7 +18,7 @@ class RandomStringGenerator implements UniqueIdentifierGenerator
 {
     public static int $length = 8;
 
-    public static function generate(Model $model): string
+    public static function generate(Model $model): string|int
     {
         return Str::random(static::$length);
     }
