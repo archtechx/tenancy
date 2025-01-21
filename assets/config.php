@@ -33,6 +33,7 @@ return [
          *
          * @see \Stancl\Tenancy\UniqueIdentifierGenerators\UUIDGenerator
          * @see \Stancl\Tenancy\UniqueIdentifierGenerators\RandomHexGenerator
+         * @see \Stancl\Tenancy\UniqueIdentifierGenerators\RandomIntGenerator
          * @see \Stancl\Tenancy\UniqueIdentifierGenerators\RandomStringGenerator
          */
         'id_generator' => UniqueIdentifierGenerators\UUIDGenerator::class,
