@@ -25,7 +25,7 @@
         "ramsey/uuid": "^4.7.3",
         "stancl/jobpipeline": "2.0.0-rc2",
         "stancl/virtualcolumn": "dev-master",
-        "spatie/invade": "^1.1",
+        "spatie/invade": "*",
         "laravel/prompts": "0.*"
     },
     "require-dev": {
@@ -36,7 +36,6 @@
         "spatie/valuestore": "^1.2.5",
         "pestphp/pest": "^2.0",
         "larastan/larastan": "^3.0",
-        "spatie/invade": "^1.1",
         "aws/aws-sdk-php-laravel": "~3.0"
     },
     "autoload": {
