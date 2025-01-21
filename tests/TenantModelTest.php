@@ -23,6 +23,11 @@ use Stancl\Tenancy\UniqueIdentifierGenerators\RandomHexGenerator;
 use Stancl\Tenancy\UniqueIdentifierGenerators\RandomIntGenerator;
 use Stancl\Tenancy\UniqueIdentifierGenerators\RandomStringGenerator;
 
+afterEach(function () {
+    RandomIntGenerator::$min = 0;
+    RandomIntGenerator::$max = PHP_INT_MAX;
+});
+
 test('created event is dispatched', function () {
     Event::fake([TenantCreated::class]);
 
@@ -90,17 +95,12 @@ test('hex ids are supported', function () {
 
 test('random ints are supported', function () {
     app()->bind(UniqueIdentifierGenerator::class, RandomIntGenerator::class);
+    RandomIntGenerator::$min = 200;
+    RandomIntGenerator::$max = 1000;
 
-    // No good way to test this besides asserting that at least one of two ids
-    // should statistically be above 1 billion.
-    try {
-        $tenant1 = Tenant::create();
-        assert((int) $tenant1->id > 10**9);
-    } catch (\AssertionError) {
-        // retry
-        $tenant1 = Tenant::create();
-        assert((int) $tenant1->id > 10**9);
-    }
+    $tenant1 = Tenant::create();
+    expect($tenant1->id >= 200)->toBeTrue();
+    expect($tenant1->id <= 1000)->toBeTrue();
 });
 
 test('random string ids are supported', function () {
