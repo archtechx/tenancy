@@ -25,14 +25,14 @@ class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager impl
         $hostname = $databaseConfig->connection()['host'];
         $password = $databaseConfig->getPassword();
 
-        $this->database()->statement("CREATE USER `{$username}`@`%` IDENTIFIED BY '{$password}'");
+        $this->database()->statement("CREATE USER `{$username}`@`{$hostname}` IDENTIFIED BY '{$password}'");
 
         $grants = implode(', ', static::$grants);
 
         if ($this->isVersion8()) { // MySQL 8+
-            $grantQuery = "GRANT $grants ON `$database`.* TO `$username`@`%`";
+            $grantQuery = "GRANT $grants ON `$database`.* TO `$username`@`{$hostname}`";
         } else { // MySQL 5.7
-            $grantQuery = "GRANT $grants ON `$database`.* TO `$username`@`%` IDENTIFIED BY '$password'";
+            $grantQuery = "GRANT $grants ON `$database`.* TO `$username`@`{$hostname}` IDENTIFIED BY '$password'";
         }
 
         return $this->database()->statement($grantQuery);
