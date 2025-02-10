@@ -20,7 +20,7 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  * Used with path and query string identification.
  *
  * @see TenancyUrlGenerator
- * @see \Stancl\Tenancy\Resolvers\PathTenantResolver
+ * @see PathTenantResolver
  */
 class UrlGeneratorBootstrapper implements TenancyBootstrapper
 {
