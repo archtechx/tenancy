@@ -24,6 +24,17 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  */
 class UrlGeneratorBootstrapper implements TenancyBootstrapper
 {
+    /**
+     * Determine if the tenant route parameter should get added to the defaults of the TenancyUrlGenerator.
+     *
+     * This is preferrable with path identification since the tenant parameter is passed to the tenant routes automatically,
+     * even with integrations like the Ziggy route() helper.
+     *
+     * With query strig identification, this essentialy has no effect because URL::defaults() works only for route paramaters,
+     * not for query strings.
+     */
+    public static bool $addTenantParameterToDefaults = true;
+
     public function __construct(
         protected Application $app,
         protected UrlGenerator $originalUrlGenerator,
@@ -54,10 +65,14 @@ class UrlGeneratorBootstrapper implements TenancyBootstrapper
             $this->app['config']->get('app.asset_url'),
         );
 
-        $defaultParameters = array_merge(
-            $this->originalUrlGenerator->getDefaultParameters(),
-            [PathTenantResolver::tenantParameterName() => $tenant->getTenantKey()]
-        );
+        $defaultParameters = $this->originalUrlGenerator->getDefaultParameters();
+
+        if (static::$addTenantParameterToDefaults) {
+            $defaultParameters = array_merge(
+                $defaultParameters,
+                [PathTenantResolver::tenantParameterName() => $tenant->getTenantKey()]
+            );
+        }
 
         $newGenerator->defaults($defaultParameters);
 
