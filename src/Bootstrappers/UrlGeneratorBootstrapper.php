@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\URL;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
+use Stancl\Tenancy\Resolvers\PathTenantResolver;
 
 /**
  * Makes the app use TenancyUrlGenerator (instead of Illuminate\Routing\UrlGenerator) which:
@@ -32,7 +33,7 @@ class UrlGeneratorBootstrapper implements TenancyBootstrapper
     {
         URL::clearResolvedInstances();
 
-        $this->useTenancyUrlGenerator();
+        $this->useTenancyUrlGenerator($tenant);
     }
 
     public function revert(): void
@@ -45,7 +46,7 @@ class UrlGeneratorBootstrapper implements TenancyBootstrapper
      *
      * @see \Illuminate\Routing\RoutingServiceProvider registerUrlGenerator()
      */
-    protected function useTenancyUrlGenerator(): void
+    protected function useTenancyUrlGenerator(Tenant $tenant): void
     {
         $newGenerator = new TenancyUrlGenerator(
             $this->app['router']->getRoutes(),
@@ -53,7 +54,12 @@ class UrlGeneratorBootstrapper implements TenancyBootstrapper
             $this->app['config']->get('app.asset_url'),
         );
 
-        $newGenerator->defaults($this->originalUrlGenerator->getDefaultParameters());
+        $defaultParameters = array_merge(
+            $this->originalUrlGenerator->getDefaultParameters(),
+            [PathTenantResolver::tenantParameterName() => $tenant->getTenantKey()]
+        );
+
+        $newGenerator->defaults($defaultParameters);
 
         $newGenerator->setSessionResolver(function () {
             return $this->app['session'] ?? null;
