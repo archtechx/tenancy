@@ -33,7 +33,7 @@ class UrlGeneratorBootstrapper implements TenancyBootstrapper
      * With query strig identification, this essentialy has no effect because URL::defaults() works only for route paramaters,
      * not for query strings.
      */
-    public static bool $addTenantParameterToDefaults = true;
+    public static bool $addTenantParameterToDefaults = false;
 
     public function __construct(
         protected Application $app,
