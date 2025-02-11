@@ -166,7 +166,8 @@ class TenancyUrlGenerator extends UrlGenerator
         return tenant() && static::$passTenantParameterToRoutes ? array_merge($parameters, [PathTenantResolver::tenantParameterName() => tenant()->getTenantKey()]) : $parameters;
     }
 
-    protected function routeNameOverride(string $name) {
+    protected function routeNameOverride(string $name)
+    {
         return static::$override[$name] ?? false;
     }
 }
