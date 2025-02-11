@@ -127,7 +127,7 @@ test('url generator can override specific route names while all other functional
 
     Route::get('/foo', fn () => 'foo')->name('foo');
     Route::get('/bar', fn () => 'bar')->name('bar');
-    Route::get('/baz', fn () => 'baz')->name('baz'); // not overridden
+    Route::get('/baz', fn () => 'baz')->name('baz'); // Not overridden
 
     TenancyUrlGenerator::$override = ['foo' => 'bar'];
 

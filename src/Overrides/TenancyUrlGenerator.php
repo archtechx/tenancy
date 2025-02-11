@@ -16,7 +16,8 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  * TenancyUrlGenerator does two extra things:
  *
  * - Autofills the tenant parameter in the tenant context with the current tenant if $passTenantParameterToRoutes is enabled.
- * With path identification, this is done by URL::defaults() when UrlGeneratorBootstrapper::$addTenantParameterToDefaults is true (which is the default).
+ * With path identification, this is required to be done by URL::defaults() -- setting
+ * UrlGeneratorBootstrapper::$addTenantParameterToDefaults (which is false by default) to true handles that.
  * Enabling $passTenantParameterToRoutes is preferable with query string identification.
  *
  * - Prepends the route name passed to route() and URL::temporarySignedRoute()
@@ -38,8 +39,8 @@ class TenancyUrlGenerator extends UrlGenerator
      * - route('tenant.home', [$bypassParameter => true]) => app.test/tenant  -- query string identification (no query string passed)
      *
      * With path identification, it is recommended to pass the tenant parameter automatically by setting
-     * UrlGeneratorBootstrapper::$addTenantParameterToDefaults to true.
-     * In that case, this class should only affect the automatic route name prefixing,
+     * UrlGeneratorBootstrapper::$addTenantParameterToDefaults to true,
+     * and in that case, this affects only the automatic route name prefixing,
      * and the forceful route name overrides set in the $override property.
      *
      * @see UrlGeneratorBootstrapper
