@@ -37,8 +37,10 @@ class TenancyUrlGenerator extends UrlGenerator
      * - route('home', [$bypassParameter => true]) => app.test/
      * - route('tenant.home', [$bypassParameter => true]) => app.test/tenant  -- query string identification (no query string passed)
      *
-     * With path identification, the tenant parameter is passed automatically by URL::defaults(), so in that case,
-     * this only affects the automatic route name prefixing.
+     * With path identification, it is recommended to pass the tenant parameter automatically by setting
+     * UrlGeneratorBootstrapper::$addTenantParameterToDefaults to true.
+     * In that case, this class should only affect the automatic route name prefixing,
+     * and the forceful route name overrides set in the $override property.
      *
      * @see UrlGeneratorBootstrapper
      */
@@ -64,6 +66,21 @@ class TenancyUrlGenerator extends UrlGenerator
      * @see UrlGeneratorBootstrapper
      */
     public static bool $passTenantParameterToRoutes = false;
+
+    /**
+     * Route names that should always be overridden.
+     * This behavior can still be bypassed by passing the bypass parameter.
+     *
+     * For example, Jetstream integration:
+     * [
+     *     'profile.show' => 'tenant.profile.show',
+     *     'two-factor.login' => 'tenant.two-factor.login',
+     * ]
+     *
+     * `route('profile.show')` will return an URL as if you called `route('tenant.profile.show')`.
+     * `route('profile.show', ['central' => true])` will return an URL as if you called `route('profile.show')`.
+     */
+    public static array $override = [];
 
     /**
      * Override the route() method so that the route name gets prefixed
@@ -117,7 +134,7 @@ class TenancyUrlGenerator extends UrlGenerator
     protected function prepareRouteInputs(string $name, array $parameters): array
     {
         if (! $this->routeBehaviorModificationBypassed($parameters)) {
-            $name = $this->prefixRouteName($name);
+            $name = $this->routeNameOverride($name) ?: $this->prefixRouteName($name);
             $parameters = $this->addTenantParameter($parameters);
         }
 
@@ -147,5 +164,9 @@ class TenancyUrlGenerator extends UrlGenerator
     protected function addTenantParameter(array $parameters): array
     {
         return tenant() && static::$passTenantParameterToRoutes ? array_merge($parameters, [PathTenantResolver::tenantParameterName() => tenant()->getTenantKey()]) : $parameters;
+    }
+
+    protected function routeNameOverride(string $name) {
+        return static::$override[$name] ?? false;
     }
 }
