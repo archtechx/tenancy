@@ -135,7 +135,7 @@ class TenancyUrlGenerator extends UrlGenerator
     protected function prepareRouteInputs(string $name, array $parameters): array
     {
         if (! $this->routeBehaviorModificationBypassed($parameters)) {
-            $name = $this->routeNameOverride($name) ?: $this->prefixRouteName($name);
+            $name = $this->routeNameOverride($name) ?? $this->prefixRouteName($name);
             $parameters = $this->addTenantParameter($parameters);
         }
 
@@ -167,8 +167,8 @@ class TenancyUrlGenerator extends UrlGenerator
         return tenant() && static::$passTenantParameterToRoutes ? array_merge($parameters, [PathTenantResolver::tenantParameterName() => tenant()->getTenantKey()]) : $parameters;
     }
 
-    protected function routeNameOverride(string $name)
+    protected function routeNameOverride(string $name): string|null
     {
-        return static::$override[$name] ?? false;
+        return static::$override[$name] ?? null;
     }
 }
