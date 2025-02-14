@@ -62,10 +62,8 @@ test('tenancy url generator can prefix route names passed to the route helper', 
     // When $prefixRouteNames is true, the route name passed to the route() helper ('home') gets prefixed with 'tenant.' automatically.
     TenancyUrlGenerator::$prefixRouteNames = true;
 
-    // Reinitialize tenancy to apply the URL generator changes
-    tenancy()->initialize($tenant);
-
     expect(route('home'))->toBe($tenantRouteUrl);
+
     // The 'tenant.home' route name doesn't get prefixed -- it is already prefixed with 'tenant.'
     expect(route('tenant.home'))->toBe($tenantRouteUrl);
 
@@ -86,8 +84,8 @@ test('the route helper can receive the tenant parameter automatically', function
 
     UrlGeneratorBootstrapper::$addTenantParameterToDefaults = $addTenantParameterToDefaults;
 
-    // When the tenant parameter isn't added to the defaults, the tenant parameter has to be passed "manually"
-    // by setting $passTenantParameterToRoutes to true. This is only preferrable with query string identification.
+    // When the tenant parameter isn't added to defaults, the tenant parameter has to be passed "manually"
+    // by setting $passTenantParameterToRoutes to true. This is only preferable with query string identification.
     // With path identification, this ultimately doesn't have any effect
     // if UrlGeneratorBootstrapper::$addTenantParameterToDefaults is true,
     // but TenancyUrlGenerator::$passTenantParameterToRoutes can still be used instead.
@@ -122,14 +120,14 @@ test('the route helper can receive the tenant parameter automatically', function
     ->with([true, false]) // UrlGeneratorBootstrapper::$addTenantParameterToDefaults
     ->with([true, false]); // TenancyUrlGenerator::$passTenantParameterToRoutes
 
-test('url generator can override specific route names while all other functionality is disabled', function() {
+test('url generator can override specific route names', function() {
     config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);
 
     Route::get('/foo', fn () => 'foo')->name('foo');
     Route::get('/bar', fn () => 'bar')->name('bar');
     Route::get('/baz', fn () => 'baz')->name('baz'); // Not overridden
 
-    TenancyUrlGenerator::$override = ['foo' => 'bar'];
+    TenancyUrlGenerator::$overrides = ['foo' => 'bar'];
 
     expect(route('foo'))->toBe(url('/foo'));
     expect(route('bar'))->toBe(url('/bar'));
@@ -138,13 +136,11 @@ test('url generator can override specific route names while all other functional
     tenancy()->initialize(Tenant::create());
 
     expect(route('foo'))->toBe(url('/bar'));
+    expect(route('bar'))->toBe(url('/bar')); // not overridden
+    expect(route('baz'))->toBe(url('/baz')); // not overridden
 
-    // Pass the bypass parameter bypasses the override
+    // Bypass the override
     expect(route('foo', ['central' => true]))->toBe(url('/foo'));
-
-    // Not overridden
-    expect(route('bar'))->toBe(url('/bar'));
-    expect(route('baz'))->toBe(url('/baz'));
 });
 
 test('both the name prefixing and the tenant parameter logic gets skipped when bypass parameter is used', function () {

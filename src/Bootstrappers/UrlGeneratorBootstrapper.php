@@ -25,15 +25,14 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
 class UrlGeneratorBootstrapper implements TenancyBootstrapper
 {
     /**
-     * Determine if the tenant route parameter should get added to the defaults of the TenancyUrlGenerator.
+     * Should the tenant route parameter get added to TenancyUrlGenerator::defaults().
      *
-     * This is preferrable with path identification since the tenant parameter is passed to the tenant routes automatically,
-     * even with integrations like the Ziggy route() helper.
+     * This is recommended when using path identification since defaults() generally has better support in integrations,
+     * namely Ziggy, compared to TenancyUrlGenerator::$passTenantParameterToRoutes.
      *
-     * With query strig identification, this essentialy has no effect because URL::defaults() works only for route paramaters,
-     * not for query strings.
+     * With query string identification, this has no effect since URL::defaults() only works for route paramaters.
      */
-    public static bool $addTenantParameterToDefaults = false;
+    public static bool $addTenantParameterToDefaults = true;
 
     public function __construct(
         protected Application $app,
