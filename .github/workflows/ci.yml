@@ -18,8 +18,6 @@ jobs:
         include:
         - laravel: "^11.0"
           php: "8.4"
-        - laravel: "dev-master"
-          php: "8.4"
 
     steps:
       - name: Checkout
