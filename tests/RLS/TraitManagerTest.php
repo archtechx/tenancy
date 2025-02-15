@@ -27,6 +27,7 @@ use Stancl\Tenancy\Bootstrappers\PostgresRLSBootstrapper;
 use Stancl\Tenancy\Database\Concerns\BelongsToPrimaryModel;
 
 beforeEach(function () {
+    CreateUserWithRLSPolicies::$forceRls = true;
     TraitRLSManager::$implicitRLS = true;
     TraitRLSManager::$modelDirectories = [__DIR__ . '/Etc'];
     TraitRLSManager::$excludedModels = [Article::class];
@@ -75,6 +76,10 @@ beforeEach(function () {
         $table->string('text');
         $table->timestamps();
     });
+});
+
+afterEach(function () {
+    CreateUserWithRLSPolicies::$forceRls = true;
 });
 
 test('correct rls policies get created with the correct hash using trait manager', function () {
@@ -148,7 +153,8 @@ test('global scope is not applied when using rls with single db traits', functio
     expect(NonRLSComment::make()->hasGlobalScope(ParentModelScope::class))->toBeFalse();
 });
 
-test('queries are correctly scoped using RLS with trait rls manager', function (bool $implicitRLS) {
+test('queries are correctly scoped using RLS with trait rls manager', function (bool $implicitRLS, bool $forceRls) {
+    CreateUserWithRLSPolicies::$forceRls = $forceRls;
     TraitRLSManager::$implicitRLS = $implicitRLS;
 
     $postModel = $implicitRLS ? NonRLSPost::class : Post::class;
@@ -262,10 +268,7 @@ test('queries are correctly scoped using RLS with trait rls manager', function (
 
     expect(fn () => DB::statement("INSERT INTO comments (text, post_id) VALUES ('third comment', {$post1->id})"))
         ->toThrow(QueryException::class);
-})->with([
-    true,
-    false
-]);
+})->with([true, false])->with([true, false]);
 
 test('trait rls manager generates queries correctly', function() {
     /** @var TraitRLSManager $manager */
