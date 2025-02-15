@@ -43,6 +43,9 @@ use Stancl\Tenancy\ResourceSyncing\Events\CentralResourceDetachedFromTenant;
 use Stancl\Tenancy\Tests\Etc\ResourceSyncing\CentralUser as BaseCentralUser;
 use Stancl\Tenancy\ResourceSyncing\CentralResourceNotAvailableInPivotException;
 use Stancl\Tenancy\ResourceSyncing\Events\SyncedResourceSavedInForeignDatabase;
+use Illuminate\Database\Eloquent\Scope;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
+use Illuminate\Database\QueryException;
 
 beforeEach(function () {
     config(['tenancy.bootstrappers' => [
@@ -105,6 +108,28 @@ beforeEach(function () {
 
 afterEach(function () {
     UpdateOrCreateSyncedResource::$scopeGetModelQuery = null;
+});
+
+test('multiple tenants can have users synced to a central resource', function() {
+    $tenants = [Tenant::create(), Tenant::create(), Tenant::create()];
+    migrateUsersTableForTenants();
+
+    tenancy()->runForMultiple($tenants, function () {
+        // Create a user in tenant DB
+        TenantUser::create([
+            'global_id' => 'acme',
+            'name' => Str::random(),
+            'email' => 'john@localhost',
+            'password' => 'secret',
+            'role' => 'commenter',
+        ]);
+    });
+
+    // Create the same user in tenant DB
+    $users = CentralUser::where(['global_id' => 'acme'])->get();
+
+    expect($users)->toHaveCount(1);
+    expect($users->first()->global_id)->toBe('acme');
 });
 
 test('SyncedResourceSaved event gets triggered when resource gets created or when its synced attributes get updated', function () {
@@ -1172,6 +1197,53 @@ test('resource creation works correctly when central resource provides defaults 
     expect($centralUser->foo)->toBe('bar');
 });
 
+test('resource syncing works correctly when using a global scope on a tenant model', function(bool $scopeGetModelQuery) {
+    if ($scopeGetModelQuery) {
+        UpdateOrCreateSyncedResource::$scopeGetModelQuery = function (Builder $query) {
+            if ($query->getModel()->hasGlobalScope(TestingScope::class)) {
+                $query->withoutGlobalScope(TestingScope::class);
+            }
+        };
+    }
+
+    $centralUser = CentralUser::firstOrCreate(
+        ['email' => 'user@test.cz'],
+        ['name' => 'User', 'password' => bcrypt('****'), 'role' => 'admin']
+    );
+
+    [$tenant1, $tenant2] = createTenantsAndRunMigrations();
+
+    tenancy()->initialize($tenant1);
+
+    TenantUserWithScope::create([
+        'global_id' => $centralUser->global_id,
+        'name' => $centralUser->name,
+        'email' => $centralUser->email,
+        'password' => $centralUser->password,
+        'role' => 'admin'
+    ]);
+
+    tenancy()->end();
+
+    tenancy()->initialize($tenant2);
+
+    if (! $scopeGetModelQuery) {
+        pest()->expectException(QueryException::class);
+        pest()->expectExceptionMessage('Duplicate entry');
+    }
+
+    TenantUserWithScope::create([
+        'global_id' => $centralUser->global_id,
+        'name' => $centralUser->name,
+        'email' => $centralUser->email,
+        'password' => $centralUser->password,
+        'role' => 'admin'
+    ]);
+})->with([
+    true,
+    false,
+]);
+
 /**
  * Create two tenants and run migrations for those tenants.
  *
@@ -1241,6 +1313,11 @@ class TenantUser extends BaseTenantUser
         return $this->belongsToMany(Tenant::class, 'tenant_users', 'global_user_id', 'tenant_id', 'global_id')
             ->using(TenantPivot::class);
     }
+}
+
+#[ScopedBy([TestingScope::class])]
+class TenantUserWithScope extends TenantUser
+{
 }
 
 class TenantPivot extends BasePivot
@@ -1342,5 +1419,13 @@ class TenantCompany extends Model implements Syncable
             'name',
             'email',
         ];
+    }
+}
+
+class TestingScope implements Scope
+{
+    public function apply(Builder $builder, Model $model): void
+    {
+        $builder->whereNull('name');
     }
 }
