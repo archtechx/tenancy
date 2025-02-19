@@ -83,15 +83,15 @@ class Tenancy
             $this->initialize($tenant);
             $result = $callback($tenant);
         } finally {
+            if ($result instanceof PendingDispatch) { // #1277
+                $result = null;
+            }
+
             if ($originalTenant) {
                 $this->initialize($originalTenant);
             } else {
                 $this->end();
             }
-        }
-
-        if ($result instanceof PendingDispatch) { // #1277
-            $result = null;
         }
 
         return $result;
