@@ -77,18 +77,21 @@ class Tenancy
     public function run(Tenant $tenant, Closure $callback): mixed
     {
         $originalTenant = $this->tenant;
+        $result = null;
 
-        $this->initialize($tenant);
-        $result = $callback($tenant);
+        try {
+            $this->initialize($tenant);
+            $result = $callback($tenant);
+        } finally {
+            if ($originalTenant) {
+                $this->initialize($originalTenant);
+            } else {
+                $this->end();
+            }
+        }
 
         if ($result instanceof PendingDispatch) { // #1277
             $result = null;
-        }
-
-        if ($originalTenant) {
-            $this->initialize($originalTenant);
-        } else {
-            $this->end();
         }
 
         return $result;
