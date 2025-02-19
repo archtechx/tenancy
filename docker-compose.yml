@@ -72,12 +72,12 @@ services:
         tmpfs:
             - /var/lib/postgresql/data
     mssql:
-        image: mcr.microsoft.com/mssql/server:2019-latest
+        image: mcr.microsoft.com/mssql/server:2022-latest
         environment:
           - ACCEPT_EULA=Y
           - SA_PASSWORD=P@ssword # todo reuse env from above
         healthcheck: # https://github.com/Microsoft/mssql-docker/issues/133#issuecomment-1995615432
-            test: timeout 1 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/1433'
+            test: timeout 2 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/1433'
             interval: 10s
             timeout: 10s
             retries: 10
