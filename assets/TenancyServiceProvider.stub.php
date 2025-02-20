@@ -151,10 +151,10 @@ class TenancyServiceProvider extends ServiceProvider
         //     ? $tenant->domain
         //     : $tenant->domains->first()->domain;
         //     $scheme = str($originalRootUrl)->before('://');
-
+        //
         //     // If you're using domain identification:
         //     return $scheme . '://' . $tenantDomain . '/';
-
+        //
         //     // If you're using subdomain identification:
         //     $originalDomain = str($originalRootUrl)->after($scheme . '://');
         //     return $scheme . '://' . $tenantDomain . '.' . $originalDomain . '/';
