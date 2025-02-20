@@ -11,7 +11,7 @@ jobs:
       - name: Prepare composer version constraint prefix
         run: |
           BRANCH=${GITHUB_REF#refs/heads/}
-          if [[ $BRANCH =~ ^[0-9] ]]; then
+          if [[ $BRANCH =~ ^[0-9]\.x$ ]]; then
             echo "VERSION_PREFIX=${BRANCH}-dev" >> $GITHUB_ENV
           else
             echo "VERSION_PREFIX=dev-${BRANCH}" >> $GITHUB_ENV
