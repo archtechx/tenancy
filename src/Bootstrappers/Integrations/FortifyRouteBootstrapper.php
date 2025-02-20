@@ -7,7 +7,6 @@ namespace Stancl\Tenancy\Bootstrappers\Integrations;
 use Illuminate\Config\Repository;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\Enums\Context;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 
 /**
@@ -78,14 +77,14 @@ class FortifyRouteBootstrapper implements TenancyBootstrapper
         $tenantParameterName = static::$defaultParameterNames ? 'tenant' : PathTenantResolver::tenantParameterName();
         $tenantParameterValue = static::$defaultParameterNames ? $tenant->getTenantKey() : PathTenantResolver::tenantParameterValue($tenant);
 
-        $generateLink = function (array $redirect) use ($tenantParameterValue, $tenantParameterName) {
-            return route($redirect['route_name'], static::$passTenantParameter ? [$tenantParameterName => $tenantParameterValue] : []);
+        $generateLink = function (string $redirect) use ($tenantParameterValue, $tenantParameterName) {
+            return route($redirect, static::$passTenantParameter ? [$tenantParameterName => $tenantParameterValue] : []);
         };
 
         // Get redirect URLs for the configured redirect routes
         $redirects = array_merge(
             $this->originalFortifyConfig['redirects'] ?? [], // Fortify config redirects
-            array_map(fn (array $redirect) => $generateLink($redirect), static::$fortifyRedirectMap), // Mapped redirects
+            array_map(fn (string $redirect) => $generateLink($redirect), static::$fortifyRedirectMap), // Mapped redirects
         );
 
         if (static::$fortifyHome) {
