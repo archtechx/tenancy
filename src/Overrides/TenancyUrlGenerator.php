@@ -176,9 +176,9 @@ class TenancyUrlGenerator extends UrlGenerator
     {
         if (tenant() && static::$passTenantParameterToRoutes) {
             if (static::$defaultParameterNames) {
-                return array_merge($parameters, ['tenant' => $tenant->getTenantKey()]);
+                return array_merge($parameters, ['tenant' => tenant()->getTenantKey()]);
             } else {
-                return array_merge($parameters, [PathTenantResolver::tenantParameterName() => PathTenantResolver::tenantParameterValue($tenant)]);
+                return array_merge($parameters, [PathTenantResolver::tenantParameterName() => PathTenantResolver::tenantParameterValue(tenant())]);
             }
         } else {
             return $parameters;
