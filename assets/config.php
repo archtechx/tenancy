@@ -326,7 +326,6 @@ return [
          */
         'url_override' => [
             // Note that the local disk you add must exist in the tenancy.filesystem.root_override config
-            // todo0 Rename url_override to something that describes the config key better
             'public' => 'public-%tenant%',
         ],
 
