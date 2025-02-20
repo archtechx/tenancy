@@ -81,6 +81,11 @@ class PathTenantResolver extends Contracts\CachedTenantResolver
         return config('tenancy.identification.resolvers.' . static::class . '.tenant_model_column') ?? tenancy()->model()->getTenantKeyName();
     }
 
+    public static function tenantParameterValue(Tenant $tenant): string
+    {
+        return $tenant->getAttribute(static::tenantModelColumn());
+    }
+
     /** @return string[] */
     public static function allowedExtraModelColumns(): array
     {

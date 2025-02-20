@@ -152,6 +152,7 @@ class TenancyUrlGenerator extends UrlGenerator
      */
     protected function prefixRouteName(string $name): string
     {
+        // todo0 review
         $tenantPrefix = PathTenantResolver::tenantRouteNamePrefix();
 
         if (static::$prefixRouteNames && ! str($name)->startsWith($tenantPrefix)) {
@@ -166,6 +167,7 @@ class TenancyUrlGenerator extends UrlGenerator
      */
     protected function addTenantParameter(array $parameters): array
     {
+        // todo0 fix - should use tenantParameterValue(), but with query identification this should just be 'tenant', not even tenantParameterName()
         return tenant() && static::$passTenantParameterToRoutes ? array_merge($parameters, [PathTenantResolver::tenantParameterName() => tenant()->getTenantKey()]) : $parameters;
     }
 

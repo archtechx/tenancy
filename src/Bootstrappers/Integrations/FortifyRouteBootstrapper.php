@@ -88,16 +88,17 @@ class FortifyRouteBootstrapper implements TenancyBootstrapper
 
     protected function useTenantRoutesInFortify(Tenant $tenant): void
     {
-        $tenantKey = $tenant->getTenantKey();
+        // todo0 this should be just using 'tenant' and the tenant key with query identification - if we can't detect that easily, just add a static property for query id (default false)
         $tenantParameterName = PathTenantResolver::tenantParameterName();
+        $tenantParameterValue = PathTenantResolver::tenantParameterValue($tenant);
 
-        $generateLink = function (array $redirect) use ($tenantKey, $tenantParameterName) {
+        $generateLink = function (array $redirect) use ($tenantParameterValue, $tenantParameterName) {
             // Specifying the context is only required with query string identification
             // because with path identification, the tenant parameter should always present
             $passTenantParameter = static::$passTenantParameter && $redirect['context'] === Context::TENANT;
 
             // Only pass the tenant parameter when the user should be redirected to a tenant route
-            return route($redirect['route_name'], $passTenantParameter ? [$tenantParameterName => $tenantKey] : []);
+            return route($redirect['route_name'], $passTenantParameter ? [$tenantParameterName => $tenantParameterValue] : []);
         };
 
         // Get redirect URLs for the configured redirect routes
@@ -108,7 +109,8 @@ class FortifyRouteBootstrapper implements TenancyBootstrapper
 
         if (static::$fortifyHome) {
             // Generate the home route URL with the tenant parameter and make it the Fortify home route
-            $this->config->set('fortify.home', route(static::$fortifyHome, [$tenantParameterName => $tenantKey]));
+            // todo0 this should ALSO be only when static::$passTenantParameter, otherwise [], but shouldn't we also check the context here?
+            $this->config->set('fortify.home', route(static::$fortifyHome, [$tenantParameterName => $tenantParameterValue]));
         }
 
         $this->config->set('fortify.redirects', $redirects);
