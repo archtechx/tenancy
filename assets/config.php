@@ -130,8 +130,6 @@ return [
                 'cache_store' => null, // null = default
             ],
         ],
-
-        // todo@docs update integration guides to use Stancl\Tenancy::defaultMiddleware()
     ],
 
     /**
@@ -215,7 +213,7 @@ return [
             // 'pgsql' => Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledPostgreSQLSchemaManager::class, // Also permission controlled
         ],
 
-        // todo@docblock
+        // todo0
         'drop_tenant_databases_on_migrate_fresh' => false,
     ],
 
@@ -320,7 +318,7 @@ return [
          */
         'url_override' => [
             // Note that the local disk you add must exist in the tenancy.filesystem.root_override config
-            // todo@v4 Rename url_override to something that describes the config key better
+            // todo0 Rename url_override to something that describes the config key better
             'public' => 'public-%tenant%',
         ],
 
@@ -356,7 +354,7 @@ return [
          * leave asset() helper tenancy disabled and explicitly use tenant_asset() calls in places
          * where you want to use tenant-specific assets (product images, avatars, etc).
          */
-        'asset_helper_tenancy' => false, // todo@rename asset_helper_override?
+        'asset_helper_override' => false,
     ],
 
     /**

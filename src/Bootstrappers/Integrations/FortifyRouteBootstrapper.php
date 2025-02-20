@@ -11,10 +11,15 @@ use Stancl\Tenancy\Enums\Context;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 
 /**
- * Allows customizing Fortify action redirects
- * so that they can also redirect to tenant routes instead of just the central routes.
+ * Allows customizing Fortify action redirects so that they can also redirect
+ * to tenant routes instead of just the central routes.
  *
- * Works with path and query string identification.
+ * This should be used with path/query string identification OR when using Fortify
+ * universally, including with domains.
+ *
+ * When using domain identification, there's no need to pass the tenant parameter,
+ * you only want to customize the routes being used, so you can set $passTenantParameter
+ * to false.
  */
 class FortifyRouteBootstrapper implements TenancyBootstrapper
 {
@@ -51,6 +56,13 @@ class FortifyRouteBootstrapper implements TenancyBootstrapper
     public static array $fortifyRedirectMap = [];
 
     /**
+     * Should the tenant parameter be passed to fortify routes in the tenant context.
+     *
+     * This should be enabled with path/query string identification and disabled with domain identification
+     */
+    public static bool $passTenantParameter = true;
+
+    /**
      * Tenant route that serves as Fortify's home (e.g. a tenant dashboard route).
      * This route will always receive the tenant parameter.
      */
@@ -82,7 +94,7 @@ class FortifyRouteBootstrapper implements TenancyBootstrapper
         $generateLink = function (array $redirect) use ($tenantKey, $tenantParameterName) {
             // Specifying the context is only required with query string identification
             // because with path identification, the tenant parameter should always present
-            $passTenantParameter = $redirect['context'] === Context::TENANT;
+            $passTenantParameter = static::$passTenantParameter && $redirect['context'] === Context::TENANT;
 
             // Only pass the tenant parameter when the user should be redirected to a tenant route
             return route($redirect['route_name'], $passTenantParameter ? [$tenantParameterName => $tenantKey] : []);

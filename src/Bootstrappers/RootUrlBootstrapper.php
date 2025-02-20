@@ -42,7 +42,7 @@ class RootUrlBootstrapper implements TenancyBootstrapper
      * that are generating URLs in things like mails, the bootstrapper should be used
      * just like in any queued job.
      *
-     * todo@revisit
+     * todo0 update docblock
      */
     public static bool $rootUrlOverrideInTests = true;
 

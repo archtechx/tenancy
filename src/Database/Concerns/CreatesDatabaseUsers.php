@@ -10,6 +10,7 @@ trait CreatesDatabaseUsers
 {
     public function createDatabase(TenantWithDatabase $tenant): bool
     {
+        // todo0 only continue if this returns true, same below
         parent::createDatabase($tenant);
 
         return $this->createUser($tenant->database());

@@ -54,6 +54,7 @@ class UserImpersonation implements Feature
         return redirect($token->redirect_url);
     }
 
+    // todo0 test with session scoping
     public static function isImpersonating(): bool
     {
         return session()->has('tenancy_impersonating');
@@ -62,7 +63,7 @@ class UserImpersonation implements Feature
     /**
      * Logout from the current domain and forget impersonation session.
      */
-    public static function leave(): void // todo@name possibly rename
+    public static function stopImpersonating(): void
     {
         auth()->logout();
 

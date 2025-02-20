@@ -11,8 +11,6 @@ class MicrosoftSQLDatabaseManager extends TenantDatabaseManager
     public function createDatabase(TenantWithDatabase $tenant): bool
     {
         $database = $tenant->database()->getName();
-        $charset = $this->connection()->getConfig('charset');
-        $collation = $this->connection()->getConfig('collation'); // todo check why these are not used
 
         return $this->connection()->statement("CREATE DATABASE [{$database}]");
     }

@@ -23,6 +23,8 @@ use Stancl\Tenancy\Events\PullingPendingTenant;
  */
 trait HasPending
 {
+    public static string $pendingSinceCast = 'timestamp';
+
     /** Boot the trait. */
     public static function bootHasPending(): void
     {
@@ -32,7 +34,7 @@ trait HasPending
     /** Initialize the trait. */
     public function initializeHasPending(): void
     {
-        $this->casts['pending_since'] = 'timestamp';
+        $this->casts['pending_since'] = static::$pendingSinceCast;
     }
 
     /** Determine if the model instance is in a pending state. */

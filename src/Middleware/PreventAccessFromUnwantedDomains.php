@@ -68,7 +68,7 @@ class PreventAccessFromUnwantedDomains
         return in_array($request->getHost(), config('tenancy.identification.central_domains'), true);
     }
 
-    // todo@samuel
+    // todo@samuel technically not an identification middleware but probably ok to keep this here
     public function requestHasTenant(Request $request): bool
     {
         return false;
