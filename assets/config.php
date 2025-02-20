@@ -213,7 +213,14 @@ return [
             // 'pgsql' => Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledPostgreSQLSchemaManager::class, // Also permission controlled
         ],
 
-        // todo0
+        /*
+         * Drop tenant databases when `php artisan migrate:fresh` is used.
+         * You may want to use this locally since deleting tenants only
+         * deletes their databases when they're deleted individually, not
+         * when the records are mass deleted from the database.
+         *
+         * Note: This overrides the default MigrateFresh command.
+         */
         'drop_tenant_databases_on_migrate_fresh' => false,
     ],
 
@@ -402,7 +409,6 @@ return [
 
     /**
      * Make all routes central, tenant, or universal by default.
-     * todo@earlyIdReview todo0
      *
      * To override the default route mode, apply the middleware of another route mode ('central', 'tenant', 'universal') to the route.
      */

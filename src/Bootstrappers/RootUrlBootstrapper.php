@@ -36,13 +36,8 @@ class RootUrlBootstrapper implements TenancyBootstrapper
     protected string|null $originalRootUrl = null;
 
     /**
-     * You may want to selectively enable or disable this bootstrapper in specific tests.
-     * For instance, when using `Livewire::test()` this bootstrapper can cause problems,
-     * due to an internal Livewire route, so you may want to disable it, while in tests
-     * that are generating URLs in things like mails, the bootstrapper should be used
-     * just like in any queued job.
-     *
-     * todo0 update docblock
+     * Overriding the root url may cause issues in *some* tests, so you can disable
+     * the behavior by setting this property to false.
      */
     public static bool $rootUrlOverrideInTests = true;
 
