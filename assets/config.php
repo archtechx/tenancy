@@ -118,6 +118,7 @@ return [
             Resolvers\PathTenantResolver::class => [
                 'tenant_parameter_name' => 'tenant',
                 'tenant_model_column' => null, // null = tenant key
+                'tenant_route_name_prefix' => null, // null = 'tenant.'
                 'allowed_extra_model_columns' => [], // used with binding route fields
 
                 'cache' => false,
