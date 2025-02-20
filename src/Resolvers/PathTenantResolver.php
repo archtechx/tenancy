@@ -73,7 +73,7 @@ class PathTenantResolver extends Contracts\CachedTenantResolver
 
     public static function tenantRouteNamePrefix(): string
     {
-        return config('tenancy.identification.resolvers.' . static::class . '.tenant_route_name_prefix') ?? static::tenantParameterName() . '.';
+        return (config('tenancy.identification.resolvers.' . static::class . '.tenant_route_name_prefix') ?? 'tenant') . '.';
     }
 
     public static function tenantModelColumn(): string

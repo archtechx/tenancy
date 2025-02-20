@@ -86,6 +86,14 @@ class TenancyUrlGenerator extends UrlGenerator
     public static array $overrides = [];
 
     /**
+     * Use default parameter names ('tenant' name and tenant key value) instead of the parameter name
+     * and column name configured in the path resolver config.
+     *
+     * You want to enable this when using query string identification while having customized that config.
+     */
+    public static bool $defaultParameterNames = false;
+
+    /**
      * Override the route() method so that the route name gets prefixed
      * and the tenant parameter gets added when in tenant context.
      */
@@ -152,7 +160,6 @@ class TenancyUrlGenerator extends UrlGenerator
      */
     protected function prefixRouteName(string $name): string
     {
-        // todo0 review
         $tenantPrefix = PathTenantResolver::tenantRouteNamePrefix();
 
         if (static::$prefixRouteNames && ! str($name)->startsWith($tenantPrefix)) {
@@ -167,8 +174,15 @@ class TenancyUrlGenerator extends UrlGenerator
      */
     protected function addTenantParameter(array $parameters): array
     {
-        // todo0 fix - should use tenantParameterValue(), but with query identification this should just be 'tenant', not even tenantParameterName()
-        return tenant() && static::$passTenantParameterToRoutes ? array_merge($parameters, [PathTenantResolver::tenantParameterName() => tenant()->getTenantKey()]) : $parameters;
+        if (tenant() && static::$passTenantParameterToRoutes) {
+            if (static::$defaultParameterNames) {
+                return array_merge($parameters, ['tenant' => $tenant->getTenantKey()]);
+            } else {
+                return array_merge($parameters, [PathTenantResolver::tenantParameterName() => PathTenantResolver::tenantParameterValue($tenant)]);
+            }
+        } else {
+            return $parameters;
+        }
     }
 
     protected function routeNameOverride(string $name): string|null
