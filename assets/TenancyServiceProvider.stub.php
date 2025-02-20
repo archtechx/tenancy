@@ -145,7 +145,6 @@ class TenancyServiceProvider extends ServiceProvider
      */
     protected function overrideUrlInTenantContext(): void
     {
-        // // Import your tenant model!
         // \Stancl\Tenancy\Bootstrappers\RootUrlBootstrapper::$rootUrlOverride = function (Tenant $tenant, string $originalRootUrl) {
         //     $tenantDomain = $tenant instanceof \Stancl\Tenancy\Contracts\SingleDomainTenant
         //     ? $tenant->domain
