@@ -88,7 +88,7 @@ test('tenant user can be impersonated on a tenant domain', function () {
     expect(session('tenancy_impersonating'))->toBeTrue();
 
     // Leave impersonation
-    UserImpersonation::leave();
+    UserImpersonation::stopImpersonating();
 
     expect(UserImpersonation::isImpersonating())->toBeFalse();
     expect(session('tenancy_impersonating'))->toBeNull();
@@ -134,7 +134,7 @@ test('tenant user can be impersonated on a tenant path', function () {
     expect(session('tenancy_impersonating'))->toBeTrue();
 
     // Leave impersonation
-    UserImpersonation::leave();
+    UserImpersonation::stopImpersonating();
 
     expect(UserImpersonation::isImpersonating())->toBeFalse();
     expect(session('tenancy_impersonating'))->toBeNull();

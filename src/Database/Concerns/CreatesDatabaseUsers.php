@@ -10,16 +10,11 @@ trait CreatesDatabaseUsers
 {
     public function createDatabase(TenantWithDatabase $tenant): bool
     {
-        parent::createDatabase($tenant);
-
-        return $this->createUser($tenant->database());
+        return parent::createDatabase($tenant) && $this->createUser($tenant->database());
     }
 
     public function deleteDatabase(TenantWithDatabase $tenant): bool
     {
-        // Some DB engines require the user to be deleted before the database (e.g. Postgres)
-        $this->deleteUser($tenant->database());
-
-        return parent::deleteDatabase($tenant);
+        return $this->deleteUser($tenant->database()) && parent::deleteDatabase($tenant);
     }
 }

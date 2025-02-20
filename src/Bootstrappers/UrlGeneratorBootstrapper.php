@@ -69,7 +69,10 @@ class UrlGeneratorBootstrapper implements TenancyBootstrapper
         if (static::$addTenantParameterToDefaults) {
             $defaultParameters = array_merge(
                 $defaultParameters,
-                [PathTenantResolver::tenantParameterName() => $tenant->getTenantKey()]
+                [
+                    PathTenantResolver::tenantParameterName() => PathTenantResolver::tenantParameterValue($tenant), // path identification
+                    'tenant' => $tenant->getTenantKey(), // query string identification
+                ],
             );
         }
 

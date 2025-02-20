@@ -13,6 +13,14 @@ use Stancl\Tenancy\Bootstrappers\Integrations\FortifyRouteBootstrapper;
 beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+    FortifyRouteBootstrapper::$passTenantParameter = true;
+});
+
+afterEach(function () {
+    FortifyRouteBootstrapper::$passTenantParameter = true;
+    FortifyRouteBootstrapper::$fortifyRedirectMap = [];
+    FortifyRouteBootstrapper::$fortifyHome = 'tenant.dashboard';
+    FortifyRouteBootstrapper::$defaultParameterNames = false;
 });
 
 test('fortify route tenancy bootstrapper updates fortify config correctly', function() {
@@ -25,53 +33,31 @@ test('fortify route tenancy bootstrapper updates fortify config correctly', func
         return true;
     })->name($homeRouteName = 'home');
 
-    Route::get('/{tenant}/home', function () {
-        return true;
-    })->name($pathIdHomeRouteName = 'tenant.home');
-
     Route::get('/welcome', function () {
         return true;
     })->name($welcomeRouteName = 'welcome');
 
-    Route::get('/{tenant}/welcome', function () {
-        return true;
-    })->name($pathIdWelcomeRouteName = 'path.welcome');
-
     FortifyRouteBootstrapper::$fortifyHome = $homeRouteName;
+    FortifyRouteBootstrapper::$fortifyRedirectMap['login'] = $welcomeRouteName;
 
-    // Make login redirect to the central welcome route
-    FortifyRouteBootstrapper::$fortifyRedirectMap['login'] = [
-        'route_name' => $welcomeRouteName,
-        'context' => Context::CENTRAL,
-    ];
+    expect(config('fortify.home'))->toBe($originalFortifyHome);
+    expect(config('fortify.redirects'))->toBe($originalFortifyRedirects);
 
+    FortifyRouteBootstrapper::$passTenantParameter = true;
     tenancy()->initialize($tenant = Tenant::create());
-    // The bootstraper makes fortify.home always receive the tenant parameter
     expect(config('fortify.home'))->toBe('http://localhost/home?tenant=' . $tenant->getTenantKey());
-
-    // The login redirect route has the central context specified, so it doesn't receive the tenant parameter
-    expect(config('fortify.redirects'))->toEqual(['login' => 'http://localhost/welcome']);
+    expect(config('fortify.redirects'))->toEqual(['login' => 'http://localhost/welcome?tenant=' . $tenant->getTenantKey()]);
 
     tenancy()->end();
     expect(config('fortify.home'))->toBe($originalFortifyHome);
     expect(config('fortify.redirects'))->toBe($originalFortifyRedirects);
 
-    // Making a route's context will pass the tenant parameter to the route
-    FortifyRouteBootstrapper::$fortifyRedirectMap['login']['context'] = Context::TENANT;
-
+    FortifyRouteBootstrapper::$passTenantParameter = false;
     tenancy()->initialize($tenant);
-
-    expect(config('fortify.redirects'))->toEqual(['login' => 'http://localhost/welcome?tenant=' . $tenant->getTenantKey()]);
-
-    // Make the home and login route accept the tenant as a route parameter
-    // To confirm that tenant route parameter gets filled automatically too (path identification works as well as query string)
-    FortifyRouteBootstrapper::$fortifyHome = $pathIdHomeRouteName;
-    FortifyRouteBootstrapper::$fortifyRedirectMap['login']['route_name'] = $pathIdWelcomeRouteName;
+    expect(config('fortify.home'))->toBe('http://localhost/home');
+    expect(config('fortify.redirects'))->toEqual(['login' => 'http://localhost/welcome']);
 
     tenancy()->end();
-
-    tenancy()->initialize($tenant);
-
-    expect(config('fortify.home'))->toBe("http://localhost/{$tenant->getTenantKey()}/home");
-    expect(config('fortify.redirects'))->toEqual(['login' => "http://localhost/{$tenant->getTenantKey()}/welcome"]);
+    expect(config('fortify.home'))->toBe($originalFortifyHome);
+    expect(config('fortify.redirects'))->toBe($originalFortifyRedirects);
 });

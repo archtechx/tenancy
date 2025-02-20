@@ -92,7 +92,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
     protected function assetHelper(string|false $suffix): void
     {
-        if (! $this->app['config']['tenancy.filesystem.asset_helper_tenancy']) {
+        if (! $this->app['config']['tenancy.filesystem.asset_helper_override']) {
             return;
         }
 

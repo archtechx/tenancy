@@ -91,7 +91,7 @@ return [
         /**
          * Identification middleware tenancy recognizes as path identification middleware.
          *
-         * This is used during determining whether whether a path identification is used
+         * This is used for determining if a path identification middleware is used
          * during operations specific to path identification, e.g. forgetting the tenant parameter in ForgetTenantParameter.
          *
          * If you're using a custom path identification middleware, add it here.
@@ -118,6 +118,7 @@ return [
             Resolvers\PathTenantResolver::class => [
                 'tenant_parameter_name' => 'tenant',
                 'tenant_model_column' => null, // null = tenant key
+                'tenant_route_name_prefix' => null, // null = 'tenant.'
                 'allowed_extra_model_columns' => [], // used with binding route fields
 
                 'cache' => false,
@@ -130,8 +131,6 @@ return [
                 'cache_store' => null, // null = default
             ],
         ],
-
-        // todo@docs update integration guides to use Stancl\Tenancy::defaultMiddleware()
     ],
 
     /**
@@ -215,7 +214,14 @@ return [
             // 'pgsql' => Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledPostgreSQLSchemaManager::class, // Also permission controlled
         ],
 
-        // todo@docblock
+        /*
+         * Drop tenant databases when `php artisan migrate:fresh` is used.
+         * You may want to use this locally since deleting tenants only
+         * deletes their databases when they're deleted individually, not
+         * when the records are mass deleted from the database.
+         *
+         * Note: This overrides the default MigrateFresh command.
+         */
         'drop_tenant_databases_on_migrate_fresh' => false,
     ],
 
@@ -320,7 +326,6 @@ return [
          */
         'url_override' => [
             // Note that the local disk you add must exist in the tenancy.filesystem.root_override config
-            // todo@v4 Rename url_override to something that describes the config key better
             'public' => 'public-%tenant%',
         ],
 
@@ -356,7 +361,7 @@ return [
          * leave asset() helper tenancy disabled and explicitly use tenant_asset() calls in places
          * where you want to use tenant-specific assets (product images, avatars, etc).
          */
-        'asset_helper_tenancy' => false, // todo@rename asset_helper_override?
+        'asset_helper_override' => false,
     ],
 
     /**

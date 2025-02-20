@@ -7,54 +7,52 @@ namespace Stancl\Tenancy\Bootstrappers\Integrations;
 use Illuminate\Config\Repository;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\Enums\Context;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 
 /**
- * Allows customizing Fortify action redirects
- * so that they can also redirect to tenant routes instead of just the central routes.
+ * Allows customizing Fortify action redirects so that they can also redirect
+ * to tenant routes instead of just the central routes.
  *
- * Works with path and query string identification.
+ * This should be used with path/query string identification OR when using Fortify
+ * universally, including with domains.
+ *
+ * When using domain identification, there's no need to pass the tenant parameter,
+ * you only want to customize the routes being used, so you can set $passTenantParameter
+ * to false.
  */
 class FortifyRouteBootstrapper implements TenancyBootstrapper
 {
     /**
-     * Make Fortify actions redirect to custom routes.
+     * Fortify redirects that should be used in tenant context.
      *
-     * For each route redirect, specify the intended route context (central or tenant).
-     * Based on the provided context, we pass the tenant parameter to the route (or not).
-     * The tenant parameter is only passed to the route when you specify its context as tenant.
-     *
-     * The route redirects should be in the following format:
-     *
-     * 'fortify_action' => [
-     *     'route_name' => 'tenant.route',
-     *     'context' => Context::TENANT,
-     * ]
-     *
-     * For example:
-     *
-     * FortifyRouteBootstrapper::$fortifyRedirectMap = [
-     *     // On logout, redirect the user to the "bye" route in the central app
-     *     'logout' => [
-     *         'route_name' => 'bye',
-     *         'context' => Context::CENTRAL,
-     *     ],
-     *
-     *     // On login, redirect the user to the "welcome" route in the tenant app
-     *     'login' => [
-     *        'route_name' => 'welcome',
-     *        'context' => Context::TENANT,
-     *     ],
-     * ];
+     * Syntax: ['redirect_name' => 'tenant_route_name']
      */
     public static array $fortifyRedirectMap = [];
+
+    /**
+     * Should the tenant parameter be passed to fortify routes in the tenant context.
+     *
+     * This should be enabled with path/query string identification and disabled with domain identification.
+     *
+     * You may also disable this when using path/query string identification if passing the tenant parameter
+     * is handled in another way (TenancyUrlGenerator::$passTenantParameter for both,
+     * UrlGeneratorBootstrapper:$addTenantParameterToDefaults for path identification).
+     */
+    public static bool $passTenantParameter = true;
 
     /**
      * Tenant route that serves as Fortify's home (e.g. a tenant dashboard route).
      * This route will always receive the tenant parameter.
      */
-    public static string $fortifyHome = 'tenant.dashboard';
+    public static string|null $fortifyHome = 'tenant.dashboard';
+
+    /**
+     * Use default parameter names ('tenant' name and tenant key value) instead of the parameter name
+     * and column name configured in the path resolver config.
+     *
+     * You want to enable this when using query string identification while having customized that config.
+     */
+    public static bool $defaultParameterNames = false;
 
     protected array $originalFortifyConfig = [];
 
@@ -76,27 +74,22 @@ class FortifyRouteBootstrapper implements TenancyBootstrapper
 
     protected function useTenantRoutesInFortify(Tenant $tenant): void
     {
-        $tenantKey = $tenant->getTenantKey();
-        $tenantParameterName = PathTenantResolver::tenantParameterName();
+        $tenantParameterName = static::$defaultParameterNames ? 'tenant' : PathTenantResolver::tenantParameterName();
+        $tenantParameterValue = static::$defaultParameterNames ? $tenant->getTenantKey() : PathTenantResolver::tenantParameterValue($tenant);
 
-        $generateLink = function (array $redirect) use ($tenantKey, $tenantParameterName) {
-            // Specifying the context is only required with query string identification
-            // because with path identification, the tenant parameter should always present
-            $passTenantParameter = $redirect['context'] === Context::TENANT;
-
-            // Only pass the tenant parameter when the user should be redirected to a tenant route
-            return route($redirect['route_name'], $passTenantParameter ? [$tenantParameterName => $tenantKey] : []);
+        $generateLink = function (string $redirect) use ($tenantParameterValue, $tenantParameterName) {
+            return route($redirect, static::$passTenantParameter ? [$tenantParameterName => $tenantParameterValue] : []);
         };
 
         // Get redirect URLs for the configured redirect routes
         $redirects = array_merge(
             $this->originalFortifyConfig['redirects'] ?? [], // Fortify config redirects
-            array_map(fn (array $redirect) => $generateLink($redirect), static::$fortifyRedirectMap), // Mapped redirects
+            array_map(fn (string $redirect) => $generateLink($redirect), static::$fortifyRedirectMap), // Mapped redirects
         );
 
         if (static::$fortifyHome) {
             // Generate the home route URL with the tenant parameter and make it the Fortify home route
-            $this->config->set('fortify.home', route(static::$fortifyHome, [$tenantParameterName => $tenantKey]));
+            $this->config->set('fortify.home', route(static::$fortifyHome, static::$passTenantParameter ? [$tenantParameterName => $tenantParameterValue] : []));
         }
 
         $this->config->set('fortify.redirects', $redirects);
