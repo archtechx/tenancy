@@ -17,6 +17,7 @@ use Stancl\Tenancy\Commands\CreateUserWithRLSPolicies;
 use Stancl\Tenancy\RLS\PolicyManagers\TableRLSManager;
 use Stancl\Tenancy\RLS\PolicyManagers\TraitRLSManager;
 use Stancl\Tenancy\Bootstrappers\PostgresRLSBootstrapper;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     TraitRLSManager::$excludedModels = [Article::class];

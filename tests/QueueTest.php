@@ -24,6 +24,8 @@ use Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\PersistentQueueTenancyBootstrapper;
 use Stancl\Tenancy\Listeners\QueueableListener;
+use function Stancl\Tenancy\Tests\pest;
+use function Stancl\Tenancy\Tests\withTenantDatabases;
 
 beforeEach(function () {
     config([

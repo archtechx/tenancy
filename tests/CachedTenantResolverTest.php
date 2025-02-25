@@ -12,8 +12,8 @@ use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 use Illuminate\Support\Facades\Route as RouteFacade;
 use Illuminate\Support\Facades\Schema;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
-use Stancl\Tenancy\PathIdentificationManager;
 use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
+use function Stancl\Tenancy\Tests\pest;
 
 test('tenants can be resolved using cached resolvers', function (string $resolver) {
     $tenant = Tenant::create(['id' => $tenantKey = 'acme']);

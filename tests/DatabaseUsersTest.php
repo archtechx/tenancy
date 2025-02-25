@@ -24,6 +24,7 @@ use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledMySQLData
 use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledPostgreSQLSchemaManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledPostgreSQLDatabaseManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledMicrosoftSQLServerDatabaseManager;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     config([

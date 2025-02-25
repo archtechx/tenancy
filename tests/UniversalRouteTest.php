@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use Stancl\Tenancy\Tenancy;
-use Illuminate\Http\Request;
 use Stancl\Tenancy\Enums\RouteMode;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Contracts\Http\Kernel;
@@ -11,16 +9,14 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Route as RouteFacade;
 use Stancl\Tenancy\Tests\Etc\HasMiddlewareController;
-use Stancl\Tenancy\Middleware\IdentificationMiddleware;
-use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
-use Stancl\Tenancy\Concerns\UsableWithEarlyIdentification;
 use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 use Stancl\Tenancy\Middleware\PreventAccessFromUnwantedDomains;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomainOrSubdomain;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByRequestDataException;
+use function Stancl\Tenancy\Tests\pest;
 
 test('a route can be universal using domain identification', function (array $routeMiddleware, array $globalMiddleware) {
     foreach ($globalMiddleware as $middleware) {

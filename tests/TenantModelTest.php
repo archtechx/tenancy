@@ -22,6 +22,7 @@ use Stancl\Tenancy\Exceptions\TenancyNotInitializedException;
 use Stancl\Tenancy\UniqueIdentifierGenerators\RandomHexGenerator;
 use Stancl\Tenancy\UniqueIdentifierGenerators\RandomIntGenerator;
 use Stancl\Tenancy\UniqueIdentifierGenerators\RandomStringGenerator;
+use function Stancl\Tenancy\Tests\pest;
 
 afterEach(function () {
     RandomIntGenerator::$min = 0;

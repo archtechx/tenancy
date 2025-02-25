@@ -11,6 +11,7 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 use Stancl\Tenancy\Middleware\PreventAccessFromUnwantedDomains;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     config(['tenancy.models.tenant' => SingleDomainTenant::class]);

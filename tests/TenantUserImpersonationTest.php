@@ -25,6 +25,7 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Exceptions\StatefulGuardRequiredException;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     pest()->artisan('migrate', [

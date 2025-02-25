@@ -26,6 +26,7 @@ use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     if (file_exists($schemaPath = 'tests/Etc/tenant-schema-test.dump')) {

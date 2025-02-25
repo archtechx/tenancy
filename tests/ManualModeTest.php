@@ -11,7 +11,8 @@ use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Listeners\CreateTenantConnection;
 use Stancl\Tenancy\Listeners\UseCentralConnection;
 use Stancl\Tenancy\Listeners\UseTenantConnection;
-use \Stancl\Tenancy\Tests\Etc\Tenant;
+use Stancl\Tenancy\Tests\Etc\Tenant;
+use function Stancl\Tenancy\Tests\pest;
 
 test('manual tenancy initialization works', function () {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
