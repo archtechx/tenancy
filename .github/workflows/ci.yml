@@ -16,12 +16,13 @@ jobs:
     strategy:
       matrix:
         include:
-        - laravel: 9
-          php: "8.0"
         - laravel: 10
           php: "8.1"
         - laravel: 11
           php: "8.3"
+        - laravel: 12
+          php: "8.3"
+          # Ideally we'd run at least one of these on PHP 8.4, however the Dockerfile seems to require some changes for that
 
     steps:
     - uses: actions/checkout@v2
