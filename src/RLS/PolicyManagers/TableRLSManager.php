@@ -75,7 +75,10 @@ class TableRLSManager implements RLSPolicyManager
         $builder = $this->database->getSchemaBuilder();
 
         // We loop through each table in the database
-        foreach ($builder->getTableListing() as $table) {
+        foreach ($builder->getTableListing(schema: $this->database->getConfig('search_path')) as $table) {
+            // E.g. "public.table_name" -> "table_name"
+            $table = str($table)->afterLast('.')->toString();
+
             // For each table, we get a list of all foreign key columns
             $foreignKeys = collect($builder->getForeignKeys($table))->map(function ($foreign) use ($table) {
                 return $this->formatForeignKey($foreign, $table);
