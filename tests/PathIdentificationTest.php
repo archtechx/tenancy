@@ -6,13 +6,17 @@ use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Exceptions\RouteIsMissingTenantParameterException;
 use Stancl\Tenancy\Exceptions\TenantColumnNotWhitelistedException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByPathException;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use Stancl\Tenancy\Tests\Etc\User;
 use function Stancl\Tenancy\Tests\pest;
+use function Stancl\Tenancy\Tests\withInitializationEvents;
+use function Stancl\Tenancy\Tests\withTenantDatabases;
 
 beforeEach(function () {
     // Make sure the tenant parameter is set to 'tenant'
@@ -33,6 +37,11 @@ beforeEach(function () {
             return "$a - $b";
         })->name('baz');
     });
+});
+
+afterEach(function () {
+    InitializeTenancyByPath::$onFail = null;
+    Tenant::$extraCustomColumns = [];
 });
 
 test('tenant can be identified by path', function () {
@@ -168,7 +177,10 @@ test('central route can have a parameter with the same name as the tenant parame
 
 test('the tenant model column can be customized in the config', function () {
     config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_model_column' => 'slug']);
+    config(['tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class]]);
     Tenant::$extraCustomColumns = ['slug'];
+    withTenantDatabases(true);
+    withInitializationEvents();
 
     Schema::table('tenants', function (Blueprint $table) {
         $table->string('slug')->unique();
@@ -178,20 +190,39 @@ test('the tenant model column can be customized in the config', function () {
         'slug' => 'acme',
     ]);
 
+    // Simple route - only a tenant parameter
     Route::get('/{tenant}/foo', function () {
         return tenant()->getTenantKey();
-    })->middleware(InitializeTenancyByPath::class);
+    })->middleware([InitializeTenancyByPath::class, 'web']);
+
+    // Route with both the tenant parameter and another bound parameter
+    Route::get('/{tenant}/bar/{user}', function (User $user) {
+        return tenant()->getTenantKey() . '-' . $user->name;
+    })->middleware([InitializeTenancyByPath::class, 'web']);
+    // NOTE: It's important to use the 'web' middleware here so we get
+    // SubstituteBindings for the {user} parameter. It also must come
+    // after the tenancy middleware since middleware priority isn't
+    // configured in tests and we want the route model binding to run
+    // against the tenant database, not the central database.
+
+    $tenant->run(function () {
+        User::create(['name' => 'John Doe', 'email' => 'john@doe.com', 'password' => 'foobar']);
+    });
 
     $this->withoutExceptionHandling();
+
     pest()->get('/acme/foo')->assertSee($tenant->getTenantKey());
     expect(fn () => pest()->get($tenant->id . '/foo'))->toThrow(TenantCouldNotBeIdentifiedByPathException::class);
 
-    Tenant::$extraCustomColumns = []; // static property reset
+    pest()->get('/acme/bar/1')->assertSee($tenant->getTenantKey() . '-John Doe');
+    expect(fn () => pest()->get($tenant->id . '/foo/bar/1'))->toThrow(TenantCouldNotBeIdentifiedByPathException::class);
 });
 
 test('the tenant model column can be customized in the route definition', function () {
     Tenant::$extraCustomColumns = ['slug'];
     config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.allowed_extra_model_columns' => ['slug']]);
+    withTenantDatabases(true);
+    withInitializationEvents();
 
     Schema::table('tenants', function (Blueprint $table) {
         $table->string('slug')->unique();
@@ -209,17 +240,31 @@ test('the tenant model column can be customized in the route definition', functi
         return tenant()->getTenantKey();
     })->middleware(InitializeTenancyByPath::class);
 
+    Route::get('/{tenant}/baz/{user}', function (User $user) {
+        return tenant()->getTenantKey() . '-' . $user->name;
+    })->middleware([InitializeTenancyByPath::class, 'web']);
+
+    Route::get('/{tenant:slug}/xyz/{user}', function (User $user) {
+        return tenant()->getTenantKey() . '-' . $user->name;
+    })->middleware([InitializeTenancyByPath::class, 'web']);
+
+    $tenant->run(function () {
+        User::create(['name' => 'John Doe', 'email' => 'john@doe.com', 'password' => 'foobar']);
+    });
+
     $this->withoutExceptionHandling();
 
     // No binding field defined
     pest()->get($tenant->getTenantKey() . '/foo')->assertSee($tenant->getTenantKey());
     expect(fn () => pest()->get('/acme/foo'))->toThrow(TenantCouldNotBeIdentifiedByPathException::class);
+    pest()->get($tenant->getTenantKey() . '/baz/1')->assertSee($tenant->getTenantKey() . '-John Doe');
+    expect(fn () => pest()->get('/acme/baz/1'))->toThrow(TenantCouldNotBeIdentifiedByPathException::class);
 
     // Binding field defined
     pest()->get('/acme/bar')->assertSee($tenant->getTenantKey());
     expect(fn () => pest()->get($tenant->id . '/bar'))->toThrow(TenantCouldNotBeIdentifiedByPathException::class);
-
-    Tenant::$extraCustomColumns = []; // static property reset
+    pest()->get('/acme/xyz/1')->assertSee($tenant->getTenantKey() . '-John Doe');
+    expect(fn () => pest()->get($tenant->id . '/xyz/1'))->toThrow(TenantCouldNotBeIdentifiedByPathException::class);
 });
 
 test('any extra model column needs to be whitelisted', function () {
@@ -243,6 +288,4 @@ test('any extra model column needs to be whitelisted', function () {
     // After whitelisting the column it works
     config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.allowed_extra_model_columns' => ['slug']]);
     pest()->get('/acme/foo')->assertSee($tenant->getTenantKey());
-
-    Tenant::$extraCustomColumns = []; // static property reset
 });
