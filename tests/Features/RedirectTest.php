@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Features\CrossDomainRedirect;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use function Stancl\Tenancy\Tests\pest;
 
 test('tenant redirect macro replaces only the hostname', function () {
     config([

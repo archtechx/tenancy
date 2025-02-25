@@ -7,6 +7,7 @@ use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Exceptions\NotASubdomainException;
 use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Database\Models;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     // Global state cleanup after some tests

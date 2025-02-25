@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 use Stancl\Tenancy\Database\Concerns\BelongsToPrimaryModel;
 use Stancl\Tenancy\Database\Concerns\HasScopedValidationRules;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     Schema::create('posts', function (Blueprint $table) {

@@ -19,6 +19,7 @@ use Stancl\Tenancy\Events\BootstrappingTenancy;
 use Stancl\Tenancy\Listeners\QueueableListener;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     FooListener::$shouldQueue = false;

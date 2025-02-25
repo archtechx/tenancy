@@ -12,6 +12,7 @@ use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByPathException;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     // Make sure the tenant parameter is set to 'tenant'

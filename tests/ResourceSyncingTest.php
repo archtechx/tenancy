@@ -43,6 +43,7 @@ use Stancl\Tenancy\ResourceSyncing\Events\CentralResourceDetachedFromTenant;
 use Stancl\Tenancy\Tests\Etc\ResourceSyncing\CentralUser as BaseCentralUser;
 use Stancl\Tenancy\ResourceSyncing\CentralResourceNotAvailableInPivotException;
 use Stancl\Tenancy\ResourceSyncing\Events\SyncedResourceSavedInForeignDatabase;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     config(['tenancy.bootstrappers' => [

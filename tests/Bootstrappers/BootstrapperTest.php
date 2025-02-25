@@ -23,6 +23,7 @@ use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     $this->mockConsoleOutput = false;

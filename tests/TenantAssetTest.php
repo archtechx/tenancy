@@ -19,6 +19,7 @@ use Stancl\Tenancy\Controllers\TenantAssetController;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     config(['tenancy.bootstrappers' => [

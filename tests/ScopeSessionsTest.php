@@ -8,6 +8,7 @@ use Stancl\Tenancy\Exceptions\TenancyNotInitializedException;
 use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Middleware\ScopeSessions;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     Route::group([

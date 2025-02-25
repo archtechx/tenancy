@@ -11,6 +11,7 @@ use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromUnwantedDomains;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomainOrSubdomain;
 use Stancl\Tenancy\Tests\Etc\EarlyIdentification\ControllerWithMiddleware;
+use function Stancl\Tenancy\Tests\pest;
 
 test('correct routes are accessible in route-level identification', function (RouteMode $defaultRouteMode) {
     config()->set([

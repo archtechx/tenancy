@@ -23,6 +23,7 @@ use Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastingConfigBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastChannelPrefixBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
+use function Stancl\Tenancy\Tests\pest;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {

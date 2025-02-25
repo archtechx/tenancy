@@ -19,6 +19,7 @@ use Stancl\Tenancy\Commands\CreateUserWithRLSPolicies;
 use Stancl\Tenancy\RLS\PolicyManagers\TableRLSManager;
 use Stancl\Tenancy\Bootstrappers\PostgresRLSBootstrapper;
 use Stancl\Tenancy\Database\Exceptions\RecursiveRelationshipException;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     TableRLSManager::$scopeByDefault = true;
