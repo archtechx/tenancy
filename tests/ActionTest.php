@@ -70,7 +70,6 @@ test('remove storage symlinks action works', function() {
 });
 
 test('removing the tenant symlinks works even if the symlinks are invalid', function() {
-    // todo0 For this test to pass, delete the file_exists($link) check from symlinkExists() in DealsWithTenantSymlinks
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
