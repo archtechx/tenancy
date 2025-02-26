@@ -36,11 +36,15 @@ test('create storage symlinks action works', function() {
 
     tenancy()->initialize($tenant);
 
-    $this->assertDirectoryDoesNotExist($publicPath = public_path("public-$tenantKey"));
+    // The symlink doesn't exist
+    expect(is_link($publicPath = public_path("public-$tenantKey")))->toBeFalse();
+    expect(file_exists($publicPath))->toBeFalse();
 
     (new CreateStorageSymlinksAction)($tenant);
 
-    $this->assertDirectoryExists($publicPath);
+    // The symlink exists and is valid
+    expect(is_link($publicPath = public_path("public-$tenantKey")))->toBeTrue();
+    expect(file_exists($publicPath))->toBeTrue();
     $this->assertEquals(storage_path("app/public/"), readlink($publicPath));
 });
 
@@ -62,11 +66,15 @@ test('remove storage symlinks action works', function() {
 
     (new CreateStorageSymlinksAction)($tenant);
 
-    $this->assertDirectoryExists($publicPath = public_path("public-$tenantKey"));
+    // The symlink exists and is valid
+    expect(is_link($publicPath = public_path("public-$tenantKey")))->toBeTrue();
+    expect(file_exists($publicPath))->toBeTrue();
 
     (new RemoveStorageSymlinksAction)($tenant);
 
-    $this->assertDirectoryDoesNotExist($publicPath);
+    // The symlink doesn't exist
+    expect(is_link($publicPath))->toBeFalse();
+    expect(file_exists($publicPath))->toBeFalse();
 });
 
 test('removing the tenant symlinks works even if the symlinks are invalid', function() {
