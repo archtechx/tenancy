@@ -18,7 +18,7 @@ class UserImpersonation implements Feature
 
     public function bootstrap(Tenancy $tenancy): void
     {
-        $tenancy->macro('impersonate', function (Tenant $tenant, string $userId, string $redirectUrl, string $authGuard = null): ImpersonationToken {
+        $tenancy->macro('impersonate', function (Tenant $tenant, string $userId, string $redirectUrl, ?string $authGuard = null): ImpersonationToken {
             return ImpersonationToken::create([
                 'tenant_id' => $tenant->getTenantKey(),
                 'user_id' => $userId,
@@ -32,10 +32,10 @@ class UserImpersonation implements Feature
      * Impersonate a user and get an HTTP redirect response.
      *
      * @param string|ImpersonationToken $token
-     * @param int $ttl
+     * @param int|null $ttl
      * @return RedirectResponse
      */
-    public static function makeResponse($token, int $ttl = null): RedirectResponse
+    public static function makeResponse($token, ?int $ttl = null): RedirectResponse
     {
         $token = $token instanceof ImpersonationToken ? $token : ImpersonationToken::findOrFail($token);
 
