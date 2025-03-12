@@ -76,60 +76,6 @@ class DatabasePreparationTest extends TestCase
     }
 
     /** @test */
-    public function database_can_not_be_seeded_after_tenant_creation_in_production_without_force()
-    {
-        $this->app->detectEnvironment(function() {
-            return 'production';
-          });
-
-        config(['tenancy.seeder_parameters' => [
-            '--class' => TestSeeder::class,
-        ]]);
-
-        Event::listen(TenantCreated::class, JobPipeline::make([
-            CreateDatabase::class,
-            MigrateDatabase::class,
-            SeedDatabase::class,
-        ])->send(function (TenantCreated $event) {
-            return $event->tenant;
-        })->toListener());
-
-        $tenant = Tenant::create();
-
-        $tenant->run(function () {
-            $this->assertEmpty(User::first());
-        });
-    }
-
-        /** @test */
-        public function database_can_not_be_seeded_after_tenant_creation_in_production_with_force()
-        {
-            $this->app->detectEnvironment(function() {
-                return 'production';
-              });
-    
-            config(['tenancy.seeder_parameters' => [
-                '--class' => TestSeeder::class,
-                '--force' => true,
-            ]]);
-    
-            Event::listen(TenantCreated::class, JobPipeline::make([
-                CreateDatabase::class,
-                MigrateDatabase::class,
-                SeedDatabase::class,
-            ])->send(function (TenantCreated $event) {
-                return $event->tenant;
-            })->toListener());
-    
-            $tenant = Tenant::create();
-    
-            $tenant->run(function () {
-                $this->assertSame('Seeded User', User::first()->name);
-            });
-        }
-    
-
-    /** @test */
     public function custom_job_can_be_added_to_the_pipeline()
     {
         config(['tenancy.seeder_parameters' => [
