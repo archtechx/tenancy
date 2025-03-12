@@ -109,4 +109,52 @@ class CachedTenantResolverTest extends TestCase
         $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('bar')));
         $this->assertNotEmpty(DB::getQueryLog()); // not empty
     }
+
+    /** @test */
+    public function cache_is_invalidated_when_a_tenants_domain_is_deleted()
+    {
+        $tenant = Tenant::create();
+        $tenant->createDomain([
+            'domain' => 'acme',
+        ]);
+
+        DB::enableQueryLog();
+
+        DomainTenantResolver::$shouldCache = true;
+
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
+        DB::flushQueryLog();
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
+        $this->assertEmpty(DB::getQueryLog()); // empty
+
+        $tenant->domains()->first()->delete();
+
+        DB::flushQueryLog();
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
+        $this->assertEmpty(DB::getQueryLog()); // not empty
+    }
+
+    /** @test */
+    public function cache_is_invalidated_when_a_tenant_is_deleted()
+    {
+        $tenant = Tenant::create();
+        $tenant->createDomain([
+            'domain' => 'acme',
+        ]);
+
+        DB::enableQueryLog();
+
+        DomainTenantResolver::$shouldCache = true;
+
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
+        DB::flushQueryLog();
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
+        $this->assertEmpty(DB::getQueryLog()); // empty
+
+        $tenant->delete();
+
+        DB::flushQueryLog();
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
+        $this->assertEmpty(DB::getQueryLog()); // not empty
+    }
 }
