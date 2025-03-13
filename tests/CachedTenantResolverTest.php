@@ -11,6 +11,8 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 use Illuminate\Support\Facades\Route as RouteFacade;
 use Illuminate\Support\Facades\Schema;
+use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
 use function Stancl\Tenancy\Tests\pest;
@@ -84,6 +86,34 @@ test('cache is invalidated when the tenant is updated', function (string $resolv
     RequestDataTenantResolver::class,
 ]);
 
+test('cache is invalidated when the tenant is deleted', function (string $resolver) {
+    DB::statement('SET FOREIGN_KEY_CHECKS=0;'); // allow deleting the tenant
+    $tenant = Tenant::create(['id' => $tenantKey = 'acme']);
+    $tenant->createDomain($tenantKey);
+
+    DB::enableQueryLog();
+
+    config(['tenancy.identification.resolvers.' . $resolver . '.cache' => true]);
+
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenantKey))))->toBeTrue();
+    expect(DB::getQueryLog())->not()->toBeEmpty();
+
+    DB::flushQueryLog();
+
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenantKey))))->toBeTrue();
+    expect(DB::getQueryLog())->toBeEmpty();
+
+    $tenant->delete();
+    DB::flushQueryLog();
+
+    expect(fn () => app($resolver)->resolve(getResolverArgument($resolver, $tenantKey)))->toThrow(TenantCouldNotBeIdentifiedException::class);
+    expect(DB::getQueryLog())->not()->toBeEmpty(); // Cache was invalidated, so the DB was queried
+})->with([
+    DomainTenantResolver::class,
+    PathTenantResolver::class,
+    RequestDataTenantResolver::class,
+]);
+
 test('cache is invalidated when a tenants domain is changed', function () {
     $tenant = Tenant::create(['id' => $tenantKey = 'acme']);
     $tenant->createDomain($tenantKey);
@@ -108,6 +138,26 @@ test('cache is invalidated when a tenants domain is changed', function () {
     DB::flushQueryLog();
     expect($tenant->is(app(DomainTenantResolver::class)->resolve('bar')))->toBeTrue();
     pest()->assertNotEmpty(DB::getQueryLog()); // not empty
+});
+
+test('cache is invalidated when a tenants domain is deleted', function () {
+    $tenant = Tenant::create(['id' => $tenantKey = 'acme']);
+    $tenant->createDomain($tenantKey);
+
+    DB::enableQueryLog();
+
+    config(['tenancy.identification.resolvers.' . DomainTenantResolver::class . '.cache' => true]);
+
+    expect($tenant->is(app(DomainTenantResolver::class)->resolve('acme')))->toBeTrue();
+    DB::flushQueryLog();
+    expect($tenant->is(app(DomainTenantResolver::class)->resolve('acme')))->toBeTrue();
+    expect(DB::getQueryLog())->toBeEmpty(); // empty
+
+    $tenant->domains->first()->delete();
+    DB::flushQueryLog();
+
+    expect(fn () => $tenant->is(app(DomainTenantResolver::class)->resolve('acme')))->toThrow(TenantCouldNotBeIdentifiedOnDomainException::class);
+    expect(DB::getQueryLog())->not()->toBeEmpty(); // Cache was invalidated, so the DB was queried
 });
 
 test('PathTenantResolver forgets the tenant route parameter when the tenant is resolved from cache', function() {
