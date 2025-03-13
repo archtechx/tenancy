@@ -12,8 +12,7 @@ trait InvalidatesResolverCache
 {
     public static function bootInvalidatesResolverCache(): void
     {
-        static::saved(function (Tenant&Model $tenant) {
-            Tenancy::invalidateResolverCache($tenant);
-        });
+        static::saved(Tenancy::invalidateResolverCache(...));
+        static::deleting(Tenancy::invalidateResolverCache(...));
     }
 }
