@@ -18,13 +18,16 @@ trait InvalidatesResolverCache
 
     public static function bootInvalidatesResolverCache()
     {
-        static::saved(function (Tenant $tenant) {
+        $invalidateCache = static function (Tenant $tenant) {
             foreach (static::$resolvers as $resolver) {
                 /** @var CachedTenantResolver $resolver */
                 $resolver = app($resolver);
 
                 $resolver->invalidateCache($tenant);
             }
-        });
+        };
+
+        static::saved($invalidateCache);
+        static::deleting($invalidateCache);
     }
 }
