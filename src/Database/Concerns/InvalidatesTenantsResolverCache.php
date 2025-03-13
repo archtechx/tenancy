@@ -22,7 +22,7 @@ trait InvalidatesTenantsResolverCache
     public static function bootInvalidatesTenantsResolverCache()
     {
         static::saved(fn(Model $model) => static::invalidateTenantCache($model));
-        static::deleted(fn(Model $model) => static::invalidateTenantCache($model));
+        static::deleting(fn(Model $model) => static::invalidateTenantCache($model));
     }
 
     private static function invalidateTenantCache(Model $model): void

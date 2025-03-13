@@ -19,7 +19,7 @@ trait InvalidatesResolverCache
     public static function bootInvalidatesResolverCache()
     {
         static::saved(fn(Tenant $tenant) => static::invalidateTenantCache($tenant));
-        static::deleted(fn(Tenant $tenant) => static::invalidateTenantCache($tenant));
+        static::deleting(fn(Tenant $tenant) => static::invalidateTenantCache($tenant));
     }
 
     private static function invalidateTenantCache(Tenant $tenant): void

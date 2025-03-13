@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Exceptions;
+use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
@@ -113,6 +115,8 @@ class CachedTenantResolverTest extends TestCase
     /** @test */
     public function cache_is_invalidated_when_a_tenants_domain_is_deleted()
     {
+        Exceptions::fake();
+
         $tenant = Tenant::create();
         $tenant->createDomain([
             'domain' => 'acme',
@@ -129,14 +133,18 @@ class CachedTenantResolverTest extends TestCase
 
         $tenant->domains()->first()->delete();
 
+        $this->expectException(TenantCouldNotBeIdentifiedException::class); // tenant not found
+
         DB::flushQueryLog();
         $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
-        $this->assertEmpty(DB::getQueryLog()); // not empty
+        $this->assertNotEmpty(DB::getQueryLog()); // not emptyt empty
     }
 
     /** @test */
     public function cache_is_invalidated_when_a_tenant_is_deleted()
     {
+        Exceptions::fake();
+
         $tenant = Tenant::create();
         $tenant->createDomain([
             'domain' => 'acme',
@@ -153,8 +161,10 @@ class CachedTenantResolverTest extends TestCase
 
         $tenant->delete();
 
+        $this->expectException(TenantCouldNotBeIdentifiedException::class); // tenant not found
+
         DB::flushQueryLog();
         $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
-        $this->assertEmpty(DB::getQueryLog()); // not empty
+        $this->assertNotEmpty(DB::getQueryLog()); // not empty
     }
 }
