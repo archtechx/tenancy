@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\DB;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
@@ -81,6 +82,33 @@ class CachedTenantResolverTest extends TestCase
     }
 
     /** @test */
+    public function cache_is_invalidated_when_the_tenant_is_deleted()
+    {
+        $tenant = Tenant::create();
+        $tenant->createDomain([
+            'domain' => 'acme',
+        ]);
+
+        DB::enableQueryLog();
+
+        DomainTenantResolver::$shouldCache = true;
+
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
+        DB::flushQueryLog();
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
+        $this->assertEmpty(DB::getQueryLog()); // empty
+
+        $tenant->delete();
+        DB::flushQueryLog();
+
+        $this->assertThrows(function () {
+            app(DomainTenantResolver::class)->resolve('acme');
+        }, TenantCouldNotBeIdentifiedOnDomainException::class);
+
+        $this->assertNotEmpty(DB::getQueryLog()); // not empty - cache cleared so the DB was queried
+    }
+
+    /** @test */
     public function cache_is_invalidated_when_a_tenants_domain_is_changed()
     {
         $tenant = Tenant::create();
@@ -108,5 +136,32 @@ class CachedTenantResolverTest extends TestCase
         DB::flushQueryLog();
         $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('bar')));
         $this->assertNotEmpty(DB::getQueryLog()); // not empty
+    }
+
+    /** @test */
+    public function cache_is_invalidated_when_a_tenants_domain_is_deleted()
+    {
+        $tenant = Tenant::create();
+        $tenant->createDomain([
+            'domain' => 'acme',
+        ]);
+
+        DB::enableQueryLog();
+
+        DomainTenantResolver::$shouldCache = true;
+
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
+        DB::flushQueryLog();
+        $this->assertTrue($tenant->is(app(DomainTenantResolver::class)->resolve('acme')));
+        $this->assertEmpty(DB::getQueryLog()); // empty
+
+        $tenant->domains->first()->delete();
+        DB::flushQueryLog();
+
+        $this->assertThrows(function () {
+            app(DomainTenantResolver::class)->resolve('acme');
+        }, TenantCouldNotBeIdentifiedOnDomainException::class);
+
+        $this->assertNotEmpty(DB::getQueryLog()); // not empty - cache cleared so the DB was queried
     }
 }
