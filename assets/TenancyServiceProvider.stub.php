@@ -182,7 +182,7 @@ class TenancyServiceProvider extends ServiceProvider
 
         // // To make Livewire v3 work with Tenancy, make the update route universal.
         // Livewire::setUpdateRoute(function ($handle) {
-        //     return RouteFacade::post('/livewire/update', $handle)->middleware(['web', 'universal', \Stancl\Tenancy::defaultMiddleware()]);
+        //     return RouteFacade::post('/livewire/update', $handle)->middleware(['web', 'universal', \Stancl\Tenancy\Tenancy::defaultMiddleware()]);
         // });
     }
 
