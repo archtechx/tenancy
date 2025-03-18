@@ -77,7 +77,7 @@ test('remove storage symlinks action works', function() {
     expect(file_exists($publicPath))->toBeFalse();
 });
 
-test('removing the tenant symlinks works even if the symlinks are invalid', function() {
+test('removing tenant symlinks works even if the symlinks are invalid', function() {
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
