@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Features;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Stancl\Tenancy\Contracts\Feature;
 use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\Database\Models\ImpersonationToken;
 use Stancl\Tenancy\Tenancy;
 
 class UserImpersonation implements Feature
@@ -18,8 +18,8 @@ class UserImpersonation implements Feature
 
     public function bootstrap(Tenancy $tenancy): void
     {
-        $tenancy->macro('impersonate', function (Tenant $tenant, string $userId, string $redirectUrl, string|null $authGuard = null, bool $remember = false): ImpersonationToken {
-            return ImpersonationToken::create([
+        $tenancy->macro('impersonate', function (Tenant $tenant, string $userId, string $redirectUrl, string|null $authGuard = null, bool $remember = false): Model {
+            return UserImpersonation::modelClass()::create([
                 Tenancy::tenantKeyColumn() => $tenant->getTenantKey(),
                 'user_id' => $userId,
                 'redirect_url' => $redirectUrl,
@@ -30,10 +30,10 @@ class UserImpersonation implements Feature
     }
 
     /** Impersonate a user and get an HTTP redirect response. */
-    public static function makeResponse(#[\SensitiveParameter] string|ImpersonationToken $token, ?int $ttl = null): RedirectResponse
+    public static function makeResponse(#[\SensitiveParameter] string|Model $token, ?int $ttl = null): RedirectResponse
     {
-        /** @var ImpersonationToken $token */
-        $token = $token instanceof ImpersonationToken ? $token : ImpersonationToken::findOrFail($token);
+        /** @var Model $token */
+        $token = $token instanceof Model ? $token : static::modelClass()::findOrFail($token);
         $ttl ??= static::$ttl;
 
         $tokenExpired = $token->created_at->diffInSeconds(now()) > $ttl;
@@ -52,6 +52,12 @@ class UserImpersonation implements Feature
         session()->put('tenancy_impersonating', true);
 
         return redirect($token->redirect_url);
+    }
+
+    /** @return class-string<Model> */
+    public static function modelClass(): string
+    {
+        return config('tenancy.models.impersonation_token');
     }
 
     public static function isImpersonating(): bool

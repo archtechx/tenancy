@@ -15,6 +15,7 @@ return [
     'models' => [
         'tenant' => Stancl\Tenancy\Database\Models\Tenant::class,
         'domain' => Stancl\Tenancy\Database\Models\Domain::class,
+        'impersonation_token' => Stancl\Tenancy\Database\Models\ImpersonationToken::class,
 
         /**
          * Name of the column used to relate models to tenants.
