@@ -26,7 +26,7 @@ class ImpersonationToken extends Model
     use CentralConnection;
 
     /** You can set this property to customize the table name */
-    public static $tableName = 'tenant_user_impersonation_tokens';
+    public static string $tableName = 'tenant_user_impersonation_tokens';
 
     protected $guarded = [];
 
