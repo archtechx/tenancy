@@ -56,6 +56,6 @@ trait DealsWithTenantSymlinks
     /** Determine if the provided path is an existing symlink. */
     protected function symlinkExists(string $link): bool
     {
-        return file_exists($link) && is_link($link);
+        return is_link($link);
     }
 }
