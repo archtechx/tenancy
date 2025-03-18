@@ -22,6 +22,8 @@ use Stancl\Tenancy\Exceptions\TenancyNotInitializedException;
 use Stancl\Tenancy\UniqueIdentifierGenerators\RandomHexGenerator;
 use Stancl\Tenancy\UniqueIdentifierGenerators\RandomIntGenerator;
 use Stancl\Tenancy\UniqueIdentifierGenerators\RandomStringGenerator;
+use Stancl\Tenancy\UniqueIdentifierGenerators\ULIDGenerator;
+
 use function Stancl\Tenancy\Tests\pest;
 
 afterEach(function () {
@@ -76,6 +78,20 @@ test('autoincrement ids are supported', function () {
 
     expect($tenant1->id)->toBe(1);
     expect($tenant2->id)->toBe(2);
+});
+
+test('ulid ids are supported', function () {
+    app()->bind(UniqueIdentifierGenerator::class, ULIDGenerator::class);
+
+    $tenant1 = Tenant::create();
+    expect($tenant1->id)->toBeString();
+    expect(strlen($tenant1->id))->toBe(26);
+
+    $tenant2 = Tenant::create();
+    expect($tenant2->id)->toBeString();
+    expect(strlen($tenant2->id))->toBe(26);
+
+    expect($tenant2->id > $tenant1->id)->toBeTrue();
 });
 
 test('hex ids are supported', function () {
