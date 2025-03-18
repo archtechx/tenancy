@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Stancl\Tenancy\Contracts\Feature;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Database\Models\ImpersonationToken;
 use Stancl\Tenancy\Tenancy;
 
 class UserImpersonation implements Feature
@@ -32,7 +33,12 @@ class UserImpersonation implements Feature
     /** Impersonate a user and get an HTTP redirect response. */
     public static function makeResponse(#[\SensitiveParameter] string|Model $token, ?int $ttl = null): RedirectResponse
     {
-        /** @var Model $token */
+        /**
+         * The model does NOT have to extend ImpersonationToken, but usually it WILL be a child
+         * of ImpersonationToken and this makes it clear to phpstan that the model has a redirect_url property.
+         *
+         * @var ImpersonationToken $token
+         */
         $token = $token instanceof Model ? $token : static::modelClass()::findOrFail($token);
         $ttl ??= static::$ttl;
 
