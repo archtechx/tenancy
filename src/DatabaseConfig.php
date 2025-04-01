@@ -163,4 +163,14 @@ class DatabaseConfig
 
         return $databaseManager;
     }
+
+    /**
+     * Check if the database exists.
+     *
+     * @return bool Returns true if the database exists, otherwise false.
+     */
+    public function exists(): bool
+    {
+        return $this->manager()->databaseExists($this->getName());
+    }
 }
