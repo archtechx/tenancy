@@ -55,3 +55,15 @@ test('an exception is thrown when the middleware is executed before tenancy is i
     pest()->expectException(TenancyNotInitializedException::class);
     $this->withoutExceptionHandling()->get('http://acme.localhost/bar');
 });
+
+test('scope sessions mw can be used on universal routes', function() {
+    Route::get('/universal', function () {
+        return true;
+    })->middleware(['universal', InitializeTenancyBySubdomain::class, ScopeSessions::class]);
+
+    Tenant::create([
+        'id' => 'acme',
+    ])->createDomain('acme');
+
+    pest()->withoutExceptionHandling()->get('http://localhost/universal')->assertSuccessful();
+});
