@@ -19,9 +19,7 @@ class ScopeSessions
     public function handle(Request $request, Closure $next): mixed
     {
         if (! tenancy()->initialized) {
-            $route = tenancy()->getRoute($request);
-
-            if (tenancy()->routeIsUniversal($route)) {
+            if (tenancy()->routeIsUniversal(tenancy()->getRoute($request))) {
                 return $next($request);
             }
 
