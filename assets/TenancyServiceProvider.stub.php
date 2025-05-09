@@ -147,16 +147,19 @@ class TenancyServiceProvider extends ServiceProvider
     {
         // \Stancl\Tenancy\Bootstrappers\RootUrlBootstrapper::$rootUrlOverride = function (Tenant $tenant, string $originalRootUrl) {
         //     $tenantDomain = $tenant instanceof \Stancl\Tenancy\Contracts\SingleDomainTenant
-        //     ? $tenant->domain
-        //     : $tenant->domains->first()->domain;
+        //         ? $tenant->domain
+        //         : $tenant->domains->first()->domain;
+        //
         //     $scheme = str($originalRootUrl)->before('://');
         //
-        //     // If you're using domain identification:
-        //     return $scheme . '://' . $tenantDomain . '/';
-        //
-        //     // If you're using subdomain identification:
-        //     $originalDomain = str($originalRootUrl)->after($scheme . '://');
-        //     return $scheme . '://' . $tenantDomain . '.' . $originalDomain . '/';
+        //     if (str_contains($tenantDomain, '.')) {
+        //         // Domain identification
+        //         return $scheme . '://' . $tenantDomain . '/';
+        //     } else {
+        //         // Subdomain identification
+        //         $originalDomain = str($originalRootUrl)->after($scheme . '://')->before('/');
+        //         return $scheme . '://' . $tenantDomain . '.' . $originalDomain . '/';
+        //     }
         // };
     }
 
