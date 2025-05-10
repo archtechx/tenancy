@@ -22,6 +22,7 @@ use Stancl\Tenancy\Database\Exceptions\RecursiveRelationshipException;
 use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
+    CreateUserWithRLSPolicies::$forceRls = true;
     TableRLSManager::$scopeByDefault = true;
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
@@ -107,6 +108,10 @@ beforeEach(function () {
     });
 });
 
+afterEach(function () {
+    CreateUserWithRLSPolicies::$forceRls = true;
+});
+
 test('correct rls policies get created with the correct hash using table manager', function() {
     $manager = app(config('tenancy.rls.manager'));
 
@@ -159,7 +164,9 @@ test('correct rls policies get created with the correct hash using table manager
     }
 });
 
-test('queries are correctly scoped using RLS', function() {
+test('queries are correctly scoped using RLS', function(bool $forceRls) {
+    CreateUserWithRLSPolicies::$forceRls = $forceRls;
+
     // 3-levels deep relationship
     Schema::create('notes', function (Blueprint $table) {
         $table->id();
@@ -320,7 +327,7 @@ test('queries are correctly scoped using RLS', function() {
 
     expect(fn () => DB::statement("INSERT INTO notes (text, comment_id) VALUES ('baz', {$post1Comment->id})"))
         ->toThrow(QueryException::class);
-});
+})->with([true, false]);
 
 test('table rls manager generates relationship trees with tables related to the tenants table', function (bool $scopeByDefault) {
     TableRLSManager::$scopeByDefault = $scopeByDefault;
@@ -535,6 +542,104 @@ test('table rls manager generates relationship trees with tables related to the 
     ]);
 })->with([true, false]);
 
+test('table owner sees all the records when forceRls is false while other users only see records scoped to them', function(bool $forceRls) {
+    CreateUserWithRLSPolicies::$forceRls = $forceRls;
+
+    // Drop all tables created in beforeEach
+    DB::statement("DROP TABLE authors, categories, posts, comments, reactions, articles;");
+
+    [$username, $password] = createPostgresUser('central_user');
+
+    config(['database.connections.central' => array_merge(
+        config('database.connections.pgsql'),
+        ['username' => $username, 'password' => $password]
+    )]);
+
+    DB::reconnect();
+
+    Schema::create('orders', function (Blueprint $table) {
+        $table->id();
+        $table->string('name');
+
+        $table->string('tenant_id')->comment('rls');
+        $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
+
+        $table->timestamps();
+    });
+
+    [$tenant1, $tenant2] = [Tenant::create(), Tenant::create()];
+
+    pest()->artisan('tenants:rls');
+
+    [$order1, $order2] = [
+        $tenant1->run(fn () => Order::create(['name' => 'order1', 'tenant_id' => $tenant1->getTenantKey()])),
+        $tenant2->run(fn () => Order::create(['name' => 'order2', 'tenant_id' => $tenant2->getTenantKey()])),
+    ];
+
+    // If forceRls is false, the table owner should see all the records
+    // Otherwise, a RLS violation exception is thrown when querying the table
+    if ($forceRls) {
+        expect(fn () => Order::all())->toThrow(QueryException::class, 'unrecognized configuration parameter');
+    } else {
+        expect(Order::count())->toBe(2);
+    }
+
+    tenancy()->initialize($tenant1);
+
+    // The tenant users should only see their records
+    expect(Order::count())->toBe(1);
+    expect(Order::first()->name)->toBe($order1->name);
+
+    tenancy()->initialize($tenant2);
+
+    expect(Order::count())->toBe(1);
+    expect(Order::first()->name)->toBe($order2->name);
+})->with([true, false]);
+
+// https://github.com/archtechx/tenancy/pull/1288
+test('user without BYPASSRLS can only query owned tables if forceRls is true', function(bool $forceRls) {
+    CreateUserWithRLSPolicies::$forceRls = $forceRls;
+
+    // Drop all tables created in beforeEach
+    DB::statement("DROP TABLE authors, categories, posts, comments, reactions, articles;");
+
+    [$username, $password] = createPostgresUser('administrator');
+
+    config(['database.connections.central' => array_merge(
+        config('database.connections.pgsql'),
+        ['username' => $username, 'password' => $password]
+    )]);
+
+    DB::reconnect();
+
+    Schema::create('orders', function (Blueprint $table) {
+        $table->id();
+        $table->string('name');
+
+        $table->string('tenant_id')->comment('rls');
+        $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
+
+        $table->timestamps();
+    });
+
+    $tenant1 = Tenant::create();
+
+    // Create RLS policy for the orders table
+    pest()->artisan('tenants:rls');
+
+    $tenant1->run(fn () => Order::create(['name' => 'order1', 'tenant_id' => $tenant1->getTenantKey()]));
+
+    if ($forceRls) {
+        // RLS is forced, so by default, not even the table owner should be able to query the table protected by the RLS policy.
+        // The RLS policy is not being bypassed, 'unrecognized configuration parameter' means
+        // that the my.current_tenant session variable isn't set.
+        expect(fn () => Order::first())->toThrow(QueryException::class, 'unrecognized configuration parameter');
+    } else {
+        // RLS is not forced, so the table owner should be able to query the table, bypassing the RLS policy
+        expect(Order::first())->not()->toBeNull();
+    }
+})->with([true, false]);
+
 test('table rls manager generates queries correctly', function() {
     expect(array_values(app(TableRLSManager::class)->generateQueries()))->toEqualCanonicalizing([
         <<<SQL
@@ -650,6 +755,28 @@ test('table manager throws an exception when encountering a recursive relationsh
     expect(fn () => app(TableRLSManager::class)->generateTrees())->toThrow(RecursiveRelationshipException::class);
 });
 
+function createPostgresUser(string $username, string $password = 'password'): array
+{
+    try {
+        DB::statement("DROP OWNED BY {$username};");
+    } catch (\Throwable $th) {}
+
+    DB::statement("DROP USER IF EXISTS {$username};");
+
+    DB::statement("CREATE USER {$username} WITH ENCRYPTED PASSWORD '{$password}'");
+    DB::statement("ALTER USER {$username} CREATEDB");
+    DB::statement("ALTER USER {$username} CREATEROLE");
+
+    // Grant privileges to the new central user
+    DB::statement("GRANT ALL PRIVILEGES ON DATABASE main to {$username}");
+    DB::statement("GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO {$username}");
+    DB::statement("GRANT ALL ON SCHEMA public TO {$username}");
+    DB::statement("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO {$username}");
+    DB::statement("GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO {$username}");
+
+    return [$username, $password];
+}
+
 class Post extends Model
 {
     protected $guarded = [];
@@ -699,6 +826,11 @@ class Category extends Model
 }
 
 class Author extends Model
+{
+    protected $guarded = [];
+}
+
+class Order extends Model
 {
     protected $guarded = [];
 }
