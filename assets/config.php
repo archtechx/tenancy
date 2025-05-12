@@ -196,4 +196,6 @@ return [
         '--class' => 'DatabaseSeeder', // root seeder class
         // '--force' => true, // This needs to be true to seed tenant databases in production
     ],
+
+    'test_tenant' => env('TEST_TENANT', 1),
 ];
