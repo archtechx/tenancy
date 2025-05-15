@@ -77,18 +77,21 @@ class Tenancy
     public function run(Tenant $tenant, Closure $callback): mixed
     {
         $originalTenant = $this->tenant;
+        $result = null;
 
-        $this->initialize($tenant);
-        $result = $callback($tenant);
+        try {
+            $this->initialize($tenant);
+            $result = $callback($tenant);
+        } finally {
+            if ($result instanceof PendingDispatch) { // #1277
+                $result = null;
+            }
 
-        if ($result instanceof PendingDispatch) { // #1277
-            $result = null;
-        }
-
-        if ($originalTenant) {
-            $this->initialize($originalTenant);
-        } else {
-            $this->end();
+            if ($originalTenant) {
+                $this->initialize($originalTenant);
+            } else {
+                $this->end();
+            }
         }
 
         return $result;
@@ -204,8 +207,10 @@ class Tenancy
         // Wrap string in array
         $tenants = is_string($tenants) ? [$tenants] : $tenants;
 
-        // Use all tenants if $tenants is falsy
-        $tenants = $tenants ?: $this->model()->cursor(); // todo@phpstan phpstan thinks this isn't needed, but tests fail without it
+        // If $tenants is falsy by this point (e.g. an empty array) there's no work to be done
+        if (! $tenants) {
+            return;
+        }
 
         $originalTenant = $this->tenant;
 

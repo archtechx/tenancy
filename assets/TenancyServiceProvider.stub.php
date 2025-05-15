@@ -53,6 +53,7 @@ class TenancyServiceProvider extends ServiceProvider
             Events\DeletingTenant::class => [
                 JobPipeline::make([
                     Jobs\DeleteDomains::class,
+                    // Jobs\RemoveStorageSymlinks::class,
                 ])->send(function (Events\DeletingTenant $event) {
                     return $event->tenant;
                 })->shouldBeQueued(false),
@@ -62,7 +63,6 @@ class TenancyServiceProvider extends ServiceProvider
             Events\TenantDeleted::class => [
                 JobPipeline::make([
                     Jobs\DeleteDatabase::class,
-                    // Jobs\RemoveStorageSymlinks::class,
                 ])->send(function (Events\TenantDeleted $event) {
                     return $event->tenant;
                 })->shouldBeQueued(false), // `false` by default, but you probably want to make this `true` for production.
@@ -145,24 +145,22 @@ class TenancyServiceProvider extends ServiceProvider
      */
     protected function overrideUrlInTenantContext(): void
     {
-        /**
-         * Import your tenant model!
-         *
-         * \Stancl\Tenancy\Bootstrappers\RootUrlBootstrapper::$rootUrlOverride = function (Tenant $tenant, string $originalRootUrl) {
-         *     $tenantDomain = $tenant instanceof \Stancl\Tenancy\Contracts\SingleDomainTenant
-         *         ? $tenant->domain
-         *         : $tenant->domains->first()->domain;
-         *
-         *     $scheme = str($originalRootUrl)->before('://');
-         *
-         *     // If you're using domain identification:
-         *     return $scheme . '://' . $tenantDomain . '/';
-         *
-         *     // If you're using subdomain identification:
-         *     $originalDomain = str($originalRootUrl)->after($scheme . '://');
-         *     return $scheme . '://' . $tenantDomain . '.' . $originalDomain . '/';
-         * };
-         */
+        // \Stancl\Tenancy\Bootstrappers\RootUrlBootstrapper::$rootUrlOverride = function (Tenant $tenant, string $originalRootUrl) {
+        //     $tenantDomain = $tenant instanceof \Stancl\Tenancy\Contracts\SingleDomainTenant
+        //         ? $tenant->domain
+        //         : $tenant->domains->first()->domain;
+        //
+        //     $scheme = str($originalRootUrl)->before('://');
+        //
+        //     if (str_contains($tenantDomain, '.')) {
+        //         // Domain identification
+        //         return $scheme . '://' . $tenantDomain . '/';
+        //     } else {
+        //         // Subdomain identification
+        //         $originalDomain = str($originalRootUrl)->after($scheme . '://')->before('/');
+        //         return $scheme . '://' . $tenantDomain . '.' . $originalDomain . '/';
+        //     }
+        // };
     }
 
     public function register()
@@ -178,32 +176,17 @@ class TenancyServiceProvider extends ServiceProvider
         $this->makeTenancyMiddlewareHighestPriority();
         $this->overrideUrlInTenantContext();
 
-        /**
-         * Include soft deleted resources in synced resource queries.
-         *
-         * ResourceSyncing\Listeners\UpdateOrCreateSyncedResource::$scopeGetModelQuery = function (Builder $query) {
-         *     if ($query->hasMacro('withTrashed')) {
-         *         $query->withTrashed();
-         *     }
-         * };
-         */
+        // // Include soft deleted resources in synced resource queries.
+        // ResourceSyncing\Listeners\UpdateOrCreateSyncedResource::$scopeGetModelQuery = function (Builder $query) {
+        //     if ($query->hasMacro('withTrashed')) {
+        //         $query->withTrashed();
+        //     }
+        // };
 
-        /**
-         * To make Livewire v3 work with Tenancy, make the update route universal.
-         *
-         * Livewire::setUpdateRoute(function ($handle) {
-         *     return RouteFacade::post('/livewire/update', $handle)->middleware(['web', 'universal']);
-         * });
-         */
-
-        // if (InitializeTenancyByRequestData::inGlobalStack()) {
-        //     FortifyRouteBootstrapper::$fortifyHome = 'dashboard';
-        //     TenancyUrlGenerator::$prefixRouteNames = false;
-        // }
-
-        if (tenancy()->globalStackHasMiddleware(config('tenancy.identification.path_identification_middleware'))) {
-            TenancyUrlGenerator::$prefixRouteNames = true;
-        }
+        // // To make Livewire v3 work with Tenancy, make the update route universal.
+        // Livewire::setUpdateRoute(function ($handle) {
+        //     return RouteFacade::post('/livewire/update', $handle)->middleware(['web', 'universal', \Stancl\Tenancy\Tenancy::defaultMiddleware()]);
+        // });
     }
 
     protected function bootEvents()
@@ -228,10 +211,7 @@ class TenancyServiceProvider extends ServiceProvider
                     ->group(base_path('routes/tenant.php'));
             }
 
-            // Delete this condition when using route-level path identification
-            if (tenancy()->globalStackHasMiddleware(config('tenancy.identification.path_identification_middleware'))) {
-                $this->cloneRoutes();
-            }
+            // $this->cloneRoutes();
         });
     }
 
@@ -245,16 +225,13 @@ class TenancyServiceProvider extends ServiceProvider
         /** @var CloneRoutesAsTenant $cloneRoutes */
         $cloneRoutes = $this->app->make(CloneRoutesAsTenant::class);
 
-        /**
-         * You can provide a closure for cloning a specific route, e.g.:
-         * $cloneRoutes->cloneUsing('welcome', function () {
-         *      RouteFacade::get('/tenant-welcome', fn () => 'Current tenant: ' . tenant()->getTenantKey())
-         *          ->middleware(['universal', InitializeTenancyByPath::class])
-         *          ->name('tenant.welcome');
-         * });
-         *
-         * To see the default behavior of cloning the universal routes, check out the cloneRoute() method in CloneRoutesAsTenant.
-         */
+        // // You can provide a closure for cloning a specific route, e.g.:
+        // $cloneRoutes->cloneUsing('welcome', function () {
+        //     RouteFacade::get('/tenant-welcome', fn () => 'Current tenant: ' . tenant()->getTenantKey())
+        //         ->middleware(['universal', InitializeTenancyByPath::class])
+        //         ->name('tenant.welcome');
+        // });
+        // // To see the default behavior of cloning the universal routes, check out the cloneRoute() method in CloneRoutesAsTenant.
 
         $cloneRoutes->handle();
     }

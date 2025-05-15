@@ -24,6 +24,7 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByOriginHeader;
 use Stancl\Tenancy\Tests\Etc\EarlyIdentification\ControllerWithMiddleware;
 use Stancl\Tenancy\Tests\Etc\EarlyIdentification\ControllerWithRouteMiddleware;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     config()->set([

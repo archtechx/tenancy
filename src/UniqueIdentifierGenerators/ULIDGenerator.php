@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\UniqueIdentifierGenerators;
 
 use Illuminate\Database\Eloquent\Model;
-use Ramsey\Uuid\Uuid;
+use Illuminate\Support\Str;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 
 /**
  * Generates a UUID for the tenant key.
  */
-class UUIDGenerator implements UniqueIdentifierGenerator
+class ULIDGenerator implements UniqueIdentifierGenerator
 {
     public static function generate(Model $model): string|int
     {
-        return Uuid::uuid4()->toString();
+        return Str::ulid()->toString();
     }
 }

@@ -19,12 +19,14 @@ beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
     TenancyUrlGenerator::$prefixRouteNames = false;
-    TenancyUrlGenerator::$passTenantParameterToRoutes = true;
+    TenancyUrlGenerator::$passTenantParameterToRoutes = false;
+    UrlGeneratorBootstrapper::$addTenantParameterToDefaults = false;
 });
 
 afterEach(function () {
     TenancyUrlGenerator::$prefixRouteNames = false;
-    TenancyUrlGenerator::$passTenantParameterToRoutes = true;
+    TenancyUrlGenerator::$passTenantParameterToRoutes = false;
+    UrlGeneratorBootstrapper::$addTenantParameterToDefaults = false;
 });
 
 test('url generator bootstrapper swaps the url generator instance correctly', function() {
@@ -41,42 +43,104 @@ test('url generator bootstrapper swaps the url generator instance correctly', fu
         ->not()->toBeInstanceOf(TenancyUrlGenerator::class);
 });
 
-test('url generator bootstrapper can prefix route names passed to the route helper', function() {
+test('tenancy url generator can prefix route names passed to the route helper', function() {
     Route::get('/central/home', fn () => route('home'))->name('home');
     // Tenant route name prefix is 'tenant.' by default
-    Route::get('/{tenant}/home', fn () => route('tenant.home'))->name('tenant.home')->middleware(['tenant', InitializeTenancyByPath::class]);
+    Route::get('/tenant/home', fn () => route('tenant.home'))->name('tenant.home');
 
     $tenant = Tenant::create();
-    $tenantKey = $tenant->getTenantKey();
     $centralRouteUrl = route('home');
-    $tenantRouteUrl = route('tenant.home', ['tenant' => $tenantKey]);
-    TenancyUrlGenerator::$bypassParameter = 'bypassParameter';
+    $tenantRouteUrl = route('tenant.home');
 
     config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);
 
     tenancy()->initialize($tenant);
 
-    // Route names don't get prefixed when TenancyUrlGenerator::$prefixRouteNames is false
-    expect(route('home'))->not()->toBe($centralRouteUrl);
-    // When TenancyUrlGenerator::$passTenantParameterToRoutes is true (default)
-    // The route helper receives the tenant parameter
-    // So in order to generate central URL, we have to pass the bypass parameter
-    expect(route('home', ['bypassParameter' => true]))->toBe($centralRouteUrl);
+    // Route names don't get prefixed when TenancyUrlGenerator::$prefixRouteNames is false (default)
+    expect(route('home'))->toBe($centralRouteUrl);
 
-
+    // When $prefixRouteNames is true, the route name passed to the route() helper ('home') gets prefixed with 'tenant.' automatically.
     TenancyUrlGenerator::$prefixRouteNames = true;
-    // The $prefixRouteNames property is true
-    // The route name passed to the route() helper ('home') gets prefixed prefixed with 'tenant.' automatically
+
     expect(route('home'))->toBe($tenantRouteUrl);
 
-    // The 'tenant.home' route name doesn't get prefixed because it is already prefixed with 'tenant.'
-    // Also, the route receives the tenant parameter automatically
+    // The 'tenant.home' route name doesn't get prefixed -- it is already prefixed with 'tenant.'
     expect(route('tenant.home'))->toBe($tenantRouteUrl);
 
     // Ending tenancy reverts route() behavior changes
     tenancy()->end();
 
     expect(route('home'))->toBe($centralRouteUrl);
+});
+
+test('the route helper can receive the tenant parameter automatically', function (
+    string $identification,
+    bool $addTenantParameterToDefaults,
+    bool $passTenantParameterToRoutes,
+) {
+    config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);
+
+    $appUrl = config('app.url');
+
+    UrlGeneratorBootstrapper::$addTenantParameterToDefaults = $addTenantParameterToDefaults;
+
+    // When the tenant parameter isn't added to defaults, the tenant parameter has to be passed "manually"
+    // by setting $passTenantParameterToRoutes to true. This is only preferable with query string identification.
+    // With path identification, this ultimately doesn't have any effect
+    // if UrlGeneratorBootstrapper::$addTenantParameterToDefaults is true,
+    // but TenancyUrlGenerator::$passTenantParameterToRoutes can still be used instead.
+    TenancyUrlGenerator::$passTenantParameterToRoutes = $passTenantParameterToRoutes;
+
+    $tenant = Tenant::create();
+    $tenantKey = $tenant->getTenantKey();
+
+    Route::get('/central/home', fn () => route('home'))->name('home');
+
+    $tenantRoute = $identification === InitializeTenancyByPath::class ? "/{tenant}/home" : "/tenant/home";
+
+    Route::get($tenantRoute, fn () => route('tenant.home'))
+        ->name('tenant.home')
+        ->middleware(['tenant', $identification]);
+
+    tenancy()->initialize($tenant);
+
+    $expectedUrl = match (true) {
+        $identification === InitializeTenancyByRequestData::class && $passTenantParameterToRoutes => "{$appUrl}/tenant/home?tenant={$tenantKey}",
+        $identification === InitializeTenancyByRequestData::class => "{$appUrl}/tenant/home", // $passTenantParameterToRoutes is false
+        $identification === InitializeTenancyByPath::class && ($addTenantParameterToDefaults || $passTenantParameterToRoutes) => "{$appUrl}/{$tenantKey}/home",
+        $identification === InitializeTenancyByPath::class => null, // Should throw an exception -- route() doesn't receive the tenant parameter in this case
+    };
+
+    if ($expectedUrl === null) {
+        expect(fn () => route('tenant.home'))->toThrow(UrlGenerationException::class, 'Missing parameter: tenant');
+    } else {
+        expect(route('tenant.home'))->toBe($expectedUrl);
+    }
+})->with([InitializeTenancyByPath::class, InitializeTenancyByRequestData::class])
+    ->with([true, false]) // UrlGeneratorBootstrapper::$addTenantParameterToDefaults
+    ->with([true, false]); // TenancyUrlGenerator::$passTenantParameterToRoutes
+
+test('url generator can override specific route names', function() {
+    config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);
+
+    Route::get('/foo', fn () => 'foo')->name('foo');
+    Route::get('/bar', fn () => 'bar')->name('bar');
+    Route::get('/baz', fn () => 'baz')->name('baz'); // Not overridden
+
+    TenancyUrlGenerator::$overrides = ['foo' => 'bar'];
+
+    expect(route('foo'))->toBe(url('/foo'));
+    expect(route('bar'))->toBe(url('/bar'));
+    expect(route('baz'))->toBe(url('/baz'));
+
+    tenancy()->initialize(Tenant::create());
+
+    expect(route('foo'))->toBe(url('/bar'));
+    expect(route('bar'))->toBe(url('/bar')); // not overridden
+    expect(route('baz'))->toBe(url('/baz')); // not overridden
+
+    // Bypass the override
+    expect(route('foo', ['central' => true]))->toBe(url('/foo'));
 });
 
 test('both the name prefixing and the tenant parameter logic gets skipped when bypass parameter is used', function () {
@@ -105,54 +169,8 @@ test('both the name prefixing and the tenant parameter logic gets skipped when b
         ->not()->toContain('bypassParameter');
 
     // When the bypass parameter is false, the generated route URL points to the prefixed route ('tenant.home')
-    expect(route('home', ['bypassParameter' => false]))->toBe($tenantRouteUrl)
+    // The tenant parameter is not passed automatically since both
+    // UrlGeneratorBootstrapper::$addTenantParameterToDefaults and TenancyUrlGenerator::$passTenantParameterToRoutes are false by default
+    expect(route('home', ['bypassParameter' => false, 'tenant' => $tenant->getTenantKey()]))->toBe($tenantRouteUrl)
         ->not()->toContain('bypassParameter');
-});
-
-test('url generator bootstrapper can make route helper generate links with the tenant parameter', function() {
-    Route::get('/query_string', fn () => route('query_string'))->name('query_string')->middleware(['universal', InitializeTenancyByRequestData::class]);
-    Route::get('/path', fn () => route('path'))->name('path');
-    Route::get('/{tenant}/path', fn () => route('tenant.path'))->name('tenant.path')->middleware([InitializeTenancyByPath::class]);
-
-    $tenant = Tenant::create();
-    $tenantKey = $tenant->getTenantKey();
-    $queryStringCentralUrl = route('query_string');
-    $queryStringTenantUrl = route('query_string', ['tenant' => $tenantKey]);
-    $pathCentralUrl = route('path');
-    $pathTenantUrl = route('tenant.path', ['tenant' => $tenantKey]);
-
-    // Makes the route helper receive the tenant parameter whenever available
-    // Unless the bypass parameter is true
-    TenancyUrlGenerator::$passTenantParameterToRoutes = true;
-
-    TenancyUrlGenerator::$bypassParameter = 'bypassParameter';
-
-    config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);
-
-    expect(route('path'))->toBe($pathCentralUrl);
-    // Tenant parameter required, but not passed since tenancy wasn't initialized
-    expect(fn () => route('tenant.path'))->toThrow(UrlGenerationException::class);
-
-    tenancy()->initialize($tenant);
-
-    // Tenant parameter is passed automatically
-    expect(route('path'))->not()->toBe($pathCentralUrl); // Parameter added as query string – bypassParameter needed
-    expect(route('path', ['bypassParameter' => true]))->toBe($pathCentralUrl);
-    expect(route('tenant.path'))->toBe($pathTenantUrl);
-
-    expect(route('query_string'))->toBe($queryStringTenantUrl)->toContain('tenant=');
-    expect(route('query_string', ['bypassParameter' => 'true']))->toBe($queryStringCentralUrl)->not()->toContain('tenant=');
-
-    tenancy()->end();
-
-    expect(route('query_string'))->toBe($queryStringCentralUrl);
-
-    // Tenant parameter required, but shouldn't be passed since tenancy isn't initialized
-    expect(fn () => route('tenant.path'))->toThrow(UrlGenerationException::class);
-
-    // Route-level identification
-    pest()->get("http://localhost/query_string")->assertSee($queryStringCentralUrl);
-    pest()->get("http://localhost/query_string?tenant=$tenantKey")->assertSee($queryStringTenantUrl);
-    pest()->get("http://localhost/path")->assertSee($pathCentralUrl);
-    pest()->get("http://localhost/$tenantKey/path")->assertSee($pathTenantUrl);
 });

@@ -22,6 +22,8 @@ use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastingConfigBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastChannelPrefixBootstrapper;
+use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
+use function Stancl\Tenancy\Tests\pest;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
@@ -85,11 +87,8 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             '--realpath' => true,
         ]);
 
-        // Laravel 6.x support todo@refactor clean up
-        $testResponse = class_exists('Illuminate\Testing\TestResponse') ? 'Illuminate\Testing\TestResponse' : 'Illuminate\Foundation\Testing\TestResponse';
-        $testResponse::macro('assertContent', function ($content) {
-            $assertClass = class_exists('Illuminate\Testing\Assert') ? 'Illuminate\Testing\Assert' : 'Illuminate\Foundation\Testing\Assert';
-            $assertClass::assertSame($content, $this->baseResponse->getContent());
+        \Illuminate\Testing\TestResponse::macro('assertContent', function ($content) {
+            \Illuminate\Testing\Assert::assertSame($content, $this->baseResponse->getContent());
 
             return $this;
         });
@@ -175,18 +174,25 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'tenancy.models.tenant' => Tenant::class, // Use test tenant w/ DBs & domains
         ]);
 
-        $app->singleton(RedisTenancyBootstrapper::class); // todo@samuel use proper approach eg config for singleton registration
-        $app->singleton(CacheTenancyBootstrapper::class); // todo@samuel use proper approach eg config for singleton registration
+        // Since we run the TSP with no bootstrappers enabled, we need
+        // to manually register bootstrappers as singletons here.
+        $app->singleton(RedisTenancyBootstrapper::class);
+        $app->singleton(CacheTenancyBootstrapper::class);
         $app->singleton(BroadcastingConfigBootstrapper::class);
         $app->singleton(BroadcastChannelPrefixBootstrapper::class);
         $app->singleton(PostgresRLSBootstrapper::class);
         $app->singleton(MailConfigBootstrapper::class);
         $app->singleton(RootUrlBootstrapper::class);
         $app->singleton(UrlGeneratorBootstrapper::class);
+        $app->singleton(FilesystemTenancyBootstrapper::class);
     }
 
     protected function getPackageProviders($app)
     {
+        TenancyServiceProvider::$configure = function () {
+            config(['tenancy.bootstrappers' => []]);
+        };
+
         return [
             TenancyServiceProvider::class,
         ];

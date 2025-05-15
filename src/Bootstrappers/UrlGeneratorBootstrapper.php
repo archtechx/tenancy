@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\URL;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
+use Stancl\Tenancy\Resolvers\PathTenantResolver;
 
 /**
  * Makes the app use TenancyUrlGenerator (instead of Illuminate\Routing\UrlGenerator) which:
@@ -19,10 +20,20 @@ use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
  * Used with path and query string identification.
  *
  * @see TenancyUrlGenerator
- * @see \Stancl\Tenancy\Resolvers\PathTenantResolver
+ * @see PathTenantResolver
  */
 class UrlGeneratorBootstrapper implements TenancyBootstrapper
 {
+    /**
+     * Should the tenant route parameter get added to TenancyUrlGenerator::defaults().
+     *
+     * This is recommended when using path identification since defaults() generally has better support in integrations,
+     * namely Ziggy, compared to TenancyUrlGenerator::$passTenantParameterToRoutes.
+     *
+     * With query string identification, this has no effect since URL::defaults() only works for route paramaters.
+     */
+    public static bool $addTenantParameterToDefaults = true;
+
     public function __construct(
         protected Application $app,
         protected UrlGenerator $originalUrlGenerator,
@@ -32,12 +43,12 @@ class UrlGeneratorBootstrapper implements TenancyBootstrapper
     {
         URL::clearResolvedInstances();
 
-        $this->useTenancyUrlGenerator();
+        $this->useTenancyUrlGenerator($tenant);
     }
 
     public function revert(): void
     {
-        $this->app->bind('url', fn () => $this->originalUrlGenerator);
+        $this->app->extend('url', fn () => $this->originalUrlGenerator);
     }
 
     /**
@@ -45,26 +56,36 @@ class UrlGeneratorBootstrapper implements TenancyBootstrapper
      *
      * @see \Illuminate\Routing\RoutingServiceProvider registerUrlGenerator()
      */
-    protected function useTenancyUrlGenerator(): void
+    protected function useTenancyUrlGenerator(Tenant $tenant): void
     {
-        $this->app->extend('url', function (UrlGenerator $urlGenerator, Application $app) {
-            $newGenerator = new TenancyUrlGenerator(
-                $app['router']->getRoutes(),
-                $urlGenerator->getRequest(),
-                $app['config']->get('app.asset_url'),
+        $newGenerator = new TenancyUrlGenerator(
+            $this->app['router']->getRoutes(),
+            $this->originalUrlGenerator->getRequest(),
+            $this->app['config']->get('app.asset_url'),
+        );
+
+        $defaultParameters = $this->originalUrlGenerator->getDefaultParameters();
+
+        if (static::$addTenantParameterToDefaults) {
+            $defaultParameters = array_merge(
+                $defaultParameters,
+                [
+                    PathTenantResolver::tenantParameterName() => PathTenantResolver::tenantParameterValue($tenant), // path identification
+                    'tenant' => $tenant->getTenantKey(), // query string identification
+                ],
             );
+        }
 
-            $newGenerator->defaults($urlGenerator->getDefaultParameters());
+        $newGenerator->defaults($defaultParameters);
 
-            $newGenerator->setSessionResolver(function () {
-                return $this->app['session'] ?? null;
-            });
-
-            $newGenerator->setKeyResolver(function () {
-                return $this->app->make('config')->get('app.key');
-            });
-
-            return $newGenerator;
+        $newGenerator->setSessionResolver(function () {
+            return $this->app['session'] ?? null;
         });
+
+        $newGenerator->setKeyResolver(function () {
+            return $this->app->make('config')->get('app.key');
+        });
+
+        $this->app->extend('url', fn () => $newGenerator);
     }
 }
