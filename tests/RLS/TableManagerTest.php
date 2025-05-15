@@ -503,7 +503,7 @@ test('table rls manager generates relationship trees with tables related to the 
 
     // Add non-nullable comment_id foreign key
     Schema::table('ratings', function (Blueprint $table) {
-        $table->foreignId('comment_id')->onUpdate('cascade')->onDelete('cascade')->comment('rls')->constrained('comments');
+        $table->foreignId('comment_id')->comment('rls')->constrained('comments')->onUpdate('cascade')->onDelete('cascade');
     });
 
     // Non-nullable paths are preferred over nullable paths
@@ -640,14 +640,27 @@ test('table rls manager generates queries correctly', function() {
 test('table manager throws an exception when encountering a recursive relationship', function() {
     Schema::create('recursive_posts', function (Blueprint $table) {
         $table->id();
-        $table->foreignId('highlighted_comment_id')->constrained('comments')->nullable()->comment('rls');
+        $table->foreignId('highlighted_comment_id')->nullable()->comment('rls')->constrained('comments');
     });
 
     Schema::table('comments', function (Blueprint $table) {
-        $table->foreignId('recursive_post_id')->constrained('recursive_posts')->comment('rls');
+        $table->foreignId('recursive_post_id')->comment('rls')->constrained('recursive_posts');
     });
 
     expect(fn () => app(TableRLSManager::class)->generateTrees())->toThrow(RecursiveRelationshipException::class);
+});
+
+test('table manager ignores recursive relationship if the foreign key responsible for the recursion has no-rls comment', function() {
+    Schema::create('recursive_posts', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('highlighted_comment_id')->nullable()->comment('no-rls')->constrained('comments');
+    });
+
+    Schema::table('comments', function (Blueprint $table) {
+        $table->foreignId('recursive_post_id')->comment('rls')->constrained('recursive_posts');
+    });
+
+    expect(fn () => app(TableRLSManager::class)->generateTrees())->not()->toThrow(RecursiveRelationshipException::class);
 });
 
 class Post extends Model
