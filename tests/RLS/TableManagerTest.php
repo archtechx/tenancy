@@ -650,6 +650,19 @@ test('table manager throws an exception when encountering a recursive relationsh
     expect(fn () => app(TableRLSManager::class)->generateTrees())->toThrow(RecursiveRelationshipException::class);
 });
 
+test('table manager ignores recursive relationship if the foreign key responsible for the recursion has no-rls comment', function() {
+    Schema::create('recursive_posts', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('highlighted_comment_id')->nullable()->comment('no-rls')->constrained('comments');
+    });
+
+    Schema::table('comments', function (Blueprint $table) {
+        $table->foreignId('recursive_post_id')->comment('rls')->constrained('recursive_posts');
+    });
+
+    expect(fn () => app(TableRLSManager::class)->generateTrees())->not()->toThrow(RecursiveRelationshipException::class);
+});
+
 class Post extends Model
 {
     protected $guarded = [];
