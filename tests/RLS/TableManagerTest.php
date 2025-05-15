@@ -595,7 +595,7 @@ test('table owner sees all the records when forceRls is false while other users 
     expect(Order::first()->name)->toBe($order2->name);
 })->with([true, false]);
 
-// https://github.com/archtechx/tenancy/pull/1288
+// https://github.com/archtechx/tenancy/pull/1293
 test('user without BYPASSRLS can only query owned tables if forceRls is true', function(bool $forceRls) {
     CreateUserWithRLSPolicies::$forceRls = $forceRls;
 
