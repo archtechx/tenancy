@@ -9,38 +9,32 @@ use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
-use Stancl\Tenancy\Enums\RouteMode;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 
 /**
- * The CloneRoutesAsTenant action clones
- * routes flagged with the 'universal' middleware,
- * all routes without a flag if the default route mode is universal,
- * and routes that directly use the InitializeTenancyByPath middleware.
+ * Clones routes manually added to $routesToClone, or if $routesToClone is empty,
+ * clones all existing routes for which shouldBeCloned returns true (by default, this means all routes
+ * with any middleware that's present in $cloneRoutesWithMiddleware).
+ * Cloned routes are prefixed with '/{tenant}', flagged with 'tenant' middleware,
+ * and have their names prefixed with 'tenant.'.
  *
  * The main purpose of this action is to make the integration
  * of packages (e.g., Jetstream or Livewire) easier with path-based tenant identification.
  *
- * By default, universal routes are cloned as tenant routes (= they get flagged with the 'tenant' middleware)
- * and prefixed with the '/{tenant}' path prefix. Their name also gets prefixed with the tenant name prefix.
- *
- * Routes with the path identification middleware get cloned similarly, but only if they're not universal at the same time.
- * Unlike universal routes, these routes don't get the tenant flag,
- * because they don't need it (they're not universal, and they have the identification MW, so they're already considered tenant).
- *
- * You can use the `cloneUsing()` hook to customize the route definitions,
- * and the `skipRoute()` method to skip cloning of specific routes.
- * You can also use the $tenantParameterName and $tenantRouteNamePrefix
- * static properties to customize the tenant parameter name or the route name prefix.
+ * Customization:
+ * - Use cloneRoutesWithMiddleware() to change the middleware in $cloneRoutesWithMiddleware
+ * - Use shouldClone() to change which routes should be cloned
+ * - Use cloneUsing() to customize route definitions
+ * - Adjust PathTenantResolver's $tenantParameterName and $tenantRouteNamePrefix as needed
  *
  * Note that routes already containing the tenant parameter or prefix won't be cloned.
  */
 class CloneRoutesAsTenant
 {
-    protected array $cloneRouteUsing = [];
-    protected array $skippedRoutes = [
-        'stancl.tenancy.asset',
-    ];
+    protected array $routesToClone = [];
+    protected Closure|null $cloneUsing = null;
+    protected Closure|null $shouldBeCloned = null;
+    protected array $cloneRoutesWithMiddleware = ['clone'];
 
     public function __construct(
         protected Router $router,
@@ -48,100 +42,69 @@ class CloneRoutesAsTenant
 
     public function handle(): void
     {
-        $this->getRoutesToClone()->each(fn (Route $route) => $this->cloneRoute($route));
+        // If no routes were specified using cloneRoute(), get all routes that should be cloned
+        if (! $this->routesToClone) {
+            $this->routesToClone = collect($this->router->getRoutes()->get())
+                ->filter(fn (Route $route) => $this->shouldBeCloned($route))
+                ->all();
+        }
+
+        foreach ($this->routesToClone as $route) {
+            // If the cloneUsing callback is set,
+            // use the callback to clone the route instead of the default
+            if ($this->cloneUsing) {
+                ($this->cloneUsing)($route);
+
+                continue;
+            }
+
+            $this->copyMiscRouteProperties($route, $this->createNewRoute($route));
+        }
 
         $this->router->getRoutes()->refreshNameLookups();
     }
 
-    /**
-     * Make the action clone a specific route using the provided callback instead of the default one.
-     */
-    public function cloneUsing(string $routeName, Closure $callback): static
+    public function cloneUsing(Closure|null $cloneUsing): static
     {
-        $this->cloneRouteUsing[$routeName] = $callback;
+        $this->cloneUsing = $cloneUsing;
 
         return $this;
     }
 
-    /**
-     * Skip a route's cloning.
-     */
-    public function skipRoute(string $routeName): static
+    public function cloneRoutesWithMiddleware(array $middleware): static
     {
-        $this->skippedRoutes[] = $routeName;
+        $this->cloneRoutesWithMiddleware = $middleware;
 
         return $this;
     }
 
-    /**
-     * @return Collection<int, Route>
-     */
-    protected function getRoutesToClone(): Collection
+    public function shouldClone(Closure|null $shouldClone): static
     {
-        $tenantParameterName = PathTenantResolver::tenantParameterName();
+        $this->shouldBeCloned = $shouldClone;
 
-        /**
-         * Clone all routes that:
-         * - don't have the tenant parameter
-         * - aren't in the $skippedRoutes array
-         * - are using path identification (kernel or route-level).
-         *
-         * Non-universal cloned routes will only be available in the tenant context,
-         * universal routes will be available in both contexts.
-         */
-        return collect($this->router->getRoutes()->get())->filter(function (Route $route) use ($tenantParameterName) {
-            if (
-                tenancy()->routeHasMiddleware($route, 'tenant') ||
-                in_array($route->getName(), $this->skippedRoutes, true) ||
-                in_array($tenantParameterName, $route->parameterNames(), true)
-            ) {
-                return false;
-            }
-
-            $pathIdentificationMiddleware = config('tenancy.identification.path_identification_middleware');
-            $routeHasPathIdentificationMiddleware = tenancy()->routeHasMiddleware($route, $pathIdentificationMiddleware);
-            $routeHasNonPathIdentificationMiddleware = tenancy()->routeHasIdentificationMiddleware($route) && ! $routeHasPathIdentificationMiddleware;
-            $pathIdentificationMiddlewareInGlobalStack = tenancy()->globalStackHasMiddleware($pathIdentificationMiddleware);
-
-            /**
-             * The route should get cloned if:
-             * - it has route-level path identification middleware, OR
-             * - it uses kernel path identification (it doesn't have any route-level identification middleware) and the route is tenant or universal.
-             *
-             * The route is considered tenant if:
-             * - it's flagged as tenant, OR
-             * - it's not flagged as tenant or universal, but it has the identification middleware
-             *
-             * The route is considered universal if it's flagged as universal, and it doesn't have the tenant flag
-             * (it's still considered universal if it has route-level path identification middleware + the universal flag).
-             *
-             * If the route isn't flagged, the context is determined using the default route mode.
-             */
-            $pathIdentificationUsed = (! $routeHasNonPathIdentificationMiddleware) &&
-                ($routeHasPathIdentificationMiddleware || $pathIdentificationMiddlewareInGlobalStack);
-
-            return $pathIdentificationUsed &&
-                (tenancy()->getRouteMode($route) === RouteMode::UNIVERSAL || tenancy()->routeHasMiddleware($route, 'clone'));
-        });
+        return $this;
     }
 
-    /**
-     * Clone a route using a callback specified in the $cloneRouteUsing property (using the cloneUsing method).
-     * If there's no callback specified for the route, use the default way of cloning routes.
-     */
-    protected function cloneRoute(Route $route): void
+    public function cloneRoute(Route $route): static
     {
-        $routeName = $route->getName();
+        $this->routesToClone[] = $route;
 
-        // If the route's cloning callback exists
-        // Use the callback to clone the route instead of the default way of cloning routes
-        if ($routeName && $customRouteCallback = data_get($this->cloneRouteUsing, $routeName)) {
-            $customRouteCallback($route);
+        return $this;
+    }
 
-            return;
+    // todo@rename
+    protected function shouldBeCloned(Route $route): bool
+    {
+        if ($this->shouldBeCloned) {
+            return ($this->shouldBeCloned)($route);
         }
 
-        $this->copyMiscRouteProperties($route, $this->createNewRoute($route));
+        if (Str::startsWith($route->getName(), PathTenantResolver::tenantRouteNamePrefix())) {
+            // The route already has the tenant route name prefix, so we don't need to clone it
+            return false;
+        }
+
+        return tenancy()->routeHasMiddleware($route, $this->cloneRoutesWithMiddleware);
     }
 
     protected function createNewRoute(Route $route): Route
@@ -156,21 +119,21 @@ class CloneRoutesAsTenant
 
             // Make the new route have the same middleware as the original route
             // Add the 'tenant' middleware to the new route
-            // Exclude `universal` and `clone` middleware from the new route (it should only be flagged as tenant)
+            // Exclude $this->cloneRoutesWithMiddleware MW from the new route (it should only be flagged as tenant)
             $newRouteMiddleware = collect($routeMiddleware)
                 ->merge(['tenant']) // Add 'tenant' flag
-                ->filter(fn (string $middleware) => ! in_array($middleware, ['universal', 'clone']))
+                ->filter(fn (string $middleware) => ! in_array($middleware, $this->cloneRoutesWithMiddleware))
                 ->toArray();
 
             $tenantRouteNamePrefix = PathTenantResolver::tenantRouteNamePrefix();
 
             // Make sure the route name has the tenant route name prefix
-            $newRouteNamePrefix = $route->getName()
+            $newRouteName = $route->getName()
                 ? $tenantRouteNamePrefix . Str::after($route->getName(), $tenantRouteNamePrefix)
                 : null;
 
             return $action
-                ->put('as', $newRouteNamePrefix)
+                ->put('as', $newRouteName)
                 ->put('middleware', $newRouteMiddleware)
                 ->put('prefix', $prefix . '/{' . PathTenantResolver::tenantParameterName() . '}');
         })->toArray();
