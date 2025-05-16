@@ -92,16 +92,10 @@ class CloneRoutesAsTenant
         return $this;
     }
 
-    // todo@rename
     protected function shouldBeCloned(Route $route): bool
     {
         if ($this->shouldBeCloned) {
             return ($this->shouldBeCloned)($route);
-        }
-
-        if (Str::startsWith($route->getName(), PathTenantResolver::tenantRouteNamePrefix())) {
-            // The route already has the tenant route name prefix, so we don't need to clone it
-            return false;
         }
 
         return tenancy()->routeHasMiddleware($route, $this->cloneRoutesWithMiddleware);
