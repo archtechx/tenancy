@@ -42,7 +42,8 @@ class CloneRoutesAsTenant
 
     public function handle(): void
     {
-        // If no routes were specified using cloneRoute(), get all routes that should be cloned
+        // If no routes were specified using cloneRoute(), get all routes
+        // and for each, determine if it should be cloned
         if (! $this->routesToClone) {
             $this->routesToClone = collect($this->router->getRoutes()->get())
                 ->filter(fn (Route $route) => $this->shouldBeCloned($route))
