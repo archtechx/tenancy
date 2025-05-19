@@ -113,7 +113,7 @@ test('custom callbacks can be used for customizing the creation of the cloned ro
     pest()->get(route('cloned.bar'))->assertSee('cloned route');
 });
 
-test('the clone action can clone specific routes', function() {
+test('the clone action can clone specific routes', function(bool $cloneRouteByName) {
     RouteFacade::get('/foo', fn () => true)->name('foo');
     $barRoute = RouteFacade::get('/bar', fn () => true)->name('bar');
     RouteFacade::get('/baz', fn () => true)->name('baz');
@@ -124,13 +124,17 @@ test('the clone action can clone specific routes', function() {
     /** @var CloneRoutesAsTenant $cloneRoutesAction */
     $cloneRoutesAction = app(CloneRoutesAsTenant::class);
 
-    $cloneRoutesAction->cloneRoute($barRoute)->handle();
+    // A route instance or a route name can be passed to cloneRoute()
+    $cloneRoutesAction->cloneRoute($cloneRouteByName ? $barRoute->getName() : $barRoute)->handle();
 
     // Exactly one route should be cloned
     expect($currentRouteCount())->toEqual($initialRouteCount + 1);
 
     expect(RouteFacade::getRoutes()->getByName('tenant.bar'))->not()->toBeNull();
-});
+})->with([
+    true,
+    false,
+]);
 
 test('the clone action prefixes already prefixed routes correctly', function () {
     $routes = [

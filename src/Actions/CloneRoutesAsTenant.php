@@ -32,7 +32,7 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
 class CloneRoutesAsTenant
 {
     protected array $routesToClone = [];
-    protected Closure|null $cloneUsing = null;
+    protected Closure|null $cloneUsing = null; // The callback should accept Route instance or the route name (string)
     protected Closure|null $shouldBeCloned = null;
     protected array $cloneRoutesWithMiddleware = ['clone'];
 
@@ -57,6 +57,11 @@ class CloneRoutesAsTenant
                 ($this->cloneUsing)($route);
 
                 continue;
+            }
+
+            if (is_string($route)) {
+                $this->router->getRoutes()->refreshNameLookups();
+                $route = $this->router->getRoutes()->getByName($route);
             }
 
             $this->copyMiscRouteProperties($route, $this->createNewRoute($route));
@@ -86,7 +91,7 @@ class CloneRoutesAsTenant
         return $this;
     }
 
-    public function cloneRoute(Route $route): static
+    public function cloneRoute(Route|string $route): static
     {
         $this->routesToClone[] = $route;
 
