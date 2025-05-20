@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\RLS\PolicyManagers;
 
 use Illuminate\Database\DatabaseManager;
-use Stancl\Tenancy\Database\Exceptions\RecursiveRelationshipException;
 use Illuminate\Support\Str;
+use Stancl\Tenancy\Database\Exceptions\RecursiveRelationshipException;
 
 // todo@samuel logical + structural refactor. the tree generation could use some dynamic programming optimizations
 class TableRLSManager implements RLSPolicyManager
