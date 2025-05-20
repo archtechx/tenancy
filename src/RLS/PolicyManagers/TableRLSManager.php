@@ -6,6 +6,7 @@ namespace Stancl\Tenancy\RLS\PolicyManagers;
 
 use Illuminate\Database\DatabaseManager;
 use Stancl\Tenancy\Database\Exceptions\RecursiveRelationshipException;
+use Illuminate\Support\Str;
 
 // todo@samuel logical + structural refactor. the tree generation could use some dynamic programming optimizations
 class TableRLSManager implements RLSPolicyManager
@@ -80,7 +81,7 @@ class TableRLSManager implements RLSPolicyManager
             $table = str($table)->afterLast('.')->toString();
 
             // For each table, we get a list of all foreign key columns
-            $foreignKeys = collect($builder->getForeignKeys($table))->map(function ($foreign) use ($table) {
+            $foreignKeys = collect($builder->getForeignKeys($table))->merge($this->getFakeForeignKeys($table))->map(function ($foreign) use ($table) {
                 return $this->formatForeignKey($foreign, $table);
             });
 
@@ -124,10 +125,48 @@ class TableRLSManager implements RLSPolicyManager
             $paths[] = $currentPath;
         } else {
             // If not, recursively generate paths for the foreign table
-            foreach ($this->database->getSchemaBuilder()->getForeignKeys($foreign['foreignTable']) as $nextConstraint) {
+            foreach (array_merge($this->database->getSchemaBuilder()->getForeignKeys($foreign['foreignTable'], $this->getFakeForeignKeys($table))) as $nextConstraint) {
                 $this->generatePaths($table, $this->formatForeignKey($nextConstraint, $foreign['foreignTable']), $paths, $currentPath);
             }
         }
+    }
+
+    protected function getFakeForeignKeys(string $tableName): array
+    {
+        $columns = $this->database->getSchemaBuilder()->getColumns($tableName);
+
+        $fakeForeignKeys = array_filter($columns, function ($column) {
+            // Constraint comment should be "rls <foreign_table>.<foreign_column>"
+            if ($column['comment']) {
+                return Str::contains($column['comment'], 'rls ');
+            }
+
+            return false;
+        });
+
+        if ($tableName === 'non_constrained_posts') {
+            dump(array_map(function ($fakeForeignKey) {
+                // Constraint comment is "rls <foreign_table>.<foreign_column>"
+                $constraint = explode('.', Str::after($fakeForeignKey['comment'], 'rls '));
+
+                return [
+                    'foreign_table' => $constraint[0],
+                    'foreign_columns' => [$constraint[1]],
+                    'columns' => [$fakeForeignKey['name']],
+                ];
+            }, $fakeForeignKeys));
+        }
+
+        return array_map(function ($fakeForeignKey) {
+            // Constraint comment is "rls <foreign_table>.<foreign_column>"
+            $constraint = explode('.', Str::after($fakeForeignKey['comment'], 'rls '));
+
+            return [
+                'foreign_table' => $constraint[0],
+                'foreign_columns' => [$constraint[1]],
+                'columns' => [$fakeForeignKey['name']],
+            ];
+        }, $fakeForeignKeys);
     }
 
     /** Get tree's non-nullable paths. */

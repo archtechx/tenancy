@@ -663,6 +663,138 @@ test('table manager ignores recursive relationship if the foreign key responsibl
     expect(fn () => app(TableRLSManager::class)->generateTrees())->not()->toThrow(RecursiveRelationshipException::class);
 });
 
+test('table manager can generate paths leading through non-constrained foreign keys', function() {
+    Schema::create('non_constrained_users', function (Blueprint $table) {
+        $table->id();
+        $table->string('tenant_id')->comment('rls tenants.id'); // "fake" constraint
+    });
+
+    Schema::create('non_constrained_posts', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('author_id')->comment('rls non_constrained_users.id'); // another "fake" constraint
+    });
+
+    /** @var TableRLSManager $manager */
+    $manager = app(TableRLSManager::class);
+
+    $expectedTrees = [
+        'authors' => [
+            // Directly related to tenants
+            'tenant_id' => [
+                [
+                    [
+                        'foreignKey' => 'tenant_id',
+                        'foreignTable' => 'tenants',
+                        'foreignId' => 'id',
+                        'nullable' => false,
+                    ]
+                ],
+            ],
+        ],
+        'comments' => [
+            // Tree starting from the post_id foreign key
+            'post_id' => [
+                [
+                    [
+                        'foreignKey' => 'post_id',
+                        'foreignTable' => 'posts',
+                        'foreignId' => 'id',
+                        'nullable' => false,
+                    ],
+                    [
+                        'foreignKey' => 'author_id',
+                        'foreignTable' => 'authors',
+                        'foreignId' => 'id',
+                        'nullable' => false,
+                    ],
+                    [
+                        'foreignKey' => 'tenant_id',
+                        'foreignTable' => 'tenants',
+                        'foreignId' => 'id',
+                        'nullable' => false,
+                    ],
+                ],
+                [
+                    [
+                        'foreignKey' => 'post_id',
+                        'foreignTable' => 'posts',
+                        'foreignId' => 'id',
+                        'nullable' => false,
+                    ],
+                    [
+                        'foreignKey' => 'tenant_id',
+                        'foreignTable' => 'tenants',
+                        'foreignId' => 'id',
+                        'nullable' => true,
+                    ],
+                ],
+            ],
+        ],
+        'non_constrained_posts' => [
+            'author_id' => [
+                [
+                    [
+                        'foreignKey' => 'author_id',
+                        'foreignTable' => 'non_constrained_users',
+                        'foreignId' => 'id',
+                        'nullable' => false,
+                    ],
+                    [
+                        'foreignKey' => 'tenant_id',
+                        'foreignTable' => 'tenants',
+                        'foreignId' => 'id',
+                        'nullable' => false,
+                    ]
+                ],
+            ],
+        ],
+        'non_constrained_users' => [
+            // Category tree gets excluded because the category table is related to the tenant table
+            // only through a column with the 'no-rls' comment
+            'tenant_id' => [
+                [
+                    [
+                        'foreignKey' => 'tenant_id',
+                        'foreignTable' => 'tenants',
+                        'foreignId' => 'id',
+                        'nullable' => false,
+                    ]
+                ]
+            ],
+        ],
+        'posts' => [
+            'author_id' => [
+                [
+                    [
+                        'foreignKey' => 'author_id',
+                        'foreignTable' => 'authors',
+                        'foreignId' => 'id',
+                        'nullable' => false,
+                    ],
+                    [
+                        'foreignKey' => 'tenant_id',
+                        'foreignTable' => 'tenants',
+                        'foreignId' => 'id',
+                        'nullable' => false,
+                    ]
+                ],
+            ],
+            'tenant_id' => [
+                [
+                    [
+                        'foreignKey' => 'tenant_id',
+                        'foreignTable' => 'tenants',
+                        'foreignId' => 'id',
+                        'nullable' => true,
+                    ]
+                ]
+            ],
+        ],
+    ];
+
+    expect($manager->generateTrees())->toEqual($expectedTrees);
+});
+
 class Post extends Model
 {
     protected $guarded = [];
