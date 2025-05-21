@@ -703,8 +703,6 @@ test('table manager can generate paths leading through non-constrained foreign k
             ],
         ],
         'non_constrained_users' => [
-            // Category tree gets excluded because the category table is related to the tenant table
-            // only through a column with the 'no-rls' comment
             'tenant_id' => [
                 [
                     [

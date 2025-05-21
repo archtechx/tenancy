@@ -82,9 +82,9 @@ class TableRLSManager implements RLSPolicyManager
             $table = str($table)->afterLast('.')->toString();
 
             // For each table, we get a list of all foreign key columns
-            $foreignKeys = collect($builder->getForeignKeys($table))->merge($this->getCommentConstraints($table))->map(function ($foreign) use ($table) {
-                return $this->formatForeignKey($foreign, $table);
-            });
+            $foreignKeys = collect($builder->getForeignKeys($table))
+                ->merge($this->getCommentConstraints($table))
+                ->map(fn ($foreign) => $this->formatForeignKey($foreign, $table));
 
             // We loop through each foreign key column and find
             // all possible paths that lead to the tenants table
@@ -149,56 +149,48 @@ class TableRLSManager implements RLSPolicyManager
     }
 
     /**
-     * Retrieve comment-based constraints for a table. These are columns with comments in the format:
-     *   "rls <foreign_table>.<foreign_column>"
+     * Retrieve table's comment-based constraints. These are columns with comments
+     * formatted like "rls <foreign_table>.<foreign_column>".
      *
+     * Returns the constraints as unformatted foreign key arrays, ready to be passed to $this->formatForeignKey().
+     *      *
      * Throws an exception if the comment is formatted incorrectly or if the referenced table/column does not exist.
      */
     protected function getCommentConstraints(string $tableName): array
     {
-        $columns = $this->database->getSchemaBuilder()->getColumns($tableName);
-        $schemaBuilder = $this->database->getSchemaBuilder();
-
-        $commentConstraints = array_filter($columns, function ($column) {
+        $builder = $this->database->getSchemaBuilder();
+        $commentConstraintColumns = array_filter($builder->getColumns($tableName), function ($column) {
             return (isset($column['comment']) && is_string($column['comment']))
                 && Str::startsWith($column['comment'], 'rls ');
         });
 
-        return array_map(function ($commentConstraint) use ($schemaBuilder, $tableName) {
-            $comment = $commentConstraint['comment'];
-            $constraintString = Str::after($comment, 'rls ');
-            $constraint = explode('.', $constraintString);
+        return array_map(function ($column) use ($builder, $tableName) {
+            $constraint = explode('.', Str::after($column['comment'], 'rls '));
 
             // Validate comment constraint format
             if (count($constraint) !== 2 || empty($constraint[0]) || empty($constraint[1])) {
-                throw new RLSCommentConstraintException("Incorrectly formatted comment constraint on {$tableName}.{$commentConstraint['name']}: '{$comment}'");
+                throw new RLSCommentConstraintException("Incorrectly formatted comment constraint on {$tableName}.{$column['name']}: '{$column['comment']}'");
             }
 
             $foreignTable = $constraint[0];
             $foreignColumn = $constraint[1];
 
             // Validate table existence
-            $allTables = array_map(function ($table) {
-                return str($table)->afterLast('.')->toString();
-            }, $schemaBuilder->getTableListing(schema: $this->database->getConfig('search_path')));
-
-            if (! in_array($foreignTable, $allTables, true)) {
-                throw new RLSCommentConstraintException("Comment constraint on {$tableName}.{$commentConstraint['name']} references non-existent table '{$foreignTable}'");
+            if (! $builder->hasTable($foreignTable)) {
+                throw new RLSCommentConstraintException("Comment constraint on {$tableName}.{$column['name']} references non-existent table '{$foreignTable}'");
             }
 
             // Validate column existence
-            $foreignColumns = $schemaBuilder->getColumns($foreignTable);
-            $foreignColumnNames = array_column($foreignColumns, 'name');
-            if (! in_array($foreignColumn, $foreignColumnNames, true)) {
-                throw new RLSCommentConstraintException("Comment constraint on {$tableName}.{$commentConstraint['name']} references non-existent column '{$foreignTable}.{$foreignColumn}'");
+            if (! $builder->hasColumn($foreignTable, $foreignColumn)) {
+                throw new RLSCommentConstraintException("Comment constraint on {$tableName}.{$column['name']} references non-existent column '{$foreignTable}.{$foreignColumn}'");
             }
 
             return [
                 'foreign_table' => $foreignTable,
                 'foreign_columns' => [$foreignColumn],
-                'columns' => [$commentConstraint['name']],
+                'columns' => [$column['name']],
             ];
-        }, $commentConstraints);
+        }, $commentConstraintColumns);
     }
 
     /** Get tree's non-nullable paths. */
@@ -266,7 +258,7 @@ class TableRLSManager implements RLSPolicyManager
      */
     protected function formatForeignKey(array $foreignKey, string $table): array
     {
-        // $foreignKey is one of the foreign keys retrieved by $this->database->getSchemaBuilder()->getForeignKeys($table)
+        // $foreignKey is an unformatted foreign key retrieved by $this->database->getSchemaBuilder()->getForeignKeys($table)
         return [
             'foreignKey' => $foreignKeyName = $foreignKey['columns'][0],
             'foreignTable' => $foreignKey['foreign_table'],
