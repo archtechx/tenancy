@@ -20,6 +20,7 @@ use Stancl\Tenancy\RLS\PolicyManagers\TableRLSManager;
 use Stancl\Tenancy\Bootstrappers\PostgresRLSBootstrapper;
 use Stancl\Tenancy\Database\Exceptions\RecursiveRelationshipException;
 use function Stancl\Tenancy\Tests\pest;
+use Stancl\Tenancy\Exceptions\RLSCommentConstraintException;
 
 beforeEach(function () {
     TableRLSManager::$scopeByDefault = true;
@@ -663,8 +664,8 @@ test('table manager ignores recursive relationship if the foreign key responsibl
     expect(fn () => app(TableRLSManager::class)->generateTrees())->not()->toThrow(RecursiveRelationshipException::class);
 });
 
-test('table manager can generate paths leading through non-constrained foreign keys', function() {
-    // Drop extra tables
+test('table manager can generate paths leading through comment constraint columns', function() {
+    // Drop extra tables for generated
     Schema::dropIfExists('reactions');
     Schema::dropIfExists('comments');
     Schema::dropIfExists('posts');
@@ -672,12 +673,12 @@ test('table manager can generate paths leading through non-constrained foreign k
 
     Schema::create('non_constrained_users', function (Blueprint $table) {
         $table->id();
-        $table->string('tenant_id')->comment('rls tenants.id'); // "fake" constraint
+        $table->string('tenant_id')->comment('rls tenants.id'); // comment constraint
     });
 
     Schema::create('non_constrained_posts', function (Blueprint $table) {
         $table->id();
-        $table->foreignId('author_id')->comment('rls non_constrained_users.id'); // another "fake" constraint
+        $table->foreignId('author_id')->comment('rls non_constrained_users.id'); // comment constraint
     });
 
     /** @var TableRLSManager $manager */
@@ -718,6 +719,26 @@ test('table manager can generate paths leading through non-constrained foreign k
 
     expect($manager->generateTrees())->toEqual($expectedTrees);
 });
+
+test('table manager throws an exception when comment constraint is incorrect', function(string $comment, string $exceptionMessage) {
+    Schema::create('non_constrained_users', function (Blueprint $table) use ($comment) {
+        $table->id();
+        $table->string('tenant_id')->comment($comment); // Invalid comment constraint
+    });
+
+    /** @var TableRLSManager $manager */
+    $manager = app(TableRLSManager::class);
+
+    expect(fn () => $manager->generateTrees())->toThrow(
+        RLSCommentConstraintException::class,
+        $exceptionMessage
+    );
+})->with([
+    ['rls non_constrained_users', 'Malformed comment constraint on non_constrained_users'],
+    ['rls non_constrained_users.foreign.id', 'Malformed comment constraint on non_constrained_users'],
+    ['rls nonexistent-table.id', 'references non-existent table'],
+    ['rls non_constrained_users.nonexistent-column', 'references non-existent column'],
+]);
 
 class Post extends Model
 {
