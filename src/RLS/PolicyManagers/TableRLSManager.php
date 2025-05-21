@@ -142,7 +142,10 @@ class TableRLSManager implements RLSPolicyManager
         $pathExplicitlySkipped = $foreignKey['comment'] === 'no-rls';
         $pathImplicitlySkipped = ! static::$scopeByDefault && (
             ! isset($foreignKey['comment']) ||
-            (is_string($foreignKey['comment']) && ! Str::startsWith($foreignKey['comment'], 'rls'))
+            (is_string($foreignKey['comment']) && ! (
+                Str::is($foreignKey['comment'], 'rls') || // Explicit RLS
+                Str::startsWith($foreignKey['comment'], 'rls ') // Comment constraint
+            ))
         );
 
         return $pathExplicitlySkipped || $pathImplicitlySkipped;
@@ -169,7 +172,7 @@ class TableRLSManager implements RLSPolicyManager
 
             // Validate comment constraint format
             if (count($constraint) !== 2 || empty($constraint[0]) || empty($constraint[1])) {
-                throw new RLSCommentConstraintException("Incorrectly formatted comment constraint on {$tableName}.{$column['name']}: '{$column['comment']}'");
+                throw new RLSCommentConstraintException("Malformed comment constraint on {$tableName}.{$column['name']}: '{$column['comment']}'");
             }
 
             $foreignTable = $constraint[0];
