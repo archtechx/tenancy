@@ -10,6 +10,6 @@ class RLSCommentConstraintException extends Exception
 {
     public function __construct(string|null $message = null)
     {
-        parent::__construct($message ?? "Invalid comment constraint.");
+        parent::__construct($message ?? 'Invalid comment constraint.');
     }
 }
