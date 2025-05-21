@@ -110,8 +110,6 @@ class TableRLSManager implements RLSPolicyManager
 
     protected function generatePaths(string $table, array $foreign, array &$paths, array $currentPath = []): void
     {
-        // If the foreign key has a comment of 'no-rls', we skip it
-        // Also skip the foreign key if implicit scoping is off and the foreign key has no comment
         if ($this->shouldSkipPathLeadingThrough($foreign)) {
             return;
         }
@@ -137,8 +135,9 @@ class TableRLSManager implements RLSPolicyManager
 
     protected function shouldSkipPathLeadingThrough(array $foreignKey): bool
     {
-        // If the foreign key has a comment of 'no-rls', we skip it
-        // Also skip the foreign key if implicit scoping is off and the foreign key has no comment
+        // If the column has a comment of 'no-rls', we skip it.
+        // Also skip the column if implicit scoping is off and the column
+        // has no 'rls' comment or is not recognized as a comment constraint (its comment doesn't begin with 'rls ').
         $pathExplicitlySkipped = $foreignKey['comment'] === 'no-rls';
         $pathImplicitlySkipped = ! static::$scopeByDefault && (
             ! isset($foreignKey['comment']) ||
