@@ -664,6 +664,12 @@ test('table manager ignores recursive relationship if the foreign key responsibl
 });
 
 test('table manager can generate paths leading through non-constrained foreign keys', function() {
+    // Drop extra tables
+    Schema::dropIfExists('reactions');
+    Schema::dropIfExists('comments');
+    Schema::dropIfExists('posts');
+    Schema::dropIfExists('authors');
+
     Schema::create('non_constrained_users', function (Blueprint $table) {
         $table->id();
         $table->string('tenant_id')->comment('rls tenants.id'); // "fake" constraint
@@ -678,58 +684,6 @@ test('table manager can generate paths leading through non-constrained foreign k
     $manager = app(TableRLSManager::class);
 
     $expectedTrees = [
-        'authors' => [
-            // Directly related to tenants
-            'tenant_id' => [
-                [
-                    [
-                        'foreignKey' => 'tenant_id',
-                        'foreignTable' => 'tenants',
-                        'foreignId' => 'id',
-                        'nullable' => false,
-                    ]
-                ],
-            ],
-        ],
-        'comments' => [
-            // Tree starting from the post_id foreign key
-            'post_id' => [
-                [
-                    [
-                        'foreignKey' => 'post_id',
-                        'foreignTable' => 'posts',
-                        'foreignId' => 'id',
-                        'nullable' => false,
-                    ],
-                    [
-                        'foreignKey' => 'author_id',
-                        'foreignTable' => 'authors',
-                        'foreignId' => 'id',
-                        'nullable' => false,
-                    ],
-                    [
-                        'foreignKey' => 'tenant_id',
-                        'foreignTable' => 'tenants',
-                        'foreignId' => 'id',
-                        'nullable' => false,
-                    ],
-                ],
-                [
-                    [
-                        'foreignKey' => 'post_id',
-                        'foreignTable' => 'posts',
-                        'foreignId' => 'id',
-                        'nullable' => false,
-                    ],
-                    [
-                        'foreignKey' => 'tenant_id',
-                        'foreignTable' => 'tenants',
-                        'foreignId' => 'id',
-                        'nullable' => true,
-                    ],
-                ],
-            ],
-        ],
         'non_constrained_posts' => [
             'author_id' => [
                 [
@@ -758,34 +712,6 @@ test('table manager can generate paths leading through non-constrained foreign k
                         'foreignTable' => 'tenants',
                         'foreignId' => 'id',
                         'nullable' => false,
-                    ]
-                ]
-            ],
-        ],
-        'posts' => [
-            'author_id' => [
-                [
-                    [
-                        'foreignKey' => 'author_id',
-                        'foreignTable' => 'authors',
-                        'foreignId' => 'id',
-                        'nullable' => false,
-                    ],
-                    [
-                        'foreignKey' => 'tenant_id',
-                        'foreignTable' => 'tenants',
-                        'foreignId' => 'id',
-                        'nullable' => false,
-                    ]
-                ],
-            ],
-            'tenant_id' => [
-                [
-                    [
-                        'foreignKey' => 'tenant_id',
-                        'foreignTable' => 'tenants',
-                        'foreignId' => 'id',
-                        'nullable' => true,
                     ]
                 ]
             ],
