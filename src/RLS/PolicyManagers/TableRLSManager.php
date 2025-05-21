@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\RLS\PolicyManagers;
 
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Support\Str;
 use Stancl\Tenancy\Database\Exceptions\RecursiveRelationshipException;
+use Stancl\Tenancy\Exceptions\RLSCommentConstraintException;
 
 // todo@samuel logical + structural refactor. the tree generation could use some dynamic programming optimizations
 class TableRLSManager implements RLSPolicyManager
@@ -80,9 +82,9 @@ class TableRLSManager implements RLSPolicyManager
             $table = str($table)->afterLast('.')->toString();
 
             // For each table, we get a list of all foreign key columns
-            $foreignKeys = collect($builder->getForeignKeys($table))->map(function ($foreign) use ($table) {
-                return $this->formatForeignKey($foreign, $table);
-            });
+            $foreignKeys = collect($builder->getForeignKeys($table))
+                ->merge($this->getCommentConstraints($table))
+                ->map(fn ($foreign) => $this->formatForeignKey($foreign, $table));
 
             // We loop through each foreign key column and find
             // all possible paths that lead to the tenants table
@@ -108,9 +110,7 @@ class TableRLSManager implements RLSPolicyManager
 
     protected function generatePaths(string $table, array $foreign, array &$paths, array $currentPath = []): void
     {
-        // If the foreign key has a comment of 'no-rls', we skip it
-        // Also skip the foreign key if implicit scoping is off and the foreign key has no comment
-        if ($foreign['comment'] === 'no-rls' || (! static::$scopeByDefault && $foreign['comment'] === null)) {
+        if ($this->shouldSkipPathLeadingThrough($foreign)) {
             return;
         }
 
@@ -124,10 +124,75 @@ class TableRLSManager implements RLSPolicyManager
             $paths[] = $currentPath;
         } else {
             // If not, recursively generate paths for the foreign table
-            foreach ($this->database->getSchemaBuilder()->getForeignKeys($foreign['foreignTable']) as $nextConstraint) {
+            foreach (array_merge(
+                $this->database->getSchemaBuilder()->getForeignKeys($foreign['foreignTable']),
+                $this->getCommentConstraints($foreign['foreignTable'])
+            ) as $nextConstraint) {
                 $this->generatePaths($table, $this->formatForeignKey($nextConstraint, $foreign['foreignTable']), $paths, $currentPath);
             }
         }
+    }
+
+    protected function shouldSkipPathLeadingThrough(array $foreignKey): bool
+    {
+        // If the column has a comment of 'no-rls', we skip it.
+        // Also skip the column if implicit scoping is off and the column
+        // has no 'rls' comment or is not recognized as a comment constraint (its comment doesn't begin with 'rls ').
+        $pathExplicitlySkipped = $foreignKey['comment'] === 'no-rls';
+        $pathImplicitlySkipped = ! static::$scopeByDefault && (
+            ! isset($foreignKey['comment']) ||
+            (is_string($foreignKey['comment']) && ! (
+                Str::is($foreignKey['comment'], 'rls') || // Explicit RLS
+                Str::startsWith($foreignKey['comment'], 'rls ') // Comment constraint
+            ))
+        );
+
+        return $pathExplicitlySkipped || $pathImplicitlySkipped;
+    }
+
+    /**
+     * Retrieve table's comment-based constraints. These are columns with comments
+     * formatted like "rls <foreign_table>.<foreign_column>".
+     *
+     * Returns the constraints as unformatted foreign key arrays, ready to be passed to $this->formatForeignKey().
+     *      *
+     * Throws an exception if the comment is formatted incorrectly or if the referenced table/column does not exist.
+     */
+    protected function getCommentConstraints(string $tableName): array
+    {
+        $builder = $this->database->getSchemaBuilder();
+        $commentConstraintColumns = array_filter($builder->getColumns($tableName), function ($column) {
+            return (isset($column['comment']) && is_string($column['comment']))
+                && Str::startsWith($column['comment'], 'rls ');
+        });
+
+        return array_map(function ($column) use ($builder, $tableName) {
+            $constraint = explode('.', Str::after($column['comment'], 'rls '));
+
+            // Validate comment constraint format
+            if (count($constraint) !== 2 || empty($constraint[0]) || empty($constraint[1])) {
+                throw new RLSCommentConstraintException("Malformed comment constraint on {$tableName}.{$column['name']}: '{$column['comment']}'");
+            }
+
+            $foreignTable = $constraint[0];
+            $foreignColumn = $constraint[1];
+
+            // Validate table existence
+            if (! $builder->hasTable($foreignTable)) {
+                throw new RLSCommentConstraintException("Comment constraint on {$tableName}.{$column['name']} references non-existent table '{$foreignTable}'");
+            }
+
+            // Validate column existence
+            if (! $builder->hasColumn($foreignTable, $foreignColumn)) {
+                throw new RLSCommentConstraintException("Comment constraint on {$tableName}.{$column['name']} references non-existent column '{$foreignTable}.{$foreignColumn}'");
+            }
+
+            return [
+                'foreign_table' => $foreignTable,
+                'foreign_columns' => [$foreignColumn],
+                'columns' => [$column['name']],
+            ];
+        }, $commentConstraintColumns);
     }
 
     /** Get tree's non-nullable paths. */
@@ -176,7 +241,7 @@ class TableRLSManager implements RLSPolicyManager
     }
 
     /**
-     * Formats the foreign key array retrieved by Postgres to a more readable format.
+     * Formats the foreign key retrieved by Postgres or comment-based constraint to a more readable format.
      *
      * Also provides information about whether the foreign key is nullable,
      * and the foreign key column comment. These additional details are removed
@@ -195,7 +260,7 @@ class TableRLSManager implements RLSPolicyManager
      */
     protected function formatForeignKey(array $foreignKey, string $table): array
     {
-        // $foreignKey is one of the foreign keys retrieved by $this->database->getSchemaBuilder()->getForeignKeys($table)
+        // $foreignKey is an unformatted foreign key retrieved by $this->database->getSchemaBuilder()->getForeignKeys($table)
         return [
             'foreignKey' => $foreignKeyName = $foreignKey['columns'][0],
             'foreignTable' => $foreignKey['foreign_table'],
