@@ -329,96 +329,6 @@ test('table rls manager generates relationship trees with tables related to the 
     /** @var TableRLSManager $manager */
     $manager = app(TableRLSManager::class);
 
-    $expectedTrees = [
-        'authors' => [
-            // Directly related to tenants
-            'tenant_id' => [
-                [
-                    [
-                        'foreignKey' => 'tenant_id',
-                        'foreignTable' => 'tenants',
-                        'foreignId' => 'id',
-                        'nullable' => false,
-                    ]
-                ],
-            ],
-        ],
-        'comments' => [
-            // Tree starting from the post_id foreign key
-            'post_id' => [
-                [
-                    [
-                        'foreignKey' => 'post_id',
-                        'foreignTable' => 'posts',
-                        'foreignId' => 'id',
-                        'nullable' => false,
-                    ],
-                    [
-                        'foreignKey' => 'author_id',
-                        'foreignTable' => 'authors',
-                        'foreignId' => 'id',
-                        'nullable' => false,
-                    ],
-                    [
-                        'foreignKey' => 'tenant_id',
-                        'foreignTable' => 'tenants',
-                        'foreignId' => 'id',
-                        'nullable' => false,
-                    ],
-                ],
-                [
-                    [
-                        'foreignKey' => 'post_id',
-                        'foreignTable' => 'posts',
-                        'foreignId' => 'id',
-                        'nullable' => false,
-                    ],
-                    [
-                        'foreignKey' => 'tenant_id',
-                        'foreignTable' => 'tenants',
-                        'foreignId' => 'id',
-                        'nullable' => true,
-                    ],
-                ],
-            ],
-        ],
-        'posts' => [
-            // Category tree gets excluded because the category table is related to the tenant table
-            // only through a column with the 'no-rls' comment
-            'author_id' => [
-                [
-                    [
-                        'foreignKey' => 'author_id',
-                        'foreignTable' => 'authors',
-                        'foreignId' => 'id',
-                        'nullable' => false,
-                    ],
-                    [
-                        'foreignKey' => 'tenant_id',
-                        'foreignTable' => 'tenants',
-                        'foreignId' => 'id',
-                        'nullable' => false,
-                    ]
-                ],
-            ],
-            'tenant_id' => [
-                [
-                    [
-                        'foreignKey' => 'tenant_id',
-                        'foreignTable' => 'tenants',
-                        'foreignId' => 'id',
-                        'nullable' => true,
-                    ]
-                ]
-            ],
-        ],
-        // Articles table is ignored because it's not related to the tenant table in any way
-        // Reactions table is ignored because of the 'no-rls' comment on the comment_id column
-        // Categories table is ignored because of the 'no-rls' comment on the tenant_id column
-    ];
-
-    expect($manager->generateTrees())->toEqual($expectedTrees);
-
     $expectedShortestPaths = [
         'authors' => [
             [
@@ -478,7 +388,7 @@ test('table rls manager generates relationship trees with tables related to the 
     // The shortest paths should include a path for the ratings table
     // That leads through tenant_id – when scoping by default is enabled, that's the shortest path
     // When scoping by default is disabled, the shortest path leads through post_id
-    // This behavior is handled by the manager's generateTrees() method, which is called by shortestPaths()
+    // This behavior is handled by the manager's shortestPaths() method
     $shortestPaths = $manager->shortestPaths();
 
     $expectedShortestPath = $scopeByDefault ? [
@@ -491,6 +401,11 @@ test('table rls manager generates relationship trees with tables related to the 
         [
             'foreignKey' => 'post_id',
             'foreignTable' => 'posts',
+            'foreignId' => 'id',
+        ],
+        [
+            'foreignKey' => 'author_id',
+            'foreignTable' => 'authors',
             'foreignId' => 'id',
         ],
         [
@@ -638,17 +553,28 @@ test('table rls manager generates queries correctly', function() {
     );
 });
 
-test('table manager throws an exception when encountering a recursive relationship', function() {
+test('table manager throws an exception when the only generated paths lead through recursive relationships', function() {
     Schema::create('recursive_posts', function (Blueprint $table) {
         $table->id();
-        $table->foreignId('highlighted_comment_id')->nullable()->comment('rls')->constrained('comments');
+        $table->foreignId('highlighted_comment_id')->nullable()->comment('rls recursive_comments.id');
     });
 
-    Schema::table('comments', function (Blueprint $table) {
-        $table->foreignId('recursive_post_id')->comment('rls')->constrained('recursive_posts');
+    Schema::create('recursive_comments', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('recursive_post_id')->comment('rls recursive_posts.id');
     });
 
-    expect(fn () => app(TableRLSManager::class)->generateTrees())->toThrow(RecursiveRelationshipException::class);
+    expect(fn () => app(TableRLSManager::class)->shortestPaths())->toThrow(RecursiveRelationshipException::class);
+
+    Schema::table('recursive_comments', function (Blueprint $table) {
+        $table->string('tenant_id')->comment('rls');
+        $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
+    });
+
+    // Doesn't throw an exception anymore, tenant_id breaks the recursion
+    $shortestPaths = app(TableRLSManager::class)->shortestPaths();
+
+    expect(array_keys($shortestPaths))->toContain('recursive_posts', 'recursive_comments');
 });
 
 test('table manager ignores recursive relationship if the foreign key responsible for the recursion has no-rls comment', function() {
@@ -661,7 +587,7 @@ test('table manager ignores recursive relationship if the foreign key responsibl
         $table->foreignId('recursive_post_id')->comment('rls')->constrained('recursive_posts');
     });
 
-    expect(fn () => app(TableRLSManager::class)->generateTrees())->not()->toThrow(RecursiveRelationshipException::class);
+    expect(fn () => app(TableRLSManager::class)->shortestPaths())->not()->toThrow(RecursiveRelationshipException::class);
 });
 
 test('table manager can generate paths leading through comment constraint columns', function() {
@@ -686,38 +612,27 @@ test('table manager can generate paths leading through comment constraint column
 
     $expectedTrees = [
         'non_constrained_posts' => [
-            'author_id' => [
-                [
-                    [
-                        'foreignKey' => 'author_id',
-                        'foreignTable' => 'non_constrained_users',
-                        'foreignId' => 'id',
-                        'nullable' => false,
-                    ],
-                    [
-                        'foreignKey' => 'tenant_id',
-                        'foreignTable' => 'tenants',
-                        'foreignId' => 'id',
-                        'nullable' => false,
-                    ]
-                ],
+            [
+                'foreignKey' => 'author_id',
+                'foreignTable' => 'non_constrained_users',
+                'foreignId' => 'id',
+            ],
+            [
+                'foreignKey' => 'tenant_id',
+                'foreignTable' => 'tenants',
+                'foreignId' => 'id',
             ],
         ],
         'non_constrained_users' => [
-            'tenant_id' => [
-                [
-                    [
-                        'foreignKey' => 'tenant_id',
-                        'foreignTable' => 'tenants',
-                        'foreignId' => 'id',
-                        'nullable' => false,
-                    ]
-                ]
+            [
+                'foreignKey' => 'tenant_id',
+                'foreignTable' => 'tenants',
+                'foreignId' => 'id',
             ],
         ],
     ];
 
-    expect($manager->generateTrees())->toEqual($expectedTrees);
+    expect($manager->shortestPaths())->toEqual($expectedTrees);
 });
 
 test('table manager throws an exception when comment constraint is incorrect', function(string $comment, string $exceptionMessage) {
@@ -729,7 +644,7 @@ test('table manager throws an exception when comment constraint is incorrect', f
     /** @var TableRLSManager $manager */
     $manager = app(TableRLSManager::class);
 
-    expect(fn () => $manager->generateTrees())->toThrow(
+    expect(fn () => $manager->shortestPaths())->toThrow(
         RLSCommentConstraintException::class,
         $exceptionMessage
     );

@@ -9,7 +9,6 @@ use Illuminate\Support\Str;
 use Stancl\Tenancy\Database\Exceptions\RecursiveRelationshipException;
 use Stancl\Tenancy\Exceptions\RLSCommentConstraintException;
 
-// todo@samuel logical + structural refactor. the tree generation could use some dynamic programming optimizations
 class TableRLSManager implements RLSPolicyManager
 {
     public static bool $scopeByDefault = true;
@@ -18,11 +17,11 @@ class TableRLSManager implements RLSPolicyManager
         protected DatabaseManager $database
     ) {}
 
-    public function generateQueries(array $trees = []): array
+    public function generateQueries(array $paths = []): array
     {
         $queries = [];
 
-        foreach ($trees ?: $this->shortestPaths() as $table => $path) {
+        foreach ($paths ?: $this->shortestPaths() as $table => $path) {
             $queries[$table] = $this->generateQuery($table, $path);
         }
 
@@ -30,7 +29,8 @@ class TableRLSManager implements RLSPolicyManager
     }
 
     /**
-     * Reduce trees to shortest paths (structured like ['table_foo' => $shortestPathForFoo, 'table_bar' => $shortestPathForBar]).
+     * Generate shortest paths from each table to the tenants table,
+     * structured like ['table_foo' => $shortestPathForFoo, 'table_bar' => $shortestPathForBar].
      *
      * For example:
      *
@@ -54,83 +54,61 @@ class TableRLSManager implements RLSPolicyManager
      *     ],
      * ],
      */
-    public function shortestPaths(array $trees = []): array
+    public function shortestPaths(): array
     {
-        $reducedTrees = [];
+        $cachedPaths = [];
+        $results = [];
 
-        foreach ($trees ?: $this->generateTrees() as $table => $tree) {
-            $reducedTrees[$table] = $this->findShortestPath($this->filterNonNullablePaths($tree) ?: $tree);
-        }
+        foreach ($this->getTableNames() as $tableName) {
+            $shortestPath = $this->shortestPathToTenantsTable($tableName, $cachedPaths);
 
-        return $reducedTrees;
-    }
-
-    /**
-     * Generate trees of paths that lead to the tenants table
-     * for the foreign keys of all tables – only the paths that lead to the tenants table are included.
-     *
-     * Also unset the 'comment' key from the retrieved path steps.
-     */
-    public function generateTrees(): array
-    {
-        $trees = [];
-        $builder = $this->database->getSchemaBuilder();
-
-        // We loop through each table in the database
-        foreach ($builder->getTableListing(schema: $this->database->getConfig('search_path')) as $table) {
-            // E.g. "public.table_name" -> "table_name"
-            $table = str($table)->afterLast('.')->toString();
-
-            // For each table, we get a list of all foreign key columns
-            $foreignKeys = collect($builder->getForeignKeys($table))
-                ->merge($this->getCommentConstraints($table))
-                ->map(fn ($foreign) => $this->formatForeignKey($foreign, $table));
-
-            // We loop through each foreign key column and find
-            // all possible paths that lead to the tenants table
-            foreach ($foreignKeys as $foreign) {
-                $paths = [];
-
-                $this->generatePaths($table, $foreign, $paths);
-
-                foreach ($paths as &$path) {
-                    foreach ($path as &$step) {
-                        unset($step['comment']);
-                    }
-                }
-
-                if (count($paths)) {
-                    $trees[$table][$foreign['foreignKey']] = $paths;
-                }
+            if ($this->isValidPath($shortestPath)) {
+                $results[$tableName] = $this->preparePathForOutput($shortestPath['steps']);
+            } elseif (isset($shortestPath['recursion']) && $shortestPath['recursion']) {
+                throw new RecursiveRelationshipException(
+                    "Table '{$tableName}' has recursive relationships with no valid paths to the tenants table."
+                );
             }
         }
 
-        return $trees;
+        return $results;
     }
 
-    protected function generatePaths(string $table, array $foreign, array &$paths, array $currentPath = []): void
+    protected function shortestPathToTenantsTable(
+        string $table,
+        array &$cachedPaths,
+        array $visitedTables = []
+    ): array
     {
-        if ($this->shouldSkipPathLeadingThrough($foreign)) {
-            return;
+        if (isset($cachedPaths[$table])) {
+            return $cachedPaths[$table];
         }
 
-        if (in_array($foreign['foreignTable'], array_column($currentPath, 'foreignTable'))) {
-            throw new RecursiveRelationshipException;
+        // Reached tenants table
+        if ($table === tenancy()->model()->getTable()) {
+            $cachedPaths[$table] = [
+                'dead_end' => false,
+                'recursion' => false,
+                'steps' => []
+            ];
+
+            return $cachedPaths[$table];
         }
 
-        $currentPath[] = $foreign;
+        $foreignKeys = $this->getForeignKeys($table);
 
-        if ($foreign['foreignTable'] === tenancy()->model()->getTable()) {
-            $paths[] = $currentPath;
-        } else {
-            // If not, recursively generate paths for the foreign table
-            foreach (array_merge(
-                $this->database->getSchemaBuilder()->getForeignKeys($foreign['foreignTable']),
-                $this->getCommentConstraints($foreign['foreignTable'])
-            ) as $nextConstraint) {
-                $this->generatePaths($table, $this->formatForeignKey($nextConstraint, $foreign['foreignTable']), $paths, $currentPath);
-            }
+        if (empty($foreignKeys)) {
+            // Dead end
+            $cachedPaths[$table] = [
+                'dead_end' => true,
+                'recursion' => false,
+                'steps' => []
+            ];
+
+            return $cachedPaths[$table];
         }
+
+        return $this->determineShortestPath($table, $foreignKeys, $cachedPaths, $visitedTables);
     }
 
     protected function shouldSkipPathLeadingThrough(array $foreignKey): bool
@@ -151,93 +129,58 @@ class TableRLSManager implements RLSPolicyManager
     }
 
     /**
+     * Parse and validate a comment-based constraint string.
+     * Returns an array with foreignTable and foreignColumn.
+     */
+    protected function parseCommentConstraint(string $comment, string $tableName, string $columnName): array
+    {
+        $builder = $this->database->getSchemaBuilder();
+        $constraint = explode('.', Str::after($comment, 'rls '));
+
+        // Validate comment constraint format
+        if (count($constraint) !== 2 || empty($constraint[0]) || empty($constraint[1])) {
+            throw new RLSCommentConstraintException("Malformed comment constraint on {$tableName}.{$columnName}: '{$comment}'");
+        }
+
+        $foreignTable = $constraint[0];
+        $foreignColumn = $constraint[1];
+
+        // Validate table existence
+        if (! $builder->hasTable($foreignTable)) {
+            throw new RLSCommentConstraintException("Comment constraint on {$tableName}.{$columnName} references non-existent table '{$foreignTable}'");
+        }
+
+        // Validate column existence
+        if (! $builder->hasColumn($foreignTable, $foreignColumn)) {
+            throw new RLSCommentConstraintException("Comment constraint on {$tableName}.{$columnName} references non-existent column '{$foreignTable}.{$foreignColumn}'");
+        }
+
+        return [
+            'foreign_table' => $foreignTable,
+            'foreign_columns' => [$foreignColumn],
+            'columns' => [$columnName],
+        ];
+    }
+
+    /**
      * Retrieve table's comment-based constraints. These are columns with comments
      * formatted like "rls <foreign_table>.<foreign_column>".
      *
      * Returns the constraints as unformatted foreign key arrays, ready to be passed to $this->formatForeignKey().
-     *      *
+     *
      * Throws an exception if the comment is formatted incorrectly or if the referenced table/column does not exist.
      */
     protected function getCommentConstraints(string $tableName): array
     {
-        $builder = $this->database->getSchemaBuilder();
-        $commentConstraintColumns = array_filter($builder->getColumns($tableName), function ($column) {
+        $commentConstraintColumns = array_filter($this->database->getSchemaBuilder()->getColumns($tableName), function ($column) {
             return (isset($column['comment']) && is_string($column['comment']))
                 && Str::startsWith($column['comment'], 'rls ');
         });
 
-        return array_map(function ($column) use ($builder, $tableName) {
-            $constraint = explode('.', Str::after($column['comment'], 'rls '));
-
-            // Validate comment constraint format
-            if (count($constraint) !== 2 || empty($constraint[0]) || empty($constraint[1])) {
-                throw new RLSCommentConstraintException("Malformed comment constraint on {$tableName}.{$column['name']}: '{$column['comment']}'");
-            }
-
-            $foreignTable = $constraint[0];
-            $foreignColumn = $constraint[1];
-
-            // Validate table existence
-            if (! $builder->hasTable($foreignTable)) {
-                throw new RLSCommentConstraintException("Comment constraint on {$tableName}.{$column['name']} references non-existent table '{$foreignTable}'");
-            }
-
-            // Validate column existence
-            if (! $builder->hasColumn($foreignTable, $foreignColumn)) {
-                throw new RLSCommentConstraintException("Comment constraint on {$tableName}.{$column['name']} references non-existent column '{$foreignTable}.{$foreignColumn}'");
-            }
-
-            return [
-                'foreign_table' => $foreignTable,
-                'foreign_columns' => [$foreignColumn],
-                'columns' => [$column['name']],
-            ];
-        }, $commentConstraintColumns);
-    }
-
-    /** Get tree's non-nullable paths. */
-    protected function filterNonNullablePaths(array $tree): array
-    {
-        $nonNullablePaths = [];
-
-        foreach ($tree as $foreignKey => $paths) {
-            foreach ($paths as $path) {
-                $pathIsNullable = false;
-
-                foreach ($path as $step) {
-                    if ($step['nullable']) {
-                        $pathIsNullable = true;
-                        break;
-                    }
-                }
-
-                if (! $pathIsNullable) {
-                    $nonNullablePaths[$foreignKey][] = $path;
-                }
-            }
-        }
-
-        return $nonNullablePaths;
-    }
-
-    /** Find the shortest path in a tree and unset the 'nullable' key from the path steps. */
-    protected function findShortestPath(array $tree): array
-    {
-        $shortestPath = [];
-
-        foreach ($tree as $pathsForForeignKey) {
-            foreach ($pathsForForeignKey as $path) {
-                if (empty($shortestPath) || count($shortestPath) > count($path)) {
-                    $shortestPath = $path;
-
-                    foreach ($shortestPath as &$step) {
-                        unset($step['nullable']);
-                    }
-                }
-            }
-        }
-
-        return $shortestPath;
+        return array_map(
+            fn ($column) => $this->parseCommentConstraint($column['comment'], $tableName, $column['name']),
+            $commentConstraintColumns
+        );
     }
 
     /**
@@ -247,7 +190,7 @@ class TableRLSManager implements RLSPolicyManager
      * and the foreign key column comment. These additional details are removed
      * from the foreign keys/path steps before returning the final shortest paths.
      *
-     * The 'comment' key gets deleted while generating the full trees (in generateTrees()),
+     * The 'comment' key gets deleted while generating the full trees (in shortestPaths()),
      * and the 'nullable' key gets deleted while generating the shortest paths (in findShortestPath()).
      *
      * [
@@ -265,9 +208,8 @@ class TableRLSManager implements RLSPolicyManager
             'foreignKey' => $foreignKeyName = $foreignKey['columns'][0],
             'foreignTable' => $foreignKey['foreign_table'],
             'foreignId' => $foreignKey['foreign_columns'][0],
-            // Deleted in generateTrees()
+            // Internal metadata (deleted in shortestPaths())
             'comment' => $this->getComment($table, $foreignKeyName),
-            // Deleted in shortestPaths()
             'nullable' => $this->database->selectOne("SELECT is_nullable FROM information_schema.columns WHERE table_name = '{$table}' AND column_name = '{$foreignKeyName}'")->is_nullable === 'YES',
         ];
     }
@@ -322,5 +264,190 @@ class TableRLSManager implements RLSPolicyManager
                 ->first();
 
         return $column['comment'] ?? null;
+    }
+
+    /**
+     * Returns true if any step in the path is nullable.
+     */
+    protected function isPathNullable(array $path): bool
+    {
+        foreach ($path as $step) {
+            if ($step['nullable']) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns unprefixed table names.
+     */
+    protected function getTableNames(): array
+    {
+        $builder = $this->database->getSchemaBuilder();
+        $tables = [];
+
+        foreach ($builder->getTableListing(schema: $this->database->getConfig('search_path')) as $table) {
+            // E.g. "public.table_name" -> "table_name"
+            $tables[] = str($table)->afterLast('.')->toString();
+        }
+
+        return $tables;
+    }
+
+    /**
+     * Check if a path is valid (not a dead end and has steps).
+     *
+     * A path has 0 steps if it leads to a dead end,
+     * or if it leads from the tenants table itself.
+     */
+    protected function isValidPath(array $path): bool
+    {
+        return ! $path['dead_end'] && ! empty($path['steps']);
+    }
+
+    /**
+     * Clean path steps by removing internal metadata (comment, nullable).
+     */
+    protected function preparePathForOutput(array $steps): array
+    {
+        return array_map(function ($step) {
+            unset($step['comment'], $step['nullable']);
+
+            return $step;
+        }, $steps);
+    }
+
+    /**
+     * Format and return table's valid foreign keys.
+     */
+    protected function getForeignKeys(string $table): array
+    {
+        $constraints = array_merge(
+            $this->database->getSchemaBuilder()->getForeignKeys($table),
+            $this->getCommentConstraints($table)
+        );
+
+        $foreignKeys = [];
+
+        foreach ($constraints as $constraint) {
+            $formatted = $this->formatForeignKey($constraint, $table);
+
+            if (! $this->shouldSkipPathLeadingThrough($formatted)) {
+                $foreignKeys[] = $formatted;
+            }
+        }
+
+        return $foreignKeys;
+    }
+
+    /**
+     * Determine the shortest path from $table to the tenants table.
+     *
+     * Non-nullable paths are preferred.
+     */
+    protected function determineShortestPath(
+        string $table,
+        array $foreignKeys,
+        array &$cachedPaths,
+        array $visitedTables
+    ): array
+    {
+        $visitedTables = [...$visitedTables, $table];
+        // Initialize the length variables with maximum values
+        $shortestLength = PHP_INT_MAX;
+        $shortestNonNullableLength = PHP_INT_MAX;
+        $shortestPath = null;
+        $shortestNonNullablePath = null;
+        $hasRecursiveRelationships = false;
+        $hasValidPaths = false;
+
+        foreach ($foreignKeys as $foreign) {
+            // Check if this specific foreign key would lead to recursion
+            if (in_array($foreign['foreignTable'], $visitedTables)) {
+                // This foreign key leads to a table we're already visiting - skip it
+                $hasRecursiveRelationships = true;
+                continue;
+            }
+
+            // Recursive call
+            $foreignPath = $this->shortestPathToTenantsTable(
+                $foreign['foreignTable'],
+                $cachedPaths,
+                $visitedTables
+            );
+
+            if ($this->isRecursivePath($foreignPath)) {
+                $hasRecursiveRelationships = true;
+                continue;
+            }
+
+            if (! $foreignPath['dead_end']) {
+                $hasValidPaths = true;
+                $path = $this->buildPath($foreign, $foreignPath);
+
+                $length = count($path['steps']);
+                $isNullable = $this->isPathNullable($path['steps']);
+
+                // Update shortest path
+                if ($length < $shortestLength) {
+                    $shortestLength = $length;
+                    $shortestPath = $path;
+                }
+
+                // Update shortest non-nullable path
+                if (! $isNullable && $length < $shortestNonNullableLength) {
+                    $shortestNonNullableLength = $length;
+                    $shortestNonNullablePath = $path;
+                }
+            }
+        }
+
+        if ($hasRecursiveRelationships && ! $hasValidPaths) {
+            $finalPath = [
+                'dead_end' => false,
+                'recursion' => true,
+                'steps' => []
+            ];
+
+            // Don't cache recursive paths -- return right away.
+            // This allows tables with recursive relationships to be processed again
+            // E.g. posts table has highlighted_comment_id -> comments
+            // comments table has recursive_post_id -> posts (recursive),
+            // and tenant_id -> tenants (valid).
+            // If the recursive path got cached, the path leading directly through tenants would never be found.
+            return $finalPath;
+        } else {
+            $finalPath = $shortestNonNullablePath ?? $shortestPath ?? [
+                'dead_end' => true,
+                'recursion' => false,
+                'steps' => []
+            ];
+        }
+
+        $cachedPaths[$table] = $finalPath;
+
+        return $finalPath;
+    }
+
+    /**
+     * Check if a path is recursive.
+     */
+    protected function isRecursivePath(array $path): bool
+    {
+        return isset($path['recursion']) && $path['recursion'];
+    }
+
+    /**
+     * Build a complete path by combining constraint with foreign path.
+     */
+    protected function buildPath(array $constraint, array $foreignPath): array
+    {
+        return [
+            'dead_end' => false,
+            'recursion' => false,
+            'steps' => array_merge([$constraint], $foreignPath['steps'])
+        ];
     }
 }
