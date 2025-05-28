@@ -78,8 +78,7 @@ class TableRLSManager implements RLSPolicyManager
         string $table,
         array &$cachedPaths,
         array $visitedTables = []
-    ): array
-    {
+    ): array {
         if (isset($cachedPaths[$table])) {
             return $cachedPaths[$table];
         }
@@ -89,7 +88,7 @@ class TableRLSManager implements RLSPolicyManager
             $cachedPaths[$table] = [
                 'dead_end' => false,
                 'recursion' => false,
-                'steps' => []
+                'steps' => [],
             ];
 
             return $cachedPaths[$table];
@@ -102,7 +101,7 @@ class TableRLSManager implements RLSPolicyManager
             $cachedPaths[$table] = [
                 'dead_end' => true,
                 'recursion' => false,
-                'steps' => []
+                'steps' => [],
             ];
 
             return $cachedPaths[$table];
@@ -352,8 +351,7 @@ class TableRLSManager implements RLSPolicyManager
         array $foreignKeys,
         array &$cachedPaths,
         array $visitedTables
-    ): array
-    {
+    ): array {
         $visitedTables = [...$visitedTables, $table];
         // Initialize the length variables with maximum values
         $shortestLength = PHP_INT_MAX;
@@ -408,7 +406,7 @@ class TableRLSManager implements RLSPolicyManager
             $finalPath = [
                 'dead_end' => false,
                 'recursion' => true,
-                'steps' => []
+                'steps' => [],
             ];
 
             // Don't cache recursive paths -- return right away.
@@ -422,7 +420,7 @@ class TableRLSManager implements RLSPolicyManager
             $finalPath = $shortestNonNullablePath ?? $shortestPath ?? [
                 'dead_end' => true,
                 'recursion' => false,
-                'steps' => []
+                'steps' => [],
             ];
         }
 
@@ -447,7 +445,7 @@ class TableRLSManager implements RLSPolicyManager
         return [
             'dead_end' => false,
             'recursion' => false,
-            'steps' => array_merge([$constraint], $foreignPath['steps'])
+            'steps' => array_merge([$constraint], $foreignPath['steps']),
         ];
     }
 }
