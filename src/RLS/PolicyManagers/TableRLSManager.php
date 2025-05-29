@@ -455,7 +455,7 @@ class TableRLSManager implements RLSPolicyManager
                     'steps' => array_merge([$foreign], $foreignPath['steps']),
                 ];
 
-                if ($this->determineBetterPath($path, $shortestPath)) {
+                if ($this->isPathPreferable($path, $shortestPath)) {
                     $shortestPath = $path;
                 }
             }
@@ -494,7 +494,7 @@ class TableRLSManager implements RLSPolicyManager
      * Non-nullable paths are preferred to nullable paths.
      * From paths of the same nullability, the shorter will be preferred.
      */
-    protected function determineBetterPath(array $path, array $shortestPath): bool
+    protected function isPathPreferable(array $path, array $shortestPath): bool
     {
         if (! $shortestPath) {
             return true;
