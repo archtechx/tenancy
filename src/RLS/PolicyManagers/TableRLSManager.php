@@ -411,11 +411,7 @@ class TableRLSManager implements RLSPolicyManager
         array $visitedTables
     ): array {
         $visitedTables = [...$visitedTables, $table];
-        // Initialize the length variables with maximum values
-        $shortestLength = PHP_INT_MAX;
-        $shortestNonNullableLength = PHP_INT_MAX;
-        $shortestPath = null;
-        $shortestNonNullablePath = null;
+        $shortestPath = [];
         $hasRecursiveRelationships = false;
         $hasValidPaths = false;
 
@@ -443,19 +439,8 @@ class TableRLSManager implements RLSPolicyManager
                 $hasValidPaths = true;
                 $path = $this->buildPath($foreign, $foreignPath);
 
-                $length = count($path['steps']);
-                $isNullable = $this->isPathNullable($path['steps']);
-
-                // Update shortest path
-                if ($length < $shortestLength) {
-                    $shortestLength = $length;
+                if ($this->determineBetterPath($path, $shortestPath)) {
                     $shortestPath = $path;
-                }
-
-                // Update shortest non-nullable path
-                if (! $isNullable && $length < $shortestNonNullableLength) {
-                    $shortestNonNullableLength = $length;
-                    $shortestNonNullablePath = $path;
                 }
             }
         }
@@ -475,7 +460,7 @@ class TableRLSManager implements RLSPolicyManager
             // If the recursive path got cached, the path leading directly through tenants would never be found.
             return $finalPath;
         } else {
-            $finalPath = $shortestNonNullablePath ?? $shortestPath ?? [
+            $finalPath = $shortestPath ? $shortestPath : [
                 'dead_end' => true,
                 'recursion' => false,
                 'steps' => [],
@@ -512,5 +497,29 @@ class TableRLSManager implements RLSPolicyManager
             'recursion' => false,
             'steps' => array_merge([$constraint], $subPath['steps'])
         ];
+    }
+
+    /**
+     * Determine if the passed path is better than the current shortest path.
+     *
+     * Non-nullable paths are preferred over nullable paths.
+     * From paths of the same nullability, the shorter will be preferred.
+     */
+    protected function determineBetterPath(array $path, array $currentBestPath): bool
+    {
+        if (! $currentBestPath) {
+            return true;
+        }
+
+        $pathIsNullable = $this->isPathNullable($path['steps']);
+        $bestPathIsNullable = $this->isPathNullable($currentBestPath['steps']);
+
+        // Prefer non-nullable
+        if ($pathIsNullable !== $bestPathIsNullable) {
+            return ! $pathIsNullable;
+        }
+
+        // Prefer shorter
+        return count($path['steps']) < count($currentBestPath['steps']);
     }
 }
