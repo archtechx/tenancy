@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByRequestDataException;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
+use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use function Stancl\Tenancy\Tests\pest;
 
@@ -13,11 +14,10 @@ beforeEach(function () {
         'tenancy.identification.central_domains' => [
             'localhost',
         ],
+        'tenancy.identification.' . RequestDataTenantResolver::class . '.header' => 'X-Tenant',
+        'tenancy.identification.' . RequestDataTenantResolver::class . '.query_parameter' => 'tenant',
+        'tenancy.identification.' . RequestDataTenantResolver::class . '.cookie' => 'tenant',
     ]);
-
-    InitializeTenancyByRequestData::$header = 'X-Tenant';
-    InitializeTenancyByRequestData::$cookie = 'X-Tenant';
-    InitializeTenancyByRequestData::$queryParameter = 'tenant';
 
     Route::middleware(['tenant', InitializeTenancyByRequestData::class])->get('/test', function () {
         return 'Tenant id: ' . tenant('id');
@@ -48,10 +48,12 @@ test('cookie identification works', function () {
 
     $this
         ->withoutExceptionHandling()
-        ->withUnencryptedCookie('X-Tenant', $tenant->id)
+        ->withUnencryptedCookie('tenant', $tenant->id)
         ->get('test')
         ->assertSee($tenant->id);
 });
+
+// todo@tests encrypted cookie
 
 test('middleware throws exception when tenant data is not provided in the request', function () {
     pest()->expectException(TenantCouldNotBeIdentifiedByRequestDataException::class);

@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Routing\UrlGenerator;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
@@ -12,8 +13,10 @@ use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Illuminate\Routing\Exceptions\UrlGenerationException;
+use Illuminate\Support\Facades\Schema;
 use Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
@@ -119,6 +122,79 @@ test('the route helper can receive the tenant parameter automatically', function
 })->with([InitializeTenancyByPath::class, InitializeTenancyByRequestData::class])
     ->with([true, false]) // UrlGeneratorBootstrapper::$addTenantParameterToDefaults
     ->with([true, false]); // TenancyUrlGenerator::$passTenantParameterToRoutes
+
+test('setting extra model columns sets additional URL defaults', function () {
+    Tenant::$extraCustomColumns = ['slug'];
+    TenancyUrlGenerator::$passTenantParameterToRoutes = false;
+    UrlGeneratorBootstrapper::$addTenantParameterToDefaults = true;
+
+    config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);
+    config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.allowed_extra_model_columns' => ['slug']]);
+
+    Schema::table('tenants', function (Blueprint $table) {
+        $table->string('slug')->unique();
+    });
+
+    $this->artisan('tenants:migrate');
+
+    Route::get('/{tenant}/foo/{user}', function (string $user) {
+        return tenant()->getTenantKey() . " $user";
+    })->middleware([InitializeTenancyByPath::class, 'web'])->name('foo');
+
+    Route::get('/{tenant:slug}/fooslug/{user}', function (string $user) {
+        return tenant()->getTenantKey() . " $user";
+    })->middleware([InitializeTenancyByPath::class, 'web'])->name('fooslug');
+
+    $tenant = Tenant::create(['slug' => 'acme']);
+
+    // In central context, no URL defaults are applied
+    expect(route('foo', [$tenant->getTenantKey(), 'bar']))->toBe("http://localhost/{$tenant->getTenantKey()}/foo/bar");
+    pest()->get(route('foo', [$tenant->getTenantKey(), 'bar']))->assertSee(tenant()->getTenantKey() . ' bar');
+    tenancy()->end();
+
+    expect(route('fooslug', ['acme', 'bar']))->toBe('http://localhost/acme/fooslug/bar');
+    pest()->get(route('fooslug', ['acme', 'bar']))->assertSee(tenant()->getTenantKey() . ' bar');
+    tenancy()->end();
+
+    // In tenant context, URL defaults are applied
+    tenancy()->initialize($tenant);
+    expect(route('foo', ['bar']))->toBe("http://localhost/{$tenant->getTenantKey()}/foo/bar");
+    pest()->get(route('foo', ['bar']))->assertSee(tenant()->getTenantKey() . ' bar');
+
+    expect(route('fooslug', ['bar']))->toBe('http://localhost/acme/fooslug/bar');
+    pest()->get(route('fooslug', ['bar']))->assertSee(tenant()->getTenantKey() . ' bar');
+});
+
+test('changing the tenant model column changes the default value for the tenant parameter', function () {
+    Tenant::$extraCustomColumns = ['slug'];
+    TenancyUrlGenerator::$passTenantParameterToRoutes = false;
+    UrlGeneratorBootstrapper::$addTenantParameterToDefaults = true;
+
+    config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);
+    config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_model_column' => 'slug']);
+
+    Schema::table('tenants', function (Blueprint $table) {
+        $table->string('slug')->unique();
+    });
+
+    $this->artisan('tenants:migrate');
+
+    Route::get('/{tenant}/foo/{user}', function (string $user) {
+        return tenant()->getTenantKey() . " $user";
+    })->middleware([InitializeTenancyByPath::class, 'web'])->name('foo');
+
+    $tenant = Tenant::create(['slug' => 'acme']);
+
+    // In central context, no URL defaults are applied
+    expect(route('foo', ['acme', 'bar']))->toBe("http://localhost/acme/foo/bar");
+    pest()->get(route('foo', ['acme', 'bar']))->assertSee(tenant()->getTenantKey() . ' bar');
+    tenancy()->end();
+
+    // In tenant context, URL defaults are applied
+    tenancy()->initialize($tenant);
+    expect(route('foo', ['bar']))->toBe("http://localhost/acme/foo/bar");
+    pest()->get(route('foo', ['bar']))->assertSee(tenant()->getTenantKey() . ' bar');
+});
 
 test('url generator can override specific route names', function() {
     config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);

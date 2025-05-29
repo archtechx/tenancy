@@ -117,7 +117,7 @@ return [
                 'cache_store' => null, // null = default
             ],
             Resolvers\PathTenantResolver::class => [
-                'tenant_parameter_name' => 'tenant',
+                'tenant_parameter_name' => 'tenant', // todo0 test changing this
                 'tenant_model_column' => null, // null = tenant key
                 'tenant_route_name_prefix' => null, // null = 'tenant.'
                 'allowed_extra_model_columns' => [], // used with binding route fields
@@ -127,6 +127,10 @@ return [
                 'cache_store' => null, // null = default
             ],
             Resolvers\RequestDataTenantResolver::class => [
+                'header' => 'X-Tenant',
+                'cookie' => 'tenant', // todo0 test in url generator
+                'query_parameter' => 'tenant',
+
                 'cache' => false,
                 'cache_ttl' => 3600, // seconds
                 'cache_store' => null, // null = default

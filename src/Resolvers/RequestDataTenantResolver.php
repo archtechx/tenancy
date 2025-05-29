@@ -33,4 +33,28 @@ class RequestDataTenantResolver extends Contracts\CachedTenantResolver
             $this->formatCacheKey($tenant->getTenantKey()),
         ];
     }
+
+    /**
+     * Returns the name of the header used for identification, or null if header identification is disabled.
+     */
+    public static function headerName(): string|null
+    {
+        return config('tenancy.identification.resolvers.' . static::class . '.header');
+    }
+
+    /**
+     * Returns the name of the query parameter used for identification, or null if query parameter identification is disabled.
+     */
+    public static function queryParameterName(): string|null
+    {
+        return config('tenancy.identification.resolvers.' . static::class . '.query_parameter');
+    }
+
+    /**
+     * Returns the name of the cookie used for identification, or null if cookie identification is disabled.
+     */
+    public static function cookieName(): string|null
+    {
+        return config('tenancy.identification.resolvers.' . static::class . '.cookie');
+    }
 }
