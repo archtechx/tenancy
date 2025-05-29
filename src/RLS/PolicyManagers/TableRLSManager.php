@@ -63,7 +63,7 @@ class TableRLSManager implements RLSPolicyManager
      *     ],
      * ],
      *
-     * @throws RecursiveRelationshipException When tables have recursive relationships with no valid paths
+     * @throws RecursiveRelationshipException When tables have recursive relationships and no valid paths
      * @throws RLSCommentConstraintException When comment constraints are malformed
      */
     public function shortestPaths(): array
@@ -146,19 +146,24 @@ class TableRLSManager implements RLSPolicyManager
      */
     protected function shouldSkipPathLeadingThrough(array $foreignKey): bool
     {
-        // If the column has a comment of 'no-rls', we skip it.
-        // Also skip the column if implicit scoping is off and the column
-        // has no 'rls' comment or is not recognized as a comment constraint (its comment doesn't begin with 'rls ').
-        $pathExplicitlySkipped = $foreignKey['comment'] === 'no-rls';
-        $pathImplicitlySkipped = ! static::$scopeByDefault && (
-            ! isset($foreignKey['comment']) ||
-            (is_string($foreignKey['comment']) && ! (
-                Str::is($foreignKey['comment'], 'rls') || // Explicit RLS
-                Str::startsWith($foreignKey['comment'], 'rls ') // Comment constraint
-            ))
-        );
+        $comment = $foreignKey['comment'] ?? null;
 
-        return $pathExplicitlySkipped || $pathImplicitlySkipped;
+        // Always skip paths explicitly marked with 'no-rls'
+        if ($comment === 'no-rls') {
+            return true;
+        }
+
+        // When scopeByDefault is true, include all paths except 'no-rls'
+        if (static::$scopeByDefault) {
+            return false;
+        }
+
+        // When scopeByDefault is false, only include paths with RLS comments
+        if (! $comment || ! is_string($comment)) {
+            return true;
+        }
+
+        return ! (Str::is($comment, 'rls') || Str::startsWith($comment, 'rls '));
     }
 
     /**
@@ -242,15 +247,27 @@ class TableRLSManager implements RLSPolicyManager
      */
     protected function formatForeignKey(array $foreignKey, string $table): array
     {
-        // $foreignKey is an unformatted foreign key retrieved by $this->database->getSchemaBuilder()->getForeignKeys($table)
+        $foreignKeyName = $foreignKey['columns'][0];
+
         return [
-            'foreignKey' => $foreignKeyName = $foreignKey['columns'][0],
+            'foreignKey' => $foreignKeyName,
             'foreignTable' => $foreignKey['foreign_table'],
             'foreignId' => $foreignKey['foreign_columns'][0],
             // Internal metadata (deleted in shortestPaths())
             'comment' => $this->getComment($table, $foreignKeyName),
-            'nullable' => $this->database->selectOne("SELECT is_nullable FROM information_schema.columns WHERE table_name = '{$table}' AND column_name = '{$foreignKeyName}'")->is_nullable === 'YES',
+            'nullable' => $this->isColumnNullable($table, $foreignKeyName),
         ];
+    }
+
+    /** Check if a column is nullable. */
+    protected function isColumnNullable(string $table, string $column): bool
+    {
+        $result = $this->database->selectOne(
+            "SELECT is_nullable FROM information_schema.columns WHERE table_name = ? AND column_name = ?",
+            [$table, $column]
+        );
+
+        return $result?->is_nullable === 'YES';
     }
 
     /** Generates a query that creates a row-level security policy for the passed table. */
@@ -305,9 +322,7 @@ class TableRLSManager implements RLSPolicyManager
         return $column['comment'] ?? null;
     }
 
-    /**
-     * Returns true if any step in the path is nullable.
-     */
+    /** Returns true if any step in the path is nullable. */
     protected function isPathNullable(array $path): bool
     {
         foreach ($path as $step) {
@@ -319,9 +334,7 @@ class TableRLSManager implements RLSPolicyManager
         return false;
     }
 
-    /**
-     * Returns unprefixed table names.
-     */
+    /** Returns unprefixed table names. */
     protected function getTableNames(): array
     {
         $builder = $this->database->getSchemaBuilder();
@@ -347,9 +360,7 @@ class TableRLSManager implements RLSPolicyManager
         return ! $path['dead_end'] && ! empty($path['steps']);
     }
 
-    /**
-     * Remove internal metadata ('comment', 'nullable') from path.
-     */
+    /** Remove internal metadata ('comment', 'nullable') from path. */
     protected function preparePathForOutput(array $steps): array
     {
         return array_map(function ($step) {
@@ -430,14 +441,19 @@ class TableRLSManager implements RLSPolicyManager
                 $visitedTables
             );
 
-            if ($this->isRecursivePath($foreignPath)) {
+            if (isset($foreignPath['recursion']) && $foreignPath['recursion']) {
                 $hasRecursiveRelationships = true;
                 continue;
             }
 
             if (! $foreignPath['dead_end']) {
                 $hasValidPaths = true;
-                $path = $this->buildPath($foreign, $foreignPath);
+                // Build the full path with the current foreign key as the first step
+                $path = [
+                    'dead_end' => false,
+                    'recursion' => false,
+                    'steps' => array_merge([$foreign], $foreignPath['steps'])
+                ];
 
                 if ($this->determineBetterPath($path, $shortestPath)) {
                     $shortestPath = $path;
@@ -460,7 +476,7 @@ class TableRLSManager implements RLSPolicyManager
             // If the recursive path got cached, the path leading directly through tenants would never be found.
             return $finalPath;
         } else {
-            $finalPath = $shortestPath ? $shortestPath : [
+            $finalPath = $shortestPath ?: [
                 'dead_end' => true,
                 'recursion' => false,
                 'steps' => [],
@@ -470,33 +486,6 @@ class TableRLSManager implements RLSPolicyManager
         $cachedPaths[$table] = $finalPath;
 
         return $finalPath;
-    }
-
-    /**
-     * Check if a path is recursive.
-     */
-    protected function isRecursivePath(array $path): bool
-    {
-        return isset($path['recursion']) && $path['recursion'];
-    }
-
-    /**
-     * Combine a foreign key constraint with its target path to create a complete path.
-     *
-     * Takes a single foreign key relationship step and the path from its target table
-     * to the tenants table, then merges them into a complete path from the source
-     * table to the tenants table.
-     *
-     * @param array $subPath Path from the constraint's target table to tenants table
-     * @return array Complete path to the tenants table
-     */
-    protected function buildPath(array $constraint, array $subPath): array
-    {
-        return [
-            'dead_end' => false,
-            'recursion' => false,
-            'steps' => array_merge([$constraint], $subPath['steps'])
-        ];
     }
 
     /**
