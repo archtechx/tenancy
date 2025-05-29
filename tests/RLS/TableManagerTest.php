@@ -323,7 +323,7 @@ test('queries are correctly scoped using RLS', function() {
         ->toThrow(QueryException::class);
 });
 
-test('table rls manager generates relationship trees with tables related to the tenants table', function (bool $scopeByDefault) {
+test('table rls manager generates shortest paths that lead to the tenants table correctly', function (bool $scopeByDefault) {
     TableRLSManager::$scopeByDefault = $scopeByDefault;
 
     /** @var TableRLSManager $manager */
@@ -378,7 +378,7 @@ test('table rls manager generates relationship trees with tables related to the 
         $table->unsignedBigInteger('post_id')->nullable()->comment('rls');
         $table->foreign('post_id')->references('id')->on('posts')->onUpdate('cascade')->onDelete('cascade');
 
-        // No 'rls' comment – should get excluded from full trees when using explicit scoping
+        // No 'rls' comment – should get excluded from path generation when using explicit scoping
         $table->string('tenant_id')->nullable();
         $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
 
@@ -625,7 +625,7 @@ test('table manager can generate paths leading through comment constraint column
     /** @var TableRLSManager $manager */
     $manager = app(TableRLSManager::class);
 
-    $expectedTrees = [
+    $expectedPaths = [
         'non_constrained_posts' => [
             [
                 'foreignKey' => 'author_id',
@@ -647,7 +647,7 @@ test('table manager can generate paths leading through comment constraint column
         ],
     ];
 
-    expect($manager->shortestPaths())->toEqual($expectedTrees);
+    expect($manager->shortestPaths())->toEqual($expectedPaths);
 });
 
 test('table manager throws an exception when comment constraint is incorrect', function(string $comment, string $exceptionMessage) {
