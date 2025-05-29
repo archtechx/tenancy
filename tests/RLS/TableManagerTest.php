@@ -567,11 +567,26 @@ test('table manager throws an exception when the only generated paths lead throu
     expect(fn () => app(TableRLSManager::class)->shortestPaths())->toThrow(RecursiveRelationshipException::class);
 
     Schema::table('recursive_comments', function (Blueprint $table) {
-        $table->string('tenant_id')->comment('rls');
+        // Add another recursive relationship
+        // Exception should not be thrown, because the tenant_id breaks the recursion
+        $table->foreignId('related_post_id')->comment('rls recursive_posts.id');
+
+        // Add tenant_id to break the recursion
+        $table->string('tenant_id')->comment('rls')->nullable();
         $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
     });
 
     // Doesn't throw an exception anymore, tenant_id breaks the recursion
+    $shortestPaths = app(TableRLSManager::class)->shortestPaths();
+
+    expect(array_keys($shortestPaths))->toContain('recursive_posts', 'recursive_comments');
+
+    Schema::table('recursive_comments', function (Blueprint $table) {
+        // Add another recursive relationship
+        // Exception still should not be thrown
+        $table->foreignId('another_related_post_id')->comment('rls recursive_posts.id');
+    });
+
     $shortestPaths = app(TableRLSManager::class)->shortestPaths();
 
     expect(array_keys($shortestPaths))->toContain('recursive_posts', 'recursive_comments');
@@ -649,11 +664,41 @@ test('table manager throws an exception when comment constraint is incorrect', f
         $exceptionMessage
     );
 })->with([
-    ['rls non_constrained_users', 'Malformed comment constraint on non_constrained_users'],
-    ['rls non_constrained_users.foreign.id', 'Malformed comment constraint on non_constrained_users'],
+    ['rls ', 'Malformed comment constraint on non_constrained_users'], // Missing table.column
+    ['rls tenants', 'Malformed comment constraint on non_constrained_users'], // Missing column part
+    ['rls tenants.', 'Malformed comment constraint on non_constrained_users'], // Missing column part
+    ['rls .id', 'Malformed comment constraint on non_constrained_users'], // Missing table part
+    ['rls tenants.foreign.id', 'Malformed comment constraint on non_constrained_users'], // Too many parts
     ['rls nonexistent-table.id', 'references non-existent table'],
-    ['rls non_constrained_users.nonexistent-column', 'references non-existent column'],
+    ['rls tenants.nonexistent-column', 'references non-existent column'],
 ]);
+
+test('table manager handles tables with self-referencing foreign keys correctly', function() {
+    Schema::create('self_referencing_table', function (Blueprint $table) {
+        $table->id();
+
+        $table->unsignedBigInteger('parent_id')->nullable()->comment('rls');
+        $table->foreign('parent_id')->references('id')->on('self_referencing_table');
+
+        $table->string('tenant_id')->comment('rls');
+        $table->foreign('tenant_id')->references('id')->on('tenants');
+    });
+
+    /** @var TableRLSManager $manager */
+    $manager = app(TableRLSManager::class);
+
+    // Should not throw an exception and should prefer the direct tenant_id path
+    $shortestPaths = $manager->shortestPaths();
+
+    expect($shortestPaths)->toHaveKey('self_referencing_table');
+    expect($shortestPaths['self_referencing_table'])->toBe([
+        [
+            'foreignKey' => 'tenant_id',
+            'foreignTable' => 'tenants',
+            'foreignId' => 'id',
+        ],
+    ]);
+});
 
 class Post extends Model
 {
