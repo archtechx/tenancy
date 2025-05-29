@@ -489,26 +489,26 @@ class TableRLSManager implements RLSPolicyManager
     }
 
     /**
-     * Determine if the passed path is better than the current shortest path.
+     * Determine if the passed path is preferred to the current shortest path.
      *
-     * Non-nullable paths are preferred over nullable paths.
+     * Non-nullable paths are preferred to nullable paths.
      * From paths of the same nullability, the shorter will be preferred.
      */
-    protected function determineBetterPath(array $path, array $currentBestPath): bool
+    protected function determineBetterPath(array $path, array $shortestPath): bool
     {
-        if (! $currentBestPath) {
+        if (! $shortestPath) {
             return true;
         }
 
         $pathIsNullable = $this->isPathNullable($path['steps']);
-        $bestPathIsNullable = $this->isPathNullable($currentBestPath['steps']);
+        $shortestPathIsNullable = $this->isPathNullable($shortestPath['steps']);
 
         // Prefer non-nullable
-        if ($pathIsNullable !== $bestPathIsNullable) {
+        if ($pathIsNullable !== $shortestPathIsNullable) {
             return ! $pathIsNullable;
         }
 
         // Prefer shorter
-        return count($path['steps']) < count($currentBestPath['steps']);
+        return count($path['steps']) < count($shortestPath['steps']);
     }
 }
