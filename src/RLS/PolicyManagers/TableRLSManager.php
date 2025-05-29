@@ -212,7 +212,7 @@ class TableRLSManager implements RLSPolicyManager
      * Retrieve table's comment-based constraints. These are columns with comments
      * formatted like "rls <foreign_table>.<foreign_column>".
      *
-     * Returns the constraints as unformatted foreign key arrays, ready to be passed to $this->formatForeignKey().
+     * Returns the constraints as unformatted foreign key arrays, ready to be formatted by formatForeignKey().
      */
     protected function getCommentConstraints(string $tableName): array
     {
