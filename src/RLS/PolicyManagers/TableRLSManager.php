@@ -263,7 +263,7 @@ class TableRLSManager implements RLSPolicyManager
     protected function isColumnNullable(string $table, string $column): bool
     {
         $result = $this->database->selectOne(
-            "SELECT is_nullable FROM information_schema.columns WHERE table_name = ? AND column_name = ?",
+            'SELECT is_nullable FROM information_schema.columns WHERE table_name = ? AND column_name = ?',
             [$table, $column]
         );
 
@@ -452,7 +452,7 @@ class TableRLSManager implements RLSPolicyManager
                 $path = [
                     'dead_end' => false,
                     'recursion' => false,
-                    'steps' => array_merge([$foreign], $foreignPath['steps'])
+                    'steps' => array_merge([$foreign], $foreignPath['steps']),
                 ];
 
                 if ($this->determineBetterPath($path, $shortestPath)) {
