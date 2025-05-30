@@ -31,9 +31,15 @@ class RequestDataTenantResolver extends Contracts\CachedTenantResolver
 
     public function getPossibleCacheKeys(Tenant&Model $tenant): array
     {
+        // todo@tests
         return [
-            $this->formatCacheKey($tenant->getTenantKey()),
+            $this->formatCacheKey(static::payloadValue($tenant)),
         ];
+    }
+
+    public static function payloadValue(Tenant $tenant): string
+    {
+        return $tenant->getAttribute(static::tenantModelColumn());
     }
 
     public static function tenantModelColumn(): string

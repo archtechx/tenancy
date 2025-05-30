@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Schema;
 use Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByRequestDataException;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
+use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
+
 use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
@@ -81,16 +83,14 @@ test('tenancy url generator can prefix route names passed to the route helper', 
 test('path identification route helper behavior', function (bool $addTenantParameterToDefaults, bool $passTenantParameterToRoutes) {
     config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);
 
-    $appUrl = config('app.url');
     UrlGeneratorBootstrapper::$addTenantParameterToDefaults = $addTenantParameterToDefaults;
     TenancyUrlGenerator::$passTenantParameterToRoutes = $passTenantParameterToRoutes;
 
     $tenant = Tenant::create();
-    $tenantKey = $tenant->getTenantKey();
 
-    Route::get('/{tenant}/home', fn () => '')
+    Route::get('/{tenant}/home', fn () => tenant('id'))
         ->name('tenant.home')
-        ->middleware(['tenant', InitializeTenancyByPath::class]);
+        ->middleware([InitializeTenancyByPath::class]);
 
     tenancy()->initialize($tenant);
 
@@ -98,7 +98,8 @@ test('path identification route helper behavior', function (bool $addTenantParam
         expect(fn () => route('tenant.home'))->toThrow(UrlGenerationException::class, 'Missing parameter: tenant');
     } else {
         // If at least *one* of the approaches was used, the parameter will make its way to the route
-        expect(route('tenant.home'))->toBe("{$appUrl}/{$tenantKey}/home");
+        expect(route('tenant.home'))->toBe("http://localhost/{$tenant->id}/home");
+        pest()->get(route('tenant.home'))->assertSee($tenant->id);
     }
 })->with([true, false]) // UrlGeneratorBootstrapper::$addTenantParameterToDefaults
     ->with([true, false]); // TenancyUrlGenerator::$passTenantParameterToRoutes
@@ -106,30 +107,54 @@ test('path identification route helper behavior', function (bool $addTenantParam
 test('request data identification route helper behavior', function (bool $addTenantParameterToDefaults, bool $passTenantParameterToRoutes) {
     config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);
 
-    $appUrl = config('app.url');
     UrlGeneratorBootstrapper::$addTenantParameterToDefaults = $addTenantParameterToDefaults;
     TenancyUrlGenerator::$passTenantParameterToRoutes = $passTenantParameterToRoutes;
 
     $tenant = Tenant::create();
-    $tenantKey = $tenant->getTenantKey();
 
     Route::get('/tenant/home', fn () => tenant('id'))
         ->name('tenant.home')
-        ->middleware(['tenant', InitializeTenancyByRequestData::class]);
+        ->middleware([InitializeTenancyByRequestData::class]);
 
     tenancy()->initialize($tenant);
 
-    // todo0 test changing tenancy.identification.resolvers.<request data>.query_parameter and tenant_model_column
-
     if ($passTenantParameterToRoutes) {
-        expect(route('tenant.home'))->toBe("{$appUrl}/tenant/home?tenant={$tenantKey}");
+        // Only $passTenantParameterToRoutes has an effect, defaults do not affect request data URL generation
+        expect(route('tenant.home'))->toBe("http://localhost/tenant/home?tenant={$tenant->id}");
         pest()->get(route('tenant.home'))->assertSee($tenant->id);
     } else {
-        expect(route('tenant.home'))->toBe("{$appUrl}/tenant/home");
+        expect(route('tenant.home'))->toBe("http://localhost/tenant/home");
         expect(fn () => $this->withoutExceptionHandling()->get(route('tenant.home')))->toThrow(TenantCouldNotBeIdentifiedByRequestDataException::class);
     }
 })->with([true, false]) // UrlGeneratorBootstrapper::$addTenantParameterToDefaults
     ->with([true, false]); // TenancyUrlGenerator::$passTenantParameterToRoutes
+
+test('changing request data query parameter and model column is respected by the url generator', function () {
+    config([
+        'tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class],
+        'tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.query_parameter' => 'team',
+        'tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.tenant_model_column' => 'slug',
+    ]);
+
+    Tenant::$extraCustomColumns = ['slug'];
+
+    Schema::table('tenants', function (Blueprint $table) {
+        $table->string('slug')->unique();
+    });
+
+    TenancyUrlGenerator::$passTenantParameterToRoutes = true;
+
+    $tenant = Tenant::create(['slug' => 'acme']);
+
+    Route::get('/tenant/home', fn () => tenant('id'))
+        ->name('tenant.home')
+        ->middleware([InitializeTenancyByRequestData::class]);
+
+    tenancy()->initialize($tenant);
+
+    expect(route('tenant.home'))->toBe("http://localhost/tenant/home?team=acme");
+    pest()->get(route('tenant.home'))->assertSee($tenant->id);
+});
 
 test('setting extra model columns sets additional URL defaults', function () {
     Tenant::$extraCustomColumns = ['slug'];
