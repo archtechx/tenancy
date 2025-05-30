@@ -119,7 +119,7 @@ test('request data identification route helper behavior', function (bool $addTen
 
     tenancy()->initialize($tenant);
 
-    // todo0 test changing tenancy.identification.resolvers.<request data>.query_parameter
+    // todo0 test changing tenancy.identification.resolvers.<request data>.query_parameter and tenant_model_column
 
     if ($passTenantParameterToRoutes) {
         expect(route('tenant.home'))->toBe("{$appUrl}/tenant/home?tenant={$tenantKey}");

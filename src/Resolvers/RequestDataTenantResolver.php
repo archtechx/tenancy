@@ -20,7 +20,9 @@ class RequestDataTenantResolver extends Contracts\CachedTenantResolver
     {
         $payload = (string) $args[0];
 
-        if ($payload && $tenant = tenancy()->find($payload, withRelations: true)) {
+        $column = static::tenantModelColumn();
+
+        if ($payload && $tenant = tenancy()->find($payload, $column, withRelations: true)) {
             return $tenant;
         }
 
@@ -32,6 +34,11 @@ class RequestDataTenantResolver extends Contracts\CachedTenantResolver
         return [
             $this->formatCacheKey($tenant->getTenantKey()),
         ];
+    }
+
+    public static function tenantModelColumn(): string
+    {
+        return config('tenancy.identification.resolvers.' . static::class . '.tenant_model_column') ?? tenancy()->model()->getTenantKeyName();
     }
 
     /**

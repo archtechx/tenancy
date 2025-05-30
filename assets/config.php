@@ -132,6 +132,8 @@ return [
                 'cookie' => 'tenant',
                 'query_parameter' => 'tenant',
 
+                'tenant_model_column' => null, // null = tenant key
+
                 'cache' => false,
                 'cache_ttl' => 3600, // seconds
                 'cache_store' => null, // null = default

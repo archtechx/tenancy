@@ -176,6 +176,7 @@ class TenancyUrlGenerator extends UrlGenerator
     {
         if (tenant() && static::$passTenantParameterToRoutes) {
             if (static::$defaultParameterNames) {
+                // todo0 this should be changed to something like static::$queryParameter and it should respect the configured tenant model column
                 return array_merge($parameters, ['tenant' => tenant()->getTenantKey()]);
             } else {
                 return array_merge($parameters, [PathTenantResolver::tenantParameterName() => PathTenantResolver::tenantParameterValue(tenant())]);
