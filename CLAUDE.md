@@ -6,6 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Testing
 - `composer test` - Run tests without coverage using Docker
+- `./test tests/TestFile.php` - Run an entire test file
 - `./t 'test name'` - Run a specific test
 
 ### Code Quality
