@@ -73,7 +73,6 @@ class UrlGeneratorBootstrapper implements TenancyBootstrapper
 
             foreach (PathTenantResolver::allowedExtraModelColumns() as $column) {
                 // todo0 should this be tenantParameterName() concatenated to :$column?
-                // add tests
                 $defaultParameters["tenant:$column"] = $tenant->getAttribute($column);
             }
         }
