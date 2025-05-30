@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `composer test` - Run tests without coverage using Docker
 - `./test tests/TestFile.php` - Run an entire test file
 - `./t 'test name'` - Run a specific test
+- You can append `-v` to get a full stack trace if a test fails due to an exception
 
 ### Code Quality
 - `composer phpstan` - Run PHPStan static analysis (level 8)
