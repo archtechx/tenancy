@@ -48,7 +48,7 @@ test('CloneRoutesAsTenant action clones routes correctly', function (Route|null 
     }
 })->with([
     null, // Clone all routes for which shouldBeCloned returns true
-    fn () => RouteFacade::get('/home', fn () => true)->name('home'), // THe only route that should be cloned
+    fn () => RouteFacade::get('/home', fn () => true)->name('home'), // The only route that should be cloned
 ]);
 
 test('all routes with any of the middleware specified in cloneRoutesWithMiddleware will be cloned by default', function(array $cloneRoutesWithMiddleware) {
