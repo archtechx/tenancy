@@ -1,6 +1,5 @@
 <?php
 
-use Stancl\Tenancy\Enums\Context;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
@@ -9,6 +8,7 @@ use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\Integrations\FortifyRouteBootstrapper;
+use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
 
 beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
@@ -58,6 +58,40 @@ test('fortify route tenancy bootstrapper updates fortify config correctly', func
     expect(config('fortify.redirects'))->toEqual(['login' => 'http://localhost/welcome']);
 
     tenancy()->end();
+    expect(config('fortify.home'))->toBe($originalFortifyHome);
+    expect(config('fortify.redirects'))->toBe($originalFortifyRedirects);
+});
+
+test('fortify route bootstrapper works with custom query parameter', function() {
+    config([
+        'tenancy.bootstrappers' => [FortifyRouteBootstrapper::class],
+        'tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.query_parameter' => 'team',
+    ]);
+
+    $originalFortifyHome = config('fortify.home');
+    $originalFortifyRedirects = config('fortify.redirects');
+
+    Route::get('/dashboard', function () {
+        return true;
+    })->name($homeRouteName = 'tenant.dashboard');
+
+    Route::get('/login', function () {
+        return true;
+    })->name($loginRouteName = 'tenant.login');
+
+    FortifyRouteBootstrapper::$fortifyHome = $homeRouteName;
+    FortifyRouteBootstrapper::$fortifyRedirectMap['login'] = $loginRouteName;
+    FortifyRouteBootstrapper::$passQueryParameter = true;
+
+    $tenant = Tenant::create();
+
+    tenancy()->initialize($tenant);
+
+    expect(config('fortify.home'))->toBe('http://localhost/dashboard?team=' . $tenant->id);
+    expect(config('fortify.redirects'))->toEqual(['login' => 'http://localhost/login?team=' . $tenant->id]);
+
+    tenancy()->end();
+
     expect(config('fortify.home'))->toBe($originalFortifyHome);
     expect(config('fortify.redirects'))->toBe($originalFortifyRedirects);
 });
