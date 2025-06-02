@@ -25,6 +25,9 @@ class ImpersonationToken extends Model
 {
     use CentralConnection;
 
+    /** You can set this property to customize the table name */
+    public static string $tableName = 'tenant_user_impersonation_tokens';
+
     protected $guarded = [];
 
     public $timestamps = false;
@@ -33,10 +36,14 @@ class ImpersonationToken extends Model
 
     public $incrementing = false;
 
-    protected $table = 'tenant_user_impersonation_tokens';
     protected $casts = [
         'created_at' => 'datetime',
     ];
+
+    public function getTable()
+    {
+        return static::$tableName;
+    }
 
     public static function booted(): void
     {

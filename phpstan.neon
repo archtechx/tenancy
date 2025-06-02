@@ -1,6 +1,5 @@
 includes:
     - ./vendor/larastan/larastan/extension.neon
-    - ./vendor/spatie/invade/phpstan-extension.neon
 
 parameters:
     paths:
@@ -16,6 +15,12 @@ parameters:
     ignoreErrors:
         - identifier: trait.unused
         - identifier: missingType.iterableValue
+        -
+            message: '#Spatie\\Invade\\Invader#'
+            identifier: method.notFound
+        -
+            message: '#Spatie\\Invade\\Invader#'
+            identifier: property.notFound
         - '#FFI#'
         - '#Return type(.*?) of method Stancl\\Tenancy\\Database\\Models\\Tenant\:\:newCollection\(\) should be compatible with return type#'
         - '#Method Stancl\\Tenancy\\Database\\Models\\Tenant\:\:newCollection\(\) should return#'

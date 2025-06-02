@@ -25,6 +25,7 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Exceptions\StatefulGuardRequiredException;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     pest()->artisan('migrate', [
@@ -88,7 +89,7 @@ test('tenant user can be impersonated on a tenant domain', function () {
     expect(session('tenancy_impersonating'))->toBeTrue();
 
     // Leave impersonation
-    UserImpersonation::leave();
+    UserImpersonation::stopImpersonating();
 
     expect(UserImpersonation::isImpersonating())->toBeFalse();
     expect(session('tenancy_impersonating'))->toBeNull();
@@ -134,7 +135,7 @@ test('tenant user can be impersonated on a tenant path', function () {
     expect(session('tenancy_impersonating'))->toBeTrue();
 
     // Leave impersonation
-    UserImpersonation::leave();
+    UserImpersonation::stopImpersonating();
 
     expect(UserImpersonation::isImpersonating())->toBeFalse();
     expect(session('tenancy_impersonating'))->toBeNull();

@@ -7,7 +7,7 @@ namespace Stancl\Tenancy\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\Kernel;
 use Stancl\Tenancy\Concerns\HasTenantOptions;
-use Symfony\Component\Console\Input\ArgvInput;
+use Symfony\Component\Console\Input\StringInput;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
 class Run extends Command
@@ -21,30 +21,19 @@ class Run extends Command
 
     public function handle(): int
     {
-        $argvInput = $this->argvInput();
+        /** @var string $commandName */
+        $commandName = $this->argument('commandname');
 
-        tenancy()->runForMultiple($this->getTenants(), function ($tenant) use ($argvInput) {
+        $stringInput = new StringInput($commandName);
+
+        tenancy()->runForMultiple($this->getTenants(), function ($tenant) use ($stringInput) {
             $this->components->info("Tenant: {$tenant->getTenantKey()}");
 
             $this->getLaravel()
                 ->make(Kernel::class)
-                ->handle($argvInput, new ConsoleOutput);
+                ->handle($stringInput, new ConsoleOutput);
         });
 
         return 0;
-    }
-
-    protected function argvInput(): ArgvInput
-    {
-        /** @var string $commandName */
-        $commandName = $this->argument('commandname');
-
-        // Convert string command to array
-        $subCommand = explode(' ', $commandName);
-
-        // Add "artisan" as first parameter because ArgvInput expects "artisan" as first parameter and later removes it
-        array_unshift($subCommand, 'artisan');
-
-        return new ArgvInput($subCommand);
     }
 }

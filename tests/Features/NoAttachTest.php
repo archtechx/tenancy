@@ -18,14 +18,9 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use function Stancl\Tenancy\Tests\pest;
 
 test('sqlite ATTACH statements can be blocked', function (bool $disallow) {
-    try {
-        readlink(base_path('vendor'));
-    } catch (\Throwable) {
-        symlink(base_path('vendor'), '/var/www/html/vendor');
-    }
-
     if (php_uname('m') == 'aarch64') {
         // Escape testbench prison. Can't hardcode /var/www/html/extensions/... here
         // since GHA doesn't mount the filesystem on the container's workdir

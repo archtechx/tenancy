@@ -26,6 +26,7 @@ use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     if (file_exists($schemaPath = 'tests/Etc/tenant-schema-test.dump')) {
@@ -387,6 +388,21 @@ test('run command works when sub command asks questions and accepts arguments', 
     // Assert user is same as provided using the command
     expect($user->name)->toBe('Abrar');
     expect($user->email)->toBe('email@localhost');
+});
+
+test('run command accepts arguments and options correctly', function() {
+    $tenant = Tenant::create();
+    $id = $tenant->getTenantKey();
+
+    // Use unquoted single-word arguments and quoted arguments with spaces
+    pest()->artisan("tenants:run \"bar username 'email@localhost' adsfg123 'some Arg' --option='some option'\" --tenants=$id")
+        ->expectsOutputToContain("Tenant: $id.")
+        ->expectsOutput("Name: username")
+        ->expectsOutput("Email: email@localhost")
+        ->expectsOutput("Password: adsfg123")
+        ->expectsOutput("Argument: some Arg")
+        ->expectsOutput("Option: some option")
+        ->assertExitCode(0);
 });
 
 test('migrate fresh command only deletes tenant databases if drop_tenant_databases_on_migrate_fresh is true', function (bool $dropTenantDBsOnMigrateFresh) {

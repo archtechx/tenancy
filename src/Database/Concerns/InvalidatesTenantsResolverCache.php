@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Database\Concerns;
 
 use Illuminate\Database\Eloquent\Model;
-use Stancl\Tenancy\Resolvers\Contracts\CachedTenantResolver;
 use Stancl\Tenancy\Tenancy;
 
 /**
@@ -15,13 +14,9 @@ trait InvalidatesTenantsResolverCache
 {
     public static function bootInvalidatesTenantsResolverCache(): void
     {
-        static::saved(function (Model $model) {
-            foreach (Tenancy::cachedResolvers() as $resolver) {
-                /** @var CachedTenantResolver $resolver */
-                $resolver = app($resolver);
+        $invalidateCache = static fn (Model $model) => Tenancy::invalidateResolverCache($model->tenant);
 
-                $resolver->invalidateCache($model->tenant);
-            }
-        });
+        static::saved($invalidateCache);
+        static::deleting($invalidateCache);
     }
 }

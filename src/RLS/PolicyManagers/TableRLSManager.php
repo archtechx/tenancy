@@ -75,7 +75,10 @@ class TableRLSManager implements RLSPolicyManager
         $builder = $this->database->getSchemaBuilder();
 
         // We loop through each table in the database
-        foreach ($builder->getTableListing() as $table) {
+        foreach ($builder->getTableListing(schema: $this->database->getConfig('search_path')) as $table) {
+            // E.g. "public.table_name" -> "table_name"
+            $table = str($table)->afterLast('.')->toString();
+
             // For each table, we get a list of all foreign key columns
             $foreignKeys = collect($builder->getForeignKeys($table))->map(function ($foreign) use ($table) {
                 return $this->formatForeignKey($foreign, $table);
@@ -105,6 +108,12 @@ class TableRLSManager implements RLSPolicyManager
 
     protected function generatePaths(string $table, array $foreign, array &$paths, array $currentPath = []): void
     {
+        // If the foreign key has a comment of 'no-rls', we skip it
+        // Also skip the foreign key if implicit scoping is off and the foreign key has no comment
+        if ($foreign['comment'] === 'no-rls' || (! static::$scopeByDefault && $foreign['comment'] === null)) {
+            return;
+        }
+
         if (in_array($foreign['foreignTable'], array_column($currentPath, 'foreignTable'))) {
             throw new RecursiveRelationshipException;
         }
@@ -112,15 +121,7 @@ class TableRLSManager implements RLSPolicyManager
         $currentPath[] = $foreign;
 
         if ($foreign['foreignTable'] === tenancy()->model()->getTable()) {
-            $comments = array_column($currentPath, 'comment');
-            $pathCanUseRls = static::$scopeByDefault ?
-                ! in_array('no-rls', $comments) :
-                ! in_array('no-rls', $comments) && ! in_array(null, $comments);
-
-            if ($pathCanUseRls) {
-                // If the foreign table is the tenants table, add the current path to $paths
-                $paths[] = $currentPath;
-            }
+            $paths[] = $currentPath;
         } else {
             // If not, recursively generate paths for the foreign table
             foreach ($this->database->getSchemaBuilder()->getForeignKeys($foreign['foreignTable']) as $nextConstraint) {

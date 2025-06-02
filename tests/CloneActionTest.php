@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route as RouteFacade;
 use Stancl\Tenancy\Tests\Etc\HasMiddlewareController;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
+use function Stancl\Tenancy\Tests\pest;
 
 test('a route can be universal using path identification', function (array $routeMiddleware, array $globalMiddleware) {
     foreach ($globalMiddleware as $middleware) {

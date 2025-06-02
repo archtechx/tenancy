@@ -20,7 +20,16 @@ use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\UniqueIdentifierGenerators\UUIDGenerator;
 use Stancl\Tenancy\Exceptions\TenancyNotInitializedException;
 use Stancl\Tenancy\UniqueIdentifierGenerators\RandomHexGenerator;
+use Stancl\Tenancy\UniqueIdentifierGenerators\RandomIntGenerator;
 use Stancl\Tenancy\UniqueIdentifierGenerators\RandomStringGenerator;
+use Stancl\Tenancy\UniqueIdentifierGenerators\ULIDGenerator;
+
+use function Stancl\Tenancy\Tests\pest;
+
+afterEach(function () {
+    RandomIntGenerator::$min = 0;
+    RandomIntGenerator::$max = PHP_INT_MAX;
+});
 
 test('created event is dispatched', function () {
     Event::fake([TenantCreated::class]);
@@ -71,6 +80,20 @@ test('autoincrement ids are supported', function () {
     expect($tenant2->id)->toBe(2);
 });
 
+test('ulid ids are supported', function () {
+    app()->bind(UniqueIdentifierGenerator::class, ULIDGenerator::class);
+
+    $tenant1 = Tenant::create();
+    expect($tenant1->id)->toBeString();
+    expect(strlen($tenant1->id))->toBe(26);
+
+    $tenant2 = Tenant::create();
+    expect($tenant2->id)->toBeString();
+    expect(strlen($tenant2->id))->toBe(26);
+
+    expect($tenant2->id > $tenant1->id)->toBeTrue();
+});
+
 test('hex ids are supported', function () {
     app()->bind(UniqueIdentifierGenerator::class, RandomHexGenerator::class);
 
@@ -85,6 +108,16 @@ test('hex ids are supported', function () {
     expect(strlen($tenant2->id))->toBe(16);
 
     RandomHexGenerator::$bytes = 6; // reset
+});
+
+test('random ints are supported', function () {
+    app()->bind(UniqueIdentifierGenerator::class, RandomIntGenerator::class);
+    RandomIntGenerator::$min = 200;
+    RandomIntGenerator::$max = 1000;
+
+    $tenant1 = Tenant::create();
+    expect($tenant1->id >= 200)->toBeTrue();
+    expect($tenant1->id <= 1000)->toBeTrue();
 });
 
 test('random string ids are supported', function () {

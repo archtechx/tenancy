@@ -20,7 +20,7 @@ class PendingScope implements Scope
     /**
      * Apply the scope to a given Eloquent query builder.
      *
-     * @param Builder<\Stancl\Tenancy\Contracts\Tenant&Model> $builder
+     * @param Builder<Model> $builder
      *
      * @return void
      */

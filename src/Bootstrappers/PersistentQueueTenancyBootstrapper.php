@@ -16,7 +16,7 @@ use Illuminate\Support\Testing\Fakes\QueueFake;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
-class QueueTenancyBootstrapper implements TenancyBootstrapper
+class PersistentQueueTenancyBootstrapper implements TenancyBootstrapper
 {
     /** @var Repository */
     protected $config;
@@ -31,7 +31,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
      */
     public static function __constructStatic(Application $app): void
     {
-        static::setUpJobListener($app->make(Dispatcher::class));
+        static::setUpJobListener($app->make(Dispatcher::class), $app->runningUnitTests());
     }
 
     public function __construct(Repository $config, QueueManager $queue)
@@ -42,7 +42,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
         $this->setUpPayloadGenerator();
     }
 
-    protected static function setUpJobListener(Dispatcher $dispatcher): void
+    protected static function setUpJobListener(Dispatcher $dispatcher, bool $runningTests): void
     {
         $previousTenant = null;
 
@@ -58,12 +58,17 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
             static::initializeTenancyForQueue($event->payload()['tenant_id'] ?? null);
         });
 
-        $revertToPreviousState = function ($event) use (&$previousTenant) {
-            // In queue worker context, this reverts to the central context.
-            // In dispatchSync context, this reverts to the previous tenant's context.
-            // There's no need to reset $previousTenant here since it's always first
-            // set in the above listeners and the app is reverted back to that context.
-            static::revertToPreviousState($event->job->payload()['tenant_id'] ?? null, $previousTenant);
+        // If we're running tests, we make sure to clean up after any artisan('queue:work') calls
+        $revertToPreviousState = function ($event) use (&$previousTenant, $runningTests) {
+            if ($runningTests) {
+                static::revertToPreviousState($event->job->payload()['tenant_id'] ?? null, $previousTenant);
+
+                // We don't need to reset $previousTenant since the value will be set again when a job is processed.
+            }
+
+            // If we're not running tests, we remain in the tenant's context. This makes other JobProcessed
+            // listeners able to deserialize the job, including with SerializesModels, since the tenant connection
+            // remains open.
         };
 
         $dispatcher->listen(JobProcessed::class, $revertToPreviousState); // artisan('queue:work') which succeeds
@@ -73,8 +78,19 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
     protected static function initializeTenancyForQueue(string|int|null $tenantId): void
     {
         if (! $tenantId) {
+            // The job is not tenant-aware
+            if (tenancy()->initialized) {
+                // Tenancy was initialized, so we revert back to the central context
+                tenancy()->end();
+            }
+
             return;
         }
+
+        // Re-initialize tenancy between all jobs even if the tenant is the same
+        // so that we don't work with an outdated tenant() instance in case it
+        // was updated outside the queue worker.
+        tenancy()->end();
 
         /** @var Tenant $tenant */
         $tenant = tenancy()->find($tenantId);
@@ -83,14 +99,18 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
 
     protected static function revertToPreviousState(string|int|null $tenantId, ?Tenant $previousTenant): void
     {
-        // The job was not tenant-aware so no context switch was done
+        // The job was not tenant-aware
         if (! $tenantId) {
             return;
         }
 
-        // End tenancy when there's no previous tenant
-        // (= when running in a queue worker, not dispatchSync)
-        if (tenant() && ! $previousTenant) {
+        // Revert back to the previous tenant
+        if (tenant() && $previousTenant && $previousTenant->isNot(tenant())) {
+            tenancy()->initialize($previousTenant);
+        }
+
+        // End tenancy
+        if (tenant() && (! $previousTenant)) {
             tenancy()->end();
         }
     }

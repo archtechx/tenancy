@@ -18,26 +18,24 @@
     "require": {
         "php": "^8.4",
         "ext-json": "*",
-        "illuminate/support": "^10.1|^11.3",
+        "illuminate/support": "^12.0",
         "laravel/tinker": "^2.0",
         "facade/ignition-contracts": "^1.0.2",
         "spatie/ignition": "^1.4",
         "ramsey/uuid": "^4.7.3",
-        "stancl/jobpipeline": "2.0.0-rc2",
-        "stancl/virtualcolumn": "dev-master",
-        "spatie/invade": "^1.1",
+        "stancl/jobpipeline": "2.0.0-rc5",
+        "stancl/virtualcolumn": "^1.5.0",
+        "spatie/invade": "*",
         "laravel/prompts": "0.*"
     },
     "require-dev": {
-        "laravel/framework": "^10.1|^11.3",
-        "orchestra/testbench": "^8.0|^9.0",
+        "laravel/framework": "^12.0",
+        "orchestra/testbench": "^10.0",
         "league/flysystem-aws-s3-v3": "^3.12.2",
         "doctrine/dbal": "^3.6.0",
         "spatie/valuestore": "^1.2.5",
-        "pestphp/pest": "^2.0",
-        "larastan/larastan": "^3.0",
-        "spatie/invade": "^1.1",
-        "aws/aws-sdk-php-laravel": "~3.0"
+        "pestphp/pest": "^3.0",
+        "larastan/larastan": "^3.0"
     },
     "autoload": {
         "psr-4": {

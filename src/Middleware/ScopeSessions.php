@@ -19,6 +19,10 @@ class ScopeSessions
     public function handle(Request $request, Closure $next): mixed
     {
         if (! tenancy()->initialized) {
+            if (tenancy()->routeIsUniversal(tenancy()->getRoute($request))) {
+                return $next($request);
+            }
+
             throw new TenancyNotInitializedException('Tenancy needs to be initialized before the session scoping middleware is executed');
         }
 

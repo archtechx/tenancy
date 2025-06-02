@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByOriginHeader;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     InitializeTenancyByOriginHeader::$onFail = null;

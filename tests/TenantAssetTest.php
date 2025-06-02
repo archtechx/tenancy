@@ -19,6 +19,7 @@ use Stancl\Tenancy\Controllers\TenantAssetController;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     config(['tenancy.bootstrappers' => [
@@ -65,7 +66,7 @@ test('asset can be accessed using the url returned by the tenant asset helper', 
 
 test('asset helper returns a link to tenant asset controller when asset url is null', function () {
     config(['app.asset_url' => null]);
-    config(['tenancy.filesystem.asset_helper_tenancy' => true]);
+    config(['tenancy.filesystem.asset_helper_override' => true]);
 
     $tenant = Tenant::create();
     tenancy()->initialize($tenant);
@@ -78,7 +79,7 @@ test('asset helper returns a link to tenant asset controller when asset url is n
 
 test('asset helper returns a link to an external url when asset url is not null', function () {
     config(['app.asset_url' => 'https://an-s3-bucket']);
-    config(['tenancy.filesystem.asset_helper_tenancy' => true]);
+    config(['tenancy.filesystem.asset_helper_override' => true]);
 
     $tenant = Tenant::create();
     tenancy()->initialize($tenant);
@@ -93,7 +94,7 @@ test('asset helper works correctly with path identification', function (bool $ke
     TenancyUrlGenerator::$prefixRouteNames = true;
     TenancyUrlGenerator::$passTenantParameterToRoutes = true;
 
-    config(['tenancy.filesystem.asset_helper_tenancy' => true]);
+    config(['tenancy.filesystem.asset_helper_override' => true]);
     config(['tenancy.identification.default_middleware' => InitializeTenancyByPath::class]);
     config(['tenancy.bootstrappers' => array_merge([UrlGeneratorBootstrapper::class], config('tenancy.bootstrappers'))]);
 
@@ -165,7 +166,7 @@ test('asset helper tenancy can be disabled', function () {
 
     config([
         'app.asset_url' => null,
-        'tenancy.filesystem.asset_helper_tenancy' => false,
+        'tenancy.filesystem.asset_helper_override' => false,
     ]);
 
     $tenant = Tenant::create();

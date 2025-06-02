@@ -1,4 +1,10 @@
 #!/bin/bash
 
+if [[ "${CLAUDECODE}" != "1" ]]; then
+    COLOR_FLAG="--colors=always"
+else
+    COLOR_FLAG="--colors=never"
+fi
+
 # --columns doesn't seem to work at the moment, so we're setting it using an environment variable
-docker compose exec -e COLUMNS=$(tput cols) -T test vendor/bin/pest --colors=always "$@"
+docker compose exec -e COLUMNS=$(tput cols) -T test vendor/bin/pest ${COLOR_FLAG} "$@"
