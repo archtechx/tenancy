@@ -99,7 +99,7 @@ test('cookie identification works', function (string|null $tenantModelColumn) {
 
 // todo@tests encrypted cookie
 
-test('an exception is thrown when no tenant data is not provided in the request', function () {
+test('an exception is thrown when no tenant data is provided in the request', function () {
     pest()->expectException(TenantCouldNotBeIdentifiedByRequestDataException::class);
     $this->withoutExceptionHandling()->get('test');
 });
