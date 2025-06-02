@@ -9,6 +9,7 @@ use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\Arr;
 use InvalidArgumentException;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
+use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
 
 /**
  * This class is used in place of the default UrlGenerator when UrlGeneratorBootstrapper is enabled.
@@ -86,12 +87,22 @@ class TenancyUrlGenerator extends UrlGenerator
     public static array $overrides = [];
 
     /**
-     * Use default parameter names ('tenant' name and tenant key value) instead of the parameter name
-     * and column name configured in the path resolver config.
+     * Follow the query_parameter config instead of the tenant_parameter_name (path identification) config.
      *
-     * You want to enable this when using query string identification while having customized that config.
+     * This only has an effect when:
+     *   - $passTenantParameterToRoutes is enabled, and
+     *   - the tenant_parameter_name config for the path resolver differs from the query_parameter config for the request data resolver.
+     *
+     * In such a case, instead of adding ['tenant' => '...'] to the route parameters (or whatever your tenant_parameter_name is if not 'tenant'),
+     * the query_parameter will be passed instead, e.g. ['team' => '...'] if your query_parameter config is 'team'.
+     *
+     * This is enabled by default because typically you will not need $passTenantParameterToRoutes with path identification.
+     * UrlGeneratorBootstrapper::$addTenantParameterToDefaults is recommended instead when using path identification.
+     *
+     * On the other hand, when using request data identification (specifically query string) you WILL need to pass the parameter
+     * directly to route() calls, therefore you would use $passTenantParameterToRoutes to avoid having to do that manually.
      */
-    public static bool $defaultParameterNames = false;
+    public static bool $passQueryParameter = true;
 
     /**
      * Override the route() method so that the route name gets prefixed
@@ -175,11 +186,14 @@ class TenancyUrlGenerator extends UrlGenerator
     protected function addTenantParameter(array $parameters): array
     {
         if (tenant() && static::$passTenantParameterToRoutes) {
-            if (static::$defaultParameterNames) {
-                return array_merge($parameters, ['tenant' => tenant()->getTenantKey()]);
-            } else {
-                return array_merge($parameters, [PathTenantResolver::tenantParameterName() => PathTenantResolver::tenantParameterValue(tenant())]);
+            if (static::$passQueryParameter) {
+                $queryParameterName = RequestDataTenantResolver::queryParameterName();
+                if ($queryParameterName !== null) {
+                    return array_merge($parameters, [$queryParameterName => RequestDataTenantResolver::payloadValue(tenant())]);
+                }
             }
+
+            return array_merge($parameters, [PathTenantResolver::tenantParameterName() => PathTenantResolver::tenantParameterValue(tenant())]);
         } else {
             return $parameters;
         }

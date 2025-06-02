@@ -20,7 +20,7 @@ afterEach(function () {
     FortifyRouteBootstrapper::$passTenantParameter = true;
     FortifyRouteBootstrapper::$fortifyRedirectMap = [];
     FortifyRouteBootstrapper::$fortifyHome = 'tenant.dashboard';
-    FortifyRouteBootstrapper::$defaultParameterNames = false;
+    FortifyRouteBootstrapper::$passQueryParameter = false;
 });
 
 test('fortify route tenancy bootstrapper updates fortify config correctly', function() {
