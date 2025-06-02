@@ -258,7 +258,7 @@ test('any extra model column needs to be whitelisted', function () {
     pest()->get('/acme/foo')->assertSee($tenant->getTenantKey());
 });
 
-test('route model binding works with closure-based routes', function() {
+test('route model binding works with path identification', function() {
     config(['tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class]]);
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
