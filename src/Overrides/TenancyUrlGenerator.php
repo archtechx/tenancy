@@ -187,10 +187,12 @@ class TenancyUrlGenerator extends UrlGenerator
     {
         if (tenant() && static::$passTenantParameterToRoutes) {
             if (static::$passQueryParameter) {
-                return array_merge($parameters, [RequestDataTenantResolver::queryParameterName() => RequestDataTenantResolver::payloadValue(tenant())]);
-            } else {
-                return array_merge($parameters, [PathTenantResolver::tenantParameterName() => PathTenantResolver::tenantParameterValue(tenant())]);
+                $queryParameterName = RequestDataTenantResolver::queryParameterName();
+                if ($queryParameterName !== null) {
+                    return array_merge($parameters, [$queryParameterName => RequestDataTenantResolver::payloadValue(tenant())]);
+                }
             }
+            return array_merge($parameters, [PathTenantResolver::tenantParameterName() => PathTenantResolver::tenantParameterValue(tenant())]);
         } else {
             return $parameters;
         }
