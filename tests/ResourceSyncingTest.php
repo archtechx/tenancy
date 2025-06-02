@@ -111,7 +111,7 @@ afterEach(function () {
     UpdateOrCreateSyncedResource::$scopeGetModelQuery = null;
 });
 
-test('multiple tenants can have users synced to a central resource', function() {
+test('multiple tenants can have users synced to a central resource', function () {
     $tenants = [Tenant::create(), Tenant::create(), Tenant::create()];
     migrateUsersTableForTenants();
 
@@ -1198,8 +1198,9 @@ test('resource creation works correctly when central resource provides defaults 
     expect($centralUser->foo)->toBe('bar');
 });
 
-test('resource syncing works correctly when using a global scope on a tenant model', function(bool $scopeGetModelQuery) {
+test('resource syncing works correctly when using a global scope on a tenant model', function (bool $scopeGetModelQuery) {
     if ($scopeGetModelQuery) {
+        // Add a scope that bypasses the global scope
         UpdateOrCreateSyncedResource::$scopeGetModelQuery = function (Builder $query) {
             if ($query->getModel()->hasGlobalScope(TestingScope::class)) {
                 $query->withoutGlobalScope(TestingScope::class);
@@ -1207,10 +1208,12 @@ test('resource syncing works correctly when using a global scope on a tenant mod
         };
     }
 
-    $centralUser = CentralUser::firstOrCreate(
-        ['email' => 'user@test.cz'],
-        ['name' => 'User', 'password' => bcrypt('****'), 'role' => 'admin']
-    );
+    $centralUser = CentralUser::create([
+        'email' => 'user@test.cz',
+        'name' => 'User',
+        'password' => bcrypt('****'),
+        'role' => 'admin',
+    ]);
 
     [$tenant1, $tenant2] = createTenantsAndRunMigrations();
 
