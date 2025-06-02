@@ -6,12 +6,23 @@ use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Exceptions\RouteIsMissingTenantParameterException;
 use Stancl\Tenancy\Exceptions\TenantColumnNotWhitelistedException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByPathException;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Jobs\MigrateDatabase;
+use Stancl\JobPipeline\JobPipeline;
+use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Events\TenancyEnded;
+use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Tests\Etc\User;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
@@ -245,4 +256,22 @@ test('any extra model column needs to be whitelisted', function () {
     // After whitelisting the column it works
     config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.allowed_extra_model_columns' => ['slug']]);
     pest()->get('/acme/foo')->assertSee($tenant->getTenantKey());
+});
+
+test('route model binding works with closure-based routes', function() {
+    config(['tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class]]);
+
+    Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    Event::listen(
+        TenantCreated::class,
+        JobPipeline::make([CreateDatabase::class, MigrateDatabase::class])->send(fn (TenantCreated $event) => $event->tenant)->toListener()
+    );
+
+    $tenant = Tenant::create();
+
+    Route::get('/{tenant}/{user}', fn (User $user) => $user->name)->middleware([InitializeTenancyByPath::class, 'web']);
+
+    $user = $tenant->run(fn () => User::create(['name' => 'John Doe', 'email' => 'john@doe.com', 'password' => 'foobar']));
+
+    pest()->get("/{$tenant->getTenantKey()}/{$user->id}")->assertSee("John Doe");
 });
