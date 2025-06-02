@@ -192,6 +192,7 @@ class TenancyUrlGenerator extends UrlGenerator
                     return array_merge($parameters, [$queryParameterName => RequestDataTenantResolver::payloadValue(tenant())]);
                 }
             }
+
             return array_merge($parameters, [PathTenantResolver::tenantParameterName() => PathTenantResolver::tenantParameterValue(tenant())]);
         } else {
             return $parameters;
