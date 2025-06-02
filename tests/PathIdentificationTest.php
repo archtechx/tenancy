@@ -19,7 +19,6 @@ use Stancl\Tenancy\Jobs\MigrateDatabase;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\Etc\User;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
