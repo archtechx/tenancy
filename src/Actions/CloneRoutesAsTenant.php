@@ -7,25 +7,36 @@ namespace Stancl\Tenancy\Actions;
 use Closure;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 
 /**
  * Clones routes manually added to $routesToClone, or if $routesToClone is empty,
- * clones all existing routes for which shouldBeCloned returns true (by default, this means all routes
- * with any middleware that's present in $cloneRoutesWithMiddleware).
+ * clones all existing routes for which shouldBeCloned returns true (by default, this means
+ * all routes with any middleware that's present in $cloneRoutesWithMiddleware).
+ *
+ * The default value of $cloneRoutesWithMiddleware is ['clone'] which means that routes
+ * with the 'clone' middleware will be cloned as described below. You may customize
+ * either this array, to make other middleware trigger cloning, or by providing a callback
+ * to shouldClone() to change how the logic determines if a route should be cloned.
+ *
+ * After cloning, all of the middleware in $cloneRoutesWithMiddleware will be *removed*
+ * from the new route (so in the default case, 'clone' will be stripped from the MW list).
+ *
  * Cloned routes are prefixed with '/{tenant}', flagged with 'tenant' middleware,
  * and have their names prefixed with 'tenant.'.
  *
- * The main purpose of this action is to make the integration
- * of packages (e.g., Jetstream or Livewire) easier with path-based tenant identification.
+ * If the config for the path resolver is customized, the parameter name and prefix
+ * can be changed, e.g. to `/{team}` and `team.`.
+ *
+ * The main purpose of this action is to make the integration of packages
+ * (e.g., Jetstream or Livewire) easier with path-based tenant identification.
  *
  * Customization:
  * - Use cloneRoutesWithMiddleware() to change the middleware in $cloneRoutesWithMiddleware
  * - Use shouldClone() to change which routes should be cloned
  * - Use cloneUsing() to customize route definitions
- * - Adjust PathTenantResolver's $tenantParameterName and $tenantRouteNamePrefix as needed
+ * - Adjust PathTenantResolver's tenantParameterName and tenantRouteNamePrefix as needed in the config file
  *
  * Note that routes already containing the tenant parameter or prefix won't be cloned.
  */
@@ -33,7 +44,7 @@ class CloneRoutesAsTenant
 {
     protected array $routesToClone = [];
     protected Closure|null $cloneUsing = null; // The callback should accept Route instance or the route name (string)
-    protected Closure|null $shouldBeCloned = null;
+    protected Closure|null $shouldClone = null;
     protected array $cloneRoutesWithMiddleware = ['clone'];
 
     public function __construct(
@@ -86,7 +97,7 @@ class CloneRoutesAsTenant
 
     public function shouldClone(Closure|null $shouldClone): static
     {
-        $this->shouldBeCloned = $shouldClone;
+        $this->shouldClone = $shouldClone;
 
         return $this;
     }
@@ -100,8 +111,8 @@ class CloneRoutesAsTenant
 
     protected function shouldBeCloned(Route $route): bool
     {
-        if ($this->shouldBeCloned) {
-            return ($this->shouldBeCloned)($route);
+        if ($this->shouldClone) {
+            return ($this->shouldClone)($route);
         }
 
         return tenancy()->routeHasMiddleware($route, $this->cloneRoutesWithMiddleware);
@@ -113,33 +124,35 @@ class CloneRoutesAsTenant
         $prefix = trim($route->getPrefix() ?? '', '/');
         $uri = $route->getPrefix() ? Str::after($route->uri(), $prefix) : $route->uri();
 
-        $newRouteAction = collect($route->action)->tap(function (Collection $action) use ($route, $prefix) {
-            /** @var array $routeMiddleware */
-            $routeMiddleware = $action->get('middleware') ?? [];
+        $action = collect($route->action);
 
-            // Make the new route have the same middleware as the original route
-            // Add the 'tenant' middleware to the new route
-            // Exclude $this->cloneRoutesWithMiddleware MW from the new route (it should only be flagged as tenant)
-            $newRouteMiddleware = collect($routeMiddleware)
-                ->merge(['tenant']) // Add 'tenant' flag
-                ->filter(fn (string $middleware) => ! in_array($middleware, $this->cloneRoutesWithMiddleware))
-                ->toArray();
+        // Make the new route have the same middleware as the original route
+        // Add the 'tenant' middleware to the new route
+        // Exclude $this->cloneRoutesWithMiddleware MW from the new route (it should only be flagged as tenant)
+        $middleware = collect($action->get('middleware') ?? [])
+            ->merge(['tenant']) // Add 'tenant' flag
+            // todo0 what if 'clone' is within some middleware group - not top level? this should be handled similarly
+            // to tenancy()->routeHasMiddleware() - use the same traversal depth. only issue is that in such a case, we
+            // *do* want the other middleware from the group, so we'd have to extract them from the group and include them
+            // directly - not using the containing group - just with 'clone' / cloneRoutesWithMiddleware removed.
+            // start by seeing if this can be reproduced in a reasonable scenario in a regression test
+            ->filter(fn (string $middleware) => ! in_array($middleware, $this->cloneRoutesWithMiddleware))
+            ->toArray();
 
-            $tenantRouteNamePrefix = PathTenantResolver::tenantRouteNamePrefix();
+        $tenantRouteNamePrefix = PathTenantResolver::tenantRouteNamePrefix();
 
-            // Make sure the route name has the tenant route name prefix
-            $newRouteName = $route->getName()
-                ? $tenantRouteNamePrefix . Str::after($route->getName(), $tenantRouteNamePrefix)
-                : null;
+        // Make sure the route name has the tenant route name prefix
+        $name = $route->getName()
+            ? $tenantRouteNamePrefix . Str::after($route->getName(), $tenantRouteNamePrefix)
+            : null;
 
-            return $action
-                ->put('as', $newRouteName)
-                ->put('middleware', $newRouteMiddleware)
-                ->put('prefix', $prefix . '/{' . PathTenantResolver::tenantParameterName() . '}');
-        })->toArray();
+        $action
+            ->put('as', $name)
+            ->put('middleware', $middleware)
+            ->put('prefix', $prefix . '/{' . PathTenantResolver::tenantParameterName() . '}');
 
         /** @var Route $newRoute */
-        $newRoute = $this->router->$method($uri, $newRouteAction);
+        $newRoute = $this->router->$method($uri, $action->toArray());
 
         return $newRoute;
     }
