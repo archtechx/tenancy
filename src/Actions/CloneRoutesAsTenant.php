@@ -129,7 +129,11 @@ class CloneRoutesAsTenant
         // Make the new route have the same middleware as the original route
         // Add the 'tenant' middleware to the new route
         // Exclude $this->cloneRoutesWithMiddleware MW from the new route (it should only be flagged as tenant)
-        $middleware = collect($action->get('middleware') ?? [])
+
+        /** @var array $middleware */
+        $middleware = $action->get('middleware') ?? [];
+
+        $middleware = collect($middleware)
             ->merge(['tenant']) // Add 'tenant' flag
             // todo0 what if 'clone' is within some middleware group - not top level? this should be handled similarly
             // to tenancy()->routeHasMiddleware() - use the same traversal depth. only issue is that in such a case, we
