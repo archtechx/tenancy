@@ -77,6 +77,36 @@ All of these work as flags, i.e. middleware groups that are empty arrays with a 
 - `universal` - Routes working in both contexts
 - `clone` - Tells route cloning logic to clone the route
 
+### Early Identification
+
+**Early identification** ensures tenancy is initialized before controller instantiation, which is critical for certain scenarios.
+
+**When needed:**
+- Controllers using constructor dependency injection
+- Integration with packages that inject dependencies in constructors
+
+**The Problem:**
+Laravel executes controller constructors and route model binding before route-level middleware runs, causing services to use central context instead of tenant context.
+
+**Solutions:**
+1. **Avoid Constructor Injection** - Use method injection instead
+2. **Laravel's Native Solution** - Use controllers that implement `HasMiddleware` interface
+3. **Kernel Identification** - Add middleware to HTTP Kernel's global stack:
+
+```php
+// In HttpKernel.php
+protected $middleware = [
+    \Stancl\Tenancy\Middleware\InitializeTenancyByDomain::class,
+    // other middleware...
+];
+```
+
+Note you also need to flag the route with the `'tenant'` middleware if default route mode (set in config) isn't set to TENANT.
+
+**Benefits:**
+- Constructor dependency injection receives tenant-aware services
+- Seamless integration with existing Laravel applications
+
 ### Testing Environment
 
 Tests use Docker with MySQL/PostgreSQL/Redis. The `./test` script runs Pest tests inside containers with proper database isolation.

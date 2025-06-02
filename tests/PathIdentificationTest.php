@@ -35,6 +35,11 @@ beforeEach(function () {
     });
 });
 
+afterEach(function () {
+    InitializeTenancyByPath::$onFail = null;
+    Tenant::$extraCustomColumns = [];
+});
+
 test('tenant can be identified by path', function () {
     Tenant::create([
         'id' => 'acme',
@@ -150,6 +155,7 @@ test('central route can have a parameter with the same name as the tenant parame
     config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_parameter_name' => 'team']);
     $tenantKey = Tenant::create()->getTenantKey();
 
+    // The route is flagged as central (while using kernel identification) so the {team} parameter should not be used for tenancy initialization
     Route::get('/central/route/{team}/{a}/{b}', function ($team, $a, $b) {
         return "$a + $b + $team";
     })->middleware('central')->name('central-route');
@@ -185,8 +191,6 @@ test('the tenant model column can be customized in the config', function () {
     $this->withoutExceptionHandling();
     pest()->get('/acme/foo')->assertSee($tenant->getTenantKey());
     expect(fn () => pest()->get($tenant->id . '/foo'))->toThrow(TenantCouldNotBeIdentifiedByPathException::class);
-
-    Tenant::$extraCustomColumns = []; // static property reset
 });
 
 test('the tenant model column can be customized in the route definition', function () {
@@ -218,8 +222,6 @@ test('the tenant model column can be customized in the route definition', functi
     // Binding field defined
     pest()->get('/acme/bar')->assertSee($tenant->getTenantKey());
     expect(fn () => pest()->get($tenant->id . '/bar'))->toThrow(TenantCouldNotBeIdentifiedByPathException::class);
-
-    Tenant::$extraCustomColumns = []; // static property reset
 });
 
 test('any extra model column needs to be whitelisted', function () {
@@ -243,6 +245,4 @@ test('any extra model column needs to be whitelisted', function () {
     // After whitelisting the column it works
     config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.allowed_extra_model_columns' => ['slug']]);
     pest()->get('/acme/foo')->assertSee($tenant->getTenantKey());
-
-    Tenant::$extraCustomColumns = []; // static property reset
 });
