@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Event;
@@ -22,6 +24,8 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\Etc\User;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Events\TenancyEnded;
+
 use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
@@ -261,16 +265,33 @@ test('route model binding works with path identification', function() {
     config(['tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class]]);
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
-    Event::listen(
-        TenantCreated::class,
-        JobPipeline::make([CreateDatabase::class, MigrateDatabase::class])->send(fn (TenantCreated $event) => $event->tenant)->toListener()
-    );
+    Event::listen(TenantCreated::class, JobPipeline::make([
+        CreateDatabase::class, MigrateDatabase::class,
+    ])->send(fn (TenantCreated $event) => $event->tenant)->toListener());
+    Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
     $tenant = Tenant::create();
 
-    Route::get('/{tenant}/{user}', fn (User $user) => $user->name)->middleware([InitializeTenancyByPath::class, 'web']);
+    $this->withoutExceptionHandling();
+
+    // Importantly, the route must have the 'web' middleware group, or SubstituteBindings directly
+    Route::get('/{tenant}/foo/{user}', fn (User $user) => $user->name)->middleware([InitializeTenancyByPath::class, 'web']);
+    Route::get('/{tenant}/bar/{user}', fn (User $user) => $user->name)->middleware([InitializeTenancyByPath::class, SubstituteBindings::class]);
 
     $user = $tenant->run(fn () => User::create(['name' => 'John Doe', 'email' => 'john@doe.com', 'password' => 'foobar']));
 
-    pest()->get("/{$tenant->getTenantKey()}/{$user->id}")->assertSee("John Doe");
+    pest()->get("/{$tenant->id}/foo/{$user->id}")->assertSee("John Doe");
+    tenancy()->end();
+    pest()->get("/{$tenant->id}/bar/{$user->id}")->assertSee("John Doe");
+    tenancy()->end();
+
+    // If SubstituteBindings comes BEFORE tenancy middleware and middleware priority is not set, route model binding is NOT expected to work correctly
+    // Since SubstituteBindings runs first, it tries to query the central database instead of the tenant database (which fails with a QueryException in this case)
+    Route::get('/{tenant}/baz/{user}', fn (User $user) => $user->name ?: 'No user')->middleware([SubstituteBindings::class, InitializeTenancyByPath::class]);
+    expect(fn () => pest()->get("/{$tenant->id}/baz/{$user->id}"))->toThrow(QueryException::class);
+    tenancy()->end();
+
+    // If SubstituteBindings is NOT USED AT ALL, we simply get an empty User instance
+    Route::get('/{tenant}/xyz/{user}', fn (User $user) => $user->name ?: 'No user')->middleware([InitializeTenancyByPath::class]);
+    pest()->get("/{$tenant->id}/xyz/{$user->id}")->assertSee('No user');
 });
