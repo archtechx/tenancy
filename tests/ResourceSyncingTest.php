@@ -1242,7 +1242,6 @@ test('scopeGetModelQuery can make resource syncing work with global scopes', fun
         // This causes it to attempt creating a duplicate, which violates unique constraints.
         pest()->expectException(QueryException::class);
         pest()->expectExceptionMessage('Duplicate entry');
-
     }
 
     // This should sync to the existing central user, not create a duplicate
