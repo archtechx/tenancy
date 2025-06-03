@@ -1199,6 +1199,8 @@ test('resource creation works correctly when central resource provides defaults 
 });
 
 test('scopeGetModelQuery can make resource syncing work with global scopes', function (bool $scopeGetModelQuery) {
+    // The TenantUserWithScope model has whereNull('name') global scope, but we're creating users WITH names.
+    // This creates a conflict during resource syncing when trying to find existing central users.
     if ($scopeGetModelQuery) {
         // Add a scope that bypasses the global scope
         UpdateOrCreateSyncedResource::$scopeGetModelQuery = function (Builder $query) {
@@ -1208,17 +1210,42 @@ test('scopeGetModelQuery can make resource syncing work with global scopes', fun
         };
     }
 
+    // Create a central user that will be synced to tenant databases
     $centralUser = CentralUser::create([
         'email' => 'user@test.cz',
-        'name' => 'User',
+        'name' => 'User', // Note: TenantUserWithScope has whereNull('name') global scope
         'password' => bcrypt('****'),
         'role' => 'admin',
     ]);
 
     [$tenant1, $tenant2] = createTenantsAndRunMigrations();
 
+    // Create user in tenant1
     tenancy()->initialize($tenant1);
 
+    TenantUserWithScope::create([
+        'global_id' => $centralUser->global_id,
+        'name' => $centralUser->name, // This has a name, conflicting with global scope
+        'email' => $centralUser->email,
+        'password' => $centralUser->password,
+        'role' => 'admin'
+    ]);
+
+    tenancy()->end();
+
+    // Try to create the same user in tenant2
+    tenancy()->initialize($tenant2);
+
+    if (! $scopeGetModelQuery) {
+        // Without scopeGetModelQuery, the global scope whereNull('name') prevents
+        // finding the existing central user with a name.
+        // This causes it to attempt creating a duplicate, which violates unique constraints.
+        pest()->expectException(QueryException::class);
+        pest()->expectExceptionMessage('Duplicate entry');
+
+    }
+
+    // This should sync to the existing central user, not create a duplicate
     TenantUserWithScope::create([
         'global_id' => $centralUser->global_id,
         'name' => $centralUser->name,
@@ -1229,20 +1256,11 @@ test('scopeGetModelQuery can make resource syncing work with global scopes', fun
 
     tenancy()->end();
 
-    tenancy()->initialize($tenant2);
-
-    if (! $scopeGetModelQuery) {
-        pest()->expectException(QueryException::class);
-        pest()->expectExceptionMessage('Duplicate entry');
+    // Verify the syncing worked correctly when scopeGetModelQuery was used
+    if ($scopeGetModelQuery) {
+        expect(CentralUser::count())->toBeOne(); // Should still be just one central user
+        expect(CentralUser::first()->global_id)->toBe($centralUser->global_id);
     }
-
-    TenantUserWithScope::create([
-        'global_id' => $centralUser->global_id,
-        'name' => $centralUser->name,
-        'email' => $centralUser->email,
-        'password' => $centralUser->password,
-        'role' => 'admin'
-    ]);
 })->with([
     true,
     false,
