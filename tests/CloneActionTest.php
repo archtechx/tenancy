@@ -249,9 +249,9 @@ test('clone middleware within middleware groups is properly handled during cloni
     expect($clonedNestedRoute)->not()->toBeNull();
 
     $nestedRouteMiddleware = tenancy()->getRouteMiddleware($clonedNestedRoute);
+
     expect($nestedRouteMiddleware)
         ->toContain('web', 'auth', 'tenant')
-        ->not()->toContain('clone')
-        // Should not contain any group names - middleware should be extracted
-        ->not()->toContain('nested-group', 'level-2-group', 'level-3-group');
+        // Shouldn't contain 'clone' or any nested group names
+        ->not()->toContain('clone', 'nested-group', 'level-2-group', 'level-3-group');
 });
