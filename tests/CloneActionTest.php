@@ -214,3 +214,28 @@ test('clone action trims trailing slashes from prefixes given to nested route gr
         ->not()->toContain("prefix//")
         ->toBe("http://localhost/prefix/{$tenant->getTenantKey()}/home");
 });
+
+test('clone middleware within middleware groups is properly handled during cloning', function () {
+    // Define a middleware group that contains the 'clone' flag along with the 'auth' MW
+    RouteFacade::middlewareGroup('mw-group-with-clone', ['auth', 'clone']);
+
+    RouteFacade::get('/foo', fn () => true)
+        ->middleware('mw-group-with-clone')
+        ->name('foo');
+
+    app(CloneRoutesAsTenant::class)->handle();
+
+    // Route 'foo' should be cloned as 'tenant.foo'
+    $clonedRoute = RouteFacade::getRoutes()->getByName('tenant.foo');
+
+    expect($clonedRoute)->not()->toBeNull();
+
+    $clonedRouteMiddleware = tenancy()->getRouteMiddleware($clonedRoute);
+
+    // The cloned route should still have other middleware from the group,
+    // but it should NOT have the original middleware group name.
+    // Instead, the middleware should be extracted from the group and applied directly.
+    expect($clonedRouteMiddleware)
+        ->toContain('auth')
+        ->not()->toContain('test-group', 'clone');
+});
