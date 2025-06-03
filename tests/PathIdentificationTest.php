@@ -3,15 +3,29 @@
 declare(strict_types=1);
 
 use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Exceptions\RouteIsMissingTenantParameterException;
 use Stancl\Tenancy\Exceptions\TenantColumnNotWhitelistedException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByPathException;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Jobs\MigrateDatabase;
+use Stancl\JobPipeline\JobPipeline;
+use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Tests\Etc\User;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Events\TenancyEnded;
+
 use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
@@ -33,6 +47,11 @@ beforeEach(function () {
             return "$a - $b";
         })->name('baz');
     });
+});
+
+afterEach(function () {
+    InitializeTenancyByPath::$onFail = null;
+    Tenant::$extraCustomColumns = [];
 });
 
 test('tenant can be identified by path', function () {
@@ -150,6 +169,7 @@ test('central route can have a parameter with the same name as the tenant parame
     config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_parameter_name' => 'team']);
     $tenantKey = Tenant::create()->getTenantKey();
 
+    // The route is flagged as central (while using kernel identification) so the {team} parameter should not be used for tenancy initialization
     Route::get('/central/route/{team}/{a}/{b}', function ($team, $a, $b) {
         return "$a + $b + $team";
     })->middleware('central')->name('central-route');
@@ -185,8 +205,6 @@ test('the tenant model column can be customized in the config', function () {
     $this->withoutExceptionHandling();
     pest()->get('/acme/foo')->assertSee($tenant->getTenantKey());
     expect(fn () => pest()->get($tenant->id . '/foo'))->toThrow(TenantCouldNotBeIdentifiedByPathException::class);
-
-    Tenant::$extraCustomColumns = []; // static property reset
 });
 
 test('the tenant model column can be customized in the route definition', function () {
@@ -218,8 +236,6 @@ test('the tenant model column can be customized in the route definition', functi
     // Binding field defined
     pest()->get('/acme/bar')->assertSee($tenant->getTenantKey());
     expect(fn () => pest()->get($tenant->id . '/bar'))->toThrow(TenantCouldNotBeIdentifiedByPathException::class);
-
-    Tenant::$extraCustomColumns = []; // static property reset
 });
 
 test('any extra model column needs to be whitelisted', function () {
@@ -243,6 +259,39 @@ test('any extra model column needs to be whitelisted', function () {
     // After whitelisting the column it works
     config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.allowed_extra_model_columns' => ['slug']]);
     pest()->get('/acme/foo')->assertSee($tenant->getTenantKey());
+});
 
-    Tenant::$extraCustomColumns = []; // static property reset
+test('route model binding works with path identification', function() {
+    config(['tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class]]);
+
+    Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    Event::listen(TenantCreated::class, JobPipeline::make([
+        CreateDatabase::class, MigrateDatabase::class,
+    ])->send(fn (TenantCreated $event) => $event->tenant)->toListener());
+    Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+
+    $tenant = Tenant::create();
+
+    $this->withoutExceptionHandling();
+
+    // Importantly, the route must have the 'web' middleware group, or SubstituteBindings directly
+    Route::get('/{tenant}/foo/{user}', fn (User $user) => $user->name)->middleware([InitializeTenancyByPath::class, 'web']);
+    Route::get('/{tenant}/bar/{user}', fn (User $user) => $user->name)->middleware([InitializeTenancyByPath::class, SubstituteBindings::class]);
+
+    $user = $tenant->run(fn () => User::create(['name' => 'John Doe', 'email' => 'john@doe.com', 'password' => 'foobar']));
+
+    pest()->get("/{$tenant->id}/foo/{$user->id}")->assertSee("John Doe");
+    tenancy()->end();
+    pest()->get("/{$tenant->id}/bar/{$user->id}")->assertSee("John Doe");
+    tenancy()->end();
+
+    // If SubstituteBindings comes BEFORE tenancy middleware and middleware priority is not set, route model binding is NOT expected to work correctly
+    // Since SubstituteBindings runs first, it tries to query the central database instead of the tenant database (which fails with a QueryException in this case)
+    Route::get('/{tenant}/baz/{user}', fn (User $user) => $user->name ?: 'No user')->middleware([SubstituteBindings::class, InitializeTenancyByPath::class]);
+    expect(fn () => pest()->get("/{$tenant->id}/baz/{$user->id}"))->toThrow(QueryException::class);
+    tenancy()->end();
+
+    // If SubstituteBindings is NOT USED AT ALL, we simply get an empty User instance
+    Route::get('/{tenant}/xyz/{user}', fn (User $user) => $user->name ?: 'No user')->middleware([InitializeTenancyByPath::class]);
+    pest()->get("/{$tenant->id}/xyz/{$user->id}")->assertSee('No user');
 });

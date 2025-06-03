@@ -119,7 +119,7 @@ return [
             Resolvers\PathTenantResolver::class => [
                 'tenant_parameter_name' => 'tenant',
                 'tenant_model_column' => null, // null = tenant key
-                'tenant_route_name_prefix' => null, // null = 'tenant.'
+                'tenant_route_name_prefix' => 'tenant.',
                 'allowed_extra_model_columns' => [], // used with binding route fields
 
                 'cache' => false,
@@ -127,6 +127,13 @@ return [
                 'cache_store' => null, // null = default
             ],
             Resolvers\RequestDataTenantResolver::class => [
+                // Set any of these to null to disable that method of identification
+                'header' => 'X-Tenant',
+                'cookie' => 'tenant',
+                'query_parameter' => 'tenant',
+
+                'tenant_model_column' => null, // null = tenant key
+
                 'cache' => false,
                 'cache_ttl' => 3600, // seconds
                 'cache_store' => null, // null = default
