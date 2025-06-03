@@ -1258,7 +1258,7 @@ test('scopeGetModelQuery can make resource syncing work with global scopes', fun
 
     // Verify the syncing worked correctly when scopeGetModelQuery was used
     if ($scopeGetModelQuery) {
-        expect(CentralUser::count())->toBeOne(); // Should still be just one central user
+        expect(CentralUser::count())->toBe(1); // Should still be just one central user
         expect(CentralUser::first()->global_id)->toBe($centralUser->global_id);
     }
 })->with([
