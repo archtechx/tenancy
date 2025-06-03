@@ -132,16 +132,7 @@ class CloneRoutesAsTenant
 
         /** @var array $middleware */
         $middleware = $action->get('middleware') ?? [];
-
-        $middleware = collect($middleware)
-            ->merge(['tenant']) // Add 'tenant' flag
-            // todo0 what if 'clone' is within some middleware group - not top level? this should be handled similarly
-            // to tenancy()->routeHasMiddleware() - use the same traversal depth. only issue is that in such a case, we
-            // *do* want the other middleware from the group, so we'd have to extract them from the group and include them
-            // directly - not using the containing group - just with 'clone' / cloneRoutesWithMiddleware removed.
-            // start by seeing if this can be reproduced in a reasonable scenario in a regression test
-            ->filter(fn (string $middleware) => ! in_array($middleware, $this->cloneRoutesWithMiddleware))
-            ->toArray();
+        $middleware = $this->processMiddlewareForCloning($middleware);
 
         $tenantRouteNamePrefix = PathTenantResolver::tenantRouteNamePrefix();
 
@@ -173,5 +164,47 @@ class CloneRoutesAsTenant
             ->block($originalRoute->locksFor(), $originalRoute->waitsFor())
             ->withTrashed($originalRoute->allowsTrashedBindings())
             ->setDefaults($originalRoute->defaults);
+    }
+
+    /**
+     * Process middleware for cloning, handling middleware groups properly.
+     * This extracts middleware from groups (up to 3 levels deep), filters out
+     * cloneRoutesWithMiddleware, and adds the 'tenant' middleware.
+     *
+     * Uses approach similar to getRouteMiddleware() in DealsWithRouteContexts for consistency.
+     */
+    protected function processMiddlewareForCloning(array $middlewares): array
+    {
+        $middlewareGroups = $this->router->getMiddlewareGroups();
+
+        $unpackGroupMiddleware = function (array $middleware) use ($middlewareGroups) {
+            $innerMiddleware = [];
+
+            foreach ($middleware as $inner) {
+                if (isset($middlewareGroups[$inner])) {
+                    $innerMiddleware = array_merge($innerMiddleware, $middlewareGroups[$inner]);
+                } else {
+                    // Actual middleware, not a group
+                    $innerMiddleware[] = $inner;
+                }
+            }
+
+            return $innerMiddleware;
+        };
+
+        // Extract all middleware from groups (up to 3 levels deep)
+        $firstLevelUnpacked = $unpackGroupMiddleware($middlewares);
+        $secondLevelUnpacked = $unpackGroupMiddleware($firstLevelUnpacked);
+        $thirdLevelUnpacked = $unpackGroupMiddleware($secondLevelUnpacked);
+
+        // Filter out MW in cloneRoutesWithMiddleware and add the 'tenant' flag
+        $processedMiddleware = array_filter(
+            $thirdLevelUnpacked,
+            fn ($mw) => ! in_array($mw, $this->cloneRoutesWithMiddleware)
+        );
+
+        $processedMiddleware[] = 'tenant';
+
+        return array_unique($processedMiddleware);
     }
 }
