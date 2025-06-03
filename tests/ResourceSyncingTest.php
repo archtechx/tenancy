@@ -1198,7 +1198,7 @@ test('resource creation works correctly when central resource provides defaults 
     expect($centralUser->foo)->toBe('bar');
 });
 
-test('resource syncing works correctly when using a global scope on a tenant model', function (bool $scopeGetModelQuery) {
+test('scopeGetModelQuery can make resource syncing work with global scopes', function (bool $scopeGetModelQuery) {
     if ($scopeGetModelQuery) {
         // Add a scope that bypasses the global scope
         UpdateOrCreateSyncedResource::$scopeGetModelQuery = function (Builder $query) {
