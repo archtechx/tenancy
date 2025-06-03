@@ -111,12 +111,12 @@ afterEach(function () {
     UpdateOrCreateSyncedResource::$scopeGetModelQuery = null;
 });
 
-test('multiple tenants can have users synced to a central resource', function () {
+test('creating the same user across multiple tenants does not create multiple central resources', function () {
     $tenants = [Tenant::create(), Tenant::create(), Tenant::create()];
     migrateUsersTableForTenants();
 
     tenancy()->runForMultiple($tenants, function () {
-        // Create a user in tenant DB
+        // Create a user with the same global_id in each tenant DB
         TenantUser::create([
             'global_id' => 'acme',
             'name' => Str::random(),
@@ -126,7 +126,7 @@ test('multiple tenants can have users synced to a central resource', function ()
         ]);
     });
 
-    // Create the same user in tenant DB
+    // Assert only one central user was created despite being created in multiple tenant DBs
     $users = CentralUser::where(['global_id' => 'acme'])->get();
 
     expect($users)->toHaveCount(1);
