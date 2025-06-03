@@ -216,26 +216,42 @@ test('clone action trims trailing slashes from prefixes given to nested route gr
 });
 
 test('clone middleware within middleware groups is properly handled during cloning', function () {
-    // Define a middleware group that contains the 'clone' flag along with the 'auth' MW
-    RouteFacade::middlewareGroup('mw-group-with-clone', ['auth', 'clone']);
+    // Simple MW group with 'clone' flag
+    RouteFacade::middlewareGroup('simple-group', ['auth', 'clone']);
 
-    RouteFacade::get('/foo', fn () => true)
-        ->middleware('mw-group-with-clone')
-        ->name('foo');
+    // Define nested middleware groups 3 levels deep
+    RouteFacade::middlewareGroup('level-3-group', ['clone']);
+    RouteFacade::middlewareGroup('level-2-group', ['auth', 'level-3-group']);
+    RouteFacade::middlewareGroup('nested-group', ['web', 'level-2-group']);
+
+    // Create routes using both simple and nested middleware groups
+    RouteFacade::get('/simple', fn () => true)
+        ->middleware('simple-group')
+        ->name('simple');
+
+    RouteFacade::get('/nested', fn () => true)
+        ->middleware('nested-group')
+        ->name('nested');
 
     app(CloneRoutesAsTenant::class)->handle();
 
-    // Route 'foo' should be cloned as 'tenant.foo'
-    $clonedRoute = RouteFacade::getRoutes()->getByName('tenant.foo');
+    // Test simple middleware group handling
+    $clonedSimpleRoute = RouteFacade::getRoutes()->getByName('tenant.simple');
+    expect($clonedSimpleRoute)->not()->toBeNull();
 
-    expect($clonedRoute)->not()->toBeNull();
+    $simpleRouteMiddleware = tenancy()->getRouteMiddleware($clonedSimpleRoute);
+    expect($simpleRouteMiddleware)
+        ->toContain('auth', 'tenant')
+        ->not()->toContain('clone', 'simple-group');
 
-    $clonedRouteMiddleware = tenancy()->getRouteMiddleware($clonedRoute);
+    // Test nested middleware group handling (3 levels deep)
+    $clonedNestedRoute = RouteFacade::getRoutes()->getByName('tenant.nested');
+    expect($clonedNestedRoute)->not()->toBeNull();
 
-    // The cloned route should still have other middleware from the group,
-    // but it should NOT have the original middleware group name.
-    // Instead, the middleware should be extracted from the group and applied directly.
-    expect($clonedRouteMiddleware)
-        ->toContain('auth')
-        ->not()->toContain('test-group', 'clone');
+    $nestedRouteMiddleware = tenancy()->getRouteMiddleware($clonedNestedRoute);
+    expect($nestedRouteMiddleware)
+        ->toContain('web', 'auth', 'tenant')
+        ->not()->toContain('clone')
+        // Should not contain any group names - middleware should be extracted
+        ->not()->toContain('nested-group', 'level-2-group', 'level-3-group');
 });
