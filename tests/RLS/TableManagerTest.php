@@ -542,7 +542,7 @@ test('table rls manager generates relationship trees with tables related to the 
     ]);
 })->with([true, false]);
 
-test('table owner sees all the records when forceRls is false while other users only see records scoped to them', function(bool $forceRls) {
+test('table owner sees all the records when forceRls is false while other users only see records scoped to them', function (bool $forceRls) {
     CreateUserWithRLSPolicies::$forceRls = $forceRls;
 
     // Drop all tables created in beforeEach
@@ -766,13 +766,13 @@ test('table manager ignores recursive relationship if the foreign key responsibl
     });
 
     expect(fn () => app(TableRLSManager::class)->generateTrees())->not()->toThrow(RecursiveRelationshipException::class);
-});  
+});
 
 function createPostgresUser(string $username, string $password = 'password'): array
 {
     try {
         DB::statement("DROP OWNED BY {$username};");
-    } catch (\Throwable $th) {}
+    } catch (\Throwable) {}
 
     DB::statement("DROP USER IF EXISTS {$username};");
 
