@@ -111,6 +111,11 @@ class CloneRoutesAsTenant
 
     protected function shouldBeCloned(Route $route): bool
     {
+        // Don't clone routes that already have tenant parameter or prefix
+        if ($this->routeIsTenant($route)) {
+            return false;
+        }
+
         if ($this->shouldClone) {
             return ($this->shouldClone)($route);
         }
@@ -166,45 +171,26 @@ class CloneRoutesAsTenant
             ->setDefaults($originalRoute->defaults);
     }
 
-    /**
-     * Process middleware for cloning, handling middleware groups properly.
-     * This extracts middleware from groups (up to 3 levels deep), filters out
-     * cloneRoutesWithMiddleware, and adds the 'tenant' middleware.
-     *
-     * Uses approach similar to getRouteMiddleware() in DealsWithRouteContexts for consistency.
-     */
+    /** Removes top-level cloneRoutesWithMiddleware and adds 'tenant' middleware. */
     protected function processMiddlewareForCloning(array $middlewares): array
     {
-        $middlewareGroups = $this->router->getMiddlewareGroups();
-
-        $unpackGroupMiddleware = function (array $middleware) use ($middlewareGroups) {
-            $innerMiddleware = [];
-
-            foreach ($middleware as $inner) {
-                if (isset($middlewareGroups[$inner])) {
-                    $innerMiddleware = array_merge($innerMiddleware, $middlewareGroups[$inner]);
-                } else {
-                    // Actual middleware, not a group
-                    $innerMiddleware[] = $inner;
-                }
-            }
-
-            return $innerMiddleware;
-        };
-
-        // Extract all middleware from groups (up to 3 levels deep)
-        $firstLevelUnpacked = $unpackGroupMiddleware($middlewares);
-        $secondLevelUnpacked = $unpackGroupMiddleware($firstLevelUnpacked);
-        $thirdLevelUnpacked = $unpackGroupMiddleware($secondLevelUnpacked);
-
-        // Filter out MW in cloneRoutesWithMiddleware and add the 'tenant' flag
+        // Filter out top-level cloneRoutesWithMiddleware and add the 'tenant' flag
         $processedMiddleware = array_filter(
-            $thirdLevelUnpacked,
+            $middlewares,
             fn ($mw) => ! in_array($mw, $this->cloneRoutesWithMiddleware)
         );
 
         $processedMiddleware[] = 'tenant';
 
         return array_unique($processedMiddleware);
+    }
+
+    /** Check if route already has tenant parameter or name prefix. */
+    protected function routeIsTenant(Route $route): bool
+    {
+        $routeHasTenantParameter = in_array(PathTenantResolver::tenantParameterName(), $route->parameterNames());
+        $routeHasTenantPrefix = $route->getName() && str_starts_with($route->getName(), PathTenantResolver::tenantRouteNamePrefix());
+
+        return $routeHasTenantParameter || $routeHasTenantPrefix;
     }
 }

@@ -215,43 +215,62 @@ test('clone action trims trailing slashes from prefixes given to nested route gr
         ->toBe("http://localhost/prefix/{$tenant->getTenantKey()}/home");
 });
 
-test('clone middleware within middleware groups is properly handled during cloning', function () {
-    // Simple MW group with 'clone' flag
-    RouteFacade::middlewareGroup('simple-group', ['auth', 'clone']);
+test('tenant routes are ignored from cloning and clone middleware in groups causes no issues', function () {
+    // Should NOT be cloned, already has tenant parameter
+    RouteFacade::get("/{tenant}/route-with-tenant-parameter", fn () => true)
+        ->middleware(['clone'])
+        ->name("tenant.route-with-tenant-parameter");
 
-    // Define nested middleware groups 3 levels deep
-    RouteFacade::middlewareGroup('level-3-group', ['clone']);
-    RouteFacade::middlewareGroup('level-2-group', ['auth', 'level-3-group']);
-    RouteFacade::middlewareGroup('nested-group', ['web', 'level-2-group']);
+    // Should NOT be cloned
+    // The route already has tenant name prefix
+    RouteFacade::get("/route-with-tenant-name-prefix", fn () => true)
+        ->middleware(['clone'])
+        ->name("tenant.route-with-tenant-name-prefix");
 
-    // Create routes using both simple and nested middleware groups
-    RouteFacade::get('/simple', fn () => true)
-        ->middleware('simple-group')
-        ->name('simple');
+    // Should NOT be cloned
+    // The route already has a tenant parameter + 'clone' middleware in group
+    // 'clone' MW in groups won't be removed, this also doesn't cause any issues
+    RouteFacade::middlewareGroup('group', ['auth', 'clone']);
+    RouteFacade::get("/{tenant}/route-with-clone-in-mw-group", fn () => true)
+        ->middleware('group')
+        ->name("tenant.route-with-clone-in-mw-group");
 
-    RouteFacade::get('/nested', fn () => true)
-        ->middleware('nested-group')
-        ->name('nested');
+    // SHOULD be cloned (with clone middleware)
+    RouteFacade::get('/foo', fn () => true)
+        ->middleware(['clone'])
+        ->name('foo');
 
-    app(CloneRoutesAsTenant::class)->handle();
+    // SHOULD be cloned (with nested clone middleware)
+    RouteFacade::get('/bar', fn () => true)
+        ->middleware(['group'])
+        ->name('bar');
 
-    // Test simple middleware group handling
-    $clonedSimpleRoute = RouteFacade::getRoutes()->getByName('tenant.simple');
-    expect($clonedSimpleRoute)->not()->toBeNull();
+    $cloneAction = app(CloneRoutesAsTenant::class);
+    $initialRouteCount = count(RouteFacade::getRoutes()->get());
 
-    $simpleRouteMiddleware = tenancy()->getRouteMiddleware($clonedSimpleRoute);
-    expect($simpleRouteMiddleware)
-        ->toContain('auth', 'tenant')
-        ->not()->toContain('clone', 'simple-group');
+    // Run clone action multiple times
+    $cloneAction->handle();
+    $firstRunCount = count(RouteFacade::getRoutes()->get());
 
-    // Test nested middleware group handling (3 levels deep)
-    $clonedNestedRoute = RouteFacade::getRoutes()->getByName('tenant.nested');
-    expect($clonedNestedRoute)->not()->toBeNull();
+    $cloneAction->handle();
+    $secondRunCount = count(RouteFacade::getRoutes()->get());
 
-    $nestedRouteMiddleware = tenancy()->getRouteMiddleware($clonedNestedRoute);
+    $cloneAction->handle();
+    $thirdRunCount = count(RouteFacade::getRoutes()->get());
 
-    expect($nestedRouteMiddleware)
-        ->toContain('web', 'auth', 'tenant')
-        // Shouldn't contain 'clone' or any nested group names
-        ->not()->toContain('clone', 'nested-group', 'level-2-group', 'level-3-group');
+    // Two route should have been cloned, and only once
+    expect($firstRunCount)->toBe($initialRouteCount + 2);
+    // No new routes on subsequent runs
+    expect($secondRunCount)->toBe($firstRunCount);
+    expect($thirdRunCount)->toBe($firstRunCount);
+
+    // Verify the correct routes were cloned
+    expect(RouteFacade::getRoutes()->getByName('tenant.foo'))->not()->toBeNull();
+    expect(RouteFacade::getRoutes()->getByName('tenant.bar'))->not()->toBeNull();
+
+    // Tenant routes were not duplicated
+    $allRouteNames = collect(RouteFacade::getRoutes()->get())->map->getName()->filter();
+    expect($allRouteNames->filter(fn($name) => str_contains($name, 'route-with-tenant-parameter'))->count())->toBe(1);
+    expect($allRouteNames->filter(fn($name) => str_contains($name, 'route-with-tenant-name-prefix'))->count())->toBe(1);
+    expect($allRouteNames->filter(fn($name) => str_contains($name, 'route-with-clone-in-mw-group'))->count())->toBe(1);
 });
