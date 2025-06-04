@@ -111,10 +111,12 @@ afterEach(function () {
     UpdateOrCreateSyncedResource::$scopeGetModelQuery = null;
 });
 
-test('creating the same user across multiple tenants does not create multiple central resources', function () {
+test('resources created with the same global id in different tenant dbs will be synced with a single central resource', function () {
     $tenants = [Tenant::create(), Tenant::create(), Tenant::create()];
     migrateUsersTableForTenants();
 
+    // No unique constraint exception will be thrown.
+    // The syncing logic ensures that there's a single central resource
     tenancy()->runForMultiple($tenants, function () {
         // Create a user with the same global_id in each tenant DB
         TenantUser::create([
