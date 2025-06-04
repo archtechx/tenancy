@@ -20,11 +20,13 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  * either this array, to make other middleware trigger cloning, or by providing a callback
  * to shouldClone() to change how the logic determines if a route should be cloned.
  *
- * After cloning, all of the middleware in $cloneRoutesWithMiddleware will be *removed*
+ * After cloning, only top-level middleware in $cloneRoutesWithMiddleware will be *removed*
  * from the new route (so in the default case, 'clone' will be stripped from the MW list).
+ * Middleware groups are preserved as-is, even if they contain cloning middleware.
  *
  * Cloned routes are prefixed with '/{tenant}', flagged with 'tenant' middleware,
  * and have their names prefixed with 'tenant.'.
+ * Routes with names that are already prefixed won't be cloned.
  *
  * If the config for the path resolver is customized, the parameter name and prefix
  * can be changed, e.g. to `/{team}` and `team.`.
@@ -34,11 +36,16 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  *
  * Customization:
  * - Use cloneRoutesWithMiddleware() to change the middleware in $cloneRoutesWithMiddleware
- * - Use shouldClone() to change which routes should be cloned
+ * - Use shouldClone() to provide a custom callback that receives a Route instance and
+ *   returns a boolean indicating whether the route should be cloned. This callback
+ *   takes precedence over the default middleware-based logic. Return true to clone
+ *   the route, false to skip it. The callback is called after the default logic that
+ *   prevents cloning routes that are already considered tenant.
  * - Use cloneUsing() to customize route definitions
  * - Adjust PathTenantResolver's tenantParameterName and tenantRouteNamePrefix as needed in the config file
  *
- * Note that routes already containing the tenant parameter or prefix won't be cloned.
+ * Infinite cloning loops are prevented by skipping routes that already contain the tenant
+ * parameter or have names with the tenant prefix.
  */
 class CloneRoutesAsTenant
 {
@@ -138,13 +145,11 @@ class CloneRoutesAsTenant
         /** @var array $middleware */
         $middleware = $action->get('middleware') ?? [];
         $middleware = $this->processMiddlewareForCloning($middleware);
+        $name = $route->getName();
 
-        $tenantRouteNamePrefix = PathTenantResolver::tenantRouteNamePrefix();
-
-        // Make sure the route name has the tenant route name prefix
-        $name = $route->getName()
-            ? $tenantRouteNamePrefix . Str::after($route->getName(), $tenantRouteNamePrefix)
-            : null;
+        if ($name) {
+            $name = PathTenantResolver::tenantRouteNamePrefix() . $name;
+        }
 
         $action
             ->put('as', $name)
