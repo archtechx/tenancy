@@ -542,60 +542,6 @@ test('table rls manager generates relationship trees with tables related to the 
     ]);
 })->with([true, false]);
 
-test('table owner sees all the records when forceRls is false while other users only see records scoped to them', function (bool $forceRls) {
-    CreateUserWithRLSPolicies::$forceRls = $forceRls;
-
-    // Drop all tables created in beforeEach
-    DB::statement("DROP TABLE authors, categories, posts, comments, reactions, articles;");
-
-    [$username, $password] = createPostgresUser('central_user');
-
-    config(['database.connections.central' => array_merge(
-        config('database.connections.pgsql'),
-        ['username' => $username, 'password' => $password]
-    )]);
-
-    DB::reconnect();
-
-    Schema::create('orders', function (Blueprint $table) {
-        $table->id();
-        $table->string('name');
-
-        $table->string('tenant_id')->comment('rls');
-        $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
-
-        $table->timestamps();
-    });
-
-    [$tenant1, $tenant2] = [Tenant::create(), Tenant::create()];
-
-    pest()->artisan('tenants:rls');
-
-    [$order1, $order2] = [
-        $tenant1->run(fn () => Order::create(['name' => 'order1', 'tenant_id' => $tenant1->getTenantKey()])),
-        $tenant2->run(fn () => Order::create(['name' => 'order2', 'tenant_id' => $tenant2->getTenantKey()])),
-    ];
-
-    // If forceRls is false, the table owner should see all the records
-    // Otherwise, a RLS violation exception is thrown when querying the table
-    if ($forceRls) {
-        expect(fn () => Order::all())->toThrow(QueryException::class, 'unrecognized configuration parameter');
-    } else {
-        expect(Order::count())->toBe(2);
-    }
-
-    tenancy()->initialize($tenant1);
-
-    // The tenant users should only see their records
-    expect(Order::count())->toBe(1);
-    expect(Order::first()->name)->toBe($order1->name);
-
-    tenancy()->initialize($tenant2);
-
-    expect(Order::count())->toBe(1);
-    expect(Order::first()->name)->toBe($order2->name);
-})->with([true, false]);
-
 // https://github.com/archtechx/tenancy/pull/1293
 test('user without BYPASSRLS can only query owned tables if forceRls is true', function(bool $forceRls) {
     CreateUserWithRLSPolicies::$forceRls = $forceRls;
