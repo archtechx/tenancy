@@ -1198,67 +1198,70 @@ test('resource creation works correctly when central resource provides defaults 
     expect($centralUser->foo)->toBe('bar');
 });
 
-test('scopeGetModelQuery can make resource syncing work with global scopes', function (bool $scopeGetModelQuery) {
-    // The TenantUserWithScope model has whereNull('name') global scope, but we're creating users WITH names.
-    // This creates a conflict during resource syncing when trying to find existing central users.
+test('scopeGetModelQuery allows customizing the query used to find resources during syncing', function (bool $scopeGetModelQuery) {
+    [$tenant1, $tenant2] = createTenantsAndRunMigrations();
+    migrateUsersTableForTenants();
+    addExtraColumns(true);
+
+    TenantUserWithSoftDeletes::$creationAttributes = [
+        'role' => 'role',
+        'foo' => 'foo',
+    ];
+
     if ($scopeGetModelQuery) {
-        // Add a scope that bypasses the global scope
+        // Configure resource syncing to include soft deleted records
+        // when looking up resources (the documented use case for $scopeGetModelQuery)
         UpdateOrCreateSyncedResource::$scopeGetModelQuery = function (Builder $query) {
-            if ($query->getModel()->hasGlobalScope(TestingScope::class)) {
-                $query->withoutGlobalScope(TestingScope::class);
+            if ($query->hasMacro('withTrashed')) {
+                $query->withTrashed();
             }
         };
     }
 
-    // Create a central user that will be synced to tenant databases
-    $centralUser = CentralUser::create([
+    // Create a central user with soft deletes
+    $centralUser = CentralUserWithSoftDeletes::create([
+        'global_id' => 'user',
         'email' => 'user@test.cz',
-        'name' => 'User', // Note: TenantUserWithScope has whereNull('name') global scope
+        'name' => 'User',
         'password' => bcrypt('****'),
         'role' => 'admin',
+        'foo' => 'bar',
     ]);
 
-    [$tenant1, $tenant2] = createTenantsAndRunMigrations();
+    $centralUser->tenants()->attach($tenant1);
 
-    // Create user in tenant1
-    tenancy()->initialize($tenant1);
+    // Soft delete the central user
+    $centralUser->delete();
 
-    TenantUserWithScope::create([
-        'global_id' => $centralUser->global_id,
-        'name' => $centralUser->name, // This has a name, conflicting with global scope
-        'email' => $centralUser->email,
-        'password' => $centralUser->password,
-        'role' => 'admin'
-    ]);
-
-    tenancy()->end();
-
-    // Try to create the same user in tenant2
+    // Try to create a tenant resource with the same global_id in tenant2
     tenancy()->initialize($tenant2);
 
     if (! $scopeGetModelQuery) {
-        // Without scopeGetModelQuery, the global scope whereNull('name') prevents
-        // finding the existing central user with a name.
-        // This causes it to attempt creating a duplicate, which violates unique constraints.
+        // WITHOUT scopeGetModelQuery: syncing can't find the soft-deleted central user
+        // and tries to create a new one, violating the unique constraint on global_id
         pest()->expectException(QueryException::class);
         pest()->expectExceptionMessage('Duplicate entry');
     }
 
-    // This should sync to the existing central user, not create a duplicate
-    TenantUserWithScope::create([
-        'global_id' => $centralUser->global_id,
-        'name' => $centralUser->name,
-        'email' => $centralUser->email,
-        'password' => $centralUser->password,
-        'role' => 'admin'
+    // Create a tenant resource - should sync with the existing soft-deleted central user
+    TenantUserWithSoftDeletes::create([
+        'global_id' => 'user',
+        'name' => 'Updated Name',
+        'email' => 'updated@example.com',
+        'password' => bcrypt('password'),
+        'role' => 'admin',
+        'foo' => 'bar',
     ]);
 
     tenancy()->end();
 
-    // Verify the syncing worked correctly when scopeGetModelQuery was used
+    // With scopeGetModelQuery, verify the soft-deleted central user was found and updated
     if ($scopeGetModelQuery) {
-        expect(CentralUser::count())->toBe(1); // Should still be just one central user
-        expect(CentralUser::first()->global_id)->toBe($centralUser->global_id);
+        $updatedCentralUser = CentralUserWithSoftDeletes::withTrashed()->where('global_id', 'user')->first();
+
+        expect($updatedCentralUser->name)->toBe('Updated Name');
+        expect($updatedCentralUser->trashed())->toBeTrue(); // Still soft deleted
+        expect(CentralUserWithSoftDeletes::withTrashed()->where('global_id', 'user')->count())->toBe(1);
     }
 })->with([
     true,
@@ -1443,6 +1446,13 @@ class TenantCompany extends Model implements Syncable
     }
 }
 
+/**
+ * An artificial test global scope that only shows users with null names.
+ * This simulates real-world scenarios where tenant models might have:
+ * - Row Level Security (RLS) policies based on session variables
+ * - User-specific data filtering based on permissions
+ * - Other scoping mechanisms that could interfere with resource syncing
+ */
 class TestingScope implements Scope
 {
     public function apply(Builder $builder, Model $model): void
