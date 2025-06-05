@@ -111,12 +111,12 @@ afterEach(function () {
     UpdateOrCreateSyncedResource::$scopeGetModelQuery = null;
 });
 
-test('resources created with the same global id in different tenant dbs will be synced with a single central resource', function () {
+test('resources created with the same global id in different tenant dbs will be synced to a single central resource', function () {
     $tenants = [Tenant::create(), Tenant::create(), Tenant::create()];
     migrateUsersTableForTenants();
 
-    // No unique constraint exception will be thrown.
-    // The syncing logic ensures that there's a single central resource
+    // Only a single central user is created since the same global_id is used for each tenant user
+    // Therefore all of these tenant users are synced to a single global user
     tenancy()->runForMultiple($tenants, function () {
         // Create a user with the same global_id in each tenant DB
         TenantUser::create([
@@ -128,11 +128,8 @@ test('resources created with the same global id in different tenant dbs will be 
         ]);
     });
 
-    // Assert only one central user was created despite being created in multiple tenant DBs
-    $users = CentralUser::where(['global_id' => 'acme'])->get();
-
-    expect($users)->toHaveCount(1);
-    expect($users->first()->global_id)->toBe('acme');
+    expect(CentralUser::all())->toHaveCount(1);
+    expect(CentralUser::first()->global_id)->toBe('acme');
 });
 
 test('SyncedResourceSaved event gets triggered when resource gets created or when its synced attributes get updated', function () {
@@ -1346,6 +1343,14 @@ class TenantUserWithScope extends TenantUser
 {
 }
 
+class TestingScope implements Scope
+{
+    public function apply(Builder $builder, Model $model): void
+    {
+        $builder->whereNull('name');
+    }
+}
+
 class TenantPivot extends BasePivot
 {
     public $table = 'tenant_users';
@@ -1423,6 +1428,7 @@ class CentralCompany extends Model implements SyncMaster
         ];
     }
 }
+
 class TenantCompany extends Model implements Syncable
 {
     use ResourceSyncing;
@@ -1445,20 +1451,5 @@ class TenantCompany extends Model implements Syncable
             'name',
             'email',
         ];
-    }
-}
-
-/**
- * An artificial test global scope that only shows users with null names.
- * This simulates real-world scenarios where tenant models might have:
- * - Row Level Security (RLS) policies based on session variables
- * - User-specific data filtering based on permissions
- * - Other scoping mechanisms that could interfere with resource syncing
- */
-class TestingScope implements Scope
-{
-    public function apply(Builder $builder, Model $model): void
-    {
-        $builder->whereNull('name');
     }
 }
