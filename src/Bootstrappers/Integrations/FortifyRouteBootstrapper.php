@@ -8,6 +8,7 @@ use Illuminate\Config\Repository;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
+use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
 
 /**
  * Allows customizing Fortify action redirects so that they can also redirect
@@ -38,7 +39,7 @@ class FortifyRouteBootstrapper implements TenancyBootstrapper
      * is handled in another way (TenancyUrlGenerator::$passTenantParameter for both,
      * UrlGeneratorBootstrapper:$addTenantParameterToDefaults for path identification).
      */
-    public static bool $passTenantParameter = true;
+    public static bool $passTenantParameter = false;
 
     /**
      * Tenant route that serves as Fortify's home (e.g. a tenant dashboard route).
@@ -47,12 +48,22 @@ class FortifyRouteBootstrapper implements TenancyBootstrapper
     public static string|null $fortifyHome = 'tenant.dashboard';
 
     /**
-     * Use default parameter names ('tenant' name and tenant key value) instead of the parameter name
-     * and column name configured in the path resolver config.
+     * Follow the query_parameter config instead of the tenant_parameter_name (path identification) config.
      *
-     * You want to enable this when using query string identification while having customized that config.
+     * This only has an effect when:
+     *   - $passTenantParameter is enabled, and
+     *   - the tenant_parameter_name config for the path resolver differs from the query_parameter config for the request data resolver.
+     *
+     * In such a case, instead of adding ['tenant' => '...'] to the route parameters (or whatever your tenant_parameter_name is if not 'tenant'),
+     * the query_parameter will be passed instead, e.g. ['team' => '...'] if your query_parameter config is 'team'.
+     *
+     * This is enabled by default because typically you will not need $passTenantParameter with path identification.
+     * UrlGeneratorBootstrapper::$addTenantParameterToDefaults is recommended instead when using path identification.
+     *
+     * On the other hand, when using request data identification (specifically query string) you WILL need to
+     * pass the parameter therefore you would use $passTenantParameter.
      */
-    public static bool $defaultParameterNames = false;
+    public static bool $passQueryParameter = true;
 
     protected array $originalFortifyConfig = [];
 
@@ -74,8 +85,14 @@ class FortifyRouteBootstrapper implements TenancyBootstrapper
 
     protected function useTenantRoutesInFortify(Tenant $tenant): void
     {
-        $tenantParameterName = static::$defaultParameterNames ? 'tenant' : PathTenantResolver::tenantParameterName();
-        $tenantParameterValue = static::$defaultParameterNames ? $tenant->getTenantKey() : PathTenantResolver::tenantParameterValue($tenant);
+        if (static::$passQueryParameter) {
+            // todo@tests
+            $tenantParameterName = RequestDataTenantResolver::queryParameterName();
+            $tenantParameterValue = RequestDataTenantResolver::payloadValue($tenant);
+        } else {
+            $tenantParameterName = PathTenantResolver::tenantParameterName();
+            $tenantParameterValue = PathTenantResolver::tenantParameterValue($tenant);
+        }
 
         $generateLink = function (string $redirect) use ($tenantParameterValue, $tenantParameterName) {
             return route($redirect, static::$passTenantParameter ? [$tenantParameterName => $tenantParameterValue] : []);
@@ -89,7 +106,7 @@ class FortifyRouteBootstrapper implements TenancyBootstrapper
 
         if (static::$fortifyHome) {
             // Generate the home route URL with the tenant parameter and make it the Fortify home route
-            $this->config->set('fortify.home', route(static::$fortifyHome, static::$passTenantParameter ? [$tenantParameterName => $tenantParameterValue] : []));
+            $this->config->set('fortify.home', $generateLink(static::$fortifyHome));
         }
 
         $this->config->set('fortify.redirects', $redirects);

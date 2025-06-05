@@ -18,9 +18,6 @@ class InitializeTenancyByRequestData extends IdentificationMiddleware
 {
     use UsableWithEarlyIdentification;
 
-    public static string $header = 'X-Tenant';
-    public static string $cookie = 'tenant';
-    public static string $queryParameter = 'tenant';
     public static ?Closure $onFail = null;
 
     public static bool $requireCookieEncryption = false;
@@ -54,18 +51,19 @@ class InitializeTenancyByRequestData extends IdentificationMiddleware
 
     protected function getPayload(Request $request): string|null
     {
-        if (static::$header && $request->hasHeader(static::$header)) {
-            $payload = $request->header(static::$header);
-        } elseif (
-            static::$queryParameter &&
-            $request->has(static::$queryParameter)
-        ) {
-            $payload = $request->get(static::$queryParameter);
-        } elseif (static::$cookie && $request->hasCookie(static::$cookie)) {
-            $payload = $request->cookie(static::$cookie);
+        $headerName = RequestDataTenantResolver::headerName();
+        $queryParameterName = RequestDataTenantResolver::queryParameterName();
+        $cookieName = RequestDataTenantResolver::cookieName();
+
+        if ($headerName && $request->hasHeader($headerName)) {
+            $payload = $request->header($headerName);
+        } elseif ($queryParameterName && $request->has($queryParameterName)) {
+            $payload = $request->get($queryParameterName);
+        } elseif ($cookieName && $request->hasCookie($cookieName)) {
+            $payload = $request->cookie($cookieName);
 
             if ($payload && is_string($payload)) {
-                $payload = $this->getTenantFromCookie($payload);
+                $payload = $this->getTenantFromCookie($cookieName, $payload);
             }
         } else {
             $payload = null;
@@ -86,12 +84,12 @@ class InitializeTenancyByRequestData extends IdentificationMiddleware
         return (bool) $this->getPayload($request);
     }
 
-    protected function getTenantFromCookie(string $cookie): string|null
+    protected function getTenantFromCookie(string $cookieName, string $cookieValue): string|null
     {
         // If the cookie looks like it's encrypted, we try decrypting it
-        if (str_starts_with($cookie, 'eyJpdiI')) {
+        if (str_starts_with($cookieValue, 'eyJpdiI')) {
             try {
-                $json = base64_decode($cookie);
+                $json = base64_decode($cookieValue);
                 $data = json_decode($json, true);
 
                 if (
@@ -100,9 +98,9 @@ class InitializeTenancyByRequestData extends IdentificationMiddleware
                 ) {
                     // We can confidently assert that the cookie is encrypted. If this call were to fail, this method would just
                     // return null and the cookie payload would get skipped.
-                    $cookie = CookieValuePrefix::validate(
-                        static::$cookie,
-                        Crypt::decryptString($cookie),
+                    $cookieValue = CookieValuePrefix::validate(
+                        $cookieName,
+                        Crypt::decryptString($cookieValue),
                         Crypt::getAllKeys()
                     );
                 }
@@ -113,6 +111,6 @@ class InitializeTenancyByRequestData extends IdentificationMiddleware
             return null;
         }
 
-        return $cookie;
+        return $cookieValue;
     }
 }
