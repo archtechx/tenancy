@@ -142,17 +142,13 @@ class CloneRoutesAsTenant
         // Add the 'tenant' middleware to the new route
         // Exclude $this->cloneRoutesWithMiddleware MW from the new route (it should only be flagged as tenant)
 
-        /** @var array $middleware */
-        $middleware = $action->get('middleware') ?? [];
-        $middleware = $this->processMiddlewareForCloning($middleware);
-        $name = $route->getName();
+        $middleware = $this->processMiddlewareForCloning($action->get('middleware') ?? []);
 
-        if ($name) {
-            $name = PathTenantResolver::tenantRouteNamePrefix() . $name;
+        if ($name = $route->getName()) {
+            $action->put('as', PathTenantResolver::tenantRouteNamePrefix() . $name);
         }
 
         $action
-            ->put('as', $name)
             ->put('middleware', $middleware)
             ->put('prefix', $prefix . '/{' . PathTenantResolver::tenantParameterName() . '}');
 
@@ -177,11 +173,10 @@ class CloneRoutesAsTenant
     }
 
     /** Removes top-level cloneRoutesWithMiddleware and adds 'tenant' middleware. */
-    protected function processMiddlewareForCloning(array $middlewares): array
+    protected function processMiddlewareForCloning(array $middleware): array
     {
-        // Filter out top-level cloneRoutesWithMiddleware and add the 'tenant' flag
         $processedMiddleware = array_filter(
-            $middlewares,
+            $middleware,
             fn ($mw) => ! in_array($mw, $this->cloneRoutesWithMiddleware)
         );
 
