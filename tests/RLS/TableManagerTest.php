@@ -625,7 +625,7 @@ test('users with BYPASSRLS privilege can bypass RLS regardless of forceRls setti
 
     $tenant1->run(fn () => Order::create(['name' => 'order1', 'tenant_id' => $tenant1->getTenantKey()]));
 
-    // We are still usng the 'administrator' user
+    // We are still using the 'administrator' user
 
     if ($bypassRls) {
         // Users with BYPASSRLS can always query tables regardless of forceRls setting
