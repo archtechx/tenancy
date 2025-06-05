@@ -47,7 +47,6 @@ use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\QueryException;
 use function Stancl\Tenancy\Tests\pest;
-use Illuminate\Database\UniqueConstraintViolationException;
 
 beforeEach(function () {
     config(['tenancy.bootstrappers' => [
@@ -118,8 +117,7 @@ test('resources created with the same global id in different tenant dbs will be 
 
     // Only a single central user is created since the same global_id is used for each tenant user
     // Therefore all of these tenant users are synced to a single global user
-    expect(function () use ($tenants) {
-        tenancy()->runForMultiple($tenants, function () {
+    tenancy()->runForMultiple($tenants, function () {
         // Create a user with the same global_id in each tenant DB
         TenantUser::create([
             'global_id' => 'acme',
@@ -129,10 +127,10 @@ test('resources created with the same global id in different tenant dbs will be 
             'role' => 'commenter',
         ]);
     });
-    })->not()
-        // The central resource is only created once,
-        // so the unique constraint violation exception isn't thrown
-        ->toThrow(UniqueConstraintViolationException::class);
+
+    // Only a single central user is created
+    expect(CentralUser::all())->toHaveCount(1);
+    expect(CentralUser::first()->global_id)->toBe('acme');
 });
 
 test('SyncedResourceSaved event gets triggered when resource gets created or when its synced attributes get updated', function () {
