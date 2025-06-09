@@ -12,7 +12,9 @@ use Stancl\Tenancy\Exceptions\RLSCommentConstraintException;
 class TableRLSManager implements RLSPolicyManager
 {
     /**
-     * When true, all foreign keys are considered for RLS unless explicitly marked with 'no-rls' comment.
+     * When true, all valid foreign keys are considered while generating paths for RLS policies,
+     * unless explicitly marked with 'no-rls' comment.
+     *
      * When false, only columns explicitly marked with 'rls' or 'rls table.column' comments are considered.
      */
     public static bool $scopeByDefault = true;
@@ -22,9 +24,14 @@ class TableRLSManager implements RLSPolicyManager
     ) {}
 
     /**
-     * Generate queries that create RLS policies
-     * for all tables related to the tenants table
-     * or for a specified set of paths in format ['table' => [steps_to_tenants_table]].
+     * Generate queries that will be executed by the tenants:rls command
+     * for creating RLS policies for all tables related to the tenants table
+     * or for a passed array of paths.
+     *
+     * The passed paths should be formatted like this:
+     * [
+     *     'table_name' => [$stepLeadingToTenantsTable]
+     * ].
      */
     public function generateQueries(array $paths = []): array
     {
@@ -69,21 +76,32 @@ class TableRLSManager implements RLSPolicyManager
     public function shortestPaths(): array
     {
         $cachedPaths = [];
-        $results = [];
+        $shortestPaths = [];
 
         foreach ($this->getTableNames() as $tableName) {
+            // Generate the shortest path from table named $tableName to the tenants table
             $shortestPath = $this->shortestPathToTenantsTable($tableName, $cachedPaths);
 
             if ($this->isValidPath($shortestPath)) {
-                $results[$tableName] = $this->preparePathForOutput($shortestPath['steps']);
-            } elseif (isset($shortestPath['recursion']) && $shortestPath['recursion']) {
+                // Format path steps to a more readable format (keep only the needed data)
+                $shortestPaths[$tableName] = array_map(fn (array $step) => [
+                    'foreignKey' => $step['foreignKey'],
+                    'foreignTable' => $step['foreignTable'],
+                    'foreignId' => $step['foreignId']
+                ], $shortestPath['steps']);
+            }
+
+            // No valid path found. The shortest path either
+            // doesn't lead to the tenants table (ignore),
+            // or leads through a recursive relationship (throw an exception).
+            if ($shortestPath['recursion']) {
                 throw new RecursiveRelationshipException(
                     "Table '{$tableName}' has recursive relationships with no valid paths to the tenants table."
                 );
             }
         }
 
-        return $results;
+        return $shortestPaths;
     }
 
     /**
@@ -349,25 +367,15 @@ class TableRLSManager implements RLSPolicyManager
     }
 
     /**
-     * Check if a discovered path is valid for RLS policy generation.
+     * Check if discovered path is valid for RLS policy generation.
      *
-     * A path is considered valid if:
-     * - it's not a dead end (leads to tenants table)
-     * - it has at least one step (the tenants table itself will have no steps)
+     * A valid path:
+     * - leads to tenants table (isn't dead end)
+     * - has at least one step (the tenants table itself will have no steps)
      */
     protected function isValidPath(array $path): bool
     {
         return ! $path['dead_end'] && ! empty($path['steps']);
-    }
-
-    /** Remove internal metadata ('comment', 'nullable') from path. */
-    protected function preparePathForOutput(array $steps): array
-    {
-        return array_map(function ($step) {
-            unset($step['comment'], $step['nullable']);
-
-            return $step;
-        }, $steps);
     }
 
     /**
