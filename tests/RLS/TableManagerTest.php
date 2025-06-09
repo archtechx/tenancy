@@ -333,6 +333,19 @@ test('queries are correctly scoped using RLS', function (bool $forceRls) {
 test('table rls manager generates shortest paths that lead to the tenants table correctly', function (bool $scopeByDefault) {
     TableRLSManager::$scopeByDefault = $scopeByDefault;
 
+    // Only related to the tenants table through nullable columns (directly through tenant_id and indirectly through post_id)
+    Schema::create('ratings', function (Blueprint $table) {
+        $table->id();
+
+        $table->foreignId('post_id')->nullable()->comment('rls')->constrained();
+
+        // No 'rls' comment – should get excluded from path generation when using explicit scoping
+        $table->string('tenant_id')->nullable();
+        $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
+
+        $table->timestamps();
+    });
+
     /** @var TableRLSManager $manager */
     $manager = app(TableRLSManager::class);
 
@@ -373,68 +386,47 @@ test('table rls manager generates shortest paths that lead to the tenants table 
                 'foreignId' => 'id',
             ],
         ],
+        // When scoping by default is enabled (implicit scoping),
+        // the shortest path from the ratings table leads directly through tenant_id.
+        // When scoping by default is disabled (explicit scoping),
+        // the shortest path leads through post_id.
+        'ratings' => $scopeByDefault ? [
+            [
+                'foreignKey' => 'tenant_id',
+                'foreignTable' => 'tenants',
+                'foreignId' => 'id',
+            ],
+        ] : [
+            [
+                'foreignKey' => 'post_id',
+                'foreignTable' => 'posts',
+                'foreignId' => 'id',
+            ],
+            [
+                'foreignKey' => 'author_id',
+                'foreignTable' => 'authors',
+                'foreignId' => 'id',
+            ],
+            [
+                'foreignKey' => 'tenant_id',
+                'foreignTable' => 'tenants',
+                'foreignId' => 'id',
+            ],
+        ],
+        // Articles table is ignored because it's not related to the tenant table in any way
+        // Reactions table is ignored because of the 'no-rls' comment on the comment_id column
+        // Categories table is ignored because of the 'no-rls' comment on the tenant_id column
     ];
 
     expect($manager->shortestPaths())->toEqual($expectedShortestPaths);
 
-    // Only related to the tenants table through nullable columns – tenant_id and indirectly through post_id
-    Schema::create('ratings', function (Blueprint $table) {
-        $table->id();
-        $table->integer('stars')->default(0);
-
-        $table->unsignedBigInteger('post_id')->nullable()->comment('rls');
-        $table->foreign('post_id')->references('id')->on('posts')->onUpdate('cascade')->onDelete('cascade');
-
-        // No 'rls' comment – should get excluded from path generation when using explicit scoping
-        $table->string('tenant_id')->nullable();
-        $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
-
-        $table->timestamps();
-    });
-
-    // The shortest paths should include a path for the ratings table
-    // That leads through tenant_id – when scoping by default is enabled, that's the shortest path
-    // When scoping by default is disabled, the shortest path leads through post_id
-    // This behavior is handled by the manager's shortestPaths() method
-    $shortestPaths = $manager->shortestPaths();
-
-    $expectedShortestPath = $scopeByDefault ? [
-        [
-            'foreignKey' => 'tenant_id',
-            'foreignTable' => 'tenants',
-            'foreignId' => 'id',
-        ],
-    ] : [
-        [
-            'foreignKey' => 'post_id',
-            'foreignTable' => 'posts',
-            'foreignId' => 'id',
-        ],
-        [
-            'foreignKey' => 'author_id',
-            'foreignTable' => 'authors',
-            'foreignId' => 'id',
-        ],
-        [
-            'foreignKey' => 'tenant_id',
-            'foreignTable' => 'tenants',
-            'foreignId' => 'id',
-        ],
-    ];
-
-    expect($shortestPaths['ratings'])->toBe($expectedShortestPath);
-
-    // Add non-nullable comment_id foreign key
+    // Add non-nullable comment_id foreign key.
     Schema::table('ratings', function (Blueprint $table) {
         $table->foreignId('comment_id')->comment('rls')->constrained('comments')->onUpdate('cascade')->onDelete('cascade');
     });
 
-    // Non-nullable paths are preferred over nullable paths
-    // The shortest paths should include a path for the ratings table
-    // That leads through comment_id instead of tenant_id
-    $shortestPaths = $manager->shortestPaths();
-
-    expect($shortestPaths['ratings'])->toBe([
+    // Non-nullable paths are preferred over nullable paths.
+    $expectedShortestPaths['ratings'] = [
         [
             'foreignKey' => 'comment_id',
             'foreignTable' => 'comments',
@@ -455,7 +447,11 @@ test('table rls manager generates shortest paths that lead to the tenants table 
             'foreignTable' => 'tenants',
             'foreignId' => 'id',
         ],
-    ]);
+    ];
+
+    // The shortest paths should now include a path for the ratings table
+    // that leads through comment_id instead of tenant_id.
+    expect($manager->shortestPaths())->toEqual($expectedShortestPaths);
 })->with([true, false]);
 
 // https://github.com/archtechx/tenancy/pull/1293
