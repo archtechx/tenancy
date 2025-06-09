@@ -416,8 +416,7 @@ class TableRLSManager implements RLSPolicyManager
         array $foreignKeys,
         array &$cachedPaths,
         array $visitedTables
-    ): array
-    {
+    ): array {
         $visitedTables = [...$visitedTables, $table];
         $shortestPath = [];
         $hasRecursiveRelationships = false;
