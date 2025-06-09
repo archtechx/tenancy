@@ -165,15 +165,22 @@ test('correct rls policies get created with the correct hash using table manager
     }
 });
 
-test('queries are correctly scoped using RLS', function (bool $forceRls) {
+test('queries are correctly scoped using RLS', function (
+    bool $forceRls,
+    bool $commentConstraint,
+) {
     CreateUserWithRLSPolicies::$forceRls = $forceRls;
 
     // 3-levels deep relationship
-    Schema::create('notes', function (Blueprint $table) {
+    Schema::create('notes', function (Blueprint $table) use ($commentConstraint) {
         $table->id();
         $table->string('text')->default('foo');
         // no rls comment needed, $scopeByDefault is set to true
-        $table->foreignId('comment_id')->onUpdate('cascade')->onDelete('cascade')->constrained('comments');
+        if ($commentConstraint) {
+            $table->foreignId('comment_id')->comment('rls comments.id');
+        } else {
+            $table->foreignId('comment_id')->constrained('comments');
+        }
         $table->timestamps();
     });
 
@@ -328,7 +335,8 @@ test('queries are correctly scoped using RLS', function (bool $forceRls) {
 
     expect(fn () => DB::statement("INSERT INTO notes (text, comment_id) VALUES ('baz', {$post1Comment->id})"))
         ->toThrow(QueryException::class);
-})->with([true, false]);
+})->with(['forceRls is true' => true, 'forceRls is false' => false])
+    ->with(['comment constraint' => true, 'real constraint' => false]);
 
 test('table rls manager generates shortest paths that lead to the tenants table correctly', function (bool $scopeByDefault) {
     TableRLSManager::$scopeByDefault = $scopeByDefault;
