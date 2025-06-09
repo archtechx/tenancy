@@ -105,6 +105,68 @@ class TableRLSManager implements RLSPolicyManager
     }
 
     /**
+     * Create a path array with the given parameters.
+     * This method serves as a 'single source of truth' for the path array structure.
+     *
+     * The 'steps' key contains the path steps returned by shortestPaths().
+     * The 'dead_end' and 'recursive_relationship' keys are just internal metadata.
+     *
+     * @param bool $deadEnd Whether the path is a dead end (no valid foreign keys leading to tenants table)
+     * @param bool $recursive Whether the path has recursive relationships
+     * @param array $steps The steps in the path, each step being an array of formatted foreign keys
+     */
+    protected function buildPath(bool $deadEnd = false, bool $recursive = false, array $steps = []): array
+    {
+        return [
+            'dead_end' => $deadEnd,
+            'recursive_relationship' => $recursive,
+            'steps' => $steps,
+        ];
+    }
+
+    /**
+     * Formats the retrieved foreign key to a more readable format.
+     *
+     * Also provides internal metadata about
+     * - the foreign key's nullability (the 'nullable' key),
+     * - the foreign key's comment
+     *
+     * These internal details are then omitted
+     * from the foreign keys (or the "path steps")
+     * before returning the shortest paths in shortestPath().
+     *
+     * [
+     *    'foreignKey' => 'tenant_id',
+     *    'foreignTable' => 'tenants',
+     *    'foreignId' => 'id',
+     *    'comment' => 'no-rls', // Used to explicitly enable/disable RLS or to create a comment constraint (internal metadata)
+     *    'nullable' => false, // Used to determine if the foreign key is nullable (internal metadata)
+     * ].
+     */
+    protected function formatForeignKey(array $foreignKey, string $table): array
+    {
+        $foreignKeyName = $foreignKey['columns'][0];
+
+        $comment = collect($this->database->getSchemaBuilder()->getColumns($table))
+                ->filter(fn ($column) => $column['name'] === $foreignKeyName)
+                ->first()['comment'] ?? null;
+
+        $columnIsNullable = $this->database->selectOne(
+            'SELECT is_nullable FROM information_schema.columns WHERE table_name = ? AND column_name = ?',
+            [$table, $foreignKeyName]
+        )?->is_nullable === 'YES';
+
+        return [
+            'foreignKey' => $foreignKeyName,
+            'foreignTable' => $foreignKey['foreign_table'],
+            'foreignId' => $foreignKey['foreign_columns'][0],
+            // Internal metadata omitted in shortestPaths()
+            'comment' => $comment,
+            'nullable' => $columnIsNullable,
+        ];
+    }
+
+    /**
      * Recursively traverse table's constraints to find
      * the shortest path to the tenants table.
      *
@@ -128,11 +190,7 @@ class TableRLSManager implements RLSPolicyManager
 
         // Reached tenants table (last step)
         if ($table === tenancy()->model()->getTable()) {
-            $cachedPaths[$table] = [
-                'dead_end' => false,
-                'recursive_relationship' => false,
-                'steps' => [],
-            ];
+            $cachedPaths[$table] = $this->buildPath();
 
             return $cachedPaths[$table];
         }
@@ -141,11 +199,7 @@ class TableRLSManager implements RLSPolicyManager
 
         if (empty($foreignKeys)) {
             // Dead end
-            $cachedPaths[$table] = [
-                'dead_end' => true,
-                'recursive_relationship' => false,
-                'steps' => [],
-            ];
+            $cachedPaths[$table] = $this->buildPath(deadEnd: true);
 
             return $cachedPaths[$table];
         }
@@ -267,48 +321,6 @@ class TableRLSManager implements RLSPolicyManager
         ];
     }
 
-    /**
-     * Formats the retrieved foreign key to a more readable format.
-     *
-     * Also provides internal metadata about
-     * - the foreign key's nullability (the 'nullable' key),
-     * - the foreign key's comment
-     *
-     * These internal details are then omitted
-     * from the foreign keys (or the "path steps")
-     * before returning the shortest paths in shortestPath().
-     *
-     * [
-     *    'foreignKey' => 'tenant_id',
-     *    'foreignTable' => 'tenants',
-     *    'foreignId' => 'id',
-     *    'comment' => 'no-rls', // Used to explicitly enable/disable RLS or to create a comment constraint (internal metadata)
-     *    'nullable' => false, // Used to determine if the foreign key is nullable (internal metadata)
-     * ].
-     */
-    protected function formatForeignKey(array $foreignKey, string $table): array
-    {
-        $foreignKeyName = $foreignKey['columns'][0];
-
-        $comment = collect($this->database->getSchemaBuilder()->getColumns($table))
-                ->filter(fn ($column) => $column['name'] === $foreignKeyName)
-                ->first()['comment'] ?? null;
-
-        $columnIsNullable = $this->database->selectOne(
-            'SELECT is_nullable FROM information_schema.columns WHERE table_name = ? AND column_name = ?',
-            [$table, $foreignKeyName]
-        )?->is_nullable === 'YES';
-
-        return [
-            'foreignKey' => $foreignKeyName,
-            'foreignTable' => $foreignKey['foreign_table'],
-            'foreignId' => $foreignKey['foreign_columns'][0],
-            // Internal metadata omitted in shortestPaths()
-            'comment' => $comment,
-            'nullable' => $columnIsNullable,
-        ];
-    }
-
     /** Generates a query that creates a row-level security policy for the passed table. */
     protected function generateQuery(string $table, array $path): string
     {
@@ -404,7 +416,8 @@ class TableRLSManager implements RLSPolicyManager
         array $foreignKeys,
         array &$cachedPaths,
         array $visitedTables
-    ): array {
+    ): array
+    {
         $visitedTables = [...$visitedTables, $table];
         $shortestPath = [];
         $hasRecursiveRelationships = false;
@@ -425,19 +438,16 @@ class TableRLSManager implements RLSPolicyManager
                 $visitedTables
             );
 
-            if (isset($foreignPath['recursive_relationship']) && $foreignPath['recursive_relationship']) {
+            if ($foreignPath['recursive_relationship']) {
                 $hasRecursiveRelationships = true;
                 continue;
             }
 
             if (! $foreignPath['dead_end']) {
                 $hasValidPaths = true;
+
                 // Build the full path with the current foreign key as the first step
-                $path = [
-                    'dead_end' => false,
-                    'recursive_relationship' => false,
-                    'steps' => array_merge([$foreign], $foreignPath['steps']),
-                ];
+                $path = $this->buildPath(steps: array_merge([$foreign], $foreignPath['steps']));
 
                 if ($this->isPathPreferable($path, $shortestPath)) {
                     $shortestPath = $path;
@@ -446,25 +456,16 @@ class TableRLSManager implements RLSPolicyManager
         }
 
         if ($hasRecursiveRelationships && ! $hasValidPaths) {
-            $finalPath = [
-                'dead_end' => false,
-                'recursive_relationship' => true,
-                'steps' => [],
-            ];
-
-            // Don't cache recursive paths -- return right away.
-            // This allows tables with recursive relationships to be processed again
-            // E.g. posts table has highlighted_comment_id -> comments
-            // comments table has recursive_post_id -> posts (recursive),
-            // and tenant_id -> tenants (valid).
-            // If the recursive path got cached, the path leading directly through tenants would never be found.
-            return $finalPath;
+            // Don't cache paths that cause recursion - return right away.
+            // This allows tables with recursive relationships to be processed again.
+            // Example:
+            // - posts table has highlighted_comment_id that leads to the comments table
+            // - comments table has recursive_post_id that leads to the posts table (recursive relationship),
+            // - comments table also has tenant_id which leadds to the tenants table (a valid path).
+            // If the recursive path got cached first, the path leading directly through tenants would never be found.
+            return $this->buildPath(recursive: true);
         } else {
-            $finalPath = $shortestPath ?: [
-                'dead_end' => true,
-                'recursive_relationship' => false,
-                'steps' => [],
-            ];
+            $finalPath = $shortestPath ?: $this->buildPath(deadEnd: true);
         }
 
         $cachedPaths[$table] = $finalPath;
