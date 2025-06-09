@@ -676,6 +676,9 @@ test('table manager throws an exception when the only generated paths lead throu
         // Add another recursive relationship to demonstrate a more complex case
         $table->foreignId('related_post_id')->comment('rls recursive_posts.id');
 
+        // Add a foreign key with constraint to the current table (= self-referencing constraint)
+        $table->foreignId('parent_comment_id')->comment('rls recursive_comments.id');
+
         // Add tenant_id to break the recursion - RecursiveRelationshipException should not be thrown
         $table->string('tenant_id')->comment('rls')->nullable();
         $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
@@ -783,33 +786,6 @@ test('table manager throws an exception when comment constraint is incorrect', f
     ['rls nonexistent-table.id', 'references non-existent table'],
     ['rls tenants.nonexistent-column', 'references non-existent column'],
 ]);
-
-test('table manager handles tables with self-referencing foreign keys correctly', function() {
-    Schema::create('self_referencing_table', function (Blueprint $table) {
-        $table->id();
-
-        $table->unsignedBigInteger('parent_id')->nullable()->comment('rls');
-        $table->foreign('parent_id')->references('id')->on('self_referencing_table');
-
-        $table->string('tenant_id')->comment('rls');
-        $table->foreign('tenant_id')->references('id')->on('tenants');
-    });
-
-    /** @var TableRLSManager $manager */
-    $manager = app(TableRLSManager::class);
-
-    // Should not throw an exception and should prefer the direct tenant_id path
-    $shortestPaths = $manager->shortestPaths();
-
-    expect($shortestPaths)->toHaveKey('self_referencing_table');
-    expect($shortestPaths['self_referencing_table'])->toBe([
-        [
-            'foreignKey' => 'tenant_id',
-            'foreignTable' => 'tenants',
-            'foreignId' => 'id',
-        ],
-    ]);
-});
 
 function createPostgresUser(string $username, string $password = 'password', bool $bypassRls = false): array
 {
