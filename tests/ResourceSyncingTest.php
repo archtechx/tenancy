@@ -1198,68 +1198,71 @@ test('resource creation works correctly when central resource provides defaults 
     expect($centralUser->foo)->toBe('bar');
 });
 
-test('resource syncing broken by custom scopes can get fixed by scopeGetModelQuery', function (bool $scopeGetModelQuery) {
+test('global scopes on syncable models can break resource syncing', function () {
     [$tenant1, $tenant2] = createTenantsAndRunMigrations();
-    migrateUsersTableForTenants();
 
-    if ($scopeGetModelQuery) {
-        // Configure scopeGetModelQuery to remove the custom scope that would break syncing
-        UpdateOrCreateSyncedResource::$scopeGetModelQuery = function (Builder $query) {
-            // Remove all global scopes to prevent them from interfering with resource syncing
-            $query->withoutGlobalScopes();
-        };
-    }
-
-    // Start with tenant1 and create a user that would be excluded by the scope
-    tenancy()->initialize($tenant1);
-
-    // Create a tenant user that will sync to central
-    TenantUser::create([
-        'global_id' => 'user123',
-        'name' => 'user123', // This will be stored in central
-        'email' => 'john@example.com',
-        'password' => 'password',
-        'role' => 'admin',
+    $centralUser = CentralUser::create([
+        'global_id' => 'foo',
+        'name' => 'foo',
+        'email' => 'foo@bar.com',
+        'password' => '*****',
+        'role' => 'admin', // not 'visible'
     ]);
 
-    tenancy()->end();
+    // Create a new tenant resource.
+    // While creating or updating a tenant resource, it's attempted to find the central resource with the same global_id.
+    $tenant1->run(fn () => TenantUser::create([
+        'global_id' => 'foo', // Already exists in the central DB, BUT it cannot be found because of the scope
+        'name' => 'tenant1 user',
+        'email' => 'tenant1@user.com',
+        'password' => 'tenant1_password',
+        'role' => 'user1',
+    ]));
 
-    // Verify the central user was created
-    $centralUser = CentralUser::where('global_id', 'user123')->first();
-    expect($centralUser)->not->toBeNull();
+    // Central user successfully found and updated
+    expect($centralUser->refresh()->name)->toBe('tenant1 user');
 
-    // Now switch to tenant2 and try to update the same user using the scoped model
-    // The scoped model only shows users with null names, but we're about to give it a name
-    tenancy()->initialize($tenant2);
+    // Add a global scope to the central resource
+    // This scope will hide the corresponding central resources from internal syncing query results
+    // So during syncing, the corresponding central resource won't be found unless it has the 'role' column set to 'visible'
+    CentralUser::addGlobalScope(new VisibleScope());
 
-    if (! $scopeGetModelQuery) {
-        // WITHOUT scopeGetModelQuery: The scope prevents finding the existing central user
-        // (whose name is null) after we update it to have a name, causing a duplicate key error
-        pest()->expectException(QueryException::class);
-        pest()->expectExceptionMessage('Duplicate entry');
-    }
+    // Update a tenant resource that should be synced to the 'foo' central resource.
+    // While creating or updating a tenant resource, it's attempted to find the central resource with the same global_id.
+    // Because of VisibleScope, the central resource is NOT FOUND.
+    // A new central resource is attempted to be created with the 'foo' global_id.
+    // The central resource with the 'foo' global_id (which is unique) exists already,
+    // so an exception will be thrown.
+    expect(function () use ($tenant1) {
+         $tenant1->run(fn () => TenantUser::create([
+            'global_id' => 'foo', // Already exists in the central DB, BUT it cannot be found because of the scope
+            'name' => 'tenant1new user',
+            'email' => 'tenant1new@user.com',
+            'password' => 'tenant1new_password',
+            'role' => 'user1new',
+        ]));
+    })->toThrow(QueryException::class, "Duplicate entry 'foo' for key 'users.users_global_id_unique'");
 
-    // Try to update the user with the scoped model - this gives it a name
-    TenantUserWithScope::create([
-        'global_id' => 'user123',
-        'name' => 'Jane', // This makes the central user invisible to the scope
-        'email' => 'jane@example.com',
-        'password' => 'password',
-        'role' => 'user',
-    ]);
+    // As a workaround,
+    // UpdateOrCreateSyncedResource::$scopeGetModelQuery can be used to bypass the global scope
+    // while syncing resources, allowing even central resources with role other than 'visible' to be found
+    // and correctly updated WHILE keeping the model's global scope.
+    UpdateOrCreateSyncedResource::$scopeGetModelQuery = function (Builder $query) {
+        // Stop VisibleScope from interfering with resource syncing
+        $query->withoutGlobalScope(VisibleScope::class);
+    };
 
-    tenancy()->end();
+    // Run exactly the same code as above, but this time the central resource will be found and updated successfully
+    $tenant2->run(fn () => TenantUser::create([
+        'global_id' => 'foo', // Already exists in the central DB, BUT now, it CAN be found
+        'name' => 'tenant2 user',
+        'email' => 'tenant2@user.com',
+        'password' => 'tenant2_password',
+        'role' => 'user2',
+    ]));
 
-    if ($scopeGetModelQuery) {
-        // The scope was bypassed, the central user was found and updated
-        $updatedCentralUser = CentralUser::where('global_id', 'user123')->first();
-        expect($updatedCentralUser->name)->toBe('Jane'); // Synced from tenant
-        expect(CentralUser::where('global_id', 'user123')->count())->toBe(1); // Only one record
-    }
-})->with([
-    true,
-    false,
-]);
+    expect($centralUser->refresh()->name)->toBe('tenant2 user');
+});
 
 /**
  * Create two tenants and run migrations for those tenants.
@@ -1332,16 +1335,11 @@ class TenantUser extends BaseTenantUser
     }
 }
 
-#[ScopedBy([TestingScope::class])]
-class TenantUserWithScope extends TenantUser
-{
-}
-
-class TestingScope implements Scope
+class VisibleScope implements Scope
 {
     public function apply(Builder $builder, Model $model): void
     {
-        $builder->whereNull('name');
+        $builder->where('role', 'visible');
     }
 }
 
