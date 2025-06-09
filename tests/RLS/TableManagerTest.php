@@ -196,9 +196,9 @@ test('queries are correctly scoped using RLS', function (
 
     $post1 = Post::create([
         'text' => 'first post',
-        'tenant_id' => $tenant1->getTenantKey(),
-        'author_id' => Author::create(['name' => 'author1', 'tenant_id' => $tenant1->getTenantKey()])->id,
-        'category_id' => Category::create(['name' => 'category1', 'tenant_id' => $tenant1->getTenantKey()])->id,
+        'tenant_id' => $tenant1->id,
+        'author_id' => Author::create(['name' => 'author1', 'tenant_id' => $tenant1->id])->id,
+        'category_id' => Category::create(['name' => 'category1', 'tenant_id' => $tenant1->id])->id,
     ]);
 
     $post1Comment = Comment::create(['text' => 'first comment', 'post_id' => $post1->id]);
@@ -209,9 +209,9 @@ test('queries are correctly scoped using RLS', function (
 
     $post2 = Post::create([
         'text' => 'second post',
-        'tenant_id' => $tenant2->getTenantKey(),
-        'author_id' => Author::create(['name' => 'author2', 'tenant_id' => $tenant2->getTenantKey()])->id,
-        'category_id' => Category::create(['name' => 'category2', 'tenant_id' => $tenant2->getTenantKey()])->id
+        'tenant_id' => $tenant2->id,
+        'author_id' => Author::create(['name' => 'author2', 'tenant_id' => $tenant2->id])->id,
+        'category_id' => Category::create(['name' => 'category2', 'tenant_id' => $tenant2->id])->id
     ]);
 
     $post2Comment = Comment::create(['text' => 'second comment', 'post_id' => $post2->id]);
@@ -327,7 +327,7 @@ test('queries are correctly scoped using RLS', function (
     expect(Note::count())->toBe(1);
 
     // Directly inserting records to other tenant's tables should fail (insufficient privilege error – new row violates row-level security policy)
-    expect(fn () => DB::statement("INSERT INTO posts (text, author_id, category_id, tenant_id) VALUES ('third post', 1, 1, '{$tenant1->getTenantKey()}')"))
+    expect(fn () => DB::statement("INSERT INTO posts (text, author_id, category_id, tenant_id) VALUES ('third post', 1, 1, '{$tenant1->id}')"))
         ->toThrow(QueryException::class);
 
     expect(fn () => DB::statement("INSERT INTO comments (text, post_id) VALUES ('third comment', {$post1->id})"))
@@ -496,7 +496,7 @@ test('forceRls prevents even the table owner from querying his own tables if he 
     // Create RLS policy for the orders table
     pest()->artisan('tenants:rls');
 
-    $tenant1->run(fn () => Order::create(['name' => 'order1', 'tenant_id' => $tenant1->getTenantKey()]));
+    $tenant1->run(fn () => Order::create(['name' => 'order1', 'tenant_id' => $tenant1->id]));
 
     // We are still using the 'administrator' user - owner of the orders table
 
@@ -543,7 +543,7 @@ test('users with BYPASSRLS privilege can bypass RLS regardless of forceRls setti
     // Create RLS policy for the orders table
     pest()->artisan('tenants:rls');
 
-    $tenant1->run(fn () => Order::create(['name' => 'order1', 'tenant_id' => $tenant1->getTenantKey()]));
+    $tenant1->run(fn () => Order::create(['name' => 'order1', 'tenant_id' => $tenant1->id]));
 
     // We are still using the 'administrator' user
 
