@@ -420,12 +420,12 @@ test('table rls manager generates shortest paths that lead to the tenants table 
 
     expect($manager->shortestPaths())->toEqual($expectedShortestPaths);
 
-    // Add non-nullable comment_id foreign key.
+    // Add non-nullable comment_id foreign key
     Schema::table('ratings', function (Blueprint $table) {
         $table->foreignId('comment_id')->comment('rls')->constrained('comments')->onUpdate('cascade')->onDelete('cascade');
     });
 
-    // Non-nullable paths are preferred over nullable paths.
+    // Non-nullable paths are preferred over nullable paths
     $expectedShortestPaths['ratings'] = [
         [
             'foreignKey' => 'comment_id',
@@ -673,28 +673,23 @@ test('table manager throws an exception when the only generated paths lead throu
     expect(fn () => app(TableRLSManager::class)->shortestPaths())->toThrow(RecursiveRelationshipException::class);
 
     Schema::table('recursive_comments', function (Blueprint $table) {
-        // Add another recursive relationship
-        // Exception should not be thrown, because the tenant_id breaks the recursion
+        // Add another recursive relationship to demonstrate a more complex case
         $table->foreignId('related_post_id')->comment('rls recursive_posts.id');
 
-        // Add tenant_id to break the recursion
+        // Add tenant_id to break the recursion - RecursiveRelationshipException should not be thrown
         $table->string('tenant_id')->comment('rls')->nullable();
         $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
-    });
 
-    // Doesn't throw an exception anymore, tenant_id breaks the recursion
-    $shortestPaths = app(TableRLSManager::class)->shortestPaths();
-
-    expect(array_keys($shortestPaths))->toContain('recursive_posts', 'recursive_comments');
-
-    Schema::table('recursive_comments', function (Blueprint $table) {
-        // Add another recursive relationship
-        // Exception still should not be thrown
+        // Add another recursive relationship constraint
+        // to demonstrate an even more complex case.
         $table->foreignId('another_related_post_id')->comment('rls recursive_posts.id');
     });
 
+    // Doesn't throw an exception anymore
     $shortestPaths = app(TableRLSManager::class)->shortestPaths();
 
+    // Generated paths include both the recursive_posts and the recursive_comments tables
+    // because they actually lead to the tenants table now.
     expect(array_keys($shortestPaths))->toContain('recursive_posts', 'recursive_comments');
 });
 
@@ -704,15 +699,25 @@ test('table manager ignores recursive relationship if the foreign key responsibl
         $table->foreignId('highlighted_comment_id')->nullable()->comment('no-rls')->constrained('comments');
     });
 
+    // Add a foreign key constraint to the comments table to introduce a recursive relationship
+    // Note that the comments table still has the post_id foreign key that leads to the tenants table
     Schema::table('comments', function (Blueprint $table) {
         $table->foreignId('recursive_post_id')->comment('rls')->constrained('recursive_posts');
     });
 
-    expect(fn () => app(TableRLSManager::class)->shortestPaths())->not()->toThrow(RecursiveRelationshipException::class);
+    // No exception thrown because
+    // the highlighted_comment_id foreign key has a no-rls comment
+    $shortestPaths = app(TableRLSManager::class)->shortestPaths();
+
+    expect(array_keys($shortestPaths))
+        ->toContain('posts', 'comments')
+        // Shortest paths do not include the recursive_posts table
+        // because it has a 'no-rls' comment on its only foreign key
+        ->not()->toContain('recursive_posts');
 });
 
 test('table manager can generate paths leading through comment constraint columns', function() {
-    // Drop extra tables for generated
+    // Drop extra tables created in beforeEach
     Schema::dropIfExists('reactions');
     Schema::dropIfExists('comments');
     Schema::dropIfExists('posts');
