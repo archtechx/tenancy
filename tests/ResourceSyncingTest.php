@@ -110,12 +110,12 @@ afterEach(function () {
     UpdateOrCreateSyncedResource::$scopeGetModelQuery = null;
 });
 
-test('resources created with the same global id in different tenant dbs will be synced to a single central resource', function () {
+test('creating multiple tenant resources with the same global_id only creates corresponding central resource if it does not exist yet', function () {
     $tenants = [Tenant::create(), Tenant::create(), Tenant::create()];
     migrateUsersTableForTenants();
 
-    // Only a single central user is created since the same global_id is used for each tenant user
-    // Therefore all of these tenant users are synced to a single global user
+    // While creating a tenant resource with global_id 'acme',
+    // a corresponding central resource is attempted to be created ONLY ONCE.
     tenancy()->runForMultiple($tenants, function () {
         // Create a user with the same global_id in each tenant DB
         TenantUser::create([
@@ -127,7 +127,8 @@ test('resources created with the same global id in different tenant dbs will be 
         ]);
     });
 
-    // Only a single central user is created
+    // Only a single central user is created.
+    // No duplicate global_id exception is thrown.
     expect(CentralUser::all())->toHaveCount(1);
     expect(CentralUser::first()->global_id)->toBe('acme');
 });
