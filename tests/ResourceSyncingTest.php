@@ -44,7 +44,6 @@ use Stancl\Tenancy\Tests\Etc\ResourceSyncing\CentralUser as BaseCentralUser;
 use Stancl\Tenancy\ResourceSyncing\CentralResourceNotAvailableInPivotException;
 use Stancl\Tenancy\ResourceSyncing\Events\SyncedResourceSavedInForeignDatabase;
 use Illuminate\Database\Eloquent\Scope;
-use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\QueryException;
 use function Stancl\Tenancy\Tests\pest;
 
