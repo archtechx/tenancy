@@ -1211,31 +1211,33 @@ test('global scopes on syncable models can break resource syncing', function () 
 
     // Create a new tenant resource.
     // While creating or updating a tenant resource, it's attempted to find the central resource with the same global_id.
+    // A central resource with the 'foo' global_id exists already,
+    // so it will be found and updated.
     $tenant1->run(fn () => TenantUser::create([
-        'global_id' => 'foo', // Already exists in the central DB, BUT it cannot be found because of the scope
+        'global_id' => 'foo',
         'name' => 'tenant1 user',
         'email' => 'tenant1@user.com',
         'password' => 'tenant1_password',
         'role' => 'user1',
     ]));
 
-    // Central user successfully found and updated
     expect($centralUser->refresh()->name)->toBe('tenant1 user');
 
-    // Add a global scope to the central resource
-    // This scope will hide the corresponding central resources from internal syncing query results
-    // So during syncing, the corresponding central resource won't be found unless it has the 'role' column set to 'visible'
+    // Add a global scope to the central resource.
+    // The scope hides the corresponding central resources from internal resource syncing query results,
+    // so during the syncing, the corresponding central resource won't be found
+    // because its 'role' column is not set to 'visible'.
     CentralUser::addGlobalScope(new VisibleScope());
 
-    // Update a tenant resource that should be synced to the 'foo' central resource.
+    // Create another tenant resource that should be synced to the 'foo' central resource.
     // While creating or updating a tenant resource, it's attempted to find the central resource with the same global_id.
-    // Because of VisibleScope, the central resource is NOT FOUND.
+    // Because of the global VisibleScope, the central resource is NOT FOUND.
     // A new central resource is attempted to be created with the 'foo' global_id.
     // The central resource with the 'foo' global_id (which is unique) exists already,
-    // so an exception will be thrown.
+    // so a duplicate entry exception will be thrown.
     expect(function () use ($tenant1) {
          $tenant1->run(fn () => TenantUser::create([
-            'global_id' => 'foo', // Already exists in the central DB, BUT it cannot be found because of the scope
+            'global_id' => 'foo',
             'name' => 'tenant1new user',
             'email' => 'tenant1new@user.com',
             'password' => 'tenant1new_password',
@@ -1243,24 +1245,28 @@ test('global scopes on syncable models can break resource syncing', function () 
         ]));
     })->toThrow(QueryException::class, "Duplicate entry 'foo' for key 'users.users_global_id_unique'");
 
-    // As a workaround,
-    // UpdateOrCreateSyncedResource::$scopeGetModelQuery can be used to bypass the global scope
-    // while syncing resources, allowing even central resources with role other than 'visible' to be found
-    // and correctly updated WHILE keeping the model's global scope.
+    // The central resource stays the same
+    expect($centralUser->refresh()->name)->toBe('tenant1 user');
+
+    // As a workaround, UpdateOrCreateSyncedResource::$scopeGetModelQuery
+    // can be used to bypass the global scope while syncing resources,
+    // allowing even central resources with role other than 'visible' to be found
+    // and correctly updated while keeping the model's global scope.
     UpdateOrCreateSyncedResource::$scopeGetModelQuery = function (Builder $query) {
-        // Stop VisibleScope from interfering with resource syncing
         $query->withoutGlobalScope(VisibleScope::class);
     };
 
-    // Run exactly the same code as above, but this time the central resource will be found and updated successfully
+    // Run exactly the same code as above, but this time the central resource will be found and updated successfully.
+    // The central resource already exists, and now, it IS found, no exception is thrown.
     $tenant2->run(fn () => TenantUser::create([
-        'global_id' => 'foo', // Already exists in the central DB, BUT now, it CAN be found
+        'global_id' => 'foo',
         'name' => 'tenant2 user',
         'email' => 'tenant2@user.com',
         'password' => 'tenant2_password',
         'role' => 'user2',
     ]));
 
+    // The central resource was updated
     expect($centralUser->refresh()->name)->toBe('tenant2 user');
 });
 
