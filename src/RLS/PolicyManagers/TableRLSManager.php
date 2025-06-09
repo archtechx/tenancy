@@ -87,7 +87,7 @@ class TableRLSManager implements RLSPolicyManager
                 $shortestPaths[$tableName] = array_map(fn (array $step) => [
                     'foreignKey' => $step['foreignKey'],
                     'foreignTable' => $step['foreignTable'],
-                    'foreignId' => $step['foreignId']
+                    'foreignId' => $step['foreignId'],
                 ], $shortestPath['steps']);
             }
 
