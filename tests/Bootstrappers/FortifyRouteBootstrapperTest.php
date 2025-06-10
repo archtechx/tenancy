@@ -27,7 +27,8 @@ afterEach(function () {
 test('fortify route tenancy bootstrapper updates fortify config correctly', function() {
     config(['tenancy.bootstrappers' => [FortifyRouteBootstrapper::class]]);
 
-    // Config used when FortifyRouteBootstrapper::$passQueryParameter is true (default)
+    // Config used for generating Fortify route URLs
+    // when FortifyRouteBootstrapper::$passQueryParameter is true (default)
     config([
         // Parameter name (RequestDataTenantResolver::queryParameterName())
         'tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.query_parameter' => 'team_query',
@@ -35,7 +36,8 @@ test('fortify route tenancy bootstrapper updates fortify config correctly', func
         'tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.tenant_model_column' => 'company',
     ]);
 
-    // Config used when FortifyRouteBootstrapper::$passQueryParameter is false
+    // Config used for generating Fortify route URLs
+    // when FortifyRouteBootstrapper::$passQueryParameter is false
     config([
         // Parameter name (PathTenantResolver::tenantParameterName())
         'tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_parameter_name' => 'team_path',
@@ -51,48 +53,51 @@ test('fortify route tenancy bootstrapper updates fortify config correctly', func
 
     FortifyRouteBootstrapper::$fortifyHome = $homeRouteName;
     FortifyRouteBootstrapper::$fortifyRedirectMap['login'] = $welcomeRouteName;
-    FortifyRouteBootstrapper::$passTenantParameter = true;
 
     expect(config('fortify.home'))->toBe($originalFortifyHome);
     expect(config('fortify.redirects'))->toBe($originalFortifyRedirects);
 
     $tenant = Tenant::create([
-        'name' => 'Foo', // Tenant parameter value for path identification
-        'company' => 'Acme', // Tenant parameter value for query string identification
+        'company' => 'Acme', // Tenant parameter value $passQueryParameter is true
+        'name' => 'Foo', // Tenant parameter value when $passQueryParameter is false
     ]);
 
-    // RequestDataTenantResolver config used
+    // The bootstrapper overrides the URLs in the Fortify config correctly (the URLs have the correct tenant parameter + parameter value)
+    // When $passQueryParameter is true, use the RequestDataTenantResolver config
     // - tenant parameter is 'team_query'
-    // - parameter value is the tenant's company
+    // - parameter value is the tenant's company ('Acme')
     FortifyRouteBootstrapper::$passQueryParameter = true;
 
     tenancy()->initialize($tenant);
+
     expect(config('fortify.home'))->toBe('http://localhost/home?team_query=Acme');
     expect(config('fortify.redirects'))->toEqual(['login' => 'http://localhost/welcome?team_query=Acme']);
 
+    // The bootstrapper restores the original Fortify config when ending tenancy
     tenancy()->end();
+
     expect(config('fortify.home'))->toBe($originalFortifyHome);
     expect(config('fortify.redirects'))->toBe($originalFortifyRedirects);
 
-    // PathTenantResolver config used
+    // When $passQueryParameter is false, use the PathTenantResolver config
     // - tenant parameter is 'team_path'
-    // - parameter value is the tenant's name
+    // - parameter value is the tenant's name ('Foo')
     FortifyRouteBootstrapper::$passQueryParameter = false;
 
     tenancy()->initialize($tenant);
+
     expect(config('fortify.home'))->toBe('http://localhost/home?team_path=Foo');
     expect(config('fortify.redirects'))->toEqual(['login' => 'http://localhost/welcome?team_path=Foo']);
 
     tenancy()->end();
-    expect(config('fortify.home'))->toBe($originalFortifyHome);
-    expect(config('fortify.redirects'))->toBe($originalFortifyRedirects);
 
+    // The bootstrapper can override the home and redirects config without the tenant parameter being passed
     FortifyRouteBootstrapper::$passTenantParameter = false;
-    tenancy()->initialize($tenant);
-    expect(config('fortify.home'))->toBe('http://localhost/home');
-    expect(config('fortify.redirects'))->toEqual(['login' => 'http://localhost/welcome']);
 
-    tenancy()->end();
-    expect(config('fortify.home'))->toBe($originalFortifyHome);
-    expect(config('fortify.redirects'))->toBe($originalFortifyRedirects);
+    tenancy()->initialize($tenant);
+
+    expect(config('fortify.home'))->toBe('http://localhost/home')
+        ->not()->toBe($originalFortifyHome);
+    expect(config('fortify.redirects'))->toEqual(['login' => 'http://localhost/welcome'])
+        ->not()->toBe($originalFortifyRedirects);
 });
