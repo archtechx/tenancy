@@ -89,6 +89,11 @@ test('cookie identification works', function (string|null $tenantModelColumn) {
     // Default cookie name
     $this->withoutExceptionHandling()->withUnencryptedCookie('tenant', $payload)->get('test')->assertSee($tenant->id);
 
+    // Encrypted cookie (encrypt cookie like MakesHttpRequests does)
+    $encryptedPayload = encrypt(CookieValuePrefix::create('tenant', app('encrypter')->getKey()) . $payload, false);
+
+    $this->withoutExceptionHandling()->withUnencryptedCookie('tenant', $encryptedPayload)->get('test')->assertSee($tenant->id);
+
     // Custom cookie name
     config(['tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.cookie' => 'custom_tenant_id']);
     $this->withoutExceptionHandling()->withUnencryptedCookie('custom_tenant_id', $payload)->get('test')->assertSee($tenant->id);
@@ -97,15 +102,6 @@ test('cookie identification works', function (string|null $tenantModelColumn) {
     config(['tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.cookie' => null]);
     expect(fn () => $this->withoutExceptionHandling()->withUnencryptedCookie('tenant', $payload)->get('test'))->toThrow(TenantCouldNotBeIdentifiedByRequestDataException::class);
 })->with([null, 'slug']);
-
-test('cookie identification works with encrypted cookies', function () {
-    $tenant = Tenant::create(['id' => 'acme']);
-
-    // Mimic MakesHttpRequests cookie encryption
-    $encryptedCookie = encrypt(CookieValuePrefix::create('tenant', app('encrypter')->getKey()) . 'acme', false);
-
-    $this->withoutExceptionHandling()->withUnencryptedCookie('tenant', $encryptedCookie)->get('test')->assertSee($tenant->id);
-});
 
 test('an exception is thrown when no tenant data is provided in the request', function () {
     pest()->expectException(TenantCouldNotBeIdentifiedByRequestDataException::class);
