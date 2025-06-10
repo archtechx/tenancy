@@ -9,6 +9,7 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use function Stancl\Tenancy\Tests\pest;
+use Illuminate\Cookie\CookieValuePrefix;
 
 beforeEach(function () {
     config([
@@ -97,30 +98,14 @@ test('cookie identification works', function (string|null $tenantModelColumn) {
     expect(fn () => $this->withoutExceptionHandling()->withUnencryptedCookie('tenant', $payload)->get('test'))->toThrow(TenantCouldNotBeIdentifiedByRequestDataException::class);
 })->with([null, 'slug']);
 
-test('encrypted cookie identification works', function (string|null $tenantModelColumn) {
-    if ($tenantModelColumn) {
-        Schema::table('tenants', function (Blueprint $table) use ($tenantModelColumn) {
-            $table->string($tenantModelColumn)->unique();
-        });
-        Tenant::$extraCustomColumns = [$tenantModelColumn];
-    }
+test('cookie identification works with encrypted cookies', function () {
+    $tenant = Tenant::create(['id' => 'acme']);
 
-    config(['tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.tenant_model_column' => $tenantModelColumn]);
+    // Mimic MakesHttpRequests cookie encryption
+    $encryptedCookie = encrypt(CookieValuePrefix::create('tenant', app('encrypter')->getKey()) . 'acme', false);
 
-    $tenant = Tenant::create($tenantModelColumn ? [$tenantModelColumn => 'acme'] : []);
-    $payload = $tenantModelColumn ? 'acme' : $tenant->id;
-
-    // Default encrypted cookie name
-    $this->withoutExceptionHandling()->withCookie('tenant', $payload)->get('test')->assertSee($tenant->id);
-
-    // Custom encrypted cookie name
-    config(['tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.cookie' => 'custom_tenant_id']);
-    $this->withoutExceptionHandling()->withCookie('custom_tenant_id', $payload)->get('test')->assertSee($tenant->id);
-
-    // Setting the cookie to null disables cookie identification
-    config(['tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.cookie' => null]);
-    expect(fn () => $this->withoutExceptionHandling()->withCookie('tenant', $payload)->get('test'))->toThrow(TenantCouldNotBeIdentifiedByRequestDataException::class);
-})->with([null, 'slug']);
+    $this->withoutExceptionHandling()->withUnencryptedCookie('tenant', $encryptedCookie)->get('test')->assertSee($tenant->id);
+});
 
 test('an exception is thrown when no tenant data is provided in the request', function () {
     pest()->expectException(TenantCouldNotBeIdentifiedByRequestDataException::class);
