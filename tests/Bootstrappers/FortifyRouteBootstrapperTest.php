@@ -9,6 +9,7 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\Integrations\FortifyRouteBootstrapper;
 use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
+use Stancl\Tenancy\Resolvers\PathTenantResolver;
 
 beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
@@ -26,27 +27,61 @@ afterEach(function () {
 test('fortify route tenancy bootstrapper updates fortify config correctly', function() {
     config(['tenancy.bootstrappers' => [FortifyRouteBootstrapper::class]]);
 
+    // Config used when FortifyRouteBootstrapper::$passQueryParameter is true (default)
+    config([
+        // Parameter name (RequestDataTenantResolver::queryParameterName())
+        'tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.query_parameter' => 'team_query',
+        // Parameter value (RequestDataTenantResolver::payloadValue())
+        'tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.tenant_model_column' => 'company',
+    ]);
+
+    // Config used when FortifyRouteBootstrapper::$passQueryParameter is false
+    config([
+        // Parameter name (PathTenantResolver::tenantParameterName())
+        'tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_parameter_name' => 'team_path',
+        // Parameter value (PathTenantResolver::tenantParameterValue())
+        'tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_model_column' => 'name',
+    ]);
+
     $originalFortifyHome = config('fortify.home');
     $originalFortifyRedirects = config('fortify.redirects');
 
-    Route::get('/home', function () {
-        return true;
-    })->name($homeRouteName = 'home');
-
-    Route::get('/welcome', function () {
-        return true;
-    })->name($welcomeRouteName = 'welcome');
+    Route::get('/home', fn () => true)->name($homeRouteName = 'home');
+    Route::get('/welcome', fn () => true)->name($welcomeRouteName = 'welcome');
 
     FortifyRouteBootstrapper::$fortifyHome = $homeRouteName;
     FortifyRouteBootstrapper::$fortifyRedirectMap['login'] = $welcomeRouteName;
+    FortifyRouteBootstrapper::$passTenantParameter = true;
 
     expect(config('fortify.home'))->toBe($originalFortifyHome);
     expect(config('fortify.redirects'))->toBe($originalFortifyRedirects);
 
-    FortifyRouteBootstrapper::$passTenantParameter = true;
-    tenancy()->initialize($tenant = Tenant::create());
-    expect(config('fortify.home'))->toBe('http://localhost/home?tenant=' . $tenant->getTenantKey());
-    expect(config('fortify.redirects'))->toEqual(['login' => 'http://localhost/welcome?tenant=' . $tenant->getTenantKey()]);
+    $tenant = Tenant::create([
+        'name' => 'Foo', // Tenant parameter value for path identification
+        'company' => 'Acme', // Tenant parameter value for query string identification
+    ]);
+
+    // RequestDataTenantResolver config used
+    // - tenant parameter is 'team_query'
+    // - parameter value is the tenant's company
+    FortifyRouteBootstrapper::$passQueryParameter = true;
+
+    tenancy()->initialize($tenant);
+    expect(config('fortify.home'))->toBe('http://localhost/home?team_query=Acme');
+    expect(config('fortify.redirects'))->toEqual(['login' => 'http://localhost/welcome?team_query=Acme']);
+
+    tenancy()->end();
+    expect(config('fortify.home'))->toBe($originalFortifyHome);
+    expect(config('fortify.redirects'))->toBe($originalFortifyRedirects);
+
+    // PathTenantResolver config used
+    // - tenant parameter is 'team_path'
+    // - parameter value is the tenant's name
+    FortifyRouteBootstrapper::$passQueryParameter = false;
+
+    tenancy()->initialize($tenant);
+    expect(config('fortify.home'))->toBe('http://localhost/home?team_path=Foo');
+    expect(config('fortify.redirects'))->toEqual(['login' => 'http://localhost/welcome?team_path=Foo']);
 
     tenancy()->end();
     expect(config('fortify.home'))->toBe($originalFortifyHome);
@@ -58,40 +93,6 @@ test('fortify route tenancy bootstrapper updates fortify config correctly', func
     expect(config('fortify.redirects'))->toEqual(['login' => 'http://localhost/welcome']);
 
     tenancy()->end();
-    expect(config('fortify.home'))->toBe($originalFortifyHome);
-    expect(config('fortify.redirects'))->toBe($originalFortifyRedirects);
-});
-
-test('fortify route bootstrapper works with custom query parameter', function() {
-    config([
-        'tenancy.bootstrappers' => [FortifyRouteBootstrapper::class],
-        'tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.query_parameter' => 'team',
-    ]);
-
-    $originalFortifyHome = config('fortify.home');
-    $originalFortifyRedirects = config('fortify.redirects');
-
-    Route::get('/dashboard', function () {
-        return true;
-    })->name($homeRouteName = 'tenant.dashboard');
-
-    Route::get('/login', function () {
-        return true;
-    })->name($loginRouteName = 'tenant.login');
-
-    FortifyRouteBootstrapper::$fortifyHome = $homeRouteName;
-    FortifyRouteBootstrapper::$fortifyRedirectMap['login'] = $loginRouteName;
-    FortifyRouteBootstrapper::$passQueryParameter = true;
-
-    $tenant = Tenant::create();
-
-    tenancy()->initialize($tenant);
-
-    expect(config('fortify.home'))->toBe('http://localhost/dashboard?team=' . $tenant->id);
-    expect(config('fortify.redirects'))->toEqual(['login' => 'http://localhost/login?team=' . $tenant->id]);
-
-    tenancy()->end();
-
     expect(config('fortify.home'))->toBe($originalFortifyHome);
     expect(config('fortify.redirects'))->toBe($originalFortifyRedirects);
 });
