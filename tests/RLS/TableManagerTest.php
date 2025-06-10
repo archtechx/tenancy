@@ -336,7 +336,7 @@ test('queries are correctly scoped using RLS', function (
     expect(fn () => DB::statement("INSERT INTO notes (text, comment_id) VALUES ('baz', {$post1Comment->id})"))
         ->toThrow(QueryException::class);
 })->with(['forceRls is true' => true, 'forceRls is false' => false])
-    ->with(['comment constraint' => true, 'real constraint' => false]);
+    ->with(['comment constraint' => true, 'foreign key constraint' => false]);
 
 test('table rls manager generates shortest paths that lead to the tenants table correctly', function (bool $scopeByDefault) {
     TableRLSManager::$scopeByDefault = $scopeByDefault;
@@ -684,7 +684,7 @@ test('table manager throws an exception when the only generated paths lead throu
         // Add another recursive relationship to demonstrate a more complex case
         $table->foreignId('related_post_id')->comment('rls recursive_posts.id');
 
-        // Add a foreign key with constraint to the current table (= self-referencing constraint)
+        // Add a foreign key to the current table (= self-referencing constraint)
         $table->foreignId('parent_comment_id')->comment('rls recursive_comments.id');
 
         // Add tenant_id to break the recursion - RecursiveRelationshipException should not be thrown
@@ -736,12 +736,12 @@ test('table manager can generate paths leading through comment constraint column
 
     Schema::create('non_constrained_users', function (Blueprint $table) {
         $table->id();
-        $table->string('tenant_id')->comment('rls tenants.id'); // comment constraint
+        $table->string('tenant_id')->comment('rls tenants.id'); // Comment constraint
     });
 
     Schema::create('non_constrained_posts', function (Blueprint $table) {
         $table->id();
-        $table->foreignId('author_id')->comment('rls non_constrained_users.id'); // comment constraint
+        $table->foreignId('author_id')->comment('rls non_constrained_users.id'); // Comment constraint
     });
 
     /** @var TableRLSManager $manager */
