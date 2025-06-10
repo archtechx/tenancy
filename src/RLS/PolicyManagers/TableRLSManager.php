@@ -12,7 +12,7 @@ use Stancl\Tenancy\Exceptions\RLSCommentConstraintException;
 class TableRLSManager implements RLSPolicyManager
 {
     /**
-     * When true, all valid foreign keys are considered while generating paths for RLS policies,
+     * When true, all valid constraints are considered while generating paths for RLS policies,
      * unless explicitly marked with 'no-rls' comment.
      *
      * When false, only columns explicitly marked with 'rls' or 'rls table.column' comments are considered.
@@ -111,9 +111,9 @@ class TableRLSManager implements RLSPolicyManager
      * The 'steps' key contains the path steps returned by shortestPaths().
      * The 'dead_end' and 'recursive_relationship' keys are just internal metadata.
      *
-     * @param bool $deadEnd Whether the path is a dead end (no valid foreign keys leading to tenants table)
+     * @param bool $deadEnd Whether the path is a dead end (no valid constraints leading to tenants table)
      * @param bool $recursive Whether the path has recursive relationships
-     * @param array $steps The steps in the path, each step being an array of formatted foreign keys
+     * @param array $steps Steps to the tenants table, each step being a formatted constraint
      */
     protected function buildPath(bool $deadEnd = false, bool $recursive = false, array $steps = []): array
     {
@@ -125,14 +125,14 @@ class TableRLSManager implements RLSPolicyManager
     }
 
     /**
-     * Formats the retrieved foreign key to a more readable format.
+     * Formats the retrieved constraint to a more readable format.
      *
      * Also provides internal metadata about
-     * - the foreign key's nullability (the 'nullable' key),
-     * - the foreign key's comment
+     * - the constraint's nullability (the 'nullable' key),
+     * - the constraint's comment
      *
      * These internal details are then omitted
-     * from the foreign keys (or the "path steps")
+     * from the constraints (or the "path steps")
      * before returning the shortest paths in shortestPath().
      *
      * [
@@ -140,12 +140,12 @@ class TableRLSManager implements RLSPolicyManager
      *    'foreignTable' => 'tenants',
      *    'foreignId' => 'id',
      *    'comment' => 'no-rls', // Used to explicitly enable/disable RLS or to create a comment constraint (internal metadata)
-     *    'nullable' => false, // Used to determine if the foreign key is nullable (internal metadata)
+     *    'nullable' => false, // Used to determine if the constraint is nullable (internal metadata)
      * ].
      */
-    protected function formatForeignKey(array $foreignKey, string $table): array
+    protected function formatConstraint(array $constraint, string $table): array
     {
-        $foreignKeyName = $foreignKey['columns'][0];
+        $foreignKeyName = $constraint['columns'][0];
 
         $comment = collect($this->database->getSchemaBuilder()->getColumns($table))
                 ->filter(fn ($column) => $column['name'] === $foreignKeyName)
@@ -158,8 +158,8 @@ class TableRLSManager implements RLSPolicyManager
 
         return [
             'foreignKey' => $foreignKeyName,
-            'foreignTable' => $foreignKey['foreign_table'],
-            'foreignId' => $foreignKey['foreign_columns'][0],
+            'foreignTable' => $constraint['foreign_table'],
+            'foreignId' => $constraint['foreign_columns'][0],
             // Internal metadata omitted in shortestPaths()
             'comment' => $comment,
             'nullable' => $columnIsNullable,
@@ -176,7 +176,7 @@ class TableRLSManager implements RLSPolicyManager
      * @param string $table The table to find a path from
      * @param array &$cachedPaths Reference to array where discovered shortest paths are cached (including dead ends)
      * @param array $visitedTables Already visited tables (used for detecting recursive relationships)
-     * @return array Paths with 'steps' (arrays of formatted foreign keys), 'dead_end' flag (bool), and 'recursive_relationship' flag (bool).
+     * @return array Paths with 'steps' (arrays of formatted constraints), 'dead_end' flag (bool), and 'recursive_relationship' flag (bool).
      */
     protected function shortestPathToTenantsTable(
         string $table,
@@ -195,57 +195,58 @@ class TableRLSManager implements RLSPolicyManager
             return $cachedPaths[$table];
         }
 
-        $foreignKeys = $this->getForeignKeys($table);
+        $constraints = $this->getConstraints($table);
 
-        if (empty($foreignKeys)) {
+        if (empty($constraints)) {
             // Dead end
             $cachedPaths[$table] = $this->buildPath(deadEnd: true);
 
             return $cachedPaths[$table];
         }
 
-        return $this->determineShortestPath($table, $foreignKeys, $cachedPaths, $visitedTables);
+        return $this->determineShortestPath($table, $constraints, $cachedPaths, $visitedTables);
     }
 
     /**
-     * Get all valid foreign key relationships for a table.
-     * Combines both standard foreign key constraints and comment-based constraints.
+     * Get all valid relationship constraints for a table.
+     *
+     * Combines both standard foreign key constraints and comment constraints.
      */
-    protected function getForeignKeys(string $table): array
+    protected function getConstraints(string $table): array
     {
         $constraints = array_merge(
             $this->database->getSchemaBuilder()->getForeignKeys($table),
             $this->getCommentConstraints($table)
         );
 
-        $foreignKeys = [];
+        $validConstraints = [];
 
         foreach ($constraints as $constraint) {
-            $formatted = $this->formatForeignKey($constraint, $table);
+            $formattedConstraint = $this->formatConstraint($constraint, $table);
 
-            if (! $this->shouldSkipPathLeadingThrough($formatted)) {
-                $foreignKeys[] = $formatted;
+            if (! $this->shouldSkipPathLeadingThrough($formattedConstraint)) {
+                $validConstraints[] = $formattedConstraint;
             }
         }
 
-        return $foreignKeys;
+        return $validConstraints;
     }
 
     /**
-     * Determine if a path leading through the passed foreign key
+     * Determine if a path leading through the passed constraint
      * should be excluded from choosing the shortest path
-     * based on the foreign key's comment.
+     * based on the constraint's comment.
      *
-     * If static::$scopeByDefault is true, only skip paths leading through foreign keys flagged with the 'no-rls' comment.
-     * If static::$scopeByDefault is false, skip paths leading through any foreign key, unless the key has explicit 'rls' or 'rls table.column' comments.
+     * If static::$scopeByDefault is true, only skip paths leading through constraints flagged with the 'no-rls' comment.
+     * If static::$scopeByDefault is false, skip paths leading through any constraint, unless the key has explicit 'rls' or 'rls table.column' comments.
      *
-     * @param array $foreignKey Formatted foreign key (has to have the 'comment' key)
+     * @param array $constraint Formatted constraint (has to have the 'comment' key)
      */
-    protected function shouldSkipPathLeadingThrough(array $foreignKey): bool
+    protected function shouldSkipPathLeadingThrough(array $constraint): bool
     {
-        $comment = $foreignKey['comment'] ?? null;
+        $comment = $constraint['comment'] ?? null;
 
-        // Always skip foreign keys with the 'no-rls' comment
+        // Always skip constraints with the 'no-rls' comment
         if ($comment === 'no-rls') {
             return true;
         }
@@ -254,7 +255,7 @@ class TableRLSManager implements RLSPolicyManager
             return false;
         }
 
-        // When scopeByDefault is false, skip every foreign key
+        // When scopeByDefault is false, skip every constraint
         // with a comment that doesn't start with 'rls'.
         if (! is_string($comment)) {
             return true;
@@ -264,21 +265,24 @@ class TableRLSManager implements RLSPolicyManager
     }
 
     /**
-     * Retrieve table's comment-based constraints. These are columns with comments
+     * Retrieve table's comment constraints.
+     *
+     * Comment constraints are columns with comments
      * formatted like "rls <foreign_table>.<foreign_column>".
      *
-     * Returns the constraints as unformatted foreign key arrays, ready to be formatted by formatForeignKey().
+     * Returns the comment constraints as unformatted constraint arrays,
+     * ready to be formatted by formatConstraint().
      */
     protected function getCommentConstraints(string $tableName): array
     {
-        $commentConstraintColumns = array_filter($this->database->getSchemaBuilder()->getColumns($tableName), function ($column) {
+        $commentConstraints = array_filter($this->database->getSchemaBuilder()->getColumns($tableName), function ($column) {
             return (isset($column['comment']) && is_string($column['comment']))
                 && Str::startsWith($column['comment'], 'rls ');
         });
 
         return array_map(
             fn ($column) => $this->parseCommentConstraint($column['comment'], $tableName, $column['name']),
-            $commentConstraintColumns
+            $commentConstraints
         );
     }
 
@@ -287,7 +291,7 @@ class TableRLSManager implements RLSPolicyManager
      *
      * This method validates that the table and column referenced
      * in the comment exist, and returns the constraint in a format corresponding to the
-     * standardly retrieved foreign keys (ready to be formatted using formatForeignKey()).
+     * standardly retrieved constraints (ready to be formatted using formatConstraint()).
      *
      * @throws RLSCommentConstraintException When comment format is invalid or references don't exist
      */
@@ -393,7 +397,7 @@ class TableRLSManager implements RLSPolicyManager
     /**
      * Find the optimal path from a table to the tenants table.
      *
-     * Gathers table's constraints (both foreign keys and comment-based constraints)
+     * Gathers table's constraints (both foreign key constraints and comment constraints)
      * and recursively finds paths through each constraint while tracking both
      * the overall shortest path and the shortest non-nullable
      * path (non-nullable paths are preferred for reliability).
@@ -406,14 +410,14 @@ class TableRLSManager implements RLSPolicyManager
      * falling back to the overall shortest path.
      *
      * @param string $table The table to find a path from
-     * @param array $foreignKeys Array of foreign key relationships to explore
+     * @param array $constraints Array of formatted constraints
      * @param array &$cachedPaths Reference to caching array for memoization
      * @param array $visitedTables Tables already visited in this path (used for detecting recursion)
      * @return array Path with 'steps' array, 'dead_end' flag, and 'recursive_relationship' flag
      */
     protected function determineShortestPath(
         string $table,
-        array $foreignKeys,
+        array $constraints,
         array &$cachedPaths,
         array $visitedTables
     ): array {
@@ -422,31 +426,31 @@ class TableRLSManager implements RLSPolicyManager
         $hasRecursiveRelationships = false;
         $hasValidPaths = false;
 
-        foreach ($foreignKeys as $foreign) {
-            // Check if this specific foreign key would lead to recursion
-            if (in_array($foreign['foreignTable'], $visitedTables)) {
-                // This foreign key leads to a table we're already visiting - skip it
+        foreach ($constraints as $constraint) {
+            // Check if the constraint would lead to recursion
+            if (in_array($constraint['foreignTable'], $visitedTables)) {
+                // This constraint leads to a table we've already visited - skip it
                 $hasRecursiveRelationships = true;
                 continue;
             }
 
             // Recursive call
-            $foreignPath = $this->shortestPathToTenantsTable(
-                $foreign['foreignTable'],
+            $pathThroughConstraint = $this->shortestPathToTenantsTable(
+                $constraint['foreignTable'],
                 $cachedPaths,
                 $visitedTables
             );
 
-            if ($foreignPath['recursive_relationship']) {
+            if ($pathThroughConstraint['recursive_relationship']) {
                 $hasRecursiveRelationships = true;
                 continue;
             }
 
-            if (! $foreignPath['dead_end']) {
+            if (! $pathThroughConstraint['dead_end']) {
                 $hasValidPaths = true;
 
-                // Build the full path with the current foreign key as the first step
-                $path = $this->buildPath(steps: array_merge([$foreign], $foreignPath['steps']));
+                // Build the full path with the current constraint as the first step
+                $path = $this->buildPath(steps: array_merge([$constraint], $pathThroughConstraint['steps']));
 
                 if ($this->isPathPreferable($path, $shortestPath)) {
                     $shortestPath = $path;
