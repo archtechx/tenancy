@@ -27,9 +27,6 @@ afterEach(function () {
 test('fortify route tenancy bootstrapper updates fortify config correctly', function() {
     config(['tenancy.bootstrappers' => [FortifyRouteBootstrapper::class]]);
 
-    // The bootstrapper uses resolver config for generating Fortify route URLs.
-    // Config used for generating Fortify route URLs
-    // when FortifyRouteBootstrapper::$passQueryParameter is true (default)
     config([
         // Parameter name (RequestDataTenantResolver::queryParameterName())
         'tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.query_parameter' => 'team_query',
@@ -37,8 +34,6 @@ test('fortify route tenancy bootstrapper updates fortify config correctly', func
         'tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.tenant_model_column' => 'company',
     ]);
 
-    // Config used for generating Fortify route URLs
-    // when FortifyRouteBootstrapper::$passQueryParameter is false
     config([
         // Parameter name (PathTenantResolver::tenantParameterName())
         'tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_parameter_name' => 'team_path',
@@ -59,11 +54,13 @@ test('fortify route tenancy bootstrapper updates fortify config correctly', func
     expect(config('fortify.redirects'))->toBe($originalFortifyRedirects);
 
     /**
-     * When $passQueryParameter is true, use the RequestDataTenantResolver config
+     * When $passQueryParameter is true, the bootstrapper uses
+     * the RequestDataTenantResolver config for generating the Fortify URLs
      * - tenant parameter is 'team_query'
      * - parameter value is the tenant's company ('Acme')
      *
-     * When $passQueryParameter is false, use the PathTenantResolver config
+     * When $passQueryParameter is false, the bootstrapper uses
+     * the PathTenantResolver config for generating the Fortify URLs
      * - tenant parameter is 'team_path'
      * - parameter value is the tenant's name ('Foo')
      */
@@ -72,8 +69,9 @@ test('fortify route tenancy bootstrapper updates fortify config correctly', func
         'name' => 'Foo',
     ]);
 
-    // The bootstrapper overrides the URLs in the Fortify config correctly (the URLs have the correct tenant parameter + parameter value)
-    // Bootstrapper should generate URLs using RequestDataTenantResolver
+    // The bootstrapper generates and overrides the URLs in the Fortify config correctly
+    // (= the generated URLs have the correct tenant parameter + parameter value)
+    // The bootstrapper should use RequestDataTenantResolver while generating the URLs (default)
     FortifyRouteBootstrapper::$passQueryParameter = true;
 
     tenancy()->initialize($tenant);
@@ -87,7 +85,7 @@ test('fortify route tenancy bootstrapper updates fortify config correctly', func
     expect(config('fortify.home'))->toBe($originalFortifyHome);
     expect(config('fortify.redirects'))->toBe($originalFortifyRedirects);
 
-    // Bootstrapper should generate URLs using PathTenantResolver
+    // The bootstrapper should use PathTenantResolver while generating the URLs now
     FortifyRouteBootstrapper::$passQueryParameter = false;
 
     tenancy()->initialize($tenant);
