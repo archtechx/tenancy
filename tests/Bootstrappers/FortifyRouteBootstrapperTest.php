@@ -73,13 +73,13 @@ test('fortify route tenancy bootstrapper updates fortify config correctly', func
     ]);
 
     // The bootstrapper overrides the URLs in the Fortify config correctly (the URLs have the correct tenant parameter + parameter value)
-    // RequestDataTenantResolver config should be used
+    // Bootstrapper should generate URLs using RequestDataTenantResolver
     FortifyRouteBootstrapper::$passQueryParameter = true;
 
     tenancy()->initialize($tenant);
 
     expect(config('fortify.home'))->toBe('http://localhost/home?team_query=Acme');
-    expect(config('fortify.redirects'))->toEqual(['login' => 'http://localhost/welcome?team_query=Acme']);
+    expect(config('fortify.redirects'))->toBe(['login' => 'http://localhost/welcome?team_query=Acme']);
 
     // The bootstrapper restores the original Fortify config when ending tenancy
     tenancy()->end();
@@ -87,13 +87,13 @@ test('fortify route tenancy bootstrapper updates fortify config correctly', func
     expect(config('fortify.home'))->toBe($originalFortifyHome);
     expect(config('fortify.redirects'))->toBe($originalFortifyRedirects);
 
-    // PathTenantResolver config should be used now
+    // Bootstrapper should generate URLs using PathTenantResolver
     FortifyRouteBootstrapper::$passQueryParameter = false;
 
     tenancy()->initialize($tenant);
 
     expect(config('fortify.home'))->toBe('http://localhost/home?team_path=Foo');
-    expect(config('fortify.redirects'))->toEqual(['login' => 'http://localhost/welcome?team_path=Foo']);
+    expect(config('fortify.redirects'))->toBe(['login' => 'http://localhost/welcome?team_path=Foo']);
 
     tenancy()->end();
 
@@ -102,8 +102,6 @@ test('fortify route tenancy bootstrapper updates fortify config correctly', func
 
     tenancy()->initialize($tenant);
 
-    expect(config('fortify.home'))->toBe('http://localhost/home')
-        ->not()->toBe($originalFortifyHome);
-    expect(config('fortify.redirects'))->toEqual(['login' => 'http://localhost/welcome'])
-        ->not()->toBe($originalFortifyRedirects);
+    expect(config('fortify.home'))->toBe('http://localhost/home');
+    expect(config('fortify.redirects'))->toBe(['login' => 'http://localhost/welcome']);
 });
