@@ -18,11 +18,11 @@ use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
 use function Stancl\Tenancy\Tests\pest;
 
 test('tenants can be resolved using cached resolvers', function (string $resolver, bool $configureTenantModelColumn) {
-    $tenant = Tenant::create([$tenantColumn = tenantModelColumn($configureTenantModelColumn) => 'acme']);
+    $tenant = Tenant::create([$tenantModelColumn = tenantModelColumn($configureTenantModelColumn) => 'acme']);
 
-    $tenant->createDomain($tenant->{$tenantColumn});
+    $tenant->createDomain($tenant->{$tenantModelColumn});
 
-    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantModelColumn))))->toBeTrue();
 })->with([
     DomainTenantResolver::class,
     PathTenantResolver::class,
@@ -33,25 +33,25 @@ test('tenants can be resolved using cached resolvers', function (string $resolve
 ]);
 
 test('the underlying resolver is not touched when using the cached resolver', function (string $resolver, bool $configureTenantModelColumn) {
-    $tenant = Tenant::create([$tenantColumn = tenantModelColumn($configureTenantModelColumn) => 'acme']);
+    $tenant = Tenant::create([$tenantModelColumn = tenantModelColumn($configureTenantModelColumn) => 'acme']);
 
-    $tenant->createDomain($tenant->{$tenantColumn});
+    $tenant->createDomain($tenant->{$tenantModelColumn});
 
     DB::enableQueryLog();
 
     config(['tenancy.identification.resolvers.' . $resolver . '.cache' => false]);
 
-    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantModelColumn))))->toBeTrue();
     DB::flushQueryLog();
-    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantModelColumn))))->toBeTrue();
 
     pest()->assertNotEmpty(DB::getQueryLog()); // not empty
 
     config(['tenancy.identification.resolvers.' . $resolver . '.cache' => true]);
 
-    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantModelColumn))))->toBeTrue();
     DB::flushQueryLog();
-    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantModelColumn))))->toBeTrue();
     expect(DB::getQueryLog())->toBeEmpty(); // empty
 })->with([
     DomainTenantResolver::class,
@@ -63,20 +63,20 @@ test('the underlying resolver is not touched when using the cached resolver', fu
 ]);
 
 test('cache is invalidated when the tenant is updated', function (string $resolver, bool $configureTenantModelColumn) {
-    $tenant = Tenant::create([$tenantColumn = tenantModelColumn($configureTenantModelColumn) => 'acme']);
+    $tenant = Tenant::create([$tenantModelColumn = tenantModelColumn($configureTenantModelColumn) => 'acme']);
 
-    $tenant->createDomain($tenant->{$tenantColumn});
+    $tenant->createDomain($tenant->{$tenantModelColumn});
 
     DB::enableQueryLog();
 
     config(['tenancy.identification.resolvers.' . $resolver . '.cache' => true]);
 
-    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantModelColumn))))->toBeTrue();
     expect(DB::getQueryLog())->not()->toBeEmpty();
 
     DB::flushQueryLog();
 
-    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantModelColumn))))->toBeTrue();
     expect(DB::getQueryLog())->toBeEmpty();
 
     // Tenant cache gets invalidated when the tenant is updated
@@ -84,7 +84,7 @@ test('cache is invalidated when the tenant is updated', function (string $resolv
 
     DB::flushQueryLog();
 
-    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantModelColumn))))->toBeTrue();
 
     expect(DB::getQueryLog())->not()->toBeEmpty(); // Cache was invalidated, so the tenant was retrieved from the DB
 })->with([
@@ -98,25 +98,25 @@ test('cache is invalidated when the tenant is updated', function (string $resolv
 
 test('cache is invalidated when the tenant is deleted', function (string $resolver, bool $configureTenantModelColumn) {
     DB::statement('SET FOREIGN_KEY_CHECKS=0;'); // allow deleting the tenant
-    $tenant = Tenant::create([$tenantColumn = tenantModelColumn($configureTenantModelColumn) => 'acme']);
-    $tenant->createDomain($tenant->{$tenantColumn});
+    $tenant = Tenant::create([$tenantModelColumn = tenantModelColumn($configureTenantModelColumn) => 'acme']);
+    $tenant->createDomain($tenant->{$tenantModelColumn});
 
     DB::enableQueryLog();
 
     config(['tenancy.identification.resolvers.' . $resolver . '.cache' => true]);
 
-    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantModelColumn))))->toBeTrue();
     expect(DB::getQueryLog())->not()->toBeEmpty();
 
     DB::flushQueryLog();
 
-    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantModelColumn))))->toBeTrue();
     expect(DB::getQueryLog())->toBeEmpty();
 
     $tenant->delete();
     DB::flushQueryLog();
 
-    expect(fn () => app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn)))->toThrow(TenantCouldNotBeIdentifiedException::class);
+    expect(fn () => app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantModelColumn)))->toThrow(TenantCouldNotBeIdentifiedException::class);
     expect(DB::getQueryLog())->not()->toBeEmpty(); // Cache was invalidated, so the DB was queried
 })->with([
     DomainTenantResolver::class,
@@ -332,23 +332,23 @@ test('PathTenantResolver properly separates cache for each tenant column', funct
  */
 function tenantModelColumn(bool $configureTenantModelColumn): string {
     // Default tenant model column is 'id'
-    $tenantColumn = 'id';
+    $tenantModelColumn = 'id';
 
     if ($configureTenantModelColumn) {
         // Use 'name' as the custom tenant model column
-        $tenantColumn = 'name';
+        $tenantModelColumn = 'name';
 
-        Tenant::$extraCustomColumns = [$tenantColumn];
+        Tenant::$extraCustomColumns = [$tenantModelColumn];
 
-        Schema::table('tenants', function (Blueprint $table) use ($tenantColumn) {
-            $table->string($tenantColumn)->unique();
+        Schema::table('tenants', function (Blueprint $table) use ($tenantModelColumn) {
+            $table->string($tenantModelColumn)->unique();
         });
 
-        config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_model_column' => $tenantColumn]);
-        config(['tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.tenant_model_column' => $tenantColumn]);
+        config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_model_column' => $tenantModelColumn]);
+        config(['tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.tenant_model_column' => $tenantModelColumn]);
     }
 
-    return $tenantColumn;
+    return $tenantModelColumn;
 }
 
 /**
