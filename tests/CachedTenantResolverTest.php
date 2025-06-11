@@ -28,8 +28,8 @@ test('tenants can be resolved using cached resolvers', function (string $resolve
     PathTenantResolver::class,
     RequestDataTenantResolver::class,
 ])->with([
-    'tenant column is id (default)' => false,
-    'tenant column is name (custom)' => true,
+    'tenant model column is id (default)' => false,
+    'tenant model column is name (custom)' => true,
 ]);
 
 test('the underlying resolver is not touched when using the cached resolver', function (string $resolver, bool $configureTenantModelColumn) {
@@ -58,8 +58,8 @@ test('the underlying resolver is not touched when using the cached resolver', fu
     PathTenantResolver::class,
     RequestDataTenantResolver::class,
 ])->with([
-    'tenant column is id (default)' => false,
-    'tenant column is name (custom)' => true,
+    'tenant model column is id (default)' => false,
+    'tenant model column is name (custom)' => true,
 ]);
 
 test('cache is invalidated when the tenant is updated', function (string $resolver, bool $configureTenantModelColumn) {
@@ -92,8 +92,8 @@ test('cache is invalidated when the tenant is updated', function (string $resolv
     PathTenantResolver::class,
     RequestDataTenantResolver::class,
 ])->with([
-    'tenant column is id (default)' => false,
-    'tenant column is name (custom)' => true,
+    'tenant model column is id (default)' => false,
+    'tenant model column is name (custom)' => true,
 ]);
 
 test('cache is invalidated when the tenant is deleted', function (string $resolver, bool $configureTenantModelColumn) {
@@ -123,8 +123,8 @@ test('cache is invalidated when the tenant is deleted', function (string $resolv
     PathTenantResolver::class,
     RequestDataTenantResolver::class,
 ])->with([
-    'tenant column is id (default)' => false,
-    'tenant column is name (custom)' => true,
+    'tenant model column is id (default)' => false,
+    'tenant model column is name (custom)' => true,
 ]);
 
 test('cache is invalidated when a tenants domain is changed', function () {
@@ -358,7 +358,7 @@ function tenantModelColumn(bool $configureTenantModelColumn): string {
  * For PathTenantResolver, return a route instance with the value retrieved using $tenant->{$parameterColumn} as the parameter.
  * For RequestDataTenantResolver and DomainTenantResolver, return the value retrieved using $tenant->{$parameterColumn}.
  *
- * Tenant column name is 'id' by default, but in the generic tests,
+ * Tenant model column is 'id' by default, but in the generic tests,
  * we also configure that to 'name' to ensure everything works both with default and custom config.
  */
 function getResolverArgument(string $resolver, Tenant $tenant, string $parameterColumn = 'id'): string|Route
