@@ -17,8 +17,8 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
 use function Stancl\Tenancy\Tests\pest;
 
-test('tenants can be resolved using cached resolvers', function (string $resolver, bool $default) {
-    $tenant = Tenant::create([$tenantColumn = tenantModelColumn($default) => 'acme']);
+test('tenants can be resolved using cached resolvers', function (string $resolver, bool $configureTenantModelColumn) {
+    $tenant = Tenant::create([$tenantColumn = tenantModelColumn($configureTenantModelColumn) => 'acme']);
 
     $tenant->createDomain($tenant->{$tenantColumn});
 
@@ -28,12 +28,12 @@ test('tenants can be resolved using cached resolvers', function (string $resolve
     PathTenantResolver::class,
     RequestDataTenantResolver::class,
 ])->with([
-    'tenant column is id (default)' => true,
-    'tenant column is name (custom)' => false,
+    'tenant column is id (default)' => false,
+    'tenant column is name (custom)' => true,
 ]);
 
-test('the underlying resolver is not touched when using the cached resolver', function (string $resolver, bool $default) {
-    $tenant = Tenant::create([$tenantColumn = tenantModelColumn($default) => 'acme']);
+test('the underlying resolver is not touched when using the cached resolver', function (string $resolver, bool $configureTenantModelColumn) {
+    $tenant = Tenant::create([$tenantColumn = tenantModelColumn($configureTenantModelColumn) => 'acme']);
 
     $tenant->createDomain($tenant->{$tenantColumn});
 
@@ -58,12 +58,12 @@ test('the underlying resolver is not touched when using the cached resolver', fu
     PathTenantResolver::class,
     RequestDataTenantResolver::class,
 ])->with([
-    'tenant column is id (default)' => true,
-    'tenant column is name (custom)' => false,
+    'tenant column is id (default)' => false,
+    'tenant column is name (custom)' => true,
 ]);
 
-test('cache is invalidated when the tenant is updated', function (string $resolver, bool $default) {
-    $tenant = Tenant::create([$tenantColumn = tenantModelColumn($default) => 'acme']);
+test('cache is invalidated when the tenant is updated', function (string $resolver, bool $configureTenantModelColumn) {
+    $tenant = Tenant::create([$tenantColumn = tenantModelColumn($configureTenantModelColumn) => 'acme']);
 
     $tenant->createDomain($tenant->{$tenantColumn});
 
@@ -92,13 +92,13 @@ test('cache is invalidated when the tenant is updated', function (string $resolv
     PathTenantResolver::class,
     RequestDataTenantResolver::class,
 ])->with([
-    'tenant column is id (default)' => true,
-    'tenant column is name (custom)' => false,
+    'tenant column is id (default)' => false,
+    'tenant column is name (custom)' => true,
 ]);
 
-test('cache is invalidated when the tenant is deleted', function (string $resolver, bool $default) {
+test('cache is invalidated when the tenant is deleted', function (string $resolver, bool $configureTenantModelColumn) {
     DB::statement('SET FOREIGN_KEY_CHECKS=0;'); // allow deleting the tenant
-    $tenant = Tenant::create([$tenantColumn = tenantModelColumn($default) => 'acme']);
+    $tenant = Tenant::create([$tenantColumn = tenantModelColumn($configureTenantModelColumn) => 'acme']);
     $tenant->createDomain($tenant->{$tenantColumn});
 
     DB::enableQueryLog();
@@ -123,8 +123,8 @@ test('cache is invalidated when the tenant is deleted', function (string $resolv
     PathTenantResolver::class,
     RequestDataTenantResolver::class,
 ])->with([
-    'tenant column is id (default)' => true,
-    'tenant column is name (custom)' => false,
+    'tenant column is id (default)' => false,
+    'tenant column is name (custom)' => true,
 ]);
 
 test('cache is invalidated when a tenants domain is changed', function () {
@@ -327,13 +327,13 @@ test('PathTenantResolver properly separates cache for each tenant column', funct
 /**
  * This method is used in generic tests to ensure that caching works correctly both with default and custom resolver config.
  *
- * If $default is true, the tenant model column is 'id' -- don't configure anything, keep the defaults.
- * If $default is false, the tenant model column should be 'name' -- configure tenant_model_column in the resolvers.
+ * If $configureTenantModelColumn is false, the tenant model column is 'id' -- don't configure anything, keep the defaults.
+ * If $configureTenantModelColumn is true, the tenant model column should be 'name' -- configure tenant_model_column in the resolvers.
  */
-function tenantModelColumn(bool $default): string {
-    $tenantColumn = $default ? 'id' : 'name';
+function tenantModelColumn(bool $configureTenantModelColumn): string {
+    $tenantColumn = $configureTenantModelColumn ? 'name' : 'id';
 
-    if (! $default) {
+    if ($configureTenantModelColumn) {
         Tenant::$extraCustomColumns = [$tenantColumn];
 
         Schema::table('tenants', function (Blueprint $table) use ($tenantColumn) {
