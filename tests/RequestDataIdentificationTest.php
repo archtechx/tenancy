@@ -89,7 +89,7 @@ test('cookie identification works', function (string|null $tenantModelColumn) {
     // Default cookie name
     $this->withoutExceptionHandling()->withUnencryptedCookie('tenant', $payload)->get('test')->assertSee($tenant->id);
 
-    // Encrypted cookie (encrypt cookie like MakesHttpRequests does)
+    // Manually encrypted cookie (encrypt the cookie exactly like MakesHttpRequests does in prepareCookiesForRequest())
     $encryptedPayload = encrypt(CookieValuePrefix::create('tenant', app('encrypter')->getKey()) . $payload, false);
 
     $this->withoutExceptionHandling()->withUnencryptedCookie('tenant', $encryptedPayload)->get('test')->assertSee($tenant->id);
