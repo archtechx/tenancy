@@ -17,59 +17,105 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
 use function Stancl\Tenancy\Tests\pest;
 
-test('tenants can be resolved using cached resolvers', function (string $resolver) {
-    $tenant = Tenant::create(['id' => $tenantKey = 'acme']);
+test('tenants can be resolved using cached resolvers', function (string $resolver, string $tenantColumn) {
+    if ($tenantColumn !== tenancy()->model()->getTenantKeyName()) {
+        Tenant::$extraCustomColumns = [$tenantColumn];
 
-    $tenant->domains()->create(['domain' => $tenantKey]);
+        Schema::table('tenants', function (Blueprint $table) use ($tenantColumn) {
+            $table->string($tenantColumn)->unique();
+        });
+    }
 
-    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenantKey))))->toBeTrue();
+    config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_model_column' => $tenantColumn]);
+    config(['tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.tenant_model_column' => $tenantColumn]);
+
+    $tenant = Tenant::create([$tenantColumn => $value = 'acme']);
+
+    if ($resolver === DomainTenantResolver::class) {
+        $tenant->createDomain($value);
+    }
+
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
 })->with([
     DomainTenantResolver::class,
     PathTenantResolver::class,
     RequestDataTenantResolver::class,
+])->with([
+    'tenant column is default' => 'id',
+    'tenant column is name' => 'name',
 ]);
 
-test('the underlying resolver is not touched when using the cached resolver', function (string $resolver) {
-    $tenant = Tenant::create(['id' => $tenantKey = 'acme']);
+test('the underlying resolver is not touched when using the cached resolver', function (string $resolver, string $tenantColumn) {
+    if ($tenantColumn !== tenancy()->model()->getTenantKeyName()) {
+        Tenant::$extraCustomColumns = [$tenantColumn];
 
-    $tenant->createDomain($tenantKey);
+        Schema::table('tenants', function (Blueprint $table) use ($tenantColumn) {
+            $table->string($tenantColumn)->unique();
+        });
+    }
+
+    config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_model_column' => $tenantColumn]);
+    config(['tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.tenant_model_column' => $tenantColumn]);
+
+    $tenant = Tenant::create([$tenantColumn => $value = 'acme']);
+
+    if ($resolver === DomainTenantResolver::class) {
+        $tenant->createDomain($value);
+    }
 
     DB::enableQueryLog();
 
     config(['tenancy.identification.resolvers.' . $resolver . '.cache' => false]);
 
-    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenantKey))))->toBeTrue();
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
     DB::flushQueryLog();
-    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenantKey))))->toBeTrue();
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
 
     pest()->assertNotEmpty(DB::getQueryLog()); // not empty
 
     config(['tenancy.identification.resolvers.' . $resolver . '.cache' => true]);
 
-    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenantKey))))->toBeTrue();
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
     DB::flushQueryLog();
-    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenantKey))))->toBeTrue();
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
     expect(DB::getQueryLog())->toBeEmpty(); // empty
 })->with([
     DomainTenantResolver::class,
     PathTenantResolver::class,
     RequestDataTenantResolver::class,
+])->with([
+    'tenant column is default' => 'id',
+    'tenant column is name' => 'name',
 ]);
 
-test('cache is invalidated when the tenant is updated', function (string $resolver) {
-    $tenant = Tenant::create(['id' => $tenantKey = 'acme']);
-    $tenant->createDomain($tenantKey);
+test('cache is invalidated when the tenant is updated', function (string $resolver, string $tenantColumn) {
+    if ($tenantColumn !== tenancy()->model()->getTenantKeyName()) {
+        Tenant::$extraCustomColumns = [$tenantColumn];
+
+        Schema::table('tenants', function (Blueprint $table) use ($tenantColumn) {
+            $table->string($tenantColumn)->unique();
+        });
+    }
+
+    config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_model_column' => $tenantColumn]);
+    config(['tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.tenant_model_column' => $tenantColumn]);
+
+    $tenant = Tenant::create([$tenantColumn => $value = 'acme']);
+
+    if ($resolver === DomainTenantResolver::class) {
+        $tenant->createDomain($value);
+    }
 
     DB::enableQueryLog();
 
     config(['tenancy.identification.resolvers.' . $resolver . '.cache' => true]);
 
-    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenantKey))))->toBeTrue();
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
     expect(DB::getQueryLog())->not()->toBeEmpty();
 
     DB::flushQueryLog();
 
-    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenantKey))))->toBeTrue();
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
     expect(DB::getQueryLog())->toBeEmpty();
 
     // Tenant cache gets invalidated when the tenant is updated
@@ -77,46 +123,66 @@ test('cache is invalidated when the tenant is updated', function (string $resolv
 
     DB::flushQueryLog();
 
-    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenantKey))))->toBeTrue();
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
 
     expect(DB::getQueryLog())->not()->toBeEmpty(); // Cache was invalidated, so the tenant was retrieved from the DB
 })->with([
     DomainTenantResolver::class,
     PathTenantResolver::class,
     RequestDataTenantResolver::class,
+])->with([
+    'tenant column is default' => 'id',
+    'tenant column is name' => 'name',
 ]);
 
-test('cache is invalidated when the tenant is deleted', function (string $resolver) {
+test('cache is invalidated when the tenant is deleted', function (string $resolver, string $tenantColumn) {
+    if ($tenantColumn !== tenancy()->model()->getTenantKeyName()) {
+        Tenant::$extraCustomColumns = [$tenantColumn];
+
+        Schema::table('tenants', function (Blueprint $table) use ($tenantColumn) {
+            $table->string($tenantColumn)->unique();
+        });
+    }
+
+    config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_model_column' => $tenantColumn]);
+    config(['tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.tenant_model_column' => $tenantColumn]);
+
     DB::statement('SET FOREIGN_KEY_CHECKS=0;'); // allow deleting the tenant
-    $tenant = Tenant::create(['id' => $tenantKey = 'acme']);
-    $tenant->createDomain($tenantKey);
+    $tenant = Tenant::create([$tenantColumn => $value = 'acme']);
+
+    if ($resolver === DomainTenantResolver::class) {
+        $tenant->createDomain($value);
+    }
 
     DB::enableQueryLog();
 
     config(['tenancy.identification.resolvers.' . $resolver . '.cache' => true]);
 
-    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenantKey))))->toBeTrue();
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
     expect(DB::getQueryLog())->not()->toBeEmpty();
 
     DB::flushQueryLog();
 
-    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenantKey))))->toBeTrue();
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
     expect(DB::getQueryLog())->toBeEmpty();
 
     $tenant->delete();
     DB::flushQueryLog();
 
-    expect(fn () => app($resolver)->resolve(getResolverArgument($resolver, $tenantKey)))->toThrow(TenantCouldNotBeIdentifiedException::class);
+    expect(fn () => app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn)))->toThrow(TenantCouldNotBeIdentifiedException::class);
     expect(DB::getQueryLog())->not()->toBeEmpty(); // Cache was invalidated, so the DB was queried
 })->with([
     DomainTenantResolver::class,
     PathTenantResolver::class,
     RequestDataTenantResolver::class,
+])->with([
+    'tenant column is default' => 'id',
+    'tenant column is name' => 'name',
 ]);
 
 test('cache is invalidated when a tenants domain is changed', function () {
-    $tenant = Tenant::create(['id' => $tenantKey = 'acme']);
-    $tenant->createDomain($tenantKey);
+    $tenant = Tenant::create(['id' => $domain = 'acme']);
+    $tenant->createDomain($domain);
 
     DB::enableQueryLog();
 
@@ -141,8 +207,8 @@ test('cache is invalidated when a tenants domain is changed', function () {
 });
 
 test('cache is invalidated when a tenants domain is deleted', function () {
-    $tenant = Tenant::create(['id' => $tenantKey = 'acme']);
-    $tenant->createDomain($tenantKey);
+    $tenant = Tenant::create(['id' => $domain = 'acme']);
+    $tenant->createDomain($domain);
 
     DB::enableQueryLog();
 
@@ -312,18 +378,21 @@ test('PathTenantResolver properly separates cache for each tenant column', funct
 });
 
 /**
- * Return the argument for the resolver – tenant key, or a route instance with the tenant parameter.
+ * For PathTenantResolver, return a route instance with the tenant key as the parameter.
+ * For RequestDataTenantResolver and DomainTenantResolver, return the tenant key.
  *
- * PathTenantResolver uses a route instance with the tenant parameter as the argument,
- * unlike other resolvers which use a tenant key as the argument.
+ * This method is used in tests where we test all the resolvers
+ * to make getting the resolver arguments less repetitive (primarily because of PathTenantResolver).
  *
- * This method is used in the tests where we test all the resolvers
- * to make getting the resolver arguments less repetitive (primarily because of the PathTenantResolver).
+ * Note that this is only intended for use in tests where the default resolver config is not changed.
+ * E.g. with request data resolver, if you change the configured tenant model column, this will still return the tenant key.
  */
-function getResolverArgument(string $resolver, string $tenantKey): string|Route
+function getResolverArgument(string $resolver, Tenant $tenant, string $parameterColumn = 'id'): string|Route
 {
-    // PathTenantResolver uses a route instance as the argument
+    $resolverArgument = $tenant->{$parameterColumn};
+
     if ($resolver === PathTenantResolver::class) {
+        // PathTenantResolver uses a route instance as the argument
         $routeName = 'tenant-route';
 
         // Find or create a route instance for the resolver
@@ -336,13 +405,12 @@ function getResolverArgument(string $resolver, string $tenantKey): string|Route
         // Make the 'tenant' route parameter the tenant key
         // Setting the parameter on the $route->parameters property is required
         // Because $route->setParameter() throws an exception when $route->parameters is not set yet
-        $route->parameters[PathTenantResolver::tenantParameterName()] = $tenantKey;
+        $route->parameters['tenant'] = $resolverArgument;
 
         // Return the route instance with the tenant key as the 'tenant' parameter
         return $route;
     }
 
-    // Resolvers other than PathTenantResolver use the tenant key as the argument
-    // Return the tenant key
-    return $tenantKey;
+    // RequestDataTenantResolver / DomainTenantResolver
+    return $resolverArgument;
 }
