@@ -19,9 +19,7 @@ use function Stancl\Tenancy\Tests\pest;
 
 test('tenants can be resolved using cached resolvers', function (string $resolver, bool $default) {
     $tenant = Tenant::create([$tenantColumn = tenantModelColumn($default) => 'acme']);
-    $tenantParameterValue = $tenant->{$tenantColumn};
-
-    $tenant->createDomain($tenantParameterValue);
+    $tenant->createDomain($tenant->{$tenantColumn});
 
     expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
 })->with([
@@ -35,9 +33,7 @@ test('tenants can be resolved using cached resolvers', function (string $resolve
 
 test('the underlying resolver is not touched when using the cached resolver', function (string $resolver, bool $default) {
     $tenant = Tenant::create([$tenantColumn = tenantModelColumn($default) => 'acme']);
-    $tenantParameterValue = $tenant->{$tenantColumn};
-
-    $tenant->createDomain($tenantParameterValue);
+    $tenant->createDomain($tenant->{$tenantColumn});
 
     DB::enableQueryLog();
 
@@ -66,9 +62,7 @@ test('the underlying resolver is not touched when using the cached resolver', fu
 
 test('cache is invalidated when the tenant is updated', function (string $resolver, bool $default) {
     $tenant = Tenant::create([$tenantColumn = tenantModelColumn($default) => 'acme']);
-    $tenantParameterValue = $tenant->{$tenantColumn};
-
-    $tenant->createDomain($tenantParameterValue);
+    $tenant->createDomain($tenant->{$tenantColumn});
 
     DB::enableQueryLog();
 
@@ -100,12 +94,9 @@ test('cache is invalidated when the tenant is updated', function (string $resolv
 ]);
 
 test('cache is invalidated when the tenant is deleted', function (string $resolver, bool $default) {
-    $tenant = Tenant::create([$tenantColumn = tenantModelColumn($default) => 'acme']);
-    $tenantParameterValue = $tenant->{$tenantColumn};
-
     DB::statement('SET FOREIGN_KEY_CHECKS=0;'); // allow deleting the tenant
-
-    $tenant->createDomain($tenantParameterValue);
+    $tenant = Tenant::create([$tenantColumn = tenantModelColumn($default) => 'acme']);
+    $tenant->createDomain($tenant->{$tenantColumn});
 
     DB::enableQueryLog();
 
@@ -134,8 +125,8 @@ test('cache is invalidated when the tenant is deleted', function (string $resolv
 ]);
 
 test('cache is invalidated when a tenants domain is changed', function () {
-    $tenant = Tenant::create(['id' => $domain = 'acme']);
-    $tenant->createDomain($domain);
+    $tenant = Tenant::create(['id' => $tenantKey = 'acme']);
+    $tenant->createDomain($tenantKey);
 
     DB::enableQueryLog();
 
@@ -160,8 +151,8 @@ test('cache is invalidated when a tenants domain is changed', function () {
 });
 
 test('cache is invalidated when a tenants domain is deleted', function () {
-    $tenant = Tenant::create(['id' => $domain = 'acme']);
-    $tenant->createDomain($domain);
+    $tenant = Tenant::create(['id' => $tenantKey = 'acme']);
+    $tenant->createDomain($tenantKey);
 
     DB::enableQueryLog();
 
