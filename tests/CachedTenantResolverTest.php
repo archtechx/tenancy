@@ -19,6 +19,7 @@ use function Stancl\Tenancy\Tests\pest;
 
 test('tenants can be resolved using cached resolvers', function (string $resolver, bool $default) {
     $tenant = Tenant::create([$tenantColumn = tenantModelColumn($default) => 'acme']);
+
     $tenant->createDomain($tenant->{$tenantColumn});
 
     expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantColumn))))->toBeTrue();
@@ -33,6 +34,7 @@ test('tenants can be resolved using cached resolvers', function (string $resolve
 
 test('the underlying resolver is not touched when using the cached resolver', function (string $resolver, bool $default) {
     $tenant = Tenant::create([$tenantColumn = tenantModelColumn($default) => 'acme']);
+
     $tenant->createDomain($tenant->{$tenantColumn});
 
     DB::enableQueryLog();
@@ -62,6 +64,7 @@ test('the underlying resolver is not touched when using the cached resolver', fu
 
 test('cache is invalidated when the tenant is updated', function (string $resolver, bool $default) {
     $tenant = Tenant::create([$tenantColumn = tenantModelColumn($default) => 'acme']);
+
     $tenant->createDomain($tenant->{$tenantColumn});
 
     DB::enableQueryLog();
