@@ -327,13 +327,17 @@ test('PathTenantResolver properly separates cache for each tenant column', funct
 /**
  * This method is used in generic tests to ensure that caching works correctly both with default and custom resolver config.
  *
- * If $configureTenantModelColumn is false, the tenant model column is 'id' -- don't configure anything, keep the defaults.
- * If $configureTenantModelColumn is true, the tenant model column should be 'name' -- configure tenant_model_column in the resolvers.
+ * If $configureTenantModelColumn is false, the tenant model column is 'id' (default) -- don't configure anything, keep the defaults.
+ * If $configureTenantModelColumn is true, the tenant model column should be 'name' (custom) -- configure tenant_model_column in the resolvers.
  */
 function tenantModelColumn(bool $configureTenantModelColumn): string {
-    $tenantColumn = $configureTenantModelColumn ? 'name' : 'id';
+    // Default tenant model column is 'id'
+    $tenantColumn = 'id';
 
     if ($configureTenantModelColumn) {
+        // Use 'name' as the custom tenant model column
+        $tenantColumn = 'name';
+
         Tenant::$extraCustomColumns = [$tenantColumn];
 
         Schema::table('tenants', function (Blueprint $table) use ($tenantColumn) {
@@ -348,19 +352,17 @@ function tenantModelColumn(bool $configureTenantModelColumn): string {
 }
 
 /**
- * For PathTenantResolver, return a route instance with the tenant key as the parameter.
- * For RequestDataTenantResolver and DomainTenantResolver, return the tenant key.
- *
- * This method is used in tests where we test all the resolvers
+ * This method is used in generic tests where we test all the resolvers
  * to make getting the resolver arguments less repetitive (primarily because of PathTenantResolver).
  *
- * Note that this is only intended for use in tests where the default resolver config is not changed.
- * E.g. with request data resolver, if you change the configured tenant model column, this will still return the tenant key.
+ * For PathTenantResolver, return a route instance with the value retrieved using $tenant->{$parameterColumn} as the parameter.
+ * For RequestDataTenantResolver and DomainTenantResolver, return the value retrieved using $tenant->{$parameterColumn}.
+ *
+ * Tenant column name is 'id' by default, but in the generic tests,
+ * we also configure that to 'name' to ensure everything works both with default and custom config.
  */
 function getResolverArgument(string $resolver, Tenant $tenant, string $parameterColumn = 'id'): string|Route
 {
-    $resolverArgument = $tenant->{$parameterColumn};
-
     if ($resolver === PathTenantResolver::class) {
         // PathTenantResolver uses a route instance as the argument
         $routeName = 'tenant-route';
@@ -371,16 +373,21 @@ function getResolverArgument(string $resolver, Tenant $tenant, string $parameter
             ->prefix('{tenant}')
             ->middleware(InitializeTenancyByPath::class);
 
-        // To make the tenant available on the route instance
-        // Make the 'tenant' route parameter the tenant key
-        // Setting the parameter on the $route->parameters property is required
-        // Because $route->setParameter() throws an exception when $route->parameters is not set yet
-        $route->parameters['tenant'] = $resolverArgument;
+        /**
+         * To make the tenant available on the route instance,
+         * set the 'tenant' route parameter to the tenant model column value ('id' or 'name').
+         *
+         * Setting the parameter on the $route->parameters property is required
+         * because $route->setParameter() throws an exception when $route->parameters isn't set yet.
+         */
+        $route->parameters['tenant'] = $tenant->{$parameterColumn};
 
-        // Return the route instance with the tenant key as the 'tenant' parameter
+        // Return the route instance with 'id' or 'name' as the 'tenant' parameter
         return $route;
     }
 
-    // RequestDataTenantResolver / DomainTenantResolver
-    return $resolverArgument;
+    // Assuming that:
+    // - with RequestDataTenantResolver, the tenant model column value is the payload value
+    // - with DomainTenantResolver, the tenant has a domain with name equal to the tenant model column value
+    return $tenant->{$parameterColumn};
 }
