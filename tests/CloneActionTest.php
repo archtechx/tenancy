@@ -41,7 +41,7 @@ test('CloneRoutesAsTenant action clones routes correctly', function (Route|null 
         $tenant = Tenant::create();
 
         expect($route->getName())->toBe($tenantRouteNamePrefix . str($route->getName())->afterLast(($tenantRouteNamePrefix)));
-        pest()->get(route($route->getName(), [$tenantParameterName => $tenant->getTenantKey()]))->assertOk();
+        pest()->get(route($route->getName(), [$tenantParameterName => $tenant->id]))->assertOk();
         expect(tenancy()->getRouteMiddleware($route))
             ->toContain('tenant')
             ->not()->toContain('clone');
@@ -176,11 +176,11 @@ test('the clone action prefixes already prefixed routes correctly', function () 
 
         expect($clonedRouteUrl)
             // Original prefix does not occur in the cloned route's URL
-            ->not()->toContain("prefix/{$tenant->getTenantKey()}/prefix")
+            ->not()->toContain("prefix/{$tenant->id}/prefix")
             ->not()->toContain("//prefix")
             ->not()->toContain("prefix//")
             // Route is prefixed correctly
-            ->toBe("http://localhost/prefix/{$tenant->getTenantKey()}/{$routes[$key]->getName()}");
+            ->toBe("http://localhost/prefix/{$tenant->id}/{$routes[$key]->getName()}");
 
         // The cloned route is accessible
         pest()->get($clonedRouteUrl)->assertOk();
@@ -208,11 +208,11 @@ test('clone action trims trailing slashes from prefixes given to nested route gr
 
     expect($clonedLandingUrl)
         ->not()->toContain("prefix//")
-        ->toBe("http://localhost/prefix/{$tenant->getTenantKey()}");
+        ->toBe("http://localhost/prefix/{$tenant->id}");
 
     expect($clonedHomeRouteUrl)
         ->not()->toContain("prefix//")
-        ->toBe("http://localhost/prefix/{$tenant->getTenantKey()}/home");
+        ->toBe("http://localhost/prefix/{$tenant->id}/home");
 });
 
 test('tenant routes are ignored from cloning and clone middleware in groups causes no issues', function () {
@@ -221,26 +221,24 @@ test('tenant routes are ignored from cloning and clone middleware in groups caus
         ->middleware(['clone'])
         ->name("tenant.route-with-tenant-parameter");
 
-    // Should NOT be cloned
-    // The route already has tenant name prefix
+    // Should NOT be cloned, already has tenant name prefix
     RouteFacade::get("/route-with-tenant-name-prefix", fn () => true)
         ->middleware(['clone'])
         ->name("tenant.route-with-tenant-name-prefix");
 
-    // Should NOT be cloned
-    // The route already has a tenant parameter + 'clone' middleware in group
-    // 'clone' MW in groups won't be removed, this also doesn't cause any issues
+    // Should NOT be cloned, already has tenant parameter + 'clone' middleware in group
+    // 'clone' MW in groups won't be removed (this doesn't cause any issues)
     RouteFacade::middlewareGroup('group', ['auth', 'clone']);
     RouteFacade::get("/{tenant}/route-with-clone-in-mw-group", fn () => true)
         ->middleware('group')
         ->name("tenant.route-with-clone-in-mw-group");
 
-    // SHOULD be cloned (with clone middleware)
+    // SHOULD be cloned (has clone middleware)
     RouteFacade::get('/foo', fn () => true)
         ->middleware(['clone'])
         ->name('foo');
 
-    // SHOULD be cloned (with nested clone middleware)
+    // SHOULD be cloned (has nested clone middleware)
     RouteFacade::get('/bar', fn () => true)
         ->middleware(['group'])
         ->name('bar');
