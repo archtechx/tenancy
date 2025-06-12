@@ -204,7 +204,7 @@ class TableRLSManager implements RLSPolicyManager
             return $cachedPaths[$table];
         }
 
-        return $this->determineShortestPath($table, $constraints, $cachedPaths, $visitedTables);
+        return $this->findShortestPath($table, $constraints, $cachedPaths, $visitedTables);
     }
 
     /**
@@ -240,7 +240,7 @@ class TableRLSManager implements RLSPolicyManager
      * If static::$scopeByDefault is true, only skip paths leading through constraints flagged with the 'no-rls' comment.
      * If static::$scopeByDefault is false, skip paths leading through any constraint, unless the key has explicit 'rls' or 'rls table.column' comments.
      *
-     * @param array $constraint Formatted constraint (has to have the 'comment' key)
+     * @param array $constraint Formatted constraint
      */
     protected function shouldSkipPathLeadingThrough(array $constraint): bool
     {
@@ -398,9 +398,7 @@ class TableRLSManager implements RLSPolicyManager
      * Find the optimal path from a table to the tenants table.
      *
      * Gathers table's constraints (both foreign key constraints and comment constraints)
-     * and recursively finds paths through each constraint while tracking both
-     * the overall shortest path and the shortest non-nullable
-     * path (non-nullable paths are preferred for reliability).
+     * and recursively finds shortest paths through each constraint (non-nullable paths are preferred for reliability).
      *
      * Handles recursive relationships by skipping paths that would create loops.
      * If there's no valid path in the end, and the table has recursive relationships,
@@ -415,7 +413,7 @@ class TableRLSManager implements RLSPolicyManager
      * @param array $visitedTables Tables already visited in this path (used for detecting recursion)
      * @return array Path with 'steps' array, 'dead_end' flag, and 'recursive_relationship' flag
      */
-    protected function determineShortestPath(
+    protected function findShortestPath(
         string $table,
         array $constraints,
         array &$cachedPaths,
