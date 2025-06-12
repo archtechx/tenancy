@@ -11,41 +11,51 @@ use Illuminate\Support\Str;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 
 /**
- * Clones routes manually added to $routesToClone, or if $routesToClone is empty,
- * clones all existing routes for which shouldBeCloned returns true (by default, this means
- * all routes with any middleware that's present in $cloneRoutesWithMiddleware).
- *
- * The default value of $cloneRoutesWithMiddleware is ['clone'] which means that routes
- * with the 'clone' middleware will be cloned as described below. You may customize
- * either this array, to make other middleware trigger cloning, or by providing a callback
- * to shouldClone() to change how the logic determines if a route should be cloned.
- *
- * After cloning, only top-level middleware in $cloneRoutesWithMiddleware will be *removed*
- * from the new route (so in the default case, 'clone' will be stripped from the MW list).
- * Middleware groups are preserved as-is, even if they contain cloning middleware.
- *
- * Cloned routes are prefixed with '/{tenant}', flagged with 'tenant' middleware,
- * and have their names prefixed with 'tenant.'.
- * Routes with names that are already prefixed won't be cloned.
- *
- * If the config for the path resolver is customized, the parameter name and prefix
- * can be changed, e.g. to `/{team}` and `team.`.
+ * Clones either all existing routes for which shouldBeCloned() returns true
+ * (by default, all routes with any middleware present in $cloneRoutesWithMiddleware),
+ * or if any routes were manually added to $routesToClone (using $action->cloneRoute($route)),
+ * clone just the routes in $routesToClone.
  *
  * The main purpose of this action is to make the integration of packages
  * (e.g., Jetstream or Livewire) easier with path-based tenant identification.
  *
- * Customization:
- * - Use cloneRoutesWithMiddleware() to change the middleware in $cloneRoutesWithMiddleware
- * - Use shouldClone() to provide a custom callback that receives a Route instance and
- *   returns a boolean indicating whether the route should be cloned. This callback
- *   takes precedence over the default middleware-based logic. Return true to clone
- *   the route, false to skip it. The callback is called after the default logic that
- *   prevents cloning routes that are already considered tenant.
- * - Use cloneUsing() to customize route definitions
- * - Adjust PathTenantResolver's tenantParameterName and tenantRouteNamePrefix as needed in the config file
+ * The default for $cloneRoutesWithMiddleware is ['clone'].
+ * If $routesToClone is empty, all routes with any middleware specified in $cloneRoutesWithMiddleware will be cloned.
+ * You may customize $cloneRoutesWithMiddleware using cloneRoutesWithMiddleware() to make any middleware of your choice trigger cloning.
+ * By providing a callback to shouldClone(), you can change how it's determined if a route should be cloned.
  *
- * Infinite cloning loops are prevented by skipping routes that already contain the tenant
- * parameter or have names with the tenant prefix.
+ * Cloned routes are prefixed with '/{tenant}', flagged with 'tenant' middleware, and have their names prefixed with 'tenant.'.
+ * The parameter name and prefix can be changed e.g. to `/{team}` and `team.` by configuring the path resolver (tenantParameterName and tenantRouteNamePrefix).
+ * Routes with names that are already prefixed won't be cloned - but that's just the default behavior.
+ * The cloneUsing() method allows you to completely override the default behavior and customize how the cloned routes will be defined.
+ *
+ * After cloning, only top-level middleware in $cloneRoutesWithMiddleware will be removed
+ * from the new route (so in the default case, 'clone' will be stripped from the MW list).
+ * Middleware groups are preserved as-is, even if they contain cloning middleware.
+ *
+ * Routes that already contain the tenant parameter or have names with the tenant prefix
+ * will not be cloned. This is to prevent infinite cloning loops.
+ *
+ * Example usage:
+ * ```
+ * Route::get('/foo', fn () => true)->name('foo')->middleware('clone');
+ * Route::get('/bar', fn () => true)->name('bar')->middleware('universal');
+ *
+ * $cloneAction = app(CloneRoutesAsTenant::class);
+ *
+ * // Clone foo route as /{tenant}/foo/ and name it tenant.foo ('clone' middleware won't be present in the cloned route)
+ * $cloneAction->handle();
+ *
+ * // Clone bar route as /{tenant}/bar and name it tenant.bar ('universal' middleware won't be present in the cloned route)
+ * $cloneAction->cloneRoutesWithMiddleware(['universal'])->handle();
+ *
+ * Route::get('/baz', fn () => true)->name('baz');
+ *
+ * // Clone baz route as /{tenant}/bar and name it tenant.baz ('universal' middleware won't be present in the cloned route)
+ * $cloneAction->cloneRoute('baz')->handle();
+ * ```
+ *
+ * @see Stancl\Tenancy\Resolvers\PathTenantResolver
  */
 class CloneRoutesAsTenant
 {
@@ -84,6 +94,9 @@ class CloneRoutesAsTenant
 
             $this->copyMiscRouteProperties($route, $this->createNewRoute($route));
         }
+
+        // Clean up the routesToClone array after cloning so that subsequent calls aren't affected
+        $this->routesToClone = [];
 
         $this->router->getRoutes()->refreshNameLookups();
     }
