@@ -1256,8 +1256,9 @@ test('global scopes on syncable models can break resource syncing', function () 
         $query->withoutGlobalScope(VisibleScope::class);
     };
 
-    // Run exactly the same code as above, but this time the central resource will be found and updated successfully.
-    // The central resource already exists, and now, it IS found, no exception is thrown.
+    // Run essentially the same code as above, but this time,
+    // the central resource will be found and updated successfully.
+    // The central resource already exists, and now, it IS found, and no exception is thrown.
     $tenant2->run(fn () => TenantUser::create([
         'global_id' => 'foo',
         'name' => 'tenant2 user',
