@@ -462,7 +462,7 @@ class TableRLSManager implements RLSPolicyManager
             // Example:
             // - posts table has highlighted_comment_id that leads to the comments table
             // - comments table has recursive_post_id that leads to the posts table (recursive relationship),
-            // - comments table also has tenant_id which leadds to the tenants table (a valid path).
+            // - comments table also has tenant_id which leads to the tenants table (a valid path).
             // If the recursive path got cached first, the path leading directly through tenants would never be found.
             return $this->buildPath(recursive: true);
         } else {
