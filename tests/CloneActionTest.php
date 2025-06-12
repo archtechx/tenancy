@@ -272,3 +272,26 @@ test('tenant routes are ignored from cloning and clone middleware in groups caus
     expect($allRouteNames->filter(fn($name) => str_contains($name, 'route-with-tenant-name-prefix'))->count())->toBe(1);
     expect($allRouteNames->filter(fn($name) => str_contains($name, 'route-with-clone-in-mw-group'))->count())->toBe(1);
 });
+
+test('clone action can be used fluently', function() {
+    RouteFacade::get('/foo', fn () => true)->name('foo')->middleware('clone');
+    RouteFacade::get('/bar', fn () => true)->name('bar')->middleware('universal');
+
+    $cloneAction = app(CloneRoutesAsTenant::class);
+
+    // Clone foo route
+    $cloneAction->handle();
+
+    // Clone bar route
+    $cloneAction->cloneRoutesWithMiddleware(['universal'])->handle();
+
+    RouteFacade::get('/baz', fn () => true)->name('baz');
+
+    // Clone baz route
+    $cloneAction->cloneRoute('baz')->handle();
+
+    $routes = collect(RouteFacade::getRoutes()->get())->map->getName();
+
+    // Routes were cloned correctly
+    expect($routes)->toContain('tenant.foo', 'tenant.bar', 'tenant.baz');
+});
