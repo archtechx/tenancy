@@ -31,8 +31,10 @@ class MigrateDatabase implements ShouldQueue
      */
     public function handle()
     {
+        ob_start();
         Artisan::call('tenants:migrate', [
             '--tenants' => [$this->tenant->getTenantKey()],
         ]);
+        ob_end_clean();
     }
 }
