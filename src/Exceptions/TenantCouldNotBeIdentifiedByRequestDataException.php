@@ -10,9 +10,6 @@ class TenantCouldNotBeIdentifiedByRequestDataException extends TenantCouldNotBeI
 {
     public function __construct(mixed $payload)
     {
-        $this
-            ->tenantCouldNotBeIdentified("by request data with payload: $payload")
-            ->title('Tenant could not be identified using this request data')
-            ->description('Did you forget to create a tenant with this id?');
+        $this->tenantCouldNotBeIdentified("by request data with payload: $payload");
     }
 }

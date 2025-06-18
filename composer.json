@@ -20,8 +20,6 @@
         "ext-json": "*",
         "illuminate/support": "^12.0",
         "laravel/tinker": "^2.0",
-        "facade/ignition-contracts": "^1.0.2",
-        "spatie/ignition": "^1.4",
         "ramsey/uuid": "^4.7.3",
         "stancl/jobpipeline": "2.0.0-rc5",
         "stancl/virtualcolumn": "^1.5.0",
