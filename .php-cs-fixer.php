@@ -132,6 +132,7 @@ $finder = Finder::create()
     ->in([
         $project_path . '/src',
     ])
+    ->exclude('Enums')
     ->name('*.php')
     ->notName('*.blade.php')
     ->ignoreDotFiles(true)
