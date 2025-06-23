@@ -22,7 +22,7 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  * The default for $cloneRoutesWithMiddleware is ['clone'].
  * If $routesToClone is empty, all routes with any middleware specified in $cloneRoutesWithMiddleware will be cloned.
  * You may customize $cloneRoutesWithMiddleware using cloneRoutesWithMiddleware() to make any middleware of your choice trigger cloning.
- * By providing a callback to shouldClone(), you can change how it's determined if a route should be cloned.
+ * By providing a callback to shouldClone(), you can change how it's determined if a route should be cloned if you don't want to use middleware flags.
  *
  * Cloned routes are prefixed with '/{tenant}', flagged with 'tenant' middleware, and have their names prefixed with 'tenant.'.
  * The parameter name and prefix can be changed e.g. to `/{team}` and `team.` by configuring the path resolver (tenantParameterName and tenantRouteNamePrefix).
@@ -34,7 +34,7 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  * Middleware groups are preserved as-is, even if they contain cloning middleware.
  *
  * Routes that already contain the tenant parameter or have names with the tenant prefix
- * will not be cloned. This is to prevent infinite cloning loops.
+ * will not be cloned.
  *
  * Example usage:
  * ```
