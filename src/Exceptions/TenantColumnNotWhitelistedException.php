@@ -10,9 +10,6 @@ class TenantColumnNotWhitelistedException extends TenantCouldNotBeIdentifiedExce
 {
     public function __construct(int|string $tenant_id)
     {
-        $this
-            ->tenantCouldNotBeIdentified("on path with tenant key: $tenant_id (column not whitelisted)")
-            ->title('Tenant could not be identified on this route because the used column is not whitelisted.')
-            ->description('Please add the column to the list of allowed columns in the PathTenantResolver config.');
+        $this->tenantCouldNotBeIdentified("on path with tenant key: $tenant_id (column not whitelisted)");
     }
 }
