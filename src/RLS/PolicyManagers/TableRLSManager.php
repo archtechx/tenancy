@@ -204,7 +204,72 @@ class TableRLSManager implements RLSPolicyManager
             return $cachedPaths[$table];
         }
 
-        return $this->findShortestPath($table, $constraints, $cachedPaths, $visitedTables);
+        /**
+         * Find the optimal path from a table to the tenants table.
+         *
+         * Gather table's constraints (both foreign key constraints and comment constraints)
+         * and recursively find shortest paths through each constraint (non-nullable paths are preferred for reliability).
+         *
+         * Handle recursive relationships by skipping paths that would create loops.
+         * If there's no valid path in the end, and the table has recursive relationships,
+         * an appropriate exception is thrown.
+         *
+         * At the end, it return the shortest non-nullable path if available,
+         * fall back to the overall shortest path.
+         */
+        $visitedTables = [...$visitedTables, $table];
+        $shortestPath = [];
+        $hasRecursiveRelationships = false;
+        $hasValidPaths = false;
+
+        foreach ($constraints as $constraint) {
+            // Check if the constraint would lead to recursion
+            if (in_array($constraint['foreignTable'], $visitedTables)) {
+                // This constraint leads to a table we've already visited - skip it
+                $hasRecursiveRelationships = true;
+                continue;
+            }
+
+            // Recursive call
+            $pathThroughConstraint = $this->shortestPathToTenantsTable(
+                $constraint['foreignTable'],
+                $cachedPaths,
+                $visitedTables
+            );
+
+            if ($pathThroughConstraint['recursive_relationship']) {
+                $hasRecursiveRelationships = true;
+                continue;
+            }
+
+            if (! $pathThroughConstraint['dead_end']) {
+                $hasValidPaths = true;
+
+                // Build the full path with the current constraint as the first step
+                $path = $this->buildPath(steps: array_merge([$constraint], $pathThroughConstraint['steps']));
+
+                if ($this->isPathPreferable($path, $shortestPath)) {
+                    $shortestPath = $path;
+                }
+            }
+        }
+
+        if ($hasRecursiveRelationships && ! $hasValidPaths) {
+            // Don't cache paths that cause recursion - return right away.
+            // This allows tables with recursive relationships to be processed again.
+            // Example:
+            // - posts table has highlighted_comment_id that leads to the comments table
+            // - comments table has recursive_post_id that leads to the posts table (recursive relationship),
+            // - comments table also has tenant_id which leads to the tenants table (a valid path).
+            // If the recursive path got cached first, the path leading directly through tenants would never be found.
+            return $this->buildPath(recursive: true);
+        } else {
+            $finalPath = $shortestPath ?: $this->buildPath(deadEnd: true);
+        }
+
+        $cachedPaths[$table] = $finalPath;
+
+        return $finalPath;
     }
 
     /**
@@ -392,86 +457,6 @@ class TableRLSManager implements RLSPolicyManager
     protected function isValidPath(array $path): bool
     {
         return ! $path['dead_end'] && ! empty($path['steps']);
-    }
-
-    /**
-     * Find the optimal path from a table to the tenants table.
-     *
-     * Gathers table's constraints (both foreign key constraints and comment constraints)
-     * and recursively finds shortest paths through each constraint (non-nullable paths are preferred for reliability).
-     *
-     * Handles recursive relationships by skipping paths that would create loops.
-     * If there's no valid path in the end, and the table has recursive relationships,
-     * an appropriate exception is thrown.
-     *
-     * At the end, it returns the shortest non-nullable path if available,
-     * falling back to the overall shortest path.
-     *
-     * @param string $table The table to find a path from
-     * @param array $constraints Array of formatted constraints
-     * @param array &$cachedPaths Reference to caching array for memoization
-     * @param array $visitedTables Tables already visited in this path (used for detecting recursion)
-     * @return array Path with 'steps' array, 'dead_end' flag, and 'recursive_relationship' flag
-     */
-    protected function findShortestPath(
-        string $table,
-        array $constraints,
-        array &$cachedPaths,
-        array $visitedTables
-    ): array {
-        $visitedTables = [...$visitedTables, $table];
-        $shortestPath = [];
-        $hasRecursiveRelationships = false;
-        $hasValidPaths = false;
-
-        foreach ($constraints as $constraint) {
-            // Check if the constraint would lead to recursion
-            if (in_array($constraint['foreignTable'], $visitedTables)) {
-                // This constraint leads to a table we've already visited - skip it
-                $hasRecursiveRelationships = true;
-                continue;
-            }
-
-            // Recursive call
-            $pathThroughConstraint = $this->shortestPathToTenantsTable(
-                $constraint['foreignTable'],
-                $cachedPaths,
-                $visitedTables
-            );
-
-            if ($pathThroughConstraint['recursive_relationship']) {
-                $hasRecursiveRelationships = true;
-                continue;
-            }
-
-            if (! $pathThroughConstraint['dead_end']) {
-                $hasValidPaths = true;
-
-                // Build the full path with the current constraint as the first step
-                $path = $this->buildPath(steps: array_merge([$constraint], $pathThroughConstraint['steps']));
-
-                if ($this->isPathPreferable($path, $shortestPath)) {
-                    $shortestPath = $path;
-                }
-            }
-        }
-
-        if ($hasRecursiveRelationships && ! $hasValidPaths) {
-            // Don't cache paths that cause recursion - return right away.
-            // This allows tables with recursive relationships to be processed again.
-            // Example:
-            // - posts table has highlighted_comment_id that leads to the comments table
-            // - comments table has recursive_post_id that leads to the posts table (recursive relationship),
-            // - comments table also has tenant_id which leads to the tenants table (a valid path).
-            // If the recursive path got cached first, the path leading directly through tenants would never be found.
-            return $this->buildPath(recursive: true);
-        } else {
-            $finalPath = $shortestPath ?: $this->buildPath(deadEnd: true);
-        }
-
-        $cachedPaths[$table] = $finalPath;
-
-        return $finalPath;
     }
 
     /**
