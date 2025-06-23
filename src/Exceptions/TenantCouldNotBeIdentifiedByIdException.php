@@ -10,9 +10,6 @@ class TenantCouldNotBeIdentifiedByIdException extends TenantCouldNotBeIdentified
 {
     public function __construct(int|string $tenant_id)
     {
-        $this
-            ->tenantCouldNotBeIdentified("by tenant key: $tenant_id")
-            ->title('Tenant could not be identified with that key')
-            ->description('Are you sure the key is correct and the tenant exists?');
+        $this->tenantCouldNotBeIdentified("by tenant key: $tenant_id");
     }
 }
