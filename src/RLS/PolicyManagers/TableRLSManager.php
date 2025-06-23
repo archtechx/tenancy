@@ -223,16 +223,17 @@ class TableRLSManager implements RLSPolicyManager
         $hasValidPaths = false;
 
         foreach ($constraints as $constraint) {
-            // Check if the constraint would lead to recursion
-            if (in_array($constraint['foreignTable'], $visitedTables)) {
-                // This constraint leads to a table we've already visited - skip it
+            $foreignTable = $constraint['foreignTable'];
+
+            // Skip constraints that would create loops
+            if (in_array($foreignTable, $visitedTables)) {
                 $hasRecursiveRelationships = true;
                 continue;
             }
 
             // Recursive call
             $pathThroughConstraint = $this->shortestPathToTenantsTable(
-                $constraint['foreignTable'],
+                $foreignTable,
                 $cachedPaths,
                 $visitedTables
             );
@@ -242,18 +243,20 @@ class TableRLSManager implements RLSPolicyManager
                 continue;
             }
 
-            if (! $pathThroughConstraint['dead_end']) {
-                $hasValidPaths = true;
+            // Skip dead ends
+            if ($pathThroughConstraint['dead_end']) {
+                continue;
+            }
 
-                // Build the full path with the current constraint as the first step
-                $path = $this->buildPath(steps: array_merge([$constraint], $pathThroughConstraint['steps']));
+            $hasValidPaths = true;
+            $path = $this->buildPath(steps: array_merge([$constraint], $pathThroughConstraint['steps']));
 
-                if ($this->isPathPreferable($path, $shortestPath)) {
-                    $shortestPath = $path;
-                }
+            if ($this->isPathPreferable($path, $shortestPath)) {
+                $shortestPath = $path;
             }
         }
 
+        // Handle tables with only recursive relationships
         if ($hasRecursiveRelationships && ! $hasValidPaths) {
             // Don't cache paths that cause recursion - return right away.
             // This allows tables with recursive relationships to be processed again.
@@ -263,13 +266,11 @@ class TableRLSManager implements RLSPolicyManager
             // - comments table also has tenant_id which leads to the tenants table (a valid path).
             // If the recursive path got cached first, the path leading directly through tenants would never be found.
             return $this->buildPath(recursive: true);
-        } else {
-            $finalPath = $shortestPath ?: $this->buildPath(deadEnd: true);
         }
 
-        $cachedPaths[$table] = $finalPath;
+        $cachedPaths[$table] = $shortestPath ?: $this->buildPath(deadEnd: true);
 
-        return $finalPath;
+        return $cachedPaths[$table];
     }
 
     /**
