@@ -61,6 +61,11 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  * $cloneAction->cloneRoute('baz')->handle();
  * ```
  *
+ * Calling handle() will also clear the $routesToClone array, so that subsequent handle() calls aren't broken.
+ * This means that $action->cloneRoute('foo')->handle() will clone the 'foo' route, but subsequent calls to handle() will behave
+ * as if cloneRoute() wasn't called at all ($routesToClone will be empty).
+ * Note that calling handle() does not reset the other properties.
+ *
  * @see Stancl\Tenancy\Resolvers\PathTenantResolver
  */
 class CloneRoutesAsTenant
