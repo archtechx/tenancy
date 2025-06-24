@@ -70,6 +70,9 @@ beforeEach(function () {
     DeleteResourceInTenant::$shouldQueue = false;
     UpdateOrCreateSyncedResource::$scopeGetModelQuery = null;
 
+    // Reset global scopes on models (should happen automatically but to make this more explicit)
+    Model::clearBootedModels();
+
     $syncedAttributes = [
         'global_id',
         'name',
