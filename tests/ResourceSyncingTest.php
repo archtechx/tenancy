@@ -1212,10 +1212,8 @@ test('global scopes on syncable models can break resource syncing', function () 
         'role' => 'admin', // not 'visible'
     ]);
 
-    // Create a new tenant resource.
-    // While creating or updating a tenant resource, it's attempted to find the central resource with the same global_id.
-    // A central resource with the 'foo' global_id exists already,
-    // so it will be found and updated.
+    // Create a tenant resource. The global id matches that of the central user created above,
+    // so the synced columns of the central record will be updated.
     $tenant1->run(fn () => TenantUser::create([
         'global_id' => 'foo',
         'name' => 'tenant1 user',
@@ -1226,18 +1224,12 @@ test('global scopes on syncable models can break resource syncing', function () 
 
     expect($centralUser->refresh()->name)->toBe('tenant1 user');
 
-    // Add a global scope to the central resource.
-    // The scope hides the corresponding central resources from internal resource syncing query results,
-    // so during the syncing, the corresponding central resource won't be found
-    // because its 'role' column is not set to 'visible'.
+    // While syncing a tenant resource with the same global id,
+    // the central resource will not be found due to this scope,
+    // leading to the syncing logic trying to create a new central resource with that same global id,
+    // triggering a unique constraint violation exception.
     CentralUser::addGlobalScope(new VisibleScope());
 
-    // Create another tenant resource that should be synced to the 'foo' central resource.
-    // While creating or updating a tenant resource, it's attempted to find the central resource with the same global_id.
-    // Because of the global VisibleScope, the central resource is NOT FOUND.
-    // A new central resource is attempted to be created with the 'foo' global_id.
-    // The central resource with the 'foo' global_id (which is unique) exists already,
-    // so a duplicate entry exception will be thrown.
     expect(function () use ($tenant1) {
          $tenant1->run(fn () => TenantUser::create([
             'global_id' => 'foo',
@@ -1251,17 +1243,12 @@ test('global scopes on syncable models can break resource syncing', function () 
     // The central resource stays the same
     expect($centralUser->refresh()->name)->toBe('tenant1 user');
 
-    // As a workaround, UpdateOrCreateSyncedResource::$scopeGetModelQuery
-    // can be used to bypass the global scope while syncing resources,
-    // allowing even central resources with role other than 'visible' to be found
-    // and correctly updated while keeping the model's global scope.
+    // Use UpdateOrCreateSyncedResource::$scopeGetModelQuery to bypass the global scope.
     UpdateOrCreateSyncedResource::$scopeGetModelQuery = function (Builder $query) {
         $query->withoutGlobalScope(VisibleScope::class);
     };
 
-    // Run essentially the same code as above, but this time,
-    // the central resource will be found and updated successfully.
-    // The central resource already exists, and now, it IS found, and no exception is thrown.
+    // Now, the central resource IS found, and no exception is thrown
     $tenant2->run(fn () => TenantUser::create([
         'global_id' => 'foo',
         'name' => 'tenant2 user',
