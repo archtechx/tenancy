@@ -13,14 +13,20 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
 /**
  * Clones either all existing routes for which shouldBeCloned() returns true
  * (by default, all routes with any middleware present in $cloneRoutesWithMiddleware),
- * or if any routes were manually added to $routesToClone (using $action->cloneRoute($route)),
- * clone just the routes in $routesToClone.
+ * or if any routes were manually added to $routesToClone using $action->cloneRoute($route),
+ * clone just the routes in $routesToClone. This means that only the routes specified
+ * by cloneRoute() (which can be chained infinitely -- you can specify as many routes as you want)
+ * will be cloned.
  *
  * The main purpose of this action is to make the integration of packages
  * (e.g., Jetstream or Livewire) easier with path-based tenant identification.
  *
  * The default for $cloneRoutesWithMiddleware is ['clone'].
  * If $routesToClone is empty, all routes with any middleware specified in $cloneRoutesWithMiddleware will be cloned.
+ * The middleware can be in a group, nested as deep as you want
+ * (e.g. if a route has a 'bar' middleware, the 'bar' is actually a middleware group with the
+ * 'foo' middleware group, and 'foo' has the 'clone' middleware, the route will be cloned).
+ *
  * You may customize $cloneRoutesWithMiddleware using cloneRoutesWithMiddleware() to make any middleware of your choice trigger cloning.
  * By providing a callback to shouldClone(), you can change how it's determined if a route should be cloned if you don't want to use middleware flags.
  *
@@ -30,7 +36,7 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  * The cloneUsing() method allows you to completely override the default behavior and customize how the cloned routes will be defined.
  *
  * After cloning, only top-level middleware in $cloneRoutesWithMiddleware will be removed
- * from the new route (so in the default case, 'clone' will be stripped from the MW list).
+ * from the new route (so by default, 'clone' will be omitted from the new route's MW).
  * Middleware groups are preserved as-is, even if they contain cloning middleware.
  *
  * Routes that already contain the tenant parameter or have names with the tenant prefix
