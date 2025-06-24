@@ -9,6 +9,57 @@ use Illuminate\Support\Str;
 use Stancl\Tenancy\Database\Exceptions\RecursiveRelationshipException;
 use Stancl\Tenancy\Exceptions\RLSCommentConstraintException;
 
+/**
+ * Generates queries for creating RLS policies
+ * for tables related to the tenants table.
+ *
+ * Usage:
+ * // Generate queries for creating RLS policies.
+ * // The queries will be returned in this format:
+ * // [
+ * //      <<<SQL
+ * //          CREATE POLICY authors_rls_policy ON authors USING (
+ * //              tenant_id::text = current_setting('my.current_tenant')
+ * //          );
+ * //      SQL,
+ * //      <<<SQL
+ * //          CREATE POLICY posts_rls_policy ON posts USING (
+ * //              author_id IN (
+ * //                  SELECT id
+ * //                  FROM authors
+ * //                  WHERE tenant_id::text = current_setting('my.current_tenant')
+ * //              )
+ * //          );
+ * //      SQL,
+ * // ]
+ * // This is used In the CreateUserWithRLSPolicies command.
+ * // Calls shortestPaths() internally to generate paths, then generates queries for each path.
+ * $queries = app(TableRLSManager::class)->generateQueries();
+ *
+ * // Generate the shortest path from table X to the tenants table.
+ * // Calls shortestPathToTenantsTable() recursively.
+ * // The paths will be returned in this format:
+ * // [
+ * //     'foo_table' => [...$stepsLeadingToTenantsTable],
+ * //     'bar_table' => [
+ * //         [
+ * //             'foreignKey' => 'post_id',
+ * //             'foreignTable' => 'posts',
+ * //             'foreignId' => 'id'
+ * //         ],
+ * //         [
+ * //             'foreignKey' => 'tenant_id',
+ * //             'foreignTable' => 'tenants',
+ * //             'foreignId' => 'id'
+ * //         ],
+ * //     ],
+ * // This is used in the CreateUserWithRLSPolicies command.
+ * $shortestPath = app(TableRLSManager::class)->shortestPaths();
+ *
+ * generateQueries() and shortestPaths() methods are the only public methods of this class.
+ * The rest of the methods are protected, and only used internally.
+ * To see how they're structured and how they work, you can check their annotations.
+ */
 class TableRLSManager implements RLSPolicyManager
 {
     /**
@@ -30,7 +81,7 @@ class TableRLSManager implements RLSPolicyManager
      *
      * The passed paths should be formatted like this:
      * [
-     *     'table_name' => [$stepLeadingToTenantsTable]
+     *     'table_name' => [...$stepsLeadingToTenantsTable]
      * ].
      */
     public function generateQueries(array $paths = []): array
@@ -46,7 +97,7 @@ class TableRLSManager implements RLSPolicyManager
 
     /**
      * Generate shortest paths from each table to the tenants table,
-     * structured like ['table_foo' => $shortestPathForFoo, 'table_bar' => $shortestPathForBar].
+     * structured like ['table_foo' => $shortestPathFromFoo, 'table_bar' => $shortestPathFromBar].
      *
      * For example:
      *
@@ -303,8 +354,8 @@ class TableRLSManager implements RLSPolicyManager
      * should be excluded from choosing the shortest path
      * based on the constraint's comment.
      *
-     * If static::$scopeByDefault is true, only skip paths leading through constraints flagged with the 'no-rls' comment.
-     * If static::$scopeByDefault is false, skip paths leading through any constraint, unless the key has explicit 'rls' or 'rls table.column' comments.
+     * If $scopeByDefault is true, only skip paths leading through constraints flagged with the 'no-rls' comment.
+     * If $scopeByDefault is false, skip paths leading through any constraint, unless the key has explicit 'rls' or 'rls table.column' comments.
      *
      * @param array $constraint Formatted constraint
      */
@@ -321,13 +372,23 @@ class TableRLSManager implements RLSPolicyManager
             return false;
         }
 
-        // When scopeByDefault is false, skip every constraint
+        // When $scopeByDefault is false, skip every constraint
         // with a comment that doesn't start with 'rls'.
         if (! is_string($comment)) {
             return true;
         }
 
-        return ! (Str::is($comment, 'rls') || Str::startsWith($comment, 'rls '));
+        // Explicit scoping
+        if (Str::is($comment, 'rls')) {
+            return false;
+        }
+
+        // Comment constraint
+        if (Str::startsWith($comment, 'rls ')) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
