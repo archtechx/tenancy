@@ -1257,6 +1257,9 @@ test('global scopes on syncable models can break resource syncing', function () 
 
     // The central resource was updated
     expect($centralUser->refresh()->name)->toBe('tenant2 user');
+
+    // The change was also synced to tenant1
+    expect($tenant1->run(fn () => TenantUser::first()->name))->toBe('tenant2 user');
 });
 
 /**
