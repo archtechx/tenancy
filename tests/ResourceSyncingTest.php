@@ -111,6 +111,9 @@ beforeEach(function () {
 
 afterEach(function () {
     UpdateOrCreateSyncedResource::$scopeGetModelQuery = null;
+
+    // Reset global scopes on models (should happen automatically but to make this more explicit)
+    Model::clearBootedModels();
 });
 
 test('resources created with the same global id in different tenant dbs will be synced to a single central resource', function () {
