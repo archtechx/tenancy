@@ -24,8 +24,7 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  * The default for $cloneRoutesWithMiddleware is ['clone'].
  * If $routesToClone is empty, all routes with any middleware specified in $cloneRoutesWithMiddleware will be cloned.
  * The middleware can be in a group, nested as deep as you want
- * (e.g. if a route has a 'bar' middleware, the 'bar' is actually a middleware group with the
- * 'foo' middleware group, and 'foo' has the 'clone' middleware, the route will be cloned).
+ * (e.g. if a route has a 'foo' middleware which is a group containing the 'clone' middleware, the route will be cloned).
  *
  * You may customize $cloneRoutesWithMiddleware using cloneRoutesWithMiddleware() to make any middleware of your choice trigger cloning.
  * By providing a callback to shouldClone(), you can change how it's determined if a route should be cloned if you don't want to use middleware flags.
@@ -61,7 +60,7 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  * $cloneAction->cloneRoute('baz')->handle();
  * ```
  *
- * Calling handle() will also clear the $routesToClone array, so that subsequent handle() calls aren't broken.
+ * Calling handle() will also clear the $routesToClone array.
  * This means that $action->cloneRoute('foo')->handle() will clone the 'foo' route, but subsequent calls to handle() will behave
  * as if cloneRoute() wasn't called at all ($routesToClone will be empty).
  * Note that calling handle() does not reset the other properties.
