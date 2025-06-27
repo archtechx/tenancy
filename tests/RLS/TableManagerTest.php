@@ -428,9 +428,15 @@ test('table rls manager generates shortest paths that lead to the tenants table 
 
     expect($manager->shortestPaths())->toEqual($expectedShortestPaths);
 
-    // Add non-nullable comment_id foreign key
+    // Add non-nullable comment_id comment constraint
     Schema::table('ratings', function (Blueprint $table) {
-        $table->foreignId('comment_id')->comment('rls')->constrained('comments')->onUpdate('cascade')->onDelete('cascade');
+        $table->string('comment_id')->comment('rls comments.id');
+
+        // Nullable constraint with a non-RLS comment.
+        // Skipped when scopeByDefault is false,
+        // not ignored when scopeByDefault is true, but still,
+        // not preferred since comment_id is valid and non-nullable.
+        $table->foreignId('author_id')->nullable()->comment('random comment')->constrained('authors');
     });
 
     // Non-nullable paths are preferred over nullable paths
