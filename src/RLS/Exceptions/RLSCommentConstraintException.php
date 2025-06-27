@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Exceptions;
+namespace Stancl\Tenancy\RLS\Exceptions;
 
 use Exception;
 

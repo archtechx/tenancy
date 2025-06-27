@@ -20,7 +20,7 @@ use Stancl\Tenancy\RLS\PolicyManagers\TableRLSManager;
 use Stancl\Tenancy\Bootstrappers\PostgresRLSBootstrapper;
 use Stancl\Tenancy\Database\Exceptions\RecursiveRelationshipException;
 use function Stancl\Tenancy\Tests\pest;
-use Stancl\Tenancy\Exceptions\RLSCommentConstraintException;
+use Stancl\Tenancy\RLS\Exceptions\RLSCommentConstraintException;
 
 beforeEach(function () {
     CreateUserWithRLSPolicies::$forceRls = true;

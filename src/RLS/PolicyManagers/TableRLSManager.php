@@ -7,7 +7,7 @@ namespace Stancl\Tenancy\RLS\PolicyManagers;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Database\Exceptions\RecursiveRelationshipException;
-use Stancl\Tenancy\Exceptions\RLSCommentConstraintException;
+use Stancl\Tenancy\RLS\Exceptions\RLSCommentConstraintException;
 
 /**
  * Generates queries for creating RLS policies
