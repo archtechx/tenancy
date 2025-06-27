@@ -46,7 +46,7 @@ final class MigrateFresh extends Command
             ]));
 
             $this->info('Migrating.');
-            $this->callSilent('tenants:migrate', [
+            $this->call('tenants:migrate', [
                 '--tenants' => [$tenant->getTenantKey()],
                 '--step' => $this->option('step'),
                 '--force' => true,
