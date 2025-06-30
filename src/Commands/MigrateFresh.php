@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Stancl\Tenancy\Concerns\DealsWithMigrations;
 use Stancl\Tenancy\Concerns\HasATenantsOption;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\NullOutput;
 
 final class MigrateFresh extends Command
 {
@@ -46,11 +47,12 @@ final class MigrateFresh extends Command
             ]));
 
             $this->info('Migrating.');
-            $this->call('tenants:migrate', [
+            $output = $this->getOutput()->isVerbose() ? $this->output : new NullOutput;
+            $this->runCommand('tenants:migrate', [
                 '--tenants' => [$tenant->getTenantKey()],
                 '--step' => $this->option('step'),
                 '--force' => true,
-            ]);
+            ], $output);
         });
 
         $this->info('Done.');
