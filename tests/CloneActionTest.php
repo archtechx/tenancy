@@ -7,17 +7,51 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
 use Illuminate\Support\Facades\Route as RouteFacade;
 use function Stancl\Tenancy\Tests\pest;
 
-test('CloneRoutesAsTenant action clones routes correctly', function (Route|null $routeToClone) {
-    config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_parameter_name' => $tenantParameterName = 'team']);
-    config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_route_name_prefix' => $tenantRouteNamePrefix = 'team-route.']);
+test('CloneRoutesAsTenant action clones routes with clone middleware by default', function () {
+    config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_parameter_name' => 'team']);
+    config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_route_name_prefix' => 'team-route.']);
 
     // Should not be cloned
     RouteFacade::get('/central', fn () => true)->name('central');
 
-    $routesThatShouldBeCloned = $routeToClone
-        ? [$routeToClone]
-        // Should be cloned if no specific routes are passed to the action using cloneRoute()
-        : [RouteFacade::get('/foo', fn () => true)->middleware(['clone'])->name('foo')];
+    // Should be cloned since no specific routes are passed to the action using cloneRoute() and the route has the 'clone' middleware
+    RouteFacade::get('/foo', fn () => true)->middleware(['clone'])->name('foo');
+
+    $originalRoutes = RouteFacade::getRoutes()->get();
+
+    /** @var CloneRoutesAsTenant $cloneRoutesAction */
+    $cloneRoutesAction = app(CloneRoutesAsTenant::class);
+
+    $cloneRoutesAction->handle();
+
+    $newRoutes = collect(RouteFacade::getRoutes()->get())->filter(fn ($route) => ! in_array($route, $originalRoutes));
+
+    expect($newRoutes->count())->toEqual(1);
+
+    $newRoute = $newRoutes->first();
+    expect($newRoute->uri())->toBe('{team}/foo');
+
+    $tenant = Tenant::create();
+
+    expect($newRoute->getName())->toBe('team-route.foo');
+    pest()->get(route('team-route.foo', ['team' => $tenant->id]))->assertOk();
+    expect(tenancy()->getRouteMiddleware($newRoute))
+        ->toContain('tenant')
+        ->not()->toContain('clone');
+});
+
+test('CloneRoutesAsTenant action clones only specified routes when using cloneRoute()', function () {
+    config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_parameter_name' => 'team']);
+    config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_route_name_prefix' => 'team-route.']);
+
+    // Should not be cloned
+    RouteFacade::get('/central', fn () => true)->name('central');
+
+    // Should not be cloned despite having clone middleware because cloneRoute() is used
+    RouteFacade::get('/foo', fn () => true)->middleware(['clone'])->name('foo');
+
+    // The only route that should be cloned
+    $routeToClone = RouteFacade::get('/home', fn () => true)->name('home');
 
     $originalRoutes = RouteFacade::getRoutes()->get();
 
@@ -25,33 +59,30 @@ test('CloneRoutesAsTenant action clones routes correctly', function (Route|null 
     $cloneRoutesAction = app(CloneRoutesAsTenant::class);
 
     // If a specific route is passed to the action, clone only that route (cloneRoute() can be chained as many times as needed)
-    if ($routeToClone) {
-        $cloneRoutesAction->cloneRoute($routeToClone);
-    }
+    $cloneRoutesAction->cloneRoute($routeToClone);
 
     $cloneRoutesAction->handle();
 
     $newRoutes = collect(RouteFacade::getRoutes()->get())->filter(fn ($route) => ! in_array($route, $originalRoutes));
 
-    expect($newRoutes->count())->toEqual(count($routesThatShouldBeCloned));
+    expect($newRoutes->count())->toEqual(1);
 
-    foreach ($newRoutes as $route) {
-        expect($route->uri())->toStartWith('{' . $tenantParameterName . '}' . '/');
+    $newRoute = $newRoutes->first();
+    expect($newRoute->uri())->toBe('{team}/home');
 
-        $tenant = Tenant::create();
+    $tenant = Tenant::create();
 
-        expect($route->getName())->toBe($tenantRouteNamePrefix . str($route->getName())->afterLast(($tenantRouteNamePrefix)));
-        pest()->get(route($route->getName(), [$tenantParameterName => $tenant->id]))->assertOk();
-        expect(tenancy()->getRouteMiddleware($route))
-            ->toContain('tenant')
-            ->not()->toContain('clone');
-    }
-})->with([
-    null, // Clone all routes for which shouldBeCloned returns true
-    fn () => RouteFacade::get('/home', fn () => true)->name('home'), // The only route that should be cloned
-]);
+    expect($newRoute->getName())->toBe('team-route.home');
+    pest()->get(route('team-route.home', ['team' => $tenant->id]))->assertOk();
+    expect(tenancy()->getRouteMiddleware($newRoute))
+        ->toContain('tenant')
+        ->not()->toContain('clone');
 
-test('all routes with any of the middleware specified in cloneRoutesWithMiddleware will be cloned by default', function(array $cloneRoutesWithMiddleware) {
+    // Verify that the route with clone middleware was NOT cloned
+    expect(RouteFacade::getRoutes()->getByName('team-route.foo'))->toBeNull();
+});
+
+test('all routes with any of the middleware specified in cloneRoutesWithMiddleware will be cloned by default', function (array $cloneRoutesWithMiddleware) {
     RouteFacade::get('/foo', fn () => true)->name('foo');
     RouteFacade::get('/bar', fn () => true)->name('bar')->middleware(['clone']);
     RouteFacade::get('/baz', fn () => true)->name('baz')->middleware(['duplicate']);
@@ -66,6 +97,7 @@ test('all routes with any of the middleware specified in cloneRoutesWithMiddlewa
         ->cloneRoutesWithMiddleware($cloneRoutesWithMiddleware)
         ->handle();
 
+    // Each middleware is only used on a single route so we assert that the count new routes matches the count of used middleware flags
     expect($currentRouteCount())->toEqual($initialRouteCount + count($cloneRoutesWithMiddleware));
 })->with([
     [[]],
@@ -73,7 +105,7 @@ test('all routes with any of the middleware specified in cloneRoutesWithMiddlewa
     [['clone', 'duplicate']],
 ]);
 
-test('custom callback can be used for determining if a route should be cloned', function () {
+test('custom callback can be used for specifying if a route should be cloned', function () {
     RouteFacade::get('/home', fn () => true)->name('home');
 
     /** @var CloneRoutesAsTenant $cloneRoutesAction */
@@ -109,11 +141,14 @@ test('custom callbacks can be used for customizing the creation of the cloned ro
             RouteFacade::get('/cloned/' . $route->uri(), fn () => 'cloned route')->name('cloned.' . $route->getName());
         })->handle();
 
+    expect(route('cloned.foo', absolute: false))->toBe('/cloned/foo');
+    expect(route('cloned.bar', absolute: false))->toBe('/cloned/bar');
+
     pest()->get(route('cloned.foo'))->assertSee('cloned route');
     pest()->get(route('cloned.bar'))->assertSee('cloned route');
 });
 
-test('the clone action can clone specific routes', function(bool $cloneRouteByName) {
+test('the clone action can clone specific routes either using name or route instance', function (bool $cloneRouteByName) {
     RouteFacade::get('/foo', fn () => true)->name('foo');
     $barRoute = RouteFacade::get('/bar', fn () => true)->name('bar');
     RouteFacade::get('/baz', fn () => true)->name('baz');
@@ -179,7 +214,7 @@ test('the clone action prefixes already prefixed routes correctly', function () 
             ->not()->toContain("prefix/{$tenant->id}/prefix")
             ->not()->toContain("//prefix")
             ->not()->toContain("prefix//")
-            // Route is prefixed correctly
+            // Instead, the route is prefixed correctly
             ->toBe("http://localhost/prefix/{$tenant->id}/{$routes[$key]->getName()}");
 
         // The cloned route is accessible
@@ -205,6 +240,12 @@ test('clone action trims trailing slashes from prefixes given to nested route gr
 
     $clonedLandingUrl = route('tenant.landing', ['tenant' => $tenant = Tenant::create()]);
     $clonedHomeRouteUrl = route('tenant.home', ['tenant' => $tenant]);
+
+    $landingRoute = RouteFacade::getRoutes()->getByName('tenant.landing');
+    $homeRoute = RouteFacade::getRoutes()->getByName('tenant.home');
+
+    expect($landingRoute->uri())->toBe('prefix/{tenant}');
+    expect($homeRoute->uri())->toBe('prefix/{tenant}/home');
 
     expect($clonedLandingUrl)
         ->not()->toContain("prefix//")
@@ -263,8 +304,8 @@ test('tenant routes are ignored from cloning and clone middleware in groups caus
     expect($thirdRunCount)->toBe($firstRunCount);
 
     // Verify the correct routes were cloned
-    expect(RouteFacade::getRoutes()->getByName('tenant.foo'))->not()->toBeNull();
-    expect(RouteFacade::getRoutes()->getByName('tenant.bar'))->not()->toBeNull();
+    expect(RouteFacade::getRoutes()->getByName('tenant.foo'))->toBeInstanceOf(Route::class);
+    expect(RouteFacade::getRoutes()->getByName('tenant.bar'))->toBeInstanceOf(Route::class);
 
     // Tenant routes were not duplicated
     $allRouteNames = collect(RouteFacade::getRoutes()->get())->map->getName()->filter();
@@ -281,17 +322,18 @@ test('clone action can be used fluently', function() {
 
     // Clone foo route
     $cloneAction->handle();
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())
+        ->toContain('tenant.foo');
 
     // Clone bar route
     $cloneAction->cloneRoutesWithMiddleware(['universal'])->handle();
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())
+        ->toContain('tenant.foo', 'tenant.bar');
 
     RouteFacade::get('/baz', fn () => true)->name('baz');
 
     // Clone baz route
     $cloneAction->cloneRoute('baz')->handle();
-
-    $routes = collect(RouteFacade::getRoutes()->get())->map->getName();
-
-    // Routes were cloned correctly
-    expect($routes)->toContain('tenant.foo', 'tenant.bar', 'tenant.baz');
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())
+        ->toContain('tenant.foo', 'tenant.bar', 'tenant.baz');
 });
