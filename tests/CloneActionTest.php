@@ -97,7 +97,7 @@ test('all routes with any of the middleware specified in cloneRoutesWithMiddlewa
         ->cloneRoutesWithMiddleware($cloneRoutesWithMiddleware)
         ->handle();
 
-    // Each middleware is only used on a single route so we assert that the count new routes matches the count of used middleware flags
+    // Each middleware is only used on a single route so we assert that the count of new routes matches the count of used middleware flags
     expect($currentRouteCount())->toEqual($initialRouteCount + count($cloneRoutesWithMiddleware));
 })->with([
     [[]],
