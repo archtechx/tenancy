@@ -110,7 +110,7 @@ trait DealsWithRouteContexts
 
             foreach ($middleware as $inner) {
                 if (! $inner instanceof Closure && isset($middlewareGroups[$inner])) {
-                    $innerMiddleware = Arr::wrap($middlewareGroups[$inner]);
+                    $innerMiddleware = array_merge($innerMiddleware, Arr::wrap($middlewareGroups[$inner]));
                 }
             }
 
