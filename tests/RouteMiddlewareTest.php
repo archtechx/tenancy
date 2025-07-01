@@ -69,6 +69,18 @@ test('tenancy detects presence of route middleware correctly', function (string 
     InitializeTenancyByDomainOrSubdomain::class,
 ]);
 
+test('getRouteMiddleware properly unpacks all mw groups on a route', function() {
+    $route = Route::get('/foo', fn () => true)->middleware(['foo', 'bar']);
+
+    Route::middlewareGroup('foo', [PreventAccessFromUnwantedDomains::class]);
+    Route::middlewareGroup('bar', [InitializeTenancyByDomain::class]);
+
+    expect(tenancy()->getRouteMiddleware($route))->toContain(
+        PreventAccessFromUnwantedDomains::class,
+        InitializeTenancyByDomain::class
+    );
+});
+
 test('domain identification middleware is configurable', function() {
     $route = Route::get('/welcome-route', fn () => 'welcome')->middleware([InitializeTenancyByDomain::class]);
 
