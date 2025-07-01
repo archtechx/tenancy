@@ -453,6 +453,10 @@ test('table rls manager generates shortest paths that lead to the tenants table 
             'foreignId' => 'id',
         ],
         [
+            // Importantly, the best path goes through authors
+            // since ratings -> posts is nullable, as well as
+            // posts -> tenants directly (without going through
+            // authors first).
             'foreignKey' => 'author_id',
             'foreignTable' => 'authors',
             'foreignId' => 'id',
