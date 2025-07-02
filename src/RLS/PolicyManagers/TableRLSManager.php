@@ -379,7 +379,7 @@ class TableRLSManager implements RLSPolicyManager
         }
 
         // Explicit scoping
-        if (Str::is($comment, 'rls')) {
+        if ($comment === 'rls') {
             return false;
         }
 
