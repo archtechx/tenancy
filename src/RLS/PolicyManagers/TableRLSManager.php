@@ -194,8 +194,10 @@ class TableRLSManager implements RLSPolicyManager
      *    'nullable' => false, // Used to determine if the constraint is nullable (internal metadata)
      * ].
      */
-    protected function formatConstraint(array $constraint, string $table): array
+    protected function formatForeignKey(array $constraint, string $table): array
     {
+        assert(count($constraint['columns']) === 1);
+
         $foreignKeyName = $constraint['columns'][0];
 
         $comment = collect($this->database->getSchemaBuilder()->getColumns($table))
@@ -207,13 +209,32 @@ class TableRLSManager implements RLSPolicyManager
             [$table, $foreignKeyName]
         )?->is_nullable === 'YES';
 
+        assert(count($constraint['foreign_columns']) === 1);
+
+        return $this->formatConstraint(
+            foreignKey: $foreignKeyName,
+            foreignTable: $constraint['foreign_table'],
+            foreignId: $constraint['foreign_columns'][0],
+            comment: $comment,
+            nullable: $columnIsNullable
+        );
+    }
+
+    /** Single source of truth for our constraint format. */
+    protected function formatConstraint(
+        string $foreignKey,
+        string $foreignTable,
+        string $foreignId,
+        string|null $comment,
+        bool $nullable
+    ): array {
         return [
-            'foreignKey' => $foreignKeyName,
-            'foreignTable' => $constraint['foreign_table'],
-            'foreignId' => $constraint['foreign_columns'][0],
+            'foreignKey' => $foreignKey,
+            'foreignTable' => $foreignTable,
+            'foreignId' => $foreignId,
             // Internal metadata omitted in shortestPaths()
             'comment' => $comment,
-            'nullable' => $columnIsNullable,
+            'nullable' => $nullable,
         ];
     }
 
@@ -325,24 +346,45 @@ class TableRLSManager implements RLSPolicyManager
     }
 
     /**
-     * Get all valid relationship constraints for a table.
-     *
+     * Get all valid relationship constraints for a table. The constraints are also formatted.
      * Combines both standard foreign key constraints and comment constraints.
+     *
+     * The schema builder retrieves foreign keys in the following format:
+     * [
+     *     'name' => 'posts_tenant_id_foreign',
+     *     'columns' => ['tenant_id'],
+     *     'foreign_table' => 'tenants',
+     *     'foreign_columns' => ['id'],
+     *     ...
+     * ]
+     *
+     * We format that into a more readable format using formatForeignKey(),
+     * and that method uses formatConstraint(), which serves as a single source of truth
+     * for our constraint formatting. A formatted constraint looks like this:
+     * [
+     *     'foreignKey' => 'tenant_id',
+     *     'foreignTable' => 'tenants',
+     *     'foreignId' => 'id',
+     *     'comment' => 'no-rls',
+     *     'nullable' => false
+     * ]
+     *
+     * The comment constraints are retrieved using getFormattedCommentConstraints().
+     * These constraints are formatted in the method itself.
+     *
      */
     protected function getConstraints(string $table): array
     {
-        $constraints = array_merge(
-            $this->database->getSchemaBuilder()->getForeignKeys($table),
-            $this->getCommentConstraints($table)
+        $formattedConstraints = array_merge(
+            array_map(fn ($schemaStructure) => $this->formatForeignKey($schemaStructure, $table), $this->database->getSchemaBuilder()->getForeignKeys($table)),
+            $this->getFormattedCommentConstraints($table)
         );
 
         $validConstraints = [];
 
-        foreach ($constraints as $constraint) {
-            $formattedConstraint = $this->formatConstraint($constraint, $table);
-
-            if (! $this->shouldSkipPathLeadingThrough($formattedConstraint)) {
-                $validConstraints[] = $formattedConstraint;
+        foreach ($formattedConstraints as $constraint) {
+            if (! $this->shouldSkipPathLeadingThrough($constraint)) {
+                $validConstraints[] = $constraint;
             }
         }
 
@@ -397,33 +439,34 @@ class TableRLSManager implements RLSPolicyManager
      * Comment constraints are columns with comments
      * formatted like "rls <foreign_table>.<foreign_column>".
      *
-     * Returns the comment constraints as unformatted constraint arrays,
-     * ready to be formatted by formatConstraint().
+     * Returns array of formatted comment constraints (check formatConstraint() to see the format).
      */
-    protected function getCommentConstraints(string $tableName): array
+    protected function getFormattedCommentConstraints(string $tableName): array
     {
         $commentConstraints = array_filter($this->database->getSchemaBuilder()->getColumns($tableName), function ($column) {
             return (isset($column['comment']) && is_string($column['comment']))
                 && Str::startsWith($column['comment'], 'rls ');
         });
 
-        return array_map(
-            fn ($column) => $this->parseCommentConstraint($column['comment'], $tableName, $column['name']),
-            $commentConstraints
-        );
+        // Validate and format the comment constraints
+        $commentConstraints = array_map(fn ($commentConstraint) => $this->parseCommentConstraint($commentConstraint, $tableName), $commentConstraints);
+
+        return $commentConstraints;
     }
 
     /**
      * Parse and validate a comment constraint.
      *
      * This method validates that the table and column referenced
-     * in the comment exist, and returns the constraint in a format corresponding to the
-     * standardly retrieved constraints (ready to be formatted using formatConstraint()).
+     * in the comment exist, formats and returns the constraint.
      *
      * @throws RLSCommentConstraintException When comment format is invalid or references don't exist
      */
-    protected function parseCommentConstraint(string $comment, string $tableName, string $columnName): array
+    protected function parseCommentConstraint(array $commentConstraint, string $tableName): array
     {
+        $comment = $commentConstraint['comment'];
+        $columnName = $commentConstraint['name'];
+
         $builder = $this->database->getSchemaBuilder();
         $constraint = explode('.', Str::after($comment, 'rls '));
 
@@ -445,11 +488,14 @@ class TableRLSManager implements RLSPolicyManager
             throw new RLSCommentConstraintException("Comment constraint on {$tableName}.{$columnName} references non-existent column '{$foreignTable}.{$foreignColumn}'");
         }
 
-        return [
-            'foreign_table' => $foreignTable,
-            'foreign_columns' => [$foreignColumn],
-            'columns' => [$columnName],
-        ];
+        // Return the formatted constraint
+        return $this->formatConstraint(
+            foreignKey: $commentConstraint['name'],
+            foreignTable: $foreignTable,
+            foreignId: $foreignColumn,
+            comment: $commentConstraint['comment'],
+            nullable: $commentConstraint['nullable']
+        );
     }
 
     /** Generates a query that creates a row-level security policy for the passed table. */
