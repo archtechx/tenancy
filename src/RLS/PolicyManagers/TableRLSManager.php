@@ -265,7 +265,7 @@ class TableRLSManager implements RLSPolicyManager
          * If there's no valid path in the end, and the table has recursive relationships,
          * an appropriate exception is thrown.
          *
-         * At the end, it return the shortest non-nullable path if available,
+         * At the end, it returns the shortest non-nullable path if available,
          * fall back to the overall shortest path.
          */
         $visitedTables = [...$visitedTables, $table];
