@@ -371,7 +371,6 @@ class TableRLSManager implements RLSPolicyManager
      *
      * The comment constraints are retrieved using getFormattedCommentConstraints().
      * These constraints are formatted in the method itself.
-     *
      */
     protected function getConstraints(string $table): array
     {
