@@ -361,38 +361,38 @@ test('table rls manager generates shortest paths that lead to the tenants table 
     $expectedShortestPaths = [
         'authors' => [
             [
-                'foreignKey' => 'tenant_id',
+                'localColumn' => 'tenant_id',
                 'foreignTable' => 'tenants',
-                'foreignId' => 'id',
+                'foreignColumn' => 'id',
             ],
         ],
         'posts' => [
             [
-                'foreignKey' => 'author_id',
+                'localColumn' => 'author_id',
                 'foreignTable' => 'authors',
-                'foreignId' => 'id',
+                'foreignColumn' => 'id',
             ],
             [
-                'foreignKey' => 'tenant_id',
+                'localColumn' => 'tenant_id',
                 'foreignTable' => 'tenants',
-                'foreignId' => 'id',
+                'foreignColumn' => 'id',
             ],
         ],
         'comments' => [
             [
-                'foreignKey' => 'post_id',
+                'localColumn' => 'post_id',
                 'foreignTable' => 'posts',
-                'foreignId' => 'id',
+                'foreignColumn' => 'id',
             ],
             [
-                'foreignKey' => 'author_id',
+                'localColumn' => 'author_id',
                 'foreignTable' => 'authors',
-                'foreignId' => 'id',
+                'foreignColumn' => 'id',
             ],
             [
-                'foreignKey' => 'tenant_id',
+                'localColumn' => 'tenant_id',
                 'foreignTable' => 'tenants',
-                'foreignId' => 'id',
+                'foreignColumn' => 'id',
             ],
         ],
         // When scoping by default is enabled (implicit scoping),
@@ -401,25 +401,25 @@ test('table rls manager generates shortest paths that lead to the tenants table 
         // the shortest path leads through post_id.
         'ratings' => $scopeByDefault ? [
             [
-                'foreignKey' => 'tenant_id',
+                'localColumn' => 'tenant_id',
                 'foreignTable' => 'tenants',
-                'foreignId' => 'id',
+                'foreignColumn' => 'id',
             ],
         ] : [
             [
-                'foreignKey' => 'post_id',
+                'localColumn' => 'post_id',
                 'foreignTable' => 'posts',
-                'foreignId' => 'id',
+                'foreignColumn' => 'id',
             ],
             [
-                'foreignKey' => 'author_id',
+                'localColumn' => 'author_id',
                 'foreignTable' => 'authors',
-                'foreignId' => 'id',
+                'foreignColumn' => 'id',
             ],
             [
-                'foreignKey' => 'tenant_id',
+                'localColumn' => 'tenant_id',
                 'foreignTable' => 'tenants',
-                'foreignId' => 'id',
+                'foreignColumn' => 'id',
             ],
         ],
         // Articles table is ignored because it's not related to the tenant table in any way
@@ -443,28 +443,28 @@ test('table rls manager generates shortest paths that lead to the tenants table 
     // Non-nullable paths are preferred over nullable paths
     $expectedShortestPaths['ratings'] = [
         [
-            'foreignKey' => 'comment_id',
+            'localColumn' => 'comment_id',
             'foreignTable' => 'comments',
-            'foreignId' => 'id',
+            'foreignColumn' => 'id',
         ],
         [
-            'foreignKey' => 'post_id',
+            'localColumn' => 'post_id',
             'foreignTable' => 'posts',
-            'foreignId' => 'id',
+            'foreignColumn' => 'id',
         ],
         [
             // Importantly, the best path goes through authors
             // since ratings -> posts is nullable, as well as
             // posts -> tenants directly (without going through
             // authors first).
-            'foreignKey' => 'author_id',
+            'localColumn' => 'author_id',
             'foreignTable' => 'authors',
-            'foreignId' => 'id',
+            'foreignColumn' => 'id',
         ],
         [
-            'foreignKey' => 'tenant_id',
+            'localColumn' => 'tenant_id',
             'foreignTable' => 'tenants',
-            'foreignId' => 'id',
+            'foreignColumn' => 'id',
         ],
     ];
 
@@ -613,38 +613,38 @@ test('table rls manager generates queries correctly', function() {
     $paths = [
         'primaries' => [
             [
-                'foreignKey' => 'tenant_id',
+                'localColumn' => 'tenant_id',
                 'foreignTable' => 'tenants',
-                'foreignId' => 'id',
+                'foreignColumn' => 'id',
             ],
         ],
         'secondaries' => [
             [
-                'foreignKey' => 'primary_id',
+                'localColumn' => 'primary_id',
                 'foreignTable' => 'primaries',
-                'foreignId' => 'id',
+                'foreignColumn' => 'id',
             ],
             [
-                'foreignKey' => 'tenant_id',
+                'localColumn' => 'tenant_id',
                 'foreignTable' => 'tenants',
-                'foreignId' => 'id',
+                'foreignColumn' => 'id',
             ],
         ],
         'foo' => [
             [
-                'foreignKey' => 'secondary_id',
+                'localColumn' => 'secondary_id',
                 'foreignTable' => 'secondaries',
-                'foreignId' => 'id',
+                'foreignColumn' => 'id',
             ],
             [
-                'foreignKey' => 'primary_id',
+                'localColumn' => 'primary_id',
                 'foreignTable' => 'primaries',
-                'foreignId' => 'id',
+                'foreignColumn' => 'id',
             ],
             [
-                'foreignKey' => 'tenant_id',
+                'localColumn' => 'tenant_id',
                 'foreignTable' => 'tenants',
-                'foreignId' => 'id',
+                'foreignColumn' => 'id',
             ],
         ],
     ];
@@ -782,21 +782,21 @@ test('table manager can generate paths leading through comment constraint column
     $expectedPaths = [
         'non_constrained_posts' => [
             [
-                'foreignKey' => 'author_id',
+                'localColumn' => 'author_id',
                 'foreignTable' => 'non_constrained_users',
-                'foreignId' => 'id',
+                'foreignColumn' => 'id',
             ],
             [
-                'foreignKey' => 'tenant_id',
+                'localColumn' => 'tenant_id',
                 'foreignTable' => 'tenants',
-                'foreignId' => 'id',
+                'foreignColumn' => 'id',
             ],
         ],
         'non_constrained_users' => [
             [
-                'foreignKey' => 'tenant_id',
+                'localColumn' => 'tenant_id',
                 'foreignTable' => 'tenants',
-                'foreignId' => 'id',
+                'foreignColumn' => 'id',
             ],
         ],
     ];

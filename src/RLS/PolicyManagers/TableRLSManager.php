@@ -43,14 +43,14 @@ use Stancl\Tenancy\RLS\Exceptions\RLSCommentConstraintException;
  * //     'foo_table' => [...$stepsLeadingToTenantsTable],
  * //     'bar_table' => [
  * //         [
- * //             'foreignKey' => 'post_id',
+ * //             'localColumn' => 'post_id',
  * //             'foreignTable' => 'posts',
- * //             'foreignId' => 'id'
+ * //             'foreignColumn' => 'id'
  * //         ],
  * //         [
- * //             'foreignKey' => 'tenant_id',
+ * //             'localColumn' => 'tenant_id',
  * //             'foreignTable' => 'tenants',
- * //             'foreignId' => 'id'
+ * //             'foreignColumn' => 'id'
  * //         ],
  * //     ],
  * // This is used in the CreateUserWithRLSPolicies command.
@@ -103,21 +103,21 @@ class TableRLSManager implements RLSPolicyManager
      *
      * 'posts' => [
      *     [
-     *         'foreignKey' => 'tenant_id',
+     *         'localColumn' => 'tenant_id',
      *         'foreignTable' => 'tenants',
-     *         'foreignId' => 'id'
+     *         'foreignColumn' => 'id'
      *     ],
      * ],
      * 'comments' => [
      *     [
-     *         'foreignKey' => 'post_id',
+     *         'localColumn' => 'post_id',
      *         'foreignTable' => 'posts',
-     *         'foreignId' => 'id'
+     *         'foreignColumn' => 'id'
      *     ],
      *     [
-     *         'foreignKey' => 'tenant_id',
+     *         'localColumn' => 'tenant_id',
      *         'foreignTable' => 'tenants',
-     *         'foreignId' => 'id'
+     *         'foreignColumn' => 'id'
      *     ],
      * ],
      *
@@ -136,9 +136,9 @@ class TableRLSManager implements RLSPolicyManager
             if ($this->isValidPath($shortestPath)) {
                 // Format path steps to a more readable format (keep only the needed data)
                 $shortestPaths[$tableName] = array_map(fn (array $step) => [
-                    'foreignKey' => $step['foreignKey'],
+                    'localColumn' => $step['localColumn'],
                     'foreignTable' => $step['foreignTable'],
-                    'foreignId' => $step['foreignId'],
+                    'foreignColumn' => $step['foreignColumn'],
                 ], $shortestPath['steps']);
             }
 
@@ -187,9 +187,9 @@ class TableRLSManager implements RLSPolicyManager
      * before returning the shortest paths in shortestPath().
      *
      * [
-     *    'foreignKey' => 'tenant_id',
+     *    'localColumn' => 'tenant_id',
      *    'foreignTable' => 'tenants',
-     *    'foreignId' => 'id',
+     *    'foreignColumn' => 'id',
      *    'comment' => 'no-rls', // Used to explicitly enable/disable RLS or to create a comment constraint (internal metadata)
      *    'nullable' => false, // Used to determine if the constraint is nullable (internal metadata)
      * ].
@@ -229,9 +229,9 @@ class TableRLSManager implements RLSPolicyManager
         bool $nullable
     ): array {
         return [
-            'foreignKey' => $foreignKey,
+            'localColumn' => $foreignKey,
             'foreignTable' => $foreignTable,
-            'foreignId' => $foreignId,
+            'foreignColumn' => $foreignId,
             // Internal metadata omitted in shortestPaths()
             'comment' => $comment,
             'nullable' => $nullable,
@@ -362,9 +362,9 @@ class TableRLSManager implements RLSPolicyManager
      * and that method uses formatConstraint(), which serves as a single source of truth
      * for our constraint formatting. A formatted constraint looks like this:
      * [
-     *     'foreignKey' => 'tenant_id',
+     *     'localColumn' => 'tenant_id',
      *     'foreignTable' => 'tenants',
-     *     'foreignId' => 'id',
+     *     'foreignColumn' => 'id',
      *     'comment' => 'no-rls',
      *     'nullable' => false
      * ]
@@ -505,9 +505,9 @@ class TableRLSManager implements RLSPolicyManager
         $sessionTenantKey = config('tenancy.rls.session_variable_name');
 
         foreach ($path as $index => $relation) {
-            $column = $relation['foreignKey'];
+            $column = $relation['localColumn'];
             $table = $relation['foreignTable'];
-            $foreignKey = $relation['foreignId'];
+            $foreignKey = $relation['foreignColumn'];
 
             $indentation = str_repeat(' ', ($index + 1) * 4);
 
