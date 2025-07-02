@@ -382,7 +382,7 @@ class TableRLSManager implements RLSPolicyManager
         $validConstraints = [];
 
         foreach ($formattedConstraints as $constraint) {
-            if (! $this->shouldSkipPathLeadingThrough($constraint)) {
+            if (! $this->shouldSkipPathLeadingThroughConstraint($constraint)) {
                 $validConstraints[] = $constraint;
             }
         }
@@ -400,7 +400,7 @@ class TableRLSManager implements RLSPolicyManager
      *
      * @param array $constraint Formatted constraint
      */
-    protected function shouldSkipPathLeadingThrough(array $constraint): bool
+    protected function shouldSkipPathLeadingThroughConstraint(array $constraint): bool
     {
         $comment = $constraint['comment'] ?? null;
 
