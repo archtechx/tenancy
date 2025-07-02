@@ -64,7 +64,7 @@ class TableRLSManager implements RLSPolicyManager
 {
     /**
      * When true, all valid constraints are considered while generating paths for RLS policies,
-     * unless explicitly marked with 'no-rls' comment.
+     * unless explicitly marked with a 'no-rls' comment.
      *
      * When false, only columns explicitly marked with 'rls' or 'rls table.column' comments are considered.
      */
@@ -82,7 +82,7 @@ class TableRLSManager implements RLSPolicyManager
      * The passed paths should be formatted like this:
      * [
      *     'table_name' => [...$stepsLeadingToTenantsTable]
-     * ].
+     * ]
      */
     public function generateQueries(array $paths = []): array
     {
@@ -392,7 +392,7 @@ class TableRLSManager implements RLSPolicyManager
     }
 
     /**
-     * Retrieve table's comment constraints.
+     * Retrieve a table's comment constraints.
      *
      * Comment constraints are columns with comments
      * formatted like "rls <foreign_table>.<foreign_column>".
