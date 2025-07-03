@@ -36,6 +36,8 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     {
         parent::setUp();
 
+        ini_set('memory_limit', '1G');
+
         Redis::connection('default')->flushdb();
         Redis::connection('cache')->flushdb();
         Artisan::call('cache:clear memcached'); // flush memcached
