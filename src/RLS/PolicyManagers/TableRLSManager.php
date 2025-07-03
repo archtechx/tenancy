@@ -121,7 +121,7 @@ class TableRLSManager implements RLSPolicyManager
      *     ],
      * ],
      *
-     * @throws RecursiveRelationshipException When tables have recursive relationships and no valid paths
+     * @throws RecursiveRelationshipException When tables have recursive relationships and no other valid paths
      * @throws RLSCommentConstraintException When comment constraints are malformed
      */
     public function shortestPaths(): array
@@ -147,7 +147,7 @@ class TableRLSManager implements RLSPolicyManager
             // or leads through a recursive relationship (throw an exception).
             if ($shortestPath['recursive_relationship']) {
                 throw new RecursiveRelationshipException(
-                    "Table '{$tableName}' has recursive relationships with no valid paths to the tenants table."
+                    "Table '{$tableName}' has recursive relationships with no other valid paths to the tenants table."
                 );
             }
         }
@@ -198,23 +198,23 @@ class TableRLSManager implements RLSPolicyManager
     {
         assert(count($constraint['columns']) === 1);
 
-        $foreignKeyName = $constraint['columns'][0];
+        $localColumn = $constraint['columns'][0];
 
         $comment = collect($this->database->getSchemaBuilder()->getColumns($table))
-                ->filter(fn ($column) => $column['name'] === $foreignKeyName)
+                ->filter(fn ($column) => $column['name'] === $localColumn)
                 ->first()['comment'] ?? null;
 
         $columnIsNullable = $this->database->selectOne(
             'SELECT is_nullable FROM information_schema.columns WHERE table_name = ? AND column_name = ?',
-            [$table, $foreignKeyName]
-        )?->is_nullable === 'YES';
+            [$table, $localColumn]
+        )->is_nullable === 'YES';
 
         assert(count($constraint['foreign_columns']) === 1);
 
         return $this->formatConstraint(
-            foreignKey: $foreignKeyName,
+            localColumn: $localColumn,
             foreignTable: $constraint['foreign_table'],
-            foreignId: $constraint['foreign_columns'][0],
+            foreignColumn: $constraint['foreign_columns'][0],
             comment: $comment,
             nullable: $columnIsNullable
         );
@@ -222,16 +222,16 @@ class TableRLSManager implements RLSPolicyManager
 
     /** Single source of truth for our constraint format. */
     protected function formatConstraint(
-        string $foreignKey,
+        string $localColumn,
         string $foreignTable,
-        string $foreignId,
+        string $foreignColumn,
         string|null $comment,
         bool $nullable
     ): array {
         return [
-            'localColumn' => $foreignKey,
+            'localColumn' => $localColumn,
             'foreignTable' => $foreignTable,
-            'foreignColumn' => $foreignId,
+            'foreignColumn' => $foreignColumn,
             // Internal metadata omitted in shortestPaths()
             'comment' => $comment,
             'nullable' => $nullable,
@@ -239,7 +239,7 @@ class TableRLSManager implements RLSPolicyManager
     }
 
     /**
-     * Recursively traverse table's constraints to find
+     * Recursively traverse a table's constraints to find
      * the shortest path to the tenants table.
      *
      * The shortest paths are cached in $cachedPaths to avoid
@@ -375,7 +375,10 @@ class TableRLSManager implements RLSPolicyManager
     protected function getConstraints(string $table): array
     {
         $formattedConstraints = array_merge(
-            array_map(fn ($schemaStructure) => $this->formatForeignKey($schemaStructure, $table), $this->database->getSchemaBuilder()->getForeignKeys($table)),
+            array_map(
+                fn ($schemaStructure) => $this->formatForeignKey($schemaStructure, $table),
+                $this->database->getSchemaBuilder()->getForeignKeys($table)
+            ),
             $this->getFormattedCommentConstraints($table)
         );
 
@@ -436,9 +439,9 @@ class TableRLSManager implements RLSPolicyManager
      * Retrieve a table's comment constraints.
      *
      * Comment constraints are columns with comments
-     * formatted like "rls <foreign_table>.<foreign_column>".
+     * structured like "rls <foreign_table>.<foreign_column>".
      *
-     * Returns array of formatted comment constraints (check formatConstraint() to see the format).
+     * Returns an array of formatted comment constraints (check formatConstraint() to see the format).
      */
     protected function getFormattedCommentConstraints(string $tableName): array
     {
@@ -448,7 +451,10 @@ class TableRLSManager implements RLSPolicyManager
         });
 
         // Validate and format the comment constraints
-        $commentConstraints = array_map(fn ($commentConstraint) => $this->parseCommentConstraint($commentConstraint, $tableName), $commentConstraints);
+        $commentConstraints = array_map(
+            fn ($commentConstraint) => $this->parseCommentConstraint($commentConstraint, $tableName),
+            $commentConstraints
+        );
 
         return $commentConstraints;
     }
@@ -489,9 +495,9 @@ class TableRLSManager implements RLSPolicyManager
 
         // Return the formatted constraint
         return $this->formatConstraint(
-            foreignKey: $commentConstraint['name'],
+            localColumn: $commentConstraint['name'],
             foreignTable: $foreignTable,
-            foreignId: $foreignColumn,
+            foreignColumn: $foreignColumn,
             comment: $commentConstraint['comment'],
             nullable: $commentConstraint['nullable']
         );
