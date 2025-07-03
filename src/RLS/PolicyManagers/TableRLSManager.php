@@ -126,12 +126,11 @@ class TableRLSManager implements RLSPolicyManager
      */
     public function shortestPaths(): array
     {
-        $cachedPaths = [];
         $shortestPaths = [];
 
         foreach ($this->getTableNames() as $tableName) {
             // Generate the shortest path from table named $tableName to the tenants table
-            $shortestPath = $this->shortestPathToTenantsTable($tableName, $cachedPaths);
+            $shortestPath = $this->shortestPathToTenantsTable($tableName);
 
             if ($this->isValidPath($shortestPath)) {
                 // Format path steps to a more readable format (keep only the needed data)
@@ -252,7 +251,7 @@ class TableRLSManager implements RLSPolicyManager
      */
     protected function shortestPathToTenantsTable(
         string $table,
-        array &$cachedPaths,
+        array &$cachedPaths = [],
         array $visitedTables = []
     ): array {
         // Return the shortest path for this table if it was already found and cached
@@ -262,6 +261,9 @@ class TableRLSManager implements RLSPolicyManager
 
         // Reached tenants table (last step)
         if ($table === tenancy()->model()->getTable()) {
+            // This pretty much just means we set $cachedPaths['tenants'] to an
+            // empty path. The significance of an empty path is that this class
+            // considers it to mean "you are at the tenants table".
             $cachedPaths[$table] = $this->buildPath();
 
             return $cachedPaths[$table];
