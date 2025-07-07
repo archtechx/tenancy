@@ -10,7 +10,6 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 
-
 // todo@addTenantParameter revisit annotation
 /**
  * Clones either all existing routes for which shouldBeCloned() returns true
