@@ -6,6 +6,7 @@ use Stancl\Tenancy\Actions\CloneRoutesAsTenant;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 use Illuminate\Support\Facades\Route as RouteFacade;
 use function Stancl\Tenancy\Tests\pest;
+use Illuminate\Routing\Exceptions\UrlGenerationException;
 
 test('CloneRoutesAsTenant action clones routes with clone middleware by default', function () {
     config(['tenancy.identification.resolvers.' . PathTenantResolver::class . '.tenant_parameter_name' => 'team']);
@@ -337,3 +338,22 @@ test('clone action can be used fluently', function() {
     expect(collect(RouteFacade::getRoutes()->get())->map->getName())
         ->toContain('tenant.foo', 'tenant.bar', 'tenant.baz');
 });
+
+test('addTenantParameter affects if the cloned route will have the tenant parameter', function(bool $addTenantParameter) {
+    RouteFacade::get('/foo', fn () => true)->name('foo')->middleware('clone');
+
+    $cloneAction = app(CloneRoutesAsTenant::class);
+
+    $cloneAction->addTenantParameter($addTenantParameter)->handle();
+
+    $clonedRoute = RouteFacade::getRoutes()->getByName('tenant.foo');
+
+    if ($addTenantParameter) {
+        expect($clonedRoute->uri())->toContain('{tenant}');
+        expect(fn () => $this->get(route('tenant.foo')))->toThrow(UrlGenerationException::class, 'Missing parameter: tenant');
+        $this->withoutExceptionHandling()->get(route('tenant.foo', ['tenant' => Tenant::create()->id]))->assertOk();
+    } else {
+        expect($clonedRoute->uri())->not()->toContain('{tenant}');
+        $this->withoutExceptionHandling()->get(route('tenant.foo'))->assertOk();
+    }
+})->with([true, false]);
