@@ -10,6 +10,8 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 
+
+// todo@addTenantParameter revisit annotation
 /**
  * Clones either all existing routes for which shouldBeCloned() returns true
  * (by default, all routes with any middleware present in $cloneRoutesWithMiddleware),
@@ -70,6 +72,7 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
 class CloneRoutesAsTenant
 {
     protected array $routesToClone = [];
+    protected bool $addTenantParameter = true;
     protected Closure|null $cloneUsing = null; // The callback should accept Route instance or the route name (string)
     protected Closure|null $shouldClone = null;
     protected array $cloneRoutesWithMiddleware = ['clone'];
@@ -109,6 +112,13 @@ class CloneRoutesAsTenant
         $this->routesToClone = [];
 
         $this->router->getRoutes()->refreshNameLookups();
+    }
+
+    public function addTenantParameter(bool $addTenantParameter): static
+    {
+        $this->addTenantParameter = $addTenantParameter;
+
+        return $this;
     }
 
     public function cloneUsing(Closure|null $cloneUsing): static
@@ -171,9 +181,11 @@ class CloneRoutesAsTenant
             $action->put('as', PathTenantResolver::tenantRouteNamePrefix() . $name);
         }
 
-        $action
-            ->put('middleware', $middleware)
-            ->put('prefix', $prefix . '/{' . PathTenantResolver::tenantParameterName() . '}');
+        $action->put('middleware', $middleware);
+
+        if ($this->addTenantParameter) {
+            $action->put('prefix', $prefix . '/{' . PathTenantResolver::tenantParameterName() . '}');
+        }
 
         /** @var Route $newRoute */
         $newRoute = $this->router->$method($uri, $action->toArray());
