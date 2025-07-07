@@ -30,7 +30,9 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  * You may customize $cloneRoutesWithMiddleware using cloneRoutesWithMiddleware() to make any middleware of your choice trigger cloning.
  * By providing a callback to shouldClone(), you can change how it's determined if a route should be cloned if you don't want to use middleware flags.
  *
- * Cloned routes are prefixed with '/{tenant}', flagged with 'tenant' middleware, and have their names prefixed with 'tenant.'.
+ * Cloned routes are prefixed with '/{tenant}' (the tenant parameter can be omitted by passing the addTenantParameter() method `false`),
+ * flagged with 'tenant' middleware, and have their names prefixed with 'tenant.'.
+ *
  * The parameter name and prefix can be changed e.g. to `/{team}` and `team.` by configuring the path resolver (tenantParameterName and tenantRouteNamePrefix).
  * Routes with names that are already prefixed won't be cloned - but that's just the default behavior.
  * The cloneUsing() method allows you to completely override the default behavior and customize how the cloned routes will be defined.
@@ -59,6 +61,12 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  *
  * // Clone baz route as /{tenant}/bar and name it tenant.baz ('universal' middleware won't be present in the cloned route)
  * $cloneAction->cloneRoute('baz')->handle();
+ *
+ * Route::get('/no-tenant-parameter', fn () => true)->name('no-tenant-parameter'->middleware('clone');
+ *
+ * // Clone baz route as /no-tenant-parameter and name it tenant.no-tenant-parameter (the route won't have the tenant parameter)
+ * // This can be useful e.g. with domain identification.
+ * $cloneAction->addTenantParameter(false)->cloneRoutesWithMiddleware(['clone'])->cloneRoute('no-tenant-parameter')->handle();
  * ```
  *
  * Calling handle() will also clear the $routesToClone array.
