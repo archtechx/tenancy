@@ -152,6 +152,11 @@ class TenancyServiceProvider extends ServiceProvider
         Route::middlewareGroup('tenant', []);
         Route::middlewareGroup('central', []);
 
+        // Always register the ForgetTenantParameter listener
+        // even if path identification is not used.
+        //
+        // Though the listener really only has an effect
+        // when path identification is used in the global stack.
         Event::listen(RouteMatched::class, ForgetTenantParameter::class);
     }
 }

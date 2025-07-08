@@ -92,12 +92,14 @@ return [
         /**
          * Identification middleware tenancy recognizes as path identification middleware.
          *
-         * This is used for determining if a path identification middleware is used
-         * during operations specific to path identification, e.g. forgetting the tenant parameter in ForgetTenantParameter.
+         * This configuration is used to identify which middleware should trigger
+         * conditionally removing the tenant parameter from routes using the ForgetTenantParameter listener.
+         *
+         * The listener only has an effect when path identification middleware is used in the global middleware stack
+         * and certain conditions are met (see ForgetTenantParameter for more info).
          *
          * If you're using a custom path identification middleware, add it here.
          *
-         * @see \Stancl\Tenancy\Actions\CloneRoutesAsTenant
          * @see \Stancl\Tenancy\Listeners\ForgetTenantParameter
          */
         'path_identification_middleware' => [

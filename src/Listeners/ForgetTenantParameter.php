@@ -11,18 +11,18 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
 // todo@earlyIdReview
 
 /**
- * Remove the tenant parameter from the matched route when path identification is used globally.
+ * Conditionally removes the tenant parameter from matched routes when using kernel path identification.
  *
- * While initializing tenancy, we forget the tenant parameter (in PathTenantResolver),
- * so that the route actions don't have to accept it.
+ * When path identification middleware is in the global stack,
+ * the tenant parameter is initially forgotten during tenancy initialization in PathTenantResolver.
+ * However, because kernel identification occurs before route matching, the route still contains
+ * the tenant parameter when RouteMatched is fired. This listener removes it to prevent route
+ * actions from needing to accept an unwanted tenant parameter.
  *
- * With kernel identification, tenancy gets initialized before the route gets matched.
- * The matched route gets the tenant parameter again, so we have to forget the parameter again on RouteMatched.
- *
- * We remove the {tenant} parameter from the matched route when
- * 1) the InitializeTenancyByPath middleware is in the global stack, AND
- * 2) the matched route does not have identification middleware (so that {tenant} isn't forgotten when using route-level identification), AND
- * 3) the route isn't in the central context (so that {tenant} doesn't get accidentally removed from central routes).
+ * The {tenant} parameter is removed from the matched route only when ALL of these conditions are met:
+ * 1) A path identification middleware is in the global middleware stack (kernel identification)
+ * 2) The matched route does NOT have its own identification middleware (route-level identification takes precedence)
+ * 3) The route is in tenant or universal context (central routes keep their tenant parameter)
  */
 class ForgetTenantParameter
 {
