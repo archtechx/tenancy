@@ -1,0 +1,35 @@
+name: Queue tests
+
+on:
+  - push
+
+jobs:
+  queue:
+    name: Queue application tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare composer version constraint prefix
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            # For refs like "refs/tags/v3.9.0", remove "refs/tags/v" prefix to get just "3.9.0"
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "VERSION_PREFIX=${VERSION}" >> $GITHUB_ENV
+          else
+            BRANCH=${GITHUB_REF#refs/heads/}
+            if [[ $BRANCH =~ ^[0-9]\.x$ ]]; then
+              # Branches starting with %d.x need to use -dev suffix
+              echo "VERSION_PREFIX=${BRANCH}-dev" >> $GITHUB_ENV
+            else
+              # All other branches use dev-${branch} prefix
+              echo "VERSION_PREFIX=dev-${BRANCH}" >> $GITHUB_ENV
+            fi
+          fi
+
+      - name: Clone test suite
+        run: git clone https://github.com/archtechx/tenancy-queue-tester
+
+      - name: Run tests
+        run: |
+          cd tenancy-queue-tester
+          TENANCY_VERSION=${VERSION_PREFIX}#${GITHUB_SHA} ./setup.sh
+          TENANCY_VERSION=${VERSION_PREFIX}#${GITHUB_SHA} ./test.sh

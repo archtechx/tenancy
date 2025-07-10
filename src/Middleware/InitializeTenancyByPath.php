@@ -40,10 +40,8 @@ class InitializeTenancyByPath extends IdentificationMiddleware
             return $this->initializeTenancy(
                 $request, $next, $route
             );
-        } else {
-            throw new RouteIsMissingTenantParameterException;
         }
 
-        return $next($request);
+        throw new RouteIsMissingTenantParameterException;
     }
 }
