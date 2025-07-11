@@ -92,11 +92,12 @@ return [
         /**
          * Identification middleware tenancy recognizes as path identification middleware.
          *
-         * This configuration is used to identify which middleware should trigger
-         * conditionally removing the tenant parameter from routes using the ForgetTenantParameter listener.
+         * This is used for determining if a path identification middleware is used
+         * during operations specific to path identification.
          *
-         * The listener only has an effect when path identification middleware is used in the global middleware stack
-         * and certain conditions are met (see ForgetTenantParameter for more info).
+         * Currently, this is only used for forgetting the tenant parameter using the ForgetTenantParameter listener.
+         * The listener only has an effect when path identification middleware
+         * is used in the global middleware stack and certain conditions are met.
          *
          * If you're using a custom path identification middleware, add it here.
          *
