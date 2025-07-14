@@ -10,6 +10,10 @@ class InitializeTenancyByOriginHeader extends InitializeTenancyByDomainOrSubdoma
 {
     public function getDomain(Request $request): string
     {
-        return $request->header('Origin', '');
+        if ($origin = $request->header('Origin', '')) {
+            return parse_url($origin, PHP_URL_HOST) ?? $origin;
+        }
+
+        return '';
     }
 }

@@ -36,6 +36,12 @@ test('origin identification works', function () {
         ->withHeader('Origin', 'foo.localhost')
         ->post('home')
         ->assertSee($tenant->id);
+
+    // Test with a full URL - not just a hostname
+    pest()
+        ->withHeader('Origin', 'https://foo.localhost')
+        ->post('home')
+        ->assertSee($tenant->id);
 });
 
 test('tenant routes are not accessible on central domains while using origin identification', function () {
