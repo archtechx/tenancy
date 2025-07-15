@@ -43,9 +43,19 @@ class MailConfigBootstrapper implements TenancyBootstrapper
         static::$credentialsMap = array_merge(static::$credentialsMap, static::$mapPresets[static::$mailer] ?? []);
     }
 
-    public function bootstrap(Tenant $tenant): void
+     public function bootstrap(Tenant $tenant): void
     {
-        // Forget the mail manager instance to clear the cached mailers
+        // Clear the mail manager and its cached mailers
+        if ($this->app->bound('mail.manager')) {
+            $mailManager = $this->app->make('mail.manager');
+
+            // Clear all cached mailer instances
+            $reflection = new \ReflectionClass($mailManager);
+            $mailersProperty = $reflection->getProperty('mailers');
+            $mailersProperty->setAccessible(true);
+            $mailersProperty->setValue($mailManager, []);
+        }
+
         $this->app->forgetInstance('mail.manager');
 
         $this->setConfig($tenant);
@@ -54,6 +64,16 @@ class MailConfigBootstrapper implements TenancyBootstrapper
     public function revert(): void
     {
         $this->unsetConfig();
+
+        // Clear cached mailers again
+        if ($this->app->bound('mail.manager')) {
+            $mailManager = $this->app->make('mail.manager');
+
+            $reflection = new \ReflectionClass($mailManager);
+            $mailersProperty = $reflection->getProperty('mailers');
+            $mailersProperty->setAccessible(true);
+            $mailersProperty->setValue($mailManager, []);
+        }
 
         $this->app->forgetInstance('mail.manager');
     }
