@@ -13,7 +13,6 @@ use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
  */
 interface SyncMaster extends Syncable
 {
-
     public function getTenantModelName(): string;
 
     /**
