@@ -19,13 +19,15 @@ class DeleteResourcesInTenants extends QueueableListener
         $centralResource = $event->centralResource;
         $forceDelete = $event->forceDelete;
 
-        tenancy()->runForMultiple($centralResource->tenants()->cursor(), function () use ($centralResource, $forceDelete) {
+        $relationshipName = $centralResource->getTenantsRelationshipName();
+
+        tenancy()->runForMultiple($centralResource->{$relationshipName}()->cursor(), function () use ($centralResource, $forceDelete, $relationshipName) {
             $this->deleteSyncedResource($centralResource, $forceDelete);
 
             // Delete pivot records if the central resource doesn't use soft deletes
             // or the central resource was deleted using forceDelete()
             if ($forceDelete || ! in_array(SoftDeletes::class, class_uses_recursive($centralResource::class), true)) {
-                $centralResource->tenants()->detach(tenant());
+                $centralResource->{$relationshipName}()->detach(tenant());
             }
         });
     }

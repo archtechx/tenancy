@@ -24,7 +24,9 @@ class RestoreResourcesInTenants extends QueueableListener
             return;
         }
 
-        tenancy()->runForMultiple($centralResource->tenants()->cursor(), function () use ($centralResource) {
+        $relationshipName = $centralResource->getTenantsRelationshipName();
+
+        tenancy()->runForMultiple($centralResource->{$relationshipName}()->cursor(), function () use ($centralResource) {
             $tenantResourceClass = $centralResource->getTenantModelName();
             /**
              * @var Syncable $centralResource

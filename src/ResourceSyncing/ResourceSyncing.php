@@ -105,12 +105,6 @@ trait ResourceSyncing
         return true;
     }
 
-    public function tenants(): BelongsToMany
-    {
-        return $this->morphToMany(config('tenancy.models.tenant'), 'tenant_resources', 'tenant_resources', 'resource_global_id', 'tenant_id', $this->getGlobalIdentifierKeyName())
-            ->using(TenantMorphPivot::class);
-    }
-
     public function getGlobalIdentifierKeyName(): string
     {
         return 'global_id';

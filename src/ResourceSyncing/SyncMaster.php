@@ -6,7 +6,6 @@ namespace Stancl\Tenancy\ResourceSyncing;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
 /**
@@ -14,12 +13,15 @@ use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
  */
 interface SyncMaster extends Syncable
 {
-    /**
-     * @return BelongsToMany<TenantWithDatabase&Model, self&Model>
-     */
-    public function tenants(): BelongsToMany;
 
     public function getTenantModelName(): string;
+
+    /**
+     * Should return the name of the relationship to the tenants table (e.g. 'tenants').
+     *
+     * In the class where this interface is implemented, the relationship method also has to be defined.
+     */
+    public function getTenantsRelationshipName(): string;
 
     public function triggerDetachEvent(TenantWithDatabase&Model $tenant): void;
 
