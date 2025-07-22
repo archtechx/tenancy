@@ -9,6 +9,7 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Bootstrappers\CacheTagsBootstrapper;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     config(['tenancy.bootstrappers' => [CacheTagsBootstrapper::class]]);

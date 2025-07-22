@@ -24,9 +24,11 @@ To fix this, simply delete the database memory by shutting down containers and s
 
 Same thing for `SQLSTATE[HY000]: General error: 1615 Prepared statement needs to be re-prepared`.
 
-### Docker on M1
+### Docker on Apple Silicon
 
 Run `composer docker-m1` to symlink `docker-compose-m1.override.yml` to `docker-compose.override.yml`. This will reconfigure a few services in the docker compose config to be compatible with M1.
+
+2025 note: By now only MSSQL doesn't have good M1 support. The override also started being a bit problematic, having issues with starts, often requiring multiple starts. This often makes the original image in docker-compose more stable, even if it's amd64-only. With Rosetta enabled, you should be able to use it without issues.
 
 ### Coverage reports
 

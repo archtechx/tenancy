@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByOriginHeader;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     InitializeTenancyByOriginHeader::$onFail = null;
@@ -33,6 +34,12 @@ test('origin identification works', function () {
 
     pest()
         ->withHeader('Origin', 'foo.localhost')
+        ->post('home')
+        ->assertSee($tenant->id);
+
+    // Test with a full URL - not just a hostname
+    pest()
+        ->withHeader('Origin', 'https://foo.localhost')
         ->post('home')
         ->assertSee($tenant->id);
 });

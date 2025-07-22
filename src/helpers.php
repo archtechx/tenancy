@@ -30,6 +30,7 @@ if (! function_exists('tenant')) {
             return app(Tenant::class);
         }
 
+        // @phpstan-ignore-next-line nullsafe.neverNull
         return app(Tenant::class)?->getAttribute($key);
     }
 }

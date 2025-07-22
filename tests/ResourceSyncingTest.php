@@ -43,6 +43,9 @@ use Stancl\Tenancy\ResourceSyncing\Events\CentralResourceDetachedFromTenant;
 use Stancl\Tenancy\Tests\Etc\ResourceSyncing\CentralUser as BaseCentralUser;
 use Stancl\Tenancy\ResourceSyncing\CentralResourceNotAvailableInPivotException;
 use Stancl\Tenancy\ResourceSyncing\Events\SyncedResourceSavedInForeignDatabase;
+use Illuminate\Database\Eloquent\Scope;
+use Illuminate\Database\QueryException;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     config(['tenancy.bootstrappers' => [
@@ -66,6 +69,9 @@ beforeEach(function () {
     CreateTenantResource::$shouldQueue = false;
     DeleteResourceInTenant::$shouldQueue = false;
     UpdateOrCreateSyncedResource::$scopeGetModelQuery = null;
+
+    // Reset global scopes on models (should happen automatically but to make this more explicit)
+    Model::clearBootedModels();
 
     $syncedAttributes = [
         'global_id',
@@ -105,6 +111,30 @@ beforeEach(function () {
 
 afterEach(function () {
     UpdateOrCreateSyncedResource::$scopeGetModelQuery = null;
+
+    // Reset global scopes on models (should happen automatically but to make this more explicit)
+    Model::clearBootedModels();
+});
+
+test('resources created with the same global id in different tenant dbs will be synced to a single central resource', function () {
+    $tenants = [Tenant::create(), Tenant::create(), Tenant::create()];
+    migrateUsersTableForTenants();
+
+    // Only a single central user is created since the same global_id is used for each tenant user
+    // Therefore all of these tenant users are synced to a single global user
+    tenancy()->runForMultiple($tenants, function () {
+        // Create a user with the same global_id in each tenant DB
+        TenantUser::create([
+            'global_id' => 'acme',
+            'name' => Str::random(),
+            'email' => 'john@localhost',
+            'password' => 'secret',
+            'role' => 'commenter',
+        ]);
+    });
+
+    expect(CentralUser::all())->toHaveCount(1);
+    expect(CentralUser::first()->global_id)->toBe('acme');
 });
 
 test('SyncedResourceSaved event gets triggered when resource gets created or when its synced attributes get updated', function () {
@@ -1172,6 +1202,69 @@ test('resource creation works correctly when central resource provides defaults 
     expect($centralUser->foo)->toBe('bar');
 });
 
+test('global scopes on syncable models can break resource syncing', function () {
+    [$tenant1, $tenant2] = createTenantsAndRunMigrations();
+
+    $centralUser = CentralUser::create([
+        'global_id' => 'foo',
+        'name' => 'foo',
+        'email' => 'foo@bar.com',
+        'password' => '*****',
+        'role' => 'admin', // not 'visible'
+    ]);
+
+    // Create a tenant resource. The global id matches that of the central user created above,
+    // so the synced columns of the central record will be updated.
+    $tenant1->run(fn () => TenantUser::create([
+        'global_id' => 'foo',
+        'name' => 'tenant1 user',
+        'email' => 'tenant1@user.com',
+        'password' => 'tenant1_password',
+        'role' => 'user1',
+    ]));
+
+    expect($centralUser->refresh()->name)->toBe('tenant1 user');
+
+    // While syncing a tenant resource with the same global id,
+    // the central resource will not be found due to this scope,
+    // leading to the syncing logic trying to create a new central resource with that same global id,
+    // triggering a unique constraint violation exception.
+    CentralUser::addGlobalScope(new VisibleScope());
+
+    expect(function () use ($tenant1) {
+         $tenant1->run(fn () => TenantUser::create([
+            'global_id' => 'foo',
+            'name' => 'tenant1new user',
+            'email' => 'tenant1new@user.com',
+            'password' => 'tenant1new_password',
+            'role' => 'user1new',
+        ]));
+    })->toThrow(QueryException::class, "Duplicate entry 'foo' for key 'users.users_global_id_unique'");
+
+    // The central resource stays the same
+    expect($centralUser->refresh()->name)->toBe('tenant1 user');
+
+    // Use UpdateOrCreateSyncedResource::$scopeGetModelQuery to bypass the global scope.
+    UpdateOrCreateSyncedResource::$scopeGetModelQuery = function (Builder $query) {
+        $query->withoutGlobalScope(VisibleScope::class);
+    };
+
+    // Now, the central resource IS found, and no exception is thrown
+    $tenant2->run(fn () => TenantUser::create([
+        'global_id' => 'foo',
+        'name' => 'tenant2 user',
+        'email' => 'tenant2@user.com',
+        'password' => 'tenant2_password',
+        'role' => 'user2',
+    ]));
+
+    // The central resource was updated
+    expect($centralUser->refresh()->name)->toBe('tenant2 user');
+
+    // The change was also synced to tenant1
+    expect($tenant1->run(fn () => TenantUser::first()->name))->toBe('tenant2 user');
+});
+
 /**
  * Create two tenants and run migrations for those tenants.
  *
@@ -1240,6 +1333,14 @@ class TenantUser extends BaseTenantUser
     {
         return $this->belongsToMany(Tenant::class, 'tenant_users', 'global_user_id', 'tenant_id', 'global_id')
             ->using(TenantPivot::class);
+    }
+}
+
+class VisibleScope implements Scope
+{
+    public function apply(Builder $builder, Model $model): void
+    {
+        $builder->where('role', 'visible');
     }
 }
 
@@ -1320,6 +1421,7 @@ class CentralCompany extends Model implements SyncMaster
         ];
     }
 }
+
 class TenantCompany extends Model implements Syncable
 {
     use ResourceSyncing;

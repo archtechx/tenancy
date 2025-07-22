@@ -19,6 +19,7 @@ use Illuminate\Broadcasting\Broadcasters\NullBroadcaster;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastingConfigBootstrapper;
 use Illuminate\Contracts\Broadcasting\Broadcaster as BroadcasterContract;
+use function Stancl\Tenancy\Tests\withTenantDatabases;
 
 beforeEach(function () {
     withTenantDatabases();

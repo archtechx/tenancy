@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use function Stancl\Tenancy\Tests\pest;
 
 test('commands run globally are tenant aware and return valid exit code', function () {
     $tenant1 = Tenant::create();

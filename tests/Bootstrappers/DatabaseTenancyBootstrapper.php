@@ -6,6 +6,9 @@ use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Tests\Etc\Tenant;
+
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);

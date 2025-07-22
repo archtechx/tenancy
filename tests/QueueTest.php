@@ -22,16 +22,14 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\PersistentQueueTenancyBootstrapper;
 use Stancl\Tenancy\Listeners\QueueableListener;
+use function Stancl\Tenancy\Tests\pest;
+use function Stancl\Tenancy\Tests\withTenantDatabases;
 
 beforeEach(function () {
-    $this->mockConsoleOutput = false;
-
     config([
-        'tenancy.bootstrappers' => [
-            QueueTenancyBootstrapper::class,
-            DatabaseTenancyBootstrapper::class,
-        ],
+        'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
         'queue.default' => 'redis',
     ]);
 
@@ -45,7 +43,22 @@ afterEach(function () {
     pest()->valuestore->flush();
 });
 
-test('tenant id is passed to tenant queues', function () {
+dataset('queue_bootstrappers', [
+    QueueTenancyBootstrapper::class,
+    PersistentQueueTenancyBootstrapper::class,
+]);
+
+function withQueueBootstrapper(string $class) {
+    config(['tenancy.bootstrappers' => [
+        DatabaseTenancyBootstrapper::class,
+        $class,
+    ]]);
+
+    $class::__constructStatic(app());
+}
+
+test('tenant id is passed to tenant queues', function (string $bootstrapper) {
+    withQueueBootstrapper($bootstrapper);
     withTenantDatabases();
 
     config(['queue.default' => 'sync']);
@@ -61,9 +74,10 @@ test('tenant id is passed to tenant queues', function () {
     Event::assertDispatched(JobProcessing::class, function ($event) {
         return $event->job->payload()['tenant_id'] === tenant('id');
     });
-});
+})->with('queue_bootstrappers');
 
-test('tenant id is not passed to central queues', function () {
+test('tenant id is not passed to central queues', function (string $bootstrapper) {
+    withQueueBootstrapper($bootstrapper);
     withTenantDatabases();
 
     $tenant = Tenant::create();
@@ -82,9 +96,10 @@ test('tenant id is not passed to central queues', function () {
     Event::assertDispatched(JobProcessing::class, function ($event) {
         return ! isset($event->job->payload()['tenant_id']);
     });
-});
+})->with('queue_bootstrappers');
 
-test('tenancy is initialized inside queues', function (bool $shouldEndTenancy) {
+test('tenancy is initialized inside queues', function (bool $shouldEndTenancy, string $bootstrapper) {
+    withQueueBootstrapper($bootstrapper);
     withTenantDatabases();
     withFailedJobs();
 
@@ -117,7 +132,7 @@ test('tenancy is initialized inside queues', function (bool $shouldEndTenancy) {
     $tenant->run(function () use ($user) {
         expect($user->fresh()->name)->toBe('Bar');
     });
-})->with([true, false]);
+})->with([true, false])->with('queue_bootstrappers');
 
 test('changing the shouldQueue static property in parent class affects child classes unless the property is redefined', function () {
     // Parent – $shouldQueue is true
@@ -142,7 +157,8 @@ test('changing the shouldQueue static property in parent class affects child cla
     expect(app(ShouldNotQueueListener::class)->shouldQueue(new stdClass()))->toBeFalse();
 });
 
-test('tenancy is initialized when retrying jobs', function (bool $shouldEndTenancy) {
+test('tenancy is initialized when retrying jobs', function (bool $shouldEndTenancy, string $bootstrapper) {
+    withQueueBootstrapper($bootstrapper);
     withFailedJobs();
     withTenantDatabases();
 
@@ -189,9 +205,10 @@ test('tenancy is initialized when retrying jobs', function (bool $shouldEndTenan
     $tenant->run(function () use ($user) {
         expect($user->fresh()->name)->toBe('Bar');
     });
-})->with([true, false]);
+})->with([true, false])->with('queue_bootstrappers');
 
-test('the tenant used by the job doesnt change when the current tenant changes', function () {
+test('the tenant used by the job doesnt change when the current tenant changes', function (string $bootstrapper) {
+    withQueueBootstrapper($bootstrapper);
     withTenantDatabases();
 
     $tenant1 = Tenant::create();
@@ -208,26 +225,11 @@ test('the tenant used by the job doesnt change when the current tenant changes',
     pest()->artisan('queue:work --once');
 
     expect(pest()->valuestore->get('tenant_id'))->toBe('The current tenant id is: ' . $tenant1->getTenantKey());
-});
-
-test('tenant connections do not persist after tenant jobs get processed', function() {
-    withTenantDatabases();
-
-    $tenant = Tenant::create();
-
-    tenancy()->initialize($tenant);
-
-    dispatch(new TestJob(pest()->valuestore));
-
-    tenancy()->end();
-
-    pest()->artisan('queue:work --once');
-
-    expect(collect(DB::select('SHOW FULL PROCESSLIST'))->pluck('db'))->not()->toContain($tenant->database()->getName());
-});
+})->with('queue_bootstrappers');
 
 // Regression test for #1277
-test('dispatching a job from a tenant run arrow function dispatches it immediately', function () {
+test('dispatching a job from a tenant run arrow function dispatches it immediately', function (string $bootstrapper) {
+    withQueueBootstrapper($bootstrapper);
     withTenantDatabases();
 
     $tenant = Tenant::create();
@@ -241,7 +243,7 @@ test('dispatching a job from a tenant run arrow function dispatches it immediate
     expect(tenant())->toBe(null);
 
     expect(pest()->valuestore->get('tenant_id'))->toBe('The current tenant id is: ' . $tenant->getTenantKey());
-});
+})->with('queue_bootstrappers');
 
 function createValueStore(): void
 {

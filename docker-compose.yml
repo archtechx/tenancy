@@ -33,7 +33,7 @@ services:
         stdin_open: true
         tty: true
     mysql:
-        image: mysql:5.7
+        image: mysql:8
         environment:
             MYSQL_ROOT_PASSWORD: password
             MYSQL_DATABASE: main
@@ -46,7 +46,7 @@ services:
         tmpfs:
             - /var/lib/mysql
     mysql2:
-        image: mysql:5.7
+        image: mysql:8
         environment:
             MYSQL_ROOT_PASSWORD: password
             MYSQL_DATABASE: main
@@ -72,12 +72,12 @@ services:
         tmpfs:
             - /var/lib/postgresql/data
     mssql:
-        image: mcr.microsoft.com/mssql/server:2019-latest
+        image: mcr.microsoft.com/mssql/server:2022-latest
         environment:
           - ACCEPT_EULA=Y
           - SA_PASSWORD=P@ssword # todo reuse env from above
         healthcheck: # https://github.com/Microsoft/mssql-docker/issues/133#issuecomment-1995615432
-            test: timeout 1 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/1433'
+            test: timeout 2 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/1433'
             interval: 10s
             timeout: 10s
             retries: 10

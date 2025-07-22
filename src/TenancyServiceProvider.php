@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy;
 
+use Closure;
 use Illuminate\Cache\CacheManager;
 use Illuminate\Database\Console\Migrations\FreshCommand;
 use Illuminate\Routing\Events\RouteMatched;
@@ -18,9 +19,15 @@ use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 
 class TenancyServiceProvider extends ServiceProvider
 {
+    public static Closure|null $configure = null;
+
     /* Register services. */
     public function register(): void
     {
+        if (static::$configure) {
+            (static::$configure)();
+        }
+
         $this->mergeConfigFrom(__DIR__ . '/../assets/config.php', 'tenancy');
 
         $this->app->singleton(Database\DatabaseManager::class);

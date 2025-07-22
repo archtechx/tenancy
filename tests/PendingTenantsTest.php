@@ -11,6 +11,7 @@ use Stancl\Tenancy\Events\PendingTenantCreated;
 use Stancl\Tenancy\Events\PendingTenantPulled;
 use Stancl\Tenancy\Events\PullingPendingTenant;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use function Stancl\Tenancy\Tests\pest;
 
 test('tenants are correctly identified as pending', function (){
     Tenant::createPending();

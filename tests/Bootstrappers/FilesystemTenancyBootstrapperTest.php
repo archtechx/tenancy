@@ -16,6 +16,7 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\DeleteTenantStorage;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);

@@ -9,6 +9,7 @@ use Stancl\Tenancy\Features\TenantConfig;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use function Stancl\Tenancy\Tests\pest;
 
 afterEach(function () {
     TenantConfig::$storageToConfigMap = [];

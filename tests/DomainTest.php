@@ -10,6 +10,7 @@ use Stancl\Tenancy\Exceptions\DomainOccupiedByOtherTenantException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
+use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     InitializeTenancyByDomain::$onFail = null;

@@ -13,6 +13,7 @@ use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Listeners;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use function Stancl\Tenancy\Tests\pest;
 
 /**
  * This collection of regression tests verifies that SessionTenancyBootstrapper

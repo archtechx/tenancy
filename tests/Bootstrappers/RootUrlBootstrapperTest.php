@@ -10,18 +10,23 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\RootUrlBootstrapper;
 use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
+use Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper;
+use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
+use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
 
 beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
     RootUrlBootstrapper::$rootUrlOverride = null;
+    RootUrlBootstrapper::$rootUrlOverrideInTests = true;
 });
 
 afterEach(function () {
     RootUrlBootstrapper::$rootUrlOverride = null;
+    RootUrlBootstrapper::$rootUrlOverrideInTests = false;
 });
 
-test('root url bootstrapper overrides the root url when tenancy gets initialized and reverts the url to the central one after tenancy ends', function() {
+test('root url bootstrapper overrides the root url when tenancy gets initialized and reverts the url to the central one when ending tenancy', function() {
     config(['tenancy.bootstrappers' => [RootUrlBootstrapper::class]]);
 
     Route::group([
