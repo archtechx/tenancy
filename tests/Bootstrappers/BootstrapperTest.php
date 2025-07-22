@@ -23,6 +23,7 @@ use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\DatabaseCacheBootstrapper;
 use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
@@ -80,27 +81,43 @@ test('cache data is separated', function (string $store, string $bootstrapper) {
         'cache.default' => $store,
     ]);
 
-    if ($store === 'database') {
+    if ($bootstrapper === DatabaseCacheBootstrapper::class) {
+        config(['tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class, $bootstrapper]]);
+    } elseif ($store === 'database') {
+        // Not needed with DatabaseCacheBootstrapper, as it always uses the tenant connection for tenant cache
         config([
             'cache.stores.database.connection' => 'central',
             'cache.stores.database.lock_connection' => 'central',
         ]);
-
-        Schema::create('cache', function (Blueprint $table) {
-            $table->string('key')->primary();
-            $table->mediumText('value');
-            $table->integer('expiration');
-        });
-
-        Schema::create('cache_locks', function (Blueprint $table) {
-            $table->string('key')->primary();
-            $table->string('owner');
-            $table->integer('expiration');
-        });
     }
 
     $tenant1 = Tenant::create();
     $tenant2 = Tenant::create();
+
+    if ($store === 'database') {
+        $createCacheTables = function () {
+            Schema::create('cache', function (Blueprint $table) {
+                $table->string('key')->primary();
+                $table->mediumText('value');
+                $table->integer('expiration');
+            });
+
+            Schema::create('cache_locks', function (Blueprint $table) {
+                $table->string('key')->primary();
+                $table->string('owner');
+                $table->integer('expiration');
+            });
+        };
+
+        // Create cache tables in central DB
+        $createCacheTables();
+
+        if ($bootstrapper === DatabaseCacheBootstrapper::class) {
+            // Create cache tables in tenant DBs
+            // With this bootstrapper, cache will be saved in these tenant DBs instead of the central DB
+            tenancy()->runForMultiple([$tenant1, $tenant2], $createCacheTables);
+        }
+    }
 
     cache()->set('foo', 'central');
     expect(Cache::get('foo'))->toBe('central');
@@ -141,6 +158,8 @@ test('cache data is separated', function (string $store, string $bootstrapper) {
     ['memcached', CacheTenancyBootstrapper::class],
     ['database', CacheTenancyBootstrapper::class],
     ['dynamodb', CacheTenancyBootstrapper::class],
+
+    ['database', DatabaseCacheBootstrapper::class],
 ]);
 
 test('redis data is separated', function () {
