@@ -30,9 +30,10 @@ beforeEach(function () {
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
-test('DatabaseCacheBootstrapper switches the cache store database connection correctly', function () {
+test('DatabaseCacheBootstrapper switches the database cache store connections correctly', function () {
     config([
         'cache.stores.database.connection' => 'central', // Explicitly set cache DB connection name in config
+        'cache.stores.database.lock_connection' => 'central', // Also set lock connection name
         'cache.default' => 'database',
         'tenancy.bootstrappers' => [
             DatabaseTenancyBootstrapper::class,
@@ -40,26 +41,33 @@ test('DatabaseCacheBootstrapper switches the cache store database connection cor
         ],
     ]);
 
-    // Original connection is 'central' in the config
+    // Original connections (store and lock) are 'central' in the config
     expect(config('cache.stores.database.connection'))->toBe('central');
+    expect(config('cache.stores.database.lock_connection'))->toBe('central');
     // The actual connection used by the cache store is 'central'
-    expect(app('cache')->store('database')->getConnection()->getName())->toBe('central');
+    expect(Cache::store()->getConnection()->getName())->toBe('central');
+    // Cache locks also use the 'central' connection
+    expect(Cache::lock('foo')->getConnectionName())->toBe('central');
 
     tenancy()->initialize(Tenant::create());
 
-    // Initializing tenancy should make the cache connection in the config 'tenant'
+    // Initializing tenancy should make both connections 'tenant'
     expect(config('cache.stores.database.connection'))->toBe('tenant');
-    // The actual connection used by the cache store is now 'tenant'
+    expect(config('cache.stores.database.lock_connection'))->toBe('tenant');
+    // The actual connection used by the cache store and locks is now 'tenant'
     // Purging the database cache store forces the CacheManager to resolve a new instance of
-    // the database store with the connection specified in the config ('tenant')
-    expect(app('cache')->store('database')->getConnection()->getName())->toBe('tenant');
+    // the database store, using the connection names specified in the config ('tenant')
+    expect(Cache::store()->getConnection()->getName())->toBe('tenant');
+    expect(Cache::lock('foo')->getConnectionName())->toBe('tenant');
 
     tenancy()->end();
 
-    // Ending tenancy should change the connection in the config back to the original ('central')
+    // Ending tenancy should change both connections back to the original ('central')
     expect(config('cache.stores.database.connection'))->toBe('central');
-    // The actual connection used by the cache store is now 'central' again
-    expect(app('cache')->store('database')->getConnection()->getName())->toBe('central');
+    expect(config('cache.stores.database.lock_connection'))->toBe('central');
+    // The actual connection used by the cache store and the cache locks is now 'central' again
+    expect(Cache::store()->getConnection()->getName())->toBe('central');
+    expect(Cache::lock('foo')->getConnectionName())->toBe('central');
 });
 
 test('cache is properly separated', function() {
