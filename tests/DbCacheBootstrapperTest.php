@@ -29,7 +29,7 @@ beforeEach(function () {
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
-test('DatabaseCacheBootstrapper makes cache use the tenant connection', function() {
+test('DatabaseCacheBootstrapper makes cache use the tenant connection', function () {
     config([
         'cache.default' => 'database',
         'tenancy.bootstrappers' => [
