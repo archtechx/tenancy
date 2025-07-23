@@ -26,13 +26,17 @@ class DatabaseCacheBootstrapper implements TenancyBootstrapper
         protected Repository $config,
         protected CacheManager $cache,
         protected string|null $originalConnection = null,
+        protected string|null $originalLockConnection = null
     ) {}
 
     public function bootstrap(Tenant $tenant): void
     {
         $this->originalConnection = $this->config->get('cache.stores.database.connection');
+        $this->originalLockConnection = $this->config->get('cache.stores.database.lock_connection');
 
+        // todo1 Maybe consider making this dynamic instead of hardcoding 'tenant'?
         $this->config->set('cache.stores.database.connection', 'tenant');
+        $this->config->set('cache.stores.database.lock_connection', 'tenant');
 
         $this->cache->purge('database');
     }
@@ -40,6 +44,7 @@ class DatabaseCacheBootstrapper implements TenancyBootstrapper
     public function revert(): void
     {
         $this->config->set('cache.stores.database.connection', $this->originalConnection);
+        $this->config->set('cache.stores.database.lock_connection', $this->originalLockConnection);
 
         $this->cache->purge('database');
     }
