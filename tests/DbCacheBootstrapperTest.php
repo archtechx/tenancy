@@ -28,9 +28,7 @@ beforeEach(function () {
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
-});
 
-test('DatabaseCacheBootstrapper switches the database cache store connections correctly', function () {
     config([
         'cache.stores.database.connection' => 'central', // Explicitly set cache DB connection name in config
         'cache.stores.database.lock_connection' => 'central', // Also set lock connection name
@@ -40,7 +38,9 @@ test('DatabaseCacheBootstrapper switches the database cache store connections co
             DatabaseCacheBootstrapper::class, // Used instead of CacheTenancyBootstrapper
         ],
     ]);
+});
 
+test('DatabaseCacheBootstrapper switches the database cache store connections correctly', function () {
     // Original connections (store and lock) are 'central' in the config
     expect(config('cache.stores.database.connection'))->toBe('central');
     expect(config('cache.stores.database.lock_connection'))->toBe('central');
@@ -70,81 +70,76 @@ test('DatabaseCacheBootstrapper switches the database cache store connections co
     expect(Cache::lock('foo')->getConnectionName())->toBe('central');
 });
 
-test('cache is properly separated', function() {
-    config([
-        'cache.default' => 'database',
-        'tenancy.bootstrappers' => [
-            DatabaseTenancyBootstrapper::class,
-            DatabaseCacheBootstrapper::class, // Used instead of CacheTenancyBootstrapper
-        ],
-    ]);
+test('cache is separated correctly when using DatabaseCacheBootstrapper', function() {
+    // DB query for verifying that the cache is stored
+    // in the cache table of the current DB connection
+    // under the passed key (the key in the DB is prefixed by the default cache prefix).
+    $getCacheUsingDbQuery = function (string $cacheKey) {
+        // Prefix the cache key with the default cache prefix
+        $databaseCacheKey = config('cache.prefix') . $cacheKey;
 
-    // DB query for verifying that the cache is stored in DB
-    // under the 'foo' key (prefixed by the default cache prefix).
-    $databaseCacheKey = config('cache.prefix') . 'foo';
-    $retrieveFooCacheUsingDbQuery = fn () => DB::selectOne("SELECT * FROM `cache` WHERE `key` = '{$databaseCacheKey}'")?->value;
+        return DB::selectOne("SELECT * FROM `cache` WHERE `key` = '{$databaseCacheKey}'")?->value;
+    };
 
-    $createCacheTables = function () {
+    // Create the cache table in the central DB
+    Schema::create('cache', function (Blueprint $table) {
+        $table->string('key')->primary();
+        $table->mediumText('value');
+        $table->integer('expiration');
+    });
+
+    $tenant = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    // Create the cache table in tenant DBs
+    // With DatabaseCacheBootstrapper, cache will be saved in these tenant DBs instead of the central DB
+    tenancy()->runForMultiple([$tenant, $tenant2], function () {
         Schema::create('cache', function (Blueprint $table) {
             $table->string('key')->primary();
             $table->mediumText('value');
             $table->integer('expiration');
         });
-
-        Schema::create('cache_locks', function (Blueprint $table) {
-            $table->string('key')->primary();
-            $table->string('owner');
-            $table->integer('expiration');
-        });
-    };
-
-    // Create cache tables in central DB
-    $createCacheTables();
-
-    $tenant = Tenant::create();
-    $tenant2 = Tenant::create();
-
-    // Create cache tables in tenant DBs
-    // With this bootstrapper, cache will be saved in these tenant DBs instead of the central DB
-    tenancy()->runForMultiple([$tenant, $tenant2], $createCacheTables);
+    });
 
     // Write to cache in central context
     cache()->set('foo', 'central');
     expect(Cache::get('foo'))->toBe('central');
-    expect(str($retrieveFooCacheUsingDbQuery())->contains('central'))->toBeTrue();
+    // The value retrieved by the DB query is formatted like "s:7:"central";".
+    // We use toContain() because of this formatting instead of just toBe().
+    expect($getCacheUsingDbQuery('foo'))->toContain('central');
 
     tenancy()->initialize($tenant);
 
     // Central cache doesn't leak to tenant context
     expect(Cache::has('foo'))->toBeFalse();
-    // The 'foo' cache key in the tenant's database shouldn't exist
-    expect(DB::select('select * from cache'))->toHaveCount(0);
+    // Verify that the 'foo' cache key doesn't exist in the tenant's DB using a direct DB query
+    expect($getCacheUsingDbQuery('foo'))->toBeNull();
 
     cache()->set('foo', 'bar');
     expect(Cache::get('foo'))->toBe('bar');
-    expect(str($retrieveFooCacheUsingDbQuery())->contains('bar'))->toBeTrue();
+    // Verify that the 'foo' cache key is 'bar' using a direct DB query
+    expect($getCacheUsingDbQuery('foo'))->toContain('bar');
 
     tenancy()->initialize($tenant2);
 
-    // Assert one tenant's data doesn't leak to another tenant
+    // Assert one tenant's cache doesn't leak to another tenant
     expect(Cache::has('foo'))->toBeFalse();
     // The 'foo' cache key in another tenant's database shouldn't exist
-    expect(DB::select('select * from cache'))->toHaveCount(0);
+    expect($getCacheUsingDbQuery('foo'))->toBeNull();
 
     cache()->set('foo', 'xyz');
     expect(Cache::get('foo'))->toBe('xyz');
-    expect(str($retrieveFooCacheUsingDbQuery())->contains('xyz'))->toBeTrue();
+    expect($getCacheUsingDbQuery('foo'))->toContain('xyz');
 
     tenancy()->initialize($tenant);
 
-    // Assert data didn't leak to original tenant
+    // Assert cache didn't leak to the original tenant
     expect(Cache::get('foo'))->toBe('bar');
-    expect(str($retrieveFooCacheUsingDbQuery())->contains('bar'))->toBeTrue();
+    expect($getCacheUsingDbQuery('foo'))->toContain('bar');
 
     tenancy()->end();
 
-    // Assert central is still the same
-    // The 'foo' cache value in the central database should be 'central'
+    // Assert central 'foo' cache is still the same ('central')
     expect(Cache::get('foo'))->toBe('central');
-    expect(str($retrieveFooCacheUsingDbQuery())->contains('central'))->toBeTrue();
+    expect($getCacheUsingDbQuery('foo'))->toContain('central');
 });
