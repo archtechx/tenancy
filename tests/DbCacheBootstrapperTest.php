@@ -16,6 +16,7 @@ use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Cache;
 
 beforeEach(function () {
     Event::listen(
@@ -41,7 +42,7 @@ test('DatabaseCacheBootstrapper makes cache use the tenant connection', function
     // DB query for verifying that the cache is stored in DB
     // under the 'foo' key (prefixed by the default cache prefix).
     $databaseCacheKey = config('cache.prefix') . 'foo';
-    $databaseCacheValue = fn () => DB::selectOne("SELECT * FROM `cache` WHERE `key` = '{$databaseCacheKey}'")?->value;
+    $retrieveFooCacheUsingDbQuery = fn () => DB::selectOne("SELECT * FROM `cache` WHERE `key` = '{$databaseCacheKey}'")?->value;
 
     $createCacheTables = function () {
         Schema::create('cache', function (Blueprint $table) {
@@ -68,25 +69,42 @@ test('DatabaseCacheBootstrapper makes cache use the tenant connection', function
     tenancy()->runForMultiple([$tenant, $tenant2], $createCacheTables);
 
     // Write to cache in central context
-    cache(['foo' => 'CENTRAL']);
+    cache()->set('foo', 'central');
+    expect(Cache::get('foo'))->toBe('central');
+    expect(str($retrieveFooCacheUsingDbQuery())->contains('central'))->toBeTrue();
 
     tenancy()->initialize($tenant);
 
-    // Write to cache in tenant context
-    cache(['foo' => 'TENANT']);
+    // Central cache doesn't leak to tenant context
+    expect(Cache::has('foo'))->toBeFalse();
+    // The 'foo' cache key in the tenant's database shouldn't exist
+    expect(DB::select('select * from cache'))->toHaveCount(0);
 
-    tenancy()->end();
-
-    // The 'foo' cache value in the central database should be 'CENTRAL'
-    expect(str($databaseCacheValue())->contains('CENTRAL'))->toBeTrue();
-
-    tenancy()->initialize($tenant);
-
-    // The 'foo' cache value in the tenant database should be 'TENANT'
-    expect(str($databaseCacheValue())->contains('TENANT'))->toBeTrue();
+    cache()->set('foo', 'bar');
+    expect(Cache::get('foo'))->toBe('bar');
+    expect(str($retrieveFooCacheUsingDbQuery())->contains('bar'))->toBeTrue();
 
     tenancy()->initialize($tenant2);
 
+    // Assert one tenant's data doesn't leak to another tenant
+    expect(Cache::has('foo'))->toBeFalse();
     // The 'foo' cache key in another tenant's database shouldn't exist
     expect(DB::select('select * from cache'))->toHaveCount(0);
+
+    cache()->set('foo', 'xyz');
+    expect(Cache::get('foo'))->toBe('xyz');
+    expect(str($retrieveFooCacheUsingDbQuery())->contains('xyz'))->toBeTrue();
+
+    tenancy()->initialize($tenant);
+
+    // Assert data didn't leak to original tenant
+    expect(Cache::get('foo'))->toBe('bar');
+    expect(str($retrieveFooCacheUsingDbQuery())->contains('bar'))->toBeTrue();
+
+    tenancy()->end();
+
+    // Assert central is still the same
+    // The 'foo' cache value in the central database should be 'central'
+    expect(Cache::get('foo'))->toBe('central');
+    expect(str($retrieveFooCacheUsingDbQuery())->contains('central'))->toBeTrue();
 });
