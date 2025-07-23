@@ -30,7 +30,39 @@ beforeEach(function () {
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
-test('DatabaseCacheBootstrapper makes cache use the tenant connection', function () {
+test('DatabaseCacheBootstrapper switches the cache store database connection correctly', function () {
+    config([
+        'cache.stores.database.connection' => 'central', // Explicitly set cache DB connection name in config
+        'cache.default' => 'database',
+        'tenancy.bootstrappers' => [
+            DatabaseTenancyBootstrapper::class,
+            DatabaseCacheBootstrapper::class, // Used instead of CacheTenancyBootstrapper
+        ],
+    ]);
+
+    // Original connection is 'central' in the config
+    expect(config('cache.stores.database.connection'))->toBe('central');
+    // The actual connection used by the cache store is 'central'
+    expect(app('cache')->store('database')->getConnection()->getName())->toBe('central');
+
+    tenancy()->initialize(Tenant::create());
+
+    // Initializing tenancy should make the cache connection in the config 'tenant'
+    expect(config('cache.stores.database.connection'))->toBe('tenant');
+    // The actual connection used by the cache store is now 'tenant'
+    // Purging the database cache store forces the CacheManager to resolve a new instance of
+    // the database store with the connection specified in the config ('tenant')
+    expect(app('cache')->store('database')->getConnection()->getName())->toBe('tenant');
+
+    tenancy()->end();
+
+    // Ending tenancy should change the connection in the config back to the original ('central')
+    expect(config('cache.stores.database.connection'))->toBe('central');
+    // The actual connection used by the cache store is now 'central' again
+    expect(app('cache')->store('database')->getConnection()->getName())->toBe('central');
+});
+
+test('cache is properly separated', function() {
     config([
         'cache.default' => 'database',
         'tenancy.bootstrappers' => [
