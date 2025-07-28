@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Closure;
-use Illuminate\Log\LogManager;
-use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Log\LogManager;
+use Stancl\Tenancy\Contracts\TenancyBootstrapper;
+use Stancl\Tenancy\Contracts\Tenant;
 
 /**
  * This bootstrapper allows modifying the logs so that they're tenant-specific.
@@ -57,7 +57,8 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
         $this->channels = [];
     }
 
-    protected function getChannels(): array {
+    protected function getChannels(): array
+    {
         $channels = [$this->config->get('logging.default')];
 
         // If the default channel is stack, also get all the channels it contains
@@ -68,7 +69,8 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
         return $channels;
     }
 
-    protected function configureChannels(array $channels, Tenant $tenant): void {
+    protected function configureChannels(array $channels, Tenant $tenant): void
+    {
         foreach ($channels as $channel) {
             if (in_array($channel, array_keys(static::$channelOverrides))) {
                 // Override specified channel's config as specified in the $channelOverrides property
@@ -86,17 +88,18 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
                 if (static::$channelOverrides[$channel] instanceof Closure) {
                     static::$channelOverrides[$channel]($this->config, $tenant);
                 }
-            } else if (in_array($channel, static::$storagePathChannels)) {
+            } elseif (in_array($channel, static::$storagePathChannels)) {
                 // Default handling for storage path channels ('single', 'daily')
                 // Can be overriden by the $channelOverrides property
                 // Set the log path to storage_path('logs/laravel.log') for the tenant
                 // The tenant log will be located at e.g. "storage/tenant{$tenantKey}/logs/laravel.log"
-                $this->config->set("logging.channels.{$channel}.path", storage_path("logs/laravel.log"));
+                $this->config->set("logging.channels.{$channel}.path", storage_path('logs/laravel.log'));
             }
         }
     }
 
-    protected function forgetChannels(): void {
+    protected function forgetChannels(): void
+    {
         // Forget the channels so that they can be re-resolved with the new config on the next log attempt
         foreach ($this->channels as $channel) {
             $this->logManager->forgetChannel($channel);
