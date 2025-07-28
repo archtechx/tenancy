@@ -149,7 +149,7 @@ class QueueTest extends TestCase
         });
     }
 
-    #[Test] #[TestWith([true, false])]
+    #[Test] #[TestWith([true])] #[TestWith([false])]
     public function tenancy_is_initialized_inside_queues(bool $shouldEndTenancy)
     {
         $this->withTenantDatabases();
@@ -184,7 +184,7 @@ class QueueTest extends TestCase
         });
     }
 
-    #[Test] #[TestWith([true, false])]
+    #[Test] #[TestWith([true])] #[TestWith([false])]
     public function tenancy_is_initialized_when_retrying_jobs(bool $shouldEndTenancy)
     {
         $this->withFailedJobs();
@@ -260,7 +260,7 @@ class TestJob implements ShouldQueue
     /** @var User|null */
     protected $user;
 
-    public function __construct(Valuestore $valuestore, User $user = null)
+    public function __construct(Valuestore $valuestore, User|null $user = null)
     {
         $this->valuestore = $valuestore;
         $this->user = $user;
