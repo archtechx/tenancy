@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Tests;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Contracts\ManagesDatabaseUsers;
@@ -37,7 +38,7 @@ class DatabaseUsersTest extends TestCase
         })->toListener());
     }
 
-    /** @test */
+    #[Test]
     public function users_are_created_when_permission_controlled_mysql_manager_is_used()
     {
         $tenant = new Tenant([
@@ -54,7 +55,7 @@ class DatabaseUsersTest extends TestCase
         $this->assertTrue($manager->userExists($tenant->database()->getUsername()));
     }
 
-    /** @test */
+    #[Test]
     public function a_tenants_database_cannot_be_created_when_the_user_already_exists()
     {
         $username = 'foo' . Str::random(8);
@@ -82,7 +83,7 @@ class DatabaseUsersTest extends TestCase
         Event::assertNotDispatched(DatabaseCreated::class);
     }
 
-    /** @test */
+    #[Test]
     public function correct_grants_are_given_to_users()
     {
         PermissionControlledMySQLDatabaseManager::$grants = [
@@ -97,7 +98,7 @@ class DatabaseUsersTest extends TestCase
         $this->assertStringStartsWith('GRANT CREATE, ALTER, ALTER ROUTINE ON', $query->{"Grants for {$user}@%"}); // @mysql because that's the hostname within the docker network
     }
 
-    /** @test */
+    #[Test]
     public function having_existing_databases_without_users_and_switching_to_permission_controlled_mysql_manager_doesnt_break_existing_dbs()
     {
         config([

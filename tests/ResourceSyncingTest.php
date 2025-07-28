@@ -10,6 +10,7 @@ use Illuminate\Events\CallQueuedListener;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Syncable;
@@ -71,7 +72,7 @@ class ResourceSyncingTest extends TestCase
         ])->assertExitCode(0);
     }
 
-    /** @test */
+    #[Test]
     public function an_event_is_triggered_when_a_synced_resource_is_changed()
     {
         Event::fake([SyncedResourceSaved::class]);
@@ -89,7 +90,7 @@ class ResourceSyncingTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function only_the_synced_columns_are_updated_in_the_central_db()
     {
         // Create user in central DB
@@ -145,7 +146,7 @@ class ResourceSyncingTest extends TestCase
         ], ResourceUser::first()->getAttributes());
     }
 
-    /** @test */
+    #[Test]
     public function creating_the_resource_in_tenant_database_creates_it_in_central_database_and_creates_the_mapping()
     {
         // Assert no user in central DB
@@ -180,7 +181,7 @@ class ResourceSyncingTest extends TestCase
         $this->assertSame('commenter', ResourceUser::first()->role);
     }
 
-    /** @test */
+    #[Test]
     public function trying_to_update_synced_resources_from_central_context_using_tenant_models_results_in_an_exception()
     {
         $this->creating_the_resource_in_tenant_database_creates_it_in_central_database_and_creates_the_mapping();
@@ -192,7 +193,7 @@ class ResourceSyncingTest extends TestCase
         ResourceUser::first()->update(['role' => 'foobar']);
     }
 
-    /** @test */
+    #[Test]
     public function attaching_a_tenant_to_the_central_resource_triggers_a_pull_from_the_tenant_db()
     {
         $centralUser = CentralUser::create([
@@ -219,7 +220,7 @@ class ResourceSyncingTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function attaching_users_to_tenants_DOES_NOT_DO_ANYTHING()
     {
         $centralUser = CentralUser::create([
@@ -248,7 +249,7 @@ class ResourceSyncingTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function resources_are_synced_only_to_workspaces_that_have_the_resource()
     {
         $centralUser = CentralUser::create([
@@ -292,7 +293,7 @@ class ResourceSyncingTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function when_a_resource_exists_in_other_tenant_dbs_but_is_CREATED_in_a_tenant_db_the_synced_columns_are_updated_in_the_other_dbs()
     {
         // create shared resource
@@ -339,7 +340,7 @@ class ResourceSyncingTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function the_synced_columns_are_updated_in_other_tenant_dbs_where_the_resource_exists()
     {
         // create shared resource
@@ -392,7 +393,7 @@ class ResourceSyncingTest extends TestCase
         $this->assertSame('commenter', $centralUser->role); // unsynced
     }
 
-    /** @test */
+    #[Test]
     public function global_id_is_generated_using_id_generator_when_its_not_supplied()
     {
         $user = CentralUser::create([
@@ -405,7 +406,7 @@ class ResourceSyncingTest extends TestCase
         $this->assertNotNull($user->global_id);
     }
 
-    /** @test */
+    #[Test]
     public function when_the_resource_doesnt_exist_in_the_tenant_db_non_synced_columns_will_cascade_too()
     {
         $centralUser = CentralUser::create([
@@ -428,7 +429,7 @@ class ResourceSyncingTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function when_the_resource_doesnt_exist_in_the_central_db_non_synced_columns_will_bubble_up_too()
     {
         $t1 = ResourceTenant::create([
@@ -449,7 +450,7 @@ class ResourceSyncingTest extends TestCase
         $this->assertSame('employee', CentralUser::first()->role);
     }
 
-    /** @test */
+    #[Test]
     public function the_listener_can_be_queued()
     {
         Queue::fake();
@@ -477,7 +478,7 @@ class ResourceSyncingTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function an_event_is_fired_for_all_touched_resources()
     {
         Event::fake([SyncedResourceChangedInForeignDatabase::class]);

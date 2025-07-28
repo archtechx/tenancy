@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests\Features;
 
 use Illuminate\Support\Facades\Route;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\Tenancy\Features\CrossDomainRedirect;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Tests\TestCase;
 
 class RedirectTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function tenant_redirect_macro_replaces_only_the_hostname()
     {
         config([
@@ -33,7 +34,7 @@ class RedirectTest extends TestCase
             ->assertRedirect('http://abcd/foobar');
     }
 
-    /** @test */
+    #[Test]
     public function tenant_route_helper_generates_correct_url()
     {
         Route::get('/abcdef/{a?}/{b?}', function () {

@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Tests;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Exceptions\TenancyNotInitializedException;
 use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
@@ -37,7 +38,7 @@ class ScopeSessionsTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function tenant_id_is_auto_added_to_session_if_its_missing()
     {
         $tenant = Tenant::create([
@@ -48,7 +49,7 @@ class ScopeSessionsTest extends TestCase
             ->assertSessionHas(ScopeSessions::$tenantIdKey, 'acme');
     }
 
-    /** @test */
+    #[Test]
     public function changing_tenant_id_in_session_will_abort_the_request()
     {
         $tenant = Tenant::create([
@@ -64,7 +65,7 @@ class ScopeSessionsTest extends TestCase
             ->assertStatus(403);
     }
 
-    /** @test */
+    #[Test]
     public function an_exception_is_thrown_when_the_middleware_is_executed_before_tenancy_is_initialized()
     {
         Route::get('/bar', function () {

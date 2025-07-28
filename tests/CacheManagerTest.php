@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Event;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
@@ -23,7 +24,7 @@ class CacheManagerTest extends TestCase
         Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     }
 
-    /** @test */
+    #[Test]
     public function default_tag_is_automatically_applied()
     {
         tenancy()->initialize(Tenant::create());
@@ -31,7 +32,7 @@ class CacheManagerTest extends TestCase
         $this->assertArrayIsSubset([config('tenancy.cache.tag_base') . tenant('id')], cache()->tags('foo')->getTags()->getNames());
     }
 
-    /** @test */
+    #[Test]
     public function tags_are_merged_when_array_is_passed()
     {
         tenancy()->initialize(Tenant::create());
@@ -40,7 +41,7 @@ class CacheManagerTest extends TestCase
         $this->assertEquals($expected, cache()->tags(['foo', 'bar'])->getTags()->getNames());
     }
 
-    /** @test */
+    #[Test]
     public function tags_are_merged_when_string_is_passed()
     {
         tenancy()->initialize(Tenant::create());
@@ -49,7 +50,7 @@ class CacheManagerTest extends TestCase
         $this->assertEquals($expected, cache()->tags('foo')->getTags()->getNames());
     }
 
-    /** @test */
+    #[Test]
     public function exception_is_thrown_when_zero_arguments_are_passed_to_tags_method()
     {
         tenancy()->initialize(Tenant::create());
@@ -58,7 +59,7 @@ class CacheManagerTest extends TestCase
         cache()->tags();
     }
 
-    /** @test */
+    #[Test]
     public function exception_is_thrown_when_more_than_one_argument_is_passed_to_tags_method()
     {
         tenancy()->initialize(Tenant::create());
@@ -67,7 +68,7 @@ class CacheManagerTest extends TestCase
         cache()->tags(1, 2);
     }
 
-    /** @test */
+    #[Test]
     public function tags_separate_cache_well_enough()
     {
         $tenant1 = Tenant::create();
@@ -85,7 +86,7 @@ class CacheManagerTest extends TestCase
         $this->assertSame('xyz', cache()->get('foo'));
     }
 
-    /** @test */
+    #[Test]
     public function invoking_the_cache_helper_works()
     {
         $tenant1 = Tenant::create();
@@ -103,7 +104,7 @@ class CacheManagerTest extends TestCase
         $this->assertSame('xyz', cache('foo'));
     }
 
-    /** @test */
+    #[Test]
     public function cache_is_persisted()
     {
         $tenant1 = Tenant::create();
@@ -118,7 +119,7 @@ class CacheManagerTest extends TestCase
         $this->assertSame('bar', cache('foo'));
     }
 
-    /** @test */
+    #[Test]
     public function cache_is_persisted_when_reidentification_is_used()
     {
         $tenant1 = Tenant::create();

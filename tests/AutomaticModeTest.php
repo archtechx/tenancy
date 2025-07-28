@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Event;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
@@ -22,7 +23,7 @@ class AutomaticModeTest extends TestCase
         Event::listen(TenancyEnded::class, RevertToCentralContext::class);
     }
 
-    /** @test */
+    #[Test]
     public function context_is_switched_when_tenancy_is_initialized()
     {
         config(['tenancy.bootstrappers' => [
@@ -38,7 +39,7 @@ class AutomaticModeTest extends TestCase
         $this->assertSame('acme', app('tenancy_initialized_for_tenant'));
     }
 
-    /** @test */
+    #[Test]
     public function context_is_reverted_when_tenancy_is_ended()
     {
         $this->context_is_switched_when_tenancy_is_initialized();
@@ -48,7 +49,7 @@ class AutomaticModeTest extends TestCase
         $this->assertSame(true, app('tenancy_ended'));
     }
 
-    /** @test */
+    #[Test]
     public function context_is_switched_when_tenancy_is_reinitialized()
     {
         config(['tenancy.bootstrappers' => [
@@ -72,7 +73,7 @@ class AutomaticModeTest extends TestCase
         $this->assertSame('foobar', app('tenancy_initialized_for_tenant'));
     }
 
-    /** @test */
+    #[Test]
     public function central_helper_runs_callbacks_in_the_central_state()
     {
         tenancy()->initialize($tenant = Tenant::create());
@@ -84,7 +85,7 @@ class AutomaticModeTest extends TestCase
         $this->assertSame($tenant, tenant());
     }
 
-    /** @test */
+    #[Test]
     public function central_helper_returns_the_value_from_the_callback()
     {
         tenancy()->initialize(Tenant::create());
@@ -94,7 +95,7 @@ class AutomaticModeTest extends TestCase
         }));
     }
 
-    /** @test */
+    #[Test]
     public function central_helper_reverts_back_to_tenant_context()
     {
         tenancy()->initialize($tenant = Tenant::create());
@@ -106,7 +107,7 @@ class AutomaticModeTest extends TestCase
         $this->assertSame($tenant, tenant());
     }
 
-    /** @test */
+    #[Test]
     public function central_helper_doesnt_change_tenancy_state_when_called_in_central_context()
     {
         $this->assertFalse(tenancy()->initialized);

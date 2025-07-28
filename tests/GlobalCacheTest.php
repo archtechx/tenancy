@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Event;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
@@ -27,7 +28,7 @@ class GlobalCacheTest extends TestCase
         Event::listen(TenancyEnded::class, RevertToCentralContext::class);
     }
 
-    /** @test */
+    #[Test]
     public function global_cache_manager_stores_data_in_global_cache()
     {
         $this->assertSame(null, cache('foo'));

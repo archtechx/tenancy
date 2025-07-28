@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Tests;
 use Illuminate\Events\CallQueuedListener;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper;
@@ -20,12 +21,11 @@ use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Jobs\MigrateDatabase;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\QueueableListener;
-use Stancl\Tenancy\Tenancy;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
 class EventListenerTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function listeners_can_be_synchronous()
     {
         Queue::fake();
@@ -38,7 +38,7 @@ class EventListenerTest extends TestCase
         $this->assertSame('bar', app('foo'));
     }
 
-    /** @test */
+    #[Test]
     public function listeners_can_be_queued_by_setting_a_static_property()
     {
         Queue::fake();
@@ -55,7 +55,7 @@ class EventListenerTest extends TestCase
         $this->assertFalse(app()->bound('foo'));
     }
 
-    /** @test */
+    #[Test]
     public function ing_events_can_be_used_to_cancel_tenant_model_actions()
     {
         Event::listen(CreatingTenant::class, function () {
@@ -66,7 +66,7 @@ class EventListenerTest extends TestCase
         $this->assertSame(0, Tenant::count());
     }
 
-    /** @test */
+    #[Test]
     public function ing_events_can_be_used_to_cancel_domain_model_actions()
     {
         $tenant = Tenant::create();
@@ -86,7 +86,7 @@ class EventListenerTest extends TestCase
         $this->assertSame('acme', $domain->refresh()->domain);
     }
 
-    /** @test */
+    #[Test]
     public function ing_events_can_be_used_to_cancel_db_creation()
     {
         Event::listen(CreatingDatabase::class, function (CreatingDatabase $event) {
@@ -101,7 +101,7 @@ class EventListenerTest extends TestCase
         ));
     }
 
-    /** @test */
+    #[Test]
     public function ing_events_can_be_used_to_cancel_tenancy_bootstrapping()
     {
         config(['tenancy.bootstrappers' => [
@@ -129,7 +129,7 @@ class EventListenerTest extends TestCase
         $this->assertSame([DatabaseTenancyBootstrapper::class], array_map('get_class', tenancy()->getBootstrappers()));
     }
 
-    /** @test */
+    #[Test]
     public function individual_job_pipelines_can_terminate_while_leaving_others_running()
     {
         $executed = [];
@@ -176,7 +176,7 @@ class EventListenerTest extends TestCase
         ], $executed);
     }
 
-    /** @test */
+    #[Test]
     public function database_is_not_migrated_if_creation_is_disabled()
     {
         Event::listen(

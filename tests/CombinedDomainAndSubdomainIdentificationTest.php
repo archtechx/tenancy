@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Route;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Database\Models;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomainOrSubdomain;
@@ -26,7 +27,7 @@ class CombinedDomainAndSubdomainIdentificationTest extends TestCase
         config(['tenancy.tenant_model' => CombinedTenant::class]);
     }
 
-    /** @test */
+    #[Test]
     public function tenant_can_be_identified_by_subdomain()
     {
         config(['tenancy.central_domains' => ['localhost']]);
@@ -49,7 +50,7 @@ class CombinedDomainAndSubdomainIdentificationTest extends TestCase
         $this->assertSame('acme', tenant('id'));
     }
 
-    /** @test */
+    #[Test]
     public function tenant_can_be_identified_by_domain()
     {
         config(['tenancy.central_domains' => []]);

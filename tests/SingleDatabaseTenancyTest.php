@@ -9,6 +9,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\Tenancy\Database\Concerns\BelongsToPrimaryModel;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 use Stancl\Tenancy\Database\Concerns\HasScopedValidationRules;
@@ -43,7 +44,7 @@ class SingleDatabaseTenancyTest extends TestCase
         config(['tenancy.tenant_model' => Tenant::class]);
     }
 
-    /** @test */
+    #[Test]
     public function primary_models_are_scoped_to_the_current_tenant()
     {
         // acme context
@@ -90,7 +91,7 @@ class SingleDatabaseTenancyTest extends TestCase
         $this->assertSame(1, Post::count());
     }
 
-    /** @test */
+    #[Test]
     public function primary_models_are_not_scoped_in_the_central_context()
     {
         $this->primary_models_are_scoped_to_the_current_tenant();
@@ -100,7 +101,7 @@ class SingleDatabaseTenancyTest extends TestCase
         $this->assertSame(2, Post::count());
     }
 
-    /** @test */
+    #[Test]
     public function secondary_models_are_scoped_to_the_current_tenant_when_accessed_via_primary_model()
     {
         // acme context
@@ -127,7 +128,7 @@ class SingleDatabaseTenancyTest extends TestCase
         $this->assertSame(1, Post::first()->comments->count());
     }
 
-    /** @test */
+    #[Test]
     public function secondary_models_are_NOT_scoped_to_the_current_tenant_when_accessed_directly()
     {
         $this->secondary_models_are_scoped_to_the_current_tenant_when_accessed_via_primary_model();
@@ -138,7 +139,7 @@ class SingleDatabaseTenancyTest extends TestCase
         $this->assertSame(2, Comment::count());
     }
 
-    /** @test */
+    #[Test]
     public function secondary_models_ARE_scoped_to_the_current_tenant_when_accessed_directly_AND_PARENT_RELATIONSHIP_TRAIT_IS_USED()
     {
         $acme = Tenant::create([
@@ -172,7 +173,7 @@ class SingleDatabaseTenancyTest extends TestCase
         $this->assertSame(2, ScopedComment::count());
     }
 
-    /** @test */
+    #[Test]
     public function secondary_models_are_NOT_scoped_in_the_central_context()
     {
         $this->secondary_models_are_scoped_to_the_current_tenant_when_accessed_via_primary_model();
@@ -182,7 +183,7 @@ class SingleDatabaseTenancyTest extends TestCase
         $this->assertSame(2, Comment::count());
     }
 
-    /** @test */
+    #[Test]
     public function global_models_are_not_scoped_at_all()
     {
         Schema::create('global_resources', function (Blueprint $table) {
@@ -207,7 +208,7 @@ class SingleDatabaseTenancyTest extends TestCase
         $this->assertSame(4, GlobalResource::count());
     }
 
-    /** @test */
+    #[Test]
     public function tenant_id_and_relationship_is_auto_added_when_creating_primary_resources_in_tenant_context()
     {
         tenancy()->initialize($acme = Tenant::create([
@@ -222,7 +223,7 @@ class SingleDatabaseTenancyTest extends TestCase
         $this->assertSame(tenant(), $post->tenant);
     }
 
-    /** @test */
+    #[Test]
     public function tenant_id_is_not_auto_added_when_creating_primary_resources_in_central_context()
     {
         $this->expectException(QueryException::class);
@@ -230,7 +231,7 @@ class SingleDatabaseTenancyTest extends TestCase
         Post::create(['text' => 'Foo']);
     }
 
-    /** @test */
+    #[Test]
     public function tenant_id_column_name_can_be_customized()
     {
         BelongsToTenant::$tenantIdColumn = 'team_id';
@@ -280,7 +281,7 @@ class SingleDatabaseTenancyTest extends TestCase
         $this->assertSame(1, Post::count());
     }
 
-    /** @test */
+    #[Test]
     public function the_model_returned_by_the_tenant_helper_has_unique_and_exists_validation_rules()
     {
         Schema::table('posts', function (Blueprint $table) {

@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Database\Models\ImpersonationToken;
@@ -89,7 +90,7 @@ class TenantUserImpersonationTest extends TestCase
         };
     }
 
-    /** @test */
+    #[Test]
     public function tenant_user_can_be_impersonated_on_a_tenant_domain()
     {
         Route::middleware(InitializeTenancyByDomain::class)->group($this->getRoutes());
@@ -122,7 +123,7 @@ class TenantUserImpersonationTest extends TestCase
             ->assertSee('You are logged in as Joe');
     }
 
-    /** @test */
+    #[Test]
     public function tenant_user_can_be_impersonated_on_a_tenant_path()
     {
         $this->makeLoginRoute();
@@ -157,7 +158,7 @@ class TenantUserImpersonationTest extends TestCase
             ->assertSee('You are logged in as Joe');
     }
 
-    /** @test */
+    #[Test]
     public function tokens_have_a_limited_ttl()
     {
         Route::middleware(InitializeTenancyByDomain::class)->group($this->getRoutes());
@@ -186,7 +187,7 @@ class TenantUserImpersonationTest extends TestCase
             ->assertStatus(403);
     }
 
-    /** @test */
+    #[Test]
     public function tokens_are_deleted_after_use()
     {
         Route::middleware(InitializeTenancyByDomain::class)->group($this->getRoutes());
@@ -217,7 +218,7 @@ class TenantUserImpersonationTest extends TestCase
         $this->assertNull(ImpersonationToken::find($token->token));
     }
 
-    /** @test */
+    #[Test]
     public function impersonation_works_with_multiple_models_and_guards()
     {
         config([

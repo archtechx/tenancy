@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests\Features;
 
 use Illuminate\Support\Facades\Event;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Features\TenantConfig;
@@ -22,7 +23,7 @@ class TenantConfigTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function nested_tenant_values_are_merged()
     {
         $this->assertSame(null, config('whitelabel.theme'));
@@ -46,7 +47,7 @@ class TenantConfigTest extends TestCase
         tenancy()->end();
     }
 
-    /** @test */
+    #[Test]
     public function config_is_merged_and_removed()
     {
         $this->assertSame(null, config('services.paypal'));
@@ -77,7 +78,7 @@ class TenantConfigTest extends TestCase
         ], config('services.paypal'));
     }
 
-    /** @test */
+    #[Test]
     public function the_value_can_be_set_to_multiple_config_keys()
     {
         $this->assertSame(null, config('services.paypal'));

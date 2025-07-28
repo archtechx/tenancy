@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use PDO;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Database\DatabaseManager;
@@ -28,10 +30,7 @@ use Stancl\Tenancy\Tests\Etc\Tenant;
 
 class TenantDatabaseManagerTest extends TestCase
 {
-    /**
-     * @test
-     * @dataProvider database_manager_provider
-     */
+    #[Test] #[DataProvider('database_manager_provider')]
     public function databases_can_be_created_and_deleted($driver, $databaseManager)
     {
         Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
@@ -59,7 +58,7 @@ class TenantDatabaseManagerTest extends TestCase
         $this->assertFalse($manager->databaseExists($name));
     }
 
-    /** @test */
+    #[Test]
     public function dbs_can_be_created_when_another_driver_is_used_for_the_central_db()
     {
         $this->assertSame('central', config('database.default'));
@@ -106,7 +105,7 @@ class TenantDatabaseManagerTest extends TestCase
         ];
     }
 
-    /** @test */
+    #[Test]
     public function the_tenant_connection_is_fully_removed()
     {
         config([
@@ -152,7 +151,7 @@ class TenantDatabaseManagerTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function db_name_is_prefixed_with_db_path_when_sqlite_is_used()
     {
         if (file_exists(database_path('foodb'))) {
@@ -171,7 +170,7 @@ class TenantDatabaseManagerTest extends TestCase
         $this->assertSame(config('database.connections.tenant.database'), database_path('foodb'));
     }
 
-    /** @test */
+    #[Test]
     public function schema_manager_uses_schema_to_separate_tenant_dbs()
     {
         config([
@@ -200,7 +199,7 @@ class TenantDatabaseManagerTest extends TestCase
         $this->assertSame($originalDatabaseName, config(['database.connections.pgsql.database']));
     }
 
-    /** @test */
+    #[Test]
     public function a_tenants_database_cannot_be_created_when_the_database_already_exists()
     {
         Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
@@ -221,7 +220,7 @@ class TenantDatabaseManagerTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function tenant_database_can_be_created_on_a_foreign_server()
     {
         config([
@@ -266,7 +265,7 @@ class TenantDatabaseManagerTest extends TestCase
         $this->assertTrue($manager->databaseExists($name));
     }
 
-    /** @test */
+    #[Test]
     public function path_used_by_sqlite_manager_can_be_customized()
     {
         $this->markTestIncomplete();

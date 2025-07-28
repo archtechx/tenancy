@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Route;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\Tenancy\Features\UniversalRoutes;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Tests\Etc\Tenant;
@@ -18,7 +19,7 @@ class UniversalRouteTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function a_route_can_work_in_both_central_and_tenant_context()
     {
         Route::middlewareGroup('universal', []);
@@ -46,7 +47,7 @@ class UniversalRouteTest extends TestCase
             ->assertSee('Tenancy is initialized.');
     }
 
-    /** @test */
+    #[Test]
     public function making_one_route_universal_doesnt_make_all_routes_universal()
     {
         Route::get('/bar', function () {
@@ -64,7 +65,7 @@ class UniversalRouteTest extends TestCase
             ->assertSee('acme');
     }
 
-    /** @test */
+    #[Test]
     public function universal_route_works_when_middleware_is_inserted_via_controller_middleware()
     {
         Route::middlewareGroup('universal', []);

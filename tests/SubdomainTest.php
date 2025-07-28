@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Route;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Database\Models;
 use Stancl\Tenancy\Exceptions\NotASubdomainException;
@@ -30,7 +31,7 @@ class SubdomainTest extends TestCase
         config(['tenancy.tenant_model' => SubdomainTenant::class]);
     }
 
-    /** @test */
+    #[Test]
     public function tenant_can_be_identified_by_subdomain()
     {
         $tenant = SubdomainTenant::create([
@@ -51,7 +52,7 @@ class SubdomainTest extends TestCase
         $this->assertSame('acme', tenant('id'));
     }
 
-    /** @test */
+    #[Test]
     public function onfail_logic_can_be_customized()
     {
         InitializeTenancyBySubdomain::$onFail = function () {
@@ -63,7 +64,7 @@ class SubdomainTest extends TestCase
             ->assertSee('foo');
     }
 
-    /** @test */
+    #[Test]
     public function localhost_is_not_a_valid_subdomain()
     {
         $this->expectException(NotASubdomainException::class);
@@ -73,7 +74,7 @@ class SubdomainTest extends TestCase
             ->get('http://localhost/foo/abc/xyz');
     }
 
-    /** @test */
+    #[Test]
     public function ip_address_is_not_a_valid_subdomain()
     {
         $this->expectException(NotASubdomainException::class);
@@ -83,7 +84,7 @@ class SubdomainTest extends TestCase
             ->get('http://127.0.0.1/foo/abc/xyz');
     }
 
-    /** @test */
+    #[Test]
     public function oninvalidsubdomain_logic_can_be_customized()
     {
         // in this case, we need to return a response instance
@@ -102,7 +103,7 @@ class SubdomainTest extends TestCase
             ->assertSee('foo custom invalid subdomain handler');
     }
 
-    /** @test */
+    #[Test]
     public function we_cant_use_a_subdomain_that_doesnt_belong_to_our_central_domains()
     {
         config(['tenancy.central_domains' => [
@@ -125,7 +126,7 @@ class SubdomainTest extends TestCase
             ->get('http://foo.localhost/foo/abc/xyz');
     }
 
-    /** @test */
+    #[Test]
     public function central_domain_is_not_a_subdomain()
     {
         config(['tenancy.central_domains' => [

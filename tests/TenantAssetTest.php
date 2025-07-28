@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Tests;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Controllers\TenantAssetsController;
 use Stancl\Tenancy\Events\TenancyInitialized;
@@ -49,7 +50,7 @@ class TenantAssetTest extends TestCase
         TenantAssetsController::$tenancyMiddleware = InitializeTenancyByDomain::class;
     }
 
-    /** @test */
+    #[Test]
     public function asset_can_be_accessed_using_the_url_returned_by_the_tenant_asset_helper()
     {
         TenantAssetsController::$tenancyMiddleware = InitializeTenancyByRequestData::class;
@@ -77,7 +78,7 @@ class TenantAssetTest extends TestCase
         $this->assertSame('bar', $content);
     }
 
-    /** @test */
+    #[Test]
     public function asset_helper_returns_a_link_to_TenantAssetController_when_asset_url_is_null()
     {
         config(['app.asset_url' => null]);
@@ -88,7 +89,7 @@ class TenantAssetTest extends TestCase
         $this->assertSame(route('stancl.tenancy.asset', ['path' => 'foo']), asset('foo'));
     }
 
-    /** @test */
+    #[Test]
     public function asset_helper_returns_a_link_to_an_external_url_when_asset_url_is_not_null()
     {
         config(['app.asset_url' => 'https://an-s3-bucket']);
@@ -99,7 +100,7 @@ class TenantAssetTest extends TestCase
         $this->assertSame("https://an-s3-bucket/tenant{$tenant->id}/foo", asset('foo'));
     }
 
-    /** @test */
+    #[Test]
     public function global_asset_helper_returns_the_same_url_regardless_of_tenancy_initialization()
     {
         $original = global_asset('foobar');
@@ -111,7 +112,7 @@ class TenantAssetTest extends TestCase
         $this->assertSame($original, global_asset('foobar'));
     }
 
-    /** @test */
+    #[Test]
     public function asset_helper_tenancy_can_be_disabled()
     {
         $original = asset('foo');

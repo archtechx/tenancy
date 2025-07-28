@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Route;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Database\Models;
 use Stancl\Tenancy\Database\Models\Domain;
@@ -30,7 +31,7 @@ class DomainTest extends TestCase
         config(['tenancy.tenant_model' => DomainTenant::class]);
     }
 
-    /** @test */
+    #[Test]
     public function tenant_can_be_identified_using_hostname()
     {
         $tenant = DomainTenant::create();
@@ -47,7 +48,7 @@ class DomainTest extends TestCase
         $this->assertSame(['foo.localhost'], $resolvedTenant->domains->pluck('domain')->toArray());
     }
 
-    /** @test */
+    #[Test]
     public function a_domain_can_belong_to_only_one_tenant()
     {
         $tenant = DomainTenant::create();
@@ -64,7 +65,7 @@ class DomainTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function an_exception_is_thrown_if_tenant_cannot_be_identified()
     {
         $this->expectException(TenantCouldNotBeIdentifiedOnDomainException::class);
@@ -72,7 +73,7 @@ class DomainTest extends TestCase
         app(DomainTenantResolver::class)->resolve('foo.localhost');
     }
 
-    /** @test */
+    #[Test]
     public function tenant_can_be_identified_by_domain()
     {
         $tenant = DomainTenant::create([
@@ -93,7 +94,7 @@ class DomainTest extends TestCase
         $this->assertSame('acme', tenant('id'));
     }
 
-    /** @test */
+    #[Test]
     public function onfail_logic_can_be_customized()
     {
         InitializeTenancyByDomain::$onFail = function () {
@@ -105,7 +106,7 @@ class DomainTest extends TestCase
             ->assertSee('foo');
     }
 
-    /** @test */
+    #[Test]
     public function domains_are_always_lowercase()
     {
         $tenant = DomainTenant::create();

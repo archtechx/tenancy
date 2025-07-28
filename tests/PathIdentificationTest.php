@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Route;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\Tenancy\Exceptions\RouteIsMissingTenantParameterException;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByPathException;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
@@ -37,7 +38,7 @@ class PathIdentificationTest extends TestCase
         PathTenantResolver::$tenantParameterName = 'tenant';
     }
 
-    /** @test */
+    #[Test]
     public function tenant_can_be_identified_by_path()
     {
         Tenant::create([
@@ -52,7 +53,7 @@ class PathIdentificationTest extends TestCase
         $this->assertSame('acme', tenant('id'));
     }
 
-    /** @test */
+    #[Test]
     public function route_actions_dont_get_the_tenant_id()
     {
         Tenant::create([
@@ -69,7 +70,7 @@ class PathIdentificationTest extends TestCase
         $this->assertSame('acme', tenant('id'));
     }
 
-    /** @test */
+    #[Test]
     public function exception_is_thrown_when_tenant_cannot_be_identified_by_path()
     {
         $this->expectException(TenantCouldNotBeIdentifiedByPathException::class);
@@ -81,7 +82,7 @@ class PathIdentificationTest extends TestCase
         $this->assertFalse(tenancy()->initialized);
     }
 
-    /** @test */
+    #[Test]
     public function onfail_logic_can_be_customized()
     {
         InitializeTenancyByPath::$onFail = function () {
@@ -93,7 +94,7 @@ class PathIdentificationTest extends TestCase
             ->assertContent('foo');
     }
 
-    /** @test */
+    #[Test]
     public function an_exception_is_thrown_when_the_routes_first_parameter_is_not_tenant()
     {
         Route::group([
@@ -116,7 +117,7 @@ class PathIdentificationTest extends TestCase
             ->get('/bar/foo/bar');
     }
 
-    /** @test */
+    #[Test]
     public function tenant_parameter_name_can_be_customized()
     {
         PathTenantResolver::$tenantParameterName = 'team';

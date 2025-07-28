@@ -23,6 +23,8 @@ use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
@@ -108,7 +110,7 @@ class QueueTest extends TestCase
         })->toListener());
     }
 
-    /** @test */
+    #[Test]
     public function tenant_id_is_passed_to_tenant_queues()
     {
         config(['queue.default' => 'sync']);
@@ -126,7 +128,7 @@ class QueueTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function tenant_id_is_not_passed_to_central_queues()
     {
         $tenant = Tenant::create();
@@ -147,12 +149,7 @@ class QueueTest extends TestCase
         });
     }
 
-    /**
-     * @test
-     *
-     * @testWith [true]
-     *           [false]
-     */
+    #[Test] #[TestWith([true, false])]
     public function tenancy_is_initialized_inside_queues(bool $shouldEndTenancy)
     {
         $this->withTenantDatabases();
@@ -187,12 +184,7 @@ class QueueTest extends TestCase
         });
     }
 
-    /**
-     * @test
-     *
-     * @testWith [true]
-     *           [false]
-     */
+    #[Test] #[TestWith([true, false])]
     public function tenancy_is_initialized_when_retrying_jobs(bool $shouldEndTenancy)
     {
         $this->withFailedJobs();
@@ -234,7 +226,7 @@ class QueueTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function the_tenant_used_by_the_job_doesnt_change_when_the_current_tenant_changes()
     {
         $tenant1 = Tenant::create([
