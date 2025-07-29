@@ -32,7 +32,7 @@ afterEach(function () {
     LogTenancyBootstrapper::$storagePathChannels = ['single', 'daily'];
 });
 
-test('storage path channels get tenant-specific paths', function () {
+test('storage path channels get tenant-specific paths by default', function () {
     // Note that for LogTenancyBootstrapper to change the paths correctly,
     // the bootstrapper MUST run after FilesystemTenancyBootstrapper.
     config([
