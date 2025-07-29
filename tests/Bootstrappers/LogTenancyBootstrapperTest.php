@@ -363,35 +363,24 @@ test('slack channel uses correct webhook urls', function () {
     ];
 
     // Test central context - should attempt to use central webhook
+    // Because the Slack channel uses cURL to send messages, we cannot use Http::fake() here.
+    // Instead, we catch the exception and check the error message which contains the actual webhook URL.
     try {
         logger('central');
     } catch (Exception $e) {
         expect($e->getMessage())->toContain('central-webhook');
     }
 
-    // Test tenant 1 context - should attempt to use tenant1 webhook
-    tenancy()->initialize($tenant1);
+    // Slack channel should attempt to use the tenant-specific webhooks
+    tenancy()->runForMultiple([$tenant1, $tenant2], function (Tenant $tenant) {
+        try {
+            logger($tenant->id);
+        } catch (Exception $e) {
+            expect($e->getMessage())->toContain($tenant->slackUrl);
+        }
+    });
 
-    try {
-        logger('tenant1');
-    } catch (Exception $e) {
-        expect($e->getMessage())->toContain('tenant1-webhook');
-    }
-
-    tenancy()->end();
-
-    // Test tenant 2 context - should attempt to use tenant2 webhook
-    tenancy()->initialize($tenant2);
-
-    try {
-        logger('tenant2');
-    } catch (Exception $e) {
-        expect($e->getMessage())->toContain('tenant2-webhook');
-    }
-
-    tenancy()->end();
-
-    // Back to central - should use central webhook again
+    // Central context, central webhook should be used again
     try {
         logger('central');
     } catch (Exception $e) {
