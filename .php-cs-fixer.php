@@ -21,7 +21,6 @@ $rules = [
     'blank_line_before_statement' => [
         'statements' => ['return']
     ],
-    'braces' => true,
     'cast_spaces' => true,
     'class_definition' => true,
     'concat_space' => [
