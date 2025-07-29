@@ -98,46 +98,55 @@ test('all channels included in the log stack get processed', function () {
 
 test('channel overrides work correctly with both arrays and closures', function () {
     config([
-        'logging.default' => 'slack',
+        'logging.default' => 'stack',
+        'logging.channels.stack.channels' => ['slack', 'single'],
         'logging.channels.slack' => [
-            'driver' => 'slack',
             'url' => $originalSlackUrl = 'default-webhook',
             'username' => 'Default',
         ],
     ]);
 
+    $originalSinglePath = config('logging.channels.single.path');
+
     $tenant = Tenant::create(['id' => 'tenant1', 'webhookUrl' => 'tenant-webhook']);
 
-    // Specify channel override for 'slack' channel using an array
+    // Test both array mapping and closure-based overrides
     LogTenancyBootstrapper::$channelOverrides = [
-        'slack' => [
-            'url' => 'webhookUrl', // $tenant->webhookUrl will be used
-        ],
+        'slack' => ['url' => 'webhookUrl'], // slack.url will be mapped to $tenant->webhookUrl
+        'single' => function ($config, $tenant) {
+            $config->set('logging.channels.single.path', storage_path("logs/override-{$tenant->id}.log"));
+        },
     ];
 
     tenancy()->initialize($tenant);
 
+    // Array mapping overrides work
     expect(config('logging.channels.slack.url'))->toBe($tenant->webhookUrl);
-    expect(config('logging.channels.slack.username'))->toBe('Default'); // Default username -- remains default unless specified
+    expect(config('logging.channels.slack.username'))->toBe('Default'); // Default username, remains default unless overridden
+
+    // Closure overrides work
+    expect(config('logging.channels.single.path'))->toEndWith('storage/logs/override-tenant1.log');
 
     tenancy()->end();
 
     // After tenancy ends, the original config should be restored
     expect(config('logging.channels.slack.url'))->toBe($originalSlackUrl);
+    expect(config('logging.channels.single.path'))->toBe($originalSinglePath);
 
-    // Now, use closure to set the slack username to $tenant->id (tenant1)
-    LogTenancyBootstrapper::$channelOverrides['slack'] = function ($config, $tenant) {
-        $config->set('logging.channels.slack.username', $tenant->id);
-    };
+    // Test that we can also change array mappings to different properties
+    $tenant->update(['slackUrl' => 'tenant-slack']);
+
+    LogTenancyBootstrapper::$channelOverrides = [
+        'slack' => ['url' => 'slackUrl'],
+    ];
 
     tenancy()->initialize($tenant);
-
-    expect(config('logging.channels.slack.url'))->toBe($originalSlackUrl); // Unchanged
-    expect(config('logging.channels.slack.username'))->toBe($tenant->id);
+    expect(config('logging.channels.slack.url'))->toBe($tenant->slackUrl);
+    expect(config('logging.channels.slack.username'))->toBe('Default'); // Still remains default since we only override url
 
     tenancy()->end();
 
-    // Config reverted back to original
+    expect(config('logging.channels.slack.url'))->toBe($originalSlackUrl);
     expect(config('logging.channels.slack.username'))->toBe('Default');
 });
 
@@ -156,38 +165,6 @@ test('channel overrides take precedence over the default storage path channel up
 
     // Should use override, not the default storage path updating behavior
     expect(config('logging.channels.single.path'))->toEndWith('storage/logs/override-tenant1.log');
-});
-
-test('multiple channel overrides work together', function () {
-    config([
-        'logging.default' => 'stack',
-        'logging.channels.stack' => [
-            'driver' => 'stack',
-            'channels' => ['slack', 'single'],
-        ],
-    ]);
-
-    $originalSinglePath = config('logging.channels.single.path');
-    $originalSlackUrl = config('logging.channels.slack.url');
-
-    $tenant = Tenant::create(['id' => 'tenant1', 'slackUrl' => 'tenant-slack']);
-
-    LogTenancyBootstrapper::$channelOverrides = [
-        'slack' => ['url' => 'slackUrl'],
-        'single' => function ($config, $tenant) {
-            $config->set('logging.channels.single.path', storage_path("logs/override-{$tenant->id}.log"));
-        },
-    ];
-
-    tenancy()->initialize($tenant);
-
-    expect(config('logging.channels.slack.url'))->toBe('tenant-slack');
-    expect(config('logging.channels.single.path'))->toEndWith('storage/logs/override-tenant1.log');
-
-    tenancy()->end();
-
-    expect(config('logging.channels.slack.url'))->toBe($originalSlackUrl);
-    expect(config('logging.channels.single.path'))->toBe($originalSinglePath);
 });
 
 test('channels are forgotten and re-resolved during bootstrap and revert', function () {
