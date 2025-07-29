@@ -225,3 +225,125 @@ test('channels are forgotten and re-resolved during bootstrap and revert', funct
     expect($currentChannel)->not()->toBe($tenantChannel);
     expect($currentChannelPath)->toBe($originalSinglePath);
 });
+
+// Test real usage
+test('logs are written to tenant-specific files and do not leak between contexts', function () {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+            LogTenancyBootstrapper::class,
+        ],
+        'logging.default' => 'single',
+    ]);
+
+    $centralLogPath = storage_path('logs/laravel.log');
+
+    logger('central');
+
+    expect(file_get_contents($centralLogPath))->toContain('central');
+
+    [$tenant1, $tenant2] = [Tenant::create(['id' => 'tenant1']), Tenant::create(['id' => 'tenant2'])];
+
+    tenancy()->runForMultiple([$tenant1, $tenant2], function (Tenant $tenant) use ($centralLogPath) {
+        logger($tenant->id);
+
+        $tenantLogPath = storage_path('logs/laravel.log');
+
+        // The log gets saved to the tenant's storage directory (default behavior)
+        expect($tenantLogPath)
+            ->not()->toBe($centralLogPath)
+            ->toEndWith("storage/tenant{$tenant->id}/logs/laravel.log");
+
+        expect(file_get_contents($tenantLogPath))
+            ->toContain($tenant->id)
+            ->not()->toContain('central');
+    });
+
+    // Tenant log messages didn't leak into central log
+    expect(file_get_contents($centralLogPath))
+        ->toContain('central')
+        ->not()->toContain('tenant1')
+        ->not()->toContain('tenant2');
+
+    // Tenant log messages didn't leak to logs of other tenants
+    tenancy()->initialize($tenant1);
+
+    expect(file_get_contents(storage_path('logs/laravel.log')))
+        ->toContain('tenant1')
+        ->not()->toContain('central')
+        ->not()->toContain('tenant2');
+
+    tenancy()->initialize($tenant2);
+
+    expect(file_get_contents(storage_path('logs/laravel.log')))
+        ->toContain('tenant2')
+        ->not()->toContain('central')
+        ->not()->toContain('tenant1');
+
+    // Overriding the channels also works
+    // Channel overrides also override the default behavior for the storage path-based channels
+    $tenant = Tenant::create(['id' => 'override-tenant']);
+
+    LogTenancyBootstrapper::$channelOverrides = [
+        'single' => function ($config, $tenant) {
+            // The tenant log path will be set to storage/tenantoverride-tenant/logs/custom-override-tenant.log
+            $config->set('logging.channels.single.path', storage_path("logs/custom-{$tenant->id}.log"));
+        },
+    ];
+
+    // Tenant context log (should use custom path due to override)
+    tenancy()->initialize($tenant);
+
+    logger('tenant-override');
+
+    expect(file_get_contents(storage_path('logs/custom-override-tenant.log')))->toContain('tenant-override');
+});
+
+test('stack logs are written to all configured channels with tenant-specific paths', function () {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+            LogTenancyBootstrapper::class,
+        ],
+        'logging.default' => 'stack',
+        'logging.channels.stack' => [
+            'driver' => 'stack',
+            'channels' => ['single', 'daily'],
+        ],
+    ]);
+
+    $tenant = Tenant::create(['id' => 'stack-tenant']);
+    $today = now()->format('Y-m-d');
+
+    // Central context stack log
+    logger('central');
+    $centralSingleLogPath = storage_path('logs/laravel.log');
+    $centralDailyLogPath = storage_path("logs/laravel-{$today}.log");
+
+    expect(file_get_contents($centralSingleLogPath))->toContain('central');
+    expect(file_get_contents($centralDailyLogPath))->toContain('central');
+
+    // Tenant context stack log
+    tenancy()->initialize($tenant);
+    logger('tenant');
+    $tenantSingleLogPath = storage_path('logs/laravel.log');
+    $tenantDailyLogPath = storage_path("logs/laravel-{$today}.log");
+
+    expect(file_get_contents($tenantSingleLogPath))->toContain('tenant');
+    expect(file_get_contents($tenantDailyLogPath))->toContain('tenant');
+
+    // Verify tenant logs don't contain central messages
+    expect(file_get_contents($tenantSingleLogPath))->not()->toContain('central');
+    expect(file_get_contents($tenantDailyLogPath))->not()->toContain('central');
+
+    tenancy()->end();
+
+    // Verify central logs still only contain the central messages
+    expect(file_get_contents($centralSingleLogPath))
+        ->toContain('central')
+        ->not()->toContain('tenant');
+
+    expect(file_get_contents($centralDailyLogPath))
+        ->toContain('central')
+        ->not()->toContain('tenant');
+});
