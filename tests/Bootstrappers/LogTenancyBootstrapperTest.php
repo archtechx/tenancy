@@ -101,12 +101,12 @@ test('channel overrides work correctly with both arrays and closures', function 
         'logging.default' => 'slack',
         'logging.channels.slack' => [
             'driver' => 'slack',
-            'url' => $originalSlackUrl = 'https://default-webhook.example.com',
+            'url' => $originalSlackUrl = 'default-webhook',
             'username' => 'Default',
         ],
     ]);
 
-    $tenant = Tenant::create(['id' => 'tenant1', 'webhookUrl' => 'https://tenant-webhook.example.com']);
+    $tenant = Tenant::create(['id' => 'tenant1', 'webhookUrl' => 'tenant-webhook']);
 
     // Specify channel override for 'slack' channel using an array
     LogTenancyBootstrapper::$channelOverrides = [
@@ -170,7 +170,7 @@ test('multiple channel overrides work together', function () {
     $originalSinglePath = config('logging.channels.single.path');
     $originalSlackUrl = config('logging.channels.slack.url');
 
-    $tenant = Tenant::create(['id' => 'tenant1', 'slackUrl' => 'https://tenant-slack.example.com']);
+    $tenant = Tenant::create(['id' => 'tenant1', 'slackUrl' => 'tenant-slack']);
 
     LogTenancyBootstrapper::$channelOverrides = [
         'slack' => ['url' => 'slackUrl'],
@@ -181,7 +181,7 @@ test('multiple channel overrides work together', function () {
 
     tenancy()->initialize($tenant);
 
-    expect(config('logging.channels.slack.url'))->toBe('https://tenant-slack.example.com');
+    expect(config('logging.channels.slack.url'))->toBe('tenant-slack');
     expect(config('logging.channels.single.path'))->toEndWith('storage/logs/override-tenant1.log');
 
     tenancy()->end();
