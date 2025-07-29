@@ -339,21 +339,53 @@ test('clone action can be used fluently', function() {
         ->toContain('tenant.foo', 'tenant.bar', 'tenant.baz');
 });
 
-test('addTenantParameter affects if the cloned route will have the tenant parameter', function(bool $addTenantParameter) {
-    RouteFacade::get('/foo', fn () => true)->name('foo')->middleware('clone');
+test('the cloned route can be scoped to a specified domain', function () {
+    RouteFacade::domain('foo.localhost')->get('/foo', fn () => in_array('tenant', request()->route()->middleware()) ? 'tenant' : 'central')->name('foo')->middleware('clone');
 
+    // Importantly, we CANNOT add a domain to the cloned route *if the original route didn't have a domain*.
+    // This is due to the route registration order - the more strongly scoped route (= route with a domain)
+    // must be registered first, so that Laravel tries that route first and only moves on if the domain check fails.
     $cloneAction = app(CloneRoutesAsTenant::class);
+    // To keep the test simple we don't even need a tenant parameter
+    $cloneAction->domain('bar.localhost')->addTenantParameter(false)->handle();
 
+    expect(route('foo'))->toBe('http://foo.localhost/foo');
+    expect(route('tenant.foo'))->toBe('http://bar.localhost/foo');
+});
+
+test('tenant parameter addition can be controlled by setting addTenantParameter', function (bool $addTenantParameter) {
+    RouteFacade::domain('central.localhost')
+        ->get('/foo', fn () => in_array('tenant', request()->route()->middleware()) ? 'tenant' : 'central')
+        ->name('foo')
+        ->middleware('clone');
+
+    // By default this action also removes the domain
+    $cloneAction = app(CloneRoutesAsTenant::class);
     $cloneAction->addTenantParameter($addTenantParameter)->handle();
 
     $clonedRoute = RouteFacade::getRoutes()->getByName('tenant.foo');
 
+    // We only use the route() helper here, since once a request is made
+    // the URL generator caches the request's domain and it affects route
+    // generation for routes that do not have domain() specified (tenant.foo)
+    expect(route('foo'))->toBe('http://central.localhost/foo');
+    if ($addTenantParameter)
+        expect(route('tenant.foo', ['tenant' => 'abc']))->toBe('http://localhost/abc/foo');
+    else
+        expect(route('tenant.foo'))->toBe('http://localhost/foo');
+
+    // Original route still works
+    $this->withoutExceptionHandling()->get(route('foo'))->assertSee('central');
+
     if ($addTenantParameter) {
         expect($clonedRoute->uri())->toContain('{tenant}');
-        expect(fn () => $this->get(route('tenant.foo')))->toThrow(UrlGenerationException::class, 'Missing parameter: tenant');
-        $this->withoutExceptionHandling()->get(route('tenant.foo', ['tenant' => Tenant::create()->id]))->assertOk();
+
+        $this->withoutExceptionHandling()->get('http://localhost/abc/foo')->assertSee('tenant');
+        $this->withoutExceptionHandling()->get('http://central.localhost/foo')->assertSee('central');
     } else {
         expect($clonedRoute->uri())->not()->toContain('{tenant}');
-        $this->withoutExceptionHandling()->get(route('tenant.foo'))->assertOk();
+
+        $this->withoutExceptionHandling()->get('http://localhost/foo')->assertSee('tenant');
+        $this->withoutExceptionHandling()->get('http://central.localhost/foo')->assertSee('central');
     }
 })->with([true, false]);

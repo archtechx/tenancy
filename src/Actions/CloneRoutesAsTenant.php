@@ -10,7 +10,6 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 
-// todo@addTenantParameter revisit annotation
 /**
  * Clones either all existing routes for which shouldBeCloned() returns true
  * (by default, all routes with any middleware present in $cloneRoutesWithMiddleware),
@@ -30,8 +29,11 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  * You may customize $cloneRoutesWithMiddleware using cloneRoutesWithMiddleware() to make any middleware of your choice trigger cloning.
  * By providing a callback to shouldClone(), you can change how it's determined if a route should be cloned if you don't want to use middleware flags.
  *
- * Cloned routes are prefixed with '/{tenant}' (the tenant parameter can be omitted by passing the addTenantParameter() method `false`),
- * flagged with 'tenant' middleware, and have their names prefixed with 'tenant.'.
+ * Cloned routes are prefixed with '/{tenant}', flagged with 'tenant' middleware, and have their names prefixed with 'tenant.'.
+ *
+ * The addition of the tenant parameter can be controlled using addTenantParameter(true|false). Note that if you decide to disable
+ * tenant parameter addition, the routes MUST differ in domains. This can be controlled using the domain(string|null) method. The
+ * default behavior is to NOT set any domains on cloned routes -- unless specified otherwise using that method.
  *
  * The parameter name and prefix can be changed e.g. to `/{team}` and `team.` by configuring the path resolver (tenantParameterName and tenantRouteNamePrefix).
  * Routes with names that are already prefixed won't be cloned - but that's just the default behavior.
@@ -46,8 +48,8 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  *
  * Example usage:
  * ```
- * Route::get('/foo', fn () => true)->name('foo')->middleware('clone');
- * Route::get('/bar', fn () => true)->name('bar')->middleware('universal');
+ * Route::get('/foo', ...)->name('foo')->middleware('clone');
+ * Route::get('/bar', ...)->name('bar')->middleware('universal');
  *
  * $cloneAction = app(CloneRoutesAsTenant::class);
  *
@@ -57,15 +59,19 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  * // Clone bar route as /{tenant}/bar and name it tenant.bar ('universal' middleware won't be present in the cloned route)
  * $cloneAction->cloneRoutesWithMiddleware(['universal'])->handle();
  *
- * Route::get('/baz', fn () => true)->name('baz');
+ * Route::get('/baz', ...)->name('baz');
  *
  * // Clone baz route as /{tenant}/bar and name it tenant.baz ('universal' middleware won't be present in the cloned route)
  * $cloneAction->cloneRoute('baz')->handle();
  *
- * Route::get('/no-tenant-parameter', fn () => true)->name('no-tenant-parameter'->middleware('clone');
+ * Route::domain('central.localhost')->get('/no-tenant-parameter', ...)->name('no-tenant-parameter')->middleware('clone');
  *
  * // Clone baz route as /no-tenant-parameter and name it tenant.no-tenant-parameter (the route won't have the tenant parameter)
- * // This can be useful e.g. with domain identification.
+ * // This can be useful with domain identification. Importantly, the original route MUST have a domain set. The domain of the
+ * // cloned route can be customized using domain(string|null). By default, the cloned route will not be scoped to a domain,
+ * // unless a domain() call is used. It's important to keep in mind that:
+ * //   1. When addTenantParameter(false) is used, the paths will be the same, thus domains must differ.
+ * //   2. If the original route (with the same path) has no domain, the cloned route will never be used due to registration order.
  * $cloneAction->addTenantParameter(false)->cloneRoutesWithMiddleware(['clone'])->cloneRoute('no-tenant-parameter')->handle();
  * ```
  *
@@ -80,6 +86,7 @@ class CloneRoutesAsTenant
 {
     protected array $routesToClone = [];
     protected bool $addTenantParameter = true;
+    protected string|null $domain = null;
     protected Closure|null $cloneUsing = null; // The callback should accept Route instance or the route name (string)
     protected Closure|null $shouldClone = null;
     protected array $cloneRoutesWithMiddleware = ['clone'];
@@ -88,6 +95,7 @@ class CloneRoutesAsTenant
         protected Router $router,
     ) {}
 
+    /** Clone routes. This resets routesToClone() but not other config. */
     public function handle(): void
     {
         // If no routes were specified using cloneRoute(), get all routes
@@ -112,15 +120,21 @@ class CloneRoutesAsTenant
                 $route = $this->router->getRoutes()->getByName($route);
             }
 
-            $this->copyMiscRouteProperties($route, $this->createNewRoute($route));
+            $this->createNewRoute($route);
         }
 
         // Clean up the routesToClone array after cloning so that subsequent calls aren't affected
         $this->routesToClone = [];
 
         $this->router->getRoutes()->refreshNameLookups();
+        $this->router->getRoutes()->refreshActionLookups();
     }
 
+    /**
+     * Should a tenant parameter be added to the cloned route.
+     *
+     * The name of the parameter is controlled using PathTenantResolver::tenantParameterName().
+     */
     public function addTenantParameter(bool $addTenantParameter): static
     {
         $this->addTenantParameter = $addTenantParameter;
@@ -128,6 +142,15 @@ class CloneRoutesAsTenant
         return $this;
     }
 
+    /** The domain the cloned route should use. Set to null if it shouldn't be scoped to a domain. */
+    public function domain(string|null $domain): static
+    {
+        $this->domain = $domain;
+
+        return $this;
+    }
+
+    /** Provide a custom callback for cloning routes, instead of the default behavior. */
     public function cloneUsing(Closure|null $cloneUsing): static
     {
         $this->cloneUsing = $cloneUsing;
@@ -135,6 +158,7 @@ class CloneRoutesAsTenant
         return $this;
     }
 
+    /** Specify which middleware should serve as "flags" telling this action to clone those routes. */
     public function cloneRoutesWithMiddleware(array $middleware): static
     {
         $this->cloneRoutesWithMiddleware = $middleware;
@@ -142,6 +166,10 @@ class CloneRoutesAsTenant
         return $this;
     }
 
+    /**
+     * Provide a custom callback for determining whether a route should be cloned.
+     * Overrides the default middleware-based detection.
+     * */
     public function shouldClone(Closure|null $shouldClone): static
     {
         $this->shouldClone = $shouldClone;
@@ -149,6 +177,7 @@ class CloneRoutesAsTenant
         return $this;
     }
 
+    /** Clone an individual route. */
     public function cloneRoute(Route|string $route): static
     {
         $this->routesToClone[] = $route;
@@ -188,6 +217,12 @@ class CloneRoutesAsTenant
             $action->put('as', PathTenantResolver::tenantRouteNamePrefix() . $name);
         }
 
+        if ($this->domain) {
+            $action->put('domain', $this->domain);
+        } elseif ($action->offsetExists('domain')) {
+            $action->offsetUnset('domain');
+        }
+
         $action->put('middleware', $middleware);
 
         if ($this->addTenantParameter) {
@@ -197,21 +232,16 @@ class CloneRoutesAsTenant
         /** @var Route $newRoute */
         $newRoute = $this->router->$method($uri, $action->toArray());
 
-        return $newRoute;
-    }
-
-    /**
-     * Copy misc properties of the original route to the new route.
-     */
-    protected function copyMiscRouteProperties(Route $originalRoute, Route $newRoute): void
-    {
+        // Copy misc properties of the original route to the new route.
         $newRoute
-            ->setBindingFields($originalRoute->bindingFields())
-            ->setFallback($originalRoute->isFallback)
-            ->setWheres($originalRoute->wheres)
-            ->block($originalRoute->locksFor(), $originalRoute->waitsFor())
-            ->withTrashed($originalRoute->allowsTrashedBindings())
-            ->setDefaults($originalRoute->defaults);
+            ->setBindingFields($route->bindingFields())
+            ->setFallback($route->isFallback)
+            ->setWheres($route->wheres)
+            ->block($route->locksFor(), $route->waitsFor())
+            ->withTrashed($route->allowsTrashedBindings())
+            ->setDefaults($route->defaults);
+
+        return $newRoute;
     }
 
     /** Removes top-level cloneRoutesWithMiddleware and adds 'tenant' middleware. */
