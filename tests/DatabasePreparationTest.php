@@ -9,7 +9,6 @@ use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Jobs\MigrateDatabase;
 use Stancl\Tenancy\Jobs\SeedDatabase;
-use Stancl\Tenancy\Database\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Foundation\Auth\User as Authenticable;
 use Stancl\Tenancy\Tests\Etc\TestSeeder;
