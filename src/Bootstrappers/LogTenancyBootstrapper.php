@@ -17,6 +17,8 @@ use Stancl\Tenancy\Contracts\Tenant;
  * Supports custom channel overrides via the $channelOverrides property.
  *
  * Note: Must run after FilesystemTenancyBootstrapper for storage path channels to work correctly.
+ *
+ * @see Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper
  */
 class LogTenancyBootstrapper implements TenancyBootstrapper
 {
