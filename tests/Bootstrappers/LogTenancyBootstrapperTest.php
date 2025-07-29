@@ -347,3 +347,54 @@ test('stack logs are written to all configured channels with tenant-specific pat
         ->toContain('central')
         ->not()->toContain('tenant');
 });
+
+test('slack channel uses correct webhook urls', function () {
+    config([
+        'logging.default' => 'slack',
+        'logging.channels.slack.url' => 'central-webhook',
+        'logging.channels.slack.level' => 'debug', // Set level to debug to keep the tests simple, since the default level here is 'critical'
+    ]);
+
+    $tenant1 = Tenant::create(['id' => 'tenant1', 'slackUrl' => 'tenant1-webhook']);
+    $tenant2 = Tenant::create(['id' => 'tenant2', 'slackUrl' => 'tenant2-webhook']);
+
+    LogTenancyBootstrapper::$channelOverrides = [
+        'slack' => ['url' => 'slackUrl'],
+    ];
+
+    // Test central context - should attempt to use central webhook
+    try {
+        logger('central');
+    } catch (Exception $e) {
+        expect($e->getMessage())->toContain('central-webhook');
+    }
+
+    // Test tenant 1 context - should attempt to use tenant1 webhook
+    tenancy()->initialize($tenant1);
+
+    try {
+        logger('tenant1');
+    } catch (Exception $e) {
+        expect($e->getMessage())->toContain('tenant1-webhook');
+    }
+
+    tenancy()->end();
+
+    // Test tenant 2 context - should attempt to use tenant2 webhook
+    tenancy()->initialize($tenant2);
+
+    try {
+        logger('tenant2');
+    } catch (Exception $e) {
+        expect($e->getMessage())->toContain('tenant2-webhook');
+    }
+
+    tenancy()->end();
+
+    // Back to central - should use central webhook again
+    try {
+        logger('central');
+    } catch (Exception $e) {
+        expect($e->getMessage())->toContain('central-webhook');
+    }
+});
