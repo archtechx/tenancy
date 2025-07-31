@@ -100,7 +100,9 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
         if (is_array($override)) {
             // Map tenant properties to channel config keys
             foreach ($override as $configKey => $tenantProperty) {
-                $this->config->set("logging.channels.{$channel}.{$configKey}", $tenant->$tenantProperty);
+                if ($tenant->$tenantProperty) {
+                    $this->config->set("logging.channels.{$channel}.{$configKey}", $tenant->$tenantProperty);
+                }
             }
         } elseif ($override instanceof Closure) {
             // Execute custom configuration closure

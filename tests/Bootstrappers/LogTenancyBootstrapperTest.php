@@ -150,6 +150,20 @@ test('channel overrides work correctly with both arrays and closures', function 
     expect(config('logging.channels.slack.username'))->toBe('Default');
 });
 
+test('channel config keys remains unchanged if the specified tenant override property is not set', function() {
+    config(['logging.default' => 'slack']);
+    config(['logging.channels.slack.username' => 'Default username']);
+
+    LogTenancyBootstrapper::$channelOverrides = [
+        'slack' => ['username' => 'nonExistentProperty'], // $tenant->nonExistentProperty
+    ];
+
+    tenancy()->initialize(Tenant::create());
+
+    // The username should remain unchanged since the tenant property is not set
+    expect(config('logging.channels.slack.username'))->toBe('Default username');
+});
+
 test('channel overrides take precedence over the default storage path channel updating logic', function () {
     config(['logging.default' => 'single']);
 
