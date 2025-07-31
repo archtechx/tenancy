@@ -86,7 +86,6 @@ class FortifyRouteBootstrapper implements TenancyBootstrapper
     protected function useTenantRoutesInFortify(Tenant $tenant): void
     {
         if (static::$passQueryParameter) {
-            // todo@tests
             $tenantParameterName = RequestDataTenantResolver::queryParameterName();
             $tenantParameterValue = RequestDataTenantResolver::payloadValue($tenant);
         } else {
