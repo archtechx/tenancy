@@ -112,9 +112,11 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
             // Map tenant properties to channel config keys.
             // If the tenant property is not set (= is null),
             // the override is ignored and the channel config key's value remains unchanged.
-            foreach ($override as $configKey => $tenantProperty) {
-                if ($tenant->$tenantProperty) {
-                    $this->config->set("logging.channels.{$channel}.{$configKey}", $tenant->$tenantProperty);
+            foreach ($override as $configKey => $tenantAttributeName) {
+                $tenantAttribute = $tenant->getAttribute($tenantAttributeName);
+
+                if ($tenantAttribute !== null) {
+                    $this->config->set("logging.channels.{$channel}.{$configKey}", $tenantAttribute);
                 }
             }
         } elseif ($override instanceof Closure) {
