@@ -11,12 +11,14 @@ use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
 /**
- * Bootstrapper for tenant-specific logging configuration.
+ * This bootstrapper makes it possible to configure tenant-specific logging.
  *
- * Automatically configures storage path channels (single, daily) to use tenant storage directories.
- * Supports custom channel overrides via the $channelOverrides property.
+ * By default, the storage path channels ('single' and 'daily' by default, feel free to configure that using the $storagePathChannels property)
+ * are configured to use tenant storage directories. For this to work correctly,
+ * this bootstrapper must run *after* FilesystemTenancyBootstrapper.
  *
- * Note: Must run after FilesystemTenancyBootstrapper for storage path channels to work correctly.
+ * The bootstrapper also supports custom channel overrides via the $channelOverrides property (see the ).
+ *
  *
  * @see Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper
  */
@@ -28,8 +30,8 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
     protected array $channels = [];
 
     /**
-     * Log channels that use storage paths for storing the logs.
-     * Requires FilesystemTenancyBootstrapper to run first.
+     * Log channels that use the storage_path() helper for storing the logs.
+     * Requires FilesystemTenancyBootstrapper to run before this bootstrapper.
      */
     public static array $storagePathChannels = ['single', 'daily'];
 
@@ -37,7 +39,7 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
      * Custom channel configuration overrides.
      *
      * Examples:
-     * - Array mapping: ['slack' => ['url' => 'webhookUrl']] maps $tenant->webhookUrl to slack.url
+     * - Array mapping: ['slack' => ['url' => 'webhookUrl']] maps $tenant->webhookUrl to slack.url (if $tenant->webhookUrl is set, otherwise, the override is ignored)
      * - Closure: ['slack' => fn ($config, $tenant) => $config->set('logging.channels.slack.url', $tenant->slackUrl)]
      */
     public static array $channelOverrides = [];
@@ -65,9 +67,10 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
         $this->channels = [];
     }
 
-    /** Get all channels that need to be configured, including channels in the log stack. */
+    /** Channels to configure (including the channels in the log stack). */
     protected function getChannels(): array
     {
+        // Get the currently used (default) logging channel
         $channels = [$this->config->get('logging.default')];
 
         // If the default channel is stack, also get all the channels it contains
@@ -92,20 +95,18 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
         }
     }
 
-    /**
-     * Apply channel override configuration.
-     */
     protected function overrideChannelConfig(string $channel, array|Closure $override, Tenant $tenant): void
     {
         if (is_array($override)) {
-            // Map tenant properties to channel config keys
+            // Map tenant properties to channel config keys.
+            // If the tenant property is not set,
+            // the override is ignored and the channel config key's value remains unchanged.
             foreach ($override as $configKey => $tenantProperty) {
                 if ($tenant->$tenantProperty) {
                     $this->config->set("logging.channels.{$channel}.{$configKey}", $tenant->$tenantProperty);
                 }
             }
         } elseif ($override instanceof Closure) {
-            // Execute custom configuration closure
             $override($this->config, $tenant);
         }
     }
