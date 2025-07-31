@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\ResourceSyncing;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
@@ -103,12 +102,6 @@ trait ResourceSyncing
     public function shouldSync(): bool
     {
         return true;
-    }
-
-    public function tenants(): BelongsToMany
-    {
-        return $this->morphToMany(config('tenancy.models.tenant'), 'tenant_resources', 'tenant_resources', 'resource_global_id', 'tenant_id', $this->getGlobalIdentifierKeyName())
-            ->using(TenantMorphPivot::class);
     }
 
     public function getGlobalIdentifierKeyName(): string

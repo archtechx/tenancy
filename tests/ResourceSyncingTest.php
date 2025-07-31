@@ -1265,6 +1265,30 @@ test('global scopes on syncable models can break resource syncing', function () 
     expect($tenant1->run(fn () => TenantUser::first()->name))->toBe('tenant2 user');
 });
 
+test('tenants relationship name can be customized', function () {
+    $tenant = Tenant::create();
+    migrateUsersTableForTenants();
+
+    $tenant->run(function () {
+        expect(TenantUser::count())->toBe(0);
+    });
+
+    // Model with a custom tenants relationship ('organizations')
+    $centralUserWithCustomTenants = CentralUserWithCustomTenantsRelationship::create([
+        'global_id' => 'tenant_user',
+        'name' => 'Tenant user',
+        'email' => 'tenant@user',
+        'password' => 'secret',
+        'role' => 'tester',
+    ]);
+
+
+    $centralUserWithCustomTenants->organizations()->attach($tenant);
+
+    $tenant->run(function () {
+        expect(TenantUser::firstWhere('name', 'Tenant user'))->not()->toBeNull();
+    });
+});
 /**
  * Create two tenants and run migrations for those tenants.
  *
@@ -1316,6 +1340,20 @@ function migrateCompaniesTableForTenants(): void
 class CentralUser extends BaseCentralUser
 {
     public function tenants(): BelongsToMany
+    {
+        return $this->belongsToMany(Tenant::class, 'tenant_users', 'global_user_id', 'tenant_id', 'global_id')
+            ->using(TenantPivot::class);
+    }
+}
+
+class CentralUserWithCustomTenantsRelationship extends BaseCentralUser
+{
+    public function getTenantsRelationshipName(): string
+    {
+        return 'organizations';
+    }
+
+    public function organizations(): BelongsToMany
     {
         return $this->belongsToMany(Tenant::class, 'tenant_users', 'global_user_id', 'tenant_id', 'global_id')
             ->using(TenantPivot::class);
@@ -1401,6 +1439,17 @@ class CentralCompany extends Model implements SyncMaster
     public $timestamps = false;
 
     public $table = 'companies';
+
+    public function getTenantsRelationshipName(): string
+    {
+        return 'tenants';
+    }
+
+    public function tenants(): BelongsToMany
+    {
+        return $this->morphToMany(config('tenancy.models.tenant'), 'tenant_resources', 'tenant_resources', 'resource_global_id', 'tenant_id', $this->getGlobalIdentifierKeyName())
+            ->using(TenantMorphPivot::class);
+    }
 
     public function getTenantModelName(): string
     {

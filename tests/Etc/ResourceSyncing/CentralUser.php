@@ -8,10 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
 use Stancl\Tenancy\ResourceSyncing\ResourceSyncing;
 use Stancl\Tenancy\ResourceSyncing\SyncMaster;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Stancl\Tenancy\ResourceSyncing\TenantMorphPivot;
 
 class CentralUser extends Model implements SyncMaster
 {
     use ResourceSyncing, CentralConnection;
+
     protected $guarded = [];
 
     public $timestamps = false;
@@ -28,6 +31,19 @@ class CentralUser extends Model implements SyncMaster
     {
         return TenantUser::class;
     }
+
+    public function getTenantsRelationshipName(): string
+    {
+        return 'tenants';
+    }
+
+
+    public function tenants(): BelongsToMany
+    {
+        return $this->morphToMany(config('tenancy.models.tenant'), 'tenant_resources', 'tenant_resources', 'resource_global_id', 'tenant_id', $this->getGlobalIdentifierKeyName())
+            ->using(TenantMorphPivot::class);
+    }
+
 
     public function shouldSync(): bool
     {
