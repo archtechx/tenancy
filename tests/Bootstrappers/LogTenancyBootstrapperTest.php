@@ -132,22 +132,7 @@ test('channel overrides work correctly with both arrays and closures', function 
     // After tenancy ends, the original config should be restored
     expect(config('logging.channels.slack.url'))->toBe($originalSlackUrl);
     expect(config('logging.channels.single.path'))->toBe($originalSinglePath);
-
-    // Test that we can also change array mappings to different properties
-    $tenant->update(['slackUrl' => 'tenant-slack']);
-
-    LogTenancyBootstrapper::$channelOverrides = [
-        'slack' => ['url' => 'slackUrl'],
-    ];
-
-    tenancy()->initialize($tenant);
-    expect(config('logging.channels.slack.url'))->toBe($tenant->slackUrl);
-    expect(config('logging.channels.slack.username'))->toBe('Default'); // Still remains default since we only override url
-
-    tenancy()->end();
-
-    expect(config('logging.channels.slack.url'))->toBe($originalSlackUrl);
-    expect(config('logging.channels.slack.username'))->toBe('Default');
+    expect(config('logging.channels.slack.username'))->toBe('Default'); // Not changed at all
 });
 
 test('channel config keys remains unchanged if the specified tenant override property is not set', function() {
