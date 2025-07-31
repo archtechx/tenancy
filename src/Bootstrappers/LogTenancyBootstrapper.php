@@ -36,7 +36,7 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
      * Custom channel configuration overrides.
      *
      * Examples:
-     * - Array mapping (the default approach): ['slack' => ['url' => 'webhookUrl']] maps $tenant->webhookUrl to slack.url (if $tenant->webhookUrl is set, otherwise, the override is ignored)
+     * - Array mapping (the default approach): ['slack' => ['url' => 'webhookUrl']] maps $tenant->webhookUrl to slack.url (if $tenant->webhookUrl is not null, otherwise, the override is ignored)
      * - Closure: ['slack' => fn ($config, $tenant) => $config->set('logging.channels.slack.url', $tenant->slackUrl)]
      */
     public static array $channelOverrides = [];
@@ -109,8 +109,8 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
     protected function overrideChannelConfig(string $channel, array|Closure $override, Tenant $tenant): void
     {
         if (is_array($override)) {
-            // Map tenant properties to channel config keys.
-            // If the tenant property is not set (= is null),
+            // Map tenant attributes to channel config keys.
+            // If the tenant attribute is null,
             // the override is ignored and the channel config key's value remains unchanged.
             foreach ($override as $configKey => $tenantAttributeName) {
                 $tenantAttribute = $tenant->getAttribute($tenantAttributeName);

@@ -135,17 +135,17 @@ test('channel overrides work correctly with both arrays and closures', function 
     expect(config('logging.channels.slack.username'))->toBe('Default'); // Not changed at all
 });
 
-test('channel config keys remains unchanged if the specified tenant override property is not set', function() {
+test('channel config keys remains unchanged if the specified tenant override attribute is null', function() {
     config(['logging.default' => 'slack']);
     config(['logging.channels.slack.username' => 'Default username']);
 
     LogTenancyBootstrapper::$channelOverrides = [
-        'slack' => ['username' => 'nonExistentProperty'], // $tenant->nonExistentProperty
+        'slack' => ['username' => 'nonExistentAttribute'], // $tenant->nonExistentAttribute
     ];
 
     tenancy()->initialize(Tenant::create());
 
-    // The username should remain unchanged since the tenant property is not set
+    // The username should remain unchanged since the tenant attribute is null
     expect(config('logging.channels.slack.username'))->toBe('Default username');
 });
 
