@@ -388,6 +388,6 @@ function getResolverArgument(string $resolver, Tenant $tenant, string $parameter
 
     // Assuming that:
     // - with RequestDataTenantResolver, the tenant model column value is the payload value
-    // - with DomainTenantResolver, the tenant has a domain with name equal to the tenant model column value
+    // - with DomainTenantResolver, the tenant has a domain with name equal to the tenant model column value (see the createDomain() calls in various tests)
     return $tenant->{$parameterColumn};
 }
