@@ -17,6 +17,12 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
 use function Stancl\Tenancy\Tests\pest;
 
+beforeEach($cleanup = function () {
+    Tenant::$extraCustomColumns = [];
+});
+
+afterEach($cleanup);
+
 test('tenants can be resolved using cached resolvers', function (string $resolver, bool $configureTenantModelColumn) {
     $tenant = Tenant::create([$tenantModelColumn = tenantModelColumn($configureTenantModelColumn) => 'acme']);
 
@@ -320,8 +326,6 @@ test('PathTenantResolver properly separates cache for each tenant column', funct
     pest()->get("/x/bar/b")->assertSee('foo');
     expect(count(DB::getRawQueryLog()))->toBe(4); // unchanged
     expect(count($redisKeys()))->toBe(4); // unchanged
-
-    Tenant::$extraCustomColumns = []; // reset
 });
 
 /**
