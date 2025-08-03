@@ -20,6 +20,8 @@ use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 class TenancyServiceProvider extends ServiceProvider
 {
     public static Closure|null $configure = null;
+    public static bool $registerForgetTenantParameterListener = true;
+    public static bool $migrateFreshOverride = true;
 
     /* Register services. */
     public function register(): void
@@ -104,9 +106,11 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\CreateUserWithRLSPolicies::class,
         ]);
 
-        $this->app->extend(FreshCommand::class, function ($_, $app) {
-            return new Commands\MigrateFreshOverride($app['migrator']);
-        });
+        if (static::$migrateFreshOverride) {
+            $this->app->extend(FreshCommand::class, function ($_, $app) {
+                return new Commands\MigrateFreshOverride($app['migrator']);
+            });
+        }
 
         $this->publishes([
             __DIR__ . '/../assets/config.php' => config_path('tenancy.php'),
@@ -152,11 +156,14 @@ class TenancyServiceProvider extends ServiceProvider
         Route::middlewareGroup('tenant', []);
         Route::middlewareGroup('central', []);
 
-        // Always register the ForgetTenantParameter listener
-        // even if path identification is not used.
-        //
-        // Though the listener really only has an effect
-        // when path identification is used in the global stack.
-        Event::listen(RouteMatched::class, ForgetTenantParameter::class);
+        if (static::$registerForgetTenantParameterListener) {
+            // Ideally, this listener would only be registered when kernel-level
+            // path identification is used, however doing that check reliably
+            // at this point in the lifecycle isn't feasible. For that reason,
+            // rather than doing an "outer" check, we do an "inner" check within
+            // that listener. That also means the listener needs to be registered
+            // always. We allow for this to be controlled using a static property.
+            Event::listen(RouteMatched::class, ForgetTenantParameter::class);
+        }
     }
 }

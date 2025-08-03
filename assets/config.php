@@ -95,9 +95,9 @@ return [
          * This is used for determining if a path identification middleware is used
          * during operations specific to path identification.
          *
-         * Currently, this is only used for forgetting the tenant parameter using the ForgetTenantParameter listener.
+         * This is used for forgetting the tenant parameter using the ForgetTenantParameter listener.
          * The listener only has an effect when path identification middleware
-         * is used in the global middleware stack and certain conditions are met.
+         * is used in the global middleware stack and certain other conditions are met.
          *
          * If you're using a custom path identification middleware, add it here.
          *
