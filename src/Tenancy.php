@@ -43,7 +43,9 @@ class Tenancy
      * bootstrappers that haven't been properly initialized
      * (bootstrapped for the first time) previously.
      *
-     * @property list<class-string<TenancyBootstrapper>>
+     * @internal
+     *
+     * @var list<class-string<TenancyBootstrapper>>
      */
     public array $initializedBootstrappers = [];
 
