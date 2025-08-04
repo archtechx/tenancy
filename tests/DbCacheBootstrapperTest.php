@@ -143,3 +143,89 @@ test('cache is separated correctly when using DatabaseCacheBootstrapper', functi
     expect(Cache::get('foo'))->toBe('central');
     expect($getCacheUsingDbQuery('foo'))->toContain('central');
 });
+
+test('DatabaseCacheBootstrapper auto-detects all database driver stores by default', function() {
+    // Configure multiple stores with different drivers
+    config([
+        'cache.stores.database' => [
+            'driver' => 'database',
+            'connection' => 'central',
+            'table' => 'cache',
+        ],
+        'cache.stores.sessions' => [
+            'driver' => 'database',
+            'connection' => 'central',
+            'table' => 'sessions_cache',
+        ],
+        'cache.stores.redis' => [
+            'driver' => 'redis',
+            'connection' => 'default',
+        ],
+        'cache.stores.file' => [
+            'driver' => 'file',
+            'path' => '/foo/bar',
+        ],
+    ]);
+
+    // Here, we're using auto-detection (default behavior)
+    expect(config('cache.stores.database.connection'))->toBe('central');
+    expect(config('cache.stores.sessions.connection'))->toBe('central');
+    expect(config('cache.stores.redis.connection'))->toBe('default');
+    expect(config('cache.stores.file.path'))->toBe('/foo/bar');
+
+    tenancy()->initialize(Tenant::create());
+
+    // Using auto-detection (default behavior),
+    // all database driver stores should be configured,
+    // and stores with non-database drivers are ignored.
+    expect(config('cache.stores.database.connection'))->toBe('tenant');
+    expect(config('cache.stores.sessions.connection'))->toBe('tenant');
+    expect(config('cache.stores.redis.connection'))->toBe('default'); // unchanged
+    expect(config('cache.stores.file.path'))->toBe('/foo/bar'); // unchanged
+
+    tenancy()->end();
+
+    // All database stores should be reverted, others unchanged
+    expect(config('cache.stores.database.connection'))->toBe('central');
+    expect(config('cache.stores.sessions.connection'))->toBe('central');
+    expect(config('cache.stores.redis.connection'))->toBe('default');
+    expect(config('cache.stores.file.path'))->toBe('/foo/bar');
+});
+
+test('manual $stores configuration takes precedence over auto-detection', function() {
+    // Configure multiple database stores
+    config([
+        'cache.stores.sessions' => [
+            'driver' => 'database',
+            'connection' => 'central',
+            'table' => 'sessions_cache',
+        ],
+        'cache.stores.redis' => [
+            'driver' => 'redis',
+            'connection' => 'default',
+        ],
+    ]);
+
+    // Specific store overrides (including non-database stores)
+    DatabaseCacheBootstrapper::$stores = ['sessions', 'redis']; // Note: excludes 'database'
+
+    expect(config('cache.stores.database.connection'))->toBe('central');
+    expect(config('cache.stores.sessions.connection'))->toBe('central');
+    expect(config('cache.stores.redis.connection'))->toBe('default');
+
+    tenancy()->initialize(Tenant::create());
+
+    // Manual config takes precedence: only 'sessions' is configured
+    // - redis filtered out by driver check
+    // - database store not included in $stores
+    expect(config('cache.stores.database.connection'))->toBe('central'); // Excluded in manual config
+    expect(config('cache.stores.sessions.connection'))->toBe('tenant'); // Included and is database driver
+    expect(config('cache.stores.redis.connection'))->toBe('default'); // Included but filtered out (not database driver)
+
+    tenancy()->end();
+
+    // Only the manually configured stores' config will be reverted
+    expect(config('cache.stores.database.connection'))->toBe('central');
+    expect(config('cache.stores.sessions.connection'))->toBe('central');
+    expect(config('cache.stores.redis.connection'))->toBe('default');
+});
