@@ -20,8 +20,8 @@ services:
             dynamodb:
                 condition: service_healthy
         volumes:
-            - .:$PWD:cached
-        working_dir: $PWD
+            - .:${PROJECT_PATH:-$PWD}:cached
+        working_dir: ${PROJECT_PATH:-$PWD}
         environment:
             DOCKER: 1
             DB_PASSWORD: password
