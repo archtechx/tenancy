@@ -16,8 +16,8 @@ uses(TestCase::class)->in(__DIR__);
 function withTenantDatabases(bool $migrate = false)
 {
     Event::listen(TenantCreated::class, JobPipeline::make($migrate
-        ? [CreateDatabase::class]
-        : [CreateDatabase::class, MigrateDatabase::class]
+        ? [CreateDatabase::class, MigrateDatabase::class]
+        : [CreateDatabase::class]
     )->send(function (TenantCreated $event) {
         return $event->tenant;
     })->toListener());
