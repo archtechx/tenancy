@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Bootstrappers;
 
+use Exception;
 use Illuminate\Cache\CacheManager;
 use Illuminate\Config\Repository;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
@@ -39,6 +40,10 @@ class DatabaseCacheBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant): void
     {
+        if (! config('database.connections.tenant')) {
+            throw new Exception('DatabaseCacheBootstrapper must run after DatabaseTenancyBootstrapper.');
+        }
+
         $stores = $this->getDatabaseCacheStores();
 
         foreach ($stores as $storeName) {
