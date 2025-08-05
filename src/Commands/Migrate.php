@@ -51,13 +51,24 @@ class Migrate extends MigrateCommand
             return 1;
         }
 
+        $originalTemplateConnection = config('tenancy.database.template_tenant_connection');
+
+        if ($database = $this->input->getOption('database')) {
+            config(['tenancy.database.template_tenant_connection' => $database]);
+        }
+
         if ($this->getProcesses() > 1) {
             return $this->runConcurrently($this->getTenantChunks()->map(function ($chunk) {
                 return $this->getTenants($chunk);
             }));
         }
 
-        return $this->migrateTenants($this->getTenants()) ? 0 : 1;
+        $code = $this->migrateTenants($this->getTenants()) ? 0 : 1;
+
+        // Reset the template tenant connection to the original one
+        config(['tenancy.database.template_tenant_connection' => $originalTemplateConnection]);
+
+        return $code;
     }
 
     protected function childHandle(mixed ...$args): bool
