@@ -76,6 +76,8 @@ test('global cache facade is not persistent', function () {
     expect(spl_object_id(GlobalCache::getFacadeRoot()))->not()->toBe($oldId);
 });
 
+// todo0 add database cache bootstrapper to other tests
+
 test('global cache is always central', function (string $store, array $bootstrappers, string $initialCentralCall) {
     config([
         'cache.default' => $store,
@@ -86,18 +88,19 @@ test('global cache is always central', function (string $store, array $bootstrap
         withTenantDatabases(true);
     }
 
-    // todo0 maybe add assertions about the DB connection used by:
-    // 1. global_cache()->store()->getStore()->getConnection()->getName()
-    // 2. cache()->store()->getStore()->getConnection()->getName()
-    // 3. GlobalCache::store()->getStore()->getConnection()->getName()
-    // and possibly Redis as well (after we integrate these data sets into the other tests here)
-
+    // This tells us which "accessor" for the global cache should be instantiated first, before we go
+    // into the tenant context. We make sure to not touch the other one here. This tests that whether
+    // a particular accessor is used "early" makes no difference in the later behavior.
     if ($initialCentralCall === 'helper') {
+        if ($store === 'database') expect(global_cache()->store()->getStore()->getConnection()->getName())->toBe('central');
         global_cache()->put('central-helper', true);
     } else if ($initialCentralCall === 'facade') {
+        if ($store === 'database') expect(GlobalCache::store()->getStore()->getConnection()->getName())->toBe('central');
         GlobalCache::put('central-facade', true);
     } else if ($initialCentralCall === 'both') {
+        if ($store === 'database') expect(global_cache()->store()->getStore()->getConnection()->getName())->toBe('central');
         global_cache()->put('central-helper', true);
+        if ($store === 'database') expect(GlobalCache::store()->getStore()->getConnection()->getName())->toBe('central');
         GlobalCache::put('central-facade', true);
     }
 
@@ -106,12 +109,18 @@ test('global cache is always central', function (string $store, array $bootstrap
 
     // Here we use both the helper and the facade to ensure the value is accessible via either one
     if ($initialCentralCall === 'helper') {
+        if ($store === 'database') expect(global_cache()->store()->getStore()->getConnection()->getName())->toBe('central');
+        if ($store === 'database') expect(GlobalCache::store()->getStore()->getConnection()->getName())->toBe('central');
         expect(global_cache('central-helper'))->toBe(true);
         expect(GlobalCache::get('central-helper'))->toBe(true);
     } else if ($initialCentralCall === 'facade') {
+        if ($store === 'database') expect(global_cache()->store()->getStore()->getConnection()->getName())->toBe('central');
+        if ($store === 'database') expect(GlobalCache::store()->getStore()->getConnection()->getName())->toBe('central');
         expect(global_cache('central-facade'))->toBe(true);
         expect(GlobalCache::get('central-facade'))->toBe(true);
     } else if ($initialCentralCall === 'both') {
+        if ($store === 'database') expect(global_cache()->store()->getStore()->getConnection()->getName())->toBe('central');
+        if ($store === 'database') expect(GlobalCache::store()->getStore()->getConnection()->getName())->toBe('central');
         expect(global_cache('central-helper'))->toBe(true);
         expect(GlobalCache::get('central-helper'))->toBe(true);
         expect(global_cache('central-facade'))->toBe(true);
@@ -122,6 +131,9 @@ test('global cache is always central', function (string $store, array $bootstrap
     GlobalCache::put('tenant-facade', true);
 
     tenancy()->end();
+
+    if ($store === 'database') expect(global_cache()->store()->getStore()->getConnection()->getName())->toBe('central');
+    if ($store === 'database') expect(GlobalCache::store()->getStore()->getConnection()->getName())->toBe('central');
 
     expect(global_cache('tenant-helper'))->toBe(true);
     expect(GlobalCache::get('tenant-helper'))->toBe(true);
