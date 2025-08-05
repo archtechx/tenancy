@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Resolvers\Contracts;
 
-use Illuminate\Contracts\Cache\Factory;
 use Illuminate\Contracts\Cache\Repository;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
@@ -13,12 +13,11 @@ use Stancl\Tenancy\Contracts\TenantResolver;
 
 abstract class CachedTenantResolver implements TenantResolver
 {
-    /** @var Repository */
-    protected $cache;
+    protected Repository $cache;
 
-    public function __construct(Factory $cache)
+    public function __construct(Application $app)
     {
-        $this->cache = $cache->store(static::cacheStore());
+        $this->cache = $app->make('globalCache')->store(static::cacheStore());
     }
 
     /**

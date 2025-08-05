@@ -35,6 +35,20 @@ class Tenancy
      */
     public static array $findWith = [];
 
+    /**
+     * A list of bootstrappers that have been initialized.
+     *
+     * This is used when reverting tenancy, mainly if an exception
+     * occurs during bootstrapping, to ensure we don't revert
+     * bootstrappers that haven't been properly initialized
+     * (bootstrapped for the first time) previously.
+     *
+     * @internal
+     *
+     * @var list<class-string<TenancyBootstrapper>>
+     */
+    public array $initializedBootstrappers = [];
+
     /** Initialize tenancy for the passed tenant. */
     public function initialize(Tenant|int|string $tenant): void
     {
@@ -192,7 +206,6 @@ class Tenancy
 
     /**
      * Run a callback for multiple tenants.
-     * More performant than running $tenant->run() one by one.
      *
      * @param array<Tenant>|array<string|int>|\Traversable|string|int|null $tenants
      */

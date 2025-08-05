@@ -20,6 +20,10 @@ class BootstrapTenancy
             $tenant = $event->tenancy->tenant;
 
             $bootstrapper->bootstrap($tenant);
+
+            if (! in_array($bootstrapper::class, $event->tenancy->initializedBootstrappers)) {
+                $event->tenancy->initializedBootstrappers[] = $bootstrapper::class;
+            }
         }
 
         event(new TenancyBootstrapped($event->tenancy));

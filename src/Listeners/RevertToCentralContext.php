@@ -15,7 +15,9 @@ class RevertToCentralContext
         event(new RevertingToCentralContext($event->tenancy));
 
         foreach (array_reverse($event->tenancy->getBootstrappers()) as $bootstrapper) {
-            $bootstrapper->revert();
+            if (in_array($bootstrapper::class, $event->tenancy->initializedBootstrappers)) {
+                $bootstrapper->revert();
+            }
         }
 
         event(new RevertedToCentralContext($event->tenancy));
