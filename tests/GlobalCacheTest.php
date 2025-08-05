@@ -68,6 +68,14 @@ test('global cache manager stores data in global cache', function (string $boots
     CacheTenancyBootstrapper::class,
 ]);
 
+test('global cache facade is not persistent', function () {
+    $oldId = spl_object_id(GlobalCache::getFacadeRoot());
+
+    $_ = new class {};
+
+    expect(spl_object_id(GlobalCache::getFacadeRoot()))->not()->toBe($oldId);
+});
+
 test('global cache is always central', function (string $store, array $bootstrappers, string $initialCentralCall) {
     config([
         'cache.default' => $store,
@@ -130,7 +138,6 @@ test('global cache is always central', function (string $store, array $bootstrap
         expect(global_cache('central-facade'))->toBe(true);
         expect(GlobalCache::get('central-facade'))->toBe(true);
     }
-
 })->with([
     ['redis', [CacheTagsBootstrapper::class]],
     ['redis', [CacheTenancyBootstrapper::class]],

@@ -83,7 +83,6 @@ class TenancyServiceProvider extends ServiceProvider
             return new Commands\Seed($app['db']);
         });
 
-        // todo0 check how the caching in the facade affects our logic here
         // todo0 check what happens if globalCache is injected - it may be
         //       problematic if it's injected before adjustCacheManagerUsing
         //       was used
