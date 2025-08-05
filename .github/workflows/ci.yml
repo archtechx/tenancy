@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         include:
-        - laravel: "dev-dbstore-setconnection" # todo0 revert along with require (8 lines below)
+        - laravel: "12.x-dev" # todo0 revert
           php: "8.4"
 
     steps:
@@ -24,7 +24,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Install Composer dependencies
         run: |
-          composer require "stancl/framework:${{ matrix.laravel }}" --no-interaction --no-update
+          composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
           composer update --prefer-dist --no-interaction
       - name: Run tests
         if: ${{ ! env.ACT }}
