@@ -5,14 +5,21 @@ declare(strict_types=1);
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 use Illuminate\Support\Facades\Route as RouteFacade;
 use Illuminate\Support\Facades\Schema;
+use Stancl\Tenancy\Bootstrappers\CacheTagsBootstrapper;
+use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
+use Stancl\Tenancy\Events\TenancyEnded;
+use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
 use function Stancl\Tenancy\Tests\pest;
@@ -100,6 +107,52 @@ test('cache is invalidated when the tenant is updated', function (string $resolv
 ])->with([
     'tenant model column is id (default)' => false,
     'tenant model column is name (custom)' => true,
+]);
+
+// Only testing update here - presumably if this works, deletes (and other things we test here)
+// will work as well. The main unique thing about this test is that it makes the change from
+// *within* the tenant context.
+test('cache is invalidated when tenant is updated from within the tenant context', function (string $cacheBootstrapper) {
+    config(['tenancy.bootstrappers' => [$cacheBootstrapper]]);
+    Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+
+    $resolver = PathTenantResolver::class;
+
+    $tenant = Tenant::create([$tenantModelColumn = tenantModelColumn(true) => 'acme']);
+
+    DB::enableQueryLog();
+
+    config(['tenancy.identification.resolvers.' . $resolver . '.cache' => true]);
+
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantModelColumn))))->toBeTrue();
+    expect(DB::getQueryLog())->not()->toBeEmpty();
+    DB::flushQueryLog();
+
+    // Different cache context
+    tenancy()->initialize($tenant);
+
+    // Tenant cache gets invalidated when the tenant is updated
+    $tenant->touch();
+
+    // If we use 'globalCache' in CachedTenantResolver's constructor (correct) this line has no effect - in either case the global cache is used.
+    // If we use 'cache' (regression) this line DOES have an effect. If we don't end tenancy, the tenant's cache is used, which
+    // wasn't populated before, so the test succeeds - a query is made. But if we do end tenancy, the central cache is used,
+    // which was populated BUT NOT INVALIDATED which makes the test fail.
+    //
+    // The actual resolver would only ever run in the central context, but this detail makes it easier to reason about how this test
+    // confirms the fix.
+    tenancy()->end();
+
+    DB::flushQueryLog();
+
+    expect($tenant->is(app($resolver)->resolve(getResolverArgument($resolver, $tenant, $tenantModelColumn))))->toBeTrue();
+
+    expect(DB::getQueryLog())->not()->toBeEmpty(); // Cache was invalidated, so the tenant was retrieved from the DB
+})->with([
+    // todo@samuel test this with the database cache bootstrapper too?
+    CacheTenancyBootstrapper::class,
+    CacheTagsBootstrapper::class,
 ]);
 
 test('cache is invalidated when the tenant is deleted', function (string $resolver, bool $configureTenantModelColumn) {
