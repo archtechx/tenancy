@@ -7,8 +7,10 @@ namespace Stancl\Tenancy\Bootstrappers;
 use Exception;
 use Illuminate\Cache\CacheManager;
 use Illuminate\Config\Repository;
+use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\TenancyServiceProvider;
 
 /**
  * This bootstrapper allows cache to be stored in the tenant databases by switching
@@ -55,6 +57,22 @@ class DatabaseCacheBootstrapper implements TenancyBootstrapper
 
             $this->cache->purge($storeName);
         }
+
+        // Preferably we'd try to respect the original value of this static property -- store it in a variable,
+        // pull it into the closure, and execute it there. But such a naive approach would lead to existing callbacks
+        // *from here* being executed repeatedly in a loop on reinitialization. For that reason we do not do that
+        // (this is our only use of $adjustCacheManagerUsing anyway) but ideally at some point we'd have a better solution.
+        TenancyServiceProvider::$adjustCacheManagerUsing = function (CacheManager $manager) use ($stores) {
+            foreach ($stores as $storeName) {
+                $manager->store($storeName)->getStore()->setConnection(
+                    DB::connection($this->originalConnections[$storeName] ?? config('tenancy.database.central_connection'))
+                );
+
+                $manager->store($storeName)->getStore()->setLockConnection(
+                    DB::connection($this->originalLockConnections[$storeName] ?? config('tenancy.database.central_connection'))
+                );
+            }
+        };
     }
 
     public function revert(): void

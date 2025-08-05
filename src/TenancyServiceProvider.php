@@ -23,6 +23,9 @@ class TenancyServiceProvider extends ServiceProvider
     public static bool $registerForgetTenantParameterListener = true;
     public static bool $migrateFreshOverride = true;
 
+    /** @internal */
+    public static Closure|null $adjustCacheManagerUsing = null;
+
     /* Register services. */
     public function register(): void
     {
@@ -80,8 +83,32 @@ class TenancyServiceProvider extends ServiceProvider
             return new Commands\Seed($app['db']);
         });
 
+        // todo0 check how the caching in the facade affects our logic here
+        // todo0 check what happens if globalCache is injected - it may be
+        //       problematic if it's injected before adjustCacheManagerUsing
+        //       was used
+
         $this->app->bind('globalCache', function ($app) {
-            return new CacheManager($app);
+            // We create a separate CacheManager to be used for "global" cache -- cache that
+            // is always central, regardless of the current context.
+            //
+            // Importantly, we use a regular binding here, not a singleton. Thanks to that,
+            // any time we resolve this cache manager, we get a *fresh* instance -- an instance
+            // that was not affected by any scoping logic.
+            //
+            // This works great for cache stores that are *directly* scoped, like Redis or
+            // any other tagged or prefixed stores, but it doesn't work for the database driver.
+            //
+            // When we use the DatabaseTenancyBootstrapper, it changes the default connection,
+            // and therefore the connection of the database store that will be created when
+            // this new CacheManager is instantiated again.
+            $manager = new CacheManager($app);
+
+            if (static::$adjustCacheManagerUsing !== null) {
+                (static::$adjustCacheManagerUsing)($manager);
+            }
+
+            return $manager;
         });
     }
 
