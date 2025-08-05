@@ -46,7 +46,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
      * tenant instances passed to $closeInMemoryConnectionUsing closures,
      * if you're setting that property as well.
      *
-     * @property Closure(PDO, string)|null
+     * @var Closure(PDO, string)|null
      */
     public static Closure|null $persistInMemoryConnectionUsing = null;
 
@@ -59,7 +59,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
      * NOTE: The parameter provided to the closure is the Tenant
      * instance, not a PDO connection.
      *
-     * @property Closure(Tenant)|null
+     * @var Closure(Tenant)|null
      */
     public static Closure|null $closeInMemoryConnectionUsing = null;
 
