@@ -26,6 +26,7 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Exceptions\StatefulGuardRequiredException;
 use function Stancl\Tenancy\Tests\pest;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 beforeEach(function () {
     pest()->artisan('migrate', [
@@ -290,6 +291,63 @@ test('impersonation tokens can be created only with stateful guards', function (
 
     expect(tenancy()->impersonate($tenant, $user->id, '/dashboard', 'stateful'))
         ->toBeInstanceOf(ImpersonationToken::class);
+});
+
+test('expired tokens are cleaned up before aborting', function () {
+    $tenant = Tenant::create();
+    migrateTenants();
+
+    $user = $tenant->run(function () {
+        return ImpersonationUser::create([
+            'name' => 'foo',
+            'email' => 'foo@bar',
+            'password' => bcrypt('password'),
+        ]);
+    });
+
+    $token = tenancy()->impersonate($tenant, $user->id, '/dashboard');
+
+    // Make the token expired
+    $token->update([
+        'created_at' => Carbon::now()->subSeconds(100),
+    ]);
+
+    expect(ImpersonationToken::find($token->token))->not()->toBeNull();
+
+    tenancy()->initialize($tenant);
+
+    // Try to use the expired token - should clean up and abort
+    expect(fn() => UserImpersonation::makeResponse($token->token))
+        ->toThrow(HttpException::class); // Abort with 403
+
+    expect(ImpersonationToken::find($token->token))->toBeNull();
+});
+
+test('tokens are cleaned up when in wrong tenant context before aborting', function () {
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    migrateTenants();
+
+    $user = $tenant1->run(function () {
+        return ImpersonationUser::create([
+            'name' => 'foo',
+            'email' => 'foo@bar',
+            'password' => bcrypt('password'),
+        ]);
+    });
+
+    $token = tenancy()->impersonate($tenant1, $user->id, '/dashboard');
+
+    expect(ImpersonationToken::find($token->token))->not->toBeNull();
+
+    tenancy()->initialize($tenant2);
+
+    // Try to use the token in wrong tenant context - should clean up and abort
+    expect(fn() => UserImpersonation::makeResponse($token->token))
+        ->toThrow(HttpException::class); // Abort with 403
+
+    expect(ImpersonationToken::find($token->token))->toBeNull();
 });
 
 function migrateTenants()
