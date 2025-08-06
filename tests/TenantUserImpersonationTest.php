@@ -363,22 +363,30 @@ test('expired impersonation tokens can be cleaned up using a command', function 
 
     // Create tokens
     $oldToken = tenancy()->impersonate($tenant, $user->id, '/dashboard');
+    $anotherOldToken = tenancy()->impersonate($tenant, $user->id, '/dashboard');
     $activeToken = tenancy()->impersonate($tenant, $user->id, '/dashboard');
 
-    // Make one of the tokens expired by updating its created_at
+    // Make two of the tokens expired by updating their created_at
     $oldToken->update([
         'created_at' => Carbon::now()->subSeconds(UserImpersonation::$ttl + 10),
     ]);
 
-    // Both tokens exist
+    $anotherOldToken->update([
+        'created_at' => Carbon::now()->subSeconds(UserImpersonation::$ttl + 10),
+    ]);
+
+    // All tokens exist
     expect(ImpersonationToken::find($activeToken->token))->not()->toBeNull();
     expect(ImpersonationToken::find($oldToken->token))->not()->toBeNull();
+    expect(ImpersonationToken::find($anotherOldToken->token))->not()->toBeNull();
 
     pest()->artisan('tenants:clear-expired-impersonation-tokens')
-        ->assertExitCode(0);
+        ->assertExitCode(0)
+        ->expectsOutputToContain('2 expired impersonation tokens deleted');
 
-    // The expired token was deleted
+    // The expired tokens were deleted
     expect(ImpersonationToken::find($oldToken->token))->toBeNull();
+    expect(ImpersonationToken::find($anotherOldToken->token))->toBeNull();
     // The active token still exists
     expect(ImpersonationToken::find($activeToken->token))->not()->toBeNull();
 
@@ -392,14 +400,16 @@ test('expired impersonation tokens can be cleaned up using a command', function 
     // and with ttl set to 80s, the active token should not be deleted
     pest()->artisan('tenants:clear-expired-impersonation-tokens', [
         '--ttl' => 80,
-    ])->assertExitCode(0);
+    ])->assertExitCode(0)
+        ->expectsOutputToContain('0 expired impersonation tokens deleted');
 
     expect(ImpersonationToken::find($activeToken->token))->not()->toBeNull();
 
     // With ttl set to 40s, the active token should be deleted
     pest()->artisan('tenants:clear-expired-impersonation-tokens', [
         '--ttl' => 40,
-    ])->assertExitCode(0);
+    ])->assertExitCode(0)
+        ->expectsOutputToContain('1 expired impersonation token deleted');
 
     expect(ImpersonationToken::find($activeToken->token))->toBeNull();
 });
