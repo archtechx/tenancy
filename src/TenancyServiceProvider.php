@@ -83,10 +83,6 @@ class TenancyServiceProvider extends ServiceProvider
             return new Commands\Seed($app['db']);
         });
 
-        // todo0 check what happens if globalCache is injected - it may be
-        //       problematic if it's injected before adjustCacheManagerUsing
-        //       was used
-
         $this->app->bind('globalCache', function ($app) {
             // We create a separate CacheManager to be used for "global" cache -- cache that
             // is always central, regardless of the current context.

@@ -29,8 +29,13 @@ beforeEach(function () {
     withCacheTables();
 });
 
-test('global cache manager stores data in global cache', function (string $bootstrapper) {
-    config(['tenancy.bootstrappers' => [$bootstrapper]]);
+test('global cache manager stores data in global cache', function (string $store, array $bootstrappers) {
+    config([
+        'cache.default' => $store,
+        'tenancy.bootstrappers' => $bootstrappers,
+    ]);
+
+    if ($store === 'database') withTenantDatabases(true);
 
     expect(cache('foo'))->toBe(null);
     GlobalCache::put('foo', 'bar');
@@ -44,9 +49,16 @@ test('global cache manager stores data in global cache', function (string $boots
     cache(['def' => 'ghi'], 10);
     expect(cache('def'))->toBe('ghi');
 
-    // different stores, same underlying connection. the prefix is set ON THE STORE
+    // different stores
     expect(cache()->store()->getStore() !== GlobalCache::store()->getStore())->toBeTrue();
-    expect(cache()->store()->getStore()->connection() === GlobalCache::store()->getStore()->connection())->toBeTrue();
+    if ($store === 'redis') {
+        // same underlying connection. the prefix is set ON THE STORE
+        expect(cache()->store()->getStore()->connection() === GlobalCache::store()->getStore()->connection())->toBeTrue();
+    } else {
+        // different connections
+        expect(cache()->store()->getStore()->getConnection()->getName())->toBe('tenant');
+        expect(GlobalCache::store()->getStore()->getConnection()->getName())->toBe('central');
+    }
 
     tenancy()->end();
     expect(GlobalCache::get('abc'))->toBe('xyz');
@@ -64,8 +76,9 @@ test('global cache manager stores data in global cache', function (string $boots
     tenancy()->initialize($tenant1);
     expect(cache('def'))->toBe('ghi');
 })->with([
-    CacheTagsBootstrapper::class,
-    CacheTenancyBootstrapper::class,
+    ['redis', [CacheTagsBootstrapper::class]],
+    ['redis', [CacheTenancyBootstrapper::class]],
+    ['database', [DatabaseTenancyBootstrapper::class, DatabaseCacheBootstrapper::class]],
 ]);
 
 test('global cache facade is not persistent', function () {
@@ -75,8 +88,6 @@ test('global cache facade is not persistent', function () {
 
     expect(spl_object_id(GlobalCache::getFacadeRoot()))->not()->toBe($oldId);
 });
-
-// todo0 add database cache bootstrapper to other tests
 
 test('global cache is always central', function (string $store, array $bootstrappers, string $initialCentralCall) {
     config([
@@ -161,15 +172,27 @@ test('global cache is always central', function (string $store, array $bootstrap
     'none',
 ]);
 
-test('the global_cache helper supports the same syntax as the cache helper', function (string $bootstrapper) {
-    config(['tenancy.bootstrappers' => [$bootstrapper]]);
+test('the global_cache helper supports the same syntax as the cache helper', function (string $store, array $bootstrappers) {
+    config([
+        'cache.default' => $store,
+        'tenancy.bootstrappers' => $bootstrappers,
+    ]);
+
+    if ($store === 'database') withTenantDatabases(true);
 
     $tenant = Tenant::create();
     $tenant->enter();
 
-    // different stores, same underlying connection. the prefix is set ON THE STORE
-    expect(cache()->store()->getStore() !== global_cache()->store()->getStore())->toBeTrue();
-    expect(cache()->store()->getStore()->connection() === global_cache()->store()->getStore()->connection())->toBeTrue();
+    // different stores
+    expect(cache()->store()->getStore() !== GlobalCache::store()->getStore())->toBeTrue();
+    if ($store === 'redis') {
+        // same underlying connection. the prefix is set ON THE STORE
+        expect(cache()->store()->getStore()->connection() === global_cache()->store()->getStore()->connection())->toBeTrue();
+    } else {
+        // different connections
+        expect(cache()->store()->getStore()->getConnection()->getName())->toBe('tenant');
+        expect(global_cache()->store()->getStore()->getConnection()->getName())->toBe('central');
+    }
 
     expect(cache('foo'))->toBe(null); // tenant cache is empty
 
@@ -181,6 +204,7 @@ test('the global_cache helper supports the same syntax as the cache helper', fun
 
     expect(cache('foo'))->toBe(null); // tenant cache is not affected
 })->with([
-    CacheTagsBootstrapper::class,
-    CacheTenancyBootstrapper::class,
+    ['redis', [CacheTagsBootstrapper::class]],
+    ['redis', [CacheTenancyBootstrapper::class]],
+    ['database', [DatabaseTenancyBootstrapper::class, DatabaseCacheBootstrapper::class]],
 ]);
