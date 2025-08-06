@@ -350,6 +350,60 @@ test('tokens are cleaned up when in wrong tenant context before aborting', funct
     expect(ImpersonationToken::find($token->token))->toBeNull();
 });
 
+test('expired impersonation tokens can be cleaned up using a command', function () {
+    $tenant = Tenant::create();
+    migrateTenants();
+    $user = $tenant->run(function () {
+        return ImpersonationUser::create([
+            'name' => 'foo',
+            'email' => 'foo@bar',
+            'password' => bcrypt('password'),
+        ]);
+    });
+
+    // Create tokens
+    $oldToken = tenancy()->impersonate($tenant, $user->id, '/dashboard');
+    $activeToken = tenancy()->impersonate($tenant, $user->id, '/dashboard');
+
+    // Make one of the tokens expired by updating its created_at
+    $oldToken->update([
+        'created_at' => Carbon::now()->subSeconds(UserImpersonation::$ttl + 10),
+    ]);
+
+    // Both tokens exist
+    expect(ImpersonationToken::find($activeToken->token))->not()->toBeNull();
+    expect(ImpersonationToken::find($oldToken->token))->not()->toBeNull();
+
+    pest()->artisan('tenants:clear-expired-impersonation-tokens')
+        ->assertExitCode(0);
+
+    // The expired token was deleted
+    expect(ImpersonationToken::find($oldToken->token))->toBeNull();
+    // The active token still exists
+    expect(ImpersonationToken::find($activeToken->token))->not()->toBeNull();
+
+    // Update the active token to make it expired according to the default ttl (60s)
+    $activeToken->update([
+        'created_at' => Carbon::now()->subSeconds(70),
+    ]);
+
+    // The --ttl option can be used to specify a custom TTL instead of updating UserImpersonation::$ttl.
+    // The passed ttl will be used in place of the default ttl,
+    // and with ttl set to 80s, the active token should not be deleted
+    pest()->artisan('tenants:clear-expired-impersonation-tokens', [
+        '--ttl' => 80,
+    ])->assertExitCode(0);
+
+    expect(ImpersonationToken::find($activeToken->token))->not()->toBeNull();
+
+    // With ttl set to 40s, the active token should be deleted
+    pest()->artisan('tenants:clear-expired-impersonation-tokens', [
+        '--ttl' => 40,
+    ])->assertExitCode(0);
+
+    expect(ImpersonationToken::find($activeToken->token))->toBeNull();
+});
+
 function migrateTenants()
 {
     pest()->artisan('tenants:migrate')->assertExitCode(0);
