@@ -29,6 +29,8 @@ beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
+    DatabaseCacheBootstrapper::$stores = null;
+
     config([
         'cache.stores.database.connection' => 'central', // Explicitly set cache DB connection name in config
         'cache.stores.database.lock_connection' => 'central', // Also set lock connection name
@@ -38,6 +40,10 @@ beforeEach(function () {
             DatabaseCacheBootstrapper::class, // Used instead of CacheTenancyBootstrapper
         ],
     ]);
+});
+
+afterEach(function () {
+    DatabaseCacheBootstrapper::$stores = null;
 });
 
 test('DatabaseCacheBootstrapper switches the database cache store connections correctly', function () {

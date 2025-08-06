@@ -52,8 +52,6 @@ class DatabaseCacheBootstrapper implements TenancyBootstrapper
             $this->originalConnections[$storeName] = $this->config->get("cache.stores.{$storeName}.connection");
             $this->originalLockConnections[$storeName] = $this->config->get("cache.stores.{$storeName}.lock_connection");
 
-            // todo0 does this handle *already resolved* stores?
-
             $this->config->set("cache.stores.{$storeName}.connection", 'tenant');
             $this->config->set("cache.stores.{$storeName}.lock_connection", 'tenant');
 
@@ -64,17 +62,18 @@ class DatabaseCacheBootstrapper implements TenancyBootstrapper
         // pull it into the closure, and execute it there. But such a naive approach would lead to existing callbacks
         // *from here* being executed repeatedly in a loop on reinitialization. For that reason we do not do that
         // (this is our only use of $adjustCacheManagerUsing anyway) but ideally at some point we'd have a better solution.
-        TenancyServiceProvider::$adjustCacheManagerUsing = function (CacheManager $manager) use ($stores) {
-            foreach ($stores as $storeName) {
+        $originalConnections = array_combine($stores, array_map(fn (string $storeName) => [
+            'connection' => $this->originalConnections[$storeName] ?? config('tenancy.database.central_connection'),
+            'lockConnection' => $this->originalLockConnections[$storeName] ?? config('tenancy.database.central_connection'),
+        ], $stores));
+
+        TenancyServiceProvider::$adjustCacheManagerUsing = static function (CacheManager $manager) use ($originalConnections) {
+            foreach ($originalConnections as $storeName => $connections) {
                 // @phpstan-ignore-next-line method.notFound
-                $manager->store($storeName)->getStore()->setConnection(
-                    DB::connection($this->originalConnections[$storeName] ?? config('tenancy.database.central_connection'))
-                );
+                $manager->store($storeName)->getStore()->setConnection(DB::connection($connections['connection']));
 
                 // @phpstan-ignore-next-line method.notFound
-                $manager->store($storeName)->getStore()->setLockConnection(
-                    DB::connection($this->originalLockConnections[$storeName] ?? config('tenancy.database.central_connection'))
-                );
+                $manager->store($storeName)->getStore()->setLockConnection(DB::connection($connections['lockConnection']));
             }
         };
     }

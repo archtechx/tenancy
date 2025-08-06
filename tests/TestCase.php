@@ -39,8 +39,8 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
         ini_set('memory_limit', '1G');
 
-        TenancyServiceProvider::$configure = null;
         TenancyServiceProvider::$registerForgetTenantParameterListener = true;
+        TenancyServiceProvider::$migrateFreshOverride = true;
         TenancyServiceProvider::$adjustCacheManagerUsing = null;
 
         Redis::connection('default')->flushdb();
