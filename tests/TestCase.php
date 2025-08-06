@@ -39,6 +39,10 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
         ini_set('memory_limit', '1G');
 
+        TenancyServiceProvider::$configure = null;
+        TenancyServiceProvider::$registerForgetTenantParameterListener = true;
+        TenancyServiceProvider::$adjustCacheManagerUsing = null;
+
         Redis::connection('default')->flushdb();
         Redis::connection('cache')->flushdb();
         Artisan::call('cache:clear memcached'); // flush memcached

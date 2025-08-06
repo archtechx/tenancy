@@ -52,6 +52,8 @@ class DatabaseCacheBootstrapper implements TenancyBootstrapper
             $this->originalConnections[$storeName] = $this->config->get("cache.stores.{$storeName}.connection");
             $this->originalLockConnections[$storeName] = $this->config->get("cache.stores.{$storeName}.lock_connection");
 
+            // todo0 does this handle *already resolved* stores?
+
             $this->config->set("cache.stores.{$storeName}.connection", 'tenant');
             $this->config->set("cache.stores.{$storeName}.lock_connection", 'tenant');
 
@@ -64,10 +66,12 @@ class DatabaseCacheBootstrapper implements TenancyBootstrapper
         // (this is our only use of $adjustCacheManagerUsing anyway) but ideally at some point we'd have a better solution.
         TenancyServiceProvider::$adjustCacheManagerUsing = function (CacheManager $manager) use ($stores) {
             foreach ($stores as $storeName) {
+                // @phpstan-ignore-next-line method.notFound
                 $manager->store($storeName)->getStore()->setConnection(
                     DB::connection($this->originalConnections[$storeName] ?? config('tenancy.database.central_connection'))
                 );
 
+                // @phpstan-ignore-next-line method.notFound
                 $manager->store($storeName)->getStore()->setLockConnection(
                     DB::connection($this->originalLockConnections[$storeName] ?? config('tenancy.database.central_connection'))
                 );
@@ -83,6 +87,8 @@ class DatabaseCacheBootstrapper implements TenancyBootstrapper
 
             $this->cache->purge($storeName);
         }
+
+        TenancyServiceProvider::$adjustCacheManagerUsing = null;
     }
 
     /**
