@@ -7,11 +7,11 @@ namespace Stancl\Tenancy\Bootstrappers;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
-use Illuminate\Support\Str;
 
 /**
  * Makes the app use TenancyUrlGenerator (instead of Illuminate\Routing\UrlGenerator) which:
