@@ -97,6 +97,9 @@ class TenancyServiceProvider extends ServiceProvider
             // When we use the DatabaseTenancyBootstrapper, it changes the default connection,
             // and therefore the connection of the database store that will be created when
             // this new CacheManager is instantiated again.
+            //
+            // For that reason, we also adjust the relevant stores on this new CacheManager
+            // using the callback below. It is set by DatabaseCacheBootstrapper.
             $manager = new CacheManager($app);
 
             if (static::$adjustCacheManagerUsing !== null) {

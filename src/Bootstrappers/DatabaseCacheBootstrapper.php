@@ -6,6 +6,7 @@ namespace Stancl\Tenancy\Bootstrappers;
 
 use Exception;
 use Illuminate\Cache\CacheManager;
+use Illuminate\Cache\DatabaseStore;
 use Illuminate\Config\Repository;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
@@ -13,10 +14,10 @@ use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\TenancyServiceProvider;
 
 /**
- * This bootstrapper allows cache to be stored in the tenant databases by switching
- * the database cache store's (and cache locks) connection.
+ * This bootstrapper allows cache to be stored in tenant databases by switching the database
+ * connection used by cache stores that use the database driver.
  *
- * Intended to be used with database driver-based cache stores, instead of CacheTenancyBootstrapper.
+ * Can be used instead of CacheTenancyBootstrapper.
  *
  * On bootstrap(), all database cache stores' connections are set to 'tenant'
  * and the database cache stores are purged from the CacheManager's resolved stores.
@@ -69,11 +70,11 @@ class DatabaseCacheBootstrapper implements TenancyBootstrapper
 
         TenancyServiceProvider::$adjustCacheManagerUsing = static function (CacheManager $manager) use ($originalConnections) {
             foreach ($originalConnections as $storeName => $connections) {
-                // @phpstan-ignore-next-line method.notFound
-                $manager->store($storeName)->getStore()->setConnection(DB::connection($connections['connection']));
+                /** @var DatabaseStore $store */
+                $store = $manager->store($storeName)->getStore();
 
-                // @phpstan-ignore-next-line method.notFound
-                $manager->store($storeName)->getStore()->setLockConnection(DB::connection($connections['lockConnection']));
+                $store->setConnection(DB::connection($connections['connection']));
+                $store->setLockConnection(DB::connection($connections['lockConnection']));
             }
         };
     }
