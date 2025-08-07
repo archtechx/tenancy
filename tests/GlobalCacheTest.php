@@ -46,7 +46,7 @@ test('global cache manager stores data in global cache', function (string $store
     expect(GlobalCache::get('foo'))->toBe('bar');
 
     GlobalCache::put('abc', 'xyz');
-    cache(['def' => 'ghi'], 10);
+    cache(['def' => 'ghi']);
     expect(cache('def'))->toBe('ghi');
 
     // different stores
@@ -70,7 +70,7 @@ test('global cache manager stores data in global cache', function (string $store
     expect(GlobalCache::get('abc'))->toBe('xyz');
     expect(GlobalCache::get('foo'))->toBe('bar');
     expect(cache('def'))->toBe(null);
-    cache(['def' => 'xxx'], 1);
+    cache(['def' => 'xxx']);
     expect(cache('def'))->toBe('xxx');
 
     tenancy()->initialize($tenant1);
