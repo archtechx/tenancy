@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Features;
 
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Vite;
 use Stancl\Tenancy\Contracts\Feature;
-use Stancl\Tenancy\Overrides\Vite;
 use Stancl\Tenancy\Tenancy;
 
 class ViteBundler implements Feature
@@ -21,6 +21,8 @@ class ViteBundler implements Feature
 
     public function bootstrap(Tenancy $tenancy): void
     {
-        $this->app->singleton(\Illuminate\Foundation\Vite::class, Vite::class);
+        Vite::createAssetPathsUsing(function ($path, $secure = null) {
+            return global_asset($path);
+        });
     }
 }
