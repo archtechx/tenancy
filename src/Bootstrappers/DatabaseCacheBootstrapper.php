@@ -19,20 +19,33 @@ use Stancl\Tenancy\TenancyServiceProvider;
  *
  * Can be used instead of CacheTenancyBootstrapper.
  *
- * On bootstrap(), all database cache stores' connections are set to 'tenant'
- * and the database cache stores are purged from the CacheManager's resolved stores.
- * This forces the manager to resolve new instances of the database stores created with the 'tenant' DB connection on the next cache operation.
+ * By default, this bootstrapper scopes ALL cache stores that use the database driver. If you only
+ * want to scope SOME stores, set the static $stores property to an array of names of the stores
+ * you want to scope. These stores must use 'database' as their driver.
  *
- * On revert(), the cache stores' connections are reverted to the originally used ones (usually 'central'), and again,
- * the database cache stores are purged from the CacheManager's resolved stores so that the originally used ones are resolved on the next cache operation.
+ * Notably, this bootstrapper sets TenancyServiceProvider::$adjustCacheManagerUsing to a callback
+ * that ensures all affected stores still use the central connection when accessed via global cache
+ * (typicaly the GlobalCache facade or global_cache() helper).
  */
 class DatabaseCacheBootstrapper implements TenancyBootstrapper
 {
     /**
-     * Cache stores to process. If null, all stores with 'database' driver will be processed.
-     * If array, only the specified stores will be processed (with driver validation).
+     * Cache stores to scope.
+     *
+     * If null, all cache stores that use the database driver will be scoped.
+     * If an array, only the specified stores will be scoped. These all must use the database driver.
      */
     public static array|null $stores = null;
+
+    /**
+     * Should scoped stores be adjusted on the global cache manager to use the central connection.
+     *
+     * You may want to set this to false if you don't use the built-in global cache and instead provide
+     * a list of stores to scope (static::$stores), with your own global store excluded that you then
+     * use manually. But in such a scenario you likely wouldn't be using global cache at all which means
+     * the callbacks for adjusting it wouldn't be executed in the first place.
+     */
+    public static bool $adjustGlobalCacheManager = true;
 
     public function __construct(
         protected Repository $config,
@@ -47,7 +60,7 @@ class DatabaseCacheBootstrapper implements TenancyBootstrapper
             throw new Exception('DatabaseCacheBootstrapper must run after DatabaseTenancyBootstrapper.');
         }
 
-        $stores = $this->getDatabaseCacheStores();
+        $stores = $this->scopedStoreNames();
 
         foreach ($stores as $storeName) {
             $this->originalConnections[$storeName] = $this->config->get("cache.stores.{$storeName}.connection");
@@ -59,24 +72,26 @@ class DatabaseCacheBootstrapper implements TenancyBootstrapper
             $this->cache->purge($storeName);
         }
 
-        // Preferably we'd try to respect the original value of this static property -- store it in a variable,
-        // pull it into the closure, and execute it there. But such a naive approach would lead to existing callbacks
-        // *from here* being executed repeatedly in a loop on reinitialization. For that reason we do not do that
-        // (this is our only use of $adjustCacheManagerUsing anyway) but ideally at some point we'd have a better solution.
-        $originalConnections = array_combine($stores, array_map(fn (string $storeName) => [
-            'connection' => $this->originalConnections[$storeName] ?? config('tenancy.database.central_connection'),
-            'lockConnection' => $this->originalLockConnections[$storeName] ?? config('tenancy.database.central_connection'),
-        ], $stores));
+        if (static::$adjustGlobalCacheManager) {
+            // Preferably we'd try to respect the original value of this static property -- store it in a variable,
+            // pull it into the closure, and execute it there. But such a naive approach would lead to existing callbacks
+            // *from here* being executed repeatedly in a loop on reinitialization. For that reason we do not do that
+            // (this is our only use of $adjustCacheManagerUsing anyway) but ideally at some point we'd have a better solution.
+            $originalConnections = array_combine($stores, array_map(fn (string $storeName) => [
+                'connection' => $this->originalConnections[$storeName] ?? config('tenancy.database.central_connection'),
+                'lockConnection' => $this->originalLockConnections[$storeName] ?? config('tenancy.database.central_connection'),
+            ], $stores));
 
-        TenancyServiceProvider::$adjustCacheManagerUsing = static function (CacheManager $manager) use ($originalConnections) {
-            foreach ($originalConnections as $storeName => $connections) {
-                /** @var DatabaseStore $store */
-                $store = $manager->store($storeName)->getStore();
+            TenancyServiceProvider::$adjustCacheManagerUsing = static function (CacheManager $manager) use ($originalConnections) {
+                foreach ($originalConnections as $storeName => $connections) {
+                    /** @var DatabaseStore $store */
+                    $store = $manager->store($storeName)->getStore();
 
-                $store->setConnection(DB::connection($connections['connection']));
-                $store->setLockConnection(DB::connection($connections['lockConnection']));
-            }
-        };
+                    $store->setConnection(DB::connection($connections['connection']));
+                    $store->setLockConnection(DB::connection($connections['lockConnection']));
+                }
+            };
+        }
     }
 
     public function revert(): void
@@ -91,24 +106,18 @@ class DatabaseCacheBootstrapper implements TenancyBootstrapper
         TenancyServiceProvider::$adjustCacheManagerUsing = null;
     }
 
-    /**
-     * Get the names of cache stores that use the database driver.
-     */
-    protected function getDatabaseCacheStores(): array
+    protected function scopedStoreNames(): array
     {
-        // Get all stores specified in the static $stores property.
-        // If they don't have the database driver, ignore them.
-        if (static::$stores !== null) {
-            return array_filter(static::$stores, function ($storeName) {
+        return array_filter(
+            static::$stores ?? array_keys($this->config->get('cache.stores', [])),
+            function ($storeName) {
                 $store = $this->config->get("cache.stores.{$storeName}");
 
-                return $store && ($store['driver'] ?? null) === 'database';
-            });
-        }
+                if (! $store) return false;
+                if (! isset($store['driver'])) return false;
 
-        // Get all stores with database driver if $stores is null
-        return array_keys(array_filter($this->config->get('cache.stores', []), function ($store) {
-            return ($store['driver'] ?? null) === 'database';
-        }));
+                return $store['driver'] === 'database';
+            }
+        );
     }
 }
