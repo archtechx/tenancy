@@ -17,6 +17,9 @@ abstract class CachedTenantResolver implements TenantResolver
 
     public function __construct(Application $app)
     {
+        // globalCache should generally not be injected, however in this case
+        // the class is always created from scratch when calling invalidateCache()
+        // meaning the global cache stores are also resolved from scratch.
         $this->cache = $app->make('globalCache')->store(static::cacheStore());
     }
 
