@@ -18,7 +18,6 @@ use Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByRequestDataException;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
-
 use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
@@ -78,6 +77,40 @@ test('tenancy url generator can prefix route names passed to the route helper', 
     tenancy()->end();
 
     expect(route('home'))->toBe('http://localhost/central/home');
+});
+
+test('tenancy url generator inherits scheme from original url generator', function() {
+    config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);
+
+    Route::get('/home', fn () => '')->name('home');
+    $tenant = Tenant::create();
+
+    // Force the original URL generator to use HTTPS
+    app('url')->forceScheme('https');
+
+    // Original generator uses HTTPS
+    expect(app('url')->formatScheme())->toBe('https://');
+
+    // Check that TenancyUrlGenerator inherits the HTTPS scheme
+    tenancy()->initialize($tenant);
+    expect(app('url')->formatScheme())->toBe('https://'); // Should inherit HTTPS
+    expect(route('home'))->toBe('https://localhost/home');
+
+    tenancy()->end();
+
+    // After ending tenancy, the original generator should still have the original scheme (HTTPS)
+    expect(route('home'))->toBe('https://localhost/home');
+
+    // Use HTTP scheme
+    app('url')->forceScheme('http');
+    expect(app('url')->formatScheme())->toBe('http://');
+
+    tenancy()->initialize($tenant);
+    expect(app('url')->formatScheme())->toBe('http://'); // Should inherit scheme (HTTP)
+    expect(route('home'))->toBe('http://localhost/home');
+
+    tenancy()->end();
+    expect(route('home'))->toBe('http://localhost/home');
 });
 
 test('path identification route helper behavior', function (bool $addTenantParameterToDefaults, bool $passTenantParameterToRoutes) {
