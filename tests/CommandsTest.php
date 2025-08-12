@@ -311,6 +311,21 @@ test('migrate fresh command works', function () {
     expect(DB::table('users')->exists())->toBeFalse();
 });
 
+test('migrate fresh command respects force option in production', function () {
+    // Set environment to production
+    app()->detectEnvironment(fn() => 'production');
+
+    Tenant::create();
+
+    // Without --force in production, command should prompt for confirmation
+    pest()->artisan('tenants:migrate-fresh')
+        ->expectsConfirmation('Are you sure you want to run this command?');
+
+    // With --force, command should succeed without prompting
+    pest()->artisan('tenants:migrate-fresh', ['--force' => true])
+        ->assertSuccessful();
+});
+
 test('run command with array of tenants works', function () {
     $tenantId1 = Tenant::create()->getTenantKey();
     $tenantId2 = Tenant::create()->getTenantKey();
