@@ -27,6 +27,7 @@ use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
 use function Stancl\Tenancy\Tests\pest;
+use Stancl\Tenancy\Events\MigratingDatabase;
 
 beforeEach(function () {
     if (file_exists($schemaPath = 'tests/Etc/tenant-schema-test.dump')) {
@@ -93,6 +94,60 @@ test('migrate command works with tenants option', function () {
 
     tenancy()->initialize($tenant);
     expect(Schema::hasTable('users'))->toBeTrue();
+});
+
+test('migrate command uses the passed database option as the template tenant connection', function () {
+    $originalTemplateConnection = config('tenancy.database.template_tenant_connection');
+
+    // Add a custom connection that will be used as the template for the tenant connection
+    // Identical to the default (mysql), just with different charset and collation
+    config(['database.connections.custom_connection' => [
+        "driver" => "mysql",
+        "url" => "",
+        "host" => "mysql",
+        "port" => "3306",
+        "database" => "main",
+        "username" => "root",
+        "password" => "password",
+        "unix_socket" => "",
+        "charset" => "latin1", // Different from the default (utf8mb4)
+        "collation" => "latin1_swedish_ci", // Different from the default (utf8mb4_unicode_ci)
+        "prefix" => "",
+        "prefix_indexes" => true,
+        "strict" => true,
+        "engine" => null,
+        "options" => []
+    ]]);
+
+    $templateConnectionDuringMigration = null;
+    $tenantConnectionDuringMigration = null;
+
+    Event::listen(MigratingDatabase::class, function() use (&$templateConnectionDuringMigration, &$tenantConnectionDuringMigration) {
+        $templateConnectionDuringMigration = config('tenancy.database.template_tenant_connection');
+        $tenantConnectionDuringMigration = DB::connection('tenant')->getConfig();
+    });
+
+    // The original tenant template connection config remains default
+    expect(config('tenancy.database.template_tenant_connection'))->toBe($originalTemplateConnection);
+
+    Tenant::create();
+
+    // The original template connection is used when the --database option is not passed
+    pest()->artisan('tenants:migrate');
+    expect($templateConnectionDuringMigration)->toBe($originalTemplateConnection);
+
+    Tenant::create();
+
+    // The migrate command temporarily uses the connection passed in the --database option
+    pest()->artisan('tenants:migrate', ['--database' => 'custom_connection']);
+    expect($templateConnectionDuringMigration)->toBe('custom_connection');
+
+    // The tenant connection during migration actually used custom_connection's config
+    expect($tenantConnectionDuringMigration['charset'])->toBe('latin1');
+    expect($tenantConnectionDuringMigration['collation'])->toBe('latin1_swedish_ci');
+
+    // The tenant template connection config is restored to the original after migrating
+    expect(config('tenancy.database.template_tenant_connection'))->toBe($originalTemplateConnection);
 });
 
 test('migrate command only throws exceptions if skip-failing is not passed', function() {
