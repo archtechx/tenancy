@@ -24,7 +24,11 @@ class Tenancy
      */
     public Tenant|null $tenant = null;
 
-    // todo@docblock
+    /**
+     * Custom callback for providing a list of bootstrappers to use.
+     * When this is null, config('tenancy.bootstrappers') is used.
+     * @var ?Closure(): list<TenancyBootstrapper>
+     */
     public ?Closure $getBootstrappersUsing = null;
 
     /** Is tenancy fully initialized? */
@@ -131,12 +135,12 @@ class Tenancy
     /** @return TenancyBootstrapper[] */
     public function getBootstrappers(): array
     {
-        // If no callback for getting bootstrappers is set, we just return all of them.
+        // If no callback for getting bootstrappers is set, we return the ones in config.
         $resolve = $this->getBootstrappersUsing ?? function (Tenant $tenant) {
             return config('tenancy.bootstrappers');
         };
 
-        // Here We instantiate the bootstrappers and return them.
+        // Here we instantiate the bootstrappers and return them.
         return array_map('app', $resolve($this->tenant));
     }
 

@@ -11,8 +11,6 @@ use Stancl\Tenancy\Concerns\UsableWithEarlyIdentification;
 use Stancl\Tenancy\Enums\RouteMode;
 
 /**
- * todo@name come up with a better name.
- *
  * Prevents accessing central domains in the tenant context/tenant domains in the central context.
  * The access isn't prevented if the request is trying to access a route flagged as 'universal',
  * or if this middleware should be skipped.
