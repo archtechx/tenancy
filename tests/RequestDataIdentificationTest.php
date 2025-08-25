@@ -9,6 +9,7 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use function Stancl\Tenancy\Tests\pest;
+use Illuminate\Cookie\CookieValuePrefix;
 
 beforeEach(function () {
     config([
@@ -88,6 +89,11 @@ test('cookie identification works', function (string|null $tenantModelColumn) {
     // Default cookie name
     $this->withoutExceptionHandling()->withUnencryptedCookie('tenant', $payload)->get('test')->assertSee($tenant->id);
 
+    // Manually encrypted cookie (encrypt the cookie exactly like MakesHttpRequests does in prepareCookiesForRequest())
+    $encryptedPayload = encrypt(CookieValuePrefix::create('tenant', app('encrypter')->getKey()) . $payload, false);
+
+    $this->withoutExceptionHandling()->withUnencryptedCookie('tenant', $encryptedPayload)->get('test')->assertSee($tenant->id);
+
     // Custom cookie name
     config(['tenancy.identification.resolvers.' . RequestDataTenantResolver::class . '.cookie' => 'custom_tenant_id']);
     $this->withoutExceptionHandling()->withUnencryptedCookie('custom_tenant_id', $payload)->get('test')->assertSee($tenant->id);
@@ -97,10 +103,7 @@ test('cookie identification works', function (string|null $tenantModelColumn) {
     expect(fn () => $this->withoutExceptionHandling()->withUnencryptedCookie('tenant', $payload)->get('test'))->toThrow(TenantCouldNotBeIdentifiedByRequestDataException::class);
 })->with([null, 'slug']);
 
-// todo@tests encrypted cookie
-
 test('an exception is thrown when no tenant data is provided in the request', function () {
     pest()->expectException(TenantCouldNotBeIdentifiedByRequestDataException::class);
     $this->withoutExceptionHandling()->get('test');
 });
-

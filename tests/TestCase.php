@@ -23,8 +23,10 @@ use Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastingConfigBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastChannelPrefixBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
-use function Stancl\Tenancy\Tests\pest;
 use Stancl\Tenancy\Bootstrappers\LogTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\DatabaseCacheBootstrapper;
+
+use function Stancl\Tenancy\Tests\pest;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
@@ -38,6 +40,10 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         parent::setUp();
 
         ini_set('memory_limit', '1G');
+
+        TenancyServiceProvider::$registerForgetTenantParameterListener = true;
+        TenancyServiceProvider::$migrateFreshOverride = true;
+        TenancyServiceProvider::$adjustCacheManagerUsing = null;
 
         Redis::connection('default')->flushdb();
         Redis::connection('cache')->flushdb();
@@ -181,6 +187,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         // to manually register bootstrappers as singletons here.
         $app->singleton(RedisTenancyBootstrapper::class);
         $app->singleton(CacheTenancyBootstrapper::class);
+        $app->singleton(DatabaseCacheBootstrapper::class);
         $app->singleton(BroadcastingConfigBootstrapper::class);
         $app->singleton(BroadcastChannelPrefixBootstrapper::class);
         $app->singleton(PostgresRLSBootstrapper::class);

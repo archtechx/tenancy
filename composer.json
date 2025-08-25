@@ -21,7 +21,7 @@
         "illuminate/support": "^12.0",
         "laravel/tinker": "^2.0",
         "ramsey/uuid": "^4.7.3",
-        "stancl/jobpipeline": "2.0.0-rc5",
+        "stancl/jobpipeline": "2.0.0-rc6",
         "stancl/virtualcolumn": "^1.5.0",
         "spatie/invade": "*",
         "laravel/prompts": "0.*"
@@ -63,7 +63,14 @@
         "docker-up": "docker compose up -d",
         "docker-down": "docker compose down",
         "docker-restart": "docker compose down && docker compose up -d",
-        "docker-rebuild": "PHP_VERSION=8.4 docker compose up -d --no-deps --build",
+        "docker-rebuild": [
+            "Composer\\Config::disableProcessTimeout",
+            "PHP_VERSION=8.4 docker compose up -d --no-deps --build"
+        ],
+        "docker-rebuild-with-xdebug": [
+            "Composer\\Config::disableProcessTimeout",
+            "PHP_VERSION=8.4 XDEBUG_ENABLED=true docker compose up -d --no-deps --build"
+        ],
         "docker-m1": "ln -s docker-compose-m1.override.yml docker-compose.override.yml",
         "testbench-unlink": "rm ./vendor/orchestra/testbench-core/laravel/vendor",
         "testbench-link": "ln -s /var/www/html/vendor ./vendor/orchestra/testbench-core/laravel/vendor",
@@ -72,10 +79,22 @@
         "phpstan": "vendor/bin/phpstan --memory-limit=256M",
         "phpstan-pro": "vendor/bin/phpstan --memory-limit=256M --pro",
         "cs": "PHP_CS_FIXER_IGNORE_ENV=1 php-cs-fixer fix --config=.php-cs-fixer.php",
-        "test": "./test --no-coverage",
-        "test-full": "./test",
-        "act": "act -j tests --matrix 'laravel:^11.0'",
-        "act-input": "act -j tests --matrix 'laravel:^11.0' --input"
+        "test": [
+            "Composer\\Config::disableProcessTimeout",
+            "./test --no-coverage"
+        ],
+        "test-full": [
+            "Composer\\Config::disableProcessTimeout",
+            "./test"
+        ],
+        "act": [
+            "Composer\\Config::disableProcessTimeout",
+            "act -j tests --matrix 'laravel:^11.0'"
+        ],
+        "act-input": [
+            "Composer\\Config::disableProcessTimeout",
+            "act -j tests --matrix 'laravel:^11.0' --input"
+        ]
     },
     "minimum-stability": "dev",
     "prefer-stable": true,

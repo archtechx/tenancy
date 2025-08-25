@@ -30,4 +30,16 @@ RUN echo "apc.enable_cli=1" >> "$PHP_INI_DIR/php.ini"
 # Only used on GHA
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
+# Conditionally install and configure Xdebug (last step for faster rebuilds)
+ARG XDEBUG_ENABLED=false
+RUN if [ "$XDEBUG_ENABLED" = "true" ]; then \
+    pecl install xdebug && docker-php-ext-enable xdebug && \
+    echo "xdebug.mode=debug" >> "$PHP_INI_DIR/conf.d/docker-php-ext-xdebug.ini" && \
+    echo "xdebug.start_with_request=yes" >> "$PHP_INI_DIR/conf.d/docker-php-ext-xdebug.ini" && \
+    echo "xdebug.client_host=host.docker.internal" >> "$PHP_INI_DIR/conf.d/docker-php-ext-xdebug.ini" && \
+    echo "xdebug.client_port=9003" >> "$PHP_INI_DIR/conf.d/docker-php-ext-xdebug.ini" && \
+    echo "xdebug.discover_client_host=true" >> "$PHP_INI_DIR/conf.d/docker-php-ext-xdebug.ini" && \
+    echo "xdebug.log=/var/log/xdebug.log" >> "$PHP_INI_DIR/conf.d/docker-php-ext-xdebug.ini"; \
+fi
+
 WORKDIR /var/www/html

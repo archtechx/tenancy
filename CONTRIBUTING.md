@@ -43,3 +43,9 @@ If you need to rebuild the container for any reason (e.g. a change in `Dockerfil
 ## PHPStan
 
 Use `composer phpstan` to run our phpstan suite.
+
+## PhpStorm
+
+Create `.env` with `PROJECT_PATH=/full/path/to/this/directory`. Configure a Docker-based interpreter for tests (with exec, not run).
+
+If you want to use XDebug, use `composer docker-rebuild-with-xdebug`.

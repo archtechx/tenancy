@@ -20,6 +20,11 @@ use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 class TenancyServiceProvider extends ServiceProvider
 {
     public static Closure|null $configure = null;
+    public static bool $registerForgetTenantParameterListener = true;
+    public static bool $migrateFreshOverride = true;
+
+    /** @internal */
+    public static Closure|null $adjustCacheManagerUsing = null;
 
     /* Register services. */
     public function register(): void
@@ -79,7 +84,29 @@ class TenancyServiceProvider extends ServiceProvider
         });
 
         $this->app->bind('globalCache', function ($app) {
-            return new CacheManager($app);
+            // We create a separate CacheManager to be used for "global" cache -- cache that
+            // is always central, regardless of the current context.
+            //
+            // Importantly, we use a regular binding here, not a singleton. Thanks to that,
+            // any time we resolve this cache manager, we get a *fresh* instance -- an instance
+            // that was not affected by any scoping logic.
+            //
+            // This works great for cache stores that are *directly* scoped, like Redis or
+            // any other tagged or prefixed stores, but it doesn't work for the database driver.
+            //
+            // When we use the DatabaseTenancyBootstrapper, it changes the default connection,
+            // and therefore the connection of the database store that will be created when
+            // this new CacheManager is instantiated again.
+            //
+            // For that reason, we also adjust the relevant stores on this new CacheManager
+            // using the callback below. It is set by DatabaseCacheBootstrapper.
+            $manager = new CacheManager($app);
+
+            if (static::$adjustCacheManagerUsing !== null) {
+                (static::$adjustCacheManagerUsing)($manager);
+            }
+
+            return $manager;
         });
     }
 
@@ -104,9 +131,11 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\CreateUserWithRLSPolicies::class,
         ]);
 
-        $this->app->extend(FreshCommand::class, function ($_, $app) {
-            return new Commands\MigrateFreshOverride($app['migrator']);
-        });
+        if (static::$migrateFreshOverride) {
+            $this->app->extend(FreshCommand::class, function ($_, $app) {
+                return new Commands\MigrateFreshOverride($app['migrator']);
+            });
+        }
 
         $this->publishes([
             __DIR__ . '/../assets/config.php' => config_path('tenancy.php'),
@@ -152,6 +181,14 @@ class TenancyServiceProvider extends ServiceProvider
         Route::middlewareGroup('tenant', []);
         Route::middlewareGroup('central', []);
 
-        Event::listen(RouteMatched::class, ForgetTenantParameter::class);
+        if (static::$registerForgetTenantParameterListener) {
+            // Ideally, this listener would only be registered when kernel-level
+            // path identification is used, however doing that check reliably
+            // at this point in the lifecycle isn't feasible. For that reason,
+            // rather than doing an "outer" check, we do an "inner" check within
+            // that listener. That also means the listener needs to be registered
+            // always. We allow for this to be controlled using a static property.
+            Event::listen(RouteMatched::class, ForgetTenantParameter::class);
+        }
     }
 }

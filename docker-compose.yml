@@ -2,6 +2,8 @@ services:
     test:
         build:
             context: .
+            args:
+                XDEBUG_ENABLED: ${XDEBUG_ENABLED:-false}
         depends_on:
             mysql:
                 condition: service_healthy
@@ -18,7 +20,8 @@ services:
             dynamodb:
                 condition: service_healthy
         volumes:
-            - .:/var/www/html:cached
+            - .:${PROJECT_PATH:-$PWD}:cached
+        working_dir: ${PROJECT_PATH:-$PWD}
         environment:
             DOCKER: 1
             DB_PASSWORD: password
@@ -30,6 +33,8 @@ services:
             TENANCY_TEST_SQLSRV_HOST: mssql
             TENANCY_TEST_SQLSRV_USERNAME: sa
             TENANCY_TEST_SQLSRV_PASSWORD: P@ssword
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
         stdin_open: true
         tty: true
     mysql:
