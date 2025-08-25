@@ -236,11 +236,6 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         $app->singleton('Illuminate\Contracts\Console\Kernel', Etc\Console\ConsoleKernel::class);
     }
 
-    public function randomString(int $length = 10)
-    {
-        return substr(str_shuffle(str_repeat($x = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', (int) (ceil($length / strlen($x))))), 1, $length);
-    }
-
     public function assertArrayIsSubset($subset, $array, string $message = ''): void
     {
         parent::assertTrue(array_intersect($subset, $array) == $subset, $message);

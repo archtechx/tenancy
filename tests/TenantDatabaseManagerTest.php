@@ -43,7 +43,7 @@ test('databases can be created and deleted', function ($driver, $databaseManager
         "tenancy.database.managers.$driver" => $databaseManager,
     ]);
 
-    $name = 'db' . pest()->randomString();
+    $name = 'db' . Str::random(10);
 
     $manager = app($databaseManager);
 
@@ -70,7 +70,7 @@ test('dbs can be created when another driver is used for the central db', functi
         return $event->tenant;
     })->toListener());
 
-    $database = 'db' . pest()->randomString();
+    $database = 'db' . Str::random(10);
 
     $mysqlmanager = app(MySQLDatabaseManager::class);
     $mysqlmanager->setConnection('mysql');
@@ -86,7 +86,7 @@ test('dbs can be created when another driver is used for the central db', functi
     $postgresManager = app(PostgreSQLDatabaseManager::class);
     $postgresManager->setConnection('pgsql');
 
-    $database = 'db' . pest()->randomString();
+    $database = 'db' . Str::random(10);
     expect($postgresManager->databaseExists($database))->toBeFalse();
 
     Tenant::create([
