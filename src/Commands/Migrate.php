@@ -58,12 +58,12 @@ class Migrate extends MigrateCommand
         }
 
         if ($this->getProcesses() > 1) {
-            return $this->runConcurrently($this->getTenantChunks()->map(function ($chunk) {
+            $code = $this->runConcurrently($this->getTenantChunks()->map(function ($chunk) {
                 return $this->getTenants($chunk);
             }));
+        } else {
+            $code = $this->migrateTenants($this->getTenants()) ? 0 : 1;
         }
-
-        $code = $this->migrateTenants($this->getTenants()) ? 0 : 1;
 
         // Reset the template tenant connection to the original one
         config(['tenancy.database.template_tenant_connection' => $originalTemplateConnection]);
