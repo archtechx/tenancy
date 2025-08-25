@@ -136,7 +136,7 @@ class Tenancy
     public function getBootstrappers(): array
     {
         // If no callback for getting bootstrappers is set, we return the ones in config.
-        $resolve = $this->getBootstrappersUsing ?? function (Tenant $tenant) {
+        $resolve = $this->getBootstrappersUsing ?? function (?Tenant $tenant) {
             return config('tenancy.bootstrappers');
         };
 
