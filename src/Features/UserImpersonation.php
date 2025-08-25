@@ -44,12 +44,20 @@ class UserImpersonation implements Feature
 
         $tokenExpired = $token->created_at->diffInSeconds(now()) > $ttl;
 
-        abort_if($tokenExpired, 403);
+        if ($tokenExpired) {
+            $token->delete();
+
+            abort(403);
+        }
 
         $tokenTenantId = (string) $token->getAttribute(Tenancy::tenantKeyColumn());
         $currentTenantId = (string) tenant()->getTenantKey();
 
-        abort_unless($tokenTenantId === $currentTenantId, 403);
+        if ($tokenTenantId !== $currentTenantId) {
+            $token->delete();
+
+            abort(403);
+        }
 
         Auth::guard($token->auth_guard)->loginUsingId($token->user_id, $token->remember);
 
