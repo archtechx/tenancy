@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Commands;
 
+use Illuminate\Console\ConfirmableTrait;
 use Illuminate\Database\Console\Migrations\BaseCommand;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\LazyCollection;
@@ -17,7 +18,7 @@ use Symfony\Component\Console\Output\OutputInterface as OI;
 
 class MigrateFresh extends BaseCommand
 {
-    use HasTenantOptions, DealsWithMigrations, ParallelCommand;
+    use HasTenantOptions, DealsWithMigrations, ParallelCommand, ConfirmableTrait;
 
     protected $description = 'Drop all tables and re-run all migrations for tenant(s)';
 
@@ -27,6 +28,7 @@ class MigrateFresh extends BaseCommand
 
         $this->addOption('drop-views', null, InputOption::VALUE_NONE, 'Drop views along with tenant tables.', null);
         $this->addOption('step', null, InputOption::VALUE_NONE, 'Force the migrations to be run so they can be rolled back individually.');
+        $this->addOption('force', null, InputOption::VALUE_NONE, 'Force the command to run when in production.', null);
         $this->addProcessesOption();
 
         $this->setName('tenants:migrate-fresh');
@@ -34,6 +36,10 @@ class MigrateFresh extends BaseCommand
 
     public function handle(): int
     {
+        if (! $this->confirmToProceed()) {
+            return 1;
+        }
+
         $success = true;
 
         if ($this->getProcesses() > 1) {

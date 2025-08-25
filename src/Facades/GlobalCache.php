@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Cache;
 
 class GlobalCache extends Cache
 {
+    /** Make sure this works identically to global_cache() */
+    protected static $cached = false;
+
     protected static function getFacadeAccessor()
     {
         return 'globalCache';

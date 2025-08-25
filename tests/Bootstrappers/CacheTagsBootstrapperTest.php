@@ -56,7 +56,7 @@ test('tags separate cache properly', function () {
     $tenant1 = Tenant::create();
     tenancy()->initialize($tenant1);
 
-    cache()->put('foo', 'bar', 1);
+    cache()->put('foo', 'bar');
     expect(cache()->get('foo'))->toBe('bar');
 
     $tenant2 = Tenant::create();
@@ -64,7 +64,7 @@ test('tags separate cache properly', function () {
 
     expect(cache('foo'))->not()->toBe('bar');
 
-    cache()->put('foo', 'xyz', 1);
+    cache()->put('foo', 'xyz');
     expect(cache()->get('foo'))->toBe('xyz');
 });
 
@@ -72,7 +72,7 @@ test('invoking the cache helper works', function () {
     $tenant1 = Tenant::create();
     tenancy()->initialize($tenant1);
 
-    cache(['foo' => 'bar'], 1);
+    cache(['foo' => 'bar']);
     expect(cache('foo'))->toBe('bar');
 
     $tenant2 = Tenant::create();
@@ -80,7 +80,7 @@ test('invoking the cache helper works', function () {
 
     expect(cache('foo'))->not()->toBe('bar');
 
-    cache(['foo' => 'xyz'], 1);
+    cache(['foo' => 'xyz']);
     expect(cache('foo'))->toBe('xyz');
 });
 
@@ -88,7 +88,7 @@ test('cache is persisted', function () {
     $tenant1 = Tenant::create();
     tenancy()->initialize($tenant1);
 
-    cache(['foo' => 'bar'], 10);
+    cache(['foo' => 'bar']);
     expect(cache('foo'))->toBe('bar');
 
     tenancy()->end();
@@ -102,7 +102,7 @@ test('cache is persisted when reidentification is used', function () {
     $tenant2 = Tenant::create();
     tenancy()->initialize($tenant1);
 
-    cache(['foo' => 'bar'], 10);
+    cache(['foo' => 'bar']);
     expect(cache('foo'))->toBe('bar');
 
     tenancy()->initialize($tenant2);
