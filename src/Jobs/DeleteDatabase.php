@@ -22,12 +22,18 @@ class DeleteDatabase implements ShouldQueue
         protected TenantWithDatabase&Model $tenant,
     ) {}
 
-    public function handle(): void
+    public function handle(): bool
     {
         event(new DeletingDatabase($this->tenant));
+
+        if ($this->tenant->getInternal('create_database') === false) {
+            return false;
+        }
 
         $this->tenant->database()->manager()->deleteDatabase($this->tenant);
 
         event(new DatabaseDeleted($this->tenant));
+
+        return true;
     }
 }
