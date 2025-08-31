@@ -185,7 +185,6 @@ class Tenancy
     {
         foreach (config('tenancy.features') ?? [] as $feature) {
             /** @var class-string<Feature> $feature */
-
             if (! in_array($feature, $this->bootstrappedFeatures)) {
                 app($feature)->bootstrap();
                 $this->bootstrappedFeatures[] = $feature;
