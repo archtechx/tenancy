@@ -63,7 +63,7 @@ test('sqlite ATTACH statements can be blocked', function (bool $disallow) {
         return json_encode(DB::select(request('q2')));
     });
 
-    tenancy(); // trigger features: todo@samuel remove after feature refactor
+    tenancy()->bootstrapFeatures();
 
     if ($disallow) {
         expect(fn () => pest()->post('/central-sqli', [

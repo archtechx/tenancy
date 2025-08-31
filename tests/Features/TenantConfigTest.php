@@ -11,16 +11,21 @@ use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use function Stancl\Tenancy\Tests\pest;
 
+beforeEach(function () {
+    config([
+        'tenancy.features' => [TenantConfig::class],
+        'tenancy.bootstrappers' => [],
+    ]);
+
+    tenancy()->bootstrapFeatures();
+});
+
 afterEach(function () {
     TenantConfig::$storageToConfigMap = [];
 });
 
 test('nested tenant values are merged', function () {
     expect(config('whitelabel.theme'))->toBeNull();
-    config([
-        'tenancy.features' => [TenantConfig::class],
-        'tenancy.bootstrappers' => [],
-    ]);
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
@@ -32,6 +37,9 @@ test('nested tenant values are merged', function () {
         'whitelabel' => ['config' => ['theme' => 'dark']],
     ]);
 
+    // todo0 one reason why this fails is that tenancy.features was empty
+    // at register() time
+
     tenancy()->initialize($tenant);
     expect(config('whitelabel.theme'))->toBe('dark');
     tenancy()->end();
@@ -39,10 +47,6 @@ test('nested tenant values are merged', function () {
 
 test('config is merged and removed', function () {
     expect(config('services.paypal'))->toBe(null);
-    config([
-        'tenancy.features' => [TenantConfig::class],
-        'tenancy.bootstrappers' => [],
-    ]);
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
@@ -68,10 +72,6 @@ test('config is merged and removed', function () {
 
 test('the value can be set to multiple config keys', function () {
     expect(config('services.paypal'))->toBe(null);
-    config([
-        'tenancy.features' => [TenantConfig::class],
-        'tenancy.bootstrappers' => [],
-    ]);
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 

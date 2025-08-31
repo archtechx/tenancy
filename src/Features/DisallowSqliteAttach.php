@@ -10,14 +10,13 @@ use Illuminate\Database\SQLiteConnection;
 use Illuminate\Support\Facades\DB;
 use PDO;
 use Stancl\Tenancy\Contracts\Feature;
-use Stancl\Tenancy\Tenancy;
 
 class DisallowSqliteAttach implements Feature
 {
     protected static bool|null $loadExtensionSupported = null;
     public static string|false|null $extensionPath = null;
 
-    public function bootstrap(Tenancy $tenancy): void
+    public function bootstrap(): void
     {
         // Handle any already resolved connections
         foreach (DB::getConnections() as $connection) {
@@ -40,15 +39,19 @@ class DisallowSqliteAttach implements Feature
     protected function loadExtension(PDO $pdo): bool
     {
         if (static::$loadExtensionSupported === null) {
+            // todo@sqlite refactor to local static
             static::$loadExtensionSupported = method_exists($pdo, 'loadExtension');
         }
 
         if (static::$loadExtensionSupported === false) {
             return false;
         }
+
         if (static::$extensionPath === false) {
             return false;
         }
+
+        // todo@sqlite we may want to check for 64 bit
 
         $suffix = match (PHP_OS_FAMILY) {
             'Linux' => 'so',

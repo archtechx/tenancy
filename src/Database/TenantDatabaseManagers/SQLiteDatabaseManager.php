@@ -94,6 +94,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
                 return false;
             }
 
+            // todo@sqlite we can just respect Laravel config for WAL now
             if (static::$WAL) {
                 $pdo = new PDO('sqlite:' . $path);
                 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -123,6 +124,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
         }
 
         try {
+            // todo@sqlite we should also remove any other files for the DB e.g. WAL
             return unlink($this->getPath($name));
         } catch (Throwable) {
             return false;
