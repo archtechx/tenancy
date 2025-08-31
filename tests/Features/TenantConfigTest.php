@@ -37,9 +37,6 @@ test('nested tenant values are merged', function () {
         'whitelabel' => ['config' => ['theme' => 'dark']],
     ]);
 
-    // todo0 one reason why this fails is that tenancy.features was empty
-    // at register() time
-
     tenancy()->initialize($tenant);
     expect(config('whitelabel.theme'))->toBe('dark');
     tenancy()->end();
