@@ -29,6 +29,8 @@ use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledPostgreSQ
 use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledPostgreSQLDatabaseManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledMicrosoftSQLServerDatabaseManager;
 use function Stancl\Tenancy\Tests\pest;
+use function Stancl\Tenancy\Tests\withBootstrapping;
+use function Stancl\Tenancy\Tests\withTenantDatabases;
 
 beforeEach(function () {
     SQLiteDatabaseManager::$path = null;
@@ -146,18 +148,15 @@ test('db name is prefixed with db path when sqlite is used', function () {
     expect(database_path('foodb'))->toBe(config('database.connections.tenant.database'));
 });
 
-test('sqlite databases use the WAL journal mode by default', function (bool|null $wal) {
-    $expected = $wal ? 'wal' : 'delete';
-    if ($wal !== null) {
-        SQLiteDatabaseManager::$WAL = $wal;
-    } else {
-        // default behavior
-        $expected = 'wal';
-    }
-
-    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
-        return $event->tenant;
-    })->toListener());
+test('sqlite databases respect the template journal_mode config', function (string $journal_mode) {
+    withTenantDatabases();
+    withBootstrapping();
+    config([
+        'database.connections.sqlite.journal_mode' => $journal_mode,
+        'tenancy.bootstrappers' => [
+            DatabaseTenancyBootstrapper::class,
+        ],
+    ]);
 
     $tenant = Tenant::create([
         'tenancy_db_connection' => 'sqlite',
@@ -170,11 +169,18 @@ test('sqlite databases use the WAL journal mode by default', function (bool|null
     $db = new PDO('sqlite:' . $dbPath);
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    expect($db->query('pragma journal_mode')->fetch(PDO::FETCH_ASSOC)['journal_mode'])->toBe($expected);
+    // Before we connect to the DB using Laravel, it will be in default delete mode
+    expect($db->query('pragma journal_mode')->fetch(PDO::FETCH_ASSOC)['journal_mode'])->toBe('delete');
 
-    // cleanup
-    SQLiteDatabaseManager::$WAL = true;
-})->with([true, false, null]);
+    // This will trigger the logic in Laravel's SQLiteConnector
+    $tenant->run(fn () => DB::select('select 1'));
+
+    $db = new PDO('sqlite:' . $dbPath);
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // Once we connect to the DB, it will be in the configured journal mode
+    expect($db->query('pragma journal_mode')->fetch(PDO::FETCH_ASSOC)['journal_mode'])->toBe($journal_mode);
+})->with(['delete', 'wal']);
 
 test('schema manager uses schema to separate tenant dbs', function () {
     config([

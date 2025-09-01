@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Database\TenantDatabaseManagers;
 
-use AssertionError;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use PDO;
@@ -18,13 +17,6 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
      * SQLite Database path without ending slash.
      */
     public static string|null $path = null;
-
-    /**
-     * Should the WAL journal mode be used for newly created databases.
-     *
-     * @see https://www.sqlite.org/pragma.html#pragma_journal_mode
-     */
-    public static bool $WAL = true;
 
     /*
      * If this isn't null, a connection to the tenant DB will be created
@@ -89,26 +81,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
             return true;
         }
 
-        try {
-            if (file_put_contents($path = $this->getPath($name), '') === false) {
-                return false;
-            }
-
-            // todo@sqlite we can just respect Laravel config for WAL now
-            if (static::$WAL) {
-                $pdo = new PDO('sqlite:' . $path);
-                $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-                // @phpstan-ignore-next-line method.nonObject
-                assert($pdo->query('pragma journal_mode = wal')->fetch(PDO::FETCH_ASSOC)['journal_mode'] === 'wal', 'Unable to set journal mode to wal.');
-            }
-
-            return true;
-        } catch (AssertionError $e) {
-            throw $e;
-        } catch (Throwable) {
-            return false;
-        }
+        return file_put_contents($this->getPath($name), '') !== false;
     }
 
     public function deleteDatabase(TenantWithDatabase $tenant): bool
@@ -123,9 +96,16 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
             return true;
         }
 
+        $path = $this->getPath($name);
+
         try {
-            // todo@sqlite we should also remove any other files for the DB e.g. WAL
-            return unlink($this->getPath($name));
+            unlink($path.'-journal');
+            unlink($path.'-wal');
+            unlink($path.'-shm');
+        } catch (Throwable) {}
+
+        try {
+            return unlink($path);
         } catch (Throwable) {
             return false;
         }
