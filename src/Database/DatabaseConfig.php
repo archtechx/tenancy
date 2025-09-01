@@ -13,7 +13,6 @@ use Stancl\Tenancy\Database\Contracts\TenantWithDatabase as Tenant;
 use Stancl\Tenancy\Database\Exceptions\DatabaseManagerNotRegisteredException;
 use Stancl\Tenancy\Database\Exceptions\NoConnectionSetException;
 
-// todo@dbRefactor refactor host connection logic to make customizing the host connection easier
 class DatabaseConfig
 {
     /** The tenant whose database we're dealing with. */
@@ -115,7 +114,7 @@ class DatabaseConfig
     {
         $this->tenant->setInternal('db_name', $this->getName());
 
-        if ($this->connectionDriverManager($this->getTemplateConnectionDriver()) instanceof Contracts\ManagesDatabaseUsers) {
+        if ($this->managerForDriver($this->getTemplateConnectionDriver()) instanceof Contracts\ManagesDatabaseUsers) {
             $this->tenant->setInternal('db_username', $this->getUsername() ?? (static::$usernameGenerator)($this->tenant, $this));
             $this->tenant->setInternal('db_password', $this->getPassword() ?? (static::$passwordGenerator)($this->tenant, $this));
         }
@@ -137,7 +136,9 @@ class DatabaseConfig
         }
 
         if ($template = config('tenancy.database.template_tenant_connection')) {
-            return is_array($template) ? array_merge($this->getCentralConnection(), $template) : config("database.connections.{$template}");
+            return is_array($template)
+                ? array_merge($this->getCentralConnection(), $template)
+                : config("database.connections.{$template}");
         }
 
         return $this->getCentralConnection();
@@ -176,10 +177,10 @@ class DatabaseConfig
         $config = $this->tenantConfig;
         $templateConnection = $this->getTemplateConnection();
 
-        if ($this->connectionDriverManager($this->getTemplateConnectionDriver()) instanceof Contracts\ManagesDatabaseUsers) {
-            // We're removing the username and password because user with these credentials is not created yet
-            // If you need to provide username and password when using PermissionControlledMySQLDatabaseManager,
-            // consider creating a new connection and use it as `tenancy_db_connection` tenant config key
+        if ($this->managerForDriver($this->getTemplateConnectionDriver()) instanceof Contracts\ManagesDatabaseUsers) {
+            // We remove the username and password because the user with these credentials is not yet created.
+            // If you need to provide a username and a password when using a permission controlled database manager,
+            // consider creating a new connection and use it as `tenancy_db_connection`.
             unset($config['username'], $config['password']);
         }
 
@@ -191,7 +192,7 @@ class DatabaseConfig
     }
 
     /**
-     * Purge the previous tenant connection before opening it for another tenant.
+     * Purge the previous host connection before opening it for another tenant.
      */
     public function purgeHostConnection(): void
     {
@@ -199,20 +200,20 @@ class DatabaseConfig
     }
 
     /**
-     * Get the TenantDatabaseManager for this tenant's connection.
+     * Get the TenantDatabaseManager for this tenant's host connection.
      *
      * @throws NoConnectionSetException|DatabaseManagerNotRegisteredException
      */
     public function manager(): Contracts\TenantDatabaseManager
     {
-        // Laravel caches the previous PDO connection, so we purge it to be able to change the connection details
+        // Laravel persists the PDO connection, so we purge it to be able to change the connection details
         $this->purgeHostConnection();
 
         // Create the tenant host connection config
         $tenantHostConnectionName = $this->getTenantHostConnectionName();
         config(["database.connections.{$tenantHostConnectionName}" => $this->hostConnection()]);
 
-        $manager = $this->connectionDriverManager(config("database.connections.{$tenantHostConnectionName}.driver"));
+        $manager = $this->managerForDriver(config("database.connections.{$tenantHostConnectionName}.driver"));
 
         if ($manager instanceof Contracts\StatefulTenantDatabaseManager) {
             $manager->setConnection($tenantHostConnectionName);
@@ -222,12 +223,11 @@ class DatabaseConfig
     }
 
     /**
-     * todo@dbRefactor come up with a better name
-     * Get database manager class from the given connection config's driver.
+     * Get the TenantDatabaseManager for a given database driver.
      *
      * @throws DatabaseManagerNotRegisteredException
      */
-    protected function connectionDriverManager(string $driver): Contracts\TenantDatabaseManager
+    protected function managerForDriver(string $driver): Contracts\TenantDatabaseManager
     {
         $databaseManagers = config('tenancy.database.managers');
 

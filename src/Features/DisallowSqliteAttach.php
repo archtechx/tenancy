@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Features;
 
-use Exception;
 use Illuminate\Database\Connectors\ConnectionFactory;
 use Illuminate\Database\SQLiteConnection;
 use Illuminate\Support\Facades\DB;
@@ -48,8 +47,10 @@ class DisallowSqliteAttach implements Feature
             'Linux' => 'so',
             'Windows' => 'dll',
             'Darwin' => 'dylib',
-            default => throw new Exception("The DisallowSqliteAttach feature doesn't support your operating system: " . PHP_OS_FAMILY),
+            default => 'error',
         };
+
+        if ($suffix === 'error') return false;
 
         $arch = php_uname('m');
         $arm = $arch === 'aarch64' || $arch === 'arm64';

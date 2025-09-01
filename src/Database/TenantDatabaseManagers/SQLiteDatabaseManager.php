@@ -14,7 +14,9 @@ use Throwable;
 class SQLiteDatabaseManager implements TenantDatabaseManager
 {
     /**
-     * SQLite Database path without ending slash.
+     * SQLite database directory path.
+     *
+     * Defaults to database_path().
      */
     public static string|null $path = null;
 
@@ -132,15 +134,10 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
         return $baseConfig;
     }
 
-    public function setConnection(string $connection): void
-    {
-        //
-    }
-
     public function getPath(string $name): string
     {
         if (static::$path) {
-            return static::$path . DIRECTORY_SEPARATOR . $name;
+            return rtrim(static::$path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $name;
         }
 
         return database_path($name);

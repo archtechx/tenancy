@@ -30,10 +30,6 @@ class PermissionControlledPostgreSQLSchemaManager extends PostgreSQLSchemaManage
         $tables = $this->connection()->select("SELECT table_name FROM information_schema.tables WHERE table_schema = '{$schema}' AND table_type = 'BASE TABLE'");
 
         // Grant permissions to any existing tables. This is used with RLS
-        // todo@dbRefactor refactor this along with the todo in TenantDatabaseManager
-        // and move the grantPermissions() call inside the condition in `ManagesPostgresUsers::createUser()`
-        // but maybe moving it inside $createUser is wrong because some central user may migrate new tables
-        // while the RLS user should STILL get access to those tables
         foreach ($tables as $table) {
             $tableName = $table->table_name;
 

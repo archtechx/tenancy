@@ -35,7 +35,7 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
         // Better debugging, but breaks cached lookup, so we disable this in prod
         if (app()->environment('local') || app()->environment('testing')) {
             $database = $tenant->database()->getName();
-            if (! $tenant->database()->manager()->databaseExists($database)) { // todo@dbRefactor does this call correctly use the host connection?
+            if (! $tenant->database()->manager()->databaseExists($database)) {
                 throw new TenantDatabaseDoesNotExistException($database);
             }
         }
