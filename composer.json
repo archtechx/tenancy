@@ -65,7 +65,7 @@
         "docker-restart": "docker compose down && docker compose up -d",
         "docker-rebuild": [
             "Composer\\Config::disableProcessTimeout",
-            "PHP_VERSION=8.5.0beta3 docker compose up -d --no-deps --build"
+            "PHP_VERSION=8.4 docker compose up -d --no-deps --build"
         ],
         "docker-rebuild-with-xdebug": [
             "Composer\\Config::disableProcessTimeout",
