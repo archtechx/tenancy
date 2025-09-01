@@ -57,7 +57,7 @@ class TenancyServiceProvider extends ServiceProvider
                     // Provision API keys, create S3 buckets, anything you want!
                 ])->send(function (Events\TenantCreated $event) {
                     return $event->tenant;
-                })->shouldBeQueued(false), // `false` by default, but you likely want to make this `true` in production.
+                })->shouldBeQueued(false),
 
                 // Listeners\CreateTenantStorage::class,
             ],
@@ -80,7 +80,7 @@ class TenancyServiceProvider extends ServiceProvider
                     Jobs\DeleteDatabase::class,
                 ])->send(function (Events\TenantDeleted $event) {
                     return $event->tenant;
-                })->shouldBeQueued(false), // `false` by default, but you probably want to make this `true` for production.
+                })->shouldBeQueued(false),
             ],
 
             Events\TenantMaintenanceModeEnabled::class => [],

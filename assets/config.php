@@ -170,6 +170,7 @@ return [
         Bootstrappers\DatabaseTenancyBootstrapper::class,
         Bootstrappers\CacheTenancyBootstrapper::class,
         // Bootstrappers\CacheTagsBootstrapper::class, // Alternative to CacheTenancyBootstrapper
+        // Bootstrappers\DatabaseCacheBootstrapper::class, // Separates cache by DB rather than by prefix, must run after DatabaseTenancyBootstrapper
         Bootstrappers\FilesystemTenancyBootstrapper::class,
         Bootstrappers\QueueTenancyBootstrapper::class,
         // Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
@@ -181,7 +182,7 @@ return [
         // Bootstrappers\TenantConfigBootstrapper::class,
         // Bootstrappers\RootUrlBootstrapper::class,
         // Bootstrappers\UrlGeneratorBootstrapper::class,
-        // Bootstrappers\MailConfigBootstrapper::class, // Note: Queueing mail requires using QueueTenancyBootstrapper with $forceRefresh set to true
+        // Bootstrappers\MailConfigBootstrapper::class,
         // Bootstrappers\BroadcastingConfigBootstrapper::class,
         // Bootstrappers\BroadcastChannelPrefixBootstrapper::class,
 

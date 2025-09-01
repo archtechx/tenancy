@@ -36,6 +36,8 @@ class DisallowSqliteAttach implements Feature
 
     protected function loadExtension(PDO $pdo): bool
     {
+        // todo@php85 In PHP 8.5, we can use setAuthorizer() instead of loading an extension.
+        // However, this is currently blocked on https://github.com/phpredis/phpredis/issues/2688
         static $loadExtensionSupported = method_exists($pdo, 'loadExtension');
 
         if ((! $loadExtensionSupported) ||
