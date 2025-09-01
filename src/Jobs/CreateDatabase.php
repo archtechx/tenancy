@@ -40,7 +40,7 @@ class CreateDatabase implements ShouldQueue
 
         try {
             $databaseManager->ensureTenantCanBeCreated($this->tenant);
-            $this->tenant->database()->manager()->createDatabase($this->tenant);
+            assert($this->tenant->database()->manager()->createDatabase($this->tenant) === true);
 
             event(new DatabaseCreated($this->tenant));
         } catch (TenantDatabaseAlreadyExistsException | TenantDatabaseUserAlreadyExistsException $e) {
