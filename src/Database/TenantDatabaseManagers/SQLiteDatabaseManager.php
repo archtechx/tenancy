@@ -99,9 +99,9 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
         $path = $this->getPath($name);
 
         try {
-            unlink($path.'-journal');
-            unlink($path.'-wal');
-            unlink($path.'-shm');
+            unlink($path . '-journal');
+            unlink($path . '-wal');
+            unlink($path . '-shm');
         } catch (Throwable) {}
 
         try {
