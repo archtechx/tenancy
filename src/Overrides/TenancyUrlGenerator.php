@@ -110,7 +110,7 @@ class TenancyUrlGenerator extends UrlGenerator
      */
     public function route($name, $parameters = [], $absolute = true)
     {
-        if ($name instanceof BackedEnum && ! is_string($name = $name->value)) { // @phpstan-ignore function.impossibleType
+        if ($name instanceof BackedEnum && ! is_string($name = $name->value)) {
             throw new InvalidArgumentException('Attribute [name] expects a string backed enum.');
         }
 
@@ -125,7 +125,7 @@ class TenancyUrlGenerator extends UrlGenerator
      */
     public function temporarySignedRoute($name, $expiration, $parameters = [], $absolute = true)
     {
-        if ($name instanceof BackedEnum && ! is_string($name = $name->value)) { // @phpstan-ignore function.impossibleType
+        if ($name instanceof BackedEnum && ! is_string($name = $name->value)) {
             throw new InvalidArgumentException('Attribute [name] expects a string backed enum.');
         }
 
