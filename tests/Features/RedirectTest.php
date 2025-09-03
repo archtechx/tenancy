@@ -12,6 +12,8 @@ test('tenant redirect macro replaces only the hostname', function () {
         'tenancy.features' => [CrossDomainRedirect::class],
     ]);
 
+    tenancy()->bootstrapFeatures();
+
     Route::get('/foobar', function () {
         return 'Foo';
     })->name('home');

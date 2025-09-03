@@ -10,14 +10,12 @@ use Illuminate\Database\SQLiteConnection;
 use Illuminate\Support\Facades\DB;
 use PDO;
 use Stancl\Tenancy\Contracts\Feature;
-use Stancl\Tenancy\Tenancy;
 
 class DisallowSqliteAttach implements Feature
 {
-    protected static bool|null $loadExtensionSupported = null;
     public static string|false|null $extensionPath = null;
 
-    public function bootstrap(Tenancy $tenancy): void
+    public function bootstrap(): void
     {
         // Handle any already resolved connections
         foreach (DB::getConnections() as $connection) {
@@ -39,16 +37,12 @@ class DisallowSqliteAttach implements Feature
 
     protected function loadExtension(PDO $pdo): bool
     {
-        if (static::$loadExtensionSupported === null) {
-            static::$loadExtensionSupported = method_exists($pdo, 'loadExtension');
-        }
+        static $loadExtensionSupported = method_exists($pdo, 'loadExtension');
 
-        if (static::$loadExtensionSupported === false) {
-            return false;
-        }
-        if (static::$extensionPath === false) {
-            return false;
-        }
+        if ((! $loadExtensionSupported) ||
+            (static::$extensionPath === false) ||
+            (PHP_INT_SIZE !== 8)
+        ) return false;
 
         $suffix = match (PHP_OS_FAMILY) {
             'Linux' => 'so',
@@ -61,9 +55,7 @@ class DisallowSqliteAttach implements Feature
         $arm = $arch === 'aarch64' || $arch === 'arm64';
 
         static::$extensionPath ??= realpath(base_path('vendor/stancl/tenancy/extensions/lib/' . ($arm ? 'arm/' : '') . 'noattach.' . $suffix));
-        if (static::$extensionPath === false) {
-            return false;
-        }
+        if (static::$extensionPath === false) return false;
 
         $pdo->loadExtension(static::$extensionPath); // @phpstan-ignore method.notFound
 

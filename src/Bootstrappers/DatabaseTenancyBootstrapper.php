@@ -32,10 +32,10 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
             throw new Exception('The template connection must NOT have URL defined. Specify the connection using individual parts instead of a database URL.');
         }
 
-        // Better debugging, but breaks cached lookup in prod
-        if (app()->environment('local') || app()->environment('testing')) { // todo@docs mention this change in v4 upgrade guide https://github.com/archtechx/tenancy/pull/945#issuecomment-1268206149
+        // Better debugging, but breaks cached lookup, so we disable this in prod
+        if (app()->environment('local') || app()->environment('testing')) {
             $database = $tenant->database()->getName();
-            if (! $tenant->database()->manager()->databaseExists($database)) { // todo@samuel does this call correctly use the host connection?
+            if (! $tenant->database()->manager()->databaseExists($database)) { // todo@dbRefactor does this call correctly use the host connection?
                 throw new TenantDatabaseDoesNotExistException($database);
             }
         }

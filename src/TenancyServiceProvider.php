@@ -40,15 +40,6 @@ class TenancyServiceProvider extends ServiceProvider
         // Make sure Tenancy is stateful.
         $this->app->singleton(Tenancy::class);
 
-        // Make sure features are bootstrapped as soon as Tenancy is instantiated.
-        $this->app->extend(Tenancy::class, function (Tenancy $tenancy) {
-            foreach ($this->app['config']['tenancy.features'] ?? [] as $feature) {
-                $this->app[$feature]->bootstrap($tenancy);
-            }
-
-            return $tenancy;
-        });
-
         // Make it possible to inject the current tenant by type hinting the Tenant contract.
         $this->app->bind(Tenant::class, function ($app) {
             return $app[Tenancy::class]->tenant;
@@ -175,6 +166,11 @@ class TenancyServiceProvider extends ServiceProvider
 
             return $instance;
         });
+
+        // Bootstrap features that are already enabled in the config.
+        // If more features are enabled at runtime, this method may be called
+        // multiple times, it keeps track of which features have already been bootstrapped.
+        $this->app->make(Tenancy::class)->bootstrapFeatures();
 
         Route::middlewareGroup('clone', []);
         Route::middlewareGroup('universal', []);
