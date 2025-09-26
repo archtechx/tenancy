@@ -178,6 +178,7 @@ return [
         Bootstrappers\DatabaseSessionBootstrapper::class,
 
         // Configurable bootstrappers
+        // Bootstrappers\TenantConfigBootstrapper::class,
         // Bootstrappers\RootUrlBootstrapper::class,
         // Bootstrappers\UrlGeneratorBootstrapper::class,
         // Bootstrappers\MailConfigBootstrapper::class, // Note: Queueing mail requires using QueueTenancyBootstrapper with $forceRefresh set to true
@@ -419,7 +420,6 @@ return [
     'features' => [
         // Stancl\Tenancy\Features\UserImpersonation::class,
         // Stancl\Tenancy\Features\TelescopeTags::class,
-        // Stancl\Tenancy\Features\TenantConfig::class,
         // Stancl\Tenancy\Features\CrossDomainRedirect::class,
         // Stancl\Tenancy\Features\ViteBundler::class,
         // Stancl\Tenancy\Features\DisallowSqliteAttach::class,

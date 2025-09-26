@@ -25,6 +25,7 @@ use Stancl\Tenancy\Bootstrappers\BroadcastChannelPrefixBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use function Stancl\Tenancy\Tests\pest;
 use Stancl\Tenancy\Bootstrappers\DatabaseCacheBootstrapper;
+use Stancl\Tenancy\Bootstrappers\TenantConfigBootstrapper;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
@@ -193,6 +194,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         $app->singleton(RootUrlBootstrapper::class);
         $app->singleton(UrlGeneratorBootstrapper::class);
         $app->singleton(FilesystemTenancyBootstrapper::class);
+        $app->singleton(TenantConfigBootstrapper::class);
     }
 
     protected function getPackageProviders($app)
