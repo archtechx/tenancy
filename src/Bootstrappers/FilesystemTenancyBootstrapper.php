@@ -120,7 +120,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             if (isset($disk['driver'], $disk['disk'])
                 && $disk['driver'] === 'scoped'
                 && in_array($disk['disk'], $tenantDisks, true)
-                && ! in_array($disk['disk'], $scopedDisks, true)) {
+                && ! in_array($name, $scopedDisks, true)) {
                 $scopedDisks[] = $name;
             }
         }
