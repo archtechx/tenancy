@@ -53,7 +53,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         }
 
         // Storage facade
-        Storage::forgetDisk($this->app['config']['tenancy.filesystem.disks']);
+        $this->forgetDisks();
 
         foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
             $originalRoot = $this->app['config']["filesystems.disks.{$disk}.root"];
@@ -85,9 +85,26 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         $this->app['url']->setAssetRoot($this->app['config']['app.asset_url']);
 
         // Storage facade
-        Storage::forgetDisk($this->app['config']['tenancy.filesystem.disks']);
+        $this->forgetDisks();
         foreach ($this->app['config']['tenancy.filesystem.disks'] as $disk) {
             $this->app['config']["filesystems.disks.{$disk}.root"] = $this->originalPaths['disks'][$disk];
         }
+    }
+
+    protected function forgetDisks(): void
+    {
+        $tenantDisks = $this->app['config']['tenancy.filesystem.disks'];
+        $scopedDisks = [];
+
+        foreach ($this->app['config']['filesystems.disks'] as $name => $disk) {
+            if (isset($disk['driver'], $disk['disk'])
+                && $disk['driver'] === 'scoped'
+                && in_array($disk['disk'], $tenantDisks, true)
+                && ! in_array($name, $scopedDisks, true)) {
+                $scopedDisks[] = $name;
+            }
+        }
+
+        Storage::forgetDisk([...$tenantDisks, ...$scopedDisks]);
     }
 }
