@@ -99,8 +99,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         foreach ($this->app['config']['filesystems.disks'] as $name => $disk) {
             if (isset($disk['driver'], $disk['disk'])
                 && $disk['driver'] === 'scoped'
-                && in_array($disk['disk'], $tenantDisks, true)
-                && ! in_array($name, $scopedDisks, true)) {
+                && in_array($disk['disk'], $tenantDisks, true)) {
                 $scopedDisks[] = $name;
             }
         }
