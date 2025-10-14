@@ -115,8 +115,6 @@ test('files can get fetched using the storage url', function() {
 test('storage_path helper does not change if suffix_storage_path is off', function() {
     $originalStoragePath = storage_path();
 
-    // todo@tests https://github.com/tenancy-for-laravel/v4/pull/44#issue-2228530362
-
     config([
         'tenancy.bootstrappers' => [FilesystemTenancyBootstrapper::class],
         'tenancy.filesystem.suffix_storage_path' => false,

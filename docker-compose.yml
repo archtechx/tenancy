@@ -3,6 +3,7 @@ services:
         build:
             context: .
             args:
+                PHP_VERSION: ${PHP_VERSION:-8.4}
                 XDEBUG_ENABLED: ${XDEBUG_ENABLED:-false}
         depends_on:
             mysql:
