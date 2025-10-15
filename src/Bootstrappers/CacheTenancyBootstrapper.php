@@ -109,7 +109,7 @@ class CacheTenancyBootstrapper implements TenancyBootstrapper
                 // Previously we just silently ignored this, however since session scoping is of high importance
                 // in production, we make sure to notify the developer, by throwing an exception, that session
                 // scoping isn't happening as expected/configured due to an incompatible session driver.
-                throw new Exception('Session driver [' . $name . '] cannot be scoped by tenancy.cache.scope_session');
+                throw new Exception('Session driver [' . $this->config->get('session.driver') . '] cannot be scoped by tenancy.cache.scope_session');
             }
 
             // Scoping sessions using this bootstrapper implicitly adds the session store to $names
