@@ -120,6 +120,7 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\ClearPendingTenants::class,
             Commands\CreatePendingTenants::class,
             Commands\CreateUserWithRLSPolicies::class,
+            Commands\ClearExpiredImpersonationTokens::class,
         ]);
 
         if (static::$migrateFreshOverride) {
