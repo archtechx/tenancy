@@ -19,7 +19,7 @@ class DisallowSqliteAttach implements Feature
         // Handle any already resolved connections
         foreach (DB::getConnections() as $connection) {
             if ($connection instanceof SQLiteConnection) {
-                if (! $this->loadExtension($connection->getPdo())) {
+                if (! $this->setAuthorizer($connection->getPdo())) {
                     return;
                 }
             }
@@ -28,16 +28,19 @@ class DisallowSqliteAttach implements Feature
         // Apply the change to all sqlite connections resolved in the future
         DB::extend('sqlite', function ($config, $name) {
             $conn = app(ConnectionFactory::class)->make($config, $name);
-            $this->loadExtension($conn->getPdo());
+            $this->setAuthorizer($conn->getPdo());
 
             return $conn;
         });
     }
 
-    protected function loadExtension(PDO $pdo): bool
+    protected function setAuthorizer(PDO $pdo): bool
     {
-        // todo@php85 In PHP 8.5, we can use setAuthorizer() instead of loading an extension.
-        // However, this is currently blocked on https://github.com/phpredis/phpredis/issues/2688
+        if (PHP_VERSION_ID >= 80500) {
+            $this->setNativeAuthorizer($pdo);
+            return true;
+        }
+
         static $loadExtensionSupported = method_exists($pdo, 'loadExtension');
 
         if ((! $loadExtensionSupported) ||
@@ -63,5 +66,14 @@ class DisallowSqliteAttach implements Feature
         $pdo->loadExtension(static::$extensionPath); // @phpstan-ignore method.notFound
 
         return true;
+    }
+
+    protected function setNativeAuthorizer(PDO $pdo): void
+    {
+        $pdo->setAuthorizer(static function (int $action): int {
+            return $action === 24 // SQLITE_ATTACH
+                ? Pdo\Sqlite::DENY
+                : Pdo\Sqlite::OK;
+        });
     }
 }

@@ -144,9 +144,6 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'prefix_indexes' => true,
                 'strict' => true,
                 'engine' => null,
-                'options' => extension_loaded('pdo_mysql') ? array_filter([
-                    PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-                ]) : [],
             ],
             'database.connections.sqlite.database' => ':memory:',
             'database.connections.mysql.charset' => 'utf8mb4',
