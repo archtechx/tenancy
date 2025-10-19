@@ -33,7 +33,7 @@ class Tenancy
     public ?Closure $getBootstrappersUsing = null;
 
     /** Is tenancy fully initialized? */
-    public bool $initialized = false; // todo@docs document the difference between $tenant being set and $initialized being true (e.g. end of initialize() method)
+    public bool $initialized = false;
 
     /**
      * List of relations to eager load when fetching a tenant via tenancy()->find().
@@ -139,10 +139,12 @@ class Tenancy
             return;
         }
 
+        // We fire both of these events before unsetting tenant so that listeners
+        // to both events can access the current tenant. Having separate events
+        // still has value as it's consistent with our other events and provides
+        // more granularity for event listeners, e.g. for ensuring something runs
+        // before standard TenancyEnded listeners such as RevertToCentralContext.
         event(new Events\EndingTenancy($this));
-
-        // todo@samuel find a way to refactor these two methods
-
         event(new Events\TenancyEnded($this));
 
         $this->tenant = null;

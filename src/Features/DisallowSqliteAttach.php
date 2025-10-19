@@ -71,6 +71,7 @@ class DisallowSqliteAttach implements Feature
 
     protected function setNativeAuthorizer(PDO $pdo): void
     {
+        // @phpstan-ignore method.notFound
         $pdo->setAuthorizer(static function (int $action): int {
             return $action === 24 // SQLITE_ATTACH
                 ? PDO\Sqlite::DENY
