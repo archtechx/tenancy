@@ -38,6 +38,7 @@ class DisallowSqliteAttach implements Feature
     {
         if (PHP_VERSION_ID >= 80500) {
             $this->setNativeAuthorizer($pdo);
+
             return true;
         }
 
@@ -72,8 +73,8 @@ class DisallowSqliteAttach implements Feature
     {
         $pdo->setAuthorizer(static function (int $action): int {
             return $action === 24 // SQLITE_ATTACH
-                ? Pdo\Sqlite::DENY
-                : Pdo\Sqlite::OK;
+                ? PDO\Sqlite::DENY
+                : PDO\Sqlite::OK;
         });
     }
 }
