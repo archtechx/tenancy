@@ -78,7 +78,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
             // or creating a closure holding a reference to it and passing that to register_shutdown_function().
 
             $name = '_tenancy_inmemory_' . $tenant->getTenantKey();
-            $tenant->update(['tenancy_db_name' => "file:$name?mode=memory&cache=shared"]);
+            $tenant->setInternal('db_name', "file:$name?mode=memory&cache=shared");
 
             return true;
         }
