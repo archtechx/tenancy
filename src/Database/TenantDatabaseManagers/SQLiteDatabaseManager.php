@@ -79,6 +79,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
 
             $name = '_tenancy_inmemory_' . $tenant->getTenantKey();
             $tenant->setInternal('db_name', "file:$name?mode=memory&cache=shared");
+            $tenant->save();
 
             return true;
         }
