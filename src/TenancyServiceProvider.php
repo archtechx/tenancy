@@ -119,6 +119,7 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\MigrateFresh::class,
             Commands\ClearPendingTenants::class,
             Commands\CreatePendingTenants::class,
+            Commands\PurgeImpersonationTokens::class,
             Commands\CreateUserWithRLSPolicies::class,
         ]);
 
