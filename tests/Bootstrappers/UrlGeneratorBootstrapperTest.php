@@ -83,6 +83,10 @@ test('tenancy url generator inherits scheme from original url generator', functi
     config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);
 
     Route::get('/home', fn () => '')->name('home');
+
+    // No scheme forced, default is HTTP
+    expect(app('url')->formatScheme())->toBe('http://');
+
     $tenant = Tenant::create();
 
     // Force the original URL generator to use HTTPS
