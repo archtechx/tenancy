@@ -86,6 +86,7 @@ class CloneRoutesAsTenant
 {
     protected array $routesToClone = [];
     protected bool $addTenantParameter = true;
+    protected bool $tenantParameterBeforePrefix = true;
     protected string|null $domain = null;
     protected Closure|null $cloneUsing = null; // The callback should accept Route instance or the route name (string)
     protected Closure|null $shouldClone = null;
@@ -177,6 +178,13 @@ class CloneRoutesAsTenant
         return $this;
     }
 
+    public function tenantParameterBeforePrefix(bool $tenantParameterBeforePrefix): static
+    {
+        $this->tenantParameterBeforePrefix = $tenantParameterBeforePrefix;
+
+        return $this;
+    }
+
     /** Clone an individual route. */
     public function cloneRoute(Route|string $route): static
     {
@@ -226,7 +234,13 @@ class CloneRoutesAsTenant
         $action->put('middleware', $middleware);
 
         if ($this->addTenantParameter) {
-            $action->put('prefix', $prefix . '/{' . PathTenantResolver::tenantParameterName() . '}');
+            $tenantParameter = '{' . PathTenantResolver::tenantParameterName() . '}';
+
+            $newPrefix = $this->tenantParameterBeforePrefix
+                ? $tenantParameter . '/' . $prefix
+                : $prefix . '/' . $tenantParameter;
+
+            $action->put('prefix', $newPrefix);
         }
 
         /** @var Route $newRoute */

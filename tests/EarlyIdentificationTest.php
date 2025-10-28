@@ -10,6 +10,7 @@ use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Illuminate\Support\Facades\Route as RouteFacade;
+use Illuminate\Support\Str;
 use Stancl\Tenancy\Actions\CloneRoutesAsTenant;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
@@ -120,7 +121,7 @@ test('early identification works with path identification', function (bool $useK
         RouteFacade::get('/{post}/comment/{comment}/edit', [$controller, 'computePost']);
     });
 
-    $tenant = Tenant::create(['tenancy_db_name' => pest()->randomString()]);
+    $tenant = Tenant::create(['tenancy_db_name' => Str::random(10)]);
 
     // Migrate users and comments tables on tenant connection
     pest()->artisan('tenants:migrate', [

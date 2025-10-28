@@ -11,6 +11,7 @@ use Illuminate\Foundation\Bus\PendingDispatch;
 use Illuminate\Support\Traits\Macroable;
 use Stancl\Tenancy\Concerns\DealsWithRouteContexts;
 use Stancl\Tenancy\Concerns\ManagesRLSPolicies;
+use Stancl\Tenancy\Contracts\Feature;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByIdException;
@@ -24,11 +25,15 @@ class Tenancy
      */
     public Tenant|null $tenant = null;
 
-    // todo@docblock
+    /**
+     * Custom callback for providing a list of bootstrappers to use.
+     * When this is null, config('tenancy.bootstrappers') is used.
+     * @var ?Closure(): list<TenancyBootstrapper>
+     */
     public ?Closure $getBootstrappersUsing = null;
 
     /** Is tenancy fully initialized? */
-    public bool $initialized = false; // todo@docs document the difference between $tenant being set and $initialized being true (e.g. end of initialize() method)
+    public bool $initialized = false;
 
     /**
      * List of relations to eager load when fetching a tenant via tenancy()->find().
@@ -36,7 +41,7 @@ class Tenancy
     public static array $findWith = [];
 
     /**
-     * A list of bootstrappers that have been initialized.
+     * List of bootstrappers that have been initialized.
      *
      * This is used when reverting tenancy, mainly if an exception
      * occurs during bootstrapping, to ensure we don't revert
@@ -48,6 +53,23 @@ class Tenancy
      * @var list<class-string<TenancyBootstrapper>>
      */
     public array $initializedBootstrappers = [];
+
+    /**
+     * List of features that have been bootstrapped.
+     *
+     * Since features may be bootstrapped multiple times during
+     * the request cycle (in TSP::boot() and any other times the user calls
+     * bootstrapFeatures()), we keep track of which features have already
+     * been bootstrapped so we do not bootstrap them again. Features are
+     * bootstrapped once and irreversible.
+     *
+     * The main point of this is that some features *need* to be bootstrapped
+     * very early (see #949), so we bootstrap them directly in TSP, but we
+     * also need the ability to *change* which features are used at runtime
+     * (mainly tests of this package) and bootstrap features again after making
+     * changes to config('tenancy.features').
+     */
+    protected array $bootstrappedFeatures = [];
 
     /** Initialize tenancy for the passed tenant. */
     public function initialize(Tenant|int|string $tenant): void
@@ -117,10 +139,12 @@ class Tenancy
             return;
         }
 
+        // We fire both of these events before unsetting tenant so that listeners
+        // to both events can access the current tenant. Having separate events
+        // still has value as it's consistent with our other events and provides
+        // more granularity for event listeners, e.g. for ensuring something runs
+        // before standard TenancyEnded listeners such as RevertToCentralContext.
         event(new Events\EndingTenancy($this));
-
-        // todo@samuel find a way to refactor these two methods
-
         event(new Events\TenancyEnded($this));
 
         $this->tenant = null;
@@ -131,12 +155,12 @@ class Tenancy
     /** @return TenancyBootstrapper[] */
     public function getBootstrappers(): array
     {
-        // If no callback for getting bootstrappers is set, we just return all of them.
-        $resolve = $this->getBootstrappersUsing ?? function (Tenant $tenant) {
+        // If no callback for getting bootstrappers is set, we return the ones in config.
+        $resolve = $this->getBootstrappersUsing ?? function (?Tenant $tenant) {
             return config('tenancy.bootstrappers');
         };
 
-        // Here We instantiate the bootstrappers and return them.
+        // Here we instantiate the bootstrappers and return them.
         return array_map('app', $resolve($this->tenant));
     }
 
@@ -148,6 +172,26 @@ class Tenancy
     public function usingBootstrapper(string $bootstrapper): bool
     {
         return in_array($bootstrapper, static::getBootstrappers(), true);
+    }
+
+    /**
+     * Bootstrap configured Tenancy features.
+     *
+     * Normally, features are bootstrapped directly in TSP::boot(). However, if
+     * new features are enabled at runtime (e.g. during tests), this method may
+     * be called to bootstrap new features. It's idempotent and keeps track of
+     * which features have already been bootstrapped. Keep in mind that feature
+     * bootstrapping is irreversible.
+     */
+    public function bootstrapFeatures(): void
+    {
+        foreach (config('tenancy.features') ?? [] as $feature) {
+            /** @var class-string<Feature> $feature */
+            if (! in_array($feature, $this->bootstrappedFeatures)) {
+                app($feature)->bootstrap();
+                $this->bootstrappedFeatures[] = $feature;
+            }
+        }
     }
 
     /**

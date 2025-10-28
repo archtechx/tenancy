@@ -6,7 +6,6 @@ namespace Stancl\Tenancy\Middleware;
 
 use Closure;
 use Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode;
-use Stancl\Tenancy\Exceptions\TenancyNotInitializedException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class CheckTenantForMaintenanceMode extends CheckForMaintenanceMode
@@ -14,7 +13,13 @@ class CheckTenantForMaintenanceMode extends CheckForMaintenanceMode
     public function handle($request, Closure $next)
     {
         if (! tenant()) {
-            throw new TenancyNotInitializedException;
+            // If there's no tenant, there's no tenant to check for maintenance mode.
+            // Since tenant identification middleware has higher priority than this
+            // middleware, a missing tenant would have already lead to request termination.
+            // (And even if priority were misconfigured, the request would simply get
+            // terminated *after* this middleware.)
+            // Therefore, we are likely on a universal route, in central context.
+            return $next($request);
         }
 
         if (tenant('maintenance_mode')) {

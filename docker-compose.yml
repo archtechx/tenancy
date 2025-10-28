@@ -3,6 +3,7 @@ services:
         build:
             context: .
             args:
+                PHP_VERSION: ${PHP_VERSION:-8.4}
                 XDEBUG_ENABLED: ${XDEBUG_ENABLED:-false}
         depends_on:
             mysql:
@@ -80,7 +81,7 @@ services:
         image: mcr.microsoft.com/mssql/server:2022-latest
         environment:
           - ACCEPT_EULA=Y
-          - SA_PASSWORD=P@ssword # todo reuse env from above
+          - SA_PASSWORD=P@ssword # must be the same as TENANCY_TEST_SQLSRV_PASSWORD
         healthcheck: # https://github.com/Microsoft/mssql-docker/issues/133#issuecomment-1995615432
             test: timeout 2 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/1433'
             interval: 10s
