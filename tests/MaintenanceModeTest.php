@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Database\Concerns\MaintenanceMode;
 use Illuminate\Support\Facades\Route;
+use Stancl\Tenancy\Events\TenantMaintenanceModeDisabled;
+use Stancl\Tenancy\Events\TenantMaintenanceModeEnabled;
 use Stancl\Tenancy\Middleware\CheckTenantForMaintenanceMode;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use function Stancl\Tenancy\Tests\pest;
@@ -38,18 +40,46 @@ test('tenants can be in maintenance mode', function () {
     pest()->get('http://acme.localhost/foo')->assertStatus(200);
 });
 
-test('maintenance mode events are fired', function () {
-    $tenant = MaintenanceTenant::create();
+test('maintenance mode middleware can be used with universal routes', function () {
+    Route::get('/foo', function () {
+        return 'bar';
+    })->middleware(['universal', InitializeTenancyByDomain::class, CheckTenantForMaintenanceMode::class]);
 
-    Event::fake();
+    $tenant = MaintenanceTenant::create();
+    $tenant->domains()->create([
+        'domain' => 'acme.localhost',
+    ]);
+
+    // Revert to central context after each request so that the tenant context
+    // from the request doesn't persist
+    $run = function (Closure $callback) { $callback(); tenancy()->end(); };
+
+    $run(fn () => pest()->get('http://acme.localhost/foo')->assertStatus(200));
+    $run(fn () => pest()->get('http://localhost/foo')->assertStatus(200));
 
     $tenant->putDownForMaintenance();
 
-    Event::assertDispatched(\Stancl\Tenancy\Events\TenantMaintenanceModeEnabled::class);
+    $run(fn () => pest()->get('http://acme.localhost/foo')->assertStatus(503));
+    $run(fn () => pest()->get('http://localhost/foo')->assertStatus(200)); // Not affected by a tenant's maintenance mode
 
     $tenant->bringUpFromMaintenance();
 
-    Event::assertDispatched(\Stancl\Tenancy\Events\TenantMaintenanceModeDisabled::class);
+    $run(fn () => pest()->get('http://acme.localhost/foo')->assertStatus(200));
+    $run(fn () => pest()->get('http://localhost/foo')->assertStatus(200));
+});
+
+test('maintenance mode events are fired', function () {
+    $tenant = MaintenanceTenant::create();
+
+    Event::fake([TenantMaintenanceModeEnabled::class, TenantMaintenanceModeDisabled::class]);
+
+    $tenant->putDownForMaintenance();
+
+    Event::assertDispatched(TenantMaintenanceModeEnabled::class);
+
+    $tenant->bringUpFromMaintenance();
+
+    Event::assertDispatched(TenantMaintenanceModeDisabled::class);
 });
 
 test('tenants can be put into maintenance mode using artisan commands', function() {

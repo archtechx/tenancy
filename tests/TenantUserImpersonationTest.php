@@ -43,6 +43,8 @@ beforeEach(function () {
         ],
     ]);
 
+    tenancy()->bootstrapFeatures();
+
     Event::listen(
         TenantCreated::class,
         JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {

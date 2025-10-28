@@ -8,6 +8,21 @@ use Stancl\Tenancy\Bootstrappers;
 use Stancl\Tenancy\Enums\RouteMode;
 use Stancl\Tenancy\UniqueIdentifierGenerators;
 
+/**
+ * Tenancy for Laravel.
+ *
+ * Documentation: https://tenancyforlaravel.com
+ *
+ * We can sustainably develop Tenancy for Laravel thanks to our sponsors.
+ * Big thanks to everyone listed here: https://github.com/sponsors/stancl
+ *
+ * You can also support us, and save time, by purchasing these products:
+ *   Exclusive content for sponsors: https://sponsors.tenancyforlaravel.com
+ *   Multi-Tenant SaaS boilerplate: https://portal.archte.ch/boilerplate
+ *   Multi-Tenant Laravel in Production e-book: https://portal.archte.ch/book
+ *
+ * All of these products can also be accessed at https://portal.archte.ch
+ */
 return [
     /**
      * Configuration for the models used by Tenancy.
@@ -155,6 +170,7 @@ return [
         Bootstrappers\DatabaseTenancyBootstrapper::class,
         Bootstrappers\CacheTenancyBootstrapper::class,
         // Bootstrappers\CacheTagsBootstrapper::class, // Alternative to CacheTenancyBootstrapper
+        // Bootstrappers\DatabaseCacheBootstrapper::class, // Separates cache by DB rather than by prefix, must run after DatabaseTenancyBootstrapper
         Bootstrappers\FilesystemTenancyBootstrapper::class,
         Bootstrappers\QueueTenancyBootstrapper::class,
         // Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
@@ -163,9 +179,10 @@ return [
         Bootstrappers\DatabaseSessionBootstrapper::class,
 
         // Configurable bootstrappers
+        // Bootstrappers\TenantConfigBootstrapper::class,
         // Bootstrappers\RootUrlBootstrapper::class,
         // Bootstrappers\UrlGeneratorBootstrapper::class,
-        // Bootstrappers\MailConfigBootstrapper::class, // Note: Queueing mail requires using QueueTenancyBootstrapper with $forceRefresh set to true
+        // Bootstrappers\MailConfigBootstrapper::class,
         // Bootstrappers\BroadcastingConfigBootstrapper::class,
         // Bootstrappers\BroadcastChannelPrefixBootstrapper::class,
 
@@ -404,7 +421,6 @@ return [
     'features' => [
         // Stancl\Tenancy\Features\UserImpersonation::class,
         // Stancl\Tenancy\Features\TelescopeTags::class,
-        // Stancl\Tenancy\Features\TenantConfig::class,
         // Stancl\Tenancy\Features\CrossDomainRedirect::class,
         // Stancl\Tenancy\Features\ViteBundler::class,
         // Stancl\Tenancy\Features\DisallowSqliteAttach::class,

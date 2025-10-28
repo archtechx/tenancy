@@ -3,27 +3,42 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Vite;
-use Stancl\Tenancy\Tests\Etc\Tenant;
-use Stancl\Tenancy\Overrides\Vite as StanclVite;
+use Illuminate\Support\Facades\File;
+use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Features\ViteBundler;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 
-test('vite helper uses our custom class', function() {
-    $vite = app(Vite::class);
+use function Stancl\Tenancy\Tests\withBootstrapping;
 
-    expect($vite)->toBeInstanceOf(Vite::class);
-    expect($vite)->not()->toBeInstanceOf(StanclVite::class);
-
+beforeEach(function () {
     config([
-        'tenancy.features' => [ViteBundler::class],
+        'tenancy.filesystem.asset_helper_override' => true,
+        'tenancy.bootstrappers' => [FilesystemTenancyBootstrapper::class],
     ]);
 
-    $tenant = Tenant::create();
+    File::ensureDirectoryExists(dirname($manifestPath = public_path('build/manifest.json')));
+    File::put($manifestPath, json_encode([
+        'foo' => [
+            'file' => 'assets/foo-AbC123.js',
+            'src'  => 'js/foo.js',
+        ],
+    ]));
+});
 
-    tenancy()->initialize($tenant);
+test('vite bundler ensures vite assets use global_asset when asset_helper_override is enabled', function () {
+    config(['tenancy.features' => [ViteBundler::class]]);
+    tenancy()->bootstrapFeatures();
 
-    app()->forgetInstance(Vite::class);
+    withBootstrapping();
 
-    $vite = app(Vite::class);
+    tenancy()->initialize(Tenant::create());
 
-    expect($vite)->toBeInstanceOf(StanclVite::class);
+    // Not what we want
+    expect(asset('foo'))->toBe(route('stancl.tenancy.asset', ['path' => 'foo']));
+
+    $viteAssetUrl = app(Vite::class)->asset('foo');
+    $expectedGlobalUrl = global_asset('build/assets/foo-AbC123.js');
+
+    expect($viteAssetUrl)->toBe($expectedGlobalUrl);
+    expect($viteAssetUrl)->toBe('http://localhost/build/assets/foo-AbC123.js');
 });

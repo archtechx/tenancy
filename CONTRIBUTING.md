@@ -43,3 +43,15 @@ If you need to rebuild the container for any reason (e.g. a change in `Dockerfil
 ## PHPStan
 
 Use `composer phpstan` to run our phpstan suite.
+
+## PhpStorm
+
+Create `.env` with `PROJECT_PATH=/full/path/to/this/directory`. Configure a Docker-based interpreter for tests (with exec, not run).
+
+If you want to use XDebug, use `composer docker-rebuild-with-xdebug`.
+
+## PHP 8.5
+
+To use PHP 8.5 during development, run:
+- `PHP_VERSION=8.5.0RC2 composer docker-rebuild` to build the `test` container with PHP 8.5
+- `composer php85-patch` to get rid of some deprecation errors coming from `config/database.php` from within testbench-core

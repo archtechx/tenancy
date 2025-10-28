@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Route as RouteFacade;
 use Illuminate\Support\Facades\Schema;
 use Stancl\Tenancy\Bootstrappers\CacheTagsBootstrapper;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\DatabaseCacheBootstrapper;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
@@ -23,6 +25,8 @@ use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
 use function Stancl\Tenancy\Tests\pest;
+use function Stancl\Tenancy\Tests\withCacheTables;
+use function Stancl\Tenancy\Tests\withTenantDatabases;
 
 beforeEach($cleanup = function () {
     Tenant::$extraCustomColumns = [];
@@ -112,10 +116,18 @@ test('cache is invalidated when the tenant is updated', function (string $resolv
 // Only testing update here - presumably if this works, deletes (and other things we test here)
 // will work as well. The main unique thing about this test is that it makes the change from
 // *within* the tenant context.
-test('cache is invalidated when tenant is updated from within the tenant context', function (string $cacheBootstrapper) {
-    config(['tenancy.bootstrappers' => [$cacheBootstrapper]]);
+test('cache is invalidated when tenant is updated from within the tenant context', function (string $cacheStore, array $bootstrappers) {
+    config([
+        'cache.default' => $cacheStore,
+        'tenancy.bootstrappers' => $bootstrappers,
+    ]);
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+
+    if ($cacheStore === 'database') {
+        withCacheTables();
+        withTenantDatabases();
+    }
 
     $resolver = PathTenantResolver::class;
 
@@ -150,9 +162,9 @@ test('cache is invalidated when tenant is updated from within the tenant context
 
     expect(DB::getQueryLog())->not()->toBeEmpty(); // Cache was invalidated, so the tenant was retrieved from the DB
 })->with([
-    // todo@samuel test this with the database cache bootstrapper too?
-    CacheTenancyBootstrapper::class,
-    CacheTagsBootstrapper::class,
+    ['redis', [CacheTenancyBootstrapper::class]],
+    ['redis', [CacheTagsBootstrapper::class]],
+    ['database', [DatabaseTenancyBootstrapper::class, DatabaseCacheBootstrapper::class]],
 ]);
 
 test('cache is invalidated when the tenant is deleted', function (string $resolver, bool $configureTenantModelColumn) {

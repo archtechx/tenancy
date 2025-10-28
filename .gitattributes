@@ -10,6 +10,7 @@
 /.nvim.lua export-ignore
 /art export-ignore
 /coverage export-ignore
+/CLAUDE.md export-ignore
 /CONTRIBUTING.md export-ignore
 /INTERNAL.md export-ignore
 /SUPPORT.md export-ignore
@@ -19,6 +20,7 @@
 /Dockerfile export-ignore
 /doctum export-ignore
 /phpunit.xml export-ignore
+/static_properties.nu export-ignore
 /t export-ignore
 /test export-ignore
 /tests export-ignore

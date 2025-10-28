@@ -17,7 +17,6 @@ jobs:
       matrix:
         include:
         - laravel: "^12.0"
-          php: "8.4"
 
     steps:
       - name: Checkout
