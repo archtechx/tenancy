@@ -6,6 +6,7 @@ namespace Stancl\Tenancy\Commands;
 
 use Closure;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Process;
 
 class Install extends Command
 {
@@ -128,14 +129,27 @@ class Install extends Command
     public function askForSupport(): void
     {
         if ($this->components->confirm('Would you like to show your support by starring the project on GitHub?', true)) {
-            if (PHP_OS_FAMILY === 'Darwin') {
-                exec('open https://github.com/archtechx/tenancy');
+            $ghVersion = Process::run('gh --version');
+            $starred = false;
+
+            // Make sure the `gh` binary is the actual GitHub CLI and not an unrelated tool
+            if ($ghVersion->successful() && str_contains($ghVersion->output(), 'https://github.com/cli/cli')) {
+                $starRequest = Process::run('gh api -X PUT user/starred/archtechx/tenancy');
+                $starred = $starRequest->successful();
             }
-            if (PHP_OS_FAMILY === 'Windows') {
-                exec('start https://github.com/archtechx/tenancy');
-            }
-            if (PHP_OS_FAMILY === 'Linux') {
-                exec('xdg-open https://github.com/archtechx/tenancy');
+
+            if ($starred) {
+                $this->components->success('Repository starred via gh CLI, thank you!');
+            } else {
+                if (PHP_OS_FAMILY === 'Darwin') {
+                    exec('open https://github.com/archtechx/tenancy');
+                }
+                if (PHP_OS_FAMILY === 'Windows') {
+                    exec('start https://github.com/archtechx/tenancy');
+                }
+                if (PHP_OS_FAMILY === 'Linux') {
+                    exec('xdg-open https://github.com/archtechx/tenancy');
+                }
             }
         }
     }

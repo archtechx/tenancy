@@ -27,6 +27,7 @@ beforeEach(function () {
 
 test('vite bundler ensures vite assets use global_asset when asset_helper_override is enabled', function () {
     config(['tenancy.features' => [ViteBundler::class]]);
+    tenancy()->bootstrapFeatures();
 
     withBootstrapping();
 

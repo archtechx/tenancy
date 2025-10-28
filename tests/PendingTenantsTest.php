@@ -2,8 +2,12 @@
 
 declare(strict_types=1);
 
+use Illuminate\Database\QueryException;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Stancl\Tenancy\Commands\ClearPendingTenants;
 use Stancl\Tenancy\Commands\CreatePendingTenants;
 use Stancl\Tenancy\Events\CreatingPendingTenant;
@@ -12,6 +16,13 @@ use Stancl\Tenancy\Events\PendingTenantPulled;
 use Stancl\Tenancy\Events\PullingPendingTenant;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use function Stancl\Tenancy\Tests\pest;
+
+beforeEach($cleanup = function () {
+    Tenant::$extraCustomColumns = [];
+    Tenant::$getPendingAttributesUsing = null;
+});
+
+afterEach($cleanup);
 
 test('tenants are correctly identified as pending', function (){
     Tenant::createPending();
@@ -191,3 +202,25 @@ test('commands run for pending tenants too if the with pending option is passed'
 
     $artisan->assertExitCode(0);
 });
+
+test('pending tenants can have default attributes for non-nullable columns', function (bool $withPendingAttributes) {
+    Schema::table('tenants', function (Blueprint $table) {
+        $table->string('slug')->unique();
+    });
+
+    Tenant::$extraCustomColumns = ['slug'];
+    if ($withPendingAttributes) Tenant::$getPendingAttributesUsing = fn () => [
+        'slug' => Str::random(8),
+    ];
+
+    $fn = fn () => Tenant::createPending();
+
+    // If there are non-nullable custom columns, and createPending() is called
+    // on its own without any values passed for those columns (as it would be called
+    // by the tenants:pending-create artisan command), we expect it to fail, unless
+    // getPendingAttributes() provides default values for those custom columns.
+    if ($withPendingAttributes)
+        expect($fn)->not()->toThrow(QueryException::class);
+    else
+        expect($fn)->toThrow(QueryException::class);
+})->with([true, false]);

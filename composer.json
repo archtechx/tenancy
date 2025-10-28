@@ -65,13 +65,16 @@
         "docker-restart": "docker compose down && docker compose up -d",
         "docker-rebuild": [
             "Composer\\Config::disableProcessTimeout",
-            "PHP_VERSION=8.4 docker compose up -d --no-deps --build"
+            "docker compose up -d --no-deps --build"
         ],
         "docker-rebuild-with-xdebug": [
             "Composer\\Config::disableProcessTimeout",
-            "PHP_VERSION=8.4 XDEBUG_ENABLED=true docker compose up -d --no-deps --build"
+            "XDEBUG_ENABLED=true docker compose up -d --no-deps --build"
         ],
         "docker-m1": "ln -s docker-compose-m1.override.yml docker-compose.override.yml",
+        "php85-patch": [
+            "php -r '$file=\"vendor/orchestra/testbench-core/laravel/config/database.php\"; file_put_contents($file, str_replace(\"PDO::MYSQL_ATTR_SSL_CA\", \"Pdo\\\\Mysql::ATTR_SSL_CA\", file_get_contents($file)));'"
+        ],
         "testbench-unlink": "rm ./vendor/orchestra/testbench-core/laravel/vendor",
         "testbench-link": "ln -s /var/www/html/vendor ./vendor/orchestra/testbench-core/laravel/vendor",
         "testbench-repair": "mkdir -p ./vendor/orchestra/testbench-core/laravel/storage/framework/sessions && mkdir -p ./vendor/orchestra/testbench-core/laravel/storage/framework/views && mkdir -p ./vendor/orchestra/testbench-core/laravel/storage/framework/cache",

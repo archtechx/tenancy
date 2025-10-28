@@ -172,7 +172,7 @@ test('the clone action can clone specific routes either using name or route inst
     false,
 ]);
 
-test('the clone action prefixes already prefixed routes correctly', function () {
+test('the clone action prefixes already prefixed routes correctly', function (bool $tenantParameterBeforePrefix) {
     $routes = [
         RouteFacade::get('/home', fn () => true)
             ->middleware(['clone'])
@@ -195,7 +195,12 @@ test('the clone action prefixes already prefixed routes correctly', function () 
             ->prefix('prefix/'),
     ];
 
-    app(CloneRoutesAsTenant::class)->handle();
+    $cloneAction = app(CloneRoutesAsTenant::class);
+    $cloneAction
+        ->tenantParameterBeforePrefix($tenantParameterBeforePrefix)
+        ->handle();
+
+    $expectedPrefix = $tenantParameterBeforePrefix ? '{tenant}/prefix' : 'prefix/{tenant}';
 
     $clonedRoutes = [
         RouteFacade::getRoutes()->getByName('tenant.home'),
@@ -206,9 +211,10 @@ test('the clone action prefixes already prefixed routes correctly', function () 
 
     // The cloned route is prefixed correctly
     foreach ($clonedRoutes as $key => $route) {
-        expect($route->getPrefix())->toBe("prefix/{tenant}");
+        expect($route->getPrefix())->toBe($expectedPrefix);
 
         $clonedRouteUrl = route($route->getName(), ['tenant' => $tenant = Tenant::create()]);
+        $expectedPrefixInUrl = $tenantParameterBeforePrefix ? "{$tenant->id}/prefix" : "prefix/{$tenant->id}";
 
         expect($clonedRouteUrl)
             // Original prefix does not occur in the cloned route's URL
@@ -216,14 +222,14 @@ test('the clone action prefixes already prefixed routes correctly', function () 
             ->not()->toContain("//prefix")
             ->not()->toContain("prefix//")
             // Instead, the route is prefixed correctly
-            ->toBe("http://localhost/prefix/{$tenant->id}/{$routes[$key]->getName()}");
+            ->toBe("http://localhost/{$expectedPrefixInUrl}/{$routes[$key]->getName()}");
 
         // The cloned route is accessible
         pest()->get($clonedRouteUrl)->assertOk();
     }
-});
+})->with([true, false]);
 
-test('clone action trims trailing slashes from prefixes given to nested route groups', function () {
+test('clone action trims trailing slashes from prefixes given to nested route groups', function (bool $tenantParameterBeforePrefix) {
     RouteFacade::prefix('prefix')->group(function () {
         RouteFacade::prefix('')->group(function () {
             // This issue seems to only happen when there's a group with a prefix, then a group with an empty prefix, and then a / route
@@ -237,7 +243,10 @@ test('clone action trims trailing slashes from prefixes given to nested route gr
         });
     });
 
-    app(CloneRoutesAsTenant::class)->handle();
+    $cloneAction = app(CloneRoutesAsTenant::class);
+    $cloneAction
+        ->tenantParameterBeforePrefix($tenantParameterBeforePrefix)
+        ->handle();
 
     $clonedLandingUrl = route('tenant.landing', ['tenant' => $tenant = Tenant::create()]);
     $clonedHomeRouteUrl = route('tenant.home', ['tenant' => $tenant]);
@@ -245,17 +254,20 @@ test('clone action trims trailing slashes from prefixes given to nested route gr
     $landingRoute = RouteFacade::getRoutes()->getByName('tenant.landing');
     $homeRoute = RouteFacade::getRoutes()->getByName('tenant.home');
 
-    expect($landingRoute->uri())->toBe('prefix/{tenant}');
-    expect($homeRoute->uri())->toBe('prefix/{tenant}/home');
+    $expectedPrefix = $tenantParameterBeforePrefix ? '{tenant}/prefix' : 'prefix/{tenant}';
+    $expectedPrefixInUrl = $tenantParameterBeforePrefix ? "{$tenant->id}/prefix" : "prefix/{$tenant->id}";
+
+    expect($landingRoute->uri())->toBe($expectedPrefix);
+    expect($homeRoute->uri())->toBe("{$expectedPrefix}/home");
 
     expect($clonedLandingUrl)
         ->not()->toContain("prefix//")
-        ->toBe("http://localhost/prefix/{$tenant->id}");
+        ->toBe("http://localhost/{$expectedPrefixInUrl}");
 
     expect($clonedHomeRouteUrl)
         ->not()->toContain("prefix//")
-        ->toBe("http://localhost/prefix/{$tenant->id}/home");
-});
+        ->toBe("http://localhost/{$expectedPrefixInUrl}/home");
+})->with([true, false]);
 
 test('tenant routes are ignored from cloning and clone middleware in groups causes no issues', function () {
     // Should NOT be cloned, already has tenant parameter
