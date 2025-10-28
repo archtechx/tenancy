@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if [[ "${CLAUDECODE}" != "1" ]]; then
     COLOR_FLAG="--colors=always"

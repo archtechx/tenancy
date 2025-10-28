@@ -28,7 +28,8 @@ trait HasDatabase
                 }
 
                 if ($key === $this->internalPrefix() . 'db_connection') {
-                    // Remove DB connection because that's not used here
+                    // Remove DB connection because that's not used for the connection *contents*.
+                    // Instead the code uses getInternal('db_connection').
                     continue;
                 }
 

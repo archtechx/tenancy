@@ -2,6 +2,9 @@ services:
     test:
         build:
             context: .
+            args:
+                PHP_VERSION: ${PHP_VERSION:-8.4}
+                XDEBUG_ENABLED: ${XDEBUG_ENABLED:-false}
         depends_on:
             mysql:
                 condition: service_healthy
@@ -18,7 +21,8 @@ services:
             dynamodb:
                 condition: service_healthy
         volumes:
-            - .:/var/www/html:cached
+            - .:${PROJECT_PATH:-$PWD}:cached
+        working_dir: ${PROJECT_PATH:-$PWD}
         environment:
             DOCKER: 1
             DB_PASSWORD: password
@@ -30,6 +34,8 @@ services:
             TENANCY_TEST_SQLSRV_HOST: mssql
             TENANCY_TEST_SQLSRV_USERNAME: sa
             TENANCY_TEST_SQLSRV_PASSWORD: P@ssword
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
         stdin_open: true
         tty: true
     mysql:
@@ -75,7 +81,7 @@ services:
         image: mcr.microsoft.com/mssql/server:2022-latest
         environment:
           - ACCEPT_EULA=Y
-          - SA_PASSWORD=P@ssword # todo reuse env from above
+          - SA_PASSWORD=P@ssword # must be the same as TENANCY_TEST_SQLSRV_PASSWORD
         healthcheck: # https://github.com/Microsoft/mssql-docker/issues/133#issuecomment-1995615432
             test: timeout 2 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/1433'
             interval: 10s

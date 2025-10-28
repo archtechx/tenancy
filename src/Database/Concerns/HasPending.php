@@ -6,13 +6,12 @@ namespace Stancl\Tenancy\Database\Concerns;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Events\CreatingPendingTenant;
 use Stancl\Tenancy\Events\PendingTenantCreated;
 use Stancl\Tenancy\Events\PendingTenantPulled;
 use Stancl\Tenancy\Events\PullingPendingTenant;
-
-// todo consider adding a method that sets pending_since to null — to flag tenants as not-pending
 
 /**
  * @property ?Carbon $pending_since
@@ -50,46 +49,62 @@ trait HasPending
      */
     public static function createPending(array $attributes = []): Model&Tenant
     {
-        $tenant = static::create($attributes);
-
-        event(new CreatingPendingTenant($tenant));
-
-        // Update the pending_since value only after the tenant is created so it's
-        // Not marked as pending until finishing running the migrations, seeders, etc.
-        $tenant->update([
-            'pending_since' => now()->timestamp,
-        ]);
+        try {
+            $tenant = static::create($attributes);
+            event(new CreatingPendingTenant($tenant));
+        } finally {
+            // Update the pending_since value only after the tenant is created so it's
+            // not marked as pending until after migrations, seeders, etc are run.
+            $tenant->update([
+                'pending_since' => now()->timestamp,
+            ]);
+        }
 
         event(new PendingTenantCreated($tenant));
 
         return $tenant;
     }
 
-    /** Pull a pending tenant. */
-    public static function pullPending(): Model&Tenant
+    /**
+     * Pull a pending tenant from the pool or create a new one if the pool is empty.
+     *
+     * @param array $attributes The attributes to set on the tenant.
+     */
+    public static function pullPending(array $attributes = []): Model&Tenant
     {
         /** @var Model&Tenant $pendingTenant */
-        $pendingTenant = static::pullPendingFromPool(true);
+        $pendingTenant = static::pullPendingFromPool(true, $attributes);
 
         return $pendingTenant;
     }
 
-    /** Try to pull a tenant from the pool of pending tenants. */
-    public static function pullPendingFromPool(bool $firstOrCreate = true, array $attributes = []): ?Tenant
+    /**
+     * Try to pull a tenant from the pool of pending tenants.
+     *
+     * @param bool $firstOrCreate If true, a tenant will be *created* if the pool is empty. Otherwise null is returned.
+     * @param array $attributes The attributes to set on the tenant.
+     */
+    public static function pullPendingFromPool(bool $firstOrCreate = false, array $attributes = []): ?Tenant
     {
-        /** @var (Model&Tenant)|null $tenant */
-        $tenant = static::onlyPending()->first();
+        $tenant = DB::transaction(function () use ($attributes): ?Tenant {
+            /** @var (Model&Tenant)|null $tenant */
+            $tenant = static::onlyPending()->first();
+
+            if ($tenant !== null) {
+                event(new PullingPendingTenant($tenant));
+                $tenant->update(array_merge($attributes, [
+                    'pending_since' => null,
+                ]));
+            }
+
+            return $tenant;
+        });
 
         if ($tenant === null) {
             return $firstOrCreate ? static::create($attributes) : null;
         }
 
-        event(new PullingPendingTenant($tenant));
-
-        $tenant->update(array_merge($attributes, [
-            'pending_since' => null,
-        ]));
-
+        // Only triggered if a tenant that was pulled from the pool is returned
         event(new PendingTenantPulled($tenant));
 
         return $tenant;
