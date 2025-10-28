@@ -8,10 +8,13 @@ use Illuminate\Console\Command;
 use Stancl\Tenancy\Features\UserImpersonation;
 
 /**
- * This command clears expired impersonation tokens.
- * By default, all tokens older than UserImpersonation::$ttl (60 seconds by default)
- * are deleted. To override this, you can use the --ttl option, for example
- * --ttl=120, all tokens older than 120 seconds will be deleted, ignoring the default.
+ * This command clears impersonation tokens.
+ * By default, only expired tokens (= tokens older than 60s, which is the UserImpersonation::$ttl default) are deleted.
+ *
+ * To override the default behavior, e.g. to clear all tokens newer than 60s,
+ * you can pass the seconds in the --ttl option.
+ *
+ * For example, `tenants:clear-expired-impersonation-tokens --ttl=30` will clear all tokens older than 30 seconds, ignoring the default.
  *
  * @see Stancl\Tenancy\Features\UserImpersonation
  */
