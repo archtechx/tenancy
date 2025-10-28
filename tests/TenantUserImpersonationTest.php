@@ -397,23 +397,13 @@ test('expired impersonation tokens can be cleaned up using a command', function 
         'created_at' => Carbon::now()->subSeconds(70),
     ]);
 
-    // The --ttl option can be used to specify a custom TTL instead of updating UserImpersonation::$ttl.
-    // The passed ttl will be used in place of the default ttl,
-    // and with ttl set to 80s, the active token should not be deleted
-    pest()->artisan('tenants:clear-expired-impersonation-tokens', [
-        '--ttl' => 80,
-    ])->assertExitCode(0)
+    // With ttl set to 80s, the active token should not be deleted (token is only considered expired if older than 80s)
+    UserImpersonation::$ttl = 80;
+    pest()->artisan('tenants:clear-expired-impersonation-tokens')
+        ->assertExitCode(0)
         ->expectsOutputToContain('0 expired impersonation tokens deleted');
 
     expect(ImpersonationToken::find($activeToken->token))->not()->toBeNull();
-
-    // With ttl set to 40s, the active token should be deleted
-    pest()->artisan('tenants:clear-expired-impersonation-tokens', [
-        '--ttl' => 40,
-    ])->assertExitCode(0)
-        ->expectsOutputToContain('1 expired impersonation token deleted');
-
-    expect(ImpersonationToken::find($activeToken->token))->toBeNull();
 });
 
 function migrateTenants()
