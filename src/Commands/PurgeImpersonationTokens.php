@@ -10,13 +10,13 @@ use Stancl\Tenancy\Features\UserImpersonation;
 /**
  * Clears expired impersonation tokens.
  *
- * Tokens older than UserImpersonation::$ttl (60 seconds by default) are considered expired.
+ * Tokens older than UserImpersonation::$ttl are considered expired.
  *
  * @see Stancl\Tenancy\Features\UserImpersonation
  */
-class ClearExpiredImpersonationTokens extends Command
+class PurgeImpersonationTokens extends Command
 {
-    protected $signature = 'tenants:clear-expired-impersonation-tokens';
+    protected $signature = 'tenants:purge-impersonation-tokens';
 
     protected $description = 'Clear expired impersonation tokens.';
 

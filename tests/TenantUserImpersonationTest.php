@@ -382,7 +382,7 @@ test('expired impersonation tokens can be cleaned up using a command', function 
     expect(ImpersonationToken::find($oldToken->token))->not()->toBeNull();
     expect(ImpersonationToken::find($anotherOldToken->token))->not()->toBeNull();
 
-    pest()->artisan('tenants:clear-expired-impersonation-tokens')
+    pest()->artisan('tenants:purge-impersonation-tokens')
         ->assertExitCode(0)
         ->expectsOutputToContain('2 expired impersonation tokens deleted');
 
@@ -399,7 +399,7 @@ test('expired impersonation tokens can be cleaned up using a command', function 
 
     // With ttl set to 80s, the active token should not be deleted (token is only considered expired if older than 80s)
     UserImpersonation::$ttl = 80;
-    pest()->artisan('tenants:clear-expired-impersonation-tokens')
+    pest()->artisan('tenants:purge-impersonation-tokens')
         ->assertExitCode(0)
         ->expectsOutputToContain('0 expired impersonation tokens deleted');
 
