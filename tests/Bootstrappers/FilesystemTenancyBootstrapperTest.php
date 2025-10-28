@@ -200,3 +200,31 @@ test('tenant storage can get deleted after the tenant when DeletingTenant listen
 
     expect(File::isDirectory($tenantStoragePath))->toBeFalse();
 });
+
+test('scoped disks are scoped per tenant', function () {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'filesystems.disks.scoped_disk' => [
+            'driver' => 'scoped',
+            'disk' => 'public',
+            'prefix' => 'scoped_disk_prefix',
+        ],
+    ]);
+
+    $tenant = Tenant::create();
+
+    $storagePath = storage_path() . "/tenant{$tenant->id}";
+
+    // Resolve scoped_disk before initializing tenancy
+    Storage::disk('scoped_disk');
+
+    tenancy()->initialize($tenant);
+
+    Storage::disk('scoped_disk')->put('foo.txt', 'foo text');
+
+    tenancy()->end();
+
+    expect(File::exists($storagePath . '/app/public/scoped_disk_prefix/foo.txt'))->toBeTrue();
+});
