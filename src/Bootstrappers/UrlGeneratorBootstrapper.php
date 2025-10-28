@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Bootstrappers;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
@@ -77,6 +78,10 @@ class UrlGeneratorBootstrapper implements TenancyBootstrapper
                 $defaultParameters["$tenantParameterName:$column"] = $tenant->getAttribute($column);
             }
         }
+
+        // Inherit scheme (http/https) from the original generator
+        $originalScheme = Str::before($this->originalUrlGenerator->formatScheme(), '://');
+        $newGenerator->forceScheme($originalScheme);
 
         $newGenerator->defaults($defaultParameters);
 
