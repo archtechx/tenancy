@@ -17,6 +17,7 @@ use Stancl\Tenancy\Contracts\Tenant;
  * but feel free to customize that using the $storagePathChannels property)
  * are configured to use tenant storage directories.
  * For this to work correctly, this bootstrapper must run *after* FilesystemTenancyBootstrapper.
+ * FilesystemTenancyBootstrapper alters how storage_path() works in the tenant context.
  *
  * The bootstrapper also supports custom channel overrides via the $channelOverrides property (see the property's docblock).
  *
@@ -27,8 +28,8 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
     protected array $defaultConfig = [];
 
     /**
-     * Log channels that use the storage_path() helper for storing the logs.
-     * Requires FilesystemTenancyBootstrapper to run before this bootstrapper.
+     * Log channels that use the storage_path() helper for storing the logs. Requires FilesystemTenancyBootstrapper to run before this bootstrapper.
+     * Or you can bypass this default behavior by using overrides, since they take precedence over the default behavior.
      */
     public static array $storagePathChannels = ['single', 'daily'];
 
