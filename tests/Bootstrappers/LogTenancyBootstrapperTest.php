@@ -66,7 +66,7 @@ test('storage path channels get tenant-specific paths by default', function () {
     }
 });
 
-test('all channels included in the log stack get processed', function () {
+test('all channels included in the log stack get processed correctly', function () {
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
@@ -79,16 +79,29 @@ test('all channels included in the log stack get processed', function () {
         ],
     ]);
 
+    $centralStoragePath = storage_path();
+    $centralLogPath = $centralStoragePath . '/logs/laravel.log';
     $originalSinglePath = config('logging.channels.single.path');
     $originalDailyPath = config('logging.channels.daily.path');
+
+    // By default, both paths are the same in the config.
+    // Note that in actual usage, the daily log file name is parsed differently from the path in the config,
+    // but the paths *in the config* are the same.
+    expect($centralLogPath)
+        ->toBe($centralStoragePath . '/logs/laravel.log')
+        ->toBe($originalSinglePath)
+        ->toBe($originalDailyPath);
 
     $tenant = Tenant::create();
 
     tenancy()->initialize($tenant);
 
-    // Both channels in the stack should be updated
-    expect(config('logging.channels.single.path'))->not()->toBe($originalSinglePath);
-    expect(config('logging.channels.daily.path'))->not()->toBe($originalDailyPath);
+    // Both channels in the stack are updated correctly
+    expect("{$centralStoragePath}/tenant{$tenant->id}/logs/laravel.log")
+        ->not()->toBe($originalSinglePath)
+        ->not()->toBe($originalDailyPath)
+        ->toBe(config('logging.channels.single.path'))
+        ->toBe(config('logging.channels.daily.path'));
 
     tenancy()->end();
 
