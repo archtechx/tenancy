@@ -113,8 +113,8 @@ test('channel overrides work correctly with both arrays and closures', function 
     // Test both array mapping and closure-based overrides
     LogTenancyBootstrapper::$channelOverrides = [
         'slack' => ['url' => 'webhookUrl'], // slack.url will be mapped to $tenant->webhookUrl
-        'single' => function ($config, $tenant) {
-            $config->set('logging.channels.single.path', storage_path("logs/override-{$tenant->id}.log"));
+        'single' => function (array $channel, Tenant $tenant) {
+            return array_merge($channel, ['path' => storage_path("logs/override-{$tenant->id}.log")]);
         },
     ];
 
@@ -155,8 +155,8 @@ test('channel overrides take precedence over the default storage path channel up
     $tenant = Tenant::create(['id' => 'tenant1']);
 
     LogTenancyBootstrapper::$channelOverrides = [
-        'single' => function ($config, $tenant) {
-            $config->set('logging.channels.single.path', storage_path("logs/override-{$tenant->id}.log"));
+        'single' => function (array $channel, Tenant $tenant) {
+            return array_merge($channel, ['path' => storage_path("logs/override-{$tenant->id}.log")]);
         },
     ];
 
@@ -261,9 +261,9 @@ test('logs are written to tenant-specific files and do not leak between contexts
     $tenant = Tenant::create(['id' => 'override-tenant']);
 
     LogTenancyBootstrapper::$channelOverrides = [
-        'single' => function ($config, $tenant) {
+        'single' => function (array $channel, Tenant $tenant) {
             // The tenant log path will be set to storage/tenantoverride-tenant/logs/custom-override-tenant.log
-            $config->set('logging.channels.single.path', storage_path("logs/custom-{$tenant->id}.log"));
+            return array_merge($channel, ['path' => storage_path("logs/custom-{$tenant->id}.log")]);
         },
     ];
 

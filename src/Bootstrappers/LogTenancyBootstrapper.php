@@ -120,7 +120,9 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
                 }
             }
         } elseif ($override instanceof Closure) {
-            $override($this->config, $tenant);
+            $channelConfigKey = "logging.channels.{$channel}";
+
+            $this->config->set($channelConfigKey, $override($this->config->get($channelConfigKey), $tenant));
         }
     }
 
