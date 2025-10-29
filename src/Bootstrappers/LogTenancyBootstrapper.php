@@ -37,7 +37,7 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
      *
      * Examples:
      * - Array mapping (the default approach): ['slack' => ['url' => 'webhookUrl']] maps $tenant->webhookUrl to slack.url (if $tenant->webhookUrl is not null, otherwise, the override is ignored)
-     * - Closure: ['slack' => fn ($config, $tenant) => $config->set('logging.channels.slack.url', $tenant->slackUrl)]
+     * - Closure: ['slack' => fn (Tenant $tenant, array $channel) => array_merge($channel, ['url' => $tenant->slackUrl])]
      */
     public static array $channelOverrides = [];
 
@@ -100,7 +100,7 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
                 $this->overrideChannelConfig($channel, static::$channelOverrides[$channel], $tenant);
             } elseif (in_array($channel, static::$storagePathChannels)) {
                 // Set storage path channels to use tenant-specific directory (default behavior)
-                // The tenant log will be located at e.g. "storage/tenant{$tenantKey}/logs/laravel.log"
+                // The tenant log will be located at e.g. "storage/tenant{$tenantKey}/logs/laravel.log" (assuming FilesystemTenancyBootstrapper is used before this bootstrapper)
                 $this->config->set("logging.channels.{$channel}.path", storage_path('logs/laravel.log'));
             }
         }
@@ -122,7 +122,7 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
         } elseif ($override instanceof Closure) {
             $channelConfigKey = "logging.channels.{$channel}";
 
-            $this->config->set($channelConfigKey, $override($this->config->get($channelConfigKey), $tenant));
+            $this->config->set($channelConfigKey, $override($tenant, $this->config->get($channelConfigKey)));
         }
     }
 

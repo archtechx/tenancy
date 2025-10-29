@@ -14,7 +14,7 @@ use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 beforeEach(function () {
     config([
         'tenancy.bootstrappers' => [
-            // FilesystemTenancyBootstrapper needed for storage path channels (added in tests that check the storage path channel logic)
+            // FilesystemTenancyBootstrapper needed for LogTenancyBootstrapper to work with storage path channels BY DEFAULT (note that this can be completely overridden)
             LogTenancyBootstrapper::class,
         ],
     ]);
@@ -33,7 +33,7 @@ afterEach(function () {
 });
 
 test('storage path channels get tenant-specific paths by default', function () {
-    // Note that for LogTenancyBootstrapper to change the paths correctly,
+    // Note that for LogTenancyBootstrapper to change the paths correctly by default,
     // the bootstrapper MUST run after FilesystemTenancyBootstrapper.
     config([
         'tenancy.bootstrappers' => [
@@ -113,7 +113,7 @@ test('channel overrides work correctly with both arrays and closures', function 
     // Test both array mapping and closure-based overrides
     LogTenancyBootstrapper::$channelOverrides = [
         'slack' => ['url' => 'webhookUrl'], // slack.url will be mapped to $tenant->webhookUrl
-        'single' => function (array $channel, Tenant $tenant) {
+        'single' => function (Tenant $tenant, array $channel) {
             return array_merge($channel, ['path' => storage_path("logs/override-{$tenant->id}.log")]);
         },
     ];
@@ -155,7 +155,7 @@ test('channel overrides take precedence over the default storage path channel up
     $tenant = Tenant::create(['id' => 'tenant1']);
 
     LogTenancyBootstrapper::$channelOverrides = [
-        'single' => function (array $channel, Tenant $tenant) {
+        'single' => function (Tenant $tenant, array $channel) {
             return array_merge($channel, ['path' => storage_path("logs/override-{$tenant->id}.log")]);
         },
     ];
@@ -261,7 +261,7 @@ test('logs are written to tenant-specific files and do not leak between contexts
     $tenant = Tenant::create(['id' => 'override-tenant']);
 
     LogTenancyBootstrapper::$channelOverrides = [
-        'single' => function (array $channel, Tenant $tenant) {
+        'single' => function (Tenant $tenant, array $channel) {
             // The tenant log path will be set to storage/tenantoverride-tenant/logs/custom-override-tenant.log
             return array_merge($channel, ['path' => storage_path("logs/custom-{$tenant->id}.log")]);
         },
