@@ -11,13 +11,6 @@ use Illuminate\Database\Eloquent\Scope;
 class PendingScope implements Scope
 {
     /**
-     * All of the extensions to be added to the builder.
-     *
-     * @var string[]
-     */
-    protected $extensions = ['WithPending', 'WithoutPending', 'OnlyPending'];
-
-    /**
      * Apply the scope to a given Eloquent query builder.
      *
      * @param Builder<Model> $builder
@@ -32,26 +25,21 @@ class PendingScope implements Scope
     }
 
     /**
-     * Extend the query builder with the needed functions.
+     * Add methods to the query builder.
      *
      * @param Builder<\Stancl\Tenancy\Contracts\Tenant&Model> $builder
-     *
-     * @return void
      */
-    public function extend(Builder $builder)
+    public function extend(Builder $builder): void
     {
-        foreach ($this->extensions as $extension) {
-            $this->{"add{$extension}"}($builder);
-        }
+        $this->addWithPending($builder);
+        $this->addWithoutPending($builder);
+        $this->addOnlyPending($builder);
     }
+
     /**
-     * Add the with-pending extension to the builder.
-     *
      * @param Builder<\Stancl\Tenancy\Contracts\Tenant&Model> $builder
-     *
-     * @return void
      */
-    protected function addWithPending(Builder $builder)
+    protected function addWithPending(Builder $builder): void
     {
         $builder->macro('withPending', function (Builder $builder, $withPending = true) {
             if (! $withPending) {
@@ -63,13 +51,9 @@ class PendingScope implements Scope
     }
 
     /**
-     * Add the without-pending extension to the builder.
-     *
      * @param Builder<\Stancl\Tenancy\Contracts\Tenant&Model> $builder
-     *
-     * @return void
      */
-    protected function addWithoutPending(Builder $builder)
+    protected function addWithoutPending(Builder $builder): void
     {
         $builder->macro('withoutPending', function (Builder $builder) {
             $builder->withoutGlobalScope(static::class)
@@ -81,13 +65,9 @@ class PendingScope implements Scope
     }
 
     /**
-     * Add the only-pending extension to the builder.
-     *
      * @param Builder<\Stancl\Tenancy\Contracts\Tenant&Model> $builder
-     *
-     * @return void
      */
-    protected function addOnlyPending(Builder $builder)
+    protected function addOnlyPending(Builder $builder): void
     {
         $builder->macro('onlyPending', function (Builder $builder) {
             $builder->withoutGlobalScope(static::class)->whereNotNull($builder->getModel()->getColumnForQuery('pending_since'));

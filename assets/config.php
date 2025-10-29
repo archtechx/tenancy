@@ -444,7 +444,6 @@ return [
 
     /**
      * Pending tenants config.
-     * This is useful if you're looking for a way to always have a tenant ready to be used.
      */
     'pending' => [
         /**
@@ -453,6 +452,7 @@ return [
          * Note: when disabled, this will also ignore pending tenants when running the tenant commands (migration, seed, etc.)
          */
         'include_in_queries' => true,
+
         /**
          * Defines how many pending tenants you want to have ready in the pending tenant pool.
          * This depends on the volume of tenants you're creating.
