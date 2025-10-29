@@ -135,7 +135,7 @@ test('channel overrides work correctly with both arrays and closures', function 
     expect(config('logging.channels.slack.username'))->toBe('Default'); // Not changed at all
 });
 
-test('channel config keys remains unchanged if the specified tenant override attribute is null', function() {
+test('channel config keys remain unchanged if the specified tenant override attribute is null', function() {
     config(['logging.default' => 'slack']);
     config(['logging.channels.slack.username' => 'Default username']);
 
