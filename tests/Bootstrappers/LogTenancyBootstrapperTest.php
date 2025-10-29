@@ -42,6 +42,7 @@ test('storage path channels get tenant-specific paths by default', function () {
         ],
     ]);
 
+    $centralStoragePath = storage_path();
     $tenant = Tenant::create();
 
     // Storage path channels are 'single' and 'daily' by default.
@@ -54,10 +55,10 @@ test('storage path channels get tenant-specific paths by default', function () {
         tenancy()->initialize($tenant);
 
         // Path should now point to the log in the tenant's storage directory
-        $tenantLogPath = "storage/tenant{$tenant->id}/logs/laravel.log";
+        $tenantLogPath = "{$centralStoragePath}/tenant{$tenant->id}/logs/laravel.log";
         expect(config("logging.channels.{$channel}.path"))
             ->not()->toBe($originalPath)
-            ->toEndWith($tenantLogPath);
+            ->toBe($tenantLogPath);
 
         tenancy()->end();
 
@@ -119,15 +120,16 @@ test('channel overrides work correctly with both arrays and closures', function 
         ],
     ]);
 
+    $centralStoragePath = storage_path();
     $originalSinglePath = config('logging.channels.single.path');
 
-    $tenant = Tenant::create(['id' => 'tenant1', 'webhookUrl' => 'tenant-webhook']);
+    $tenant = Tenant::create(['webhookUrl' => 'tenant-webhook']);
 
     // Test both array mapping and closure-based overrides
     LogTenancyBootstrapper::$channelOverrides = [
         'slack' => ['url' => 'webhookUrl'], // slack.url will be mapped to $tenant->webhookUrl
-        'single' => function (Tenant $tenant, array $channel) {
-            return array_merge($channel, ['path' => storage_path("logs/override-{$tenant->id}.log")]);
+        'single' => function (Tenant $tenant, array $channel) use ($centralStoragePath) {
+            return array_merge($channel, ['path' => $centralStoragePath . "/logs/override-{$tenant->id}.log"]);
         },
     ];
 
@@ -138,7 +140,7 @@ test('channel overrides work correctly with both arrays and closures', function 
     expect(config('logging.channels.slack.username'))->toBe('Default'); // Default username, remains default unless overridden
 
     // Closure overrides work
-    expect(config('logging.channels.single.path'))->toEndWith('storage/logs/override-tenant1.log');
+    expect(config('logging.channels.single.path'))->toBe("{$centralStoragePath}/logs/override-{$tenant->id}.log");
 
     tenancy()->end();
 
@@ -307,6 +309,8 @@ test('stack logs are written to all configured channels with tenant-specific pat
     // Central context stack log
     logger('central');
     $centralSingleLogPath = storage_path('logs/laravel.log');
+
+    // The single and daily channels have the same path in the config, but the daily driver parses the file name so that the date is included in the file name
     $centralDailyLogPath = storage_path("logs/laravel-{$today}.log");
 
     expect(file_get_contents($centralSingleLogPath))->toContain('central');
