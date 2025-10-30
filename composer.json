@@ -33,7 +33,8 @@
         "doctrine/dbal": "^3.6.0",
         "spatie/valuestore": "^1.2.5",
         "pestphp/pest": "^3.0",
-        "larastan/larastan": "^3.0"
+        "larastan/larastan": "^3.0",
+        "league/flysystem-path-prefixing": "^3.0"
     },
     "autoload": {
         "psr-4": {
