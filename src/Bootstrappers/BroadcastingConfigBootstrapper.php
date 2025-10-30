@@ -15,7 +15,7 @@ use Stancl\Tenancy\Overrides\TenancyBroadcastManager;
 class BroadcastingConfigBootstrapper implements TenancyBootstrapper
 {
     /**
-     * Tenant properties to be mapped to config (similarly to the TenantConfig feature).
+     * Tenant properties to be mapped to config (similarly to the TenantConfigBootstrapper).
      *
      * For example:
      * [
