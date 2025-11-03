@@ -46,6 +46,10 @@ use Stancl\Tenancy\ResourceSyncing\Events\SyncedResourceSavedInForeignDatabase;
 use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Database\QueryException;
 use function Stancl\Tenancy\Tests\pest;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Stancl\Tenancy\ResourceSyncing\Events\SyncedResourceDeleted;
+use Stancl\Tenancy\ResourceSyncing\Listeners\DeleteResourceMapping;
 
 beforeEach(function () {
     config(['tenancy.bootstrappers' => [
@@ -92,6 +96,7 @@ beforeEach(function () {
     CentralUser::$creationAttributes = $creationAttributes;
 
     Event::listen(SyncedResourceSaved::class, UpdateOrCreateSyncedResource::class);
+    Event::listen(SyncedResourceDeleted::class, DeleteResourceMapping::class);
     Event::listen(SyncMasterDeleted::class, DeleteResourcesInTenants::class);
     Event::listen(SyncMasterRestored::class, RestoreResourcesInTenants::class);
     Event::listen(CentralResourceAttachedToTenant::class, CreateTenantResource::class);
@@ -890,8 +895,12 @@ test('deleting SyncMaster automatically deletes its Syncables', function (bool $
     'basic pivot' => false,
 ]);
 
-test('tenant pivot records are deleted along with the tenants to which they belong to', function() {
+test('tenant pivot records are deleted along with the tenants to which they belong to', function(bool $dbLevelOnCascadeDelete) {
     [$tenant] = createTenantsAndRunMigrations();
+
+    if ($dbLevelOnCascadeDelete) {
+        addFkConstraintsToTenantUsersPivot();
+    }
 
     $syncMaster = CentralUser::create([
         'global_id' => 'cascade_user',
@@ -907,6 +916,54 @@ test('tenant pivot records are deleted along with the tenants to which they belo
 
     // Deleting tenant deletes its pivot records
     expect(DB::select("SELECT * FROM tenant_users WHERE tenant_id = ?", [$tenant->getTenantKey()]))->toHaveCount(0);
+})->with([
+    'db level on cascade delete' => true,
+    'event-based on cascade delete' => false,
+]);
+
+test('pivot record is automatically deleted with the tenant resource', function() {
+    [$tenant] = createTenantsAndRunMigrations();
+
+    $syncMaster = CentralUser::create([
+        'global_id' => 'cascade_user',
+        'name' => 'Central user',
+        'email' => 'central@localhost',
+        'password' => 'password',
+        'role' => 'cascade_user',
+    ]);
+
+    $syncMaster->tenants()->attach($tenant);
+
+    expect(DB::select("SELECT * FROM tenant_users WHERE tenant_id = ?", [$tenant->id]))->toHaveCount(1);
+
+    $tenant->run(function () {
+        TenantUser::firstWhere('global_id', 'cascade_user')->delete();
+    });
+
+    // Deleting tenant resource deletes its pivot record
+    expect(DB::select("SELECT * FROM tenant_users WHERE tenant_id = ?", [$tenant->id]))->toHaveCount(0);
+
+    // The same works with forceDelete
+    addExtraColumns(true);
+
+    $syncMaster = CentralUserWithSoftDeletes::create([
+        'global_id' => 'force_cascade_user',
+        'name' => 'Central user',
+        'email' => 'central2@localhost',
+        'password' => 'password',
+        'role' => 'force_cascade_user',
+        'foo' => 'bar',
+    ]);
+
+    $syncMaster->tenants()->attach($tenant);
+
+    expect(DB::select("SELECT * FROM tenant_users WHERE tenant_id = ?", [$tenant->id]))->toHaveCount(1);
+
+    $tenant->run(function () {
+        TenantUserWithSoftDeletes::firstWhere('global_id', 'force_cascade_user')->forceDelete();
+    });
+
+    expect(DB::select("SELECT * FROM tenant_users WHERE tenant_id = ?", [$tenant->id]))->toHaveCount(0);
 });
 
 test('trashed resources are synced correctly', function () {
@@ -1264,6 +1321,14 @@ test('global scopes on syncable models can break resource syncing', function () 
     // The change was also synced to tenant1
     expect($tenant1->run(fn () => TenantUser::first()->name))->toBe('tenant2 user');
 });
+
+function addFkConstraintsToTenantUsersPivot(): void
+{
+    Schema::table('tenant_users', function (Blueprint $table) {
+        $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
+        $table->foreign('global_user_id')->references('global_id')->on('users')->onDelete('cascade');
+    });
+}
 
 /**
  * Create two tenants and run migrations for those tenants.

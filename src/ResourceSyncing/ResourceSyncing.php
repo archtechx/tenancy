@@ -11,6 +11,7 @@ use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\ResourceSyncing\Events\CentralResourceAttachedToTenant;
 use Stancl\Tenancy\ResourceSyncing\Events\CentralResourceDetachedFromTenant;
+use Stancl\Tenancy\ResourceSyncing\Events\SyncedResourceDeleted;
 use Stancl\Tenancy\ResourceSyncing\Events\SyncedResourceSaved;
 use Stancl\Tenancy\ResourceSyncing\Events\SyncMasterDeleted;
 use Stancl\Tenancy\ResourceSyncing\Events\SyncMasterRestored;
@@ -25,8 +26,8 @@ trait ResourceSyncing
             }
         });
 
-        static::deleting(function (Syncable&Model $model) {
-            if ($model->shouldSync() && $model instanceof SyncMaster) {
+        static::deleted(function (Syncable&Model $model) {
+            if ($model->shouldSync()) {
                 $model->triggerDeleteEvent();
             }
         });
@@ -42,14 +43,14 @@ trait ResourceSyncing
 
         if (in_array(SoftDeletes::class, class_uses_recursive(static::class), true)) {
             static::forceDeleting(function (Syncable&Model $model) {
-                if ($model->shouldSync() && $model instanceof SyncMaster) {
+                if ($model->shouldSync()) {
                     $model->triggerDeleteEvent(true);
                 }
             });
 
             static::restoring(function (Syncable&Model $model) {
-                if ($model->shouldSync() && $model instanceof SyncMaster) {
-                    $model->triggerRestoredEvent();
+                if ($model instanceof SyncMaster && $model->shouldSync()) {
+                    $model->triggerRestoreEvent();
                 }
             });
         }
@@ -67,9 +68,11 @@ trait ResourceSyncing
             /** @var SyncMaster&Model $this */
             event(new SyncMasterDeleted($this, $forceDelete));
         }
+
+        event(new SyncedResourceDeleted($this, tenant(), $forceDelete));
     }
 
-    public function triggerRestoredEvent(): void
+    public function triggerRestoreEvent(): void
     {
         if ($this instanceof SyncMaster && in_array(SoftDeletes::class, class_uses_recursive($this), true)) {
             /** @var SyncMaster&Model $this */
