@@ -12,6 +12,7 @@ use Stancl\Tenancy\ResourceSyncing\SyncMaster;
 class CentralUser extends Model implements SyncMaster
 {
     use ResourceSyncing, CentralConnection;
+
     protected $guarded = [];
 
     public $timestamps = false;

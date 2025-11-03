@@ -25,7 +25,5 @@ interface SyncMaster extends Syncable
 
     public function triggerAttachEvent(TenantWithDatabase&Model $tenant): void;
 
-    public function triggerDeleteEvent(bool $forceDelete = false): void;
-
-    public function triggerRestoredEvent(): void;
+    public function triggerRestoreEvent(): void;
 }
