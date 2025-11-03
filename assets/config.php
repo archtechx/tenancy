@@ -48,6 +48,8 @@ return [
          * SECURITY NOTE: Keep in mind that autoincrement IDs come with potential enumeration issues (such as tenant storage URLs).
          *
          * @see \Stancl\Tenancy\UniqueIdentifierGenerators\UUIDGenerator
+         * @see \Stancl\Tenancy\UniqueIdentifierGenerators\ULIDGenerator
+         * @see \Stancl\Tenancy\UniqueIdentifierGenerators\UUIDv7Generator
          * @see \Stancl\Tenancy\UniqueIdentifierGenerators\RandomHexGenerator
          * @see \Stancl\Tenancy\UniqueIdentifierGenerators\RandomIntGenerator
          * @see \Stancl\Tenancy\UniqueIdentifierGenerators\RandomStringGenerator
