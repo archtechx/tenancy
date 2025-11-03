@@ -129,6 +129,9 @@ class TenancyServiceProvider extends ServiceProvider
             ResourceSyncing\Events\SyncedResourceSaved::class => [
                 ResourceSyncing\Listeners\UpdateOrCreateSyncedResource::class,
             ],
+            ResourceSyncing\Events\SyncedResourceDeleted::class => [
+                ResourceSyncing\Listeners\DeleteResourceMapping::class,
+            ],
             ResourceSyncing\Events\SyncMasterDeleted::class => [
                 ResourceSyncing\Listeners\DeleteResourcesInTenants::class,
             ],
