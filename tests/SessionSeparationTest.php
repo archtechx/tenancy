@@ -56,6 +56,7 @@ test('file sessions are separated', function (bool $scopeSessions) {
 
     if ($scopeSessions) {
         expect($sessionPath())->toBe(storage_path('tenant' . $tenant->getTenantKey() . '/framework/sessions'));
+        expect(is_dir(storage_path('tenant' . $tenant->getTenantKey() . '/framework/sessions')))->toBeTrue();
     } else {
         expect($sessionPath())->toBe(storage_path('framework/sessions'));
     }
