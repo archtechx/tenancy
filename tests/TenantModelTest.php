@@ -23,6 +23,7 @@ use Stancl\Tenancy\UniqueIdentifierGenerators\RandomHexGenerator;
 use Stancl\Tenancy\UniqueIdentifierGenerators\RandomIntGenerator;
 use Stancl\Tenancy\UniqueIdentifierGenerators\RandomStringGenerator;
 use Stancl\Tenancy\UniqueIdentifierGenerators\ULIDGenerator;
+use Stancl\Tenancy\UniqueIdentifierGenerators\UUIDv7Generator;
 
 use function Stancl\Tenancy\Tests\pest;
 
@@ -90,6 +91,20 @@ test('ulid ids are supported', function () {
     $tenant2 = Tenant::create();
     expect($tenant2->id)->toBeString();
     expect(strlen($tenant2->id))->toBe(26);
+
+    expect($tenant2->id > $tenant1->id)->toBeTrue();
+});
+
+test('uuidv7 ids are supported', function () {
+    app()->bind(UniqueIdentifierGenerator::class, UUIDv7Generator::class);
+
+    $tenant1 = Tenant::create();
+    expect($tenant1->id)->toBeString();
+    expect(strlen($tenant1->id))->toBe(36);
+
+    $tenant2 = Tenant::create();
+    expect($tenant2->id)->toBeString();
+    expect(strlen($tenant2->id))->toBe(36);
 
     expect($tenant2->id > $tenant1->id)->toBeTrue();
 });
