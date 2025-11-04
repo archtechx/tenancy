@@ -48,7 +48,9 @@ use Illuminate\Database\QueryException;
 use function Stancl\Tenancy\Tests\pest;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
+use Stancl\Tenancy\Events\TenantDeleted;
 use Stancl\Tenancy\ResourceSyncing\Events\SyncedResourceDeleted;
+use Stancl\Tenancy\ResourceSyncing\Listeners\DeleteAllTenantMappings;
 use Stancl\Tenancy\ResourceSyncing\Listeners\DeleteResourceMapping;
 
 beforeEach(function () {
@@ -73,6 +75,7 @@ beforeEach(function () {
     CreateTenantResource::$shouldQueue = false;
     DeleteResourceInTenant::$shouldQueue = false;
     UpdateOrCreateSyncedResource::$scopeGetModelQuery = null;
+    DeleteAllTenantMappings::$pivotTables = ['tenant_resources' => 'tenant_id'];
 
     // Reset global scopes on models (should happen automatically but to make this more explicit)
     Model::clearBootedModels();
@@ -895,30 +898,51 @@ test('deleting SyncMaster automatically deletes its Syncables', function (bool $
     'basic pivot' => false,
 ]);
 
-test('tenant pivot records are deleted along with the tenants to which they belong to', function(bool $dbLevelOnCascadeDelete) {
+test('tenant pivot records are deleted along with the tenants to which they belong', function (bool $dbLevelOnCascadeDelete, bool $morphPivot) {
     [$tenant] = createTenantsAndRunMigrations();
 
-    if ($dbLevelOnCascadeDelete) {
-        addFkConstraintsToTenantUsersPivot();
+    if ($morphPivot) {
+        config(['tenancy.models.tenant' => MorphTenant::class]);
+        $centralUserModel = BaseCentralUser::class;
+
+        // The default pivot table, no need to configure the listener
+        $pivotTable = 'tenant_resources';
+    } else {
+        $centralUserModel = CentralUser::class;
+
+        // Custom pivot table
+        $pivotTable = 'tenant_users';
     }
 
-    $syncMaster = CentralUser::create([
-        'global_id' => 'cascade_user',
+    if ($dbLevelOnCascadeDelete) {
+        addTenantIdConstraintToPivot($pivotTable);
+    } else {
+        // Event-based cleanup
+        Event::listen(TenantDeleted::class, DeleteAllTenantMappings::class);
+
+        DeleteAllTenantMappings::$pivotTables = [$pivotTable => 'tenant_id'];
+    }
+
+    $syncMaster = $centralUserModel::create([
+        'global_id' => 'user',
         'name' => 'Central user',
         'email' => 'central@localhost',
         'password' => 'password',
-        'role' => 'cascade_user',
+        'role' => 'user',
     ]);
 
     $syncMaster->tenants()->attach($tenant);
 
+    // Pivot records should be deleted along with the tenant
     $tenant->delete();
 
-    // Deleting tenant deletes its pivot records
-    expect(DB::select("SELECT * FROM tenant_users WHERE tenant_id = ?", [$tenant->getTenantKey()]))->toHaveCount(0);
+    expect(DB::select("SELECT * FROM {$pivotTable} WHERE tenant_id = ?", [$tenant->getTenantKey()]))->toHaveCount(0);
 })->with([
     'db level on cascade delete' => true,
     'event-based on cascade delete' => false,
+])->with([
+    'polymorphic pivot' => true,
+    'basic pivot' => false,
 ]);
 
 test('pivot record is automatically deleted with the tenant resource', function() {
@@ -964,6 +988,24 @@ test('pivot record is automatically deleted with the tenant resource', function(
     });
 
     expect(DB::select("SELECT * FROM tenant_users WHERE tenant_id = ?", [$tenant->id]))->toHaveCount(0);
+});
+
+test('DeleteAllTenantMappings handles incorrect configuration correctly', function() {
+    Event::listen(TenantDeleted::class, DeleteAllTenantMappings::class);
+
+    [$tenant1, $tenant2] = createTenantsAndRunMigrations();
+
+    // Existing table, non-existent tenant key column
+    // The listener should throw an 'unknown column' exception
+    DeleteAllTenantMappings::$pivotTables = ['tenant_users' => 'non_existent_column'];
+
+    // Should throw an exception when tenant is deleted
+    expect(fn() => $tenant1->delete())->toThrow(QueryException::class, "Unknown column 'non_existent_column' in 'where clause'");
+
+    // Non-existent table
+    DeleteAllTenantMappings::$pivotTables = ['nonexistent_pivot' => 'non_existent_column'];
+
+    expect(fn() => $tenant2->delete())->toThrow(QueryException::class, "Table 'main.nonexistent_pivot' doesn't exist");
 });
 
 test('trashed resources are synced correctly', function () {
@@ -1322,11 +1364,10 @@ test('global scopes on syncable models can break resource syncing', function () 
     expect($tenant1->run(fn () => TenantUser::first()->name))->toBe('tenant2 user');
 });
 
-function addFkConstraintsToTenantUsersPivot(): void
+function addTenantIdConstraintToPivot(string $pivotTable): void
 {
-    Schema::table('tenant_users', function (Blueprint $table) {
+    Schema::table($pivotTable, function (Blueprint $table) {
         $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
-        $table->foreign('global_user_id')->references('global_id')->on('users')->onDelete('cascade');
     });
 }
 

@@ -81,6 +81,8 @@ class TenancyServiceProvider extends ServiceProvider
                 ])->send(function (Events\TenantDeleted $event) {
                     return $event->tenant;
                 })->shouldBeQueued(false),
+
+                // ResourceSyncing\Listeners\DeleteAllTenantMappings::class,
             ],
 
             Events\TenantMaintenanceModeEnabled::class => [],
