@@ -78,6 +78,15 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             return;
         }
 
+        $path = $suffix
+            ? $this->tenantStoragePath($suffix) . '/framework/cache'
+            : $this->originalStoragePath . '/framework/cache';
+
+        if (! is_dir($path)) {
+            // Create tenant framework/cache directory if it does not exist
+            mkdir($path, 0750, true);
+        }
+
         if ($suffix === false) {
             $this->app->useStoragePath($this->originalStoragePath);
         } else {
@@ -211,7 +220,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
         if (! is_dir($path)) {
             // Create tenant framework/sessions directory if it does not exist
-            mkdir($path, 0755, true);
+            mkdir($path, 0750, true);
         }
 
         $this->app['config']['session.files'] = $path;

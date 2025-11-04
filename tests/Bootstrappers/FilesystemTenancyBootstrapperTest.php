@@ -200,3 +200,24 @@ test('tenant storage can get deleted after the tenant when DeletingTenant listen
 
     expect(File::isDirectory($tenantStoragePath))->toBeFalse();
 });
+
+test('the framework/cache directory is created when storage_path is scoped', function (bool $suffixStoragePath) {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.filesystem.suffix_storage_path' => $suffixStoragePath
+    ]);
+
+    $centralStoragePath = storage_path();
+
+    tenancy()->initialize($tenant = Tenant::create());
+
+    if ($suffixStoragePath) {
+        expect(storage_path('framework/cache'))->toBe($centralStoragePath . "/tenant{$tenant->id}/framework/cache");
+        expect(is_dir($centralStoragePath . "/tenant{$tenant->id}/framework/cache"))->toBeTrue();
+    } else {
+        expect(storage_path('framework/cache'))->toBe($centralStoragePath . '/framework/cache');
+        expect(is_dir($centralStoragePath . "/tenant{$tenant->id}/framework/cache"))->toBeFalse();
+    }
+})->with([true, false]);
