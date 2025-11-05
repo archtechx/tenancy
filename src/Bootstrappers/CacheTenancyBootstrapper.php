@@ -102,14 +102,7 @@ class CacheTenancyBootstrapper implements TenancyBootstrapper
         if ($this->config->get('tenancy.cache.scope_sessions', true)) {
             // These are the only cache driven session backends (see Laravel's config/session.php)
             if (! in_array($this->config->get('session.driver'), ['redis', 'memcached', 'dynamodb', 'apc'], true)) {
-                if (app()->environment('production')) {
-                    // We only throw this exception in prod to make configuration a little easier. Developers
-                    // may have scope_sessions set to true while using different session drivers e.g. in tests.
-                    // Previously we just silently ignored this, however since session scoping is of high importance
-                    // in production, we make sure to notify the developer, by throwing an exception, that session
-                    // scoping isn't happening as expected/configured due to an incompatible session driver.
-                    throw new Exception('Session driver [' . $this->config->get('session.driver') . '] cannot be scoped by tenancy.cache.scope_sessions');
-                }
+                throw new Exception('Session driver [' . $this->config->get('session.driver') . '] cannot be scoped by tenancy.cache.scope_sessions');
             } else {
                 // Scoping sessions using this bootstrapper implicitly adds the session store to $names
                 $names[] = $this->getSessionCacheStoreName();
