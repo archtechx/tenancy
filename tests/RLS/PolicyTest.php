@@ -17,6 +17,7 @@ use Stancl\Tenancy\Commands\CreateUserWithRLSPolicies;
 use Stancl\Tenancy\RLS\PolicyManagers\TableRLSManager;
 use Stancl\Tenancy\RLS\PolicyManagers\TraitRLSManager;
 use Stancl\Tenancy\Bootstrappers\PostgresRLSBootstrapper;
+use Stancl\Tenancy\Tenancy;
 use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
@@ -188,6 +189,23 @@ test('rls command recreates policies if the force option is passed', function (s
     TableRLSManager::class,
     TraitRLSManager::class,
 ]);
+
+test('dropRLSPolicies removes postgres policies', function () {
+    // create dummy policy with characters that require quoting to ensure identifier handling works
+    DB::statement('CREATE POLICY "comments_rls_policy_manual" ON comments USING (true)');
+
+    $policyCount = fn () => count(DB::select(
+        'SELECT policyname FROM pg_policies WHERE tablename = ? AND policyname = ?',
+        ['comments', 'comments_rls_policy_manual']
+    ));
+
+    expect($policyCount())->toBe(1);
+
+    $removed = Tenancy::dropRLSPolicies('comments');
+
+    expect($removed)->toBe(1);
+    expect($policyCount())->toBe(0);
+});
 
 test('queries will stop working when the tenant session variable is not set', function(string $manager, bool $forceRls) {
     CreateUserWithRLSPolicies::$forceRls = $forceRls;
