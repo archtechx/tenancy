@@ -17,28 +17,18 @@ trait ManagesRLSPolicies
     {
         return array_map(
             fn (stdClass $policy) => $policy->policyname,
-            DB::select(
-                "SELECT policyname FROM pg_policies WHERE tablename = ? AND policyname LIKE ?",
-                [$table, '%_rls_policy%']
-            )
+            DB::select("SELECT policyname FROM pg_policies WHERE tablename = '{$table}' AND policyname LIKE '%_rls_policy%'")
         );
     }
 
     public static function dropRLSPolicies(string $table): int
     {
         $policies = static::getRLSPolicies($table);
-        $quotedTable = static::quoteIdentifier($table);
 
         foreach ($policies as $policy) {
-            $quotedPolicy = static::quoteIdentifier($policy);
-            DB::statement("DROP POLICY {$quotedPolicy} ON {$quotedTable}");
+            DB::statement('DROP POLICY ? ON ?', [$policy, $table]);
         }
 
         return count($policies);
-    }
-
-    protected static function quoteIdentifier(string $identifier): string
-    {
-        return '"' . str_replace('"', '""', $identifier) . '"';
     }
 }
