@@ -190,21 +190,20 @@ test('rls command recreates policies if the force option is passed', function (s
     TraitRLSManager::class,
 ]);
 
-test('dropRLSPolicies removes postgres policies', function () {
-    // create dummy policy with characters that require quoting to ensure identifier handling works
-    DB::statement('CREATE POLICY "comments_rls_policy_manual" ON comments USING (true)');
+test('dropRLSPolicies only drops RLS policies', function () {
+    DB::statement('CREATE POLICY "comments_dummy_rls_policy" ON comments USING (true)');
+    DB::statement('CREATE POLICY "comments_foo_policy" ON comments USING (true)'); // non-RLS policy
 
-    $policyCount = fn () => count(DB::select(
-        'SELECT policyname FROM pg_policies WHERE tablename = ? AND policyname = ?',
-        ['comments', 'comments_rls_policy_manual']
-    ));
+    $policyCount = fn () => count(DB::select("SELECT policyname FROM pg_policies WHERE tablename = 'comments'"));
 
-    expect($policyCount())->toBe(1);
+    expect($policyCount())->toBe(2);
 
     $removed = Tenancy::dropRLSPolicies('comments');
 
     expect($removed)->toBe(1);
-    expect($policyCount())->toBe(0);
+
+    // Only the non-RLS policy remains
+    expect($policyCount())->toBe(1);
 });
 
 test('queries will stop working when the tenant session variable is not set', function(string $manager, bool $forceRls) {
