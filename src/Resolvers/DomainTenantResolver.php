@@ -69,12 +69,21 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
     protected static function setCurrentDomain(Tenant $tenant, string $domain): void
     {
         /** @var Tenant&Model $tenant */
+        $domainModelClass = config('tenancy.models.domain');
+
         if ($tenant instanceof SingleDomainTenant) {
-            $domainModelClass = config('tenancy.models.domain');
-            /** @var Domain&Model $domainModel */
+            /**
+             * Single-domain tenants keep their hostname on the tenant row, so there's no Domain record
+             * we could look up. Build an in-memory instance that carries enough data for the Domain
+             * contract binding (hostname + tenant relation).
+             *
+             * @var Domain&Model $domainModel
+             */
             $domainModel = new $domainModelClass;
-            $domainModel->setAttribute('domain', $domain);
-            $domainModel->setAttribute(Tenancy::tenantKeyColumn(), $tenant->getTenantKey());
+            $domainModel->forceFill([
+                'domain' => $domain,
+                Tenancy::tenantKeyColumn() => $tenant->getTenantKey(),
+            ]);
             $domainModel->setRelation('tenant', $tenant);
 
             static::$currentDomain = $domainModel;
@@ -82,7 +91,21 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
             return;
         }
 
-        static::$currentDomain = $tenant->domains->where('domain', $domain)->first();
+        if (! $tenant->relationLoaded('domains')) {
+            $tenant->loadMissing('domains');
+        }
+
+        /** @var Domain&Model|null $resolvedDomain */
+        $resolvedDomain = $tenant->domains->firstWhere('domain', $domain);
+
+        if (! $resolvedDomain) {
+            $resolvedDomain = $domainModelClass::query()
+                ->where('domain', $domain)
+                ->where(Tenancy::tenantKeyColumn(), $tenant->getTenantKey())
+                ->first();
+        }
+
+        static::$currentDomain = $resolvedDomain;
     }
 
     public function getPossibleCacheKeys(Tenant&Model $tenant): array
