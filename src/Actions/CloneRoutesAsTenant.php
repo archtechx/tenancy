@@ -71,7 +71,7 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  * // cloned route can be customized using domain(string|null). By default, the cloned route will not be scoped to a domain,
  * // unless a domain() call is used. It's important to keep in mind that:
  * //   1. When addTenantParameter(false) is used, the paths will be the same, thus domains must differ.
- * //   2. If the original route (with the same path) has no domain, the cloned route will never be used due to registration order.
+ * //   2. If the original route has no domain, the cloned route will override the original route as they will directly conflict.
  * $cloneAction->addTenantParameter(false)->cloneRoutesWithMiddleware(['clone'])->cloneRoute('no-tenant-parameter')->handle();
  * ```
  *
@@ -95,6 +95,11 @@ class CloneRoutesAsTenant
     public function __construct(
         protected Router $router,
     ) {}
+
+    public static function make(): static
+    {
+        return app(static::class);
+    }
 
     /** Clone routes. This resets routesToClone() but not other config. */
     public function handle(): void

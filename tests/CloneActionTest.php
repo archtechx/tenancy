@@ -422,3 +422,18 @@ test('existing context flags are removed during cloning', function () {
     expect(tenancy()->getRouteMiddleware(RouteFacade::getRoutes()->getByName('tenant.foo')))
         ->not()->toContain('universal');
 });
+
+test('cloning a route without a prefix or differing domains overrides the original route', function () {
+    RouteFacade::get('/foo', fn () => true)->name('foo')->middleware(['clone']);
+
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())->toContain('foo');
+
+    $cloneAction = CloneRoutesAsTenant::make();
+    $cloneAction->cloneRoute('foo')
+        ->addTenantParameter(false)
+        ->tenantParameterBeforePrefix(false)
+        ->handle();
+
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())->toContain('tenant.foo');
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())->not()->toContain('foo');
+});
