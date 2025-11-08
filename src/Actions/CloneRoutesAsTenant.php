@@ -39,7 +39,7 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  * Routes with names that are already prefixed won't be cloned - but that's just the default behavior.
  * The cloneUsing() method allows you to completely override the default behavior and customize how the cloned routes will be defined.
  *
- * After cloning, only top-level middleware in $cloneRoutesWithMiddleware will be removed
+ * After cloning, only top-level middleware in $cloneRoutesWithMiddleware (as well as any route context flags) will be removed
  * from the new route (so by default, 'clone' will be omitted from the new route's MW).
  * Middleware groups are preserved as-is, even if they contain cloning middleware.
  *
@@ -258,12 +258,12 @@ class CloneRoutesAsTenant
         return $newRoute;
     }
 
-    /** Removes top-level cloneRoutesWithMiddleware and adds 'tenant' middleware. */
+    /** Removes top-level cloneRoutesWithMiddleware and context flags, adds 'tenant' middleware. */
     protected function processMiddlewareForCloning(array $middleware): array
     {
         $processedMiddleware = array_filter(
             $middleware,
-            fn ($mw) => ! in_array($mw, $this->cloneRoutesWithMiddleware)
+            fn ($mw) => ! in_array($mw, $this->cloneRoutesWithMiddleware) && ! in_array($mw, ['central', 'tenant', 'universal'])
         );
 
         $processedMiddleware[] = 'tenant';

@@ -401,3 +401,24 @@ test('tenant parameter addition can be controlled by setting addTenantParameter'
         $this->withoutExceptionHandling()->get('http://central.localhost/foo')->assertSee('central');
     }
 })->with([true, false]);
+
+test('existing context flags are removed during cloning', function () {
+    RouteFacade::get('/foo', fn () => true)->name('foo')->middleware(['clone', 'central']);
+    RouteFacade::get('/bar', fn () => true)->name('bar')->middleware(['clone', 'universal']);
+
+    $cloneAction = app(CloneRoutesAsTenant::class);
+
+    // Clone foo route
+    $cloneAction->handle();
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())
+        ->toContain('tenant.foo');
+    expect(tenancy()->getRouteMiddleware(RouteFacade::getRoutes()->getByName('tenant.foo')))
+        ->not()->toContain('central');
+
+    // Clone bar route
+    $cloneAction->handle();
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())
+        ->toContain('tenant.foo', 'tenant.bar');
+    expect(tenancy()->getRouteMiddleware(RouteFacade::getRoutes()->getByName('tenant.foo')))
+        ->not()->toContain('universal');
+});
