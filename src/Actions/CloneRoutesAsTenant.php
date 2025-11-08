@@ -30,6 +30,8 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  * By providing a callback to shouldClone(), you can change how it's determined if a route should be cloned if you don't want to use middleware flags.
  *
  * Cloned routes are prefixed with '/{tenant}', flagged with 'tenant' middleware, and have their names prefixed with 'tenant.'.
+ * The addition of the 'tenant' middleware can be controlled using addTenantMiddleware(array). You can specify the identification
+ * middleware to be used on the cloned route using that method -- instead of using the approach that "inherits" it from a universal route.
  *
  * The addition of the tenant parameter can be controlled using addTenantParameter(true|false). Note that if you decide to disable
  * tenant parameter addition, the routes MUST differ in domains. This can be controlled using the domain(string|null) method. The
@@ -91,6 +93,7 @@ class CloneRoutesAsTenant
     protected Closure|null $cloneUsing = null; // The callback should accept Route instance or the route name (string)
     protected Closure|null $shouldClone = null;
     protected array $cloneRoutesWithMiddleware = ['clone'];
+    protected array $addTenantMiddleware = ['tenant'];
 
     public function __construct(
         protected Router $router,
@@ -144,6 +147,18 @@ class CloneRoutesAsTenant
     public function addTenantParameter(bool $addTenantParameter): static
     {
         $this->addTenantParameter = $addTenantParameter;
+
+        return $this;
+    }
+
+    /**
+     * The tenant middleware to be added to the cloned route.
+     *
+     * If used with early identification, make sure to include 'tenant' in this array.
+     */
+    public function addTenantMiddleware(array $middleware): static
+    {
+        $this->addTenantMiddleware = $middleware;
 
         return $this;
     }
@@ -271,9 +286,7 @@ class CloneRoutesAsTenant
             fn ($mw) => ! in_array($mw, $this->cloneRoutesWithMiddleware) && ! in_array($mw, ['central', 'tenant', 'universal'])
         );
 
-        $processedMiddleware[] = 'tenant';
-
-        return array_unique($processedMiddleware);
+        return array_unique(array_merge($processedMiddleware, $this->addTenantMiddleware));
     }
 
     /** Check if route already has tenant parameter or name prefix. */
