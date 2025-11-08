@@ -95,7 +95,7 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
             $tenant->loadMissing('domains');
         }
 
-        /** @var Domain&Model|null $resolvedDomain */
+        /** @var (Domain&Model)|null $resolvedDomain */
         $resolvedDomain = $tenant->domains->firstWhere('domain', $domain);
 
         if (! $resolvedDomain) {
