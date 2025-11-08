@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Stancl\Tenancy\Contracts\Domain;
 use Stancl\Tenancy\Tests\Etc\SingleDomainTenant;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
@@ -132,3 +133,15 @@ test('single domain tenant can be identified by domain or subdomain', function (
         [PreventAccessFromUnwantedDomains::class, InitializeTenancyBySubdomain::class], // Identification middleware
     ],
 ]);
+
+test('domain contract can be injected for single domain tenants', function () {
+    SingleDomainTenant::create(['domain' => 'acme.single.test']);
+
+    Route::get('/domain-check', function (Domain $domain) {
+        return $domain?->domain ?? 'missing';
+    })->middleware([InitializeTenancyByDomain::class]);
+
+    pest()
+        ->get('http://acme.single.test/domain-check')
+        ->assertSee('acme.single.test');
+});

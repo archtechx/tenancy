@@ -69,9 +69,20 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
     protected static function setCurrentDomain(Tenant $tenant, string $domain): void
     {
         /** @var Tenant&Model $tenant */
-        if (! $tenant instanceof SingleDomainTenant) {
-            static::$currentDomain = $tenant->domains->where('domain', $domain)->first();
+        if ($tenant instanceof SingleDomainTenant) {
+            $domainModelClass = config('tenancy.models.domain');
+            /** @var Domain&Model $domainModel */
+            $domainModel = new $domainModelClass;
+            $domainModel->setAttribute('domain', $domain);
+            $domainModel->setAttribute(Tenancy::tenantKeyColumn(), $tenant->getTenantKey());
+            $domainModel->setRelation('tenant', $tenant);
+
+            static::$currentDomain = $domainModel;
+
+            return;
         }
+
+        static::$currentDomain = $tenant->domains->where('domain', $domain)->first();
     }
 
     public function getPossibleCacheKeys(Tenant&Model $tenant): array
