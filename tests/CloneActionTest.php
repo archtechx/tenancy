@@ -464,3 +464,14 @@ test('addTenantMiddleware can be used to specify the tenant middleware for the c
     expect($cloned->getDomain())->toBe('foo.localhost');
     expect(tenancy()->getRouteMiddleware($cloned))->toBe([InitializeTenancyByDomain::class]);
 });
+
+test('cloneRoutes can be used to clone multiple routes', function () {
+    RouteFacade::get('/foo', fn () => true)->name('foo');
+    $bar = RouteFacade::get('/bar', fn () => true)->name('bar');
+    RouteFacade::get('/baz', fn () => true)->name('baz');
+
+    CloneRoutesAsTenant::make()->cloneRoutes(['foo', $bar])->handle();
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())->toContain('tenant.foo');
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())->toContain('tenant.bar');
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())->not()->toContain('tenant.baz');
+});
