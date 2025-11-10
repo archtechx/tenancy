@@ -242,24 +242,7 @@ class TenancyServiceProvider extends ServiceProvider
         /** @var CloneRoutesAsTenant $cloneRoutes */
         $cloneRoutes = $this->app->make(CloneRoutesAsTenant::class);
 
-        // The cloning action has two modes:
-        // 1. Clone all routes that have the middleware present in the action's $cloneRoutesWithMiddleware property.
-        // You can customize the middleware that triggers cloning by using cloneRoutesWithMiddleware() on the action.
-        //
-        // By default, the middleware is ['clone'], but using $cloneRoutes->cloneRoutesWithMiddleware(['clone', 'universal'])->handle()
-        // will clone all routes that have either 'clone' or 'universal' middleware (mentioning 'universal' since that's a common use case).
-        //
-        // Also, you can use the shouldClone() method to provide a custom closure that determines if a route should be cloned.
-        //
-        // 2. Clone only the routes that were manually added to the action using cloneRoute().
-        //
-        // Regardless of the mode, you can provide a custom closure for defining the cloned route, e.g.:
-        // $cloneRoutesAction->cloneUsing(function (Route $route) {
-        //     RouteFacade::get('/cloned/' . $route->uri(), fn () => 'cloned route')->name('cloned.' . $route->getName());
-        // })->handle();
-        // This will make all cloned routes use the custom closure to define the cloned route instead of the default behavior.
-        // See Stancl\Tenancy\Actions\CloneRoutesAsTenant for more details.
-
+        /** See CloneRoutesAsTenant for usage details. */
         $cloneRoutes->handle();
     }
 
