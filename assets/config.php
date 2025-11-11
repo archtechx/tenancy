@@ -64,7 +64,7 @@ return [
          * Only relevant if you're using the domain or subdomain identification middleware.
          */
         'central_domains' => [
-            str(env('APP_URL'))->after('://')->before('/')->toString(),
+            str(env('APP_URL'))->after('://')->before('/')->before(':')->toString(),
         ],
 
         /**
