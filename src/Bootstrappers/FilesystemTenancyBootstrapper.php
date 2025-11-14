@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Illuminate\Foundation\Application;
-use Illuminate\Routing\UrlGenerator;
 use Illuminate\Session\FileSessionHandler;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
@@ -22,13 +21,6 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
     ) {
         $this->originalAssetUrl = $this->app['config']['app.asset_url'];
         $this->originalStoragePath = $app->storagePath();
-
-        $this->app['url']->macro('setAssetRoot', function ($root) {
-            /** @var UrlGenerator $this */
-            $this->assetRoot = $root;
-
-            return $this;
-        });
     }
 
     public function bootstrap(Tenant $tenant): void
@@ -107,16 +99,16 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
         if ($suffix === false) {
             $this->app['config']['app.asset_url'] = $this->originalAssetUrl;
-            $this->app['url']->setAssetRoot($this->originalAssetUrl);
+            $this->app['url']->useAssetOrigin($this->originalAssetUrl);
 
             return;
         }
 
         if ($this->originalAssetUrl) {
             $this->app['config']['app.asset_url'] = $this->originalAssetUrl . "/$suffix";
-            $this->app['url']->setAssetRoot($this->app['config']['app.asset_url']);
+            $this->app['url']->useAssetOrigin($this->app['config']['app.asset_url']);
         } else {
-            $this->app['url']->setAssetRoot($this->app['url']->route('stancl.tenancy.asset', ['path' => '']));
+            $this->app['url']->useAssetOrigin($this->app['url']->route('stancl.tenancy.asset', ['path' => '']));
         }
     }
 
