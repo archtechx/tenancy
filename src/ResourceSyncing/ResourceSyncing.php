@@ -20,35 +20,32 @@ trait ResourceSyncing
 {
     public static function bootResourceSyncing(): void
     {
-        static::saved(function (Syncable&Model $model) {
+        static::saved(static function (Syncable&Model $model) {
             if ($model->shouldSync() && ($model->wasRecentlyCreated || $model->wasChanged($model->getSyncedAttributeNames()))) {
                 $model->triggerSyncEvent();
             }
         });
 
-        static::deleted(function (Syncable&Model $model) {
+        static::deleted(static function (Syncable&Model $model) {
             if ($model->shouldSync()) {
                 $model->triggerDeleteEvent();
             }
         });
 
-        static::creating(function (Syncable&Model $model) {
-            if (! $model->getAttribute($model->getGlobalIdentifierKeyName()) && app()->bound(UniqueIdentifierGenerator::class)) {
-                $model->setAttribute(
-                    $model->getGlobalIdentifierKeyName(),
-                    app(UniqueIdentifierGenerator::class)->generate($model)
-                );
+        static::creating(static function (Syncable&Model $model) {
+            if (! $model->getAttribute($model->getGlobalIdentifierKeyName())) {
+                $model->generateGlobalIdentifierKey();
             }
         });
 
         if (in_array(SoftDeletes::class, class_uses_recursive(static::class), true)) {
-            static::forceDeleting(function (Syncable&Model $model) {
+            static::forceDeleting(static function (Syncable&Model $model) {
                 if ($model->shouldSync()) {
                     $model->triggerDeleteEvent(true);
                 }
             });
 
-            static::restoring(function (Syncable&Model $model) {
+            static::restoring(static function (Syncable&Model $model) {
                 if ($model instanceof SyncMaster && $model->shouldSync()) {
                     $model->triggerRestoreEvent();
                 }
@@ -119,8 +116,18 @@ trait ResourceSyncing
         return 'global_id';
     }
 
-    public function getGlobalIdentifierKey(): string
+    public function getGlobalIdentifierKey(): string|int
     {
         return $this->getAttribute($this->getGlobalIdentifierKeyName());
+    }
+
+    protected function generateGlobalIdentifierKey(): void
+    {
+        if (! app()->bound(UniqueIdentifierGenerator::class)) return;
+
+        $this->setAttribute(
+            $this->getGlobalIdentifierKeyName(),
+            app(UniqueIdentifierGenerator::class)->generate($this),
+        );
     }
 }
