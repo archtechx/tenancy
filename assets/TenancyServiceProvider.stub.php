@@ -146,7 +146,9 @@ class TenancyServiceProvider extends ServiceProvider
             ResourceSyncing\Events\CentralResourceDetachedFromTenant::class => [
                 ResourceSyncing\Listeners\DeleteResourceInTenant::class,
             ],
-            // Fired only when a synced resource is changed in a different DB than the origin DB (to avoid infinite loops)
+
+            // Fired only when a synced resource is changed (as a result of syncing)
+            // in a different DB than DB from which the change originates (to avoid infinite loops)
             ResourceSyncing\Events\SyncedResourceSavedInForeignDatabase::class => [],
 
             // Storage symlinks
