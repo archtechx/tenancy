@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use Illuminate\Routing\Route;
 use Stancl\Tenancy\Jobs;
 use Stancl\Tenancy\Events;
 use Stancl\Tenancy\ResourceSyncing;
@@ -14,12 +13,8 @@ use Stancl\JobPipeline\JobPipeline;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Actions\CloneRoutesAsTenant;
-use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
 use Illuminate\Contracts\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Route as RouteFacade;
-use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
-use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
-use Stancl\Tenancy\Bootstrappers\Integrations\FortifyRouteBootstrapper;
+use Illuminate\Support\Facades\Route;
 
 /**
  * Tenancy for Laravel.
@@ -207,7 +202,7 @@ class TenancyServiceProvider extends ServiceProvider
 
         // // To make Livewire v3 work with Tenancy, make the update route universal.
         // Livewire::setUpdateRoute(function ($handle) {
-        //     return RouteFacade::post('/livewire/update', $handle)->middleware(['web', 'universal', \Stancl\Tenancy\Tenancy::defaultMiddleware()]);
+        //     return Route::post('/livewire/update', $handle)->middleware(['web', 'universal', \Stancl\Tenancy\Tenancy::defaultMiddleware()]);
         // });
     }
 
@@ -228,7 +223,7 @@ class TenancyServiceProvider extends ServiceProvider
     {
         $this->app->booted(function () {
             if (file_exists(base_path('routes/tenant.php'))) {
-                RouteFacade::namespace(static::$controllerNamespace)
+                Route::namespace(static::$controllerNamespace)
                     ->middleware('tenant')
                     ->group(base_path('routes/tenant.php'));
             }
