@@ -20,14 +20,14 @@ trait TriggerSyncingEvents
 {
     public static function bootTriggerSyncingEvents(): void
     {
-        static::saving(function (self $pivot) {
+        static::saving(static function (self $pivot) {
             // Try getting the central resource to see if it is available
             // If it is not available, throw an exception to interrupt the saving process
             // And prevent creating a pivot record without a central resource
             $pivot->getCentralResourceAndTenant();
         });
 
-        static::saved(function (self $pivot) {
+        static::saved(static function (self $pivot) {
             /**
              * @var static&Pivot $pivot
              * @var SyncMaster|null $centralResource
@@ -40,7 +40,7 @@ trait TriggerSyncingEvents
             }
         });
 
-        static::deleting(function (self $pivot) {
+        static::deleting(static function (self $pivot) {
             /**
              * @var static&Pivot $pivot
              * @var SyncMaster|null $centralResource
