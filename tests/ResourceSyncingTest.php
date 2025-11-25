@@ -263,7 +263,7 @@ test('attaching central resources to tenants or vice versa creates synced tenant
         expect(TenantUser::all())->toHaveCount(0);
     });
 
-    // Attaching resources to tenants requires using a pivot that implements the PivotWithRelation interface
+    // Attaching resources to tenants requires using a pivot that implements the PivotWithCentralResource interface
     $tenant->customPivotUsers()->attach($createCentralUser());
     $createCentralUser()->tenants()->attach($tenant);
 
@@ -287,7 +287,7 @@ test('detaching central users from tenants or vice versa force deletes the synce
     migrateUsersTableForTenants();
 
     if ($attachUserToTenant) {
-        // Attaching resources to tenants requires using a pivot that implements the PivotWithRelation interface
+        // Attaching resources to tenants requires using a pivot that implements the PivotWithCentralResource interface
         $tenant->customPivotUsers()->attach($centralUser);
     } else {
         $centralUser->tenants()->attach($tenant);
@@ -298,7 +298,7 @@ test('detaching central users from tenants or vice versa force deletes the synce
     });
 
     if ($attachUserToTenant) {
-        // Detaching resources from tenants requires using a pivot that implements the PivotWithRelation interface
+        // Detaching resources from tenants requires using a pivot that implements the PivotWithCentralResource interface
         $tenant->customPivotUsers()->detach($centralUser);
     } else {
         $centralUser->tenants()->detach($tenant);
@@ -333,7 +333,7 @@ test('detaching central users from tenants or vice versa force deletes the synce
     });
 
     if ($attachUserToTenant) {
-        // Detaching resources from tenants requires using a pivot that implements the PivotWithRelation interface
+        // Detaching resources from tenants requires using a pivot that implements the PivotWithCentralResource interface
         $tenant->customPivotUsers()->detach($centralUserWithSoftDeletes);
     } else {
         $centralUserWithSoftDeletes->tenants()->detach($tenant);

@@ -79,9 +79,9 @@ trait TriggerSyncingEvents
      */
     protected function getResourceClass(): string
     {
-        /** @var $this&(Pivot|MorphPivot|((Pivot|MorphPivot)&PivotWithRelation)) $this */
-        if ($this instanceof PivotWithRelation) {
-            return $this->getRelatedModel()::class;
+        /** @var $this&(Pivot|MorphPivot|((Pivot|MorphPivot)&PivotWithCentralResource)) $this */
+        if ($this instanceof PivotWithCentralResource) {
+            return $this->getCentralResourceClass();
         }
 
         if ($this instanceof MorphPivot) {
