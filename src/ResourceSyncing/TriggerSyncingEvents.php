@@ -7,9 +7,9 @@ namespace Stancl\Tenancy\ResourceSyncing;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphPivot;
 use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
-use Illuminate\Database\Eloquent\Relations\Relation;
 
 /**
  * Used on pivot models.
