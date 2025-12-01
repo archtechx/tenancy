@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\ResourceSyncing;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphPivot;
 use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
@@ -85,7 +86,7 @@ trait TriggerSyncingEvents
         }
 
         if ($this instanceof MorphPivot) {
-            return $this->morphClass;
+            return Relation::getMorphedModel($this->morphClass) ?? $this->morphClass;
         }
 
         throw new CentralResourceNotAvailableInPivotException;

@@ -52,6 +52,7 @@ use Stancl\Tenancy\Events\TenantDeleted;
 use Stancl\Tenancy\ResourceSyncing\Events\SyncedResourceDeleted;
 use Stancl\Tenancy\ResourceSyncing\Listeners\DeleteAllTenantMappings;
 use Stancl\Tenancy\ResourceSyncing\Listeners\DeleteResourceMapping;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 beforeEach(function () {
     config(['tenancy.bootstrappers' => [
@@ -1362,6 +1363,53 @@ test('global scopes on syncable models can break resource syncing', function () 
 
     // The change was also synced to tenant1
     expect($tenant1->run(fn () => TenantUser::first()->name))->toBe('tenant2 user');
+});
+
+test('attach and detach events are handled correctly when using morph maps', function() {
+    config(['tenancy.models.tenant' => MorphTenant::class]);
+    [$tenant] = createTenantsAndRunMigrations();
+    migrateCompaniesTableForTenants();
+
+    Relation::morphMap([
+        'users' => BaseCentralUser::class,
+        'companies' => CentralCompany::class,
+    ]);
+
+    $centralUser = BaseCentralUser::create([
+        'global_id' => 'user',
+        'name' => 'Central user',
+        'email' => 'central@localhost',
+        'password' => 'password',
+        'role' => 'user',
+    ]);
+
+    $centralCompany = CentralCompany::create([
+        'global_id' => 'company',
+        'name' => 'Central company',
+        'email' => 'company@localhost',
+    ]);
+
+    $tenant->users()->attach($centralUser);
+    $tenant->companies()->attach($centralCompany);
+
+    // Assert all tenant_resources mappings actually use the configured morph map
+    expect(DB::table('tenant_resources')->count())
+        ->toBe(DB::table('tenant_resources')->whereIn('tenant_resources_type', ['users', 'companies'])->count());
+
+    tenancy()->initialize($tenant);
+
+    expect(BaseTenantUser::whereGlobalId('user')->first())->not()->toBeNull();
+    expect(TenantCompany::whereGlobalId('company')->first())->not()->toBeNull();
+
+    tenancy()->end();
+
+    $tenant->users()->detach($centralUser);
+    $tenant->companies()->detach($centralCompany);
+
+    tenancy()->initialize($tenant);
+
+    expect(BaseTenantUser::whereGlobalId('user')->first())->toBeNull();
+    expect(TenantCompany::whereGlobalId('company')->first())->toBeNull();
 });
 
 function addTenantIdConstraintToPivot(string $pivotTable): void
