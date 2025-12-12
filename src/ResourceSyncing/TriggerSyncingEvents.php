@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\ResourceSyncing;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphPivot;
 use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
@@ -20,14 +21,14 @@ trait TriggerSyncingEvents
 {
     public static function bootTriggerSyncingEvents(): void
     {
-        static::saving(function (self $pivot) {
+        static::saving(static function (self $pivot) {
             // Try getting the central resource to see if it is available
             // If it is not available, throw an exception to interrupt the saving process
             // And prevent creating a pivot record without a central resource
             $pivot->getCentralResourceAndTenant();
         });
 
-        static::saved(function (self $pivot) {
+        static::saved(static function (self $pivot) {
             /**
              * @var static&Pivot $pivot
              * @var SyncMaster|null $centralResource
@@ -40,7 +41,7 @@ trait TriggerSyncingEvents
             }
         });
 
-        static::deleting(function (self $pivot) {
+        static::deleting(static function (self $pivot) {
             /**
              * @var static&Pivot $pivot
              * @var SyncMaster|null $centralResource
@@ -79,13 +80,13 @@ trait TriggerSyncingEvents
      */
     protected function getResourceClass(): string
     {
-        /** @var $this&(Pivot|MorphPivot|((Pivot|MorphPivot)&PivotWithRelation)) $this */
-        if ($this instanceof PivotWithRelation) {
-            return $this->getRelatedModel()::class;
+        /** @var $this&(Pivot|MorphPivot|((Pivot|MorphPivot)&PivotWithCentralResource)) $this */
+        if ($this instanceof PivotWithCentralResource) {
+            return $this->getCentralResourceClass();
         }
 
         if ($this instanceof MorphPivot) {
-            return $this->morphClass;
+            return Relation::getMorphedModel($this->morphClass) ?? $this->morphClass;
         }
 
         throw new CentralResourceNotAvailableInPivotException;

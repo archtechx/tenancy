@@ -81,6 +81,8 @@ class TenancyServiceProvider extends ServiceProvider
                 ])->send(function (Events\TenantDeleted $event) {
                     return $event->tenant;
                 })->shouldBeQueued(false),
+
+                // ResourceSyncing\Listeners\DeleteAllTenantMappings::class,
             ],
 
             Events\TenantMaintenanceModeEnabled::class => [],
@@ -129,6 +131,9 @@ class TenancyServiceProvider extends ServiceProvider
             ResourceSyncing\Events\SyncedResourceSaved::class => [
                 ResourceSyncing\Listeners\UpdateOrCreateSyncedResource::class,
             ],
+            ResourceSyncing\Events\SyncedResourceDeleted::class => [
+                ResourceSyncing\Listeners\DeleteResourceMapping::class,
+            ],
             ResourceSyncing\Events\SyncMasterDeleted::class => [
                 ResourceSyncing\Listeners\DeleteResourcesInTenants::class,
             ],
@@ -141,7 +146,9 @@ class TenancyServiceProvider extends ServiceProvider
             ResourceSyncing\Events\CentralResourceDetachedFromTenant::class => [
                 ResourceSyncing\Listeners\DeleteResourceInTenant::class,
             ],
-            // Fired only when a synced resource is changed in a different DB than the origin DB (to avoid infinite loops)
+
+            // Fired only when a synced resource is changed (as a result of syncing)
+            // in a different DB than DB from which the change originates (to avoid infinite loops)
             ResourceSyncing\Events\SyncedResourceSavedInForeignDatabase::class => [],
 
             // Storage symlinks
