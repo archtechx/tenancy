@@ -6,6 +6,7 @@ namespace Stancl\Tenancy;
 
 use Closure;
 use Illuminate\Cache\CacheManager;
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Console\Migrations\FreshCommand;
 use Illuminate\Routing\Events\RouteMatched;
 use Illuminate\Support\Facades\Event;
@@ -119,6 +120,7 @@ class TenancyServiceProvider extends ServiceProvider
             Commands\MigrateFresh::class,
             Commands\ClearPendingTenants::class,
             Commands\CreatePendingTenants::class,
+            Commands\PurgeImpersonationTokens::class,
             Commands\CreateUserWithRLSPolicies::class,
         ]);
 
@@ -156,12 +158,13 @@ class TenancyServiceProvider extends ServiceProvider
             $this->loadRoutesFrom(__DIR__ . '/../assets/routes.php');
         }
 
-        $this->app->singleton('globalUrl', function ($app) {
+        $this->app->singleton('globalUrl', function (Container $app) {
             if ($app->bound(FilesystemTenancyBootstrapper::class)) {
-                $instance = clone $app['url'];
-                $instance->setAssetRoot($app[FilesystemTenancyBootstrapper::class]->originalAssetUrl);
+                /** @var \Illuminate\Routing\UrlGenerator */
+                $instance = clone $app->make('url');
+                $instance->useAssetOrigin($app->make(FilesystemTenancyBootstrapper::class)->originalAssetUrl);
             } else {
-                $instance = $app['url'];
+                $instance = $app->make('url');
             }
 
             return $instance;

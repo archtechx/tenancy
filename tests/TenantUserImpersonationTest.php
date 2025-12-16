@@ -26,6 +26,7 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Exceptions\StatefulGuardRequiredException;
 use function Stancl\Tenancy\Tests\pest;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 beforeEach(function () {
     pest()->artisan('migrate', [
@@ -292,6 +293,117 @@ test('impersonation tokens can be created only with stateful guards', function (
 
     expect(tenancy()->impersonate($tenant, $user->id, '/dashboard', 'stateful'))
         ->toBeInstanceOf(ImpersonationToken::class);
+});
+
+test('expired tokens are cleaned up before aborting', function () {
+    $tenant = Tenant::create();
+    migrateTenants();
+
+    $user = $tenant->run(function () {
+        return ImpersonationUser::create([
+            'name' => 'foo',
+            'email' => 'foo@bar',
+            'password' => bcrypt('password'),
+        ]);
+    });
+
+    $token = tenancy()->impersonate($tenant, $user->id, '/dashboard');
+
+    // Make the token expired
+    $token->update([
+        'created_at' => Carbon::now()->subSeconds(100),
+    ]);
+
+    expect(ImpersonationToken::find($token->token))->not()->toBeNull();
+
+    tenancy()->initialize($tenant);
+
+    // Try to use the expired token - should clean up and abort
+    expect(fn() => UserImpersonation::makeResponse($token->token))
+        ->toThrow(HttpException::class); // Abort with 403
+
+    expect(ImpersonationToken::find($token->token))->toBeNull();
+});
+
+test('tokens are cleaned up when in wrong tenant context before aborting', function () {
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    migrateTenants();
+
+    $user = $tenant1->run(function () {
+        return ImpersonationUser::create([
+            'name' => 'foo',
+            'email' => 'foo@bar',
+            'password' => bcrypt('password'),
+        ]);
+    });
+
+    $token = tenancy()->impersonate($tenant1, $user->id, '/dashboard');
+
+    expect(ImpersonationToken::find($token->token))->not->toBeNull();
+
+    tenancy()->initialize($tenant2);
+
+    // Try to use the token in wrong tenant context - should clean up and abort
+    expect(fn() => UserImpersonation::makeResponse($token->token))
+        ->toThrow(HttpException::class); // Abort with 403
+
+    expect(ImpersonationToken::find($token->token))->toBeNull();
+});
+
+test('expired impersonation tokens can be cleaned up using a command', function () {
+    $tenant = Tenant::create();
+    migrateTenants();
+    $user = $tenant->run(function () {
+        return ImpersonationUser::create([
+            'name' => 'foo',
+            'email' => 'foo@bar',
+            'password' => bcrypt('password'),
+        ]);
+    });
+
+    // Create tokens
+    $oldToken = tenancy()->impersonate($tenant, $user->id, '/dashboard');
+    $anotherOldToken = tenancy()->impersonate($tenant, $user->id, '/dashboard');
+    $activeToken = tenancy()->impersonate($tenant, $user->id, '/dashboard');
+
+    // Make two of the tokens expired by updating their created_at
+    $oldToken->update([
+        'created_at' => Carbon::now()->subSeconds(UserImpersonation::$ttl + 10),
+    ]);
+
+    $anotherOldToken->update([
+        'created_at' => Carbon::now()->subSeconds(UserImpersonation::$ttl + 10),
+    ]);
+
+    // All tokens exist
+    expect(ImpersonationToken::find($activeToken->token))->not()->toBeNull();
+    expect(ImpersonationToken::find($oldToken->token))->not()->toBeNull();
+    expect(ImpersonationToken::find($anotherOldToken->token))->not()->toBeNull();
+
+    pest()->artisan('tenants:purge-impersonation-tokens')
+        ->assertExitCode(0)
+        ->expectsOutputToContain('2 expired impersonation tokens deleted');
+
+    // The expired tokens were deleted
+    expect(ImpersonationToken::find($oldToken->token))->toBeNull();
+    expect(ImpersonationToken::find($anotherOldToken->token))->toBeNull();
+    // The active token still exists
+    expect(ImpersonationToken::find($activeToken->token))->not()->toBeNull();
+
+    // Update the active token to make it expired according to the default ttl (60s)
+    $activeToken->update([
+        'created_at' => Carbon::now()->subSeconds(70),
+    ]);
+
+    // With ttl set to 80s, the active token should not be deleted (token is only considered expired if older than 80s)
+    UserImpersonation::$ttl = 80;
+    pest()->artisan('tenants:purge-impersonation-tokens')
+        ->assertExitCode(0)
+        ->expectsOutputToContain('0 expired impersonation tokens deleted');
+
+    expect(ImpersonationToken::find($activeToken->token))->not()->toBeNull();
 });
 
 function migrateTenants()

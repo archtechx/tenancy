@@ -48,6 +48,8 @@ return [
          * SECURITY NOTE: Keep in mind that autoincrement IDs come with potential enumeration issues (such as tenant storage URLs).
          *
          * @see \Stancl\Tenancy\UniqueIdentifierGenerators\UUIDGenerator
+         * @see \Stancl\Tenancy\UniqueIdentifierGenerators\ULIDGenerator
+         * @see \Stancl\Tenancy\UniqueIdentifierGenerators\UUIDv7Generator
          * @see \Stancl\Tenancy\UniqueIdentifierGenerators\RandomHexGenerator
          * @see \Stancl\Tenancy\UniqueIdentifierGenerators\RandomIntGenerator
          * @see \Stancl\Tenancy\UniqueIdentifierGenerators\RandomStringGenerator
@@ -62,7 +64,7 @@ return [
          * Only relevant if you're using the domain or subdomain identification middleware.
          */
         'central_domains' => [
-            str(env('APP_URL'))->after('://')->before('/')->toString(),
+            str(env('APP_URL'))->after('://')->before('/')->before(':')->toString(),
         ],
 
         /**
@@ -311,7 +313,7 @@ return [
          *
          * Note: This will implicitly add your configured session store to the list of prefixed stores above.
          */
-        'scope_sessions' => true,
+        'scope_sessions' => in_array(env('SESSION_DRIVER'), ['redis', 'memcached', 'dynamodb', 'apc'], true),
 
         'tag_base' => 'tenant', // This tag_base, followed by the tenant_id, will form a tag that will be applied on each cache call.
     ],
@@ -444,7 +446,6 @@ return [
 
     /**
      * Pending tenants config.
-     * This is useful if you're looking for a way to always have a tenant ready to be used.
      */
     'pending' => [
         /**
@@ -453,6 +454,7 @@ return [
          * Note: when disabled, this will also ignore pending tenants when running the tenant commands (migration, seed, etc.)
          */
         'include_in_queries' => true,
+
         /**
          * Defines how many pending tenants you want to have ready in the pending tenant pool.
          * This depends on the volume of tenants you're creating.

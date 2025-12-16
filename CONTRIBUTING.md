@@ -53,5 +53,5 @@ If you want to use XDebug, use `composer docker-rebuild-with-xdebug`.
 ## PHP 8.5
 
 To use PHP 8.5 during development, run:
-- `PHP_VERSION=8.5.0RC2 composer docker-rebuild` to build the `test` container with PHP 8.5
+- `PHP_VERSION=8.5.0 composer docker-rebuild` to build the `test` container with PHP 8.5
 - `composer php85-patch` to get rid of some deprecation errors coming from `config/database.php` from within testbench-core

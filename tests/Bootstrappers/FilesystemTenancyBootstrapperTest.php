@@ -201,6 +201,27 @@ test('tenant storage can get deleted after the tenant when DeletingTenant listen
     expect(File::isDirectory($tenantStoragePath))->toBeFalse();
 });
 
+test('the framework/cache directory is created when storage_path is scoped', function (bool $suffixStoragePath) {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.filesystem.suffix_storage_path' => $suffixStoragePath
+    ]);
+
+    $centralStoragePath = storage_path();
+
+    tenancy()->initialize($tenant = Tenant::create());
+
+    if ($suffixStoragePath) {
+        expect(storage_path('framework/cache'))->toBe($centralStoragePath . "/tenant{$tenant->id}/framework/cache");
+        expect(is_dir($centralStoragePath . "/tenant{$tenant->id}/framework/cache"))->toBeTrue();
+    } else {
+        expect(storage_path('framework/cache'))->toBe($centralStoragePath . '/framework/cache');
+        expect(is_dir($centralStoragePath . "/tenant{$tenant->id}/framework/cache"))->toBeFalse();
+    }
+})->with([true, false]);
+
 test('scoped disks are scoped per tenant', function () {
     config([
         'tenancy.bootstrappers' => [
@@ -215,16 +236,24 @@ test('scoped disks are scoped per tenant', function () {
 
     $tenant = Tenant::create();
 
-    $storagePath = storage_path() . "/tenant{$tenant->id}";
-
-    // Resolve scoped_disk before initializing tenancy
-    Storage::disk('scoped_disk');
+    Storage::disk('scoped_disk')->put('foo.txt', 'central');
+    expect(Storage::disk('scoped_disk')->get('foo.txt'))->toBe('central');
+    expect(file_get_contents(storage_path() . "/app/public/scoped_disk_prefix/foo.txt"))->toBe('central');
 
     tenancy()->initialize($tenant);
 
-    Storage::disk('scoped_disk')->put('foo.txt', 'foo text');
+    expect(Storage::disk('scoped_disk')->get('foo.txt'))->toBe(null);
+    Storage::disk('scoped_disk')->put('foo.txt', 'tenant');
+    expect(file_get_contents(storage_path() . "/app/public/scoped_disk_prefix/foo.txt"))->toBe('tenant');
+    expect(Storage::disk('scoped_disk')->get('foo.txt'))->toBe('tenant');
 
     tenancy()->end();
 
-    expect(File::exists($storagePath . '/app/public/scoped_disk_prefix/foo.txt'))->toBeTrue();
+    expect(Storage::disk('scoped_disk')->get('foo.txt'))->toBe('central');
+    Storage::disk('scoped_disk')->put('foo.txt', 'central2');
+    expect(Storage::disk('scoped_disk')->get('foo.txt'))->toBe('central2');
+
+    expect(file_get_contents(storage_path() . "/app/public/scoped_disk_prefix/foo.txt"))->toBe('central2');
+    expect(file_get_contents(storage_path() . "/tenant{$tenant->id}/app/public/scoped_disk_prefix/foo.txt"))->toBe('tenant');
 });
+

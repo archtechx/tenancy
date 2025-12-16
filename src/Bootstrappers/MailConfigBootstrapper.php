@@ -12,7 +12,7 @@ use Stancl\Tenancy\Contracts\Tenant;
 class MailConfigBootstrapper implements TenancyBootstrapper
 {
     /**
-     * Tenant properties to be mapped to config (similarly to the TenantConfig feature).
+     * Tenant properties to be mapped to config (similarly to the TenantConfigBootstrapper).
      *
      * For example:
      * [

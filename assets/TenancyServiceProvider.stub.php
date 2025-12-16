@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use Illuminate\Routing\Route;
 use Stancl\Tenancy\Jobs;
 use Stancl\Tenancy\Events;
 use Stancl\Tenancy\ResourceSyncing;
@@ -14,12 +13,8 @@ use Stancl\JobPipeline\JobPipeline;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Actions\CloneRoutesAsTenant;
-use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
 use Illuminate\Contracts\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Route as RouteFacade;
-use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
-use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
-use Stancl\Tenancy\Bootstrappers\Integrations\FortifyRouteBootstrapper;
+use Illuminate\Support\Facades\Route;
 
 /**
  * Tenancy for Laravel.
@@ -81,6 +76,8 @@ class TenancyServiceProvider extends ServiceProvider
                 ])->send(function (Events\TenantDeleted $event) {
                     return $event->tenant;
                 })->shouldBeQueued(false),
+
+                // ResourceSyncing\Listeners\DeleteAllTenantMappings::class,
             ],
 
             Events\TenantMaintenanceModeEnabled::class => [],
@@ -129,6 +126,9 @@ class TenancyServiceProvider extends ServiceProvider
             ResourceSyncing\Events\SyncedResourceSaved::class => [
                 ResourceSyncing\Listeners\UpdateOrCreateSyncedResource::class,
             ],
+            ResourceSyncing\Events\SyncedResourceDeleted::class => [
+                ResourceSyncing\Listeners\DeleteResourceMapping::class,
+            ],
             ResourceSyncing\Events\SyncMasterDeleted::class => [
                 ResourceSyncing\Listeners\DeleteResourcesInTenants::class,
             ],
@@ -141,7 +141,9 @@ class TenancyServiceProvider extends ServiceProvider
             ResourceSyncing\Events\CentralResourceDetachedFromTenant::class => [
                 ResourceSyncing\Listeners\DeleteResourceInTenant::class,
             ],
-            // Fired only when a synced resource is changed in a different DB than the origin DB (to avoid infinite loops)
+
+            // Fired only when a synced resource is changed (as a result of syncing)
+            // in a different DB than DB from which the change originates (to avoid infinite loops)
             ResourceSyncing\Events\SyncedResourceSavedInForeignDatabase::class => [],
 
             // Storage symlinks
@@ -200,7 +202,7 @@ class TenancyServiceProvider extends ServiceProvider
 
         // // To make Livewire v3 work with Tenancy, make the update route universal.
         // Livewire::setUpdateRoute(function ($handle) {
-        //     return RouteFacade::post('/livewire/update', $handle)->middleware(['web', 'universal', \Stancl\Tenancy\Tenancy::defaultMiddleware()]);
+        //     return Route::post('/livewire/update', $handle)->middleware(['web', 'universal', \Stancl\Tenancy\Tenancy::defaultMiddleware()]);
         // });
     }
 
@@ -221,7 +223,7 @@ class TenancyServiceProvider extends ServiceProvider
     {
         $this->app->booted(function () {
             if (file_exists(base_path('routes/tenant.php'))) {
-                RouteFacade::namespace(static::$controllerNamespace)
+                Route::namespace(static::$controllerNamespace)
                     ->middleware('tenant')
                     ->group(base_path('routes/tenant.php'));
             }
@@ -242,24 +244,7 @@ class TenancyServiceProvider extends ServiceProvider
         /** @var CloneRoutesAsTenant $cloneRoutes */
         $cloneRoutes = $this->app->make(CloneRoutesAsTenant::class);
 
-        // The cloning action has two modes:
-        // 1. Clone all routes that have the middleware present in the action's $cloneRoutesWithMiddleware property.
-        // You can customize the middleware that triggers cloning by using cloneRoutesWithMiddleware() on the action.
-        //
-        // By default, the middleware is ['clone'], but using $cloneRoutes->cloneRoutesWithMiddleware(['clone', 'universal'])->handle()
-        // will clone all routes that have either 'clone' or 'universal' middleware (mentioning 'universal' since that's a common use case).
-        //
-        // Also, you can use the shouldClone() method to provide a custom closure that determines if a route should be cloned.
-        //
-        // 2. Clone only the routes that were manually added to the action using cloneRoute().
-        //
-        // Regardless of the mode, you can provide a custom closure for defining the cloned route, e.g.:
-        // $cloneRoutesAction->cloneUsing(function (Route $route) {
-        //     RouteFacade::get('/cloned/' . $route->uri(), fn () => 'cloned route')->name('cloned.' . $route->getName());
-        // })->handle();
-        // This will make all cloned routes use the custom closure to define the cloned route instead of the default behavior.
-        // See Stancl\Tenancy\Actions\CloneRoutesAsTenant for more details.
-
+        /** See CloneRoutesAsTenant for usage details. */
         $cloneRoutes->handle();
     }
 
