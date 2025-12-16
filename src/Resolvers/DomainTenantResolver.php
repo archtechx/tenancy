@@ -56,9 +56,22 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
         return $tenant;
     }
 
-    public static function isSubdomain(string $domain): bool
+    protected function isSubdomain(string $hostname): bool
     {
-        return Str::endsWith($domain, config('tenancy.identification.central_domains'));
+        $centralDomains = Arr::wrap(config('tenancy.central_domains'));
+
+        foreach ($centralDomains as $domain) {
+
+            if ($hostname === $domain) {
+                return false;
+            }
+
+            if (Str::endsWith($hostname, '.' . $domain)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function resolved(Tenant $tenant, mixed ...$args): void
