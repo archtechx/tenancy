@@ -114,7 +114,18 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
     protected function forgetDisks(): void
     {
-        Storage::forgetDisk($this->app['config']['tenancy.filesystem.disks']);
+        $tenantDisks = $this->app['config']['tenancy.filesystem.disks'];
+        $scopedDisks = [];
+
+        foreach ($this->app['config']['filesystems.disks'] as $name => $disk) {
+            if (isset($disk['driver'], $disk['disk'])
+                && $disk['driver'] === 'scoped'
+                && in_array($disk['disk'], $tenantDisks, true)) {
+                $scopedDisks[] = $name;
+            }
+        }
+
+        Storage::forgetDisk(array_merge($tenantDisks, $scopedDisks));
     }
 
     protected function diskRoot(string $disk, Tenant|false $tenant): void

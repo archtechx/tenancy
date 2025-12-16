@@ -221,3 +221,39 @@ test('the framework/cache directory is created when storage_path is scoped', fun
         expect(is_dir($centralStoragePath . "/tenant{$tenant->id}/framework/cache"))->toBeFalse();
     }
 })->with([true, false]);
+
+test('scoped disks are scoped per tenant', function () {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'filesystems.disks.scoped_disk' => [
+            'driver' => 'scoped',
+            'disk' => 'public',
+            'prefix' => 'scoped_disk_prefix',
+        ],
+    ]);
+
+    $tenant = Tenant::create();
+
+    Storage::disk('scoped_disk')->put('foo.txt', 'central');
+    expect(Storage::disk('scoped_disk')->get('foo.txt'))->toBe('central');
+    expect(file_get_contents(storage_path() . "/app/public/scoped_disk_prefix/foo.txt"))->toBe('central');
+
+    tenancy()->initialize($tenant);
+
+    expect(Storage::disk('scoped_disk')->get('foo.txt'))->toBe(null);
+    Storage::disk('scoped_disk')->put('foo.txt', 'tenant');
+    expect(file_get_contents(storage_path() . "/app/public/scoped_disk_prefix/foo.txt"))->toBe('tenant');
+    expect(Storage::disk('scoped_disk')->get('foo.txt'))->toBe('tenant');
+
+    tenancy()->end();
+
+    expect(Storage::disk('scoped_disk')->get('foo.txt'))->toBe('central');
+    Storage::disk('scoped_disk')->put('foo.txt', 'central2');
+    expect(Storage::disk('scoped_disk')->get('foo.txt'))->toBe('central2');
+
+    expect(file_get_contents(storage_path() . "/app/public/scoped_disk_prefix/foo.txt"))->toBe('central2');
+    expect(file_get_contents(storage_path() . "/tenant{$tenant->id}/app/public/scoped_disk_prefix/foo.txt"))->toBe('tenant');
+});
+
