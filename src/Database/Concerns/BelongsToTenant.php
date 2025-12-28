@@ -17,6 +17,9 @@ trait BelongsToTenant
 {
     use FillsCurrentTenant;
 
+    /**
+     * @return BelongsTo<\Stancl\Tenancy\Contracts\Tenant, $this>
+     */
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(config('tenancy.models.tenant'), Tenancy::tenantKeyColumn());
