@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Database\Concerns;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Stancl\Tenancy\Contracts\Domain;
 use Stancl\Tenancy\Tenancy;
 
@@ -15,9 +16,9 @@ use Stancl\Tenancy\Tenancy;
 trait HasDomains
 {
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<Domain, $this>
+     * @return HasMany<\Illuminate\Database\Eloquent\Model&\Stancl\Tenancy\Contracts\Domain, $this>
      */
-    public function domains()
+    public function domains(): HasMany
     {
         return $this->hasMany(config('tenancy.models.domain'), Tenancy::tenantKeyColumn());
     }

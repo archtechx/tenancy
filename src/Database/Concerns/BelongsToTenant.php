@@ -18,7 +18,7 @@ trait BelongsToTenant
     use FillsCurrentTenant;
 
     /**
-     * @return BelongsTo<\Stancl\Tenancy\Contracts\Tenant, $this>
+     * @return BelongsTo<\Illuminate\Database\Eloquent\Model&\Stancl\Tenancy\Contracts\Tenant, $this>
      */
     public function tenant(): BelongsTo
     {
