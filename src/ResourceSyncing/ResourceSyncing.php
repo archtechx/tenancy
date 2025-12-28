@@ -105,6 +105,9 @@ trait ResourceSyncing
         return true;
     }
 
+    /**
+     * @return BelongsToMany<\Illuminate\Database\Eloquent\Model&\Stancl\Tenancy\Database\Contracts\TenantWithDatabase, $this>
+     */
     public function tenants(): BelongsToMany
     {
         return $this->morphToMany(config('tenancy.models.tenant'), 'tenant_resources', 'tenant_resources', 'resource_global_id', 'tenant_id', $this->getGlobalIdentifierKeyName())
