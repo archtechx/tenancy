@@ -14,6 +14,9 @@ use Stancl\Tenancy\Tenancy;
  */
 trait HasDomains
 {
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<Domain, $this>
+     */
     public function domains()
     {
         return $this->hasMany(config('tenancy.models.domain'), Tenancy::tenantKeyColumn());
