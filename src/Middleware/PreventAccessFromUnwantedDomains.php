@@ -31,7 +31,7 @@ class PreventAccessFromUnwantedDomains
     {
         $route = tenancy()->getRoute($request);
 
-        if ($this->shouldBeSkipped($route) || tenancy()->routeIsUniversal($route)) {
+        if ($this->shouldBeSkipped($route)) {
             return $next($request);
         }
 
