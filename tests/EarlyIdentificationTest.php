@@ -300,7 +300,7 @@ test('using different default route modes works with global domain identificatio
         $exception = match ($middleware) {
             InitializeTenancyByDomain::class => TenantCouldNotBeIdentifiedOnDomainException::class,
             InitializeTenancyBySubdomain::class => NotASubdomainException::class,
-            InitializeTenancyByDomainOrSubdomain::class => NotASubdomainException::class,
+            InitializeTenancyByDomainOrSubdomain::class => TenantCouldNotBeIdentifiedOnDomainException::class,
         };
 
         expect(fn () => $this->withoutExceptionHandling()->get('http://localhost/central-route'))->toThrow($exception);
