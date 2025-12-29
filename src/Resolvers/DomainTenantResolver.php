@@ -7,13 +7,13 @@ namespace Stancl\Tenancy\Resolvers;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Contracts\Domain;
 use Stancl\Tenancy\Contracts\SingleDomainTenant;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 use Stancl\Tenancy\Tenancy;
-use Illuminate\Support\Arr;
 
 class DomainTenantResolver extends Contracts\CachedTenantResolver
 {
