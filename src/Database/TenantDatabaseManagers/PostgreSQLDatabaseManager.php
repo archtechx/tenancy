@@ -10,7 +10,11 @@ class PostgreSQLDatabaseManager extends TenantDatabaseManager
 {
     public function createDatabase(TenantWithDatabase $tenant): bool
     {
-        return $this->connection()->statement("CREATE DATABASE \"{$tenant->database()->getName()}\" WITH TEMPLATE=template0");
+        $database = $tenant->database()->getName();
+        $charset = $this->connection()->getConfig('charset');
+        $collation = $this->connection()->getConfig('collation');
+
+        return $this->connection()->statement("CREATE DATABASE \"{$database}\" WITH TEMPLATE=template0 ENCODING='{$charset}' LC_COLLATE='{$collation}' LC_CTYPE='{$collation}'");
     }
 
     public function deleteDatabase(TenantWithDatabase $tenant): bool
