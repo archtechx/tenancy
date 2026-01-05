@@ -32,7 +32,7 @@
         "league/flysystem-aws-s3-v3": "^3.12.2",
         "doctrine/dbal": "^3.6.0",
         "spatie/valuestore": "^1.2.5",
-        "pestphp/pest": "^3.0",
+        "pestphp/pest": "^4.0",
         "larastan/larastan": "^3.0",
         "league/flysystem-path-prefixing": "^3.0"
     },
