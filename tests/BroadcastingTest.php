@@ -23,14 +23,14 @@ use function Stancl\Tenancy\Tests\withTenantDatabases;
 
 beforeEach(function () {
     withTenantDatabases();
-    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably','reverb'];
+    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably', 'reverb'];
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
 afterEach(function () {
-    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably','reverb'];
+    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably', 'reverb'];
 });
 
 test('bound broadcaster instance is the same before initializing tenancy and after ending it', function() {
@@ -174,9 +174,6 @@ test('broadcasting channel helpers register channels correctly', function() {
 });
 
 test('reverb driver triggers tenant context binding', function() {
-    // Add reverb to the list of tenant broadcasters
-    \Stancl\Tenancy\Overrides\TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably', 'reverb'];
-
     $manager = new \Stancl\Tenancy\Overrides\TenancyBroadcastManager(app());
 
     $manager->extend('reverb', function() {
