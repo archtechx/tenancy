@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Resolvers;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Contracts\Domain;
 use Stancl\Tenancy\Contracts\SingleDomainTenant;
@@ -58,7 +59,19 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
 
     public static function isSubdomain(string $domain): bool
     {
-        return Str::endsWith($domain, config('tenancy.identification.central_domains'));
+        $centralDomains = Arr::wrap(config('tenancy.identification.central_domains'));
+
+        foreach ($centralDomains as $centralDomain) {
+            if ($domain === $centralDomain) {
+                return false;
+            }
+
+            if (Str::endsWith($domain, '.' . $centralDomain)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function resolved(Tenant $tenant, mixed ...$args): void
