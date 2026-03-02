@@ -515,3 +515,134 @@ test('migrate fresh command only deletes tenant databases if drop_tenant_databas
         expect($tenantHasDatabase($tenant))->toBe($shouldHaveDBAfterMigrateFresh);
     }
 })->with([true, false]);
+
+test('migrate command skips specified tenants', function () {
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+    $tenant3 = Tenant::create();
+
+    Artisan::call('tenants:migrate', [
+        '--skip-tenants' => [$tenant2->getTenantKey()],
+    ]);
+
+    tenancy()->initialize($tenant1);
+    expect(Schema::hasTable('users'))->toBeTrue();
+    tenancy()->end();
+
+    tenancy()->initialize($tenant2);
+    expect(Schema::hasTable('users'))->toBeFalse();
+    tenancy()->end();
+
+    tenancy()->initialize($tenant3);
+    expect(Schema::hasTable('users'))->toBeTrue();
+    tenancy()->end();
+});
+
+test('migrate command skips multiple tenants', function () {
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+    $tenant3 = Tenant::create();
+
+    Artisan::call('tenants:migrate', [
+        '--skip-tenants' => [$tenant1->getTenantKey(), $tenant2->getTenantKey()],
+    ]);
+
+    tenancy()->initialize($tenant1);
+    expect(Schema::hasTable('users'))->toBeFalse();
+    tenancy()->end();
+
+    tenancy()->initialize($tenant2);
+    expect(Schema::hasTable('users'))->toBeFalse();
+    tenancy()->end();
+
+    tenancy()->initialize($tenant3);
+    expect(Schema::hasTable('users'))->toBeTrue();
+    tenancy()->end();
+});
+
+test('run command skips specified tenants', function () {
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+    $tenant3 = Tenant::create();
+
+    Artisan::call('tenants:migrate-fresh');
+
+    $id1 = $tenant1->getTenantKey();
+    $id2 = $tenant2->getTenantKey();
+    $id3 = $tenant3->getTenantKey();
+
+    pest()->artisan("tenants:run --skip-tenants=$id2 'foo foo --b=bar --c=xyz'")
+        ->expectsOutputToContain("Tenant: $id1")
+        ->doesntExpectOutputToContain("Tenant: $id2")
+        ->expectsOutputToContain("Tenant: $id3")
+        ->assertExitCode(0);
+});
+
+test('run command skips multiple tenants', function () {
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+    $tenant3 = Tenant::create();
+
+    Artisan::call('tenants:migrate-fresh');
+
+    $id1 = $tenant1->getTenantKey();
+    $id2 = $tenant2->getTenantKey();
+    $id3 = $tenant3->getTenantKey();
+
+    pest()->artisan("tenants:run --skip-tenants=$id1 --skip-tenants=$id2 'foo foo --b=bar --c=xyz'")
+        ->doesntExpectOutputToContain("Tenant: $id1")
+        ->doesntExpectOutputToContain("Tenant: $id2")
+        ->expectsOutputToContain("Tenant: $id3")
+        ->assertExitCode(0);
+});
+
+test('tenants and skip-tenants options can be used together', function () {
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+    $tenant3 = Tenant::create();
+
+    Artisan::call('tenants:migrate-fresh');
+
+    $id1 = $tenant1->getTenantKey();
+    $id2 = $tenant2->getTenantKey();
+    $id3 = $tenant3->getTenantKey();
+
+    // Scope to tenant1+tenant2, then skip tenant2 — only tenant1 should run
+    pest()->artisan("tenants:run --tenants=$id1 --tenants=$id2 --skip-tenants=$id2 'foo foo --b=bar --c=xyz'")
+        ->expectsOutputToContain("Tenant: $id1")
+        ->doesntExpectOutputToContain("Tenant: $id2")
+        ->doesntExpectOutputToContain("Tenant: $id3")
+        ->assertExitCode(0);
+});
+
+test('migrate-fresh command skips specified tenants', function () {
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    // Migrate all tenants first so both have the users table
+    Artisan::call('tenants:migrate');
+
+    tenancy()->initialize($tenant1);
+    expect(Schema::hasTable('users'))->toBeTrue();
+    tenancy()->end();
+
+    tenancy()->initialize($tenant2);
+    expect(Schema::hasTable('users'))->toBeTrue();
+    tenancy()->end();
+
+    // migrate-fresh on tenant1 only (skip tenant2)
+    pest()->artisan('tenants:migrate-fresh', [
+        '--skip-tenants' => [$tenant2->getTenantKey()],
+        '--force' => true,
+    ])->assertExitCode(0);
+
+    // tenant1 should still have the table (re-created by migrate-fresh)
+    tenancy()->initialize($tenant1);
+    expect(Schema::hasTable('users'))->toBeTrue();
+    tenancy()->end();
+
+    // tenant2 was skipped, so its DB is untouched — table still exists
+    tenancy()->initialize($tenant2);
+    expect(Schema::hasTable('users'))->toBeTrue();
+    tenancy()->end();
+});
