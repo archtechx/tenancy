@@ -89,7 +89,8 @@ test('tenant user can be impersonated on a tenant domain', function () {
         ->assertSee('You are logged in as Joe');
 
     expect(UserImpersonation::isImpersonating())->toBeTrue();
-    expect(session('tenancy_impersonation_guard'))->toBe($token->auth_guard);
+    expect(session('tenancy_impersonation_guard'))->toBe('web');
+    expect($token->auth_guard)->toBe('web');
 
     // Leave impersonation
     UserImpersonation::stopImpersonating();
@@ -135,7 +136,8 @@ test('tenant user can be impersonated on a tenant path', function () {
         ->assertSee('You are logged in as Joe');
 
     expect(UserImpersonation::isImpersonating())->toBeTrue();
-    expect(session('tenancy_impersonation_guard'))->toBe($token->auth_guard);
+    expect(session('tenancy_impersonation_guard'))->toBe('web');
+    expect($token->auth_guard)->toBe('web');
 
     // Leave impersonation
     UserImpersonation::stopImpersonating();
