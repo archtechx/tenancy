@@ -89,13 +89,13 @@ test('tenant user can be impersonated on a tenant domain', function () {
         ->assertSee('You are logged in as Joe');
 
     expect(UserImpersonation::isImpersonating())->toBeTrue();
-    expect(session('tenancy_impersonating'))->toBeTrue();
+    expect(session('tenancy_impersonation_guard'))->toBe($token->auth_guard);
 
     // Leave impersonation
     UserImpersonation::stopImpersonating();
 
     expect(UserImpersonation::isImpersonating())->toBeFalse();
-    expect(session('tenancy_impersonating'))->toBeNull();
+    expect(session('tenancy_impersonation_guard'))->toBeNull();
 
     // Assert can't access the tenant dashboard
     pest()->get('http://foo.localhost/dashboard')
@@ -135,13 +135,13 @@ test('tenant user can be impersonated on a tenant path', function () {
         ->assertSee('You are logged in as Joe');
 
     expect(UserImpersonation::isImpersonating())->toBeTrue();
-    expect(session('tenancy_impersonating'))->toBeTrue();
+    expect(session('tenancy_impersonation_guard'))->toBe($token->auth_guard);
 
     // Leave impersonation
     UserImpersonation::stopImpersonating();
 
     expect(UserImpersonation::isImpersonating())->toBeFalse();
-    expect(session('tenancy_impersonating'))->toBeNull();
+    expect(session('tenancy_impersonation_guard'))->toBeNull();
 
     // Assert can't access the tenant dashboard
     pest()->get('/acme/dashboard')
