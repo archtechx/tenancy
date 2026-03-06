@@ -26,12 +26,16 @@ beforeEach(function () {
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
     TenancyUrlGenerator::$prefixRouteNames = false;
     TenancyUrlGenerator::$passTenantParameterToRoutes = false;
+    TenancyUrlGenerator::$overrides = [];
+    TenancyUrlGenerator::$bypassParameter = 'central';
     UrlGeneratorBootstrapper::$addTenantParameterToDefaults = false;
 });
 
 afterEach(function () {
     TenancyUrlGenerator::$prefixRouteNames = false;
     TenancyUrlGenerator::$passTenantParameterToRoutes = false;
+    TenancyUrlGenerator::$overrides = [];
+    TenancyUrlGenerator::$bypassParameter = 'central';
     UrlGeneratorBootstrapper::$addTenantParameterToDefaults = false;
 });
 
