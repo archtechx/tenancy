@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Routing\UrlGenerator;
+use Illuminate\Support\Facades\URL;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
@@ -358,4 +359,41 @@ test('both the name prefixing and the tenant parameter logic gets skipped when b
     // UrlGeneratorBootstrapper::$addTenantParameterToDefaults and TenancyUrlGenerator::$passTenantParameterToRoutes are false by default
     expect(route('home', ['bypassParameter' => false, 'tenant' => $tenant->getTenantKey()]))->toBe($tenantRouteUrl)
         ->not()->toContain('bypassParameter');
+});
+
+test('the temporarySignedRoute method can automatically prefix the passed route name', function() {
+    config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);
+
+    Route::get('/{tenant}/foo', fn () => 'foo')->name('tenant.foo')->middleware([InitializeTenancyByPath::class]);
+
+    TenancyUrlGenerator::$prefixRouteNames = true;
+
+    $tenant = Tenant::create();
+
+    tenancy()->initialize($tenant);
+
+    // Route name ('foo') gets prefixed automatically (will be 'tenant.foo')
+    $tenantSignedUrl = URL::temporarySignedRoute('foo', now()->addMinutes(2), ['tenant' => $tenantKey = $tenant->getTenantKey()]);
+
+    expect($tenantSignedUrl)->toContain("localhost/{$tenantKey}/foo");
+});
+
+test('the bypass parameter works correctly with temporarySignedRoute', function() {
+    config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);
+
+    Route::get('/foo', fn () => 'foo')->name('central.foo');
+
+    TenancyUrlGenerator::$prefixRouteNames = true;
+    TenancyUrlGenerator::$bypassParameter = 'central';
+
+    $tenant = Tenant::create();
+
+    tenancy()->initialize($tenant);
+
+    // Bypass parameter allows us to generate URL for the 'central.foo' route in tenant context
+    $centralSignedUrl = URL::temporarySignedRoute('central.foo', now()->addMinutes(2), ['central' => true]);
+
+    expect($centralSignedUrl)
+        ->toContain('localhost/foo')
+        ->not()->toContain('central='); // Bypass parameter gets removed from the generated URL
 });
