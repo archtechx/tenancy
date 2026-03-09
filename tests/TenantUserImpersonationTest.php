@@ -89,13 +89,14 @@ test('tenant user can be impersonated on a tenant domain', function () {
         ->assertSee('You are logged in as Joe');
 
     expect(UserImpersonation::isImpersonating())->toBeTrue();
-    expect(session('tenancy_impersonating'))->toBeTrue();
+    expect(session('tenancy_impersonation_guard'))->toBe('web');
+    expect($token->auth_guard)->toBe('web');
 
     // Leave impersonation
     UserImpersonation::stopImpersonating();
 
     expect(UserImpersonation::isImpersonating())->toBeFalse();
-    expect(session('tenancy_impersonating'))->toBeNull();
+    expect(session('tenancy_impersonation_guard'))->toBeNull();
 
     // Assert can't access the tenant dashboard
     pest()->get('http://foo.localhost/dashboard')
@@ -135,17 +136,59 @@ test('tenant user can be impersonated on a tenant path', function () {
         ->assertSee('You are logged in as Joe');
 
     expect(UserImpersonation::isImpersonating())->toBeTrue();
-    expect(session('tenancy_impersonating'))->toBeTrue();
+    expect(session('tenancy_impersonation_guard'))->toBe('web');
+    expect($token->auth_guard)->toBe('web');
 
     // Leave impersonation
     UserImpersonation::stopImpersonating();
 
     expect(UserImpersonation::isImpersonating())->toBeFalse();
-    expect(session('tenancy_impersonating'))->toBeNull();
+    expect(session('tenancy_impersonation_guard'))->toBeNull();
 
     // Assert can't access the tenant dashboard
     pest()->get('/acme/dashboard')
         ->assertRedirect('/login');
+});
+
+test('stopImpersonating can keep the user authenticated', function() {
+    makeLoginRoute();
+
+    Route::middleware(InitializeTenancyByPath::class)->prefix('/{tenant}')->group(getRoutes(false));
+
+    $tenant = Tenant::create([
+        'id' => 'acme',
+        'tenancy_db_name' => 'db' . Str::random(16),
+    ]);
+
+    migrateTenants();
+
+    $user = $tenant->run(function () {
+        return ImpersonationUser::create([
+            'name' => 'Joe',
+            'email' => 'joe@local',
+            'password' => bcrypt('secret'),
+        ]);
+    });
+
+    // Impersonate the user
+    $token = tenancy()->impersonate($tenant, $user->id, '/acme/dashboard');
+
+    pest()->get('/acme/impersonate/' . $token->token)
+        ->assertRedirect('/acme/dashboard');
+
+    expect(UserImpersonation::isImpersonating())->toBeTrue();
+
+    // Stop impersonating without logging out
+    UserImpersonation::stopImpersonating(false);
+
+    // The impersonation session key should be cleared
+    expect(UserImpersonation::isImpersonating())->toBeFalse();
+    expect(session('tenancy_impersonation_guard'))->toBeNull();
+
+    // The user should still be authenticated
+    pest()->get('/acme/dashboard')
+        ->assertSuccessful()
+        ->assertSee('You are logged in as Joe');
 });
 
 test('tokens have a limited ttl', function () {
