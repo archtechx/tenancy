@@ -159,7 +159,7 @@ class TenancyUrlGenerator extends UrlGenerator
         $name = $route->getName();
 
         if ($name) {
-            [$prefixedName, $parameters] = $this->prepareRouteInputs($name, Arr::wrap($parameters)); // @phpstan-ignore argument.type
+            [$prefixedName, $parameters] = $this->prepareRouteInputs($name, Arr::wrap($parameters));
 
             if ($prefixedName !== $name && $tenantRoute = $this->routes->getByName($prefixedName)) {
                 $route = $tenantRoute;
