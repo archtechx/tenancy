@@ -114,7 +114,15 @@ class TenancyUrlGenerator extends UrlGenerator
             throw new InvalidArgumentException('Attribute [name] expects a string backed enum.');
         }
 
-        [$name, $parameters] = $this->prepareRouteInputs($name, Arr::wrap($parameters)); // @phpstan-ignore argument.type
+        $wrappedParameters = Arr::wrap($parameters);
+
+        [$name, $parameters] = $this->prepareRouteInputs($name, $wrappedParameters); // @phpstan-ignore argument.type
+
+        if (isset($wrappedParameters[static::$bypassParameter])) {
+            // If the bypass parameter was passed, we need to add it back to the parameters after prepareRouteInputs() removes it,
+            // so that the underlying toRoute() call in parent::route() can bypass the behavior modification as well.
+            $parameters[static::$bypassParameter] = $wrappedParameters[static::$bypassParameter];
+        }
 
         return parent::route($name, $parameters, $absolute);
     }
@@ -140,6 +148,25 @@ class TenancyUrlGenerator extends UrlGenerator
         }
 
         return parent::temporarySignedRoute($name, $expiration, $parameters, $absolute);
+    }
+
+    /**
+     * Override the toRoute() method so that the route name gets prefixed
+     * and the tenant parameter gets added when in tenant context.
+     */
+    public function toRoute($route, $parameters, $absolute)
+    {
+        $name = $route->getName();
+
+        if ($name) {
+            [$prefixedName, $parameters] = $this->prepareRouteInputs($name, Arr::wrap($parameters)); // @phpstan-ignore argument.type
+
+            if ($prefixedName !== $name && $tenantRoute = $this->routes->getByName($prefixedName)) {
+                $route = $tenantRoute;
+            }
+        }
+
+        return parent::toRoute($route, $parameters, $absolute);
     }
 
     /**
