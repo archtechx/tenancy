@@ -105,8 +105,16 @@ class TenancyUrlGenerator extends UrlGenerator
     public static bool $passQueryParameter = true;
 
     /**
-     * Override the route() method so that the route name gets prefixed
-     * and the tenant parameter gets added when in tenant context.
+     * Override the route() method to prefix the route name before $this->routes->getByName($name) is called
+     * in the parent route() call.
+     *
+     * This is necessary because $this->routes->getByName($name) is called to retrieve the route
+     * before passing it to toRoute(). If only the prefixed route (e.g. 'tenant.foo') is registered
+     * and the original ('foo') isn't, route() would throw a RouteNotFoundException.
+     * So route() has to be overridden to prefix the passed route name, even though toRoute() is overridden already.
+     *
+     * Only the name is taken from prepareRouteInputs() here — parameter handling
+     * (adding tenant parameter, removing bypass parameter) is delegated to toRoute().
      */
     public function route($name, $parameters = [], $absolute = true)
     {
@@ -114,40 +122,9 @@ class TenancyUrlGenerator extends UrlGenerator
             throw new InvalidArgumentException('Attribute [name] expects a string backed enum.');
         }
 
-        $wrappedParameters = Arr::wrap($parameters);
-
-        [$name, $parameters] = $this->prepareRouteInputs($name, $wrappedParameters); // @phpstan-ignore argument.type
-
-        if (isset($wrappedParameters[static::$bypassParameter])) {
-            // If the bypass parameter was passed, we need to add it back to the parameters after prepareRouteInputs() removes it,
-            // so that the underlying toRoute() call in parent::route() can bypass the behavior modification as well.
-            $parameters[static::$bypassParameter] = $wrappedParameters[static::$bypassParameter];
-        }
+        [$name] = $this->prepareRouteInputs($name, Arr::wrap($parameters)); // @phpstan-ignore argument.type
 
         return parent::route($name, $parameters, $absolute);
-    }
-
-    /**
-     * Override the temporarySignedRoute() method so that the route name gets prefixed
-     * and the tenant parameter gets added when in tenant context.
-     */
-    public function temporarySignedRoute($name, $expiration, $parameters = [], $absolute = true)
-    {
-        if ($name instanceof BackedEnum && ! is_string($name = $name->value)) {
-            throw new InvalidArgumentException('Attribute [name] expects a string backed enum.');
-        }
-
-        $wrappedParameters = Arr::wrap($parameters);
-
-        [$name, $parameters] = $this->prepareRouteInputs($name, $wrappedParameters); // @phpstan-ignore argument.type
-
-        if (isset($wrappedParameters[static::$bypassParameter])) {
-            // If the bypass parameter was passed, we need to add it back to the parameters after prepareRouteInputs() removes it,
-            // so that the underlying route() call in parent::temporarySignedRoute() can bypass the behavior modification as well.
-            $parameters[static::$bypassParameter] = $wrappedParameters[static::$bypassParameter];
-        }
-
-        return parent::temporarySignedRoute($name, $expiration, $parameters, $absolute);
     }
 
     /**
