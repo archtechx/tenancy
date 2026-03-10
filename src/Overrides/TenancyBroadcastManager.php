@@ -18,7 +18,7 @@ class TenancyBroadcastManager extends BroadcastManager
      * The reason for recreating the broadcasters is
      * to make your app use the correct broadcaster credentials when tenancy is initialized.
      */
-    public static array $tenantBroadcasters = ['pusher', 'ably'];
+    public static array $tenantBroadcasters = ['pusher', 'ably', 'reverb'];
 
     /**
      * Override the get method so that the broadcasters in $tenantBroadcasters
