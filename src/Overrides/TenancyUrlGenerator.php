@@ -22,16 +22,17 @@ use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
  *       - Automatically passing ['tenant' => ...] to each route() call -- if TenancyUrlGenerator::$passTenantParameterToRoutes is enabled
  *         This is a more universal solution since it supports both path identification and query parameter identification.
  *
- *   - Prepends route names passed to route() and URL::temporarySignedRoute()
- *     with `tenant.` (or the configured prefix) if $prefixRouteNames is enabled.
+ *   - Prepends route names with `tenant.` (or the configured prefix) if $prefixRouteNames is enabled.
  *     This is primarily useful when using route cloning with path identification.
  *
- * To bypass this behavior on any single route() call, pass the $bypassParameter as true (['central' => true] by default).
+ * Affected methods: route(), toRoute(), temporarySignedRoute(), signedRoute() (the last two via the route() override).
+ *
+ * To bypass this behavior on any single affected method call, pass the $bypassParameter as true (['central' => true] by default).
  */
 class TenancyUrlGenerator extends UrlGenerator
 {
     /**
-     * Parameter which works as a flag for bypassing the behavior modification of route() and temporarySignedRoute().
+     * Parameter which works as a flag for bypassing the behavior modification of the affected methods.
      *
      * For example, in tenant context:
      * Route::get('/', ...)->name('home');
@@ -44,12 +45,12 @@ class TenancyUrlGenerator extends UrlGenerator
      * Note: UrlGeneratorBootstrapper::$addTenantParameterToDefaults is not affected by this, though
      * it doesn't matter since it doesn't pass any extra parameters when not needed.
      *
-     * @see UrlGeneratorBootstrapper
+     * @see Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper
      */
     public static string $bypassParameter = 'central';
 
     /**
-     * Should route names passed to route() or temporarySignedRoute()
+     * Should route names passed to the affected methods
      * get prefixed with the tenant route name prefix.
      *
      * This is useful when using e.g. path identification with third-party packages
@@ -59,12 +60,12 @@ class TenancyUrlGenerator extends UrlGenerator
     public static bool $prefixRouteNames = false;
 
     /**
-     * Should the tenant parameter be passed to route() or temporarySignedRoute() calls.
+     * Should the tenant parameter be passed to the affected methods.
      *
      * This is useful with path or query parameter identification. The former can be handled
      * more elegantly using UrlGeneratorBootstrapper::$addTenantParameterToDefaults.
      *
-     * @see UrlGeneratorBootstrapper
+     * @see Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper
      */
     public static bool $passTenantParameterToRoutes = false;
 
@@ -115,6 +116,8 @@ class TenancyUrlGenerator extends UrlGenerator
      *
      * Only the name is taken from prepareRouteInputs() here — parameter handling
      * (adding tenant parameter, removing bypass parameter) is delegated to toRoute().
+     *
+     * Affects temporarySignedRoute() and signedRoute() as well since they call route() under the hood.
      */
     public function route($name, $parameters = [], $absolute = true)
     {
@@ -130,6 +133,8 @@ class TenancyUrlGenerator extends UrlGenerator
     /**
      * Override the toRoute() method so that the route name gets prefixed
      * and the tenant parameter gets added when in tenant context.
+     *
+     * Also affects route(). Even though route() is overridden separately, it delegates parameter handling to toRoute().
      */
     public function toRoute($route, $parameters, $absolute)
     {
