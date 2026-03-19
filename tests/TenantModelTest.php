@@ -9,6 +9,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Contracts;
@@ -23,7 +24,7 @@ use Stancl\Tenancy\UUIDGenerator;
 
 class TenantModelTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function created_event_is_dispatched()
     {
         Event::fake([TenantCreated::class]);
@@ -35,7 +36,7 @@ class TenantModelTest extends TestCase
         Event::assertDispatched(TenantCreated::class);
     }
 
-    /** @test */
+    #[Test]
     public function current_tenant_can_be_resolved_from_service_container_using_typehint()
     {
         $tenant = Tenant::create();
@@ -49,7 +50,7 @@ class TenantModelTest extends TestCase
         $this->assertSame(null, app(Contracts\Tenant::class));
     }
 
-    /** @test */
+    #[Test]
     public function id_is_generated_when_no_id_is_supplied()
     {
         config(['tenancy.id_generator' => UUIDGenerator::class]);
@@ -63,7 +64,7 @@ class TenantModelTest extends TestCase
         $this->assertNotNull($tenant->id);
     }
 
-    /** @test */
+    #[Test]
     public function autoincrement_ids_are_supported()
     {
         Schema::drop('domains');
@@ -80,7 +81,7 @@ class TenantModelTest extends TestCase
         $this->assertSame(2, $tenant2->id);
     }
 
-    /** @test */
+    #[Test]
     public function custom_tenant_model_can_be_used()
     {
         $tenant = MyTenant::create();
@@ -90,7 +91,7 @@ class TenantModelTest extends TestCase
         $this->assertTrue(tenant() instanceof MyTenant);
     }
 
-    /** @test */
+    #[Test]
     public function custom_tenant_model_that_doesnt_extend_vendor_Tenant_model_can_be_used()
     {
         $tenant = AnotherTenant::create([
@@ -102,7 +103,7 @@ class TenantModelTest extends TestCase
         $this->assertTrue(tenant() instanceof AnotherTenant);
     }
 
-    /** @test */
+    #[Test]
     public function tenant_can_be_created_even_when_we_are_in_another_tenants_context()
     {
         config(['tenancy.bootstrappers' => [
@@ -131,7 +132,7 @@ class TenantModelTest extends TestCase
         $this->assertSame(2, Tenant::count());
     }
 
-    /** @test */
+    #[Test]
     public function the_model_uses_TenantCollection()
     {
         Tenant::create();
@@ -141,7 +142,7 @@ class TenantModelTest extends TestCase
         $this->assertTrue(Tenant::all() instanceof TenantCollection);
     }
 
-    /** @test */
+    #[Test]
     public function a_command_can_be_run_on_a_collection_of_tenants()
     {
         Tenant::create([

@@ -9,6 +9,7 @@ use Illuminate\Foundation\Auth\User as Authenticable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Jobs\CreateDatabase;
@@ -19,7 +20,7 @@ use Stancl\Tenancy\Tests\Etc\Tenant;
 
 class DatabasePreparationTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function database_can_be_created_after_tenant_creation()
     {
         config(['tenancy.database.template_tenant_connection' => 'mysql']);
@@ -36,7 +37,7 @@ class DatabasePreparationTest extends TestCase
         $this->assertTrue($manager->databaseExists($tenant->database()->getName()));
     }
 
-    /** @test */
+    #[Test]
     public function database_can_be_migrated_after_tenant_creation()
     {
         Event::listen(TenantCreated::class, JobPipeline::make([
@@ -53,7 +54,7 @@ class DatabasePreparationTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function database_can_be_seeded_after_tenant_creation()
     {
         config(['tenancy.seeder_parameters' => [
@@ -75,7 +76,7 @@ class DatabasePreparationTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function custom_job_can_be_added_to_the_pipeline()
     {
         config(['tenancy.seeder_parameters' => [
