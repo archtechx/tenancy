@@ -13,7 +13,7 @@ use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Jobs\CreateStorageSymlinks;
 use Stancl\Tenancy\Jobs\RemoveStorageSymlinks;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Listeners\DeleteTenantStorage;
+use Stancl\Tenancy\Jobs\DeleteTenantStorage;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use function Stancl\Tenancy\Tests\pest;
@@ -185,7 +185,11 @@ test('create and delete storage symlinks jobs work', function() {
 });
 
 test('tenant storage can get deleted after the tenant when DeletingTenant listens to DeleteTenantStorage', function() {
-    Event::listen(DeletingTenant::class, DeleteTenantStorage::class);
+    Event::listen(DeletingTenant::class,
+        JobPipeline::make([DeleteTenantStorage::class])->send(function (DeletingTenant $event) {
+            return $event->tenant;
+        })->shouldBeQueued(false)->toListener()
+    );
 
     tenancy()->initialize(Tenant::create());
     $tenantStoragePath = storage_path();
