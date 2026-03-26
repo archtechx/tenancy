@@ -9,8 +9,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Stancl\Tenancy\Contracts\Tenant;
 use Illuminate\Support\Facades\File;
+use Stancl\Tenancy\Contracts\Tenant;
 
 class DeleteTenantStorage implements ShouldQueue
 {
