@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Concurrency;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
@@ -89,6 +90,34 @@ class CommandsTest extends TestCase
         $this->assertFalse(Schema::hasTable('users'));
 
         tenancy()->initialize($tenant);
+        $this->assertTrue(Schema::hasTable('users'));
+    }
+
+    #[Test]
+    public function migrate_command_works_with_parallel_option()
+    {
+        if (! class_exists(Concurrency::class)) {
+            $this->markTestSkipped('Parallel tenant migrations require the Concurrency facade (Laravel 11+).');
+        }
+
+        config(['concurrency.default' => 'sync']);
+
+        $tenant1 = Tenant::create();
+        $tenant2 = Tenant::create();
+
+        $this->assertFalse(Schema::hasTable('users'));
+
+        Artisan::call('tenants:migrate', [
+            '--parallel' => true,
+        ]);
+
+        $this->assertFalse(Schema::hasTable('users'));
+
+        tenancy()->initialize($tenant1);
+        $this->assertTrue(Schema::hasTable('users'));
+        tenancy()->end();
+
+        tenancy()->initialize($tenant2);
         $this->assertTrue(Schema::hasTable('users'));
     }
 
