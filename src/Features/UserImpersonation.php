@@ -61,9 +61,9 @@ class UserImpersonation implements Feature
 
         Auth::guard($token->auth_guard)->loginUsingId($token->user_id, $token->remember);
 
-        $token->delete();
+        session()->put('tenancy_impersonation_guard', $token->auth_guard);
 
-        session()->put('tenancy_impersonating', true);
+        $token->delete();
 
         return redirect($token->redirect_url);
     }
@@ -76,16 +76,20 @@ class UserImpersonation implements Feature
 
     public static function isImpersonating(): bool
     {
-        return session()->has('tenancy_impersonating');
+        return session()->has('tenancy_impersonation_guard');
     }
 
     /**
      * Logout from the current domain and forget impersonation session.
      */
-    public static function stopImpersonating(): void
+    public static function stopImpersonating(bool $logout = true): void
     {
-        auth()->logout();
+        if ($logout) {
+            $guard = session()->get('tenancy_impersonation_guard');
 
-        session()->forget('tenancy_impersonating');
+            auth($guard)->logout();
+        }
+
+        session()->forget('tenancy_impersonation_guard');
     }
 }
