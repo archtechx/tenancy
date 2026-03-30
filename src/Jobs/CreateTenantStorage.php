@@ -2,9 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Listeners;
+namespace Stancl\Tenancy\Jobs;
 
-use Stancl\Tenancy\Events\Contracts\TenantEvent;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Stancl\Tenancy\Contracts\Tenant;
 
 /**
  * Can be used to manually create framework directories in the tenant storage when storage_path() is scoped.
@@ -13,11 +18,17 @@ use Stancl\Tenancy\Events\Contracts\TenantEvent;
  *
  * Generally not needed anymore as the directory is also created by the FilesystemTenancyBootstrapper.
  */
-class CreateTenantStorage
+class CreateTenantStorage implements ShouldQueue
 {
-    public function handle(TenantEvent $event): void
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public function __construct(
+        public Tenant $tenant,
+    ) {}
+
+    public function handle(): void
     {
-        $storage_path = tenancy()->run($event->tenant, fn () => storage_path());
+        $storage_path = tenancy()->run($this->tenant, fn () => storage_path());
         $cache_path = "$storage_path/framework/cache";
 
         if (! is_dir($cache_path)) {

@@ -46,6 +46,7 @@ class TenancyServiceProvider extends ServiceProvider
                     Jobs\CreateDatabase::class,
                     Jobs\MigrateDatabase::class,
                     // Jobs\SeedDatabase::class,
+                    // Jobs\CreateTenantStorage::class,
                     // Jobs\CreateStorageSymlinks::class,
 
                     // Your own jobs to prepare the tenant.
@@ -53,8 +54,6 @@ class TenancyServiceProvider extends ServiceProvider
                 ])->send(function (Events\TenantCreated $event) {
                     return $event->tenant;
                 })->shouldBeQueued(false),
-
-                // Listeners\CreateTenantStorage::class,
             ],
             Events\SavingTenant::class => [],
             Events\TenantSaved::class => [],
@@ -63,12 +62,11 @@ class TenancyServiceProvider extends ServiceProvider
             Events\DeletingTenant::class => [
                 JobPipeline::make([
                     Jobs\DeleteDomains::class,
+                    // Jobs\DeleteTenantStorage::class,
                     // Jobs\RemoveStorageSymlinks::class,
                 ])->send(function (Events\DeletingTenant $event) {
                     return $event->tenant;
                 })->shouldBeQueued(false),
-
-                // Listeners\DeleteTenantStorage::class,
             ],
             Events\TenantDeleted::class => [
                 JobPipeline::make([

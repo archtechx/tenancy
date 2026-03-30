@@ -13,7 +13,8 @@ use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Jobs\CreateStorageSymlinks;
 use Stancl\Tenancy\Jobs\RemoveStorageSymlinks;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Listeners\DeleteTenantStorage;
+use Stancl\Tenancy\Jobs\CreateTenantStorage;
+use Stancl\Tenancy\Jobs\DeleteTenantStorage;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use function Stancl\Tenancy\Tests\pest;
@@ -184,8 +185,32 @@ test('create and delete storage symlinks jobs work', function() {
     $this->assertDirectoryDoesNotExist(public_path("public-$tenantKey"));
 });
 
+test('tenant storage gets created when TenantCreated listens to CreateTenantStorage', function() {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+    ]);
+
+    Event::listen(TenantCreated::class,
+        JobPipeline::make([CreateTenantStorage::class])->send(function (TenantCreated $event) {
+            return $event->tenant;
+        })->shouldBeQueued(false)->toListener()
+    );
+
+    $centralStoragePath = storage_path();
+    $tenant = Tenant::create();
+    $tenantStoragePath = $centralStoragePath . '/tenant' . $tenant->getTenantKey();
+
+    $this->assertDirectoryExists($tenantStoragePath . '/framework/cache');
+});
+
 test('tenant storage can get deleted after the tenant when DeletingTenant listens to DeleteTenantStorage', function() {
-    Event::listen(DeletingTenant::class, DeleteTenantStorage::class);
+    Event::listen(DeletingTenant::class,
+        JobPipeline::make([DeleteTenantStorage::class])->send(function (DeletingTenant $event) {
+            return $event->tenant;
+        })->shouldBeQueued(false)->toListener()
+    );
 
     tenancy()->initialize(Tenant::create());
     $tenantStoragePath = storage_path();
@@ -256,4 +281,3 @@ test('scoped disks are scoped per tenant', function () {
     expect(file_get_contents(storage_path() . "/app/public/scoped_disk_prefix/foo.txt"))->toBe('central2');
     expect(file_get_contents(storage_path() . "/tenant{$tenant->id}/app/public/scoped_disk_prefix/foo.txt"))->toBe('tenant');
 });
-
