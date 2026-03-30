@@ -23,14 +23,14 @@ use function Stancl\Tenancy\Tests\withTenantDatabases;
 
 beforeEach(function () {
     withTenantDatabases();
-    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably'];
+    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably', 'reverb'];
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
 afterEach(function () {
-    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably'];
+    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably', 'reverb'];
 });
 
 test('bound broadcaster instance is the same before initializing tenancy and after ending it', function() {
@@ -171,4 +171,25 @@ test('broadcasting channel helpers register channels correctly', function() {
     // Channel prefixed with 'global__' found
     $foundChannelClosure = $getChannels()->first(fn ($closure, $name) => $name === 'global__' . $channelName);
     expect($foundChannelClosure)->not()->toBeNull();
+});
+
+test('reverb driver triggers tenant context binding', function() {
+    $manager = new \Stancl\Tenancy\Overrides\TenancyBroadcastManager(app());
+
+    $manager->extend('reverb', function() {
+        return new \Stancl\Tenancy\Tests\Etc\TestingBroadcaster('tenant_instance');
+    });
+
+    // Bind a "central" broadcaster to the container
+    $centralBroadcaster = new \Stancl\Tenancy\Tests\Etc\TestingBroadcaster('central_instance');
+    app()->instance(\Illuminate\Contracts\Broadcasting\Broadcaster::class, $centralBroadcaster);
+
+    // Resolve the reverb driver
+    $manager->driver('reverb');
+
+    $currentBroadcaster = app(\Illuminate\Contracts\Broadcasting\Broadcaster::class);
+
+    // Assert the broadcaster instance was swapped
+    expect($currentBroadcaster)->not->toBe($centralBroadcaster);
+    expect($currentBroadcaster->message)->toBe('tenant_instance');
 });
