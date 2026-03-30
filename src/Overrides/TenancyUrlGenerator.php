@@ -129,7 +129,15 @@ class TenancyUrlGenerator extends UrlGenerator
             throw new InvalidArgumentException('Attribute [name] expects a string backed enum.');
         }
 
-        [$name, $parameters] = $this->prepareRouteInputs($name, Arr::wrap($parameters)); // @phpstan-ignore argument.type
+        $wrappedParameters = Arr::wrap($parameters);
+
+        [$name, $parameters] = $this->prepareRouteInputs($name, $wrappedParameters); // @phpstan-ignore argument.type
+
+        if (isset($wrappedParameters[static::$bypassParameter])) {
+            // If the bypass parameter was passed, we need to add it back to the parameters after prepareRouteInputs() removes it,
+            // so that the underlying route() call in parent::temporarySignedRoute() can bypass the behavior modification as well.
+            $parameters[static::$bypassParameter] = $wrappedParameters[static::$bypassParameter];
+        }
 
         return parent::temporarySignedRoute($name, $expiration, $parameters, $absolute);
     }
