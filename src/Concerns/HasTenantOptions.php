@@ -10,15 +10,16 @@ use Stancl\Tenancy\Database\Concerns\PendingScope;
 use Symfony\Component\Console\Input\InputOption;
 
 /**
- * Adds 'tenants' and 'with-pending' options.
+ * Adds 'tenants', 'skip-tenants', and 'with-pending' options.
  */
 trait HasTenantOptions
 {
     protected function getOptions()
     {
         return array_merge([
-           new InputOption('tenants', null, InputOption::VALUE_IS_ARRAY|InputOption::VALUE_OPTIONAL, 'The tenants to run this command for. Leave empty for all tenants', null),
-           new InputOption('with-pending', null, InputOption::VALUE_NONE, 'Include pending tenants in query'), // todo@pending should we also offer without-pending? if we add this, mention in docs
+            new InputOption('tenants', null, InputOption::VALUE_IS_ARRAY|InputOption::VALUE_OPTIONAL, 'The tenants to run this command for. Leave empty for all tenants', null),
+            new InputOption('skip-tenants', null, InputOption::VALUE_IS_ARRAY|InputOption::VALUE_OPTIONAL, 'The tenants to skip when running this command', null),
+            new InputOption('with-pending', null, InputOption::VALUE_NONE, 'Include pending tenants in query'), // todo@pending should we also offer without-pending? if we add this, mention in docs
         ], parent::getOptions());
     }
 
@@ -41,6 +42,9 @@ trait HasTenantOptions
             })
             ->when($this->option('tenants'), function ($query) {
                 $query->whereIn(tenancy()->model()->getTenantKeyName(), $this->option('tenants'));
+            })
+            ->when($this->option('skip-tenants'), function ($query) {
+                $query->whereNotIn(tenancy()->model()->getTenantKeyName(), $this->option('skip-tenants'));
             })
             ->when(tenancy()->model()::hasGlobalScope(PendingScope::class), function ($query) {
                 $query->withPending(config('tenancy.pending.include_in_queries') ?: $this->option('with-pending'));
