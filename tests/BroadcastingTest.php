@@ -70,11 +70,13 @@ test('broadcasting config bootstrapper maps the config to broadcaster credential
     $tenant1 = Tenant::create(['testing_key' => 'tenant1_key']);
     $tenant2 = Tenant::create(['testing_key' => 'tenant2_key']);
 
+    expect(app(BroadcastManager::class)->driver()->config['key'])->toBe('central_key');
     expect(app(BroadcasterContract::class)->config['key'])->toBe('central_key');
     expect(Broadcast::driver()->config['key'])->toBe('central_key');
 
     tenancy()->initialize($tenant1);
 
+    expect(app(BroadcastManager::class)->driver()->config['key'])->toBe('tenant1_key');
     // Switching to tenant context makes the currently bound Broadcaster instance use the tenant's config
     expect(app(BroadcasterContract::class)->config['key'])->toBe('tenant1_key');
     // The Broadcast facade (used in BroadcastController::authenticate) uses the broadcaster with tenant config
@@ -84,12 +86,14 @@ test('broadcasting config bootstrapper maps the config to broadcaster credential
     tenancy()->initialize($tenant2);
 
     // Switching to another tenant context makes the current broadcaster use the new tenant's config
+    expect(app(BroadcastManager::class)->driver()->config['key'])->toBe('tenant2_key');
     expect(app(BroadcasterContract::class)->config['key'])->toBe('tenant2_key');
     expect(Broadcast::driver()->config['key'])->toBe('tenant2_key');
 
     tenancy()->end();
 
     // Ending tenancy reverts the broadcaster changes
+    expect(app(BroadcastManager::class)->driver()->config['key'])->toBe('central_key');
     expect(app(BroadcasterContract::class)->config['key'])->toBe('central_key');
     expect(Broadcast::driver()->config['key'])->toBe('central_key');
 });
