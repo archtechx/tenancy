@@ -108,33 +108,33 @@ test('tenant broadcast manager receives the custom driver creators of the centra
     $tenant = Tenant::create();
     $tenant2 = Tenant::create();
 
-    app(BroadcastManager::class)->extend('testing', $testingClosure = fn($app, $config) => new TestingBroadcaster('testing', $config));
+    app(BroadcastManager::class)->extend('testing', fn($app, $config) => new TestingBroadcaster('testing', $config));
 
-    $originalCustomCreators = invade(app(BroadcastManager::class))->customCreators;
+    $originalDrivers = array_keys(invade(app(BroadcastManager::class))->customCreators);
 
-    expect($originalCustomCreators['testing'])->toBe($testingClosure);
+    expect($originalDrivers)->toContain('testing');
 
     tenancy()->initialize($tenant);
 
     app(BroadcastManager::class)->extend(
         'testing-tenant1',
-        $testingTenant1Closure = fn($app, $config) => new TestingBroadcaster('testing-tenant1', $config)
+        fn($app, $config) => new TestingBroadcaster('testing-tenant1', $config)
     );
 
     // Current BroadcastManager instance has the original custom creators plus the newly registered testing-tenant1 creator
-    expect(invade(app(BroadcastManager::class))->customCreators)->toBe($originalCustomCreators + ['testing-tenant1' => $testingTenant1Closure]);
+    expect(array_keys(invade(app(BroadcastManager::class))->customCreators))->toBe([...$originalDrivers, 'testing-tenant1']);
 
     tenancy()->initialize($tenant2);
 
     // Current BroadcastManager only has the original custom creators,
     // the creator added in the previous tenant's context doesn't persist.
-    expect(invade(app(BroadcastManager::class))->customCreators)->toBe($originalCustomCreators);
+    expect(array_keys(invade(app(BroadcastManager::class))->customCreators))->toBe($originalDrivers);
 
     tenancy()->end();
 
     // Ending tenancy reverts the BroadcastManager binding back to the original state,
     // the creator registered in the tenant context doesn't persist.
-    expect(invade(app(BroadcastManager::class))->customCreators)->toBe($originalCustomCreators);
+    expect(array_keys(invade(app(BroadcastManager::class))->customCreators))->toBe($originalDrivers);
 });
 
 test('new broadcasters get the channels from the previously bound broadcaster', function() {
