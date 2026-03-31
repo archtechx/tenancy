@@ -11,6 +11,8 @@ use Illuminate\Foundation\Application;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Overrides\TenancyBroadcastManager;
+use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Contracts\Broadcasting\Factory as BroadcastingFactory;
 
 class BroadcastingConfigBootstrapper implements TenancyBootstrapper
 {
@@ -81,6 +83,10 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
         $this->app->extend(Broadcaster::class, function (Broadcaster $broadcaster) {
             return $this->app->make(BroadcastManager::class)->connection();
         });
+
+        // Clear the resolved Broadcast facade instance so that it gets re-resolved as the tenant broadcast manager
+        // when used (e.g. in BroadcastController::authenticate)
+        Broadcast::clearResolvedInstance(BroadcastingFactory::class);
     }
 
     public function revert(): void
@@ -88,6 +94,9 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
         // Change the BroadcastManager and Broadcaster singletons back to what they were before initializing tenancy
         $this->app->singleton(BroadcastManager::class, fn (Application $app) => $this->originalBroadcastManager);
         $this->app->singleton(Broadcaster::class, fn (Application $app) => $this->originalBroadcaster);
+
+        // Clear the resolved Broadcast facade instance so that it gets re-resolved as the central broadcast manager
+        Broadcast::clearResolvedInstance(BroadcastingFactory::class);
 
         $this->unsetConfig();
     }
