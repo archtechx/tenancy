@@ -7,12 +7,12 @@ namespace Stancl\Tenancy\Bootstrappers;
 use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Config\Repository;
 use Illuminate\Contracts\Broadcasting\Broadcaster;
+use Illuminate\Contracts\Broadcasting\Factory as BroadcastingFactory;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Broadcast;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Overrides\TenancyBroadcastManager;
-use Illuminate\Support\Facades\Broadcast;
-use Illuminate\Contracts\Broadcasting\Factory as BroadcastingFactory;
 
 class BroadcastingConfigBootstrapper implements TenancyBootstrapper
 {
