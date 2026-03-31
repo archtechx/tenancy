@@ -76,6 +76,11 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
 
             return $tenantBroadcastManager;
         });
+
+        // Make the Broadcaster singleton resolve to the broadcaster of the TenantBroadcastManager so that it uses the tenant credentials
+        $this->app->extend(Broadcaster::class, function (Broadcaster $broadcaster) {
+            return $this->app->make(BroadcastManager::class)->connection();
+        });
     }
 
     public function revert(): void
