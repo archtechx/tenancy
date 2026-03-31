@@ -237,7 +237,7 @@ test('broadcasting channel helpers register channels correctly', function() {
     expect($tenantChannelClosure($centralUser, $tenant->getTenantKey(), $tenantUser->name))->toBeFalse();
     expect($tenantChannelClosure($tenantUser, $tenant->getTenantKey(), $tenantUser->name))->toBeTrue();
 
-    // Use a new channel instance to delete the previously registered channels before testing the univeresal_channel helper
+    // Use a new channel instance to delete the previously registered channels before testing the universal_channel helper
     $broadcastManager->purge($driver);
     $broadcastManager->extend($driver, fn () => new NullBroadcaster);
 
