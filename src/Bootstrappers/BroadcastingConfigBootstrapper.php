@@ -64,9 +64,17 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
 
         $this->setConfig($tenant);
 
-        // Make BroadcastManager resolve to a custom BroadcastManager which makes the broadcasters use the tenant credentials
+        // Make BroadcastManager resolve to a custom BroadcastManager which makes the broadcasters use the tenant credentials.
+        // TenantBroadcastManager also inherits the custom drivers registered in the original BroadcastManager, so that they can be used in tenant context as well.
         $this->app->extend(BroadcastManager::class, function (BroadcastManager $broadcastManager) {
-            return new TenancyBroadcastManager($this->app);
+            $originalCustomCreators = invade($broadcastManager)->customCreators;
+            $tenantBroadcastManager = new TenancyBroadcastManager($this->app);
+
+            foreach ($originalCustomCreators as $driver => $closure) {
+                $tenantBroadcastManager->extend($driver, $closure);
+            }
+
+            return $tenantBroadcastManager;
         });
     }
 
