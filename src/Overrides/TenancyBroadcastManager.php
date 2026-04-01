@@ -12,21 +12,21 @@ use Illuminate\Contracts\Foundation\Application;
 class TenancyBroadcastManager extends BroadcastManager
 {
     /**
-     * Names of broadcasters to always recreate using $this->resolve() (even when they're
-     * cached and available in the $broadcasters property).
+     * Names of broadcasters that should always be recreated using $this->resolve()
+     * (even when they're cached and available in the $broadcasters property to prevent
+     * any potential leaks between contexts) and that should inherit the original broadcaster's channels.
      *
-     * The reason for recreating the broadcasters is
-     * to make your app use the correct broadcaster credentials when tenancy is initialized.
+     * The main concern is inheriting the channels, since the channels get registered
+     * (e.g. in routes/channels.php) before this manager overrides the BroadcastManager instance
+     * and new broadcaster instances don't receive the channels automatically.
      */
     public static array $tenantBroadcasters = ['pusher', 'ably'];
 
     /**
      * Override the get method so that the broadcasters in $tenantBroadcasters
-     * always get freshly resolved even when they're cached and available in the $broadcasters property,
+     * receive the original broadcaster's channels and always get freshly resolved
+     * even when they're cached and available in the $broadcasters property,
      * and that the resolved broadcaster will override the BroadcasterContract::class singleton.
-     *
-     * If there's a cached broadcaster with the same name as $name,
-     * give its channels to the newly resolved bootstrapper.
      */
     protected function get($name)
     {
