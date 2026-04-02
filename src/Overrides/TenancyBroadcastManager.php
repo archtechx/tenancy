@@ -13,7 +13,7 @@ class TenancyBroadcastManager extends BroadcastManager
     /**
      * Names of broadcasters that
      * - should always be recreated using $this->resolve(), even when they're cached and available
-     *   in $this->drivers (so that e.g. when you update tenant's broadcaster credentials in the tenant context,
+     *   in $this->drivers (so that e.g. when you update broadcasting credentials in the tenant context,
      *   the updated credentials will be used for broadcasting in the same context)
      * - should inherit the original broadcaster's channels (= the channels registered in
      *   the central context, e.g. in routes/channels.php, before this manager overrides the bound BroadcastManager).
@@ -22,7 +22,7 @@ class TenancyBroadcastManager extends BroadcastManager
 
     /**
      * Override the get method so that the broadcasters in static::$tenantBroadcasters
-     * receive the original broadcaster's channels and always get freshly resolved.
+     * receive the original (central) broadcaster's channels and always get freshly resolved.
      */
     protected function get($name)
     {
@@ -31,7 +31,7 @@ class TenancyBroadcastManager extends BroadcastManager
             $originalBroadcaster = $this->app->make(BroadcasterContract::class);
             $newBroadcaster = $this->resolve($name);
 
-            // Give the channels of the original broadcaster (from the central context) to the newly resolved one.
+            // Give the channels of the original (central) broadcaster to the newly resolved one.
             // Broadcasters only have to implement the Illuminate\Contracts\Broadcasting\Broadcaster contract
             // which doesn't require the channels property, so passing the channels is only
             // needed for Illuminate\Broadcasting\Broadcasters\Broadcaster instances.
@@ -46,8 +46,8 @@ class TenancyBroadcastManager extends BroadcastManager
     }
 
     // The newly resolved broadcasters don't automatically receive the channels registered
-    // in central context (e.g. in routes/channels.php), so we have to obtain the channels from the
-    // broadcaster used in central context and manually pass them to the new broadcasters
+    // in central context (e.g. in routes/channels.php), so the channels have to be obtained from the
+    // broadcaster used in central context and manually passed to the new broadcasters
     // (attempting to broadcast using a broadcaster with no channels results in a 403 error).
     protected function passChannelsFromOriginalBroadcaster(Broadcaster $originalBroadcaster, Broadcaster $newBroadcaster): void
     {
