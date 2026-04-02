@@ -16,7 +16,7 @@ class TenancyBroadcastManager extends BroadcastManager
      *   in $this->drivers (so that e.g. when you update tenant's broadcaster credentials in the tenant context,
      *   the updated credentials will be used for broadcasting in the same context)
      * - should inherit the original broadcaster's channels (= the channels registered in
-     *   the central context, e.g. in routes/channels.php, before this manager overrides the bound BroadcastManager)
+     *   the central context, e.g. in routes/channels.php, before this manager overrides the bound BroadcastManager).
      */
     public static array $tenantBroadcasters = ['pusher', 'ably'];
 
