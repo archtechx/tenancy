@@ -7,7 +7,6 @@ namespace Stancl\Tenancy\Overrides;
 use Illuminate\Broadcasting\Broadcasters\Broadcaster;
 use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Contracts\Broadcasting\Broadcaster as BroadcasterContract;
-use Illuminate\Contracts\Foundation\Application;
 
 class TenancyBroadcastManager extends BroadcastManager
 {
@@ -42,8 +41,6 @@ class TenancyBroadcastManager extends BroadcastManager
             if ($originalBroadcaster instanceof Broadcaster && $newBroadcaster instanceof Broadcaster) {
                 $this->passChannelsFromOriginalBroadcaster($originalBroadcaster, $newBroadcaster);
             }
-
-            $this->app->singleton(BroadcasterContract::class, fn (Application $app) => $newBroadcaster);
 
             return $newBroadcaster;
         }
