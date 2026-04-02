@@ -66,8 +66,9 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
 
         $this->setConfig($tenant);
 
-        // Make BroadcastManager resolve to a custom BroadcastManager which makes the broadcasters use the tenant credentials.
-        // TenantBroadcastManager also inherits the custom drivers registered in the original BroadcastManager, so that they can be used in tenant context as well.
+        // Make BroadcastManager resolve to TenancyBroadcastManager which always re-resolves the used broadcasters (so that
+        // the broadcasting credentials are always up-to-date at the point of broadcasting) and gives the channels of
+        // the broadcaster from the central context to the newly resolved broadcasters in tenant context.
         $this->app->extend(BroadcastManager::class, function (BroadcastManager $broadcastManager) {
             $originalCustomCreators = invade($broadcastManager)->customCreators;
             $tenantBroadcastManager = new TenancyBroadcastManager($this->app);
@@ -79,13 +80,17 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
             return $tenantBroadcastManager;
         });
 
-        // Make the Broadcaster singleton resolve to the broadcaster of the TenantBroadcastManager so that it uses the tenant credentials
+        // Swap currently bound Broadcaster instance for one that's resolved through the tenant broadcast manager.
+        // Note that changing tenant's credentials in tenant context doesn't update them in the bound Broadcaster instance.
+        // If you need to e.g. send a notification in response to changing tenant's broadcasting credentials,
+        // it's recommended to use the broadcast() helper which always uses fresh broadcasters with the current credentials.
         $this->app->extend(Broadcaster::class, function (Broadcaster $broadcaster) {
             return $this->app->make(BroadcastManager::class)->connection();
         });
 
-        // Clear the resolved Broadcast facade instance so that it gets re-resolved as the tenant broadcast manager
-        // when used (e.g. in BroadcastController::authenticate)
+        // Clear the resolved Broadcast facade's Illuminate\Contracts\Broadcasting\Factory instance
+        // so that it gets re-resolved as the tenant broadcast manager when used (e.g. the
+        // Broadcast::auth() call in BroadcastController::authenticate).
         Broadcast::clearResolvedInstance(BroadcastingFactory::class);
     }
 

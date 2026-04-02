@@ -11,21 +11,18 @@ use Illuminate\Contracts\Broadcasting\Broadcaster as BroadcasterContract;
 class TenancyBroadcastManager extends BroadcastManager
 {
     /**
-     * Names of broadcasters that should always be recreated using $this->resolve()
-     * (even when they're cached and available in the $broadcasters property to prevent
-     * any potential leaks between contexts) and that should inherit the original broadcaster's channels.
-     *
-     * The main concern is inheriting the channels, since the channels get registered
-     * (e.g. in routes/channels.php) before this manager overrides the BroadcastManager instance
-     * and new broadcaster instances don't receive the channels automatically.
+     * Names of broadcasters that
+     * - should always be recreated using $this->resolve(), even when they're cached and available
+     *   in $this->drivers (so that e.g. when you update tenant's broadcaster credentials in the tenant context,
+     *   the updated credentials will be used for broadcasting in the same context)
+     * - should inherit the original broadcaster's channels (= the channels registered in
+     *   the central context, e.g. in routes/channels.php, before this manager overrides the bound BroadcastManager)
      */
     public static array $tenantBroadcasters = ['pusher', 'ably'];
 
     /**
-     * Override the get method so that the broadcasters in $tenantBroadcasters
-     * receive the original broadcaster's channels and always get freshly resolved
-     * even when they're cached and available in the $broadcasters property,
-     * and that the resolved broadcaster will override the BroadcasterContract::class singleton.
+     * Override the get method so that the broadcasters in static::$tenantBroadcasters
+     * receive the original broadcaster's channels and always get freshly resolved.
      */
     protected function get($name)
     {
@@ -34,10 +31,10 @@ class TenancyBroadcastManager extends BroadcastManager
             $originalBroadcaster = $this->app->make(BroadcasterContract::class);
             $newBroadcaster = $this->resolve($name);
 
-            // If there is a current broadcaster, give its channels to the newly resolved one
+            // Give the channels of the original broadcaster (from the central context) to the newly resolved one.
             // Broadcasters only have to implement the Illuminate\Contracts\Broadcasting\Broadcaster contract
-            // Which doesn't require the channels property
-            // So passing the channels is only needed for Illuminate\Broadcasting\Broadcasters\Broadcaster instances
+            // which doesn't require the channels property, so passing the channels is only
+            // needed for Illuminate\Broadcasting\Broadcasters\Broadcaster instances.
             if ($originalBroadcaster instanceof Broadcaster && $newBroadcaster instanceof Broadcaster) {
                 $this->passChannelsFromOriginalBroadcaster($originalBroadcaster, $newBroadcaster);
             }
@@ -48,8 +45,10 @@ class TenancyBroadcastManager extends BroadcastManager
         return parent::get($name);
     }
 
-    // Because, unlike the original broadcaster, the newly resolved broadcaster won't have the channels registered using routes/channels.php
-    // Using it for broadcasting won't work, unless we make it have the original broadcaster's channels
+    // The newly resolved broadcasters don't automatically receive the channels registered
+    // in central context (e.g. in routes/channels.php), so we have to obtain the channels from the
+    // broadcaster used in central context and manually pass them to the new broadcasters
+    // (attempting to broadcast using a broadcaster with no channels results in a 403 error).
     protected function passChannelsFromOriginalBroadcaster(Broadcaster $originalBroadcaster, Broadcaster $newBroadcaster): void
     {
         // invade() because channels can't be retrieved through any of the broadcaster's public methods
