@@ -137,7 +137,7 @@ test('tenant broadcast manager receives the custom driver creators of the centra
     expect(array_keys(invade(app(BroadcastManager::class))->customCreators))->toBe($originalDrivers);
 });
 
-test('new broadcasters get the channels from the previously bound broadcaster', function() {
+test('tenant broadcasters receive the channels from the broadcaster bound in central context', function() {
     config(['tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class]]);
     config([
         'broadcasting.default' => $driver = 'testing',
@@ -146,20 +146,36 @@ test('new broadcasters get the channels from the previously bound broadcaster', 
 
     TenancyBroadcastManager::$tenantBroadcasters[] = $driver;
 
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
     app(BroadcastManager::class)->extend('testing', fn($app, $config) => new TestingBroadcaster('testing'));
-    $getCurrentChannels = fn() => array_keys(invade(app(BroadcastManager::class)->driver())->channels);
+    $getCurrentChannelsFromBoundBroadcaster = fn() => array_keys(invade(app(BroadcasterContract::class))->channels);
+    $getCurrentChannelsThroughManager = fn() => array_keys(invade(app(BroadcastManager::class)->driver())->channels);
 
     Broadcast::channel($channel = 'testing-channel', fn() => true);
 
-    expect($channel)->toBeIn($getCurrentChannels());
+    expect($channel)
+        ->toBeIn($getCurrentChannelsThroughManager())
+        ->toBeIn($getCurrentChannelsFromBoundBroadcaster());
 
-    tenancy()->initialize(Tenant::create());
+    tenancy()->initialize($tenant1);
 
-    expect($channel)->toBeIn($getCurrentChannels());
+    expect($channel)
+        ->toBeIn($getCurrentChannelsThroughManager())
+        ->toBeIn($getCurrentChannelsFromBoundBroadcaster());
+
+    tenancy()->initialize($tenant2);
+
+    expect($channel)
+        ->toBeIn($getCurrentChannelsThroughManager())
+        ->toBeIn($getCurrentChannelsFromBoundBroadcaster());
 
     tenancy()->end();
 
-    expect($channel)->toBeIn($getCurrentChannels());
+    expect($channel)
+        ->toBeIn($getCurrentChannelsThroughManager())
+        ->toBeIn($getCurrentChannelsFromBoundBroadcaster());
 });
 
 test('broadcasting channel helpers register channels correctly', function() {
