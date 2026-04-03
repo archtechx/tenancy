@@ -40,34 +40,38 @@ test('BroadcastingConfigBootstrapper binds TenancyBroadcastManager to BroadcastM
     expect(app(BroadcastManager::class))->toBeInstanceOf(BroadcastManager::class);
 });
 
-test('BroadcastingConfigBootstrapper maps tenant properties to broadcaster credentials correctly', function() {
+test('BroadcastingConfigBootstrapper maps tenant properties to broadcaster credentials correctly', function(string $driver) {
     config([
-        'broadcasting.default' => $driver = 'testing',
-        'broadcasting.connections.testing.driver' => $driver,
-        'broadcasting.connections.testing.key' => 'central_key',
+        'broadcasting.default' => $driver,
+        "broadcasting.connections.{$driver}.key" => 'central_key',
         'tenancy.bootstrappers' => [
             BroadcastingConfigBootstrapper::class,
         ],
     ]);
 
-    BroadcastingConfigBootstrapper::$credentialsMap['broadcasting.connections.testing.key'] = 'testing_key';
+    if ($driver === 'custom') {
+        config(['broadcasting.connections.custom.driver' => 'custom']);
 
-    // Register the testing broadcaster
-    app(BroadcastManager::class)->extend('testing', fn($app, $config) => new TestingBroadcaster('testing', $config));
+        // Custom driver, not included in TenancyBroadcastManager::$tenantBroadcasters by default
+        TenancyBroadcastManager::$tenantBroadcasters = ['custom'];
+    }
+
+    BroadcastingConfigBootstrapper::$credentialsMap["broadcasting.connections.{$driver}.key"] = 'testing_key';
+
+    app(BroadcastManager::class)->extend($driver, fn ($app, $config) => new TestingBroadcaster('testing', $config));
 
     $tenant1 = Tenant::create(['testing_key' => 'tenant1_key']);
     $tenant2 = Tenant::create(['testing_key' => 'tenant2_key']);
 
-    expect(config('broadcasting.connections.testing.key'))->toBe('central_key');
+    expect(config("broadcasting.connections.{$driver}.key"))->toBe('central_key');
     expect(app(BroadcastManager::class)->driver()->config['key'])->toBe('central_key');
     expect(app(BroadcasterContract::class)->config['key'])->toBe('central_key');
     expect(Broadcast::driver()->config['key'])->toBe('central_key');
 
     tenancy()->initialize($tenant1);
 
-    expect(array_key_exists('testing_key', tenant()->getAttributes()))->toBeTrue();
     // Tenant's testing_key property is mapped to broadcasting.connections.testing.key config value
-    expect(config('broadcasting.connections.testing.key'))->toBe('tenant1_key');
+    expect(config("broadcasting.connections.{$driver}.key"))->toBe('tenant1_key');
     expect(app(BroadcastManager::class)->driver()->config['key'])->toBe('tenant1_key');
     // Switching to tenant context makes the currently bound Broadcaster instance use the tenant's config
     expect(app(BroadcasterContract::class)->config['key'])->toBe('tenant1_key');
@@ -77,21 +81,47 @@ test('BroadcastingConfigBootstrapper maps tenant properties to broadcaster crede
 
     tenancy()->initialize($tenant2);
 
-    expect(array_key_exists('testing_key', tenant()->getAttributes()))->toBeTrue();
-    expect(config('broadcasting.connections.testing.key'))->toBe('tenant2_key');
+    expect(config("broadcasting.connections.{$driver}.key"))->toBe('tenant2_key');
     // Switching to another tenant context makes the current broadcaster use the new tenant's config
     expect(app(BroadcastManager::class)->driver()->config['key'])->toBe('tenant2_key');
     expect(app(BroadcasterContract::class)->config['key'])->toBe('tenant2_key');
     expect(Broadcast::driver()->config['key'])->toBe('tenant2_key');
 
+    $tenant2->update(['testing_key' => 'new_tenant2_key']);
+
+    // Reinitialize tenancy to apply the tenant property update to config
+    tenancy()->end();
+    tenancy()->initialize($tenant2);
+
+    expect(config("broadcasting.connections.{$driver}.key"))->toBe('new_tenant2_key');
+    expect(app(BroadcastManager::class)->driver()->config['key'])->toBe('new_tenant2_key');
+    expect(app(BroadcasterContract::class)->config['key'])->toBe('new_tenant2_key');
+    expect(Broadcast::driver()->config['key'])->toBe('new_tenant2_key');
+
+    tenancy()->initialize($tenant1);
+
+    // When updating tenant properties without reinitializing, the tenant property update doesn't update the config,
+    // so the config has to be modified manually. Only methods that use TenancyBroadcastManager::get()
+    // will use the updated credentials without needing to reinitialize tenancy (e.g. the bound
+    // BroadcasterContract instance will still the original credentials, even after config gets updated directly).
+    config(["broadcasting.connections.{$driver}.key" => 'new_tenant1_key']);
+
+    expect(app(BroadcastManager::class)->driver()->config['key'])->toBe('new_tenant1_key');
+    expect(Broadcast::driver()->config['key'])->toBe('new_tenant1_key');
+
     tenancy()->end();
 
-    expect(config('broadcasting.connections.testing.key'))->toBe('central_key');
+    expect(config("broadcasting.connections.{$driver}.key"))->toBe('central_key');
     // Ending tenancy reverts the broadcaster changes
     expect(app(BroadcastManager::class)->driver()->config['key'])->toBe('central_key');
     expect(app(BroadcasterContract::class)->config['key'])->toBe('central_key');
     expect(Broadcast::driver()->config['key'])->toBe('central_key');
-});
+})->with([
+    'pusher',
+    'ably',
+    // 'reverb',
+    'custom', // Except for this custom driver, assume that the drivers are included in TenancyBroadcastManager::$tenantBroadcasters by default
+]);
 
 test('tenant broadcast manager receives the custom driver creators of the central broadcast manager', function() {
     config([
@@ -132,19 +162,23 @@ test('tenant broadcast manager receives the custom driver creators of the centra
     expect(array_keys(invade(app(BroadcastManager::class))->customCreators))->toBe($originalDrivers);
 });
 
-test('tenant broadcasters receive the channels from the broadcaster bound in central context', function() {
-    config(['tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class]]);
+test('tenant broadcasters receive the channels from the broadcaster bound in central context', function(string $driver) {
     config([
-        'broadcasting.default' => $driver = 'testing',
-        'broadcasting.connections.testing.driver' => $driver,
+        'tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class],
+        'broadcasting.default' => $driver,
     ]);
 
-    TenancyBroadcastManager::$tenantBroadcasters[] = $driver;
+    if ($driver === 'custom') {
+        config(['broadcasting.connections.custom.driver' => 'custom']);
+
+        // Custom driver, not included in TenancyBroadcastManager::$tenantBroadcasters by default
+        TenancyBroadcastManager::$tenantBroadcasters = ['custom'];
+    }
 
     $tenant1 = Tenant::create();
     $tenant2 = Tenant::create();
 
-    app(BroadcastManager::class)->extend('testing', fn($app, $config) => new TestingBroadcaster('testing'));
+    app(BroadcastManager::class)->extend($driver, fn($app, $config) => new TestingBroadcaster('testing'));
     $getCurrentChannelsFromBoundBroadcaster = fn() => array_keys(invade(app(BroadcasterContract::class))->channels);
     $getCurrentChannelsThroughManager = fn() => array_keys(invade(app(BroadcastManager::class)->driver())->channels);
 
@@ -171,4 +205,9 @@ test('tenant broadcasters receive the channels from the broadcaster bound in cen
     expect($channel)
         ->toBeIn($getCurrentChannelsThroughManager())
         ->toBeIn($getCurrentChannelsFromBoundBroadcaster());
-});
+})->with([
+    'pusher',
+    'ably',
+    // 'reverb',
+    'custom', // Except for this custom driver, assume that the drivers are included in TenancyBroadcastManager::$tenantBroadcasters by default
+]);
