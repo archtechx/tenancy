@@ -18,12 +18,12 @@ beforeEach(function () {
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
     BroadcastingConfigBootstrapper::$credentialsMap = [];
-    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably'];
+    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably', 'reverb'];
 });
 
 afterEach(function () {
     BroadcastingConfigBootstrapper::$credentialsMap = [];
-    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably'];
+    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably', 'reverb'];
 });
 
 test('BroadcastingConfigBootstrapper binds TenancyBroadcastManager to BroadcastManager and reverts the binding when tenancy is ended', function() {

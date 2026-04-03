@@ -32,7 +32,7 @@ class TenancyBroadcastManager extends BroadcastManager
      * - should inherit the original broadcaster's channels (= the channels registered in
      *   the central context, e.g. in routes/channels.php, before this manager overrides the bound BroadcastManager).
      */
-    public static array $tenantBroadcasters = ['pusher', 'ably'];
+    public static array $tenantBroadcasters = ['pusher', 'ably', 'reverb'];
 
     /**
      * Override the get method so that the broadcasters in static::$tenantBroadcasters
