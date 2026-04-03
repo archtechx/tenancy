@@ -88,7 +88,7 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
             return $tenantBroadcastManager;
         });
 
-        // Swap currently bound Broadcaster instance for one that's resolved through the tenant broadcast manager.
+        // Swap currently bound Broadcaster instance for one that's resolved through the tenant BroadcastManager.
         // Note that updating broadcasting config (credentials) in tenant context doesn't update the credentials
         // used by the bound Broadcaster instance. If you need to e.g. send a notification in response to
         // updating tenant's broadcasting credentials in tenant context, it's recommended to
@@ -99,7 +99,7 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
 
         // Clear the resolved Broadcast facade's Illuminate\Contracts\Broadcasting\Factory instance
         // so that it gets re-resolved as TenancyBroadcastManager instead of the central BroadcastManager
-        // when used e.g. in the Broadcast::auth() call in BroadcastController::authenticate (/broadcasting/auth).
+        // when used. E.g. the Broadcast::auth() call in BroadcastController::authenticate (/broadcasting/auth).
         Broadcast::clearResolvedInstance(BroadcastingFactory::class);
     }
 
@@ -109,7 +109,7 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
         $this->app->singleton(BroadcastManager::class, fn (Application $app) => $this->originalBroadcastManager);
         $this->app->singleton(Broadcaster::class, fn (Application $app) => $this->originalBroadcaster);
 
-        // Clear the resolved Broadcast facade instance so that it gets re-resolved as the central broadcast manager
+        // Clear the resolved Broadcast facade instance so that it gets re-resolved as the central BroadcastManager
         Broadcast::clearResolvedInstance(BroadcastingFactory::class);
 
         $this->unsetConfig();
