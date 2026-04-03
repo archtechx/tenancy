@@ -16,7 +16,7 @@ use Stancl\Tenancy\Overrides\TenancyBroadcastManager;
 
 /**
  * Maps tenant properties to broadcasting config and overrides
- * the BroadcastManager binding with TenancyBroadcastManager in tenant context.
+ * the BroadcastManager binding with TenancyBroadcastManager.
  *
  * @see TenancyBroadcastManager
  */
