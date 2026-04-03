@@ -56,7 +56,7 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
         protected Application $app
     ) {
         static::$broadcaster ??= $config->get('broadcasting.default');
-        static::$credentialsMap = array_merge(static::$credentialsMap, static::$mapPresets[static::$broadcaster] ?? []);
+        static::$credentialsMap = array_merge(static::$mapPresets[static::$broadcaster] ?? [], static::$credentialsMap);
     }
 
     public function bootstrap(Tenant $tenant): void
