@@ -119,7 +119,7 @@ test('BroadcastingConfigBootstrapper maps tenant properties to broadcaster crede
 })->with([
     'pusher',
     'ably',
-    // 'reverb',
+    'reverb',
     'custom', // Except for this custom driver, assume that the drivers are included in TenancyBroadcastManager::$tenantBroadcasters by default
 ]);
 
@@ -208,6 +208,6 @@ test('tenant broadcasters receive the channels from the broadcaster bound in cen
 })->with([
     'pusher',
     'ably',
-    // 'reverb',
+    'reverb',
     'custom', // Except for this custom driver, assume that the drivers are included in TenancyBroadcastManager::$tenantBroadcasters by default
 ]);
