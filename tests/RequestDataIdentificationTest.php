@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Route;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
@@ -33,7 +34,7 @@ class RequestDataIdentificationTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function header_identification_works()
     {
         InitializeTenancyByRequestData::$header = 'X-Tenant';
@@ -48,7 +49,7 @@ class RequestDataIdentificationTest extends TestCase
             ->assertSee($tenant->id);
     }
 
-    /** @test */
+    #[Test]
     public function query_parameter_identification_works()
     {
         InitializeTenancyByRequestData::$header = null;

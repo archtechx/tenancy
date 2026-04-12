@@ -6,11 +6,12 @@ namespace Stancl\Tenancy\Tests;
 
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 
 class TenantAwareCommandTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function commands_run_globally_are_tenant_aware_and_return_valid_exit_code()
     {
         $tenant1 = Tenant::create();

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Events\TenancyEnded;
@@ -47,7 +48,7 @@ class CommandsTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function migrate_command_doesnt_change_the_db_connection()
     {
         $this->assertFalse(Schema::hasTable('users'));
@@ -61,7 +62,7 @@ class CommandsTest extends TestCase
         $this->assertNotEquals('tenant', $new_connection_name);
     }
 
-    /** @test */
+    #[Test]
     public function migrate_command_works_without_options()
     {
         $tenant = Tenant::create();
@@ -75,7 +76,7 @@ class CommandsTest extends TestCase
         $this->assertTrue(Schema::hasTable('users'));
     }
 
-    /** @test */
+    #[Test]
     public function migrate_command_works_with_tenants_option()
     {
         $tenant = Tenant::create();
@@ -91,7 +92,7 @@ class CommandsTest extends TestCase
         $this->assertTrue(Schema::hasTable('users'));
     }
 
-    /** @test */
+    #[Test]
     public function rollback_command_works()
     {
         $tenant = Tenant::create();
@@ -105,13 +106,13 @@ class CommandsTest extends TestCase
         $this->assertFalse(Schema::hasTable('users'));
     }
 
-    /** @test */
+    #[Test]
     public function seed_command_works()
     {
         $this->markTestIncomplete();
     }
 
-    /** @test */
+    #[Test]
     public function database_connection_is_switched_to_default()
     {
         $originalDBName = DB::connection()->getDatabaseName();
@@ -129,7 +130,7 @@ class CommandsTest extends TestCase
         $this->assertSame($originalDBName, DB::connection()->getDatabaseName());
     }
 
-    /** @test */
+    #[Test]
     public function database_connection_is_switched_to_default_when_tenancy_has_been_initialized()
     {
         tenancy()->initialize(Tenant::create());
@@ -137,7 +138,7 @@ class CommandsTest extends TestCase
         $this->database_connection_is_switched_to_default();
     }
 
-    /** @test */
+    #[Test]
     public function run_commands_works()
     {
         $id = Tenant::create()->getTenantKey();
@@ -150,7 +151,7 @@ class CommandsTest extends TestCase
             ->expectsOutput('xyz');
     }
 
-    /** @test */
+    #[Test]
     public function install_command_works()
     {
         if (! is_dir($dir = app_path('Http'))) {
@@ -169,7 +170,7 @@ class CommandsTest extends TestCase
         $this->assertDirectoryExists(database_path('migrations/tenant'));
     }
 
-    /** @test */
+    #[Test]
     public function migrate_fresh_command_works()
     {
         $tenant = Tenant::create();
@@ -191,7 +192,7 @@ class CommandsTest extends TestCase
         $this->assertFalse(DB::table('users')->exists());
     }
 
-    /** @test */
+    #[Test]
     public function run_command_with_array_of_tenants_works()
     {
         $tenantId1 = Tenant::create()->getTenantKey();

@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Events\TenantCreated;
@@ -45,7 +46,7 @@ class BootstrapperTest extends TestCase
         Event::listen(TenancyEnded::class, RevertToCentralContext::class);
     }
 
-    /** @test */
+    #[Test]
     public function database_data_is_separated()
     {
         config(['tenancy.bootstrappers' => [
@@ -78,7 +79,7 @@ class BootstrapperTest extends TestCase
         $this->assertSame('Foo', DB::table('users')->first()->name);
     }
 
-    /** @test */
+    #[Test]
     public function cache_data_is_separated()
     {
         config([
@@ -121,7 +122,7 @@ class BootstrapperTest extends TestCase
         $this->assertSame('central', Cache::get('foo'));
     }
 
-    /** @test */
+    #[Test]
     public function redis_data_is_separated()
     {
         config(['tenancy.bootstrappers' => [
@@ -152,7 +153,7 @@ class BootstrapperTest extends TestCase
         $this->assertSame(null, Redis::get('abc'));
     }
 
-    /** @test */
+    #[Test]
     public function filesystem_data_is_separated()
     {
         config(['tenancy.bootstrappers' => [

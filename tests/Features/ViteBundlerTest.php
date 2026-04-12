@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use PHPUnit\Framework\Attributes\Test;
 use Stancl\Tenancy\Features\ViteBundler;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Stancl\Tenancy\Tests\TestCase;
@@ -9,7 +10,7 @@ use Stancl\Tenancy\Vite as StanclVite;
 
 class ViteBundlerTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function the_vite_helper_uses_our_custom_class()
     {
         $vite = app(\Illuminate\Foundation\Vite::class);
