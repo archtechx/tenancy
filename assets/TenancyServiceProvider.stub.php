@@ -167,6 +167,10 @@ class TenancyServiceProvider extends ServiceProvider
         //         ? $tenant->domain
         //         : $tenant->domains->first()->domain;
         //
+        //     if (is_null($tenantDomain)) {
+        //         return $originalRootUrl;
+        //     }
+        //
         //     $scheme = str($originalRootUrl)->before('://');
         //
         //     if (str_contains($tenantDomain, '.')) {

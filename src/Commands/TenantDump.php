@@ -63,7 +63,7 @@ class TenantDump extends DumpCommand
     protected function getOptions(): array
     {
         return array_merge([
-            ['tenant', null, InputOption::VALUE_OPTIONAL, '', null],
+            new InputOption('tenant', null, InputOption::VALUE_OPTIONAL, '', null),
         ], parent::getOptions());
     }
 }
