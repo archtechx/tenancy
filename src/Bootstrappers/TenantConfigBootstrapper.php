@@ -2,21 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Stancl\Tenancy\Features;
+namespace Stancl\Tenancy\Bootstrappers;
 
-use Illuminate\Contracts\Config\Repository;
+use Illuminate\Config\Repository;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Event;
-use Stancl\Tenancy\Contracts\Feature;
+use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\Events\RevertedToCentralContext;
-use Stancl\Tenancy\Events\TenancyBootstrapped;
 
-// todo@release remove this class
-
-/** @deprecated Use the TenantConfigBootstrapper instead. */
-class TenantConfig implements Feature
+class TenantConfigBootstrapper implements TenancyBootstrapper
 {
     public array $originalConfig = [];
 
@@ -29,21 +23,7 @@ class TenantConfig implements Feature
         protected Repository $config,
     ) {}
 
-    public function bootstrap(): void
-    {
-        Event::listen(TenancyBootstrapped::class, function (TenancyBootstrapped $event) {
-            /** @var Tenant $tenant */
-            $tenant = $event->tenancy->tenant;
-
-            $this->setTenantConfig($tenant);
-        });
-
-        Event::listen(RevertedToCentralContext::class, function () {
-            $this->unsetTenantConfig();
-        });
-    }
-
-    public function setTenantConfig(Tenant $tenant): void
+    public function bootstrap(Tenant $tenant): void
     {
         foreach (static::$storageToConfigMap as $storageKey => $configKey) {
             /** @var Tenant&Model $tenant */
@@ -65,7 +45,7 @@ class TenantConfig implements Feature
         }
     }
 
-    public function unsetTenantConfig(): void
+    public function revert(): void
     {
         foreach ($this->originalConfig as $key => $value) {
             $this->config->set($key, $value);

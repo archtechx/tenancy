@@ -46,10 +46,6 @@ parameters:
             message: '#PHPDoc tag \@param has invalid value \(dynamic#'
             paths:
                 - src/helpers.php
-        -
-            message: '#Illuminate\\Routing\\UrlGenerator#'
-            paths:
-                - src/Bootstrappers/FilesystemTenancyBootstrapper.php
         - '#Method Stancl\\Tenancy\\Tenancy::cachedResolvers\(\) should return array#'
         - '#Access to an undefined property Stancl\\Tenancy\\Middleware\\IdentificationMiddleware\:\:\$tenancy#'
         - '#Access to an undefined property Stancl\\Tenancy\\Middleware\\IdentificationMiddleware\:\:\$resolver#'

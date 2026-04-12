@@ -81,12 +81,19 @@ class CreateUserWithRLSPolicies extends Command
         #[\SensitiveParameter]
         string $password,
     ): DatabaseConfig {
+        // This is a bit of a hack. We want to use our existing createUser() logic.
+        // That logic needs a DatabaseConfig instance. However, we aren't really working
+        // with any specific tenant here. We also *don't* want to use anything tenant-specific
+        // here. We are creating the SHARED "RLS user". Therefore, we need a custom DatabaseConfig
+        // instance for this purpose. The easiest way to do that is to grab an empty Tenant model
+        // (we use TenantWithDatabase in RLS) and manually create the host connection, just like
+        // DatabaseConfig::manager() would. We don't call that method since we want to use our existing
+        // PermissionControlledPostgreSQLSchemaManager $manager instance, rather than the "tenant's manager".
+
         /** @var TenantWithDatabase $tenantModel */
         $tenantModel = tenancy()->model();
 
-        // Use a temporary DatabaseConfig instance to set the host connection
         $temporaryDbConfig = $tenantModel->database();
-
         $temporaryDbConfig->purgeHostConnection();
 
         $tenantHostConnectionName = $temporaryDbConfig->getTenantHostConnectionName();

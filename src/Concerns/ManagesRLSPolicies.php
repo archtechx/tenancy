@@ -26,7 +26,7 @@ trait ManagesRLSPolicies
         $policies = static::getRLSPolicies($table);
 
         foreach ($policies as $policy) {
-            DB::statement('DROP POLICY ? ON ?', [$policy, $table]);
+            DB::statement("DROP POLICY {$policy} ON {$table}");
         }
 
         return count($policies);

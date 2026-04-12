@@ -99,11 +99,14 @@ class CacheTenancyBootstrapper implements TenancyBootstrapper
     {
         $names = $this->config->get('tenancy.cache.stores');
 
-        if (
-            $this->config->get('tenancy.cache.scope_sessions', true) &&
-            in_array($this->config->get('session.driver'), ['redis', 'memcached', 'dynamodb', 'apc'], true)
-        ) {
-            $names[] = $this->getSessionCacheStoreName();
+        if ($this->config->get('tenancy.cache.scope_sessions', true)) {
+            // These are the only cache driven session backends (see Laravel's config/session.php)
+            if (! in_array($this->config->get('session.driver'), ['redis', 'memcached', 'dynamodb', 'apc'], true)) {
+                throw new Exception('Session driver [' . $this->config->get('session.driver') . '] cannot be scoped by tenancy.cache.scope_sessions');
+            } else {
+                // Scoping sessions using this bootstrapper implicitly adds the session store to $names
+                $names[] = $this->getSessionCacheStoreName();
+            }
         }
 
         $names = array_unique($names);
@@ -112,6 +115,7 @@ class CacheTenancyBootstrapper implements TenancyBootstrapper
             $store = $this->config->get("cache.stores.{$name}");
 
             if ($store === null || $store['driver'] === 'file') {
+                // 'file' stores are ignored here and instead handled by FilesystemTenancyBootstrapper
                 return false;
             }
 

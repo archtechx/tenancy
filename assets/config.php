@@ -8,6 +8,21 @@ use Stancl\Tenancy\Bootstrappers;
 use Stancl\Tenancy\Enums\RouteMode;
 use Stancl\Tenancy\UniqueIdentifierGenerators;
 
+/**
+ * Tenancy for Laravel.
+ *
+ * Documentation: https://tenancyforlaravel.com
+ *
+ * We can sustainably develop Tenancy for Laravel thanks to our sponsors.
+ * Big thanks to everyone listed here: https://github.com/sponsors/stancl
+ *
+ * You can also support us, and save time, by purchasing these products:
+ *   Exclusive content for sponsors: https://sponsors.tenancyforlaravel.com
+ *   Multi-Tenant SaaS boilerplate: https://portal.archte.ch/boilerplate
+ *   Multi-Tenant Laravel in Production e-book: https://portal.archte.ch/book
+ *
+ * All of these products can also be accessed at https://portal.archte.ch
+ */
 return [
     /**
      * Configuration for the models used by Tenancy.
@@ -33,6 +48,8 @@ return [
          * SECURITY NOTE: Keep in mind that autoincrement IDs come with potential enumeration issues (such as tenant storage URLs).
          *
          * @see \Stancl\Tenancy\UniqueIdentifierGenerators\UUIDGenerator
+         * @see \Stancl\Tenancy\UniqueIdentifierGenerators\ULIDGenerator
+         * @see \Stancl\Tenancy\UniqueIdentifierGenerators\UUIDv7Generator
          * @see \Stancl\Tenancy\UniqueIdentifierGenerators\RandomHexGenerator
          * @see \Stancl\Tenancy\UniqueIdentifierGenerators\RandomIntGenerator
          * @see \Stancl\Tenancy\UniqueIdentifierGenerators\RandomStringGenerator
@@ -47,7 +64,7 @@ return [
          * Only relevant if you're using the domain or subdomain identification middleware.
          */
         'central_domains' => [
-            str(env('APP_URL'))->after('://')->before('/')->toString(),
+            str(env('APP_URL'))->after('://')->before('/')->before(':')->toString(),
         ],
 
         /**
@@ -155,6 +172,7 @@ return [
         Bootstrappers\DatabaseTenancyBootstrapper::class,
         Bootstrappers\CacheTenancyBootstrapper::class,
         // Bootstrappers\CacheTagsBootstrapper::class, // Alternative to CacheTenancyBootstrapper
+        // Bootstrappers\DatabaseCacheBootstrapper::class, // Separates cache by DB rather than by prefix, must run after DatabaseTenancyBootstrapper
         Bootstrappers\FilesystemTenancyBootstrapper::class,
         Bootstrappers\QueueTenancyBootstrapper::class,
         // Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
@@ -163,9 +181,10 @@ return [
         Bootstrappers\DatabaseSessionBootstrapper::class,
 
         // Configurable bootstrappers
+        // Bootstrappers\TenantConfigBootstrapper::class,
         // Bootstrappers\RootUrlBootstrapper::class,
         // Bootstrappers\UrlGeneratorBootstrapper::class,
-        // Bootstrappers\MailConfigBootstrapper::class, // Note: Queueing mail requires using QueueTenancyBootstrapper with $forceRefresh set to true
+        // Bootstrappers\MailConfigBootstrapper::class,
         // Bootstrappers\BroadcastingConfigBootstrapper::class,
         // Bootstrappers\BroadcastChannelPrefixBootstrapper::class,
 
@@ -294,7 +313,7 @@ return [
          *
          * Note: This will implicitly add your configured session store to the list of prefixed stores above.
          */
-        'scope_sessions' => true,
+        'scope_sessions' => in_array(env('SESSION_DRIVER'), ['redis', 'memcached', 'dynamodb', 'apc'], true),
 
         'tag_base' => 'tenant', // This tag_base, followed by the tenant_id, will form a tag that will be applied on each cache call.
     ],
@@ -404,7 +423,6 @@ return [
     'features' => [
         // Stancl\Tenancy\Features\UserImpersonation::class,
         // Stancl\Tenancy\Features\TelescopeTags::class,
-        // Stancl\Tenancy\Features\TenantConfig::class,
         // Stancl\Tenancy\Features\CrossDomainRedirect::class,
         // Stancl\Tenancy\Features\ViteBundler::class,
         // Stancl\Tenancy\Features\DisallowSqliteAttach::class,
@@ -428,7 +446,6 @@ return [
 
     /**
      * Pending tenants config.
-     * This is useful if you're looking for a way to always have a tenant ready to be used.
      */
     'pending' => [
         /**
@@ -437,6 +454,7 @@ return [
          * Note: when disabled, this will also ignore pending tenants when running the tenant commands (migration, seed, etc.)
          */
         'include_in_queries' => true,
+
         /**
          * Defines how many pending tenants you want to have ready in the pending tenant pool.
          * This depends on the volume of tenants you're creating.

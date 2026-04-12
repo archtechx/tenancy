@@ -17,9 +17,9 @@ class UserImpersonation implements Feature
     /** The lifespan of impersonation tokens (in seconds). */
     public static int $ttl = 60;
 
-    public function bootstrap(Tenancy $tenancy): void
+    public function bootstrap(): void
     {
-        $tenancy->macro('impersonate', function (Tenant $tenant, string $userId, string $redirectUrl, string|null $authGuard = null, bool $remember = false): Model {
+        Tenancy::macro('impersonate', function (Tenant $tenant, string $userId, string $redirectUrl, string|null $authGuard = null, bool $remember = false): Model {
             return UserImpersonation::modelClass()::create([
                 Tenancy::tenantKeyColumn() => $tenant->getTenantKey(),
                 'user_id' => $userId,
@@ -44,12 +44,20 @@ class UserImpersonation implements Feature
 
         $tokenExpired = $token->created_at->diffInSeconds(now()) > $ttl;
 
-        abort_if($tokenExpired, 403);
+        if ($tokenExpired) {
+            $token->delete();
+
+            abort(403);
+        }
 
         $tokenTenantId = (string) $token->getAttribute(Tenancy::tenantKeyColumn());
         $currentTenantId = (string) tenant()->getTenantKey();
 
-        abort_unless($tokenTenantId === $currentTenantId, 403);
+        if ($tokenTenantId !== $currentTenantId) {
+            $token->delete();
+
+            abort(403);
+        }
 
         Auth::guard($token->auth_guard)->loginUsingId($token->user_id, $token->remember);
 

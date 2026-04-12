@@ -36,7 +36,12 @@ if (! function_exists('tenant')) {
 }
 
 if (! function_exists('tenant_asset')) {
-    // todo@docblock
+    /**
+     * Generate a URL to an asset in tenant storage.
+     *
+     * If app.asset_url is set, this helper suffixes that URL before appending the asset path.
+     * If it is not set, the stancl.tenancy.asset route is used.
+     */
     function tenant_asset(string|null $asset): string
     {
         if ($assetUrl = config('app.asset_url')) {

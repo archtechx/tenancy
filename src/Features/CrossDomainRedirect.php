@@ -6,11 +6,10 @@ namespace Stancl\Tenancy\Features;
 
 use Illuminate\Http\RedirectResponse;
 use Stancl\Tenancy\Contracts\Feature;
-use Stancl\Tenancy\Tenancy;
 
 class CrossDomainRedirect implements Feature
 {
-    public function bootstrap(Tenancy $tenancy): void
+    public function bootstrap(): void
     {
         RedirectResponse::macro('domain', function (string $domain) {
             /** @var RedirectResponse $this */

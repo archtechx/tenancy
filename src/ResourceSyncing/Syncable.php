@@ -16,6 +16,8 @@ interface Syncable
 
     public function triggerSyncEvent(): void;
 
+    public function triggerDeleteEvent(bool $forceDelete = false): void;
+
     /**
      * Get the attributes used for creating the *other* model (i.e. tenant if this is the central one, and central if this is the tenant one).
      *

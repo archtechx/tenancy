@@ -8,8 +8,6 @@ use Illuminate\Routing\Events\RouteMatched;
 use Stancl\Tenancy\Enums\RouteMode;
 use Stancl\Tenancy\Resolvers\PathTenantResolver;
 
-// todo@earlyIdReview
-
 /**
  * Conditionally removes the tenant parameter from matched routes when using kernel path identification.
  *

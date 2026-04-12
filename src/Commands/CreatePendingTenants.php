@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 
 class CreatePendingTenants extends Command
 {
-    protected $signature = 'tenants:pending-create {--count= : The number of pending tenants to be created}';
+    protected $signature = 'tenants:pending-create {--count= : The number of pending tenants to maintain}';
 
     protected $description = 'Create pending tenants.';
 

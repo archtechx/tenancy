@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Stancl\Tenancy\Actions\CloneRoutesAsTenant;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
@@ -44,7 +45,7 @@ test('asset can be accessed using the url returned by the tenant asset helper', 
     $tenant = Tenant::create();
     tenancy()->initialize($tenant);
 
-    $filename = 'testfile' . pest()->randomString(10);
+    $filename = 'testfile' . Str::random(8);
     Storage::disk('public')->put($filename, 'bar');
     $path = storage_path("app/public/$filename");
 
@@ -136,7 +137,7 @@ test('TenantAssetController headers are configurable', function () {
     tenancy()->initialize($tenant);
     $tenant->createDomain('foo.localhost');
 
-    $filename = 'testfile' . pest()->randomString(10);
+    $filename = 'testfile' . Str::random(10);
     Storage::disk('public')->put($filename, 'bar');
 
     $this->withoutExceptionHandling();

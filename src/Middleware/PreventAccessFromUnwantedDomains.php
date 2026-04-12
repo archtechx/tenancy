@@ -11,8 +11,6 @@ use Stancl\Tenancy\Concerns\UsableWithEarlyIdentification;
 use Stancl\Tenancy\Enums\RouteMode;
 
 /**
- * todo@name come up with a better name.
- *
  * Prevents accessing central domains in the tenant context/tenant domains in the central context.
  * The access isn't prevented if the request is trying to access a route flagged as 'universal',
  * or if this middleware should be skipped.
@@ -68,9 +66,11 @@ class PreventAccessFromUnwantedDomains
         return in_array($request->getHost(), config('tenancy.identification.central_domains'), true);
     }
 
-    // todo@samuel technically not an identification middleware but probably ok to keep this here
     public function requestHasTenant(Request $request): bool
     {
+        // This middleware is special in that it's not an identification middleware
+        // but still uses some logic from UsableWithEarlyIdentification, so we just
+        // need to implement this method here. It doesn't matter what it returns.
         return false;
     }
 }

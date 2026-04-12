@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 use Stancl\Tenancy\Contracts\UniqueIdentifierGenerator;
 
 /**
- * Generates a UUID for the tenant key.
+ * Generates a ULID for the tenant key.
  */
 class ULIDGenerator implements UniqueIdentifierGenerator
 {

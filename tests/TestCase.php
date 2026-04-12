@@ -25,6 +25,7 @@ use Stancl\Tenancy\Bootstrappers\BroadcastChannelPrefixBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use function Stancl\Tenancy\Tests\pest;
 use Stancl\Tenancy\Bootstrappers\DatabaseCacheBootstrapper;
+use Stancl\Tenancy\Bootstrappers\TenantConfigBootstrapper;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
@@ -143,9 +144,6 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'prefix_indexes' => true,
                 'strict' => true,
                 'engine' => null,
-                'options' => extension_loaded('pdo_mysql') ? array_filter([
-                    PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-                ]) : [],
             ],
             'database.connections.sqlite.database' => ':memory:',
             'database.connections.mysql.charset' => 'utf8mb4',
@@ -193,6 +191,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         $app->singleton(RootUrlBootstrapper::class);
         $app->singleton(UrlGeneratorBootstrapper::class);
         $app->singleton(FilesystemTenancyBootstrapper::class);
+        $app->singleton(TenantConfigBootstrapper::class);
     }
 
     protected function getPackageProviders($app)
@@ -234,11 +233,6 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     protected function resolveApplicationConsoleKernel($app)
     {
         $app->singleton('Illuminate\Contracts\Console\Kernel', Etc\Console\ConsoleKernel::class);
-    }
-
-    public function randomString(int $length = 10)
-    {
-        return substr(str_shuffle(str_repeat($x = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', (int) (ceil($length / strlen($x))))), 1, $length);
     }
 
     public function assertArrayIsSubset($subset, $array, string $message = ''): void
