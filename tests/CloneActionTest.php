@@ -401,3 +401,77 @@ test('tenant parameter addition can be controlled by setting addTenantParameter'
         $this->withoutExceptionHandling()->get('http://central.localhost/foo')->assertSee('central');
     }
 })->with([true, false]);
+
+test('existing context flags are removed during cloning', function () {
+    RouteFacade::get('/foo', fn () => true)->name('foo')->middleware(['clone', 'central']);
+    RouteFacade::get('/bar', fn () => true)->name('bar')->middleware(['clone', 'universal']);
+
+    $cloneAction = app(CloneRoutesAsTenant::class);
+
+    // Clone foo route
+    $cloneAction->handle();
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())
+        ->toContain('tenant.foo');
+    expect(tenancy()->getRouteMiddleware(RouteFacade::getRoutes()->getByName('tenant.foo')))
+        ->not()->toContain('central');
+
+    // Clone bar route
+    $cloneAction->handle();
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())
+        ->toContain('tenant.foo', 'tenant.bar');
+    expect(tenancy()->getRouteMiddleware(RouteFacade::getRoutes()->getByName('tenant.foo')))
+        ->not()->toContain('universal');
+});
+
+test('cloning a route without a prefix or differing domains overrides the original route', function () {
+    RouteFacade::get('/foo', fn () => true)->name('foo')->middleware(['clone']);
+
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())->toContain('foo');
+
+    $cloneAction = CloneRoutesAsTenant::make();
+    $cloneAction->cloneRoute('foo')
+        ->addTenantParameter(false)
+        ->tenantParameterBeforePrefix(false)
+        ->handle();
+
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())->toContain('tenant.foo');
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())->not()->toContain('foo');
+});
+
+test('addTenantMiddleware can be used to specify the tenant middleware for the cloned route', function () {
+    RouteFacade::get('/foo', fn () => true)->name('foo')->middleware(['clone']);
+    RouteFacade::get('/bar', fn () => true)->name('bar')->middleware(['clone']);
+
+    $cloneAction = app(CloneRoutesAsTenant::class);
+
+    $cloneAction->cloneRoute('foo')->addTenantMiddleware([InitializeTenancyByPath::class])->handle();
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())->toContain('tenant.foo');
+    $cloned = RouteFacade::getRoutes()->getByName('tenant.foo');
+    expect($cloned->uri())->toBe('{tenant}/foo');
+    expect($cloned->getName())->toBe('tenant.foo');
+    expect(tenancy()->getRouteMiddleware($cloned))->toBe([InitializeTenancyByPath::class]);
+
+    $cloneAction->cloneRoute('bar')
+        ->addTenantMiddleware([InitializeTenancyByDomain::class])
+        ->domain('foo.localhost')
+        ->addTenantParameter(false)
+        ->tenantParameterBeforePrefix(false)
+        ->handle();
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())->toContain('tenant.bar');
+    $cloned = RouteFacade::getRoutes()->getByName('tenant.bar');
+    expect($cloned->uri())->toBe('bar');
+    expect($cloned->getName())->toBe('tenant.bar');
+    expect($cloned->getDomain())->toBe('foo.localhost');
+    expect(tenancy()->getRouteMiddleware($cloned))->toBe([InitializeTenancyByDomain::class]);
+});
+
+test('cloneRoutes can be used to clone multiple routes', function () {
+    RouteFacade::get('/foo', fn () => true)->name('foo');
+    $bar = RouteFacade::get('/bar', fn () => true)->name('bar');
+    RouteFacade::get('/baz', fn () => true)->name('baz');
+
+    CloneRoutesAsTenant::make()->cloneRoutes(['foo', $bar])->handle();
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())->toContain('tenant.foo');
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())->toContain('tenant.bar');
+    expect(collect(RouteFacade::getRoutes()->get())->map->getName())->not()->toContain('tenant.baz');
+});

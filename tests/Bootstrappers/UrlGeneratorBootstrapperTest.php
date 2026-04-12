@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Routing\UrlGenerator;
+use Illuminate\Support\Facades\URL;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
@@ -18,7 +19,6 @@ use Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByRequestDataException;
 use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
-
 use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
@@ -26,12 +26,16 @@ beforeEach(function () {
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
     TenancyUrlGenerator::$prefixRouteNames = false;
     TenancyUrlGenerator::$passTenantParameterToRoutes = false;
+    TenancyUrlGenerator::$overrides = [];
+    TenancyUrlGenerator::$bypassParameter = 'central';
     UrlGeneratorBootstrapper::$addTenantParameterToDefaults = false;
 });
 
 afterEach(function () {
     TenancyUrlGenerator::$prefixRouteNames = false;
     TenancyUrlGenerator::$passTenantParameterToRoutes = false;
+    TenancyUrlGenerator::$overrides = [];
+    TenancyUrlGenerator::$bypassParameter = 'central';
     UrlGeneratorBootstrapper::$addTenantParameterToDefaults = false;
 });
 
@@ -78,6 +82,44 @@ test('tenancy url generator can prefix route names passed to the route helper', 
     tenancy()->end();
 
     expect(route('home'))->toBe('http://localhost/central/home');
+});
+
+test('tenancy url generator inherits scheme from original url generator', function() {
+    config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);
+
+    Route::get('/home', fn () => '')->name('home');
+
+    // No scheme forced, default is HTTP
+    expect(app('url')->formatScheme())->toBe('http://');
+
+    $tenant = Tenant::create();
+
+    // Force the original URL generator to use HTTPS
+    app('url')->forceScheme('https');
+
+    // Original generator uses HTTPS
+    expect(app('url')->formatScheme())->toBe('https://');
+
+    // Check that TenancyUrlGenerator inherits the HTTPS scheme
+    tenancy()->initialize($tenant);
+    expect(app('url')->formatScheme())->toBe('https://'); // Should inherit HTTPS
+    expect(route('home'))->toBe('https://localhost/home');
+
+    tenancy()->end();
+
+    // After ending tenancy, the original generator should still have the original scheme (HTTPS)
+    expect(route('home'))->toBe('https://localhost/home');
+
+    // Use HTTP scheme
+    app('url')->forceScheme('http');
+    expect(app('url')->formatScheme())->toBe('http://');
+
+    tenancy()->initialize($tenant);
+    expect(app('url')->formatScheme())->toBe('http://'); // Should inherit scheme (HTTP)
+    expect(route('home'))->toBe('http://localhost/home');
+
+    tenancy()->end();
+    expect(route('home'))->toBe('http://localhost/home');
 });
 
 test('path identification route helper behavior', function (bool $addTenantParameterToDefaults, bool $passTenantParameterToRoutes) {
@@ -321,4 +363,41 @@ test('both the name prefixing and the tenant parameter logic gets skipped when b
     // UrlGeneratorBootstrapper::$addTenantParameterToDefaults and TenancyUrlGenerator::$passTenantParameterToRoutes are false by default
     expect(route('home', ['bypassParameter' => false, 'tenant' => $tenant->getTenantKey()]))->toBe($tenantRouteUrl)
         ->not()->toContain('bypassParameter');
+});
+
+test('the temporarySignedRoute method can automatically prefix the passed route name', function() {
+    config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);
+
+    Route::get('/{tenant}/foo', fn () => 'foo')->name('tenant.foo')->middleware([InitializeTenancyByPath::class]);
+
+    TenancyUrlGenerator::$prefixRouteNames = true;
+
+    $tenant = Tenant::create();
+
+    tenancy()->initialize($tenant);
+
+    // Route name ('foo') gets prefixed automatically (will be 'tenant.foo')
+    $tenantSignedUrl = URL::temporarySignedRoute('foo', now()->addMinutes(2), ['tenant' => $tenantKey = $tenant->getTenantKey()]);
+
+    expect($tenantSignedUrl)->toContain("localhost/{$tenantKey}/foo");
+});
+
+test('the bypass parameter works correctly with temporarySignedRoute', function() {
+    config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);
+
+    Route::get('/foo', fn () => 'foo')->name('central.foo');
+
+    TenancyUrlGenerator::$prefixRouteNames = true;
+    TenancyUrlGenerator::$bypassParameter = 'central';
+
+    $tenant = Tenant::create();
+
+    tenancy()->initialize($tenant);
+
+    // Bypass parameter allows us to generate URL for the 'central.foo' route in tenant context
+    $centralSignedUrl = URL::temporarySignedRoute('central.foo', now()->addMinutes(2), ['central' => true]);
+
+    expect($centralSignedUrl)
+        ->toContain('localhost/foo')
+        ->not()->toContain('central='); // Bypass parameter gets removed from the generated URL
 });

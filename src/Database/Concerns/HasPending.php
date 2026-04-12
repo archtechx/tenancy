@@ -49,13 +49,15 @@ trait HasPending
      */
     public static function createPending(array $attributes = []): Model&Tenant
     {
+        $tenant = null;
+
         try {
-            $tenant = static::create($attributes);
+            $tenant = static::create(array_merge(static::getPendingAttributes($attributes), $attributes));
             event(new CreatingPendingTenant($tenant));
         } finally {
             // Update the pending_since value only after the tenant is created so it's
             // not marked as pending until after migrations, seeders, etc are run.
-            $tenant->update([
+            $tenant?->update([
                 'pending_since' => now()->timestamp,
             ]);
         }
@@ -63,6 +65,17 @@ trait HasPending
         event(new PendingTenantCreated($tenant));
 
         return $tenant;
+    }
+
+    /**
+     * Attributes to be set when a pending tenant is initially created.
+     *
+     * @param array<string, mixed> $attributes The attributes passed to createPending() (will be merged with the returned array)
+     * @return array<string, mixed>
+     */
+    public static function getPendingAttributes(array $attributes): array
+    {
+        return [];
     }
 
     /**

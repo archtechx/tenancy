@@ -30,6 +30,8 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  * By providing a callback to shouldClone(), you can change how it's determined if a route should be cloned if you don't want to use middleware flags.
  *
  * Cloned routes are prefixed with '/{tenant}', flagged with 'tenant' middleware, and have their names prefixed with 'tenant.'.
+ * The addition of the 'tenant' middleware can be controlled using addTenantMiddleware(array). You can specify the identification
+ * middleware to be used on the cloned route using that method -- instead of using the approach that "inherits" it from a universal route.
  *
  * The addition of the tenant parameter can be controlled using addTenantParameter(true|false). Note that if you decide to disable
  * tenant parameter addition, the routes MUST differ in domains. This can be controlled using the domain(string|null) method. The
@@ -39,7 +41,7 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  * Routes with names that are already prefixed won't be cloned - but that's just the default behavior.
  * The cloneUsing() method allows you to completely override the default behavior and customize how the cloned routes will be defined.
  *
- * After cloning, only top-level middleware in $cloneRoutesWithMiddleware will be removed
+ * After cloning, only top-level middleware in $cloneRoutesWithMiddleware (as well as any route context flags) will be removed
  * from the new route (so by default, 'clone' will be omitted from the new route's MW).
  * Middleware groups are preserved as-is, even if they contain cloning middleware.
  *
@@ -71,7 +73,7 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  * // cloned route can be customized using domain(string|null). By default, the cloned route will not be scoped to a domain,
  * // unless a domain() call is used. It's important to keep in mind that:
  * //   1. When addTenantParameter(false) is used, the paths will be the same, thus domains must differ.
- * //   2. If the original route (with the same path) has no domain, the cloned route will never be used due to registration order.
+ * //   2. If the original route has no domain, the cloned route will override the original route as they will directly conflict.
  * $cloneAction->addTenantParameter(false)->cloneRoutesWithMiddleware(['clone'])->cloneRoute('no-tenant-parameter')->handle();
  * ```
  *
@@ -84,17 +86,37 @@ use Stancl\Tenancy\Resolvers\PathTenantResolver;
  */
 class CloneRoutesAsTenant
 {
+    /** @var list<Route|string> */
     protected array $routesToClone = [];
+
     protected bool $addTenantParameter = true;
     protected bool $tenantParameterBeforePrefix = true;
     protected string|null $domain = null;
-    protected Closure|null $cloneUsing = null; // The callback should accept Route instance or the route name (string)
+
+    /**
+     * The callback should accept a Route instance or the route name (string).
+     *
+     * @var ?Closure(Route|string): void
+     */
+    protected Closure|null $cloneUsing = null;
+
+    /** @var ?Closure(Route): bool */
     protected Closure|null $shouldClone = null;
+
+    /** @var list<string> */
     protected array $cloneRoutesWithMiddleware = ['clone'];
+
+    /** @var list<string> */
+    protected array $addTenantMiddleware = ['tenant'];
 
     public function __construct(
         protected Router $router,
     ) {}
+
+    public static function make(): static
+    {
+        return app(static::class);
+    }
 
     /** Clone routes. This resets routesToClone() but not other config. */
     public function handle(): void
@@ -102,9 +124,12 @@ class CloneRoutesAsTenant
         // If no routes were specified using cloneRoute(), get all routes
         // and for each, determine if it should be cloned
         if (! $this->routesToClone) {
-            $this->routesToClone = collect($this->router->getRoutes()->get())
+            /** @var list<Route> */
+            $routesToClone = collect($this->router->getRoutes()->get())
                 ->filter(fn (Route $route) => $this->shouldBeCloned($route))
                 ->all();
+
+            $this->routesToClone = $routesToClone;
         }
 
         foreach ($this->routesToClone as $route) {
@@ -118,7 +143,9 @@ class CloneRoutesAsTenant
 
             if (is_string($route)) {
                 $this->router->getRoutes()->refreshNameLookups();
-                $route = $this->router->getRoutes()->getByName($route);
+                $routeName = $route;
+                $route = $this->router->getRoutes()->getByName($routeName);
+                assert(! is_null($route), "Route [{$routeName}] was meant to be cloned but does not exist.");
             }
 
             $this->createNewRoute($route);
@@ -143,6 +170,20 @@ class CloneRoutesAsTenant
         return $this;
     }
 
+    /**
+     * The tenant middleware to be added to the cloned route.
+     *
+     * If used with early identification, make sure to include 'tenant' in this array.
+     *
+     * @param list<string> $middleware
+     */
+    public function addTenantMiddleware(array $middleware): static
+    {
+        $this->addTenantMiddleware = $middleware;
+
+        return $this;
+    }
+
     /** The domain the cloned route should use. Set to null if it shouldn't be scoped to a domain. */
     public function domain(string|null $domain): static
     {
@@ -151,7 +192,11 @@ class CloneRoutesAsTenant
         return $this;
     }
 
-    /** Provide a custom callback for cloning routes, instead of the default behavior. */
+    /**
+     * Provide a custom callback for cloning routes, instead of the default behavior.
+     *
+     * @param ?Closure(Route|string): void $cloneUsing
+     */
     public function cloneUsing(Closure|null $cloneUsing): static
     {
         $this->cloneUsing = $cloneUsing;
@@ -159,7 +204,11 @@ class CloneRoutesAsTenant
         return $this;
     }
 
-    /** Specify which middleware should serve as "flags" telling this action to clone those routes. */
+    /**
+     * Specify which middleware should serve as "flags" telling this action to clone those routes.
+     *
+     * @param list<string> $middleware
+     */
     public function cloneRoutesWithMiddleware(array $middleware): static
     {
         $this->cloneRoutesWithMiddleware = $middleware;
@@ -170,7 +219,9 @@ class CloneRoutesAsTenant
     /**
      * Provide a custom callback for determining whether a route should be cloned.
      * Overrides the default middleware-based detection.
-     * */
+     *
+     * @param Closure(Route): bool $shouldClone
+     */
     public function shouldClone(Closure|null $shouldClone): static
     {
         $this->shouldClone = $shouldClone;
@@ -189,6 +240,18 @@ class CloneRoutesAsTenant
     public function cloneRoute(Route|string $route): static
     {
         $this->routesToClone[] = $route;
+
+        return $this;
+    }
+
+    /**
+     * Clone individual routes.
+     *
+     * @param list<Route|string> $routes
+     */
+    public function cloneRoutes(array $routes): static
+    {
+        $this->routesToClone = array_merge($this->routesToClone, $routes);
 
         return $this;
     }
@@ -258,17 +321,15 @@ class CloneRoutesAsTenant
         return $newRoute;
     }
 
-    /** Removes top-level cloneRoutesWithMiddleware and adds 'tenant' middleware. */
+    /** Removes top-level cloneRoutesWithMiddleware and context flags, adds 'tenant' middleware. */
     protected function processMiddlewareForCloning(array $middleware): array
     {
         $processedMiddleware = array_filter(
             $middleware,
-            fn ($mw) => ! in_array($mw, $this->cloneRoutesWithMiddleware)
+            fn ($mw) => ! in_array($mw, $this->cloneRoutesWithMiddleware) && ! in_array($mw, ['central', 'tenant', 'universal'])
         );
 
-        $processedMiddleware[] = 'tenant';
-
-        return array_unique($processedMiddleware);
+        return array_unique(array_merge($processedMiddleware, $this->addTenantMiddleware));
     }
 
     /** Check if route already has tenant parameter or name prefix. */

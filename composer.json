@@ -18,22 +18,23 @@
     "require": {
         "php": "^8.4",
         "ext-json": "*",
-        "illuminate/support": "^12.0",
-        "laravel/tinker": "^2.0",
+        "illuminate/support": "^12.0|^13.0",
+        "laravel/tinker": "^2.0|^3.0",
         "ramsey/uuid": "^4.7.3",
-        "stancl/jobpipeline": "2.0.0-rc6",
+        "stancl/jobpipeline": "2.0.0-rc7",
         "stancl/virtualcolumn": "^1.5.0",
         "spatie/invade": "*",
         "laravel/prompts": "0.*"
     },
     "require-dev": {
-        "laravel/framework": "^12.0",
-        "orchestra/testbench": "^10.0",
+        "laravel/framework": "^13.0",
+        "orchestra/testbench": "^10.0|^11.0",
         "league/flysystem-aws-s3-v3": "^3.12.2",
         "doctrine/dbal": "^3.6.0",
         "spatie/valuestore": "^1.2.5",
-        "pestphp/pest": "^3.0",
-        "larastan/larastan": "^3.0"
+        "pestphp/pest": "^4.0",
+        "larastan/larastan": "^3.0",
+        "league/flysystem-path-prefixing": "^3.0"
     },
     "autoload": {
         "psr-4": {

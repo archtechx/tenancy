@@ -63,13 +63,17 @@ class DatabaseCacheBootstrapper implements TenancyBootstrapper
         $stores = $this->scopedStoreNames();
 
         foreach ($stores as $storeName) {
-            $this->originalConnections[$storeName] = $this->config->get("cache.stores.{$storeName}.connection");
-            $this->originalLockConnections[$storeName] = $this->config->get("cache.stores.{$storeName}.lock_connection");
+            $this->originalConnections[$storeName] = $this->config->get("cache.stores.{$storeName}.connection") ?? config('tenancy.database.central_connection');
+            $this->originalLockConnections[$storeName] = $this->config->get("cache.stores.{$storeName}.lock_connection") ?? config('tenancy.database.central_connection');
 
             $this->config->set("cache.stores.{$storeName}.connection", 'tenant');
             $this->config->set("cache.stores.{$storeName}.lock_connection", 'tenant');
 
-            $this->cache->purge($storeName);
+            /** @var DatabaseStore $store */
+            $store = $this->cache->store($storeName)->getStore();
+
+            $store->setConnection(DB::connection('tenant'));
+            $store->setLockConnection(DB::connection('tenant'));
         }
 
         if (static::$adjustGlobalCacheManager) {
@@ -78,8 +82,8 @@ class DatabaseCacheBootstrapper implements TenancyBootstrapper
             // *from here* being executed repeatedly in a loop on reinitialization. For that reason we do not do that
             // (this is our only use of $adjustCacheManagerUsing anyway) but ideally at some point we'd have a better solution.
             $originalConnections = array_combine($stores, array_map(fn (string $storeName) => [
-                'connection' => $this->originalConnections[$storeName] ?? config('tenancy.database.central_connection'),
-                'lockConnection' => $this->originalLockConnections[$storeName] ?? config('tenancy.database.central_connection'),
+                'connection' => $this->originalConnections[$storeName],
+                'lockConnection' => $this->originalLockConnections[$storeName],
             ], $stores));
 
             TenancyServiceProvider::$adjustCacheManagerUsing = static function (CacheManager $manager) use ($originalConnections) {
@@ -100,7 +104,11 @@ class DatabaseCacheBootstrapper implements TenancyBootstrapper
             $this->config->set("cache.stores.{$storeName}.connection", $originalConnection);
             $this->config->set("cache.stores.{$storeName}.lock_connection", $this->originalLockConnections[$storeName]);
 
-            $this->cache->purge($storeName);
+            /** @var DatabaseStore $store */
+            $store = $this->cache->store($storeName)->getStore();
+
+            $store->setConnection(DB::connection($this->originalConnections[$storeName]));
+            $store->setLockConnection(DB::connection($this->originalLockConnections[$storeName]));
         }
 
         TenancyServiceProvider::$adjustCacheManagerUsing = null;
