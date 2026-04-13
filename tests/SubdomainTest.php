@@ -110,10 +110,11 @@ test('we cant use a subdomain that doesnt belong to our central domains', functi
 });
 
 test('domain resolver correctly determines if string is a subdomain', function() {
-    config(['tenancy.identification.central_domains' => ['app.test']]);
+    config(['tenancy.identification.central_domains' => ['site.com', 'blog.site.com']]);
 
-    expect(DomainTenantResolver::isSubdomain('foo.app.test'))->toBeTrue();
-    expect(DomainTenantResolver::isSubdomain('fooapp.test'))->toBeFalse();
+    expect(DomainTenantResolver::isSubdomain('blog.site.com'))->toBeFalse();
+    expect(DomainTenantResolver::isSubdomain('tenant.site.com'))->toBeTrue();
+    expect(DomainTenantResolver::isSubdomain('tenantsite.com'))->toBeFalse();
 });
 
 class SubdomainTenant extends Models\Tenant

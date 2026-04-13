@@ -61,11 +61,11 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
     {
         $centralDomains = Arr::wrap(config('tenancy.identification.central_domains'));
 
-        foreach ($centralDomains as $centralDomain) {
-            if ($domain === $centralDomain) {
-                return false;
-            }
+        if (in_array($domain, $centralDomains, true)) {
+            return false;
+        }
 
+        foreach ($centralDomains as $centralDomain) {
             if (Str::endsWith($domain, '.' . $centralDomain)) {
                 return true;
             }
