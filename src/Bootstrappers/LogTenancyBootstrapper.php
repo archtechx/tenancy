@@ -30,11 +30,15 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
     /**
      * Log channels that use the storage_path() helper for storing the logs. Requires FilesystemTenancyBootstrapper to run before this bootstrapper.
      * Or you can bypass this default behavior by using overrides, since they take precedence over the default behavior.
+     *
+     * All channels included here will be configured to use tenant-specific storage paths.
      */
     public static array $storagePathChannels = ['single', 'daily'];
 
     /**
      * Custom channel configuration overrides.
+     *
+     * All channels included here will be configured using the provided override.
      *
      * Examples:
      * - Array mapping (the default approach): ['slack' => ['url' => 'webhookUrl']] maps $tenant->webhookUrl to slack.url (if $tenant->webhookUrl is not null, otherwise, the override is ignored)
@@ -64,27 +68,37 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
     }
 
     /**
-     * Channels to configure and re-resolve afterwards (including the channels in the log stack).
+     * Channels to configure and forget so they can be re-resolved afterwards.
+     *
+     * Includes:
+     * - the default channel
+     * - all channels in the $storagePathChannels array
+     * - all channels that have custom overrides in the $channelOverrides property
      */
     protected function getChannels(): array
     {
-        // Get the currently used (default) logging channel
+        /**
+         * Include the default channel in the list of channels to configure/re-resolve.
+         *
+         * Including the default channel is harmless (if it's not overridden or not in $storagePathChannels,
+         * it'll just be forgotten and re-resolved on the next use), and for the case where 'stack' is the default,
+         * this is necessary since the 'stack' channel will be resolved and saved in the log manager,
+         * and its stale config could accidentally be used instead of the stack member channels.
+         *
+         * For example, when you use 'stack' with the 'slack' channel and you want to configure the webhook URL,
+         * both 'stack' and 'slack' must be re-resolved after updating the config for the channels to use the correct webhook URLs.
+         * If only one of the mentioned channels would be re-resolved, the other's (stale) webhook URL could be used for logging.
+         */
         $defaultChannel = $this->config->get('logging.default');
-        $channelIsStack = $this->config->get("logging.channels.{$defaultChannel}.driver") === 'stack';
 
-        // If the default channel is stack, also get all the channels it contains.
-        // The stack channel also has to be included in the list of channels
-        // since the channel will be resolved and saved in the log manager,
-        // and its config could accidentally be used instead of the underlying channels.
-        //
-        // For example, when you use 'stack' with the 'slack' channel and you want to configure the webhook URL,
-        // both the 'stack' and the 'slack' must be re-resolved after updating the config for the channels to use the correct webhook URLs.
-        // If only one of the mentioned channels would be re-resolved, the other's webhook URL would be used for logging.
-        $channels = $channelIsStack
-            ? [$defaultChannel, ...$this->config->get("logging.channels.{$defaultChannel}.channels")]
-            : [$defaultChannel];
-
-        return $channels;
+        return array_filter(
+            array_unique([
+                $defaultChannel,
+                ...static::$storagePathChannels,
+                ...array_keys(static::$channelOverrides),
+            ]),
+            fn (string $channel): bool => $this->config->has("logging.channels.{$channel}")
+        );
     }
 
     /**
