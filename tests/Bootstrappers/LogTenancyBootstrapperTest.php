@@ -19,6 +19,12 @@ beforeEach(function () {
         ],
     ]);
 
+    @unlink(storage_path('logs/laravel.log'));
+    @unlink(storage_path('logs/laravel-' . now()->format('Y-m-d') . '.log'));
+    foreach (glob(storage_path('tenant*/logs/*.log')) ?: [] as $path) {
+        @unlink($path);
+    }
+
     // Reset static properties
     LogTenancyBootstrapper::$channelOverrides = [];
     LogTenancyBootstrapper::$storagePathChannels = ['single', 'daily'];
@@ -30,6 +36,12 @@ beforeEach(function () {
 afterEach(function () {
     LogTenancyBootstrapper::$channelOverrides = [];
     LogTenancyBootstrapper::$storagePathChannels = ['single', 'daily'];
+
+    @unlink(storage_path('logs/laravel.log'));
+    @unlink(storage_path('logs/laravel-' . now()->format('Y-m-d') . '.log'));
+    foreach (glob(storage_path('tenant*/logs/*.log')) ?: [] as $path) {
+        @unlink($path);
+    }
 });
 
 test('storage path channels get tenant-specific paths by default', function () {
