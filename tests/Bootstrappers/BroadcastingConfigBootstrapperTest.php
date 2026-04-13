@@ -103,7 +103,7 @@ test('BroadcastingConfigBootstrapper maps tenant properties to broadcaster crede
     // When updating tenant properties without reinitializing, the tenant property update doesn't update the config,
     // so the config has to be modified manually. Only methods that use TenancyBroadcastManager::get()
     // will use the updated credentials without needing to reinitialize tenancy (e.g. the bound
-    // BroadcasterContract instance will still the original credentials, even after config gets updated directly).
+    // BroadcasterContract instance will still use the original credentials, even after config gets updated directly).
     config(["broadcasting.connections.{$driver}.key" => 'new_tenant1_key']);
 
     expect(app(BroadcastManager::class)->driver()->config['key'])->toBe('new_tenant1_key');
