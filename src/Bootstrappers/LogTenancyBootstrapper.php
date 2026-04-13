@@ -60,8 +60,15 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
         $this->defaultConfig = $this->config->get('logging.channels');
         $channels = $this->getChannels();
 
-        $this->configureChannels($channels, $tenant);
-        $this->forgetChannels($channels);
+        try {
+            $this->configureChannels($channels, $tenant);
+            $this->forgetChannels($channels);
+        } catch (\Throwable $exception) {
+            $this->config->set('logging.channels', $this->defaultConfig);
+            $this->forgetChannels($channels);
+
+            throw $exception;
+        }
     }
 
     public function revert(): void
