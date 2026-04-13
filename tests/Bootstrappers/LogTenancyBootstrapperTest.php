@@ -350,6 +350,22 @@ test('slack channel uses correct webhook urls', function () {
         'logging.channels.slack.level' => 'debug', // Set level to debug to keep the tests simple, since the default level here is 'critical'
     ]);
 
+    $assertWebhook = function (string $expectedWebhook, string $message): void {
+        $thrown = false;
+
+        // Because the Slack channel uses cURL to send messages, we cannot use Http::fake() here.
+        // Instead, we catch the exception and check the error message which contains the actual webhook URL
+        // (logging always throws "Curl error (code 6): Could not resolve host: {webhook_url}").
+        try {
+            Log::channel('slack')->info($message);
+        } catch (Exception $e) {
+            $thrown = true;
+            expect($e->getMessage())->toContain($expectedWebhook);
+        }
+
+        expect($thrown)->toBeTrue();
+    };
+
     $tenant1 = Tenant::create(['id' => 'tenant1', 'slackUrl' => 'tenant1-webhook']);
     $tenant2 = Tenant::create(['id' => 'tenant2', 'slackUrl' => 'tenant2-webhook']);
 
@@ -358,27 +374,13 @@ test('slack channel uses correct webhook urls', function () {
     ];
 
     // Test central context - should attempt to use central webhook
-    // Because the Slack channel uses cURL to send messages, we cannot use Http::fake() here.
-    // Instead, we catch the exception and check the error message which contains the actual webhook URL.
-    try {
-        Log::channel('slack')->info('central');
-    } catch (Exception $e) {
-        expect($e->getMessage())->toContain('central-webhook');
-    }
+    $assertWebhook('central-webhook', 'central');
 
     // Slack channel should attempt to use the tenant-specific webhooks
-    tenancy()->runForMultiple([$tenant1, $tenant2], function (Tenant $tenant) {
-        try {
-            Log::channel('slack')->info($tenant->id);
-        } catch (Exception $e) {
-            expect($e->getMessage())->toContain($tenant->slackUrl);
-        }
+    tenancy()->runForMultiple([$tenant1, $tenant2], function (Tenant $tenant) use ($assertWebhook) {
+        $assertWebhook($tenant->slackUrl, $tenant->id);
     });
 
     // Central context, central webhook should be used again
-    try {
-        Log::channel('slack')->info('central');
-    } catch (Exception $e) {
-        expect($e->getMessage())->toContain('central-webhook');
-    }
+    $assertWebhook('central-webhook', 'central');
 });
