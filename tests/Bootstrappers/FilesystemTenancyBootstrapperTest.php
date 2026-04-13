@@ -200,7 +200,8 @@ test('tenant storage gets created when TenantCreated listens to CreateTenantStor
 
     $centralStoragePath = storage_path();
     $tenant = Tenant::create();
-    $tenantStoragePath = $centralStoragePath . '/tenant' . $tenant->getTenantKey();
+    $suffixBase = config('tenancy.filesystem.suffix_base', 'tenant');
+    $tenantStoragePath = $centralStoragePath . '/' . $suffixBase . $tenant->getTenantKey();
 
     $this->assertDirectoryExists($tenantStoragePath . '/framework/cache');
 });
