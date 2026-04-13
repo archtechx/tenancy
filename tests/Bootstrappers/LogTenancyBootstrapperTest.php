@@ -10,6 +10,7 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\LogTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
+use Illuminate\Support\Facades\Log;
 
 beforeEach(function () {
     config([
@@ -60,8 +61,6 @@ test('storage path channels get tenant-specific paths by default', function () {
     // Storage path channels are 'single' and 'daily' by default.
     // This can be customized via LogTenancyBootstrapper::$storagePathChannels.
     foreach (LogTenancyBootstrapper::$storagePathChannels as $channel) {
-        config(['logging.default' => $channel]);
-
         $originalPath = config("logging.channels.{$channel}.path");
 
         tenancy()->initialize($tenant);
@@ -85,7 +84,6 @@ test('all channels included in the log stack get processed correctly', function 
             FilesystemTenancyBootstrapper::class,
             LogTenancyBootstrapper::class,
         ],
-        'logging.default' => 'stack',
         'logging.channels.stack' => [
             'driver' => 'stack',
             'channels' => ['single', 'daily'],
@@ -124,7 +122,6 @@ test('all channels included in the log stack get processed correctly', function 
 
 test('channel overrides work correctly with both arrays and closures', function () {
     config([
-        'logging.default' => 'stack',
         'logging.channels.stack.channels' => ['slack', 'single'],
         'logging.channels.slack' => [
             'url' => $originalSlackUrl = 'default-webhook',
@@ -163,7 +160,6 @@ test('channel overrides work correctly with both arrays and closures', function 
 });
 
 test('channel config keys remain unchanged if the specified tenant override attribute is null', function() {
-    config(['logging.default' => 'slack']);
     config(['logging.channels.slack.username' => 'Default username']);
 
     LogTenancyBootstrapper::$channelOverrides = [
@@ -177,8 +173,6 @@ test('channel config keys remain unchanged if the specified tenant override attr
 });
 
 test('channel overrides take precedence over the default storage path channel updating logic', function () {
-    config(['logging.default' => 'single']);
-
     $tenant = Tenant::create(['id' => 'tenant1']);
 
     LogTenancyBootstrapper::$channelOverrides = [
@@ -199,7 +193,6 @@ test('channels are forgotten and re-resolved during bootstrap and revert', funct
             FilesystemTenancyBootstrapper::class,
             LogTenancyBootstrapper::class,
         ],
-        'logging.default' => 'single'
     ]);
 
     $logManager = app('log');
@@ -236,19 +229,18 @@ test('logs are written to tenant-specific files and do not leak between contexts
             FilesystemTenancyBootstrapper::class,
             LogTenancyBootstrapper::class,
         ],
-        'logging.default' => 'single',
     ]);
 
     $centralLogPath = storage_path('logs/laravel.log');
 
-    logger('central');
+    Log::channel('single')->info('central');
 
     expect(file_get_contents($centralLogPath))->toContain('central');
 
     [$tenant1, $tenant2] = [Tenant::create(['id' => 'tenant1']), Tenant::create(['id' => 'tenant2'])];
 
     tenancy()->runForMultiple([$tenant1, $tenant2], function (Tenant $tenant) use ($centralLogPath) {
-        logger($tenant->id);
+        Log::channel('single')->info($tenant->id);
 
         $tenantLogPath = storage_path('logs/laravel.log');
 
@@ -297,7 +289,7 @@ test('logs are written to tenant-specific files and do not leak between contexts
     // Tenant context log (should use custom path due to override)
     tenancy()->initialize($tenant);
 
-    logger('tenant-override');
+    Log::channel('single')->info('tenant-override');
 
     expect(file_get_contents(storage_path('logs/custom-override-tenant.log')))->toContain('tenant-override');
 });
@@ -308,7 +300,6 @@ test('stack logs are written to all configured channels with tenant-specific pat
             FilesystemTenancyBootstrapper::class,
             LogTenancyBootstrapper::class,
         ],
-        'logging.default' => 'stack',
         'logging.channels.stack' => [
             'driver' => 'stack',
             'channels' => ['single', 'daily'],
@@ -319,7 +310,7 @@ test('stack logs are written to all configured channels with tenant-specific pat
     $today = now()->format('Y-m-d');
 
     // Central context stack log
-    logger('central');
+    Log::channel('stack')->info('central');
     $centralSingleLogPath = storage_path('logs/laravel.log');
 
     // The single and daily channels have the same path in the config, but the daily driver parses the file name so that the date is included in the file name
@@ -330,7 +321,7 @@ test('stack logs are written to all configured channels with tenant-specific pat
 
     // Tenant context stack log
     tenancy()->initialize($tenant);
-    logger('tenant');
+    Log::channel('stack')->info('tenant');
     $tenantSingleLogPath = storage_path('logs/laravel.log');
     $tenantDailyLogPath = storage_path("logs/laravel-{$today}.log");
 
@@ -355,7 +346,6 @@ test('stack logs are written to all configured channels with tenant-specific pat
 
 test('slack channel uses correct webhook urls', function () {
     config([
-        'logging.default' => 'slack',
         'logging.channels.slack.url' => 'central-webhook',
         'logging.channels.slack.level' => 'debug', // Set level to debug to keep the tests simple, since the default level here is 'critical'
     ]);
@@ -371,7 +361,7 @@ test('slack channel uses correct webhook urls', function () {
     // Because the Slack channel uses cURL to send messages, we cannot use Http::fake() here.
     // Instead, we catch the exception and check the error message which contains the actual webhook URL.
     try {
-        logger('central');
+        Log::channel('slack')->info('central');
     } catch (Exception $e) {
         expect($e->getMessage())->toContain('central-webhook');
     }
@@ -379,7 +369,7 @@ test('slack channel uses correct webhook urls', function () {
     // Slack channel should attempt to use the tenant-specific webhooks
     tenancy()->runForMultiple([$tenant1, $tenant2], function (Tenant $tenant) {
         try {
-            logger($tenant->id);
+            Log::channel('slack')->info($tenant->id);
         } catch (Exception $e) {
             expect($e->getMessage())->toContain($tenant->slackUrl);
         }
@@ -387,7 +377,7 @@ test('slack channel uses correct webhook urls', function () {
 
     // Central context, central webhook should be used again
     try {
-        logger('central');
+        Log::channel('slack')->info('central');
     } catch (Exception $e) {
         expect($e->getMessage())->toContain('central-webhook');
     }
