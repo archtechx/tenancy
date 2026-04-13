@@ -11,6 +11,7 @@ use Stancl\Tenancy\Contracts\Feature;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\Models\ImpersonationToken;
 use Stancl\Tenancy\Tenancy;
+use Exception;
 
 class UserImpersonation implements Feature
 {
@@ -84,6 +85,10 @@ class UserImpersonation implements Feature
      */
     public static function stopImpersonating(bool $logout = true): void
     {
+        if (! static::isImpersonating()) {
+            throw new Exception('Not currently impersonating any user.');
+        }
+
         if ($logout) {
             $guard = session()->get('tenancy_impersonation_guard');
 

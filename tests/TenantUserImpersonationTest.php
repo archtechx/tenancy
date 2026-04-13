@@ -234,6 +234,14 @@ test('stopImpersonating logs out the user from tenancy_impersonation_guard store
 
     expect(auth('web')->check())->toBeFalse();
     expect(auth('test')->check())->toBeTrue();
+
+    expect(UserImpersonation::isImpersonating())->toBeFalse();
+
+    // tenancy_impersonation_guard isn't in the session anymore,
+    // stopImpersonating should throw an exception instead of logging out
+    expect(fn() => UserImpersonation::stopImpersonating())->toThrow(Exception::class);
+
+    expect(auth()->check())->toBeTrue();
 });
 
 test('tokens have a limited ttl', function () {
