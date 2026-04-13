@@ -9,6 +9,7 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Log\LogManager;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
+use Illuminate\Support\Arr;
 
 /**
  * This bootstrapper makes it possible to configure tenant-specific logging.
@@ -128,7 +129,7 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
             // If the tenant attribute is null,
             // the override is ignored and the channel config key's value remains unchanged.
             foreach ($override as $configKey => $tenantAttributeName) {
-                $tenantAttribute = $tenant->getAttribute($tenantAttributeName);
+                $tenantAttribute = Arr::get($tenant, $tenantAttributeName);
 
                 if ($tenantAttribute !== null) {
                     $this->config->set("logging.channels.{$channel}.{$configKey}", $tenantAttribute);

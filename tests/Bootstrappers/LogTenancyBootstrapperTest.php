@@ -366,11 +366,12 @@ test('slack channel uses correct webhook urls', function () {
         expect($thrown)->toBeTrue();
     };
 
-    $tenant1 = Tenant::create(['id' => 'tenant1', 'slackUrl' => 'tenant1-webhook']);
-    $tenant2 = Tenant::create(['id' => 'tenant2', 'slackUrl' => 'tenant2-webhook']);
+    $tenant1 = Tenant::create(['id' => 'tenant1', 'logging' => ['slackUrl' => 'tenant1-webhook']]);
+    $tenant2 = Tenant::create(['id' => 'tenant2', 'logging' => ['slackUrl' => 'tenant2-webhook']]);
 
+    // Attribute mapping using nested attributes (dot notation) works
     LogTenancyBootstrapper::$channelOverrides = [
-        'slack' => ['url' => 'slackUrl'],
+        'slack' => ['url' => 'logging.slackUrl'],
     ];
 
     // Test central context - should attempt to use central webhook
@@ -378,7 +379,7 @@ test('slack channel uses correct webhook urls', function () {
 
     // Slack channel should attempt to use the tenant-specific webhooks
     tenancy()->runForMultiple([$tenant1, $tenant2], function (Tenant $tenant) use ($assertWebhook) {
-        $assertWebhook($tenant->slackUrl, $tenant->id);
+        $assertWebhook($tenant->logging['slackUrl'], $tenant->id);
     });
 
     // Central context, central webhook should be used again
