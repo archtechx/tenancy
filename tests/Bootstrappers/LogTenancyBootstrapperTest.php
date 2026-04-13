@@ -140,6 +140,11 @@ test('channel overrides work correctly with both arrays and closures', function 
 
     $tenant = Tenant::create(['webhookUrl' => 'tenant-webhook']);
 
+    // Channel override closures must return an array, otherwise an exception is thrown
+    LogTenancyBootstrapper::$channelOverrides['slack'] = fn (Tenant $tenant, array $channel) => 'invalid override';
+
+    expect(fn() => tenancy()->initialize($tenant))->toThrow(InvalidArgumentException::class);
+
     // Test both array mapping and closure-based overrides
     LogTenancyBootstrapper::$channelOverrides = [
         'slack' => ['url' => 'webhookUrl'], // slack.url will be mapped to $tenant->webhookUrl
@@ -148,7 +153,8 @@ test('channel overrides work correctly with both arrays and closures', function 
         },
     ];
 
-    tenancy()->initialize($tenant);
+    // Reinitialize tenancy to apply the new overrides
+    tenancy()->reinitialize();
 
     // Array mapping overrides work
     expect(config('logging.channels.slack.url'))->toBe($tenant->webhookUrl);
