@@ -206,19 +206,53 @@ test('tenant storage gets created when TenantCreated listens to CreateTenantStor
 });
 
 test('tenant storage can get deleted after the tenant when DeletingTenant listens to DeleteTenantStorage', function() {
-    config([
-        'tenancy.bootstrappers' => [FilesystemTenancyBootstrapper::class],
-    ]);
-
     Event::listen(DeletingTenant::class,
         JobPipeline::make([DeleteTenantStorage::class])->send(function (DeletingTenant $event) {
             return $event->tenant;
         })->shouldBeQueued(false)->toListener()
     );
 
+    $centralStoragePath = storage_path();
+    tenancy()->initialize(Tenant::create());
+
+    // FilesystemTenancyBootstrapper not enabled,
+    // tenant and central storage path is the same,
+    // the storage deletion will be skipped.
+    $tenantStoragePath = storage_path();
+    expect($tenantStoragePath)->toBe($centralStoragePath);
+    expect(File::isDirectory($tenantStoragePath))->toBeTrue();
+    tenant()->delete();
+
+    expect(File::isDirectory($tenantStoragePath))->toBeTrue();
+
+    config([
+        'tenancy.bootstrappers' => [FilesystemTenancyBootstrapper::class],
+        'tenancy.filesystem.suffix_storage_path' => false,
+    ]);
+
+    tenancy()->initialize(Tenant::create());
+
+    $tenantStoragePath = storage_path();
+
+    // FilesystemTenancyBootstrapper enabled,
+    // but tenant and central storage path is still the same
+    // because suffix_storage_path is false.
+    // The storage deletion will be skipped.
+    expect($tenantStoragePath)->toBe($centralStoragePath);
+    expect(File::isDirectory($tenantStoragePath))->toBeTrue();
+    tenant()->delete();
+
+    expect(File::isDirectory($tenantStoragePath))->toBeTrue();
+
+    config([
+        'tenancy.bootstrappers' => [FilesystemTenancyBootstrapper::class],
+        'tenancy.filesystem.suffix_storage_path' => true,
+    ]);
+
     tenancy()->initialize(Tenant::create());
     $tenantStoragePath = storage_path();
 
+    expect($centralStoragePath)->not()->toBe($tenantStoragePath);
     expect(File::isDirectory($tenantStoragePath))->toBeTrue();
 
     tenant()->delete();
