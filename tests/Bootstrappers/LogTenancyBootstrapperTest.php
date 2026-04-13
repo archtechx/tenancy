@@ -20,9 +20,12 @@ beforeEach(function () {
         ],
     ]);
 
-    @unlink(storage_path('logs/laravel.log'));
-    @unlink(storage_path('logs/laravel-' . now()->format('Y-m-d') . '.log'));
-    foreach (glob(storage_path('tenant*/logs/*.log')) ?: [] as $path) {
+    $logFiles = array_merge(
+        glob(storage_path('logs/*.log')) ?: [],
+        glob(storage_path('tenant*/logs/*.log')) ?: []
+    );
+
+    foreach ($logFiles as $path) {
         @unlink($path);
     }
 
@@ -38,9 +41,12 @@ afterEach(function () {
     LogTenancyBootstrapper::$channelOverrides = [];
     LogTenancyBootstrapper::$storagePathChannels = ['single', 'daily'];
 
-    @unlink(storage_path('logs/laravel.log'));
-    @unlink(storage_path('logs/laravel-' . now()->format('Y-m-d') . '.log'));
-    foreach (glob(storage_path('tenant*/logs/*.log')) ?: [] as $path) {
+    $logFiles = array_merge(
+        glob(storage_path('logs/*.log')) ?: [],
+        glob(storage_path('tenant*/logs/*.log')) ?: []
+    );
+
+    foreach ($logFiles as $path) {
         @unlink($path);
     }
 });
