@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Features;
 
+use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -11,7 +12,6 @@ use Stancl\Tenancy\Contracts\Feature;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\Models\ImpersonationToken;
 use Stancl\Tenancy\Tenancy;
-use Exception;
 
 class UserImpersonation implements Feature
 {
