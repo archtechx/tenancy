@@ -215,12 +215,12 @@ test('broadcasting channel helpers register channels correctly', function() {
 
     tenancy()->initialize($tenant);
 
-    // The channel closure runs in the central context
-    // Only the central user is available
+    // The channel closure runs in the tenant context
+    // Only the tenant user is available
     expect($tenantChannelClosure($centralUser, $tenant->getTenantKey(), $tenantUser->name))->toBeFalse();
     expect($tenantChannelClosure($tenantUser, $tenant->getTenantKey(), $tenantUser->name))->toBeTrue();
 
-    // Use a new channel instance to delete the previously registered channels before testing the universal_channel helper
+    // Use a new channel instance to delete the previously registered channels before testing the global_channel helper
     $broadcastManager->purge($driver);
     $broadcastManager->extend($driver, fn () => new NullBroadcaster);
 
