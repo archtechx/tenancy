@@ -191,7 +191,7 @@ test('stopImpersonating can keep the user authenticated', function() {
         ->assertSee('You are logged in as Joe');
 });
 
-test('stopImpersonating logs out the user from the guard used while starting impersonation', function() {
+test('stopImpersonating logs out the user from tenancy_impersonation_guard stored in session', function() {
     Route::middleware(InitializeTenancyByPath::class)->prefix('/{tenant}')->group(getRoutes(false));
 
     $tenant = Tenant::create([
@@ -225,8 +225,9 @@ test('stopImpersonating logs out the user from the guard used while starting imp
         'provider' => 'users',
     ]]);
 
-    // Manually log in the user using a different guard
-    auth('test')->loginUsingId($user->id);
+    // Switch guard from 'web' to 'test' and manually log in the user through 'test'
+    auth()->shouldUse('test');
+    auth()->loginUsingId($user->id);
 
     // Should log out the user from the guard used for impersonation ('web')
     UserImpersonation::stopImpersonating();
