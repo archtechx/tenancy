@@ -70,7 +70,7 @@ test('BroadcastingConfigBootstrapper maps tenant properties to broadcaster crede
 
     tenancy()->initialize($tenant1);
 
-    // Tenant's testing_key property is mapped to broadcasting.connections.testing.key config value
+    // Tenant's testing_key property is mapped to the current broadcasting connection key
     expect(config("broadcasting.connections.{$driver}.key"))->toBe('tenant1_key');
     expect(app(BroadcastManager::class)->driver()->config['key'])->toBe('tenant1_key');
     // Switching to tenant context makes the currently bound Broadcaster instance use the tenant's config
