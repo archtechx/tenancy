@@ -206,6 +206,10 @@ test('tenant storage gets created when TenantCreated listens to CreateTenantStor
 });
 
 test('tenant storage can get deleted after the tenant when DeletingTenant listens to DeleteTenantStorage', function() {
+    config([
+        'tenancy.bootstrappers' => [FilesystemTenancyBootstrapper::class],
+    ]);
+
     Event::listen(DeletingTenant::class,
         JobPipeline::make([DeleteTenantStorage::class])->send(function (DeletingTenant $event) {
             return $event->tenant;
@@ -215,11 +219,7 @@ test('tenant storage can get deleted after the tenant when DeletingTenant listen
     tenancy()->initialize(Tenant::create());
     $tenantStoragePath = storage_path();
 
-    Storage::fake('test');
-
     expect(File::isDirectory($tenantStoragePath))->toBeTrue();
-
-    Storage::put('test.txt', 'testing file');
 
     tenant()->delete();
 
