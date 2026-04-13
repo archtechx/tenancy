@@ -125,7 +125,7 @@ class TenancyUrlGenerator extends UrlGenerator
             throw new InvalidArgumentException('Attribute [name] expects a string backed enum.');
         }
 
-        [$name] = $this->prepareRouteInputs($name, Arr::wrap($parameters)); // @phpstan-ignore argument.type
+        [$name] = $this->prepareRouteInputs(Arr::wrap($parameters), $name); // @phpstan-ignore argument.type
 
         return parent::route($name, $parameters, $absolute);
     }
@@ -140,12 +140,10 @@ class TenancyUrlGenerator extends UrlGenerator
     {
         $name = $route->getName();
 
-        if ($name) {
-            [$prefixedName, $parameters] = $this->prepareRouteInputs($name, Arr::wrap($parameters));
+        [$prefixedName, $parameters] = $this->prepareRouteInputs(Arr::wrap($parameters), $name);
 
-            if ($prefixedName !== $name && $tenantRoute = $this->routes->getByName($prefixedName)) {
-                $route = $tenantRoute;
-            }
+        if ($name && $prefixedName !== $name && $tenantRoute = $this->routes->getByName($prefixedName)) {
+            $route = $tenantRoute;
         }
 
         return parent::toRoute($route, $parameters, $absolute);
@@ -170,10 +168,13 @@ class TenancyUrlGenerator extends UrlGenerator
      * To skip these modifications, pass the bypass parameter in route parameters.
      * Before returning the modified route inputs, the bypass parameter is removed from the parameters.
      */
-    protected function prepareRouteInputs(string $name, array $parameters): array
+    protected function prepareRouteInputs(array $parameters, string|null $name): array
     {
         if (! $this->routeBehaviorModificationBypassed($parameters)) {
-            $name = $this->routeNameOverride($name) ?? $this->prefixRouteName($name);
+            if (! is_null($name)) {
+                $name = $this->routeNameOverride($name) ?? $this->prefixRouteName($name);
+            }
+
             $parameters = $this->addTenantParameter($parameters);
         }
 

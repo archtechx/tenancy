@@ -423,3 +423,25 @@ test('the toRoute method can automatically prefix the passed route name', functi
     // Passing the bypass parameter skips the name prefixing, so the method returns the central route URL
     expect(url()->toRoute($centralRoute, ['central' => true], true))->toBe('http://localhost/central/home');
 });
+
+test('toRoute modifies parameters even when the route has no name', function () {
+    config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);
+
+    TenancyUrlGenerator::$passTenantParameterToRoutes = true;
+
+    $unnamedRoute = Route::get('/unnamed', fn () => 'unnamed');
+
+    $tenant = Tenant::create();
+
+    tenancy()->initialize($tenant);
+
+    // The tenant parameter is added to the URL even for unnamed routes
+    expect(url()->toRoute($unnamedRoute, [], true))
+        ->toBe("http://localhost/unnamed?tenant={$tenant->getTenantKey()}");
+
+    // The bypass parameter prevents passing the tenant parameter and is stripped from the URL
+    expect(url()->toRoute($unnamedRoute, ['central' => true], true))
+        ->toBe("http://localhost/unnamed")
+        ->not()->toContain('tenant=')
+        ->not()->toContain('central=');
+});
