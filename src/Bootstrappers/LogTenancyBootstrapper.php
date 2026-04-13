@@ -6,11 +6,11 @@ namespace Stancl\Tenancy\Bootstrappers;
 
 use Closure;
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Log\LogManager;
 use Illuminate\Support\Arr;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
-use Illuminate\Database\Eloquent\Model;
 
 /**
  * This bootstrapper makes it possible to configure tenant-specific logging.
