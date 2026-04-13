@@ -191,6 +191,50 @@ test('stopImpersonating can keep the user authenticated', function() {
         ->assertSee('You are logged in as Joe');
 });
 
+test('stopImpersonating logs out the user from the guard used while starting impersonation', function() {
+    Route::middleware(InitializeTenancyByPath::class)->prefix('/{tenant}')->group(getRoutes(false));
+
+    $tenant = Tenant::create([
+        'id' => 'acme',
+        'tenancy_db_name' => 'db' . Str::random(16),
+    ]);
+
+    migrateTenants();
+
+    $user = $tenant->run(function () {
+        return ImpersonationUser::create([
+            'name' => 'Joe',
+            'email' => 'joe@local',
+            'password' => bcrypt('secret'),
+        ]);
+    });
+
+    // Impersonate the user
+    $token = tenancy()->impersonate($tenant, $user->id, '/acme/dashboard');
+
+    pest()->get('/acme/impersonate/' . $token->token)
+        ->assertRedirect('/acme/dashboard');
+
+    expect(session('tenancy_impersonation_guard'))->toBe('web');
+
+    // Impersonation logged in the user using the current guard ('web')
+    expect(auth('web')->check())->toBeTrue();
+
+    config(['auth.guards.test' => [
+        'driver' => 'session',
+        'provider' => 'users',
+    ]]);
+
+    // Manually log in the user using a different guard
+    auth('test')->loginUsingId($user->id);
+
+    // Should log out the user from the guard used for impersonation ('web')
+    UserImpersonation::stopImpersonating();
+
+    expect(auth('web')->check())->toBeFalse();
+    expect(auth('test')->check())->toBeTrue();
+});
+
 test('tokens have a limited ttl', function () {
     Route::middleware(InitializeTenancyByDomain::class)->group(getRoutes());
 
