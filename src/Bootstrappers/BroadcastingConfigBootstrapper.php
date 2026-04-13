@@ -93,7 +93,7 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
         // used by the bound Broadcaster instance. If you need to e.g. send a notification in response to
         // updating tenant's broadcasting credentials in tenant context, it's recommended to
         // reinitialize tenancy after updating the credentials.
-        $this->app->extend(Broadcaster::class, function (Broadcaster $broadcaster) {
+        $this->app->extend(Broadcaster::class, function () {
             return $this->app->make(BroadcastManager::class)->connection();
         });
 
