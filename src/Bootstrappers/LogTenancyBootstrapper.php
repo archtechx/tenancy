@@ -9,9 +9,9 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Log\LogManager;
 use Illuminate\Support\Arr;
+use InvalidArgumentException;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
-use InvalidArgumentException;
 
 /**
  * This bootstrapper makes it possible to configure tenant-specific logging.
