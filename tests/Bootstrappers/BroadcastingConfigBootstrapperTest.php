@@ -31,7 +31,9 @@ afterEach(function () {
 test('BroadcastingConfigBootstrapper binds TenancyBroadcastManager to BroadcastManager and reverts the binding when tenancy is ended', function() {
     config(['tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class]]);
 
-    expect(app(BroadcastManager::class))->toBeInstanceOf(BroadcastManager::class);
+    expect(app(BroadcastManager::class))
+        ->toBeInstanceOf(BroadcastManager::class)
+        ->not()->toBeInstanceOf(TenancyBroadcastManager::class);
 
     tenancy()->initialize(Tenant::create());
 
@@ -39,7 +41,9 @@ test('BroadcastingConfigBootstrapper binds TenancyBroadcastManager to BroadcastM
 
     tenancy()->end();
 
-    expect(app(BroadcastManager::class))->toBeInstanceOf(BroadcastManager::class);
+    expect(app(BroadcastManager::class))
+        ->toBeInstanceOf(BroadcastManager::class)
+        ->not()->toBeInstanceOf(TenancyBroadcastManager::class);
 });
 
 test('BroadcastingConfigBootstrapper maps tenant properties to broadcaster credentials correctly', function(string $driver) {
