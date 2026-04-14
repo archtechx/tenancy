@@ -17,11 +17,13 @@ beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
+    BroadcastingConfigBootstrapper::$broadcaster = null;
     BroadcastingConfigBootstrapper::$credentialsMap = [];
     TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably', 'reverb'];
 });
 
 afterEach(function () {
+    BroadcastingConfigBootstrapper::$broadcaster = null;
     BroadcastingConfigBootstrapper::$credentialsMap = [];
     TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably', 'reverb'];
 });
