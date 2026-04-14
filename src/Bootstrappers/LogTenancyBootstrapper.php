@@ -46,10 +46,12 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
      * All channels included here will be configured using the provided override.
      *
      * Examples:
-     * - Array mapping (the default approach): ['slack' => ['url' => 'webhookUrl']] maps $tenant->webhookUrl to slack.url (if $tenant->webhookUrl is not null, otherwise, the override is ignored)
-     * - Closure: ['slack' => fn (Tenant $tenant, array $channel) => array_merge($channel, ['url' => $tenant->slackUrl])] (the closure should return the whole channel's config)
+     * - Array mapping (the default approach): ['slack' => ['url' => 'webhookUrl']]
+     *      - this maps $tenant->webhookUrl to slack.url (if $tenant->webhookUrl is not null, otherwise, the override is ignored)
+     * - Closure: ['slack' => fn (Tenant $tenant, array $channel) => array_merge($channel, ['url' => $tenant->slackUrl])]
+     *      - this merges ['url' => $tenant->slackUrl] into the channel's config.
      *
-     * In both cases, the override should be an array.
+     * So the channel overrides can be arrays and closures that return arrays.
      */
     public static array $channelOverrides = [];
 
