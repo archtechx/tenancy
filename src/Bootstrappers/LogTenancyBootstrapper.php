@@ -29,6 +29,8 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
 {
     protected array $defaultConfig = [];
 
+    protected array $configuredChannels = [];
+
     /**
      * Log channels that use the storage_path() helper for storing the logs. Requires FilesystemTenancyBootstrapper to run before this bootstrapper.
      * Or you can bypass this default behavior by using overrides, since they take precedence over the default behavior.
@@ -58,14 +60,15 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
     public function bootstrap(Tenant $tenant): void
     {
         $this->defaultConfig = $this->config->get('logging.channels');
-        $channels = $this->getChannels();
+        $this->configuredChannels = $this->getChannels();
 
         try {
-            $this->configureChannels($channels, $tenant);
-            $this->forgetChannels($channels);
+            $this->configureChannels($this->configuredChannels, $tenant);
+            $this->forgetChannels($this->configuredChannels);
         } catch (\Throwable $exception) {
+            // Revert to default config if anything goes wrong during channel configuration
             $this->config->set('logging.channels', $this->defaultConfig);
-            $this->forgetChannels($channels);
+            $this->forgetChannels($this->configuredChannels);
 
             throw $exception;
         }
@@ -75,7 +78,7 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
     {
         $this->config->set('logging.channels', $this->defaultConfig);
 
-        $this->forgetChannels($this->getChannels());
+        $this->forgetChannels($this->configuredChannels);
     }
 
     /**
