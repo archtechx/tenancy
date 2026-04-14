@@ -133,7 +133,9 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
             } elseif (in_array($channel, static::$storagePathChannels)) {
                 // Set storage path channels to use tenant-specific directory (default behavior)
                 // The tenant log will be located at e.g. "storage/tenant{$tenantKey}/logs/laravel.log" (assuming FilesystemTenancyBootstrapper is used before this bootstrapper)
-                $this->config->set("logging.channels.{$channel}.path", storage_path('logs/laravel.log'));
+                $path = $this->config->get("logging.channels.{$channel}.path");
+
+                $this->config->set("logging.channels.{$channel}.path", storage_path('logs/' . ($path ? basename($path) : 'laravel.log')));
             }
         }
     }
