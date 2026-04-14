@@ -131,10 +131,13 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
             if (isset(static::$channelOverrides[$channel])) {
                 $this->overrideChannelConfig($channel, static::$channelOverrides[$channel], $tenant);
             } elseif (in_array($channel, static::$storagePathChannels)) {
-                // Set storage path channels to use tenant-specific directory (default behavior)
-                // The tenant log will be located at e.g. "storage/tenant{$tenantKey}/logs/laravel.log" (assuming FilesystemTenancyBootstrapper is used before this bootstrapper)
+                // Set storage path channels to use tenant-specific directory (default behavior).
+                // The tenant log will be located at e.g. "storage/tenant{$tenantKey}/logs/laravel.log"
+                // (assuming FilesystemTenancyBootstrapper is used before this bootstrapper).
                 $path = $this->config->get("logging.channels.{$channel}.path");
 
+                // The tenant log will inherit the central log filename from the central channel path config.
+                // For better customization, e.g. using custom paths for tenant logs, look into channel overrides.
                 $this->config->set("logging.channels.{$channel}.path", storage_path('logs/' . ($path ? basename($path) : 'laravel.log')));
             }
         }
