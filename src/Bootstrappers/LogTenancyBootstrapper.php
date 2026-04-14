@@ -9,18 +9,23 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Log\LogManager;
 use Illuminate\Support\Arr;
+use Exception;
 use InvalidArgumentException;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
+use Illuminate\Support\Str;
 
 /**
  * This bootstrapper makes it possible to configure tenant-specific logging.
  *
- * By default, the storage path channels ('single' and 'daily' by default,
- * but feel free to customize that using the $storagePathChannels property)
- * are configured to use tenant storage directories.
- * For this to work correctly, this bootstrapper must run *after* FilesystemTenancyBootstrapper.
- * FilesystemTenancyBootstrapper alters how storage_path() works in the tenant context.
+ * By default, all the storage path channels are configured to use tenant
+ * storage directories (see the $storagePathChannels property).
+ *
+ * For this to work correctly:
+ * - this bootstrapper must run *after* FilesystemTenancyBootstrapper,
+ * since FilesystemTenancyBootstrapper alters how storage_path() works in the tenant context
+ * - storage path suffixing has to be enabled (= config('tenancy.filesystem.suffix_storage_path')
+ * has to be true), since the storage path suffix is what separates logs by tenant
  *
  * The bootstrapper also supports custom channel overrides via the $channelOverrides property (see the property's docblock).
  *
@@ -33,10 +38,16 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
     protected array $configuredChannels = [];
 
     /**
-     * Log channels that use the storage_path() helper for storing the logs. Requires FilesystemTenancyBootstrapper to run before this bootstrapper.
-     * Or you can bypass this default behavior by using overrides, since they take precedence over the default behavior.
+     * Logging channels that use the storage_path() helper for storing the logs.
+     * Or you can bypass this default behavior by using overrides, since they take
+     * precedence over the default behavior.
      *
      * All channels included here will be configured to use tenant-specific storage paths.
+     *
+     * Requires FilesystemTenancyBootstrapper to run before this bootstrapper,
+     * and storage path suffixing to be enabled.
+     *
+     * @see Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper
      */
     public static array $storagePathChannels = ['single', 'daily'];
 
@@ -44,6 +55,8 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
      * Custom channel configuration overrides.
      *
      * All channels included here will be configured using the provided override.
+     * The overrides take precedence over the default storage path channels
+     * behavior.
      *
      * Examples:
      * - Array mapping (the default approach): ['slack' => ['url' => 'webhookUrl']]
@@ -134,11 +147,13 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
                 // Set storage path channels to use tenant-specific directory (default behavior).
                 // The tenant log will be located at e.g. "storage/tenant{$tenantKey}/logs/laravel.log"
                 // (assuming FilesystemTenancyBootstrapper is used before this bootstrapper).
-                $path = $this->config->get("logging.channels.{$channel}.path");
+                $originalChannelPath = $this->config->get("logging.channels.{$channel}.path");
+                $centralStoragePath = Str::before(storage_path(), $this->config->get('tenancy.filesystem.suffix_base') . $tenant->getTenantKey());
 
-                // The tenant log will inherit the central log filename from the central channel path config.
-                // For better customization, e.g. using custom paths for tenant logs, look into channel overrides.
-                $this->config->set("logging.channels.{$channel}.path", storage_path('logs/' . ($path ? basename($path) : 'laravel.log')));
+                // The tenant log will inherit the segment that follows the storage path from the central channel path config.
+                // For example, if a channel's path is configured to storage_path('custom/logs/path.log') (storage/custom/logs/path.log),
+                // the 'custom/logs/path.log' segment will be passed to storage_path() in the tenant context (storage/tenantfoo/custom/logs/path.log).
+                $this->config->set("logging.channels.{$channel}.path", storage_path(Str::after($originalChannelPath, $centralStoragePath)));
             }
         }
     }

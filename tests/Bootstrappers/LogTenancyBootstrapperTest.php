@@ -398,7 +398,7 @@ test('slack channel uses correct webhook urls', function () {
     $assertWebhook('central-webhook', 'central');
 });
 
-test('tenant logs inherit the filename from the central log path config', function () {
+test('tenant logs inherit the path from the central log path config', function () {
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
@@ -408,18 +408,17 @@ test('tenant logs inherit the filename from the central log path config', functi
             'driver' => 'stack',
             'channels' => ['single', 'daily'],
         ],
-        'logging.channels.single.path' => storage_path('logs/custom-name.log'),
-        'logging.channels.daily.path' => storage_path('logs/custom-name.log'),
+        'logging.channels.single.path' => storage_path('logs/single/custom-name.log'),
+        'logging.channels.daily.path' => storage_path('logs/daily/custom-name.log'),
     ]);
 
     $tenant = Tenant::create();
     $today = now()->format('Y-m-d');
 
-    // Central log is located at storage/logs/custom-name.log
     Log::channel('stack')->info('central');
 
-    expect(file_get_contents(storage_path('logs/custom-name.log')))->toContain('central');
-    expect(file_get_contents(storage_path("logs/custom-name-{$today}.log")))->toContain('central');
+    expect(file_get_contents(storage_path('logs/single/custom-name.log')))->toContain('central');
+    expect(file_get_contents(storage_path("logs/daily/custom-name-{$today}.log")))->toContain('central');
 
     tenancy()->initialize($tenant);
 
@@ -427,14 +426,14 @@ test('tenant logs inherit the filename from the central log path config', functi
     Log::channel('stack')->info($tenant->id);
 
     // The filename from the central config is preserved in tenant context
-    expect(config('logging.channels.single.path'))->toEndWith('custom-name.log');
-    expect(config('logging.channels.daily.path'))->toEndWith('custom-name.log');
+    expect(config('logging.channels.single.path'))->toEndWith('logs/single/custom-name.log');
+    expect(config('logging.channels.daily.path'))->toEndWith('logs/daily/custom-name.log');
 
-    expect(file_get_contents(storage_path('logs/custom-name.log')))
+    expect(file_get_contents(storage_path('logs/single/custom-name.log')))
         ->toContain($tenant->id)
         ->not()->toContain('central');
 
-    expect(file_get_contents(storage_path("logs/custom-name-{$today}.log")))
+    expect(file_get_contents(storage_path("logs/daily/custom-name-{$today}.log")))
         ->toContain($tenant->id)
         ->not()->toContain('central');
 });
