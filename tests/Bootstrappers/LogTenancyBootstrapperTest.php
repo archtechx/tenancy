@@ -22,7 +22,9 @@ beforeEach(function () {
 
     $logFiles = array_merge(
         glob(storage_path('logs/*.log')) ?: [],
-        glob(storage_path('tenant*/logs/*.log')) ?: []
+        glob(storage_path('logs/*/*.log')) ?: [],
+        glob(storage_path('tenant*/logs/*.log')) ?: [],
+        glob(storage_path('tenant*/logs/*/*.log')) ?: []
     );
 
     foreach ($logFiles as $path) {
@@ -43,7 +45,9 @@ afterEach(function () {
 
     $logFiles = array_merge(
         glob(storage_path('logs/*.log')) ?: [],
-        glob(storage_path('tenant*/logs/*.log')) ?: []
+        glob(storage_path('logs/*/*.log')) ?: [],
+        glob(storage_path('tenant*/logs/*.log')) ?: [],
+        glob(storage_path('tenant*/logs/*/*.log')) ?: []
     );
 
     foreach ($logFiles as $path) {
