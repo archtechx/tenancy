@@ -11,6 +11,7 @@ use Illuminate\Log\LogManager;
 use Illuminate\Support\Arr;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
+use InvalidArgumentException;
 
 /**
  * This bootstrapper makes it possible to configure tenant-specific logging.
@@ -155,7 +156,7 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
             $result = $override($tenant, $this->config->get($channelConfigKey));
 
             if (! is_array($result)) {
-                throw new \InvalidArgumentException("Channel override closure for '{$channel}' must return an array.");
+                throw new InvalidArgumentException("Channel override closure for '{$channel}' must return an array.");
             }
 
             $this->config->set($channelConfigKey, $result);
