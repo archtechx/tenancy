@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use Stancl\Tenancy\Tenancy;
 
+/** @implements Scope<Model> */
 class TenantScope implements Scope
 {
     /**
