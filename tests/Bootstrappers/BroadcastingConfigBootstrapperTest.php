@@ -171,19 +171,19 @@ test('tenant broadcast manager receives the custom driver creators of the centra
     );
 
     // Current BroadcastManager instance has the original custom creators plus the newly registered testing-tenant1 creator
-    expect(array_keys(invade(app(BroadcastManager::class))->customCreators))->toBe([...$originalDrivers, 'testing-tenant1']);
+    expect(array_keys(invade(app(BroadcastManager::class))->customCreators))->toEqualCanonicalizing([...$originalDrivers, 'testing-tenant1']);
 
     tenancy()->initialize($tenant2);
 
     // Current BroadcastManager only has the original custom creators,
     // the creator added in the previous tenant's context doesn't persist.
-    expect(array_keys(invade(app(BroadcastManager::class))->customCreators))->toBe($originalDrivers);
+    expect(array_keys(invade(app(BroadcastManager::class))->customCreators))->toEqualCanonicalizing($originalDrivers);
 
     tenancy()->end();
 
     // Ending tenancy reverts the BroadcastManager binding back to the original state,
     // the creator registered in the tenant context doesn't persist.
-    expect(array_keys(invade(app(BroadcastManager::class))->customCreators))->toBe($originalDrivers);
+    expect(array_keys(invade(app(BroadcastManager::class))->customCreators))->toEqualCanonicalizing($originalDrivers);
 });
 
 test('tenant broadcasters receive the channels from the broadcaster bound in central context', function(string $driver) {
