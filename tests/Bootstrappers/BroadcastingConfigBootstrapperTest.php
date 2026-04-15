@@ -242,4 +242,8 @@ test('mappings specified in credentialsMap override default mapPresets', functio
     tenancy()->initialize($tenant);
 
     expect(config("broadcasting.connections.{$driver}.key"))->toBe('custom_value');
-})->with(['pusher', 'ably', 'reverb']);
+})->with([
+    'pusher',
+    'ably',
+    'reverb',
+]);
