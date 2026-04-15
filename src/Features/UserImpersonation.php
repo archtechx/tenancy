@@ -81,7 +81,13 @@ class UserImpersonation implements Feature
     }
 
     /**
-     * Logout from the current domain and forget impersonation session.
+     * Stop user impersonation by forgetting the impersonation session.
+     *
+     * When $logout is true, the user will also be logged out
+     * from the impersonation guard stored in the session.
+     *
+     * Throws an exception if impersonation is not active
+     * (= the impersonation guard is not in the session).
      */
     public static function stopImpersonating(bool $logout = true): void
     {
