@@ -13,56 +13,38 @@ use Stancl\Tenancy\Bootstrappers\BroadcastingConfigBootstrapper;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Contracts\Broadcasting\Broadcaster as BroadcasterContract;
 
-beforeEach(function () {
+$cleanup = function () {
+    BroadcastingConfigBootstrapper::$broadcaster = null;
+    BroadcastingConfigBootstrapper::$credentialsMap = [];
+    BroadcastingConfigBootstrapper::$mapPresets = [
+        'pusher' => [
+            'broadcasting.connections.pusher.key' => 'pusher_key',
+            'broadcasting.connections.pusher.secret' => 'pusher_secret',
+            'broadcasting.connections.pusher.app_id' => 'pusher_app_id',
+            'broadcasting.connections.pusher.options.cluster' => 'pusher_cluster',
+        ],
+        'reverb' => [
+            'broadcasting.connections.reverb.key' => 'reverb_key',
+            'broadcasting.connections.reverb.secret' => 'reverb_secret',
+            'broadcasting.connections.reverb.app_id' => 'reverb_app_id',
+            'broadcasting.connections.reverb.options.cluster' => 'reverb_cluster',
+        ],
+        'ably' => [
+            'broadcasting.connections.ably.key' => 'ably_key',
+            'broadcasting.connections.ably.public' => 'ably_public',
+        ],
+    ];
+    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably', 'reverb'];
+};
+
+beforeEach(function () use ($cleanup) {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
-    BroadcastingConfigBootstrapper::$broadcaster = null;
-    BroadcastingConfigBootstrapper::$credentialsMap = [];
-    BroadcastingConfigBootstrapper::$mapPresets = [
-        'pusher' => [
-            'broadcasting.connections.pusher.key' => 'pusher_key',
-            'broadcasting.connections.pusher.secret' => 'pusher_secret',
-            'broadcasting.connections.pusher.app_id' => 'pusher_app_id',
-            'broadcasting.connections.pusher.options.cluster' => 'pusher_cluster',
-        ],
-        'reverb' => [
-            'broadcasting.connections.reverb.key' => 'reverb_key',
-            'broadcasting.connections.reverb.secret' => 'reverb_secret',
-            'broadcasting.connections.reverb.app_id' => 'reverb_app_id',
-            'broadcasting.connections.reverb.options.cluster' => 'reverb_cluster',
-        ],
-        'ably' => [
-            'broadcasting.connections.ably.key' => 'ably_key',
-            'broadcasting.connections.ably.public' => 'ably_public',
-        ],
-    ];
-    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably', 'reverb'];
+    $cleanup();
 });
 
-afterEach(function () {
-    BroadcastingConfigBootstrapper::$broadcaster = null;
-    BroadcastingConfigBootstrapper::$credentialsMap = [];
-    BroadcastingConfigBootstrapper::$mapPresets = [
-        'pusher' => [
-            'broadcasting.connections.pusher.key' => 'pusher_key',
-            'broadcasting.connections.pusher.secret' => 'pusher_secret',
-            'broadcasting.connections.pusher.app_id' => 'pusher_app_id',
-            'broadcasting.connections.pusher.options.cluster' => 'pusher_cluster',
-        ],
-        'reverb' => [
-            'broadcasting.connections.reverb.key' => 'reverb_key',
-            'broadcasting.connections.reverb.secret' => 'reverb_secret',
-            'broadcasting.connections.reverb.app_id' => 'reverb_app_id',
-            'broadcasting.connections.reverb.options.cluster' => 'reverb_cluster',
-        ],
-        'ably' => [
-            'broadcasting.connections.ably.key' => 'ably_key',
-            'broadcasting.connections.ably.public' => 'ably_public',
-        ],
-    ];
-    TenancyBroadcastManager::$tenantBroadcasters = ['pusher', 'ably', 'reverb'];
-});
+afterEach($cleanup);
 
 test('BroadcastingConfigBootstrapper binds TenancyBroadcastManager to BroadcastManager and reverts the binding when tenancy is ended', function() {
     config(['tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class]]);
