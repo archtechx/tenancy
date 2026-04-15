@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Bootstrappers;
 
+use Exception;
 use Illuminate\Foundation\Application;
 use Illuminate\Session\FileSessionHandler;
 use Illuminate\Support\Facades\Storage;
@@ -75,8 +76,13 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             : $this->originalStoragePath . '/framework/cache';
 
         if (! is_dir($path)) {
-            // Create tenant framework/cache directory if it does not exist
-            mkdir($path, 0750, true);
+            // Create tenant framework/cache directory if it does not exist.
+            // We ignore errors due to TOCTOU race conditions, instead we check for success below.
+            @mkdir($path, 0750, true);
+
+            if (! is_dir($path)) {
+                throw new Exception("Unable to create tenant storage directory [{$path}].");
+            }
         }
 
         if ($suffix === false) {
@@ -222,8 +228,13 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             : $this->originalStoragePath . '/framework/sessions';
 
         if (! is_dir($path)) {
-            // Create tenant framework/sessions directory if it does not exist
-            mkdir($path, 0750, true);
+            // Create tenant framework/sessions directory if it does not exist.
+            // We ignore errors due to TOCTOU race conditions, instead we check for success below.
+            @mkdir($path, 0750, true);
+
+            if (! is_dir($path)) {
+                throw new Exception("Unable to create tenant session directory [{$path}].");
+            }
         }
 
         $this->app['config']['session.files'] = $path;
