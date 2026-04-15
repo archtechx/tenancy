@@ -217,3 +217,29 @@ test('tenant broadcasters receive the channels from the broadcaster bound in cen
     'reverb',
     'custom', // Except for this custom driver, assume that the drivers are included in TenancyBroadcastManager::$tenantBroadcasters by default
 ]);
+
+test('mappings specified in credentialsMap override default mapPresets', function($driver) {
+    config([
+        'tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class],
+        'broadcasting.default' => $driver,
+    ]);
+
+    // Preset used for broadcasters included in TenancyBroadcastManager::$tenantBroadcasters by default.
+    // This is the default for all tenant broadcasters, but we set it here for clarity.
+    BroadcastingConfigBootstrapper::$mapPresets[$driver]["broadcasting.connections.{$driver}.key"] = "{$driver}_key";
+
+    // Custom mapping specified in credentialsMap should override the preset mapping for the tested broadcaster
+    BroadcastingConfigBootstrapper::$credentialsMap["broadcasting.connections.{$driver}.key"] = 'broadcasting_key';
+
+    app(BroadcastManager::class)->extend($driver, fn($app, $config) => new TestingBroadcaster('testing'));
+
+    $tenant = Tenant::create([
+        "{$driver}_key" => 'preset_value',
+        'broadcasting_key' => 'custom_value',
+    ]);
+
+
+    tenancy()->initialize($tenant);
+
+    expect(config("broadcasting.connections.{$driver}.key"))->toBe('custom_value');
+})->with(['pusher', 'ably', 'reverb']);
