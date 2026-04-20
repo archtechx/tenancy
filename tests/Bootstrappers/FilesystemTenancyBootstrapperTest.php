@@ -184,7 +184,7 @@ test('create and delete storage symlinks jobs work', function() {
     $this->assertDirectoryDoesNotExist(public_path("public-$tenantKey"));
 });
 
-test('tenant storage can get deleted after the tenant when DeletingTenant listens to DeleteTenantStorage', function() {
+test('tenant storage gets deleted during tenant deletion when the DeletingTenant pipeline contains DeleteTenantStorage', function() {
     Event::listen(DeletingTenant::class,
         JobPipeline::make([DeleteTenantStorage::class])->send(function (DeletingTenant $event) {
             return $event->tenant;
@@ -199,10 +199,10 @@ test('tenant storage can get deleted after the tenant when DeletingTenant listen
     // the storage deletion will be skipped.
     $tenantStoragePath = storage_path();
     expect($tenantStoragePath)->toBe($centralStoragePath);
-    expect(File::isDirectory($tenantStoragePath))->toBeTrue();
+    expect(File::isDirectory($centralStoragePath))->toBeTrue();
     tenant()->delete();
 
-    expect(File::isDirectory($tenantStoragePath))->toBeTrue();
+    expect(File::isDirectory($centralStoragePath))->toBeTrue();
 
     config([
         'tenancy.bootstrappers' => [FilesystemTenancyBootstrapper::class],
@@ -218,10 +218,10 @@ test('tenant storage can get deleted after the tenant when DeletingTenant listen
     // because suffix_storage_path is false.
     // The storage deletion will be skipped.
     expect($tenantStoragePath)->toBe($centralStoragePath);
-    expect(File::isDirectory($tenantStoragePath))->toBeTrue();
+    expect(File::isDirectory($centralStoragePath))->toBeTrue();
     tenant()->delete();
 
-    expect(File::isDirectory($tenantStoragePath))->toBeTrue();
+    expect(File::isDirectory($centralStoragePath))->toBeTrue();
 
     config([
         'tenancy.bootstrappers' => [FilesystemTenancyBootstrapper::class],
@@ -231,12 +231,16 @@ test('tenant storage can get deleted after the tenant when DeletingTenant listen
     tenancy()->initialize(Tenant::create());
     $tenantStoragePath = storage_path();
 
-    expect($centralStoragePath)->not()->toBe($tenantStoragePath);
+    // FilesystemTenancyBootstrapper enabled,
+    // suffix_storage_path enabled, so the two paths are distinct.
+    // Tenant storage will be deleted.
+    expect($tenantStoragePath)->not()->toBe($centralStoragePath);
     expect(File::isDirectory($tenantStoragePath))->toBeTrue();
 
     tenant()->delete();
 
     expect(File::isDirectory($tenantStoragePath))->toBeFalse();
+    expect(File::isDirectory($centralStoragePath))->toBeTrue();
 });
 
 test('the framework/cache directory is created when storage_path is scoped', function (bool $suffixStoragePath) {
