@@ -16,8 +16,10 @@ class RemoveStorageSymlinks implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    /** The maximum number of times the job may be attempted. */
     public int $tries = 3;
 
+    /** Delay in seconds between retries. */
     public array $backoff = [30, 60, 120];
 
     public Tenant $tenant;
