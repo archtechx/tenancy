@@ -19,6 +19,8 @@ class MigrateDatabase implements ShouldQueue
 
     public int $tries = 3;
 
+    public array $backoff = [30, 60, 120];
+
     public function __construct(
         protected TenantWithDatabase&Model $tenant,
     ) {}

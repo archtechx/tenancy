@@ -15,6 +15,10 @@ class ClearPendingTenants implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    public int $tries = 3;
+
+    public array $backoff = [30, 60, 120];
+
     public function handle(): void
     {
         Artisan::call(ClearPendingTenantsCommand::class);
