@@ -21,6 +21,8 @@ class CreateDatabase implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public int $tries = 3;
+
     public static bool $ignoreExisting = false;
 
     public function __construct(
