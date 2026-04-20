@@ -13,7 +13,6 @@ use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Jobs\CreateStorageSymlinks;
 use Stancl\Tenancy\Jobs\RemoveStorageSymlinks;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Jobs\CreateTenantStorage;
 use Stancl\Tenancy\Jobs\DeleteTenantStorage;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
@@ -183,27 +182,6 @@ test('create and delete storage symlinks jobs work', function() {
     $tenant->delete();
 
     $this->assertDirectoryDoesNotExist(public_path("public-$tenantKey"));
-});
-
-test('tenant storage gets created when TenantCreated listens to CreateTenantStorage', function() {
-    config([
-        'tenancy.bootstrappers' => [
-            FilesystemTenancyBootstrapper::class,
-        ],
-    ]);
-
-    Event::listen(TenantCreated::class,
-        JobPipeline::make([CreateTenantStorage::class])->send(function (TenantCreated $event) {
-            return $event->tenant;
-        })->shouldBeQueued(false)->toListener()
-    );
-
-    $centralStoragePath = storage_path();
-    $tenant = Tenant::create();
-    $suffixBase = config('tenancy.filesystem.suffix_base', 'tenant');
-    $tenantStoragePath = $centralStoragePath . '/' . $suffixBase . $tenant->getTenantKey();
-
-    $this->assertDirectoryExists($tenantStoragePath . '/framework/cache');
 });
 
 test('tenant storage can get deleted after the tenant when DeletingTenant listens to DeleteTenantStorage', function() {

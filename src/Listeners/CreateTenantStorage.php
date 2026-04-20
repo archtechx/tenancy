@@ -7,7 +7,7 @@ namespace Stancl\Tenancy\Listeners;
 use Stancl\Tenancy\Events\Contracts\TenantEvent;
 
 /**
- * @deprecated use Stancl\Tenancy\Jobs\CreateTenantStorage instead.
+ * @deprecated FilesystemTenancyBootstrapper creates the path automatically when suffix_storage_path is enabled.
  */
 class CreateTenantStorage
 {

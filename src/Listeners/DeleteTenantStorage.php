@@ -8,25 +8,28 @@ use Illuminate\Support\Facades\File;
 use Stancl\Tenancy\Events\Contracts\TenantEvent;
 
 /**
- * @deprecated use Stancl\Tenancy\Jobs\DeleteTenantStorage instead.
+ * @deprecated Use Stancl\Tenancy\Jobs\DeleteTenantStorage in a job pipeline instead.
  */
 class DeleteTenantStorage
 {
     public function handle(TenantEvent $event): void
     {
-        // Skip storage deletion if path suffixing is disabled
         if (config('tenancy.filesystem.suffix_storage_path') === false) {
+            // Skip storage deletion if path suffixing is disabled
             return;
         }
 
-        $centralPath = tenancy()->central(fn () => storage_path());
-        $path = tenancy()->run($event->tenant, fn () => storage_path());
+        $centralStoragePath = tenancy()->central(fn () => storage_path());
+        $tenantStoragePath = tenancy()->run($event->tenant, fn () => storage_path());
 
-        // Skip storage deletion if tenant's storage path is the same as central storage path
-        $tenantPathIsCentral = realpath($path) === realpath($centralPath);
+        if ($tenantStoragePath === $centralStoragePath) {
+            // Check again to ensure the tenant storage path is distinct from the central storage path
+            // to avoid any accidental central storage path deletion
+            return;
+        }
 
-        if (is_dir($path) && ! $tenantPathIsCentral) {
-            File::deleteDirectory($path);
+        if (is_dir($tenantStoragePath)) {
+            File::deleteDirectory($tenantStoragePath);
         }
     }
 }
