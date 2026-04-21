@@ -431,3 +431,32 @@ test('tenant logs inherit the path from the central log path config', function (
         ->toContain($tenant->id)
         ->not()->toContain('central');
 });
+
+test('logging config is reverted to the original state if configuration fails', function() {
+    config([
+        'logging.channels.slack.url' => $originalSlackUrl = 'default-webhook',
+        'logging.channels.single.path' => $originalSinglePath = storage_path('logs/default-single-path.log'),
+    ]);
+
+    $tenant = Tenant::create(['loggingPath' => storage_path('logs/tenant-single-path.log')]);
+
+    // Valid override first, the config will be updated properly,
+    // then an invalid override that will cause the configuration to fail and throw an exception.
+    LogTenancyBootstrapper::$channelOverrides = [
+        'single' => ['path' => 'loggingPath'], // Valid override
+        'slack' => fn () => 'invalid override',
+    ];
+
+    expect(fn() => tenancy()->initialize($tenant))->toThrow(InvalidArgumentException::class);
+
+    // Single channel config reverted to original state after the exception was thrown
+    expect(config('logging.channels.single.path'))->toBe($originalSinglePath);
+
+    // Exception thrown before slack config got changed
+    expect(config('logging.channels.slack.url'))->toBe($originalSlackUrl);
+
+    // The single channel uses the original path for logging
+    Log::channel('single')->info('bootstrap failed');
+    expect(file_exists($originalSinglePath))->toBeTrue();
+    expect(file_get_contents($originalSinglePath))->toContain('bootstrap failed');
+});
