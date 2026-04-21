@@ -22,7 +22,8 @@ use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
  *       - Automatically passing ['tenant' => ...] to each route() call -- if TenancyUrlGenerator::$passTenantParameterToRoutes is enabled
  *         This is a more universal solution since it supports both path identification and query parameter identification.
  *
- *   - Prepends route names with `tenant.` (or the configured prefix) if $prefixRouteNames is enabled.
+ *   - Prepends route names with the tenant route name prefix ('tenant.' by default,
+ *     configurable at tenant_route_name_prefix under PathTenantResolver) if $prefixRouteNames is enabled.
  *     This is primarily useful when using route cloning with path identification.
  *
  * Affected methods: route(), toRoute(), temporarySignedRoute(), signedRoute() (the last two via the route() override).
@@ -131,8 +132,8 @@ class TenancyUrlGenerator extends UrlGenerator
     }
 
     /**
-     * Override the toRoute() method so that the route name gets prefixed
-     * and the tenant parameter gets added when in tenant context.
+     * Override the toRoute() to prefix the route name
+     * and add the tenant parameter when in tenant context.
      *
      * Also affects route(). Even though route() is overridden separately, it delegates parameter handling to toRoute().
      */

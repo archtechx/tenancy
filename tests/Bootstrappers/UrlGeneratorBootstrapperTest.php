@@ -402,7 +402,7 @@ test('the bypass parameter works correctly with temporarySignedRoute', function(
         ->not()->toContain('central='); // Bypass parameter gets removed from the generated URL
 });
 
-test('the toRoute method can automatically prefix the passed route name', function () {
+test('toRoute can automatically prefix the passed route name', function () {
     config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);
 
     Route::get('/central/home', fn () => 'central')->name('home');
