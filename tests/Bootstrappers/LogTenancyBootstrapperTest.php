@@ -96,7 +96,8 @@ test('all channels included in the log stack get processed correctly', function 
 
     // By default, both paths are the same in the config.
     // Note that in actual usage, the daily log file name is parsed differently from the path in the config,
-    // but the paths *in the config* are the same.
+    // e.g. if daily channel has 'path' => storage_path('logs/laravel.log') in config, the log will be
+    // located at storage_path('logs/laravel-2026-01-01.log'). But the paths *in the config* are the same.
     expect($centralLogPath)
         ->toBe($centralStoragePath . '/logs/laravel.log')
         ->toBe($originalSinglePath)
@@ -161,7 +162,7 @@ test('channel overrides work correctly with both arrays and closures', function 
     // After tenancy ends, the original config should be restored
     expect(config('logging.channels.slack.url'))->toBe($originalSlackUrl);
     expect(config('logging.channels.single.path'))->toBe($originalSinglePath);
-    expect(config('logging.channels.slack.username'))->toBe('Default'); // Not changed at all
+    expect(config('logging.channels.slack.username'))->toBe('Default'); // Unchanged
 });
 
 test('channel config keys remain unchanged if the specified tenant override attribute is null', function() {
