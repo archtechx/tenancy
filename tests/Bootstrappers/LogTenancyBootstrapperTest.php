@@ -12,13 +12,9 @@ use Stancl\Tenancy\Bootstrappers\LogTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Illuminate\Support\Facades\Log;
 
-beforeEach(function () {
-    config([
-        'tenancy.bootstrappers' => [
-            // FilesystemTenancyBootstrapper needed for LogTenancyBootstrapper to work with storage path channels BY DEFAULT (note that this can be completely overridden)
-            LogTenancyBootstrapper::class,
-        ],
-    ]);
+$cleanup = function () {
+    LogTenancyBootstrapper::$channelOverrides = [];
+    LogTenancyBootstrapper::$storagePathChannels = ['single', 'daily'];
 
     $logFiles = array_merge(
         glob(storage_path('logs/*.log')) ?: [],
@@ -30,30 +26,23 @@ beforeEach(function () {
     foreach ($logFiles as $path) {
         @unlink($path);
     }
+};
 
-    // Reset static properties
-    LogTenancyBootstrapper::$channelOverrides = [];
-    LogTenancyBootstrapper::$storagePathChannels = ['single', 'daily'];
+beforeEach(function () use ($cleanup) {
+    config([
+        'tenancy.bootstrappers' => [
+            // FilesystemTenancyBootstrapper needed for LogTenancyBootstrapper to work with storage path channels BY DEFAULT
+            LogTenancyBootstrapper::class,
+        ],
+    ]);
+
+    $cleanup();
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
-afterEach(function () {
-    LogTenancyBootstrapper::$channelOverrides = [];
-    LogTenancyBootstrapper::$storagePathChannels = ['single', 'daily'];
-
-    $logFiles = array_merge(
-        glob(storage_path('logs/*.log')) ?: [],
-        glob(storage_path('logs/*/*.log')) ?: [],
-        glob(storage_path('tenant*/logs/*.log')) ?: [],
-        glob(storage_path('tenant*/logs/*/*.log')) ?: []
-    );
-
-    foreach ($logFiles as $path) {
-        @unlink($path);
-    }
-});
+afterEach($cleanup);
 
 test('storage path channels get tenant-specific paths by default', function () {
     // Note that for LogTenancyBootstrapper to change the paths correctly by default,
