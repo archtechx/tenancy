@@ -29,6 +29,8 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
      * [
      *     'config.key.name' => 'tenant_property',
      * ]
+     *
+     * $tenant->tenant_property will be mapped to config('config.key.name') when tenancy is initialized.
      */
     public static array $credentialsMap = [];
 
@@ -72,15 +74,18 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
 
         $this->setConfig($tenant);
 
-        // Make BroadcastManager resolve to TenancyBroadcastManager which always re-resolves the used broadcasters so that
-        // the credentials used by broadcasters are always up-to-date with the config when retrieving the broadcasters using
-        // the manager and gives the channels of the broadcaster from central context to the newly resolved broadcasters in tenant context.
+        // Make BroadcastManager resolve to TenancyBroadcastManager. The manager:
+        // - resolves fresh broadcasters so that the updated (tenant) broadcasting config is used while broadcasting
+        // - makes the tenant broadcasters inherit the channels of the original (central) broadcaster
+        //   (since newly resolved broadcasters don't receive any channels by default, broadcasting on
+        //   channels registered in central context, e.g. in routes/channels.php, would otherwise not
+        //   work with the tenant broadcasters)
         $this->app->extend(BroadcastManager::class, function (BroadcastManager $broadcastManager) {
             $originalCustomCreators = invade($broadcastManager)->customCreators;
             $tenantBroadcastManager = new TenancyBroadcastManager($this->app);
 
-            // TenancyBroadcastManager inherits the custom driver creators registered in the central context so that
-            // custom drivers work in tenant context without having to re-register the creators manually.
+            // Make TenancyBroadcastManager inherit the custom driver creators registered in the central context
+            // so that custom drivers work in tenant context without having to re-register the creators manually.
             foreach ($originalCustomCreators as $driver => $closure) {
                 $tenantBroadcastManager->extend($driver, $closure);
             }
@@ -105,8 +110,8 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
 
     public function revert(): void
     {
-        // Change the BroadcastManager and Broadcaster singletons back to what they were before initializing tenancy
-        $this->app->singleton(BroadcastManager::class, fn (Application $app) => $this->originalBroadcastManager);
+        // Revert the bound BroadcastManager and Broadcaster singletons back to their original state
+        $this->app->singleton(BroadcastManager::class, fn (Application $app): ?BroadcastManager => $this->originalBroadcastManager);
         $this->app->singleton(Broadcaster::class, fn (Application $app) => $this->originalBroadcaster);
 
         // Clear the resolved Broadcast facade instance so that it gets re-resolved as the central BroadcastManager

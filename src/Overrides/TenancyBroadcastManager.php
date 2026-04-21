@@ -10,10 +10,11 @@ use Illuminate\Contracts\Broadcasting\Broadcaster as BroadcasterContract;
 
 /**
  * BroadcastManager override that always re-resolves the broadcasters in static::$tenantBroadcasters
- * when attempting to retrieve them and passes the channels of the original (central) broadcaster
+ * when attempting to retrieve them so that they use the updated tenant-specific config
+ * and passes the channels of the original (central) broadcaster
  * to the newly resolved (tenant) broadcasters.
  *
- * Affects calls that use app(BroadcastManager::class)->get().
+ * Affects calls that use BroadcastManager's get() method.
  *
  * @see Stancl\Tenancy\Bootstrappers\BroadcastingConfigBootstrapper
  */
@@ -49,7 +50,7 @@ class TenancyBroadcastManager extends BroadcastManager
             // Give the channels of the original (central) broadcaster to the newly resolved one.
             //
             // Broadcasters only have to implement the Illuminate\Contracts\Broadcasting\Broadcaster contract
-            // which doesn't require the channels property, so passing the channels is only needed for
+            // which doesn't require the channels property, so we only pass the channels to
             // Illuminate\Broadcasting\Broadcasters\Broadcaster instances (= all the default broadcasters, e.g. PusherBroadcaster).
             if ($originalBroadcaster instanceof Broadcaster && $newBroadcaster instanceof Broadcaster) {
                 $this->passChannelsFromOriginalBroadcaster($originalBroadcaster, $newBroadcaster);
