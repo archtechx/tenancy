@@ -191,7 +191,7 @@ test('stopImpersonating can keep the user authenticated', function() {
         ->assertSee('You are logged in as Joe');
 });
 
-test('stopImpersonating logs out the user from tenancy_impersonation_guard stored in session', function() {
+test('stopImpersonating logs out the user from the impersonation guard stored in session', function() {
     Route::middleware(InitializeTenancyByPath::class)->prefix('/{tenant}')->group(getRoutes(false));
 
     $tenant = Tenant::create([
