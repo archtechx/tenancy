@@ -82,7 +82,7 @@ class UpdateSyncedResource extends QueueableListener
 
         return $centralModel->tenants->filter(function ($model) use ($currentTenantMapping) {
             // Remove the mapping for the current tenant.
-            return ! $currentTenantMapping($model);
+            return ! $model->wasRecentlyCreated || ! $currentTenantMapping($model);
         });
     }
 
