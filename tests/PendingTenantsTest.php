@@ -115,8 +115,14 @@ test('withoutPending chained with where clauses returns correct results', functi
     $tenant = Tenant::create();
     $pendingTenant = Tenant::createPending();
 
-    expect(Tenant::withoutPending()->where('id', $tenant->id)->first()->id)->toBe($tenant->id);
-    expect(Tenant::withoutPending()->where('id', 'nonexistent-id')->first())->toBeNull();
+    $foundTenant = Tenant::withoutPending()->where('id', $tenant->id)->first();
+    expect($foundTenant)->not()->toBeNull();
+
+    // The query returned the correct tenant
+    expect($foundTenant->id)->toBe($tenant->id);
+    // No tenant with this ID exists, the query returns null
+    expect(Tenant::withoutPending()->where('id', Str::random(8) . 'nonexistent-id')->first())->toBeNull();
+    // withoutPending() correctly excludes the pending tenant from the query
     expect(Tenant::withoutPending()->where('id', $pendingTenant->id)->first())->toBeNull();
 });
 
