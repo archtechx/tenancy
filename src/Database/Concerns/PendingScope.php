@@ -58,8 +58,10 @@ class PendingScope implements Scope
     {
         $builder->macro('withoutPending', function (Builder $builder) {
             $builder->withoutGlobalScope(static::class)
-                ->whereNull($builder->getModel()->getColumnForQuery('pending_since'))
-                ->orWhereNull($builder->getModel()->getDataColumn());
+                ->where(function (Builder $builder) {
+                    $builder->whereNull($builder->getModel()->getColumnForQuery('pending_since'))
+                        ->orWhereNull($builder->getModel()->getDataColumn());
+                });
 
             return $builder;
         });
