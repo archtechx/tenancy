@@ -7,11 +7,7 @@ namespace Stancl\Tenancy\Listeners;
 use Stancl\Tenancy\Events\Contracts\TenantEvent;
 
 /**
- * Can be used to manually create framework directories in the tenant storage when storage_path() is scoped.
- *
- * Useful when using real-time facades which use the framework/cache directory.
- *
- * Generally not needed anymore as the directory is also created by the FilesystemTenancyBootstrapper.
+ * @deprecated FilesystemTenancyBootstrapper creates the path automatically when suffix_storage_path is enabled.
  */
 class CreateTenantStorage
 {
