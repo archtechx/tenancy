@@ -111,7 +111,7 @@ test('a new tenant gets created while pulling a pending tenant if the pending po
     expect(Tenant::withPending()->get()->count())->toBe(1); // All tenants
 });
 
-test('withoutPending chained with where clauses returns correct results', function() {
+test('withoutPending chained with where clauses returns correct results', function () {
     $tenant = Tenant::create();
     $pendingTenant = Tenant::createPending();
 
