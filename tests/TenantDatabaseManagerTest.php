@@ -558,7 +558,7 @@ test('newly created postgres databases use the correct charset', function (strin
 
     $databaseName = $tenant->database()->getName();
 
-    // Postgres server's default charset (utf8)
+    // Postgres server's default charset
     $serverCharset = DB::connection('pgsql')
         ->selectOne("SELECT pg_encoding_to_char(encoding) AS encoding FROM pg_database WHERE datname = 'template1'")
         ->encoding;
