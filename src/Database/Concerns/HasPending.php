@@ -49,18 +49,15 @@ trait HasPending
      */
     public static function createPending(array $attributes = []): Model&Tenant
     {
-        $tenant = null;
+        $tenant = static::make(array_merge(
+            ['pending_since' => now()->timestamp],
+            static::getPendingAttributes($attributes),
+            $attributes
+        ));
 
-        try {
-            $tenant = static::create(array_merge(static::getPendingAttributes($attributes), $attributes));
-            event(new CreatingPendingTenant($tenant));
-        } finally {
-            // Update the pending_since value only after the tenant is created so it's
-            // not marked as pending until after migrations, seeders, etc are run.
-            $tenant?->update([
-                'pending_since' => now()->timestamp,
-            ]);
-        }
+        event(new CreatingPendingTenant($tenant));
+
+        $tenant->save();
 
         event(new PendingTenantCreated($tenant));
 
