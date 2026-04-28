@@ -16,10 +16,25 @@ use Stancl\Tenancy\Events\PendingTenantPulled;
 use Stancl\Tenancy\Events\PullingPendingTenant;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use function Stancl\Tenancy\Tests\pest;
+use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\JobPipeline\JobPipeline;
+use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Jobs\MigrateDatabase;
+use Stancl\Tenancy\Jobs\SeedDatabase;
+use Stancl\Tenancy\Tests\Etc\User;
+use Stancl\Tenancy\Tests\Etc\TestSeeder;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Events\TenancyEnded;
+use Stancl\Tenancy\Listeners\RevertToCentralContext;
 
 beforeEach($cleanup = function () {
     Tenant::$extraCustomColumns = [];
     Tenant::$getPendingAttributesUsing = null;
+
+    MigrateDatabase::$includePending = true;
+    SeedDatabase::$includePending = true;
 });
 
 afterEach($cleanup);
@@ -154,8 +169,8 @@ test('pending events are dispatched', function () {
     Event::assertDispatched(PendingTenantPulled::class);
 });
 
-test('commands do not run for pending tenants if tenancy.pending.include_in_queries is false and the with pending option does not get passed', function() {
-    config(['tenancy.pending.include_in_queries' => false]);
+test('commands include tenants based on the include_in_queries config when --with-pending is not passed', function (bool $includeInQueries) {
+    config(['tenancy.pending.include_in_queries' => $includeInQueries]);
 
     $tenants = collect([
         Tenant::create(),
@@ -164,40 +179,21 @@ test('commands do not run for pending tenants if tenancy.pending.include_in_quer
         Tenant::createPending(),
     ]);
 
-    pest()->artisan('tenants:migrate --with-pending');
+    $command = pest()->artisan("tenants:run 'bar testing testing@test.test password foo'");
 
-    $artisan = pest()->artisan("tenants:run 'foo foo --b=bar --c=xyz'");
+    $tenants->each(function ($tenant) use ($command, $includeInQueries) {
+        if ($tenant->pending() && ! $includeInQueries) {
+            $command->doesntExpectOutputToContain("Tenant: {$tenant->getTenantKey()}");
+        } else {
+            $command->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}");
+        }
+    });
 
-    $pendingTenants = $tenants->filter->pending();
-    $readyTenants = $tenants->reject->pending();
+    $command->assertSuccessful();
+})->with([true, false]);
 
-    $pendingTenants->each(fn ($tenant) => $artisan->doesntExpectOutputToContain("Tenant: {$tenant->getTenantKey()}"));
-    $readyTenants->each(fn ($tenant) => $artisan->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}"));
-
-    $artisan->assertExitCode(0);
-});
-
-test('commands run for pending tenants too if tenancy.pending.include_in_queries is true', function() {
-    config(['tenancy.pending.include_in_queries' => true]);
-
-    $tenants = collect([
-        Tenant::create(),
-        Tenant::create(),
-        Tenant::createPending(),
-        Tenant::createPending(),
-    ]);
-
-    pest()->artisan('tenants:migrate --with-pending');
-
-    $artisan = pest()->artisan("tenants:run 'foo foo --b=bar --c=xyz'");
-
-    $tenants->each(fn ($tenant) => $artisan->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}"));
-
-    $artisan->assertExitCode(0);
-});
-
-test('commands run for pending tenants too if the with pending option is passed', function() {
-    config(['tenancy.pending.include_in_queries' => false]);
+test('commands include pending tenants when truthy --with-pending is passed', function (bool $includeInQueries) {
+    config(['tenancy.pending.include_in_queries' => $includeInQueries]);
 
     $tenants = collect([
         Tenant::create(),
@@ -206,14 +202,49 @@ test('commands run for pending tenants too if the with pending option is passed'
         Tenant::createPending(),
     ]);
 
-    pest()->artisan('tenants:migrate --with-pending');
+    foreach ([
+        '--with-pending',
+        '--with-pending=true',
+        '--with-pending=1'
+    ] as $option) {
+        $command = pest()->artisan("tenants:run 'bar testing testing@test.test password foo' {$option}");
 
-    $artisan = pest()->artisan("tenants:run 'foo foo --b=bar --c=xyz' --with-pending");
+        // Pending tenants are included regardless of tenancy.pending.include_in_queries
+        $tenants->each(fn ($tenant) => $command->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}"));
 
-    $tenants->each(fn ($tenant) => $artisan->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}"));
+        $command->assertSuccessful();
+    }
+})->with([true, false]);
 
-    $artisan->assertExitCode(0);
-});
+test('commands exclude pending tenants when falsy --with-pending is passed', function (bool $includeInQueries) {
+    config(['tenancy.pending.include_in_queries' => $includeInQueries]);
+
+    $tenants = collect([
+        Tenant::create(),
+        Tenant::create(),
+        Tenant::createPending(),
+        Tenant::createPending(),
+    ]);
+
+    foreach ([
+        '--with-pending=false',
+        '--with-pending=0',
+        '--with-pending=foo' // Invalid values are treated as false
+    ] as $option) {
+        $command = pest()->artisan("tenants:run 'bar testing testing@test.test password foo' {$option}");
+
+        $tenants->each(function ($tenant) use ($command) {
+            if ($tenant->pending()) {
+                // Pending tenants are excluded regardless of tenancy.pending.include_in_queries
+                $command->doesntExpectOutputToContain("Tenant: {$tenant->getTenantKey()}");
+            } else {
+                $command->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}");
+            }
+        });
+
+        $command->assertSuccessful();
+    }
+})->with([true, false]);
 
 test('pending tenants can have default attributes for non-nullable columns', function (bool $withPendingAttributes) {
     Schema::table('tenants', function (Blueprint $table) {
@@ -236,3 +267,103 @@ test('pending tenants can have default attributes for non-nullable columns', fun
     else
         expect($fn)->toThrow(QueryException::class);
 })->with([true, false]);
+
+test('pending tenant databases can be migrated using a job unless configured otherwise', function (bool $includeInQueries, bool $migrateWithPending) {
+    config([
+        'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
+        'tenancy.pending.include_in_queries' => $includeInQueries,
+    ]);
+
+    MigrateDatabase::$includePending = $migrateWithPending;
+
+    Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+    Event::listen(TenantCreated::class, JobPipeline::make([
+        CreateDatabase::class,
+        MigrateDatabase::class,
+    ])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    $pendingTenant = Tenant::createPending();
+
+    expect(Schema::hasTable('users'))->toBeFalse();
+
+    tenancy()->initialize($pendingTenant);
+
+    // MigrateDatabase includes/excludes pending tenants based on its $includePending property,
+    // regardless of the tenancy.pending.include_in_queries config.
+    expect(Schema::hasTable('users'))->toBe($migrateWithPending);
+})->with([
+    'include pending in queries' => [true],
+    'exclude pending from queries' => [false],
+])->with([
+    'migrate with pending' => [true],
+    'migrate without pending' => [false],
+]);
+
+test('pending tenant databases can be seeded using a job unless configured otherwise', function ($includeInQueries, $seedWithPending) {
+    config([
+        'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
+        'tenancy.pending.include_in_queries' => $includeInQueries,
+        'tenancy.seeder_parameters.--class' => TestSeeder::class,
+    ]);
+
+    MigrateDatabase::$includePending = true;
+    SeedDatabase::$includePending = $seedWithPending;
+
+    Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+    Event::listen(TenantCreated::class, JobPipeline::make([
+        CreateDatabase::class,
+        MigrateDatabase::class,
+        SeedDatabase::class,
+    ])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    $pendingTenant = Tenant::createPending();
+
+    tenancy()->initialize($pendingTenant);
+
+    // SeedDatabase includes/excludes pending tenants based on its $includePending property,
+    // regardless of the tenancy.pending.include_in_queries config.
+    expect(User::where('email', 'seeded@user')->exists())->toBe($seedWithPending);
+})->with([
+    'include pending in queries' => [true],
+    'exclude pending from queries' => [false],
+])->with([
+    'seed with pending' => [true],
+    'seed without pending' => [false],
+]);
+
+test('jobs that run before tenants get fully created recognize pending tenants', function () {
+    config([
+        'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
+    ]);
+
+    Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+    Event::listen(TenantCreated::class, JobPipeline::make([
+        CreateDatabase::class,
+        PendingTenantJob::class,
+    ])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    Tenant::createPending();
+
+    expect(app('tenant_is_pending'))->toBeTrue();
+});
+
+class PendingTenantJob
+{
+    public function __construct(
+        public Tenant $tenant,
+    ) {}
+
+    public function handle()
+    {
+        app()->instance('tenant_is_pending', $this->tenant->pending());
+    }
+}
