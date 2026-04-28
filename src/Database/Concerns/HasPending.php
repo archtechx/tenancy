@@ -62,9 +62,9 @@ trait HasPending
     public static function createPending(array $attributes = []): Model&Tenant
     {
         return static::create(array_merge(
-            ['pending_since' => now()->timestamp],
             static::getPendingAttributes($attributes),
-            $attributes
+            $attributes,
+            ['pending_since' => now()->timestamp],
         ));
     }
 
