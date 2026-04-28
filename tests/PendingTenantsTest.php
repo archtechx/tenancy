@@ -154,8 +154,8 @@ test('pending events are dispatched', function () {
     Event::assertDispatched(PendingTenantPulled::class);
 });
 
-test('commands do not run for pending tenants if tenancy.pending.include_in_queries is false and the with pending option does not get passed', function() {
-    config(['tenancy.pending.include_in_queries' => false]);
+test('commands include tenants based on the include_in_queries config when --with-pending is not passed', function (bool $includeInQueries) {
+    config(['tenancy.pending.include_in_queries' => $includeInQueries]);
 
     $tenants = collect([
         Tenant::create(),
@@ -164,40 +164,21 @@ test('commands do not run for pending tenants if tenancy.pending.include_in_quer
         Tenant::createPending(),
     ]);
 
-    pest()->artisan('tenants:migrate --with-pending');
+    $command = pest()->artisan("tenants:run 'bar testing testing@test.test password foo'");
 
-    $artisan = pest()->artisan("tenants:run 'foo foo --b=bar --c=xyz'");
+    $tenants->each(function ($tenant) use ($command, $includeInQueries) {
+        if ($tenant->pending() && ! $includeInQueries) {
+            $command->doesntExpectOutputToContain("Tenant: {$tenant->getTenantKey()}");
+        } else {
+            $command->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}");
+        }
+    });
 
-    $pendingTenants = $tenants->filter->pending();
-    $readyTenants = $tenants->reject->pending();
+    $command->assertSuccessful();
+})->with([true, false]);
 
-    $pendingTenants->each(fn ($tenant) => $artisan->doesntExpectOutputToContain("Tenant: {$tenant->getTenantKey()}"));
-    $readyTenants->each(fn ($tenant) => $artisan->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}"));
-
-    $artisan->assertExitCode(0);
-});
-
-test('commands run for pending tenants too if tenancy.pending.include_in_queries is true', function() {
-    config(['tenancy.pending.include_in_queries' => true]);
-
-    $tenants = collect([
-        Tenant::create(),
-        Tenant::create(),
-        Tenant::createPending(),
-        Tenant::createPending(),
-    ]);
-
-    pest()->artisan('tenants:migrate --with-pending');
-
-    $artisan = pest()->artisan("tenants:run 'foo foo --b=bar --c=xyz'");
-
-    $tenants->each(fn ($tenant) => $artisan->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}"));
-
-    $artisan->assertExitCode(0);
-});
-
-test('commands run for pending tenants too if the with pending option is passed', function() {
-    config(['tenancy.pending.include_in_queries' => false]);
+test('commands include pending tenants when truthy --with-pending is passed', function (bool $includeInQueries) {
+    config(['tenancy.pending.include_in_queries' => $includeInQueries]);
 
     $tenants = collect([
         Tenant::create(),
@@ -206,14 +187,41 @@ test('commands run for pending tenants too if the with pending option is passed'
         Tenant::createPending(),
     ]);
 
-    pest()->artisan('tenants:migrate --with-pending');
+    foreach (['--with-pending', '--with-pending=true', '--with-pending=1'] as $option) {
+        $command = pest()->artisan("tenants:run 'bar testing testing@test.test password foo' {$option}");
 
-    $artisan = pest()->artisan("tenants:run 'foo foo --b=bar --c=xyz' --with-pending");
+        // Pending tenants are included regardless of tenancy.pending.include_in_queries
+        $tenants->each(fn ($tenant) => $command->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}"));
 
-    $tenants->each(fn ($tenant) => $artisan->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}"));
+        $command->assertSuccessful();
+    }
+})->with([true, false]);
 
-    $artisan->assertExitCode(0);
-});
+test('commands exclude pending tenants when falsy --with-pending is passed', function (bool $includeInQueries) {
+    config(['tenancy.pending.include_in_queries' => $includeInQueries]);
+
+    $tenants = collect([
+        Tenant::create(),
+        Tenant::create(),
+        Tenant::createPending(),
+        Tenant::createPending(),
+    ]);
+
+    foreach (['--with-pending=false', '--with-pending=0'] as $option) {
+        $command = pest()->artisan("tenants:run 'bar testing testing@test.test password foo' {$option}");
+
+        $tenants->each(function ($tenant) use ($command) {
+            if ($tenant->pending()) {
+                // Pending tenants are excluded regardless of tenancy.pending.include_in_queries
+                $command->doesntExpectOutputToContain("Tenant: {$tenant->getTenantKey()}");
+            } else {
+                $command->expectsOutputToContain("Tenant: {$tenant->getTenantKey()}");
+            }
+        });
+
+        $command->assertSuccessful();
+    }
+})->with([true, false]);
 
 test('pending tenants can have default attributes for non-nullable columns', function (bool $withPendingAttributes) {
     Schema::table('tenants', function (Blueprint $table) {
