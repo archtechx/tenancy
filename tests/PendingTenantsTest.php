@@ -16,10 +16,25 @@ use Stancl\Tenancy\Events\PendingTenantPulled;
 use Stancl\Tenancy\Events\PullingPendingTenant;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use function Stancl\Tenancy\Tests\pest;
+use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\JobPipeline\JobPipeline;
+use Stancl\Tenancy\Jobs\CreateDatabase;
+use Stancl\Tenancy\Jobs\MigrateDatabase;
+use Stancl\Tenancy\Jobs\SeedDatabase;
+use Stancl\Tenancy\Tests\Etc\User;
+use Stancl\Tenancy\Tests\Etc\TestSeeder;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Events\TenancyInitialized;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Events\TenancyEnded;
+use Stancl\Tenancy\Listeners\RevertToCentralContext;
 
 beforeEach($cleanup = function () {
     Tenant::$extraCustomColumns = [];
     Tenant::$getPendingAttributesUsing = null;
+
+    MigrateDatabase::$includePending = true;
+    SeedDatabase::$includePending = true;
 });
 
 afterEach($cleanup);
@@ -244,3 +259,72 @@ test('pending tenants can have default attributes for non-nullable columns', fun
     else
         expect($fn)->toThrow(QueryException::class);
 })->with([true, false]);
+
+test('pending tenant databases can be migrated using a job unless configured otherwise', function (bool $includeInQueries, bool $migrateWithPending) {
+    config([
+        'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
+        'tenancy.pending.include_in_queries' => $includeInQueries,
+    ]);
+
+    MigrateDatabase::$includePending = $migrateWithPending;
+
+    Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+    Event::listen(TenantCreated::class, JobPipeline::make([
+        CreateDatabase::class,
+        MigrateDatabase::class,
+    ])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    $pendingTenant = Tenant::createPending();
+
+    expect(Schema::hasTable('users'))->toBeFalse();
+
+    tenancy()->initialize($pendingTenant);
+
+    // MigrateDatabase includes/excludes pending tenants based on its $includePending property,
+    // regardless of the tenancy.pending.include_in_queries config.
+    expect(Schema::hasTable('users'))->toBe($migrateWithPending);
+})->with([
+    'include pending in queries' => [true],
+    'exclude pending from queries' => [false],
+])->with([
+    'migrate with pending' => [true],
+    'migrate without pending' => [false],
+]);
+
+test('pending tenant databases can be seeded using a job unless configured otherwise', function ($includeInQueries, $seedWithPending) {
+    config([
+        'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
+        'tenancy.pending.include_in_queries' => $includeInQueries,
+        'tenancy.seeder_parameters.--class' => TestSeeder::class,
+    ]);
+
+    MigrateDatabase::$includePending = true;
+    SeedDatabase::$includePending = $seedWithPending;
+
+    Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+    Event::listen(TenantCreated::class, JobPipeline::make([
+        CreateDatabase::class,
+        MigrateDatabase::class,
+        SeedDatabase::class,
+    ])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    $pendingTenant = Tenant::createPending();
+
+    tenancy()->initialize($pendingTenant);
+
+    // SeedDatabase includes/excludes pending tenants based on its $includePending property,
+    // regardless of the tenancy.pending.include_in_queries config.
+    expect(User::where('email', 'seeded@user')->exists())->toBe($seedWithPending);
+})->with([
+    'include pending in queries' => [true],
+    'exclude pending from queries' => [false],
+])->with([
+    'seed with pending' => [true],
+    'seed without pending' => [false],
+]);
