@@ -336,3 +336,34 @@ test('pending tenant databases can be seeded using a job unless configured other
     'seed with pending' => [true],
     'seed without pending' => [false],
 ]);
+
+test('jobs that run before tenants get fully created recognize pending tenants', function () {
+    config([
+        'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
+    ]);
+
+    Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+    Event::listen(TenantCreated::class, JobPipeline::make([
+        CreateDatabase::class,
+        PendingTenantJob::class,
+    ])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    Tenant::createPending();
+
+    expect(app('tenant_is_pending'))->toBeTrue();
+});
+
+class PendingTenantJob
+{
+    public function __construct(
+        public Tenant $tenant,
+    ) {}
+
+    public function handle()
+    {
+        app()->instance('tenant_is_pending', $this->tenant->pending());
+    }
+}
