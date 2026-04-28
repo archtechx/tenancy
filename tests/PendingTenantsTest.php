@@ -202,7 +202,11 @@ test('commands include pending tenants when truthy --with-pending is passed', fu
         Tenant::createPending(),
     ]);
 
-    foreach (['--with-pending', '--with-pending=true', '--with-pending=1'] as $option) {
+    foreach ([
+        '--with-pending',
+        '--with-pending=true',
+        '--with-pending=1'
+    ] as $option) {
         $command = pest()->artisan("tenants:run 'bar testing testing@test.test password foo' {$option}");
 
         // Pending tenants are included regardless of tenancy.pending.include_in_queries
@@ -222,7 +226,11 @@ test('commands exclude pending tenants when falsy --with-pending is passed', fun
         Tenant::createPending(),
     ]);
 
-    foreach (['--with-pending=false', '--with-pending=0'] as $option) {
+    foreach ([
+        '--with-pending=false',
+        '--with-pending=0',
+        '--with-pending=foo' // Invalid values are treated as false
+    ] as $option) {
         $command = pest()->artisan("tenants:run 'bar testing testing@test.test password foo' {$option}");
 
         $tenants->each(function ($tenant) use ($command) {
