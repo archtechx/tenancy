@@ -25,8 +25,8 @@ class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager impl
         $username = $databaseConfig->getUsername();
         $password = $databaseConfig->getPassword();
 
-        //todo@validation password
         $this->validateParameter([$database, $username]);
+        $this->validatePassword($password);
 
         $this->connection()->statement("CREATE USER `{$username}`@`%` IDENTIFIED BY '{$password}'");
 

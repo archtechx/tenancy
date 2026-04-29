@@ -28,8 +28,8 @@ trait ManagesPostgresUsers
         $username = $databaseConfig->getUsername();
         $password = $databaseConfig->getPassword();
 
-        // todo@validation password
         $this->validateParameter($username);
+        $this->validatePassword($password);
 
         $createUser = ! $this->userExists($username);
 
