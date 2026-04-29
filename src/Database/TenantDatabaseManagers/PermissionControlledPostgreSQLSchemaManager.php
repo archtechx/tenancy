@@ -36,7 +36,7 @@ class PermissionControlledPostgreSQLSchemaManager extends PostgreSQLSchemaManage
             $tableName = $table->table_name;
 
             /** @var string $primaryKey */
-            $primaryKey = $this->connection()->selectOne(<<<SQL
+            $primaryKey = $this->connection()->selectOne(<<<'SQL'
                 SELECT column_name
                 FROM information_schema.key_column_usage
                 WHERE table_name = ?

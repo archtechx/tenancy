@@ -24,6 +24,6 @@ class MicrosoftSQLDatabaseManager extends TenantDatabaseManager
 
     public function databaseExists(string $name): bool
     {
-        return (bool) $this->connection()->select("SELECT name FROM master.sys.databases WHERE name = ?", [$name]);
+        return (bool) $this->connection()->select('SELECT name FROM master.sys.databases WHERE name = ?', [$name]);
     }
 }

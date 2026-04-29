@@ -47,7 +47,7 @@ class PermissionControlledMicrosoftSQLServerDatabaseManager extends MicrosoftSQL
 
     public function userExists(string $username): bool
     {
-        return (bool) $this->connection()->select("SELECT sp.name as username FROM sys.server_principals sp WHERE sp.name = ?", [$username]);
+        return (bool) $this->connection()->select('SELECT sp.name as username FROM sys.server_principals sp WHERE sp.name = ?', [$username]);
     }
 
     public function makeConnectionConfig(array $baseConfig, string $databaseName): array
