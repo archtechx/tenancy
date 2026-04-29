@@ -27,7 +27,7 @@ class PermissionControlledPostgreSQLSchemaManager extends PostgreSQLSchemaManage
         $this->connection()->statement("GRANT USAGE, CREATE ON SCHEMA \"{$schema}\" TO \"{$username}\"");
         $this->connection()->statement("GRANT USAGE ON ALL SEQUENCES IN SCHEMA \"{$schema}\" TO \"{$username}\"");
 
-        $tables = $this->connection()->select("SELECT table_name FROM information_schema.tables WHERE table_schema = '{$schema}' AND table_type = 'BASE TABLE'");
+        $tables = $this->connection()->select("SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_type = 'BASE TABLE'", [$schema]);
 
         // Grant permissions to any existing tables. This is used with RLS
         foreach ($tables as $table) {
@@ -37,9 +37,9 @@ class PermissionControlledPostgreSQLSchemaManager extends PostgreSQLSchemaManage
             $primaryKey = $this->connection()->selectOne(<<<SQL
                 SELECT column_name
                 FROM information_schema.key_column_usage
-                WHERE table_name = '{$tableName}'
+                WHERE table_name = ?
                 AND constraint_name LIKE '%_pkey'
-            SQL)->column_name;
+            SQL, [$tableName])->column_name;
 
             // Grant all permissions for all existing tables
             $this->connection()->statement("GRANT ALL ON \"{$schema}\".\"{$tableName}\" TO \"{$username}\"");

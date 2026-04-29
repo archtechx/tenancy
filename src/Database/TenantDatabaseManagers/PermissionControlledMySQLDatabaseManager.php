@@ -53,6 +53,6 @@ class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager impl
 
     public function userExists(string $username): bool
     {
-        return (bool) $this->connection()->select("SELECT count(*) FROM mysql.user WHERE user = '$username'")[0]->{'count(*)'};
+        return (bool) $this->connection()->select("SELECT count(*) FROM mysql.user WHERE user = ?", [$username])[0]->{'count(*)'};
     }
 }

@@ -77,6 +77,6 @@ trait ManagesPostgresUsers
 
     public function userExists(string $username): bool
     {
-        return (bool) $this->connection()->select("SELECT usename FROM pg_user WHERE usename = '{$username}'");
+        return (bool) $this->connection()->select("SELECT usename FROM pg_user WHERE usename = ?", [$username]);
     }
 }

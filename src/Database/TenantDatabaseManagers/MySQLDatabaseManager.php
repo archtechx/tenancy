@@ -24,6 +24,6 @@ class MySQLDatabaseManager extends TenantDatabaseManager
 
     public function databaseExists(string $name): bool
     {
-        return (bool) $this->connection()->select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$name'");
+        return (bool) $this->connection()->select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ?", [$name]);
     }
 }
