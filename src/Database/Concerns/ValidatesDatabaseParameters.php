@@ -6,9 +6,7 @@ namespace Stancl\Tenancy\Database\Concerns;
 
 use InvalidArgumentException;
 
-// todo@validation this trait's name might be a bit misleading
-// it suggests validating parameters for SQL statements, but it is also used in SQLiteDatabaseManager to validate the database file name
-trait ValidatesSqlParameters
+trait ValidatesDatabaseParameters
 {
     /**
      * Characters allowed in the parameters.

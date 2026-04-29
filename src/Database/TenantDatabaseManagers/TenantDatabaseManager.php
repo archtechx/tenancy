@@ -6,13 +6,13 @@ namespace Stancl\Tenancy\Database\TenantDatabaseManagers;
 
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
-use Stancl\Tenancy\Database\Concerns\ValidatesSqlParameters;
+use Stancl\Tenancy\Database\Concerns\ValidatesDatabaseParameters;
 use Stancl\Tenancy\Database\Contracts\StatefulTenantDatabaseManager;
 use Stancl\Tenancy\Database\Exceptions\NoConnectionSetException;
 
 abstract class TenantDatabaseManager implements StatefulTenantDatabaseManager
 {
-    use ValidatesSqlParameters;
+    use ValidatesDatabaseParameters;
 
     /** The database connection to the server. */
     protected string $connection;

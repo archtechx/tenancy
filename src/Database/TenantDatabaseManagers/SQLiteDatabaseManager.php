@@ -7,14 +7,14 @@ namespace Stancl\Tenancy\Database\TenantDatabaseManagers;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use PDO;
-use Stancl\Tenancy\Database\Concerns\ValidatesSqlParameters;
+use Stancl\Tenancy\Database\Concerns\ValidatesDatabaseParameters;
 use Stancl\Tenancy\Database\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Throwable;
 
 class SQLiteDatabaseManager implements TenantDatabaseManager
 {
-    use ValidatesSqlParameters;
+    use ValidatesDatabaseParameters;
 
     /**
      * SQLite database directory path.
