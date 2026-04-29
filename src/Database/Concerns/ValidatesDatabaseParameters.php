@@ -6,6 +6,15 @@ namespace Stancl\Tenancy\Database\Concerns;
 
 use InvalidArgumentException;
 
+/**
+ * Provides methods to validate database parameters (e.g. database names, usernames, passwords)
+ * before using them in SQL statements (or in file paths in the case of SQLiteDatabaseManager).
+ *
+ * Used where parameters can be provided by users, and where parameter binding isn't possible.
+ *
+ * @mixin \Stancl\Tenancy\Database\TenantDatabaseManagers\TenantDatabaseManager
+ * @mixin \Stancl\Tenancy\Database\TenantDatabaseManagers\SQLiteDatabaseManager
+ */
 trait ValidatesDatabaseParameters
 {
     /**
@@ -30,8 +39,9 @@ trait ValidatesDatabaseParameters
     }
 
     /**
-     * Validate that parameters (database names, usernames, etc.)
-     * only contain allowed characters before used in SQL statements.
+     * Ensure that parameters (database names, usernames, etc.)
+     * only contain allowed characters before used in SQL statements
+     * (or file names in the case of SQLiteDatabaseManager).
      *
      * By default, only the characters in static::parameterAllowlist() are allowed.
      *
@@ -60,9 +70,9 @@ trait ValidatesDatabaseParameters
     }
 
     /**
-     * Validate that a password only contains allowed characters before used in SQL statements.
+     * Ensure password only contains allowed characters before used in SQL statements.
      *
-     * Used as a shorthand for validateParameter() with the less strict allowlist.
+     * Used as a shorthand for calling validateParameter() with the less strict allowlist.
      *
      * @throws InvalidArgumentException
      */
