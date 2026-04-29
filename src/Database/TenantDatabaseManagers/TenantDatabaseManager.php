@@ -6,14 +6,13 @@ namespace Stancl\Tenancy\Database\TenantDatabaseManagers;
 
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
-use InvalidArgumentException;
+use Stancl\Tenancy\Database\Concerns\ValidatesSqlParameters;
 use Stancl\Tenancy\Database\Contracts\StatefulTenantDatabaseManager;
 use Stancl\Tenancy\Database\Exceptions\NoConnectionSetException;
 
 abstract class TenantDatabaseManager implements StatefulTenantDatabaseManager
 {
-    /** Characters allowed in SQL identifiers (database names, usernames, schema names, etc.). */
-    public static string $allowlist = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-';
+    use ValidatesSqlParameters;
 
     /** The database connection to the server. */
     protected string $connection;
@@ -37,24 +36,5 @@ abstract class TenantDatabaseManager implements StatefulTenantDatabaseManager
         $baseConfig['database'] = $databaseName;
 
         return $baseConfig;
-    }
-
-    /**
-     * Validate that parameters (database names, usernames, etc.)
-     * contain only allowed characters before used in SQL statements.
-     *
-     * @throws InvalidArgumentException
-     */
-    protected function validateParameter(string|array $parameters): string|array
-    {
-        foreach ((array) $parameters as $parameter) {
-            foreach (str_split($parameter) as $char) {
-                if (! str_contains(static::$allowlist, $char)) {
-                    throw new InvalidArgumentException("Invalid character '{$char}' in SQL parameter: {$parameter}");
-                }
-            }
-        }
-
-        return $parameters;
     }
 }
