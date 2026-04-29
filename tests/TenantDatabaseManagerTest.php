@@ -17,6 +17,7 @@ use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Database\Contracts\ManagesDatabaseUsers;
 use Stancl\Tenancy\Database\Contracts\StatefulTenantDatabaseManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\SQLiteDatabaseManager;
@@ -538,6 +539,78 @@ test('partial tenant connection templates get merged into the central connection
     expect($manager->connection()->getConfig('host'))->toBe('mysql2');
     expect($manager->connection()->getConfig('url'))->toBeNull();
 });
+
+test('database managers validate sql parameters before using them in statements', function ($driver, $databaseManager) {
+    // todo@validation passwords. also sqlite?
+    if ($driver === 'sqlite') {
+        $this->markTestSkipped('SQLiteDatabaseManager does not use SQL statements.');
+    }
+
+    config()->set([
+        "tenancy.database.template_tenant_connection" => $driver,
+    ]);
+
+    $manager = app($databaseManager);
+
+    if ($manager instanceof StatefulTenantDatabaseManager) {
+        $manager->setConnection($driver);
+    }
+
+    if (! $manager instanceof ManagesDatabaseUsers) {
+        // Test that the createDatabase() and deleteDatabase() methods validate the database name.
+        // Only test non-permission controlled managers here since permission controlled managers
+        // override these methods to e.g. delete users before calling parent::deleteDatabase(),
+        // and with invalid DB name, the user deletion will already fail before we even get to actual
+        // deleteDatabase() logic.
+        $tenant = new Tenant([
+            'tenancy_db_name' => $invalidDatabaseName = "\"database_with_quotes\"",
+            'tenancy_db_username' => 'valid-username',
+        ]);
+
+        expect(fn () => $manager->createDatabase($tenant))
+            ->toThrow(InvalidArgumentException::class, $invalidDatabaseName);
+
+        expect(fn () => $manager->deleteDatabase($tenant))
+            ->toThrow(InvalidArgumentException::class, $invalidDatabaseName);
+    }
+
+    if ($manager instanceof ManagesDatabaseUsers) {
+        // Valid database name but invalid username
+        // to ensure that createUser() and deleteUser() validate the username.
+        $tenantWithInvalidUsername = new Tenant([
+            'tenancy_db_name' => 'valid_database_name890',
+            'tenancy_db_username' => $invalidUsername = "username with spaces",
+        ]);
+
+        expect(fn () => $manager->createUser($tenantWithInvalidUsername->database()))
+            ->toThrow(InvalidArgumentException::class, $invalidUsername);
+
+        expect(fn () => $manager->deleteUser($tenantWithInvalidUsername->database()))
+            ->toThrow(InvalidArgumentException::class, $invalidUsername);
+
+        // Valid username but invalid database name
+        // to ensure that createUser() validates the database name.
+        //
+        // grantPermissions() called in createUser() also validates DB and user names,
+        // but with the current implementation, if these parameters are
+        // invalid in createUser(), grantPermissions() will never be reached.
+        $tenantWithInvalidDatabase = new Tenant([
+            'tenancy_db_name' => $invalidDatabaseName = 'db/with/slashes',
+            'tenancy_db_username' => 'valid_USERNAME',
+        ]);
+
+        expect(fn () => $manager->createUser($tenantWithInvalidDatabase->database()))
+            ->toThrow(InvalidArgumentException::class, $invalidDatabaseName);
+    }
+
+    $validTenant = new Tenant([
+        'tenancy_db_name' => 'VALID-db-name456',
+        'tenancy_db_username' => 'valid_USERNAME123',
+    ]);
+
+    expect(fn () => $manager->createDatabase($validTenant))->not()->toThrow(InvalidArgumentException::class);
+    expect(fn () => $manager->deleteDatabase($validTenant))->not()->toThrow(InvalidArgumentException::class);
+})->with('database_managers');
 
 // Datasets
 dataset('database_managers', [
