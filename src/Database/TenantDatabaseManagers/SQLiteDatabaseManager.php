@@ -7,12 +7,15 @@ namespace Stancl\Tenancy\Database\TenantDatabaseManagers;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use PDO;
+use Stancl\Tenancy\Database\Concerns\ValidatesSqlParameters;
 use Stancl\Tenancy\Database\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Throwable;
 
 class SQLiteDatabaseManager implements TenantDatabaseManager
 {
+    use ValidatesSqlParameters;
+
     /**
      * SQLite database directory path.
      *
@@ -57,6 +60,11 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
      */
     public static Closure|null $closeInMemoryConnectionUsing = null;
 
+    protected static function parameterAllowlist(): string
+    {
+        return 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.';
+    }
+
     public function createDatabase(TenantWithDatabase $tenant): bool
     {
         /** @var TenantWithDatabase&Model $tenant */
@@ -84,6 +92,8 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
             return true;
         }
 
+        $this->validateParameter($name);
+
         return file_put_contents($this->getPath($name), '') !== false;
     }
 
@@ -98,6 +108,8 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
 
             return true;
         }
+
+        $this->validateParameter($name);
 
         $path = $this->getPath($name);
 

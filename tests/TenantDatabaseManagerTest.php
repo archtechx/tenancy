@@ -541,10 +541,7 @@ test('partial tenant connection templates get merged into the central connection
 });
 
 test('database managers validate sql parameters before using them in statements', function ($driver, $databaseManager) {
-    // todo@validation passwords. also sqlite?
-    if ($driver === 'sqlite') {
-        $this->markTestSkipped('SQLiteDatabaseManager does not use SQL statements.');
-    }
+    // todo@validation passwords
 
     config()->set([
         "tenancy.database.template_tenant_connection" => $driver,
