@@ -20,6 +20,8 @@ class PermissionControlledPostgreSQLDatabaseManager extends PostgreSQLDatabaseMa
         $username = $databaseConfig->getUsername();
         $schema = $databaseConfig->connection()['search_path'];
 
+        $this->validateParameter([$database, $username, $schema]);
+
         // Host config
         $connectionName = $this->connection()->getConfig('name');
         $centralDatabase = $this->connection()->getConfig('database');

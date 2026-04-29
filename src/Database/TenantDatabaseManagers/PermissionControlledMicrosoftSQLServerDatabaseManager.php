@@ -24,6 +24,9 @@ class PermissionControlledMicrosoftSQLServerDatabaseManager extends MicrosoftSQL
         $username = $databaseConfig->getUsername();
         $password = $databaseConfig->getPassword();
 
+        // todo@validation password
+        $this->validateParameter([$database, $username]);
+
         // Create login
         $this->connection()->statement("CREATE LOGIN [$username] WITH PASSWORD = '$password'");
 
@@ -37,7 +40,9 @@ class PermissionControlledMicrosoftSQLServerDatabaseManager extends MicrosoftSQL
 
     public function deleteUser(DatabaseConfig $databaseConfig): bool
     {
-        return $this->connection()->statement("DROP LOGIN [{$databaseConfig->getUsername()}]");
+        $username = $this->validateParameter($databaseConfig->getUsername());
+
+        return $this->connection()->statement("DROP LOGIN [{$username}]");
     }
 
     public function userExists(string $username): bool
@@ -54,11 +59,13 @@ class PermissionControlledMicrosoftSQLServerDatabaseManager extends MicrosoftSQL
 
     public function deleteDatabase(TenantWithDatabase $tenant): bool
     {
+        $name = $this->validateParameter($tenant->database()->getName());
+
         // Close all connections to the database before deleting it
         // Set the database to SINGLE_USER mode to ensure that
         // No other connections are using the database while we're trying to delete it
         // Rollback all active transactions
-        $this->connection()->statement("ALTER DATABASE [{$tenant->database()->getName()}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;");
+        $this->connection()->statement("ALTER DATABASE [{$name}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;");
 
         return parent::deleteDatabase($tenant);
     }

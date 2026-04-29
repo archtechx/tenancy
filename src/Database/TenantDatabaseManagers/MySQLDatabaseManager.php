@@ -14,12 +14,16 @@ class MySQLDatabaseManager extends TenantDatabaseManager
         $charset = $this->connection()->getConfig('charset');
         $collation = $this->connection()->getConfig('collation');
 
+        $this->validateParameter([$database, $charset, $collation]);
+
         return $this->connection()->statement("CREATE DATABASE `{$database}` CHARACTER SET `$charset` COLLATE `$collation`");
     }
 
     public function deleteDatabase(TenantWithDatabase $tenant): bool
     {
-        return $this->connection()->statement("DROP DATABASE `{$tenant->database()->getName()}`");
+        $database = $this->validateParameter($tenant->database()->getName());
+
+        return $this->connection()->statement("DROP DATABASE `{$database}`");
     }
 
     public function databaseExists(string $name): bool

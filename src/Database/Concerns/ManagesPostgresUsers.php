@@ -28,6 +28,9 @@ trait ManagesPostgresUsers
         $username = $databaseConfig->getUsername();
         $password = $databaseConfig->getPassword();
 
+        // todo@validation password
+        $this->validateParameter($username);
+
         $createUser = ! $this->userExists($username);
 
         if ($createUser) {
@@ -42,7 +45,7 @@ trait ManagesPostgresUsers
     public function deleteUser(DatabaseConfig $databaseConfig): bool
     {
         // Tenant DB username
-        $username = $databaseConfig->getUsername();
+        $username = $this->validateParameter($databaseConfig->getUsername());
 
         // Tenant host connection config
         $connectionName = $this->connection()->getConfig('name');

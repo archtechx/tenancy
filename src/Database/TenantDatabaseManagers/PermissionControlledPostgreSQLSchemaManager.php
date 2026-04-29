@@ -23,6 +23,8 @@ class PermissionControlledPostgreSQLSchemaManager extends PostgreSQLSchemaManage
         // Central database name
         $database = DB::connection(config('tenancy.database.central_connection'))->getDatabaseName();
 
+        $this->validateParameter([$username, $schema, $database]);
+
         $this->connection()->statement("GRANT CONNECT ON DATABASE {$database} TO \"{$username}\"");
         $this->connection()->statement("GRANT USAGE, CREATE ON SCHEMA \"{$schema}\" TO \"{$username}\"");
         $this->connection()->statement("GRANT USAGE ON ALL SEQUENCES IN SCHEMA \"{$schema}\" TO \"{$username}\"");

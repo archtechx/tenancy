@@ -25,6 +25,9 @@ class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager impl
         $username = $databaseConfig->getUsername();
         $password = $databaseConfig->getPassword();
 
+        //todo@validation password
+        $this->validateParameter([$database, $username]);
+
         $this->connection()->statement("CREATE USER `{$username}`@`%` IDENTIFIED BY '{$password}'");
 
         $grants = implode(', ', static::$grants);
@@ -48,7 +51,9 @@ class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager impl
 
     public function deleteUser(DatabaseConfig $databaseConfig): bool
     {
-        return $this->connection()->statement("DROP USER IF EXISTS '{$databaseConfig->getUsername()}'");
+        $username = $this->validateParameter($databaseConfig->getUsername());
+
+        return $this->connection()->statement("DROP USER IF EXISTS '{$username}'");
     }
 
     public function userExists(string $username): bool
