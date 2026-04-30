@@ -45,7 +45,9 @@ trait ManagesPostgresUsers
     public function deleteUser(DatabaseConfig $databaseConfig): bool
     {
         // Tenant DB username
-        $username = $this->validateParameter($databaseConfig->getUsername());
+        $username = $databaseConfig->getUsername();
+
+        $this->validateParameter($username);
 
         // Tenant host connection config
         $connectionName = $this->connection()->getConfig('name');

@@ -40,7 +40,9 @@ class PermissionControlledMicrosoftSQLServerDatabaseManager extends MicrosoftSQL
 
     public function deleteUser(DatabaseConfig $databaseConfig): bool
     {
-        $username = $this->validateParameter($databaseConfig->getUsername());
+        $username = $databaseConfig->getUsername();
+
+        $this->validateParameter($username);
 
         return $this->connection()->statement("DROP LOGIN [{$username}]");
     }
@@ -59,7 +61,9 @@ class PermissionControlledMicrosoftSQLServerDatabaseManager extends MicrosoftSQL
 
     public function deleteDatabase(TenantWithDatabase $tenant): bool
     {
-        $name = $this->validateParameter($tenant->database()->getName());
+        $name = $tenant->database()->getName();
+
+        $this->validateParameter($name);
 
         // Close all connections to the database before deleting it
         // Set the database to SINGLE_USER mode to ensure that

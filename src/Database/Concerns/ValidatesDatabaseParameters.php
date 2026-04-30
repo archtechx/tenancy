@@ -47,13 +47,13 @@ trait ValidatesDatabaseParameters
      *
      * @throws InvalidArgumentException
      */
-    protected function validateParameter(string|array|null $parameters, string|null $allowlist = null): string|array|null
+    protected function validateParameter(string|array|null $parameters, string|null $allowlist = null): void
     {
         if (is_null($parameters)) {
-            // Return null if there's nothing to validate
+            // Return early if there's nothing to validate
             // (e.g. when $databaseConfig->getUsername() of an
             // improperly created tenant is passed).
-            return null;
+            return;
         }
 
         $allowlist = $allowlist ?? static::parameterAllowlist();
@@ -69,12 +69,6 @@ trait ValidatesDatabaseParameters
                 }
             }
         }
-                    throw new InvalidArgumentException("Invalid character '{$char}' in parameter: {$parameter}");
-                }
-            }
-        }
-
-        return $parameters;
     }
 
     /**
@@ -84,8 +78,8 @@ trait ValidatesDatabaseParameters
      *
      * @throws InvalidArgumentException
      */
-    protected function validatePassword(string|null $password): string|null
+    protected function validatePassword(string|null $password): void
     {
-        return $this->validateParameter($password, static::passwordAllowlist());
+        $this->validateParameter($password, static::passwordAllowlist());
     }
 }

@@ -10,14 +10,18 @@ class MicrosoftSQLDatabaseManager extends TenantDatabaseManager
 {
     public function createDatabase(TenantWithDatabase $tenant): bool
     {
-        $database = $this->validateParameter($tenant->database()->getName());
+        $database = $tenant->database()->getName();
+
+        $this->validateParameter($database);
 
         return $this->connection()->statement("CREATE DATABASE [{$database}]");
     }
 
     public function deleteDatabase(TenantWithDatabase $tenant): bool
     {
-        $database = $this->validateParameter($tenant->database()->getName());
+        $database = $tenant->database()->getName();
+
+        $this->validateParameter($database);
 
         return $this->connection()->statement("DROP DATABASE [{$database}]");
     }

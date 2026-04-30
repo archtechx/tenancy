@@ -51,7 +51,9 @@ class PermissionControlledMySQLDatabaseManager extends MySQLDatabaseManager impl
 
     public function deleteUser(DatabaseConfig $databaseConfig): bool
     {
-        $username = $this->validateParameter($databaseConfig->getUsername());
+        $username = $databaseConfig->getUsername();
+
+        $this->validateParameter($username);
 
         return $this->connection()->statement("DROP USER IF EXISTS '{$username}'");
     }

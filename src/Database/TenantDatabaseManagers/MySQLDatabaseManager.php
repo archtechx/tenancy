@@ -21,7 +21,9 @@ class MySQLDatabaseManager extends TenantDatabaseManager
 
     public function deleteDatabase(TenantWithDatabase $tenant): bool
     {
-        $database = $this->validateParameter($tenant->database()->getName());
+        $database = $tenant->database()->getName();
+
+        $this->validateParameter($database);
 
         return $this->connection()->statement("DROP DATABASE `{$database}`");
     }

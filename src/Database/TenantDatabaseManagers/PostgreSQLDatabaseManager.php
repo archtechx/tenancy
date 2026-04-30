@@ -10,14 +10,18 @@ class PostgreSQLDatabaseManager extends TenantDatabaseManager
 {
     public function createDatabase(TenantWithDatabase $tenant): bool
     {
-        $name = $this->validateParameter($tenant->database()->getName());
+        $name = $tenant->database()->getName();
+
+        $this->validateParameter($name);
 
         return $this->connection()->statement("CREATE DATABASE \"{$name}\" WITH TEMPLATE=template0");
     }
 
     public function deleteDatabase(TenantWithDatabase $tenant): bool
     {
-        $name = $this->validateParameter($tenant->database()->getName());
+        $name = $tenant->database()->getName();
+
+        $this->validateParameter($name);
 
         return $this->connection()->statement("DROP DATABASE \"{$name}\"");
     }
