@@ -57,10 +57,10 @@ trait ValidatesDatabaseParameters
         $allowlist = $allowlist ?? static::parameterAllowlist();
 
         foreach ((array) $parameters as $parameter) {
-            if (is_null($parameter)) {
+            if (! is_string($parameter)) {
                 // Skip if there's nothing to validate
                 // (e.g. when $tenant->database()->getUsername() of an
-                // improperly created tenant is passed).
+                // improperly created tenant is null and it gets passed).
                 continue;
             }
 
