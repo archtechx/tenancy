@@ -128,7 +128,13 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
 
     public function databaseExists(string $name): bool
     {
-        return $this->isInMemory($name) || file_exists($this->getPath($name));
+        if ($this->isInMemory($name)) {
+            return true;
+        }
+
+        $this->validateParameter($name);
+
+        return file_exists($this->getPath($name));
     }
 
     public function makeConnectionConfig(array $baseConfig, string $databaseName): array

@@ -623,6 +623,16 @@ test('database managers validate parameters that cannot be bound', function ($dr
     expect(fn () => $manager->deleteDatabase($validTenant))->not()->toThrow(InvalidArgumentException::class);
 })->with('database_managers');
 
+test('sqlite database manager validates the name in databaseExists', function () {
+    $manager = app(SQLiteDatabaseManager::class);
+
+    expect(fn () => $manager->databaseExists("../invalid-db-name.sqlite"))
+        ->toThrow(InvalidArgumentException::class);
+
+    expect(fn () => $manager->databaseExists('valid-db_name.sqlite'))
+        ->not()->toThrow(InvalidArgumentException::class);
+});
+
 // Datasets
 dataset('database_managers', [
     ['mysql', MySQLDatabaseManager::class],
