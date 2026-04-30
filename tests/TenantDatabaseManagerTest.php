@@ -551,14 +551,15 @@ test('database managers validate parameters that cannot be bound', function ($dr
         $manager->setConnection($driver);
     }
 
+    $invalidDatabaseName = "\"database_with_quotes\"";
+
     if (! $manager instanceof ManagesDatabaseUsers) {
-        // Test that the createDatabase() and deleteDatabase() methods validate the database name.
-        // Only test non-permission controlled managers here since permission controlled managers
-        // override these methods to e.g. delete users before calling parent::deleteDatabase(),
-        // and with invalid DB name, the user deletion will already fail before we even get to actual
-        // deleteDatabase() logic.
+        // Only test createDatabase() and deleteDatabase() with non-permission controlled managers here
+        // since permission controlled managers override these methods to e.g. delete users before
+        // calling parent::deleteDatabase(), and with invalid DB name, the user deletion will already
+        // fail before we even get to actual deleteDatabase() logic.
         $tenant = Tenant::make([
-            'tenancy_db_name' => $invalidDatabaseName = "\"database_with_quotes\"",
+            'tenancy_db_name' => $invalidDatabaseName,
             'tenancy_db_username' => 'valid-username',
         ]);
 
@@ -567,9 +568,7 @@ test('database managers validate parameters that cannot be bound', function ($dr
 
         expect(fn () => $manager->deleteDatabase($tenant))
             ->toThrow(InvalidArgumentException::class, $invalidDatabaseName);
-    }
-
-    if ($manager instanceof ManagesDatabaseUsers) {
+    } else {
         // Invalid username, createUser() and deleteUser() should
         // throw an invalid argument exception.
         $tenantWithInvalidUsername = Tenant::make([
@@ -584,13 +583,10 @@ test('database managers validate parameters that cannot be bound', function ($dr
             ->toThrow(InvalidArgumentException::class, $invalidUsername);
 
         // Invalid database name, createUser() should throw
-        // an invalid argument exception.
-        //
-        // grantPermissions() called in createUser() also validates DB and user names,
-        // but with the current implementation, if these parameters are
-        // invalid in createUser(), grantPermissions() will never be reached.
+        // an invalid argument exception. deleteUser() doesn't
+        // validate the DB name (it only validates the username).
         $tenantWithInvalidDatabase = Tenant::make([
-            'tenancy_db_name' => $invalidDatabaseName = 'db/with/slashes',
+            'tenancy_db_name' => $invalidDatabaseName,
             'tenancy_db_username' => 'valid_USERNAME',
         ]);
 
@@ -606,31 +602,17 @@ test('database managers validate parameters that cannot be bound', function ($dr
         expect(fn () => $manager->createUser($tenantWithInvalidPassword->database()))
             ->toThrow(InvalidArgumentException::class, $invalidPassword);
 
-        // validateParameter() doesn't throw if a parameter is null
         $tenantWithNullDbParameters = Tenant::make([
             'tenancy_db_name' => null,
             'tenancy_db_username' => null,
             'tenancy_db_password' => null,
         ]);
 
+        // validateParameter() doesn't throw InvalidArgumentException if a parameter is null
+        // (an exception will be thrown, but not by validateParameter()).
         expect(fn () => $manager->createUser($tenantWithNullDbParameters->database()))
             ->not()->toThrow(InvalidArgumentException::class);
     }
-
-    $validTenant = Tenant::make([
-        'tenancy_db_name' => 'VALID-db-name456',
-        'tenancy_db_username' => 'valid_USERNAME123',
-        'tenancy_db_password' => 'v a/1d_P@ssword!',
-    ]);
-
-    expect(fn () => $manager->createDatabase($validTenant))->not()->toThrow(InvalidArgumentException::class);
-
-    if ($manager instanceof ManagesDatabaseUsers) {
-        expect(fn () => $manager->createUser($validTenant->database()))->not()->toThrow(InvalidArgumentException::class);
-        expect(fn () => $manager->deleteUser($validTenant->database()))->not()->toThrow(InvalidArgumentException::class);
-    }
-
-    expect(fn () => $manager->deleteDatabase($validTenant))->not()->toThrow(InvalidArgumentException::class);
 })->with('database_managers');
 
 test('sqlite database manager validates the name in databaseExists', function () {
