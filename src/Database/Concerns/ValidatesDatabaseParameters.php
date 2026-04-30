@@ -10,7 +10,7 @@ use InvalidArgumentException;
  * Provides methods to validate database parameters (e.g. database names, usernames, passwords)
  * before using them in SQL statements (or in file paths in the case of SQLiteDatabaseManager).
  *
- * Used where parameters can be provided by users, and where parameter binding isn't possible.
+ * Used where parameters can be provided by users, and where parameter binding cannot be used.
  *
  * @mixin \Stancl\Tenancy\Database\TenantDatabaseManagers\TenantDatabaseManager
  * @mixin \Stancl\Tenancy\Database\TenantDatabaseManagers\SQLiteDatabaseManager
@@ -18,7 +18,10 @@ use InvalidArgumentException;
 trait ValidatesDatabaseParameters
 {
     /**
-     * Characters allowed in the parameters.
+     * Characters allowed in parameters.
+     *
+     * Used as the default allowlist for validateParameter(), which validates non-password
+     * parameters such as database names or usernames.
      */
     protected static function parameterAllowlist(): string
     {
@@ -45,21 +48,19 @@ trait ValidatesDatabaseParameters
      *
      * By default, only the characters in static::parameterAllowlist() are allowed.
      *
+     * Null parameters are skipped.
+     *
      * @throws InvalidArgumentException
      */
     protected function validateParameter(string|array|null $parameters, string|null $allowlist = null): void
     {
-        if (is_null($parameters)) {
-            // Return early if there's nothing to validate
-            // (e.g. when $databaseConfig->getUsername() of an
-            // improperly created tenant is passed).
-            return;
-        }
-
         $allowlist = $allowlist ?? static::parameterAllowlist();
 
         foreach ((array) $parameters as $parameter) {
             if (is_null($parameter)) {
+                // Skip if there's nothing to validate
+                // (e.g. when $tenant->database()->getUsername() of an
+                // improperly created tenant is passed).
                 continue;
             }
 
@@ -74,7 +75,8 @@ trait ValidatesDatabaseParameters
     /**
      * Ensure password only contains allowed characters before used in SQL statements.
      *
-     * Used as a shorthand for calling validateParameter() with the less strict allowlist.
+     * Used as a shorthand for calling validateParameter() with the less strict allowlist
+     * to validate database user passwords.
      *
      * @throws InvalidArgumentException
      */
