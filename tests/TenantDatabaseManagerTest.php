@@ -605,6 +605,16 @@ test('database managers validate parameters that cannot be bound', function ($dr
 
         expect(fn () => $manager->createUser($tenantWithInvalidPassword->database()))
             ->toThrow(InvalidArgumentException::class, $invalidPassword);
+
+        // validateParameter() doesn't throw if a parameter is null
+        $tenantWithNullDbParameters = Tenant::make([
+            'tenancy_db_name' => null,
+            'tenancy_db_username' => null,
+            'tenancy_db_password' => null,
+        ]);
+
+        expect(fn () => $manager->createUser($tenantWithNullDbParameters->database()))
+            ->not()->toThrow(InvalidArgumentException::class);
     }
 
     $validTenant = Tenant::make([
@@ -630,6 +640,10 @@ test('sqlite database manager validates the name in databaseExists', function ()
         ->toThrow(InvalidArgumentException::class);
 
     expect(fn () => $manager->databaseExists('valid-db_name.sqlite'))
+        ->not()->toThrow(InvalidArgumentException::class);
+
+    // In-memory database names aren't validated
+    expect(fn () => $manager->databaseExists('../_tenancy_inmemory_'))
         ->not()->toThrow(InvalidArgumentException::class);
 });
 
