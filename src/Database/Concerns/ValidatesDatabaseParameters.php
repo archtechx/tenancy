@@ -59,8 +59,16 @@ trait ValidatesDatabaseParameters
         $allowlist = $allowlist ?? static::parameterAllowlist();
 
         foreach ((array) $parameters as $parameter) {
+            if (is_null($parameter)) {
+                continue;
+            }
+
             foreach (str_split($parameter) as $char) {
                 if (! str_contains($allowlist, $char)) {
+                    throw new InvalidArgumentException("Invalid character '{$char}' in parameter: {$parameter}");
+                }
+            }
+        }
                     throw new InvalidArgumentException("Invalid character '{$char}' in parameter: {$parameter}");
                 }
             }
