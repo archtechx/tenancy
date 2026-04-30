@@ -66,7 +66,7 @@ trait ValidatesDatabaseParameters
 
             foreach (str_split($parameter) as $char) {
                 if (! str_contains($allowlist, $char)) {
-                    throw new InvalidArgumentException("Invalid character '{$char}' in parameter: {$parameter}");
+                    throw new InvalidArgumentException("Forbidden character '{$char}' in database parameter.");
                 }
             }
         }

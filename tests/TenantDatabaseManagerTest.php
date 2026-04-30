@@ -564,23 +564,23 @@ test('database managers validate parameters that cannot be bound', function ($dr
         ]);
 
         expect(fn () => $manager->createDatabase($tenant))
-            ->toThrow(InvalidArgumentException::class, $invalidDatabaseName);
+            ->toThrow(InvalidArgumentException::class);
 
         expect(fn () => $manager->deleteDatabase($tenant))
-            ->toThrow(InvalidArgumentException::class, $invalidDatabaseName);
+            ->toThrow(InvalidArgumentException::class);
     } else {
         // Invalid username, createUser() and deleteUser() should
         // throw an invalid argument exception.
         $tenantWithInvalidUsername = Tenant::make([
             'tenancy_db_name' => 'valid_database_name890',
-            'tenancy_db_username' => $invalidUsername = "username with spaces",
+            'tenancy_db_username' => "username with spaces",
         ]);
 
         expect(fn () => $manager->createUser($tenantWithInvalidUsername->database()))
-            ->toThrow(InvalidArgumentException::class, $invalidUsername);
+            ->toThrow(InvalidArgumentException::class, 'Forbidden character');
 
         expect(fn () => $manager->deleteUser($tenantWithInvalidUsername->database()))
-            ->toThrow(InvalidArgumentException::class, $invalidUsername);
+            ->toThrow(InvalidArgumentException::class, 'Forbidden character');
 
         // Invalid database name, createUser() should throw
         // an invalid argument exception. deleteUser() doesn't
@@ -591,16 +591,16 @@ test('database managers validate parameters that cannot be bound', function ($dr
         ]);
 
         expect(fn () => $manager->createUser($tenantWithInvalidDatabase->database()))
-            ->toThrow(InvalidArgumentException::class, $invalidDatabaseName);
+            ->toThrow(InvalidArgumentException::class, 'Forbidden character');
 
         $tenantWithInvalidPassword = Tenant::make([
             'tenancy_db_name' => 'valid_database_name890',
             'tenancy_db_username' => 'valid_USERNAME',
-            'tenancy_db_password' => $invalidPassword = "p'ssword",
+            'tenancy_db_password' => "p'ssword",
         ]);
 
         expect(fn () => $manager->createUser($tenantWithInvalidPassword->database()))
-            ->toThrow(InvalidArgumentException::class, $invalidPassword);
+            ->toThrow(InvalidArgumentException::class, 'Forbidden character');
 
         $tenantWithNullDbParameters = Tenant::make([
             'tenancy_db_name' => null,
