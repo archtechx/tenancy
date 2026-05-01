@@ -6,12 +6,12 @@ namespace Stancl\Tenancy\Database\TenantDatabaseManagers;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 use PDO;
 use Stancl\Tenancy\Database\Concerns\ValidatesDatabaseParameters;
 use Stancl\Tenancy\Database\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Throwable;
-use InvalidArgumentException;
 
 class SQLiteDatabaseManager implements TenantDatabaseManager
 {
@@ -198,7 +198,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
         }
 
         if (is_dir($name)) {
-            throw new InvalidArgumentException("Database name cannot be a directory.");
+            throw new InvalidArgumentException('Database name cannot be a directory.');
         }
     }
 }
