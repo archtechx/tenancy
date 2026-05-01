@@ -20,7 +20,7 @@ trait ValidatesDatabaseParameters
     /**
      * Characters allowed in parameters.
      *
-     * Used as the default allowlist for validateParameter(), which validates non-password
+     * Used as the default allowlist in validateParameter(), which validates non-password
      * parameters such as database names or usernames.
      */
     protected static function allowedParameterCharacters(): string
@@ -44,7 +44,7 @@ trait ValidatesDatabaseParameters
     /**
      * Ensure that parameters (database names, usernames, etc.)
      * only contain allowed characters before used in SQL statements
-     * (or file names in the case of SQLiteDatabaseManager).
+     * (or paths in the case of SQLiteDatabaseManager).
      *
      * By default, only the characters in static::allowedParameterCharacters() are allowed.
      *
@@ -65,6 +65,7 @@ trait ValidatesDatabaseParameters
             }
 
             if (! is_string($parameter)) {
+                // E.g. if a parameter is retrieved from the config, it isn't necessarily a string
                 throw new InvalidArgumentException('Parameter has to be a string.');
             }
 
