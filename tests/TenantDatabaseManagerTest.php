@@ -622,8 +622,12 @@ test('sqlite database manager validates database filenames', function () {
     expect(fn () => $manager->databaseExists('valid-db_name.sqlite'))
         ->not()->toThrow(InvalidArgumentException::class);
 
-    // Directories are not allowed as database names
-    expect(fn () => $manager->databaseExists(".."))
+    // Directory names are considered invalid input for database names
+    expect(fn () => $manager->databaseExists('..'))
+        ->toThrow(InvalidArgumentException::class);
+
+    // Empty strings are considered invalid input for database names
+    expect(fn () => $manager->databaseExists(''))
         ->toThrow(InvalidArgumentException::class);
 
     // In-memory database names aren't validated
