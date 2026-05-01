@@ -75,7 +75,7 @@ trait ValidatesDatabaseParameters
             }
 
             if (! is_string($parameter)) {
-                throw new InvalidArgumentException("Parameter has to be a string.");
+                throw new InvalidArgumentException('Parameter has to be a string.');
             }
 
             foreach (str_split($parameter) as $character) {
