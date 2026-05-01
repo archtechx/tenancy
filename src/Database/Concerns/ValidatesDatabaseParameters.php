@@ -105,10 +105,10 @@ trait ValidatesDatabaseParameters
      */
     protected function validateFilename(string|null $filename): void
     {
-        if (is_dir($filename)) {
+        $this->validateParameter($filename, static::allowedFilenameCharacters());
+
+        if (is_string($filename) && is_dir($filename)) {
             throw new InvalidArgumentException("Filename '{$filename}' is a directory.");
         }
-
-        $this->validateParameter($filename, static::allowedFilenameCharacters());
     }
 }
