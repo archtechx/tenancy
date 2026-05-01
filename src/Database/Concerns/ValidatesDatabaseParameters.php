@@ -112,7 +112,7 @@ trait ValidatesDatabaseParameters
         $this->validateParameter($filename, static::allowedFilenameCharacters());
 
         if ($filename === '') {
-            throw new InvalidArgumentException("Filename cannot be empty.");
+            throw new InvalidArgumentException('Filename cannot be empty.');
         }
 
         if (is_dir($filename)) {

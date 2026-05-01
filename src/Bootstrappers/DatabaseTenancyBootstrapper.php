@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Exception;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
@@ -12,7 +13,6 @@ use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\DatabaseManager;
 use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
-use Illuminate\Database\Eloquent\Model;
 
 class DatabaseTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -68,7 +68,7 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
         if ($tenant::where($tenant->getTenantKeyName(), '!=', $tenant->getTenantKey())
             ->where('data->tenancy_db_name', $dbName)
             ->exists()) {
-            throw new RuntimeException("Tenant cannot use a database of another tenant.");
+            throw new RuntimeException('Tenant cannot use a database of another tenant.');
         }
 
         // Check if the current database doesn't have the tenants table (i.e. it's not the central database)
