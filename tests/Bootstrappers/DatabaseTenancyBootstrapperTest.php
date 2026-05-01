@@ -82,6 +82,10 @@ test('database tenancy bootstrapper throws an exception if DATABASE_URL is set',
 
     config(['tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class]]);
 
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
     $tenant1 = Tenant::create();
 
     pest()->artisan('tenants:migrate');
