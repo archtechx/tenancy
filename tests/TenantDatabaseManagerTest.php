@@ -615,7 +615,7 @@ test('database managers validate parameters that cannot be bound', function ($dr
     }
 })->with('database_managers');
 
-test('sqlite database manager validates database filenames', function () {
+test('sqlite database manager validates database names', function () {
     $manager = app(SQLiteDatabaseManager::class);
 
     // Dots are allowed in database names
@@ -630,9 +630,13 @@ test('sqlite database manager validates database filenames', function () {
     expect(fn () => $manager->databaseExists(''))
         ->toThrow(InvalidArgumentException::class);
 
-    // In-memory database names aren't validated
-    expect(fn () => $manager->databaseExists('../_tenancy_inmemory_'))
+    // In-memory database names have to start with 'file:_tenancy_inmemory_'
+    expect(fn () => $manager->databaseExists('file:_tenancy_inmemory_123?mode=memory&cache=shared'))
         ->not()->toThrow(InvalidArgumentException::class);
+
+    // Doesn't start with 'file:_tenancy_inmemory_', not considered an in-memory database, filename validation applies
+    expect(fn () => $manager->databaseExists('../_tenancy_inmemory_'))
+        ->toThrow(InvalidArgumentException::class);
 });
 
 // Datasets

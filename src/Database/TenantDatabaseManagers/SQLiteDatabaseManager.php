@@ -155,6 +155,6 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
 
     public static function isInMemory(string $name): bool
     {
-        return $name === ':memory:' || str_contains($name, '_tenancy_inmemory_');
+        return $name === ':memory:' || str_starts_with($name, 'file:_tenancy_inmemory_');
     }
 }
