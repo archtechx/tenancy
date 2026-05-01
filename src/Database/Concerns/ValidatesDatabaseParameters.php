@@ -23,7 +23,7 @@ trait ValidatesDatabaseParameters
      * Used as the default allowlist in validateParameter(), which validates non-password
      * parameters such as database names or usernames.
      */
-    protected static function allowedParameterCharacters(): string
+    protected function allowedParameterCharacters(): string
     {
         return 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-';
     }
@@ -36,7 +36,7 @@ trait ValidatesDatabaseParameters
      * characters that can break out of the quoted SQL strings (so e.g.
      * ', ", \, and ` aren't allowed).
      */
-    protected static function allowedPasswordCharacters(): string
+    protected function allowedPasswordCharacters(): string
     {
         return ' !#$%&()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_abcdefghijklmnopqrstuvwxyz{|}~';
     }
@@ -46,15 +46,15 @@ trait ValidatesDatabaseParameters
      * only contain allowed characters before used in SQL statements
      * (or paths in the case of SQLiteDatabaseManager).
      *
-     * By default, only the characters in static::allowedParameterCharacters() are allowed.
+     * By default, only the characters in allowedParameterCharacters() are allowed.
      *
      * Null parameters are skipped.
      *
      * @throws InvalidArgumentException
      */
-    protected static function validateParameter(string|array|null $parameters, string|null $allowedCharacters = null): void
+    protected function validateParameter(string|array|null $parameters, string|null $allowedCharacters = null): void
     {
-        $allowedCharacters ??= static::allowedParameterCharacters();
+        $allowedCharacters ??= $this->allowedParameterCharacters();
 
         foreach ((array) $parameters as $parameter) {
             if (is_null($parameter)) {
@@ -78,7 +78,7 @@ trait ValidatesDatabaseParameters
     }
 
     /**
-     * Ensure password only contains allowed characters (static::allowedPasswordCharacters())
+     * Ensure password only contains allowed characters (allowedPasswordCharacters())
      * before used in SQL statements.
      *
      * Used in permission controlled managers as a shorthand for calling validateParameter()
@@ -86,8 +86,8 @@ trait ValidatesDatabaseParameters
      *
      * @throws InvalidArgumentException
      */
-    protected static function validatePassword(string|null $password): void
+    protected function validatePassword(string|null $password): void
     {
-        static::validateParameter($password, allowedCharacters: static::allowedPasswordCharacters());
+        $this->validateParameter($password, allowedCharacters: $this->allowedPasswordCharacters());
     }
 }

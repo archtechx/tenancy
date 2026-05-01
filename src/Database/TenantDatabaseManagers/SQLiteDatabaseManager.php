@@ -136,6 +136,9 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
     public function makeConnectionConfig(array $baseConfig, string $databaseName): array
     {
         if ($this->isInMemory($databaseName)) {
+            // Named in-memory DBs are formatted like 'file:_tenancy_inmemory_tenant123?mode=memory&cache=shared'
+            $this->validateDatabaseName($databaseName, ':?=&');
+
             $baseConfig['database'] = $databaseName;
 
             if (static::$persistInMemoryConnectionUsing !== null) {
@@ -162,30 +165,21 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
 
     public static function isInMemory(string $name): bool
     {
-        if ($name === ':memory:') {
-            return true;
-        }
+        $isNamed = str_starts_with($name, 'file:_tenancy_inmemory_') &&
+            str_ends_with($name, '?mode=memory&cache=shared');
 
-        if (str_starts_with($name, 'file:_tenancy_inmemory_') &&
-            str_ends_with($name, '?mode=memory&cache=shared')) {
-            // Named in-memory DBs are formatted like 'file:_tenancy_inmemory_tenant123?mode=memory&cache=shared'
-            static::validateDatabaseName($name, ':?=&');
-
-            return true;
-        }
-
-        return false;
+        return $name === ':memory:' || $isNamed;
     }
 
     /**
      * Ensure database name only contains allowed characters
-     * (static::allowedDatabaseNameCharacters() + $extraAllowedCharacters) and is not a directory name.
+     * (allowedDatabaseNameCharacters() + $extraAllowedCharacters) and is not a directory name.
      *
      * @throws InvalidArgumentException
      */
-    protected static function validateDatabaseName(string $name, string $extraAllowedCharacters = ''): void
+    protected function validateDatabaseName(string $name, string $extraAllowedCharacters = ''): void
     {
-        static::validateParameter($name, static::allowedDatabaseNameCharacters() . $extraAllowedCharacters);
+        $this->validateParameter($name, $this->allowedDatabaseNameCharacters() . $extraAllowedCharacters);
 
         if ($name === '') {
             throw new InvalidArgumentException('Database name cannot be empty.');
