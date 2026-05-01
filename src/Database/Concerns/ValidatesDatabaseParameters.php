@@ -29,16 +29,6 @@ trait ValidatesDatabaseParameters
     }
 
     /**
-     * Characters allowed in filenames (SQLite databases).
-     *
-     * Includes dots to support file extensions (e.g. '.sqlite').
-     */
-    protected static function allowedFilenameCharacters(): string
-    {
-        return 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.';
-    }
-
-    /**
      * Characters allowed in database user passwords.
      *
      * Passwords are always quoted in the SQL statements, so it's safe
@@ -62,7 +52,7 @@ trait ValidatesDatabaseParameters
      *
      * @throws InvalidArgumentException
      */
-    protected function validateParameter(string|array|null $parameters, string|null $allowedCharacters = null): void
+    protected static function validateParameter(string|array|null $parameters, string|null $allowedCharacters = null): void
     {
         $allowedCharacters ??= static::allowedParameterCharacters();
 
@@ -95,28 +85,8 @@ trait ValidatesDatabaseParameters
      *
      * @throws InvalidArgumentException
      */
-    protected function validatePassword(string|null $password): void
+    protected static function validatePassword(string|null $password): void
     {
-        $this->validateParameter($password, static::allowedPasswordCharacters());
-    }
-
-    /**
-     * Ensure filename only contains allowed characters (static::allowedFilenameCharacters())
-     * and is not a directory name before used in file paths (e.g. SQLite database names).
-     *
-     * @throws InvalidArgumentException
-     * @see Stancl\Tenancy\Database\TenantDatabaseManagers\SQLiteDatabaseManager
-     */
-    protected function validateFilename(string $filename): void
-    {
-        $this->validateParameter($filename, static::allowedFilenameCharacters());
-
-        if ($filename === '') {
-            throw new InvalidArgumentException('Filename cannot be empty.');
-        }
-
-        if (is_dir($filename)) {
-            throw new InvalidArgumentException("Filename ('{$filename}') cannot be a directory.");
-        }
+        static::validateParameter($password, allowedCharacters: static::allowedPasswordCharacters());
     }
 }
