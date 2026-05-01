@@ -5,14 +5,23 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Exception;
+use Illuminate\Support\Facades\Schema;
+use RuntimeException;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\DatabaseManager;
 use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
+use Illuminate\Database\Eloquent\Model;
 
 class DatabaseTenancyBootstrapper implements TenancyBootstrapper
 {
+    /**
+     * When true, throw an exception if a tenant gets connected to
+     * another tenant's database or to the central database.
+     */
+    public static bool $harden = false;
+
     /** @var DatabaseManager */
     protected $database;
 
@@ -41,10 +50,30 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
         }
 
         $this->database->connectToTenant($tenant);
+
+        if (static::$harden) $this->harden($tenant);
     }
 
     public function revert(): void
     {
         $this->database->reconnectToCentral();
+    }
+
+    protected function harden(Tenant $tenant): void
+    {
+        /** @var TenantWithDatabase&Model $tenant */
+        $dbName = $tenant->database()->getName();
+
+        // Check if the current database is unique (i.e. no other tenant uses this database)
+        if ($tenant::where($tenant->getTenantKeyName(), '!=', $tenant->getTenantKey())
+            ->where('data->tenancy_db_name', $dbName)
+            ->exists()) {
+            throw new RuntimeException("Tenant cannot use a database of another tenant.");
+        }
+
+        // Check if the current database doesn't have the tenants table (i.e. it's not the central database)
+        if (Schema::hasTable($tenant->getTable())) {
+            throw new RuntimeException('Tenant cannot use the central database.');
+        }
     }
 }
