@@ -42,7 +42,7 @@ test('harden prevents tenants from using the central database', function () {
     $tenant = Tenant::create();
 
     $tenant->update([
-        'tenancy_db_name' => 'main', // Central database name
+        'tenancy_db_name' => config('database.connections.central.database'), // Central database name
     ]);
 
     // Harden blocks initialization for tenants that use central database
