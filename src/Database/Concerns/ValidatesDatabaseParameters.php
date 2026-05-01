@@ -29,6 +29,16 @@ trait ValidatesDatabaseParameters
     }
 
     /**
+     * Characters allowed in filenames (SQLite databases).
+     *
+     * Allows dots to support file extensions (e.g. '.sqlite').
+     */
+    protected static function filenameAllowlist(): string
+    {
+        return 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.';
+    }
+
+    /**
      * Characters allowed in database user passwords.
      *
      * Passwords are always quoted in the SQL statements, so it's safe
@@ -66,7 +76,7 @@ trait ValidatesDatabaseParameters
 
             foreach (str_split($parameter) as $char) {
                 if (! str_contains($allowlist, $char)) {
-                    throw new InvalidArgumentException("Forbidden character '{$char}' in database parameter.");
+                    throw new InvalidArgumentException("Forbidden character '{$char}' in parameter.");
                 }
             }
         }
@@ -75,13 +85,29 @@ trait ValidatesDatabaseParameters
     /**
      * Ensure password only contains allowed characters before used in SQL statements.
      *
-     * Used as a shorthand for calling validateParameter() with the less strict allowlist
-     * to validate database user passwords.
+     * Used in permission controlled managers as a shorthand for calling validateParameter()
+     * with the less strict allowlist to validate database user passwords.
      *
      * @throws InvalidArgumentException
      */
     protected function validatePassword(string|null $password): void
     {
         $this->validateParameter($password, static::passwordAllowlist());
+    }
+
+    /**
+     * Ensure filename only contains allowed characters and is not a directory name
+     * before used in file paths (e.g. SQLite databases).
+     *
+     * @throws InvalidArgumentException
+     * @see Stancl\Tenancy\Database\TenantDatabaseManagers\SQLiteDatabaseManager
+     */
+    protected function validateFilename(string|null $filename): void
+    {
+        if (is_dir($filename)) {
+            throw new InvalidArgumentException("Filename '{$filename}' is a directory.");
+        }
+
+        $this->validateParameter($filename, static::filenameAllowlist());
     }
 }

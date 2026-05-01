@@ -60,11 +60,6 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
      */
     public static Closure|null $closeInMemoryConnectionUsing = null;
 
-    protected static function parameterAllowlist(): string
-    {
-        return 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.';
-    }
-
     public function createDatabase(TenantWithDatabase $tenant): bool
     {
         /** @var TenantWithDatabase&Model $tenant */
@@ -92,8 +87,6 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
             return true;
         }
 
-        $this->validateParameter($name);
-
         return file_put_contents($this->getPath($name), '') !== false;
     }
 
@@ -108,8 +101,6 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
 
             return true;
         }
-
-        $this->validateParameter($name);
 
         $path = $this->getPath($name);
 
@@ -131,8 +122,6 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
         if ($this->isInMemory($name)) {
             return true;
         }
-
-        $this->validateParameter($name);
 
         return file_exists($this->getPath($name));
     }
@@ -158,6 +147,8 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
         if (static::$path) {
             return rtrim(static::$path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $name;
         }
+
+        $this->validateFilename($name);
 
         return database_path($name);
     }
