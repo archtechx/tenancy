@@ -147,9 +147,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
                 (static::$persistInMemoryConnectionUsing)(new PDO($dsn), $dsn);
             }
         } else {
-            $this->validateDatabaseName($databaseName);
-
-            $baseConfig['database'] = database_path($databaseName);
+            $baseConfig['database'] = $this->getPath($databaseName);
         }
 
         return $baseConfig;
