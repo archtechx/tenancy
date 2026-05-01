@@ -67,11 +67,15 @@ trait ValidatesDatabaseParameters
         $allowedCharacters ??= static::allowedParameterCharacters();
 
         foreach ((array) $parameters as $parameter) {
-            if (! is_string($parameter)) {
+            if (is_null($parameter)) {
                 // Skip if there's nothing to validate
                 // (e.g. when $tenant->database()->getUsername() of an
                 // improperly created tenant is null and it gets passed).
                 continue;
+            }
+
+            if (! is_string($parameter)) {
+                throw new InvalidArgumentException("Parameter has to be a string.");
             }
 
             foreach (str_split($parameter) as $character) {
