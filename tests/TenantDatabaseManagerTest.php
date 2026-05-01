@@ -568,12 +568,17 @@ test('newly created postgres databases use the correct charset', function (strin
         ->selectOne('SELECT pg_encoding_to_char(encoding) AS encoding FROM pg_database WHERE datname = ?', [$databaseName])
         ->encoding;
 
-    $expectedCharset = $charset !== null ? strtoupper($charset) : $serverCharset;
+    if ($charset) {
+        expect($dbCharset)->toBe(strtoupper($charset));
+    } else {
+        expect($dbCharset)->toBe($serverCharset);
 
-    expect($dbCharset)->toBe($expectedCharset);
+        // Server charset should be UTF8 by default
+        expect($dbCharset)->toBe('UTF8');
+    }
 })->with([
     null,
-    'utf8',
+    'latin1',
 ]);
 
 // Datasets
