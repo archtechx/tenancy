@@ -615,7 +615,7 @@ test('database managers validate parameters that cannot be bound', function ($dr
     }
 })->with('database_managers');
 
-test('sqlite database manager validates database names', function () {
+test('sqlite database manager validates database names correctly', function () {
     $manager = app(SQLiteDatabaseManager::class);
 
     // Dots are allowed in database names
@@ -629,14 +629,19 @@ test('sqlite database manager validates database names', function () {
     // Empty strings are considered invalid input for database names
     expect(fn () => $manager->databaseExists(''))
         ->toThrow(InvalidArgumentException::class);
+});
 
-    // In-memory database names have to start with 'file:_tenancy_inmemory_'
-    expect(fn () => $manager->databaseExists('file:_tenancy_inmemory_123?mode=memory&cache=shared'))
-        ->not()->toThrow(InvalidArgumentException::class);
+test('sqlite database manager recognizes inmemory databases correctly', function () {
+    $manager = app(SQLiteDatabaseManager::class);
 
-    // Doesn't start with 'file:_tenancy_inmemory_', not considered an in-memory database, filename validation applies
-    expect(fn () => $manager->databaseExists('../_tenancy_inmemory_'))
-        ->toThrow(InvalidArgumentException::class);
+    expect($manager->isInMemory('file:_tenancy_inmemory_123?mode=memory&cache=shared'))->toBeTrue();
+    expect($manager->isInMemory(':memory:'))->toBeTrue();
+
+    // Missing the '?mode=memory&cache=shared' suffix
+    expect($manager->isInMemory('file:_tenancy_inmemory_456'))->toBeFalse();
+
+    // Doesn't start with 'file:_tenancy_inmemory_'
+    expect($manager->isInMemory('_tenancy_inmemory_123?mode=memory&cache=shared'))->toBeFalse();
 });
 
 // Datasets
