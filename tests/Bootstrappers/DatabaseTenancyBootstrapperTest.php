@@ -81,9 +81,9 @@ test('harden prevents tenants from using a database of another tenant', function
 });
 
 test('database tenancy bootstrapper throws an exception if DATABASE_URL is set', function (string|null $databaseUrl) {
-    if ($databaseUrl) {
-        config(['database.connections.central.url' => $databaseUrl]);
+    config(['database.connections.central.url' => $databaseUrl]);
 
+    if ($databaseUrl) {
         pest()->expectException(Exception::class);
     }
 
