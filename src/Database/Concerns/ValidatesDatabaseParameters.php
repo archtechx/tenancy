@@ -23,7 +23,7 @@ trait ValidatesDatabaseParameters
      * Used as the default allowlist for validateParameter(), which validates non-password
      * parameters such as database names or usernames.
      */
-    protected static function parameterAllowlist(): string
+    protected static function allowedParameterCharacters(): string
     {
         return 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-';
     }
@@ -31,9 +31,9 @@ trait ValidatesDatabaseParameters
     /**
      * Characters allowed in filenames (SQLite databases).
      *
-     * Allows dots to support file extensions (e.g. '.sqlite').
+     * Includes dots to support file extensions (e.g. '.sqlite').
      */
-    protected static function filenameAllowlist(): string
+    protected static function allowedFilenameCharacters(): string
     {
         return 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.';
     }
@@ -46,7 +46,7 @@ trait ValidatesDatabaseParameters
      * characters that can break out of the quoted SQL strings (so e.g.
      * ', ", \, and ` aren't allowed).
      */
-    protected static function passwordAllowlist(): string
+    protected static function allowedPasswordCharacters(): string
     {
         return ' !#$%&()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_abcdefghijklmnopqrstuvwxyz{|}~';
     }
@@ -56,15 +56,15 @@ trait ValidatesDatabaseParameters
      * only contain allowed characters before used in SQL statements
      * (or file names in the case of SQLiteDatabaseManager).
      *
-     * By default, only the characters in static::parameterAllowlist() are allowed.
+     * By default, only the characters in static::allowedParameterCharacters() are allowed.
      *
      * Null parameters are skipped.
      *
      * @throws InvalidArgumentException
      */
-    protected function validateParameter(string|array|null $parameters, string|null $allowlist = null): void
+    protected function validateParameter(string|array|null $parameters, string|null $allowedCharacters = null): void
     {
-        $allowlist = $allowlist ?? static::parameterAllowlist();
+        $allowedCharacters ??= static::allowedParameterCharacters();
 
         foreach ((array) $parameters as $parameter) {
             if (! is_string($parameter)) {
@@ -74,16 +74,17 @@ trait ValidatesDatabaseParameters
                 continue;
             }
 
-            foreach (str_split($parameter) as $char) {
-                if (! str_contains($allowlist, $char)) {
-                    throw new InvalidArgumentException("Forbidden character '{$char}' in parameter.");
+            foreach (str_split($parameter) as $character) {
+                if (! str_contains($allowedCharacters, $character)) {
+                    throw new InvalidArgumentException("Forbidden character '{$character}' in parameter.");
                 }
             }
         }
     }
 
     /**
-     * Ensure password only contains allowed characters before used in SQL statements.
+     * Ensure password only contains allowed characters (static::allowedPasswordCharacters())
+     * before used in SQL statements.
      *
      * Used in permission controlled managers as a shorthand for calling validateParameter()
      * with the less strict allowlist to validate database user passwords.
@@ -92,12 +93,12 @@ trait ValidatesDatabaseParameters
      */
     protected function validatePassword(string|null $password): void
     {
-        $this->validateParameter($password, static::passwordAllowlist());
+        $this->validateParameter($password, static::allowedPasswordCharacters());
     }
 
     /**
-     * Ensure filename only contains allowed characters and is not a directory name
-     * before used in file paths (e.g. SQLite databases).
+     * Ensure filename only contains allowed characters (static::allowedFilenameCharacters())
+     * and is not a directory name before used in file paths (e.g. SQLite database names).
      *
      * @throws InvalidArgumentException
      * @see Stancl\Tenancy\Database\TenantDatabaseManagers\SQLiteDatabaseManager
@@ -108,6 +109,6 @@ trait ValidatesDatabaseParameters
             throw new InvalidArgumentException("Filename '{$filename}' is a directory.");
         }
 
-        $this->validateParameter($filename, static::filenameAllowlist());
+        $this->validateParameter($filename, static::allowedFilenameCharacters());
     }
 }
