@@ -644,6 +644,23 @@ test('sqlite database manager recognizes inmemory databases correctly', function
     expect($manager->isInMemory('_tenancy_inmemory_123?mode=memory&cache=shared'))->toBeFalse();
 });
 
+test('sqlite database manager respects the configured path while making the database config', function () {
+    config()->set([
+        'tenancy.database.template_tenant_connection' => 'sqlite',
+    ]);
+
+    $tenant = Tenant::make([
+        'tenancy_db_name' => 'tenant.sqlite',
+    ]);
+
+    // SQLiteDatabaseManager::$path is null, the database path is built using database_path()
+    expect($tenant->database()->connection()['database'])->toBe(database_path('tenant.sqlite'));
+
+    SQLiteDatabaseManager::$path = $customPath = '/custom/path/';
+
+    expect($tenant->database()->connection()['database'])->toBe($customPath . 'tenant.sqlite');
+});
+
 // Datasets
 dataset('database_managers', [
     ['mysql', MySQLDatabaseManager::class],
