@@ -13,6 +13,7 @@ use Stancl\Tenancy\Tests\Etc\Tenant;
 
 use function Stancl\Tenancy\Tests\pest;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 $cleanup = function () {
     DatabaseTenancyBootstrapper::$harden = false;
@@ -46,6 +47,9 @@ test('harden prevents tenants from using the central database', function () {
 
     // Harden blocks initialization for tenants that use central database
     expect(fn () => tenancy()->initialize($tenant))->toThrow(RuntimeException::class);
+
+    // Connection should be reverted back to central
+    expect(DB::connection()->getName())->toBe('central');
 });
 
 test('harden prevents tenants from using a database of another tenant', function () {
@@ -71,6 +75,9 @@ test('harden prevents tenants from using a database of another tenant', function
 
     // Harden blocks initialization for tenants that use a database of another tenant
     expect(fn () => tenancy()->initialize($tenant))->toThrow(RuntimeException::class);
+
+    // Connection should be reverted back to central
+    expect(DB::connection()->getName())->toBe('central');
 });
 
 test('database tenancy bootstrapper throws an exception if DATABASE_URL is set', function (string|null $databaseUrl) {

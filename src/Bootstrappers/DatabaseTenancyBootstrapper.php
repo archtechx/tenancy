@@ -51,7 +51,16 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
 
         $this->database->connectToTenant($tenant);
 
-        if (static::$harden) $this->harden($tenant);
+        try {
+            if (static::$harden) {
+                $this->harden($tenant);
+            }
+        } catch (RuntimeException $e) {
+            // Revert connection back to central
+            $this->revert();
+
+            throw $e;
+        }
     }
 
     public function revert(): void
