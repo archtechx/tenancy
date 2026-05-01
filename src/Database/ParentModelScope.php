@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
+/** @implements Scope<Model> */
 class ParentModelScope implements Scope
 {
     /**
-     * @param Builder<Model> $builder
+     * @param Builder<covariant Model> $builder
      */
     public function apply(Builder $builder, Model $model): void
     {
