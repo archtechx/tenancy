@@ -30,8 +30,6 @@ class DeleteDatabase implements ShouldQueue
 
     public function handle(): void
     {
-        event(new DeletingDatabase($this->tenant));
-
         if (static::$skipWhenCreateDatabaseIsFalse && $this->tenant->getInternal('create_database') === false) {
             // If database creation was skipped, we presume deletion should also be skipped.
             // To avoid this skip, either unset the `create_database` attribute (or make it true), or
@@ -39,14 +37,19 @@ class DeleteDatabase implements ShouldQueue
             return;
         }
 
+        event(new DeletingDatabase($this->tenant));
+
+        $deleted = false;
+
         try {
             $this->tenant->database()->manager()->deleteDatabase($this->tenant);
+            $deleted = true;
         } catch (\Throwable $e) {
             if (! static::$ignoreFailures) {
                 throw $e;
             }
         }
 
-        event(new DatabaseDeleted($this->tenant));
+        if ($deleted) event(new DatabaseDeleted($this->tenant));
     }
 }
