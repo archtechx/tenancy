@@ -134,7 +134,7 @@ test('database deletion is skipped when create_database is false', function (boo
     expect($manager->databaseExists($tenant->database()->getName()))->toBeFalse();
 })->with([true, false]);
 
-test('database deletion failures are swallowed when ignoreFailures is true', function () {
+test('database deletion failure is ignored when ignoreFailures is true', function (bool $ignoreFailures) {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
     })->toListener());
@@ -143,7 +143,7 @@ test('database deletion failures are swallowed when ignoreFailures is true', fun
         return $event->tenant;
     })->toListener());
 
-    DeleteDatabase::$ignoreFailures = true;
+    DeleteDatabase::$ignoreFailures = $ignoreFailures;
 
     $tenant = Tenant::create();
     $manager = $tenant->database()->manager();
@@ -152,27 +152,12 @@ test('database deletion failures are swallowed when ignoreFailures is true', fun
     $manager->deleteDatabase($tenant); // manually delete so the job fails
     expect($manager->databaseExists($tenant->database()->getName()))->toBeFalse();
 
-    $tenant->delete(); // would throw without $ignoreFailures
-});
-
-test('database deletion failures are rethrown when ignoreFailures is false', function () {
-    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
-        return $event->tenant;
-    })->toListener());
-
-    Event::listen(TenantDeleted::class, JobPipeline::make([DeleteDatabase::class])->send(function (TenantDeleted $event) {
-        return $event->tenant;
-    })->toListener());
-
-    $tenant = Tenant::create();
-    $manager = $tenant->database()->manager();
-    expect($manager->databaseExists($tenant->database()->getName()))->toBeTrue();
-
-    $manager->deleteDatabase($tenant); // manually delete so the job fails
-    expect($manager->databaseExists($tenant->database()->getName()))->toBeFalse();
-
-    expect(fn () => $tenant->delete())->toThrow(QueryException::class, "database doesn't exist");
-});
+    if ($ignoreFailures) {
+        $tenant->delete(); // no exception
+    } else {
+        expect(fn () => $tenant->delete())->toThrow(QueryException::class, "database doesn't exist");
+    }
+})->with([true, false]);
 
 class User extends Authenticable
 {
