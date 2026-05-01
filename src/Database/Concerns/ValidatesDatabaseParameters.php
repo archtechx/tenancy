@@ -107,13 +107,9 @@ trait ValidatesDatabaseParameters
      * @throws InvalidArgumentException
      * @see Stancl\Tenancy\Database\TenantDatabaseManagers\SQLiteDatabaseManager
      */
-    protected function validateFilename(string|null $filename): void
+    protected function validateFilename(string $filename): void
     {
         $this->validateParameter($filename, static::allowedFilenameCharacters());
-
-        if (! is_string($filename)) {
-            throw new InvalidArgumentException("Filename has to be a string.");
-        }
 
         if ($filename === '') {
             throw new InvalidArgumentException("Filename cannot be empty.");
