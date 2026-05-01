@@ -111,8 +111,16 @@ trait ValidatesDatabaseParameters
     {
         $this->validateParameter($filename, static::allowedFilenameCharacters());
 
-        if (is_string($filename) && is_dir($filename)) {
-            throw new InvalidArgumentException("Filename '{$filename}' is a directory.");
+        if (! is_string($filename)) {
+            throw new InvalidArgumentException("Filename has to be a string.");
+        }
+
+        if ($filename === '') {
+            throw new InvalidArgumentException("Filename cannot be empty.");
+        }
+
+        if (is_dir($filename)) {
+            throw new InvalidArgumentException("Filename ('{$filename}') cannot be a directory.");
         }
     }
 }
