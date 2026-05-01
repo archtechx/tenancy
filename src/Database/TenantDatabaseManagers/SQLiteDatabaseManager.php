@@ -157,11 +157,11 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
 
     public function getPath(string $name): string
     {
+        $this->validateDatabaseName($name);
+
         if (static::$path) {
             return rtrim(static::$path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $name;
         }
-
-        $this->validateDatabaseName($name);
 
         return database_path($name);
     }
