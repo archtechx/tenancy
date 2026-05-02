@@ -539,6 +539,48 @@ test('partial tenant connection templates get merged into the central connection
     expect($manager->connection()->getConfig('url'))->toBeNull();
 });
 
+test('newly created postgres databases use the correct charset', function (string|null $charset) {
+    config([
+        'tenancy.database.managers.pgsql' => PostgreSQLDatabaseManager::class,
+        'database.connections.pgsql.charset' => $charset, // If null, Postgres creates the DB with the server's default charset
+    ]);
+
+    // Purge connection to make sure the updated charset config is used
+    DB::purge('pgsql');
+
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    $tenant = Tenant::create([
+        'tenancy_db_connection' => 'pgsql',
+    ]);
+
+    $databaseName = $tenant->database()->getName();
+
+    // Postgres server's default charset
+    $serverCharset = DB::connection('pgsql')
+        ->selectOne("SELECT pg_encoding_to_char(encoding) AS encoding FROM pg_database WHERE datname = 'template1'")
+        ->encoding;
+
+    // Charset of the newly created tenant database
+    $dbCharset = DB::connection('pgsql')
+        ->selectOne('SELECT pg_encoding_to_char(encoding) AS encoding FROM pg_database WHERE datname = ?', [$databaseName])
+        ->encoding;
+
+    if ($charset) {
+        expect($dbCharset)->toBe(strtoupper($charset));
+    } else {
+        expect($dbCharset)->toBe($serverCharset);
+
+        // Server charset should be UTF8 by default
+        expect($dbCharset)->toBe('UTF8');
+    }
+})->with([
+    null,
+    'latin1',
+]);
+
 // Datasets
 dataset('database_managers', [
     ['mysql', MySQLDatabaseManager::class],
