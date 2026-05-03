@@ -401,3 +401,47 @@ test('the bypass parameter works correctly with temporarySignedRoute', function(
         ->toContain('localhost/foo')
         ->not()->toContain('central='); // Bypass parameter gets removed from the generated URL
 });
+
+test('toRoute can automatically prefix the passed route name', function () {
+    config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);
+
+    Route::get('/central/home', fn () => 'central')->name('home');
+    Route::get('/tenant/home', fn () => 'tenant')->name('tenant.home');
+
+    TenancyUrlGenerator::$prefixRouteNames = true;
+
+    $tenant = Tenant::create();
+
+    tenancy()->initialize($tenant);
+
+    $centralRoute = Route::getRoutes()->getByName('home');
+
+    // url()->toRoute() prefixes the name of the passed route ('home') with the tenant prefix
+    // and generates the URL for the tenant route (as if the 'tenant.home' route was passed to the method)
+    expect(url()->toRoute($centralRoute, [], true))->toBe('http://localhost/tenant/home');
+
+    // Passing the bypass parameter skips the name prefixing, so the method returns the central route URL
+    expect(url()->toRoute($centralRoute, ['central' => true], true))->toBe('http://localhost/central/home');
+});
+
+test('toRoute modifies parameters even when the route has no name', function () {
+    config(['tenancy.bootstrappers' => [UrlGeneratorBootstrapper::class]]);
+
+    TenancyUrlGenerator::$passTenantParameterToRoutes = true;
+
+    $unnamedRoute = Route::get('/unnamed', fn () => 'unnamed');
+
+    $tenant = Tenant::create();
+
+    tenancy()->initialize($tenant);
+
+    // The tenant parameter is added to the URL even for unnamed routes
+    expect(url()->toRoute($unnamedRoute, [], true))
+        ->toBe("http://localhost/unnamed?tenant={$tenant->getTenantKey()}");
+
+    // The bypass parameter prevents passing the tenant parameter and is stripped from the URL
+    expect(url()->toRoute($unnamedRoute, ['central' => true], true))
+        ->toBe("http://localhost/unnamed")
+        ->not()->toContain('tenant=')
+        ->not()->toContain('central=');
+});
