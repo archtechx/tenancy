@@ -612,6 +612,20 @@ test('database managers validate parameters that cannot be bound', function ($dr
         // (an exception will be thrown, but not by validateParameter()).
         expect(fn () => $manager->createUser($tenantWithNullDbParameters->database()))
             ->not()->toThrow(InvalidArgumentException::class);
+
+        if ($driver === 'mysql') {
+            // MySQLDatabaseManager gets the charset from the config
+            // Validation throws if the parameter is not a string
+            $tenantWithNonStringCharset = Tenant::make([
+                'tenancy_db_name' => 'valid_database_name890',
+                'tenancy_db_username' => 'valid-username',
+            ]);
+
+            config(['database.connections.mysql.charset' => []]);
+
+            expect(fn () => $manager->createDatabase($tenantWithNonStringCharset))
+                ->toThrow(InvalidArgumentException::class, 'Parameter has to be a string.');
+        }
     }
 })->with('database_managers');
 
@@ -642,6 +656,16 @@ test('sqlite database manager recognizes inmemory databases correctly', function
 
     // Doesn't start with 'file:_tenancy_inmemory_'
     expect($manager->isInMemory('_tenancy_inmemory_123?mode=memory&cache=shared'))->toBeFalse();
+
+    // In-memory DB name is validated correctly in makeConnectionConfig()
+    expect(fn () => $manager->makeConnectionConfig([], 'file:_tenancy_inmemory_12"3?mode=memory&cache=shared'))
+        ->toThrow(InvalidArgumentException::class, 'Forbidden character');
+
+    expect(fn () => $manager->makeConnectionConfig([], 'file:_tenancy_inmemory_123?mode=memory&cache=shared'))
+        ->not()->toThrow(InvalidArgumentException::class);
+
+    expect(fn () => $manager->makeConnectionConfig([], ':memory:'))
+        ->not()->toThrow(InvalidArgumentException::class);
 });
 
 test('sqlite database manager respects the configured path while making the database config', function () {
