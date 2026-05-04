@@ -13,6 +13,7 @@ use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\DatabaseManager;
 use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
+use Throwable;
 
 class DatabaseTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -54,7 +55,7 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
         if (static::$harden) {
             try {
                 $this->harden($tenant);
-            } catch (RuntimeException $e) {
+            } catch (Throwable $e) {
                 // Revert connection back to central
                 $this->revert();
 
