@@ -620,6 +620,16 @@ test('database managers validate parameters that cannot be bound', function ($dr
         expect(fn () => $manager->createUser($tenantWithInvalidPassword->database()))
             ->toThrow(InvalidArgumentException::class, 'Forbidden character');
 
+        // Special characters are allowed in password
+        $tenantWithValidPassword = Tenant::make([
+            'tenancy_db_name' => 'valid_database_name890',
+            'tenancy_db_username' => 'valid_USERNAME',
+            'tenancy_db_password' => "]pa$$ ;word",
+        ]);
+
+        expect(fn () => $manager->createUser($tenantWithValidPassword->database()))
+            ->not()->toThrow(InvalidArgumentException::class, 'Forbidden character');
+
         $tenantWithNullDbParameters = Tenant::make([
             'tenancy_db_name' => null,
             'tenancy_db_username' => null,
