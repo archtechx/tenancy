@@ -14,16 +14,36 @@ class MySQLDatabaseManager extends TenantDatabaseManager
         $charset = $this->connection()->getConfig('charset');
         $collation = $this->connection()->getConfig('collation');
 
-        return $this->connection()->statement("CREATE DATABASE `{$database}` CHARACTER SET `$charset` COLLATE `$collation`");
+        $this->validateParameter([$database, $charset, $collation]);
+
+        // MySQL defaults to the server's charset and collation
+        // if charset and collation are not specified.
+        // If charset is specified but collation is null, MySQL
+        // will choose a default collation for the specified charset (and vice versa).
+        $statement = "CREATE DATABASE `{$database}`";
+
+        if ($charset !== null) {
+            $statement .= " CHARACTER SET `{$charset}`";
+        }
+
+        if ($collation !== null) {
+            $statement .= " COLLATE `{$collation}`";
+        }
+
+        return $this->connection()->statement($statement);
     }
 
     public function deleteDatabase(TenantWithDatabase $tenant): bool
     {
-        return $this->connection()->statement("DROP DATABASE `{$tenant->database()->getName()}`");
+        $database = $tenant->database()->getName();
+
+        $this->validateParameter($database);
+
+        return $this->connection()->statement("DROP DATABASE `{$database}`");
     }
 
     public function databaseExists(string $name): bool
     {
-        return (bool) $this->connection()->select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$name'");
+        return (bool) $this->connection()->select('SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ?', [$name]);
     }
 }
