@@ -568,6 +568,20 @@ test('database managers validate parameters that cannot be bound', function ($dr
 
         expect(fn () => $manager->deleteDatabase($tenant))
             ->toThrow(InvalidArgumentException::class, 'Forbidden character');
+
+        if ($driver === 'mysql') {
+            // MySQLDatabaseManager reads charset/collation from config.
+            // An exception is thrown during validation if the parameter is not a string.
+            config(['database.connections.mysql.charset' => []]);
+            DB::purge('mysql');
+
+            $tenantWithNonStringCharset = Tenant::make([
+                'tenancy_db_name' => 'valid_db_name',
+            ]);
+
+            expect(fn () => $manager->createDatabase($tenantWithNonStringCharset))
+                ->toThrow(InvalidArgumentException::class, 'Parameter has to be a string.');
+        }
     } else {
         // Invalid username, createUser() and deleteUser() should
         // throw an invalid argument exception.
@@ -612,20 +626,6 @@ test('database managers validate parameters that cannot be bound', function ($dr
         // (an exception will be thrown, but not by validateParameter()).
         expect(fn () => $manager->createUser($tenantWithNullDbParameters->database()))
             ->not()->toThrow(InvalidArgumentException::class);
-
-        if ($driver === 'mysql') {
-            // MySQLDatabaseManager gets the charset from the config
-            // Validation throws if the parameter is not a string
-            $tenantWithNonStringCharset = Tenant::make([
-                'tenancy_db_name' => 'valid_database_name890',
-                'tenancy_db_username' => 'valid-username',
-            ]);
-
-            config(['database.connections.mysql.charset' => []]);
-
-            expect(fn () => $manager->createDatabase($tenantWithNonStringCharset))
-                ->toThrow(InvalidArgumentException::class, 'Parameter has to be a string.');
-        }
     }
 })->with('database_managers');
 
@@ -688,6 +688,8 @@ test('sqlite database manager respects the configured path while making the data
 test('newly created tenant databases use the correct charset and collation with mysql', function () {
     config([
         'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
+        'database.connections.mysql.charset' => 'utf8mb4',
+        'database.connections.mysql.collation' => 'utf8mb4_unicode_ci',
     ]);
 
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
