@@ -564,10 +564,10 @@ test('database managers validate parameters that cannot be bound', function ($dr
         ]);
 
         expect(fn () => $manager->createDatabase($tenant))
-            ->toThrow(InvalidArgumentException::class);
+            ->toThrow(InvalidArgumentException::class, 'Forbidden character');
 
         expect(fn () => $manager->deleteDatabase($tenant))
-            ->toThrow(InvalidArgumentException::class);
+            ->toThrow(InvalidArgumentException::class, 'Forbidden character');
     } else {
         // Invalid username, createUser() and deleteUser() should
         // throw an invalid argument exception.
