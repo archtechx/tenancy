@@ -656,9 +656,9 @@ test('sqlite database manager respects the configured path while making the data
     // SQLiteDatabaseManager::$path is null, the database path is built using database_path()
     expect($tenant->database()->connection()['database'])->toBe(database_path('tenant.sqlite'));
 
-    SQLiteDatabaseManager::$path = $customPath = '/custom/path/';
+    SQLiteDatabaseManager::$path = '/custom/path/';
 
-    expect($tenant->database()->connection()['database'])->toBe($customPath . 'tenant.sqlite');
+    expect($tenant->database()->connection()['database'])->toBe('/custom/path/tenant.sqlite');
 });
 
 test('newly created tenant databases use the correct charset and collation with mysql', function () {
