@@ -661,6 +661,76 @@ test('sqlite database manager respects the configured path while making the data
     expect($tenant->database()->connection()['database'])->toBe($customPath . 'tenant.sqlite');
 });
 
+test('newly created tenant databases use the correct charset and collation with mysql', function () {
+    config([
+        'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
+    ]);
+
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    withBootstrapping();
+
+    $charset = fn () => DB::selectOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()')->DEFAULT_CHARACTER_SET_NAME;
+    $collation = fn () => DB::selectOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()')->DEFAULT_COLLATION_NAME;
+
+    $defaultTenant = Tenant::create();
+
+    tenancy()->initialize($defaultTenant);
+
+    // No charset or collation specified,
+    // defaults from the MySQL config used.
+    expect($charset())->toBe('utf8mb4');
+    expect($collation())->toBe('utf8mb4_unicode_ci');
+
+    $tenantWithCharsetAndCollation = Tenant::create([
+        'tenancy_db_charset' => 'latin1',
+        'tenancy_db_collation' => 'latin1_swedish_ci',
+    ]);
+
+    tenancy()->initialize($tenantWithCharsetAndCollation);
+
+    // Custom charset and collation from tenant config
+    expect($charset())->toBe('latin1');
+    expect($collation())->toBe('latin1_swedish_ci');
+
+    $tenantWithNullCharsetAndCollation = Tenant::create([
+        'tenancy_db_charset' => null,
+        'tenancy_db_collation' => null,
+    ]);
+
+    tenancy()->initialize($tenantWithNullCharsetAndCollation);
+
+    // Default MySQL server charset and collation
+    expect($charset())->toBe('utf8mb4');
+    expect($collation())->toBe('utf8mb4_0900_ai_ci');
+
+    $tenantWithCharsetAndNullCollation = Tenant::create([
+        'tenancy_db_charset' => 'binary',
+        'tenancy_db_collation' => null,
+    ]);
+
+    tenancy()->initialize($tenantWithCharsetAndNullCollation);
+
+    // Charset specified, collation is null,
+    // MySQL will choose a default collation for the specified charset.
+    expect($charset())->toBe('binary');
+    expect($collation())->toBe('binary');
+
+    // Collation specified, charset is null,
+    // MySQL will choose a default charset for the specified collation.
+    $tenantWithCollationAndNullCharset = Tenant::create([
+        'tenancy_db_charset' => null,
+        'tenancy_db_collation' => 'latin1_swedish_ci',
+    ]);
+
+    tenancy()->initialize($tenantWithCollationAndNullCharset);
+
+    expect($charset())->toBe('latin1');
+    expect($collation())->toBe('latin1_swedish_ci');
+});
+
 // Datasets
 dataset('database_managers', [
     ['mysql', MySQLDatabaseManager::class],

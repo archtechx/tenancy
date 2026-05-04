@@ -16,7 +16,21 @@ class MySQLDatabaseManager extends TenantDatabaseManager
 
         $this->validateParameter([$database, $charset, $collation]);
 
-        return $this->connection()->statement("CREATE DATABASE `{$database}` CHARACTER SET `$charset` COLLATE `$collation`");
+        // MySQL defaults to the server's charset and collation
+        // if charset and collation are not specified.
+        // If charset is specified but collation is null, MySQL
+        // will choose a default collation for the specified charset (and vice versa).
+        $statement = "CREATE DATABASE `{$database}`";
+
+        if ($charset !== null) {
+            $statement .= " CHARACTER SET `{$charset}`";
+        }
+
+        if ($collation !== null) {
+            $statement .= " COLLATE `{$collation}`";
+        }
+
+        return $this->connection()->statement($statement);
     }
 
     public function deleteDatabase(TenantWithDatabase $tenant): bool
