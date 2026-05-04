@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
@@ -12,7 +13,6 @@ use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\DatabaseManager;
 use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
-use Illuminate\Support\Facades\DB;
 
 class DatabaseTenancyBootstrapper implements TenancyBootstrapper
 {
