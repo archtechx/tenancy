@@ -622,8 +622,8 @@ test('database managers validate parameters that cannot be bound', function ($dr
 
         // Special characters are allowed in password
         $tenantWithValidPassword = Tenant::make([
-            'tenancy_db_name' => 'valid_database_name890',
-            'tenancy_db_username' => 'valid_USERNAME',
+            'tenancy_db_name' => 'valid_database_name890' . Str::random(4),
+            'tenancy_db_username' => 'valid_USERNAME' . Str::random(4),
             'tenancy_db_password' => "]pa$$ ;word",
         ]);
 
