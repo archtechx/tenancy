@@ -581,6 +581,10 @@ test('database managers validate parameters that cannot be bound', function ($dr
 
             expect(fn () => $manager->createDatabase($tenantWithNonStringCharset))
                 ->toThrow(InvalidArgumentException::class, 'Parameter has to be a string.');
+
+            // Restore the default charset to avoid inconsistencies in future test runs
+            config(['database.connections.mysql.charset' => 'utf8mb4']);
+            DB::purge('mysql');
         }
     } else {
         // Invalid username, createUser() and deleteUser() should
