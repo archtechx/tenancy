@@ -688,6 +688,8 @@ test('sqlite database manager respects the configured path while making the data
 test('newly created tenant databases use the correct charset and collation with mysql', function () {
     config([
         'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
+        'database.connections.mysql.charset' => 'utf8mb4',
+        'database.connections.mysql.collation' => 'utf8mb4_unicode_ci',
     ]);
 
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
