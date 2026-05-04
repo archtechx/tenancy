@@ -553,7 +553,7 @@ test('database managers validate parameters that cannot be bound', function ($dr
 
     $invalidDatabaseName = "\"database_with_quotes\"";
 
-    if (! $manager instanceof ManagesDatabaseUsers) {
+    if (! ($manager instanceof ManagesDatabaseUsers)) {
         // Only test createDatabase() and deleteDatabase() with non-permission controlled managers here
         // since permission controlled managers override these methods to e.g. delete users before
         // calling parent::deleteDatabase(), and with invalid DB name, the user deletion will already
