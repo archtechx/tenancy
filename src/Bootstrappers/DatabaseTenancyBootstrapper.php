@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Exception;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
@@ -13,6 +12,7 @@ use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\DatabaseManager;
 use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
+use Illuminate\Support\Facades\DB;
 
 class DatabaseTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -70,10 +70,9 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
 
     protected function harden(Tenant $tenant): void
     {
-        /** @var TenantWithDatabase&Model $tenant */
-        $dbName = $tenant->database()->getName();
+        $dbName = DB::getDatabaseName();
 
-        // Check if the current database is unique (i.e. no other tenant uses this database)
+        // Check if any other tenant uses this tenant's database
         if ($tenant::where($tenant->getTenantKeyName(), '!=', $tenant->getTenantKey())
             ->where('data->tenancy_db_name', $dbName)
             ->exists()) {
