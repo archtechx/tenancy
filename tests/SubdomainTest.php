@@ -7,6 +7,7 @@ use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Exceptions\NotASubdomainException;
 use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Database\Models;
+use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
@@ -106,6 +107,14 @@ test('we cant use a subdomain that doesnt belong to our central domains', functi
     $this
         ->withoutExceptionHandling()
         ->get('http://foo.localhost/foo/abc/xyz');
+});
+
+test('domain resolver correctly determines if string is a subdomain', function() {
+    config(['tenancy.identification.central_domains' => ['site.com', 'blog.site.com']]);
+
+    expect(DomainTenantResolver::isSubdomain('blog.site.com'))->toBeFalse();
+    expect(DomainTenantResolver::isSubdomain('tenant.site.com'))->toBeTrue();
+    expect(DomainTenantResolver::isSubdomain('tenantsite.com'))->toBeFalse();
 });
 
 class SubdomainTenant extends Models\Tenant
