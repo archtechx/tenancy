@@ -34,10 +34,10 @@ class PermissionControlledPostgreSQLDatabaseManager extends PostgreSQLDatabaseMa
         $this->connection()->reconnect();
 
         // Grant permissions to create and use tables in the configured schema ("public" by default) to the user
-        $this->connection()->statement("GRANT USAGE, CREATE ON SCHEMA {$schema} TO \"{$username}\"");
+        $this->connection()->statement("GRANT USAGE, CREATE ON SCHEMA \"{$schema}\" TO \"{$username}\"");
 
         // Grant permissions to use sequences in the current schema to the user
-        $this->connection()->statement("GRANT USAGE ON ALL SEQUENCES IN SCHEMA {$schema} TO \"{$username}\"");
+        $this->connection()->statement("GRANT USAGE ON ALL SEQUENCES IN SCHEMA \"{$schema}\" TO \"{$username}\"");
 
         // Reconnect to central database
         config(["database.connections.{$connectionName}.database" => $centralDatabase]);
