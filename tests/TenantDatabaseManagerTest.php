@@ -672,8 +672,11 @@ test('newly created tenant databases use the correct charset and collation with 
 
     withBootstrapping();
 
-    $charset = fn () => DB::selectOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()')->DEFAULT_CHARACTER_SET_NAME;
-    $collation = fn () => DB::selectOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()')->DEFAULT_COLLATION_NAME;
+    $serverDefaultCharset = DB::selectOne('SELECT @@character_set_server AS charset')->charset;
+    $serverDefaultCollation = DB::selectOne('SELECT @@collation_server AS collation')->collation;
+
+    $databaseCharset = fn () => DB::selectOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()')->DEFAULT_CHARACTER_SET_NAME;
+    $databaseCollation = fn () => DB::selectOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()')->DEFAULT_COLLATION_NAME;
 
     $defaultTenant = Tenant::create();
 
@@ -681,8 +684,8 @@ test('newly created tenant databases use the correct charset and collation with 
 
     // No charset or collation specified,
     // defaults from the MySQL config used.
-    expect($charset())->toBe('utf8mb4');
-    expect($collation())->toBe('utf8mb4_unicode_ci');
+    expect($databaseCharset())->toBe('utf8mb4');
+    expect($databaseCollation())->toBe('utf8mb4_unicode_ci');
 
     $tenantWithCharsetAndCollation = Tenant::create([
         'tenancy_db_charset' => 'latin1',
@@ -692,8 +695,8 @@ test('newly created tenant databases use the correct charset and collation with 
     tenancy()->initialize($tenantWithCharsetAndCollation);
 
     // Custom charset and collation from tenant config
-    expect($charset())->toBe('latin1');
-    expect($collation())->toBe('latin1_swedish_ci');
+    expect($databaseCharset())->toBe('latin1');
+    expect($databaseCollation())->toBe('latin1_swedish_ci');
 
     $tenantWithNullCharsetAndCollation = Tenant::create([
         'tenancy_db_charset' => null,
@@ -703,8 +706,9 @@ test('newly created tenant databases use the correct charset and collation with 
     tenancy()->initialize($tenantWithNullCharsetAndCollation);
 
     // Default MySQL server charset and collation
-    expect($charset())->toBe('utf8mb4');
-    expect($collation())->toBe('utf8mb4_0900_ai_ci');
+    // (e.g. charset = utf8mb4, collation = utf8mb4_0900_ai_ci)
+    expect($databaseCharset())->toBe($serverDefaultCharset);
+    expect($databaseCollation())->toBe($serverDefaultCollation);
 
     $tenantWithCharsetAndNullCollation = Tenant::create([
         'tenancy_db_charset' => 'binary',
@@ -715,8 +719,8 @@ test('newly created tenant databases use the correct charset and collation with 
 
     // Charset specified, collation is null,
     // MySQL will choose a default collation for the specified charset.
-    expect($charset())->toBe('binary');
-    expect($collation())->toBe('binary');
+    expect($databaseCharset())->toBe('binary');
+    expect($databaseCollation())->toBe('binary');
 
     // Collation specified, charset is null,
     // MySQL will choose a default charset for the specified collation.
@@ -727,8 +731,8 @@ test('newly created tenant databases use the correct charset and collation with 
 
     tenancy()->initialize($tenantWithCollationAndNullCharset);
 
-    expect($charset())->toBe('latin1');
-    expect($collation())->toBe('latin1_swedish_ci');
+    expect($databaseCharset())->toBe('latin1');
+    expect($databaseCollation())->toBe('latin1_swedish_ci');
 });
 
 // Datasets
