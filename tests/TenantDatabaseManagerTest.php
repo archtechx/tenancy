@@ -582,7 +582,7 @@ test('database managers validate parameters that cannot be bound', function ($dr
             expect(fn () => $manager->createDatabase($tenantWithNonStringCharset))
                 ->toThrow(InvalidArgumentException::class, 'Parameter has to be a string.');
 
-            // Restore the default charset to avoid inconsistencies in future test runs
+            // Restore the default charset
             config(['database.connections.mysql.charset' => 'utf8mb4']);
             DB::purge('mysql');
         }
@@ -620,7 +620,7 @@ test('database managers validate parameters that cannot be bound', function ($dr
         expect(fn () => $manager->createUser($tenantWithInvalidPassword->database()))
             ->toThrow(InvalidArgumentException::class, 'Forbidden character');
 
-        // Special characters are allowed in password
+        // Special characters are allowed in passwords
         $tenantWithValidPassword = Tenant::make([
             'tenancy_db_name' => 'valid_database_name890' . Str::random(4),
             'tenancy_db_username' => 'valid_USERNAME' . Str::random(4),
@@ -629,6 +629,10 @@ test('database managers validate parameters that cannot be bound', function ($dr
 
         expect(fn () => $manager->createUser($tenantWithValidPassword->database()))
             ->not()->toThrow(InvalidArgumentException::class, 'Forbidden character');
+
+        // Delete the created user
+        expect(fn () => $manager->deleteUser($tenantWithValidPassword->database()))
+            ->not()->toThrow(InvalidArgumentException::class);
 
         $tenantWithNullDbParameters = Tenant::make([
             'tenancy_db_name' => null,
