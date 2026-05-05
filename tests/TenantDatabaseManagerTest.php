@@ -17,6 +17,7 @@ use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Database\Contracts\ManagesDatabaseUsers;
 use Stancl\Tenancy\Database\Contracts\StatefulTenantDatabaseManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\SQLiteDatabaseManager;
@@ -537,6 +538,241 @@ test('partial tenant connection templates get merged into the central connection
     expect($manager->databaseExists($name))->toBeTrue(); // tenant connection works
     expect($manager->connection()->getConfig('host'))->toBe('mysql2');
     expect($manager->connection()->getConfig('url'))->toBeNull();
+});
+
+test('database managers validate parameters that cannot be bound', function ($driver, $databaseManager) {
+    config()->set([
+        "tenancy.database.template_tenant_connection" => $driver,
+    ]);
+
+    $manager = app($databaseManager);
+
+    if ($manager instanceof StatefulTenantDatabaseManager) {
+        $manager->setConnection($driver);
+    }
+
+    $invalidDatabaseName = "\"database_with_quotes\"";
+
+    if (! ($manager instanceof ManagesDatabaseUsers)) {
+        // Only test createDatabase() and deleteDatabase() with non-permission controlled managers here
+        // since permission controlled managers override these methods to e.g. delete users before
+        // calling parent::deleteDatabase(), and with invalid DB name, the user deletion will already
+        // fail before we even get to actual deleteDatabase() logic.
+        $tenant = Tenant::make([
+            'tenancy_db_name' => $invalidDatabaseName,
+            'tenancy_db_username' => 'valid-username',
+        ]);
+
+        expect(fn () => $manager->createDatabase($tenant))
+            ->toThrow(InvalidArgumentException::class, 'Forbidden character');
+
+        expect(fn () => $manager->deleteDatabase($tenant))
+            ->toThrow(InvalidArgumentException::class, 'Forbidden character');
+
+        if ($driver === 'mysql') {
+            // MySQLDatabaseManager reads charset/collation from config.
+            // An exception is thrown during validation if the parameter is not a string.
+            config(['database.connections.mysql.charset' => []]);
+            DB::purge('mysql');
+
+            $tenantWithNonStringCharset = Tenant::make([
+                'tenancy_db_name' => 'valid_db_name',
+            ]);
+
+            expect(fn () => $manager->createDatabase($tenantWithNonStringCharset))
+                ->toThrow(InvalidArgumentException::class, 'Parameter has to be a string.');
+
+            // Restore the default charset
+            config(['database.connections.mysql.charset' => 'utf8mb4']);
+            DB::purge('mysql');
+        }
+    } else {
+        // Invalid username, createUser() and deleteUser() should
+        // throw an invalid argument exception.
+        $tenantWithInvalidUsername = Tenant::make([
+            'tenancy_db_name' => 'valid_database_name890',
+            'tenancy_db_username' => "username with spaces",
+        ]);
+
+        expect(fn () => $manager->createUser($tenantWithInvalidUsername->database()))
+            ->toThrow(InvalidArgumentException::class, 'Forbidden character');
+
+        expect(fn () => $manager->deleteUser($tenantWithInvalidUsername->database()))
+            ->toThrow(InvalidArgumentException::class, 'Forbidden character');
+
+        // Invalid database name, createUser() should throw
+        // an invalid argument exception. deleteUser() doesn't
+        // validate the DB name (it only validates the username).
+        $tenantWithInvalidDatabase = Tenant::make([
+            'tenancy_db_name' => $invalidDatabaseName,
+            'tenancy_db_username' => 'valid_USERNAME',
+        ]);
+
+        expect(fn () => $manager->createUser($tenantWithInvalidDatabase->database()))
+            ->toThrow(InvalidArgumentException::class, 'Forbidden character');
+
+        $tenantWithInvalidPassword = Tenant::make([
+            'tenancy_db_name' => 'valid_database_name890',
+            'tenancy_db_username' => 'valid_USERNAME',
+            'tenancy_db_password' => "p'ssword",
+        ]);
+
+        expect(fn () => $manager->createUser($tenantWithInvalidPassword->database()))
+            ->toThrow(InvalidArgumentException::class, 'Forbidden character');
+
+        // Special characters are allowed in passwords
+        $tenantWithValidPassword = Tenant::make([
+            'tenancy_db_name' => 'valid_database_name890' . Str::random(8),
+            'tenancy_db_username' => 'valid_USERNAME' . Str::random(8),
+            'tenancy_db_password' => "]pa$$ ;word",
+        ]);
+
+        expect(fn () => $manager->createUser($tenantWithValidPassword->database()))
+            ->not()->toThrow(InvalidArgumentException::class, 'Forbidden character');
+
+        $tenantWithNullDbParameters = Tenant::make([
+            'tenancy_db_name' => null,
+            'tenancy_db_username' => null,
+            'tenancy_db_password' => null,
+        ]);
+
+        // validateParameter() doesn't throw InvalidArgumentException if a parameter is null
+        // (an exception will be thrown, but not by validateParameter()).
+        expect(fn () => $manager->createUser($tenantWithNullDbParameters->database()))
+            ->not()->toThrow(InvalidArgumentException::class);
+    }
+})->with('database_managers');
+
+test('sqlite database manager validates database names correctly', function () {
+    $manager = app(SQLiteDatabaseManager::class);
+
+    // Dots are allowed in database names
+    expect(fn () => $manager->databaseExists('valid-db_name.sqlite'))
+        ->not()->toThrow(InvalidArgumentException::class);
+
+    // Directory names are considered invalid input for database names
+    expect(fn () => $manager->databaseExists('..'))
+        ->toThrow(InvalidArgumentException::class);
+
+    // Empty strings are considered invalid input for database names
+    expect(fn () => $manager->databaseExists(''))
+        ->toThrow(InvalidArgumentException::class);
+});
+
+test('sqlite database manager recognizes inmemory databases correctly', function () {
+    $manager = app(SQLiteDatabaseManager::class);
+
+    expect($manager->isInMemory('file:_tenancy_inmemory_123?mode=memory&cache=shared'))->toBeTrue();
+    expect($manager->isInMemory(':memory:'))->toBeTrue();
+
+    // Missing the '?mode=memory&cache=shared' suffix
+    expect($manager->isInMemory('file:_tenancy_inmemory_456'))->toBeFalse();
+
+    // Doesn't start with 'file:_tenancy_inmemory_'
+    expect($manager->isInMemory('_tenancy_inmemory_123?mode=memory&cache=shared'))->toBeFalse();
+
+    // In-memory DB name is validated correctly in makeConnectionConfig()
+    expect(fn () => $manager->makeConnectionConfig([], 'file:_tenancy_inmemory_12"3?mode=memory&cache=shared'))
+        ->toThrow(InvalidArgumentException::class, 'Forbidden character');
+
+    expect(fn () => $manager->makeConnectionConfig([], 'file:_tenancy_inmemory_123?mode=memory&cache=shared'))
+        ->not()->toThrow(InvalidArgumentException::class);
+
+    expect(fn () => $manager->makeConnectionConfig([], ':memory:'))
+        ->not()->toThrow(InvalidArgumentException::class);
+});
+
+test('sqlite database manager respects the configured path while making the database config', function () {
+    config()->set([
+        'tenancy.database.template_tenant_connection' => 'sqlite',
+    ]);
+
+    $tenant = Tenant::make([
+        'tenancy_db_name' => 'tenant.sqlite',
+    ]);
+
+    // SQLiteDatabaseManager::$path is null, the database path is built using database_path()
+    expect($tenant->database()->connection()['database'])->toBe(database_path('tenant.sqlite'));
+
+    SQLiteDatabaseManager::$path = '/custom/path/';
+
+    expect($tenant->database()->connection()['database'])->toBe('/custom/path/tenant.sqlite');
+});
+
+test('newly created tenant databases use the correct charset and collation with mysql', function () {
+    config([
+        'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
+        'database.connections.mysql.charset' => 'utf8mb4',
+        'database.connections.mysql.collation' => 'utf8mb4_unicode_ci',
+    ]);
+
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    withBootstrapping();
+
+    $serverDefaultCharset = DB::selectOne('SELECT @@character_set_server AS charset')->charset;
+    $serverDefaultCollation = DB::selectOne('SELECT @@collation_server AS collation')->collation;
+
+    $databaseCharset = fn () => DB::selectOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()')->DEFAULT_CHARACTER_SET_NAME;
+    $databaseCollation = fn () => DB::selectOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()')->DEFAULT_COLLATION_NAME;
+
+    $defaultTenant = Tenant::create();
+
+    tenancy()->initialize($defaultTenant);
+
+    // No charset or collation specified,
+    // defaults from the MySQL config used.
+    expect($databaseCharset())->toBe('utf8mb4');
+    expect($databaseCollation())->toBe('utf8mb4_unicode_ci');
+
+    $tenantWithCharsetAndCollation = Tenant::create([
+        'tenancy_db_charset' => 'latin1',
+        'tenancy_db_collation' => 'latin1_swedish_ci',
+    ]);
+
+    tenancy()->initialize($tenantWithCharsetAndCollation);
+
+    // Custom charset and collation from tenant config
+    expect($databaseCharset())->toBe('latin1');
+    expect($databaseCollation())->toBe('latin1_swedish_ci');
+
+    $tenantWithNullCharsetAndCollation = Tenant::create([
+        'tenancy_db_charset' => null,
+        'tenancy_db_collation' => null,
+    ]);
+
+    tenancy()->initialize($tenantWithNullCharsetAndCollation);
+
+    // Default MySQL server charset and collation
+    // (e.g. charset = utf8mb4, collation = utf8mb4_0900_ai_ci)
+    expect($databaseCharset())->toBe($serverDefaultCharset);
+    expect($databaseCollation())->toBe($serverDefaultCollation);
+
+    $tenantWithCharsetAndNullCollation = Tenant::create([
+        'tenancy_db_charset' => 'binary',
+        'tenancy_db_collation' => null,
+    ]);
+
+    tenancy()->initialize($tenantWithCharsetAndNullCollation);
+
+    // Charset specified, collation is null,
+    // MySQL will choose a default collation for the specified charset.
+    expect($databaseCharset())->toBe('binary');
+    expect($databaseCollation())->toBe('binary');
+
+    // Collation specified, charset is null,
+    // MySQL will choose a default charset for the specified collation.
+    $tenantWithCollationAndNullCharset = Tenant::create([
+        'tenancy_db_charset' => null,
+        'tenancy_db_collation' => 'latin1_swedish_ci',
+    ]);
+
+    tenancy()->initialize($tenantWithCollationAndNullCharset);
+
+    expect($databaseCharset())->toBe('latin1');
+    expect($databaseCollation())->toBe('latin1_swedish_ci');
 });
 
 // Datasets
