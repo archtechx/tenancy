@@ -7,11 +7,19 @@ namespace Stancl\Tenancy\Bootstrappers;
 use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Config\Repository;
 use Illuminate\Contracts\Broadcasting\Broadcaster;
+use Illuminate\Contracts\Broadcasting\Factory as BroadcastingFactory;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Broadcast;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Overrides\TenancyBroadcastManager;
 
+/**
+ * Maps tenant properties to broadcasting config and overrides
+ * the BroadcastManager binding with TenancyBroadcastManager.
+ *
+ * @see TenancyBroadcastManager
+ */
 class BroadcastingConfigBootstrapper implements TenancyBootstrapper
 {
     /**
@@ -21,6 +29,8 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
      * [
      *     'config.key.name' => 'tenant_property',
      * ]
+     *
+     * $tenant->tenant_property will be mapped to config('config.key.name') when tenancy is initialized.
      */
     public static array $credentialsMap = [];
 
@@ -54,7 +64,7 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
         protected Application $app
     ) {
         static::$broadcaster ??= $config->get('broadcasting.default');
-        static::$credentialsMap = array_merge(static::$credentialsMap, static::$mapPresets[static::$broadcaster] ?? []);
+        static::$credentialsMap = array_merge(static::$mapPresets[static::$broadcaster] ?? [], static::$credentialsMap);
     }
 
     public function bootstrap(Tenant $tenant): void
@@ -64,17 +74,48 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
 
         $this->setConfig($tenant);
 
-        // Make BroadcastManager resolve to a custom BroadcastManager which makes the broadcasters use the tenant credentials
+        // Make BroadcastManager resolve to TenancyBroadcastManager. The manager:
+        // - resolves fresh broadcasters so that the updated (tenant) broadcasting config is used while broadcasting
+        // - makes the tenant broadcasters inherit the channels of the original (central) broadcaster
+        //   (since newly resolved broadcasters don't receive any channels by default, broadcasting on
+        //   channels registered in central context, e.g. in routes/channels.php, would otherwise not
+        //   work with the tenant broadcasters)
         $this->app->extend(BroadcastManager::class, function (BroadcastManager $broadcastManager) {
-            return new TenancyBroadcastManager($this->app);
+            $originalCustomCreators = invade($broadcastManager)->customCreators;
+            $tenantBroadcastManager = new TenancyBroadcastManager($this->app);
+
+            // Make TenancyBroadcastManager inherit the custom driver creators registered in the central context
+            // so that custom drivers work in tenant context without having to re-register the creators manually.
+            foreach ($originalCustomCreators as $driver => $closure) {
+                $tenantBroadcastManager->extend($driver, $closure);
+            }
+
+            return $tenantBroadcastManager;
         });
+
+        // Swap currently bound Broadcaster instance for one that's resolved through the tenant BroadcastManager.
+        // Note that updating broadcasting config (credentials) in tenant context doesn't update the credentials
+        // used by the bound Broadcaster instance. If you need to e.g. send a notification in response to
+        // updating tenant's broadcasting credentials in tenant context, it's recommended to
+        // reinitialize tenancy after updating the credentials.
+        $this->app->extend(Broadcaster::class, function () {
+            return $this->app->make(BroadcastManager::class)->connection();
+        });
+
+        // Clear the resolved Broadcast facade's Illuminate\Contracts\Broadcasting\Factory instance
+        // so that it gets re-resolved as TenancyBroadcastManager instead of the central BroadcastManager
+        // when used. E.g. the Broadcast::auth() call in BroadcastController::authenticate (/broadcasting/auth).
+        Broadcast::clearResolvedInstance(BroadcastingFactory::class);
     }
 
     public function revert(): void
     {
-        // Change the BroadcastManager and Broadcaster singletons back to what they were before initializing tenancy
-        $this->app->singleton(BroadcastManager::class, fn (Application $app) => $this->originalBroadcastManager);
+        // Revert the bound BroadcastManager and Broadcaster singletons back to their original state
+        $this->app->singleton(BroadcastManager::class, fn (Application $app): ?BroadcastManager => $this->originalBroadcastManager);
         $this->app->singleton(Broadcaster::class, fn (Application $app) => $this->originalBroadcaster);
+
+        // Clear the resolved Broadcast facade instance so that it gets re-resolved as the central BroadcastManager
+        Broadcast::clearResolvedInstance(BroadcastingFactory::class);
 
         $this->unsetConfig();
     }

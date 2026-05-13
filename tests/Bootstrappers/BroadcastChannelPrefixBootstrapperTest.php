@@ -16,6 +16,9 @@ use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastChannelPrefixBootstrapper;
 use function Stancl\Tenancy\Tests\pest;
+use Illuminate\Broadcasting\Broadcasters\NullBroadcaster;
+use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Collection;
 
 beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
@@ -136,4 +139,97 @@ test('BroadcastChannelPrefixBootstrapper prefixes the channels events are broadc
     // The current broadcaster is the same as the central one again
     expect(app(BroadcastManager::class)->driver())->toBe($broadcaster);
     expect(invade(app(BroadcastManager::class)->driver())->formatChannels($channelNames))->toEqual($channelNames);
+});
+
+test('broadcasting channel helpers register channels correctly', function() {
+    config([
+        'broadcasting.default' => $driver = 'testing',
+        'broadcasting.connections.testing.driver' => $driver,
+    ]);
+
+    config(['tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class]]);
+
+    Schema::create('users', function (Blueprint $table) {
+        $table->increments('id');
+        $table->string('name');
+        $table->string('email')->unique();
+        $table->string('password');
+        $table->rememberToken();
+        $table->timestamps();
+    });
+
+    $centralUser = User::create(['name' => 'central', 'email' => 'test@central.cz', 'password' => 'test']);
+    $tenant = Tenant::create();
+
+    migrateTenants();
+
+    tenancy()->initialize($tenant);
+
+    // Same ID as $centralUser
+    $tenantUser = User::create(['name' => 'tenant', 'email' => 'test@tenant.cz', 'password' => 'test']);
+
+    tenancy()->end();
+
+    /** @var BroadcastManager $broadcastManager */
+    $broadcastManager = app(BroadcastManager::class);
+
+    // Use a driver with no channels
+    $broadcastManager->extend($driver, fn () => new NullBroadcaster);
+
+    $getChannels = fn (): Collection => $broadcastManager->driver($driver)->getChannels();
+
+    expect($getChannels())->toBeEmpty();
+
+    // Basic channel registration
+    Broadcast::channel($channelName = 'user.{userName}', $channelClosure = function ($user, $userName) {
+        return User::firstWhere('name', $userName)?->is($user) ?? false;
+    });
+
+    // Check if the channel is registered
+    $centralChannelClosure = $getChannels()->first(fn ($closure, $name) => $name === $channelName);
+    expect($centralChannelClosure)->not()->toBeNull();
+
+    // Channel closures work as expected (running in central context)
+    expect($centralChannelClosure($centralUser, $centralUser->name))->toBeTrue();
+    expect($centralChannelClosure($centralUser, $tenantUser->name))->toBeFalse();
+
+    // Register a tenant broadcasting channel (almost identical to the original channel, just able to accept the tenant key)
+    tenant_channel($channelName, $channelClosure);
+
+    // Tenant channel registered – its name is correctly prefixed ("{tenant}.user.{userId}")
+    $tenantChannelClosure = $getChannels()->first(fn ($closure, $name) => $name === "{tenant}.$channelName");
+    expect($tenantChannelClosure)->toBe($centralChannelClosure);
+
+    // The tenant channels are prefixed with '{tenant}.'
+    // They accept the tenant key, but their closures only run in tenant context when tenancy is initialized
+    // The regular channels don't accept the tenant key, but they also respect the current context
+    // The tenant key is used solely for the name prefixing – the closures can still run in the central context
+    tenant_channel($channelName, $tenantChannelClosure = function ($user, $tenant, $userName) {
+        return User::firstWhere('name', $userName)?->is($user) ?? false;
+    });
+
+    expect($tenantChannelClosure)->not()->toBe($centralChannelClosure);
+
+    expect($tenantChannelClosure($centralUser, $tenant->getTenantKey(), $centralUser->name))->toBeTrue();
+    expect($tenantChannelClosure($centralUser, $tenant->getTenantKey(), $tenantUser->name))->toBeFalse();
+
+    tenancy()->initialize($tenant);
+
+    // The channel closure runs in the tenant context
+    // Only the tenant user is available
+    expect($tenantChannelClosure($centralUser, $tenant->getTenantKey(), $tenantUser->name))->toBeFalse();
+    expect($tenantChannelClosure($tenantUser, $tenant->getTenantKey(), $tenantUser->name))->toBeTrue();
+
+    // Use a new channel instance to delete the previously registered channels before testing the global_channel helper
+    $broadcastManager->purge($driver);
+    $broadcastManager->extend($driver, fn () => new NullBroadcaster);
+
+    expect($getChannels())->toBeEmpty();
+
+    // Global channel helper prefixes the channel name with 'global__'
+    global_channel($channelName, $channelClosure);
+
+    // Channel prefixed with 'global__' found
+    $foundChannelClosure = $getChannels()->first(fn ($closure, $name) => $name === 'global__' . $channelName);
+    expect($foundChannelClosure)->not()->toBeNull();
 });
