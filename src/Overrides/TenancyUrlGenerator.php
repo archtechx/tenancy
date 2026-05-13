@@ -22,16 +22,18 @@ use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
  *       - Automatically passing ['tenant' => ...] to each route() call -- if TenancyUrlGenerator::$passTenantParameterToRoutes is enabled
  *         This is a more universal solution since it supports both path identification and query parameter identification.
  *
- *   - Prepends route names passed to route() and URL::temporarySignedRoute()
- *     with `tenant.` (or the configured prefix) if $prefixRouteNames is enabled.
+ *   - Prepends route names with the tenant route name prefix ('tenant.' by default,
+ *     configurable at tenant_route_name_prefix under PathTenantResolver) if $prefixRouteNames is enabled.
  *     This is primarily useful when using route cloning with path identification.
  *
- * To bypass this behavior on any single route() call, pass the $bypassParameter as true (['central' => true] by default).
+ * Affected methods: route(), toRoute(), temporarySignedRoute(), signedRoute() (the last two via the route() override).
+ *
+ * To bypass this behavior on any single affected method call, pass the $bypassParameter as true (['central' => true] by default).
  */
 class TenancyUrlGenerator extends UrlGenerator
 {
     /**
-     * Parameter which works as a flag for bypassing the behavior modification of route() and temporarySignedRoute().
+     * Parameter which works as a flag for bypassing the behavior modification of the affected methods.
      *
      * For example, in tenant context:
      * Route::get('/', ...)->name('home');
@@ -44,12 +46,12 @@ class TenancyUrlGenerator extends UrlGenerator
      * Note: UrlGeneratorBootstrapper::$addTenantParameterToDefaults is not affected by this, though
      * it doesn't matter since it doesn't pass any extra parameters when not needed.
      *
-     * @see UrlGeneratorBootstrapper
+     * @see Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper
      */
     public static string $bypassParameter = 'central';
 
     /**
-     * Should route names passed to route() or temporarySignedRoute()
+     * Should route names passed to the affected methods
      * get prefixed with the tenant route name prefix.
      *
      * This is useful when using e.g. path identification with third-party packages
@@ -59,12 +61,12 @@ class TenancyUrlGenerator extends UrlGenerator
     public static bool $prefixRouteNames = false;
 
     /**
-     * Should the tenant parameter be passed to route() or temporarySignedRoute() calls.
+     * Should the tenant parameter be passed to the affected methods.
      *
      * This is useful with path or query parameter identification. The former can be handled
      * more elegantly using UrlGeneratorBootstrapper::$addTenantParameterToDefaults.
      *
-     * @see UrlGeneratorBootstrapper
+     * @see Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper
      */
     public static bool $passTenantParameterToRoutes = false;
 
@@ -105,8 +107,18 @@ class TenancyUrlGenerator extends UrlGenerator
     public static bool $passQueryParameter = true;
 
     /**
-     * Override the route() method so that the route name gets prefixed
-     * and the tenant parameter gets added when in tenant context.
+     * Override the route() method to prefix the route name before $this->routes->getByName($name) is called
+     * in the parent route() call.
+     *
+     * This is necessary because $this->routes->getByName($name) is called to retrieve the route
+     * before passing it to toRoute(). If only the prefixed route (e.g. 'tenant.foo') is registered
+     * and the original ('foo') isn't, route() would throw a RouteNotFoundException.
+     * So route() has to be overridden to prefix the passed route name, even though toRoute() is overridden already.
+     *
+     * Only the name is taken from prepareRouteInputs() here — parameter handling
+     * (adding tenant parameter, removing bypass parameter) is delegated to toRoute().
+     *
+     * Affects temporarySignedRoute() and signedRoute() as well since they call route() under the hood.
      */
     public function route($name, $parameters = [], $absolute = true)
     {
@@ -114,32 +126,28 @@ class TenancyUrlGenerator extends UrlGenerator
             throw new InvalidArgumentException('Attribute [name] expects a string backed enum.');
         }
 
-        [$name, $parameters] = $this->prepareRouteInputs($name, Arr::wrap($parameters)); // @phpstan-ignore argument.type
+        [$name] = $this->prepareRouteInputs(Arr::wrap($parameters), $name); // @phpstan-ignore argument.type
 
         return parent::route($name, $parameters, $absolute);
     }
 
     /**
-     * Override the temporarySignedRoute() method so that the route name gets prefixed
-     * and the tenant parameter gets added when in tenant context.
+     * Override the toRoute() to prefix the route name
+     * and add the tenant parameter when in tenant context.
+     *
+     * Also affects route(). Even though route() is overridden separately, it delegates parameter handling to toRoute().
      */
-    public function temporarySignedRoute($name, $expiration, $parameters = [], $absolute = true)
+    public function toRoute($route, $parameters, $absolute)
     {
-        if ($name instanceof BackedEnum && ! is_string($name = $name->value)) {
-            throw new InvalidArgumentException('Attribute [name] expects a string backed enum.');
+        $name = $route->getName();
+
+        [$prefixedName, $parameters] = $this->prepareRouteInputs(Arr::wrap($parameters), $name);
+
+        if ($name && $prefixedName !== $name && $tenantRoute = $this->routes->getByName($prefixedName)) {
+            $route = $tenantRoute;
         }
 
-        $wrappedParameters = Arr::wrap($parameters);
-
-        [$name, $parameters] = $this->prepareRouteInputs($name, $wrappedParameters); // @phpstan-ignore argument.type
-
-        if (isset($wrappedParameters[static::$bypassParameter])) {
-            // If the bypass parameter was passed, we need to add it back to the parameters after prepareRouteInputs() removes it,
-            // so that the underlying route() call in parent::temporarySignedRoute() can bypass the behavior modification as well.
-            $parameters[static::$bypassParameter] = $wrappedParameters[static::$bypassParameter];
-        }
-
-        return parent::temporarySignedRoute($name, $expiration, $parameters, $absolute);
+        return parent::toRoute($route, $parameters, $absolute);
     }
 
     /**
@@ -161,10 +169,13 @@ class TenancyUrlGenerator extends UrlGenerator
      * To skip these modifications, pass the bypass parameter in route parameters.
      * Before returning the modified route inputs, the bypass parameter is removed from the parameters.
      */
-    protected function prepareRouteInputs(string $name, array $parameters): array
+    protected function prepareRouteInputs(array $parameters, string|null $name): array
     {
         if (! $this->routeBehaviorModificationBypassed($parameters)) {
-            $name = $this->routeNameOverride($name) ?? $this->prefixRouteName($name);
+            if (! is_null($name)) {
+                $name = $this->routeNameOverride($name) ?? $this->prefixRouteName($name);
+            }
+
             $parameters = $this->addTenantParameter($parameters);
         }
 
