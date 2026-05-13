@@ -17,6 +17,12 @@ class SeedDatabase implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    /**
+     * Should pending tenants be included while seeding,
+     * regardless of the tenancy.pending.include_in_queries config value.
+     */
+    public static bool $includePending = true;
+
     public function __construct(
         protected TenantWithDatabase&Model $tenant,
     ) {}
@@ -25,6 +31,7 @@ class SeedDatabase implements ShouldQueue
     {
         Artisan::call('tenants:seed', [
             '--tenants' => [$this->tenant->getTenantKey()],
+            '--with-pending' => static::$includePending,
         ]);
     }
 }
