@@ -6,13 +6,17 @@ namespace Stancl\Tenancy\Database\TenantDatabaseManagers;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 use PDO;
+use Stancl\Tenancy\Database\Concerns\ValidatesDatabaseParameters;
 use Stancl\Tenancy\Database\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Throwable;
 
 class SQLiteDatabaseManager implements TenantDatabaseManager
 {
+    use ValidatesDatabaseParameters;
+
     /**
      * SQLite database directory path.
      *
@@ -56,6 +60,16 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
      * @var Closure(Tenant)|null
      */
     public static Closure|null $closeInMemoryConnectionUsing = null;
+
+    /**
+     * Characters allowed in database names.
+     *
+     * Includes dots to support file extensions (e.g. '.sqlite').
+     */
+    protected static function allowedDatabaseNameCharacters(): string
+    {
+        return 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.';
+    }
 
     public function createDatabase(TenantWithDatabase $tenant): bool
     {
@@ -122,6 +136,9 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
     public function makeConnectionConfig(array $baseConfig, string $databaseName): array
     {
         if ($this->isInMemory($databaseName)) {
+            // Named in-memory DBs are formatted like 'file:_tenancy_inmemory_tenant123?mode=memory&cache=shared'
+            $this->validateDatabaseName($databaseName, ':?=&');
+
             $baseConfig['database'] = $databaseName;
 
             if (static::$persistInMemoryConnectionUsing !== null) {
@@ -129,7 +146,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
                 (static::$persistInMemoryConnectionUsing)(new PDO($dsn), $dsn);
             }
         } else {
-            $baseConfig['database'] = database_path($databaseName);
+            $baseConfig['database'] = $this->getPath($databaseName);
         }
 
         return $baseConfig;
@@ -137,6 +154,8 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
 
     public function getPath(string $name): string
     {
+        $this->validateDatabaseName($name);
+
         if (static::$path) {
             return rtrim(static::$path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $name;
         }
@@ -146,6 +165,28 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
 
     public static function isInMemory(string $name): bool
     {
-        return $name === ':memory:' || str_contains($name, '_tenancy_inmemory_');
+        $isNamed = str_starts_with($name, 'file:_tenancy_inmemory_') &&
+            str_ends_with($name, '?mode=memory&cache=shared');
+
+        return $name === ':memory:' || $isNamed;
+    }
+
+    /**
+     * Ensure database name only contains allowed characters
+     * (allowedDatabaseNameCharacters() + $extraAllowedCharacters) and is not a directory name.
+     *
+     * @throws InvalidArgumentException
+     */
+    protected function validateDatabaseName(string $name, string $extraAllowedCharacters = ''): void
+    {
+        $this->validateParameter($name, $this->allowedDatabaseNameCharacters() . $extraAllowedCharacters);
+
+        if ($name === '') {
+            throw new InvalidArgumentException('Database name cannot be empty.');
+        }
+
+        if (is_dir($name)) {
+            throw new InvalidArgumentException('Database name cannot be a directory.');
+        }
     }
 }
