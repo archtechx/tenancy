@@ -107,6 +107,34 @@ class CommandsTest extends TestCase
     }
 
     #[Test]
+    public function migrate_status_command_works()
+    {
+        $tenant = Tenant::create();
+
+        $this->artisan('tenants:migrate-status')
+            ->expectsOutputToContain('Tenant: ' . $tenant->getTenantKey());
+
+        Artisan::call('tenants:migrate', ['--tenants' => [$tenant->getTenantKey()]]);
+
+        $this->artisan('tenants:migrate-status', ['--tenants' => [$tenant->getTenantKey()]])
+            ->expectsOutputToContain('Tenant: ' . $tenant->getTenantKey())
+            ->expectsOutputToContain('Ran');
+    }
+
+    #[Test]
+    public function migrate_status_command_works_with_multiple_tenants()
+    {
+        $tenant1 = Tenant::create()->getTenantKey();
+        $tenant2 = Tenant::create()->getTenantKey();
+
+        Artisan::call('tenants:migrate', ['--tenants' => [$tenant1, $tenant2]]);
+
+        $this->artisan('tenants:migrate-status')
+            ->expectsOutputToContain('Tenant: ' . $tenant1)
+            ->expectsOutputToContain('Tenant: ' . $tenant2);
+    }
+
+    #[Test]
     public function seed_command_works()
     {
         $this->markTestIncomplete();
