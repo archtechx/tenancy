@@ -292,7 +292,7 @@ Commands registered by `TenancyServiceProvider`:
 - `tenants:pending-clear`
 - `tenants:pending-create`
 - `tenants:purge-impersonation-tokens`
-- `tenants:create-user-with-rls-policies`
+- `tenants:rls`
 
 Prefer these commands over hand-written loops for tenant maintenance tasks.
 
