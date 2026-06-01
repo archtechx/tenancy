@@ -6,9 +6,11 @@ namespace Stancl\Tenancy;
 
 use Closure;
 use Illuminate\Cache\CacheManager;
+use Illuminate\Cache\DatabaseStore;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Console\Migrations\FreshCommand;
 use Illuminate\Routing\Events\RouteMatched;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -94,12 +96,49 @@ class TenancyServiceProvider extends ServiceProvider
             // using the callback below. It is set by DatabaseCacheBootstrapper.
             $manager = new CacheManager($app);
 
+            // Make globalCache use either the configured non-null connection,
+            // or fall back to the central connection.
+            $this->makeDatabaseCacheStoresCentral($manager);
+
+            // If a bootstrapper (like DatabaseCacheBootstrapper) makes the
+            // cache connection tenant explicitly, the makeDatabaseCacheStoresCentral()
+            // call ends up setting the tenant connection rather than the central one,
+            // and the $adjustCacheManagerUsing callback is needed to
+            // make globalCache use the central connection.
             if (static::$adjustCacheManagerUsing !== null) {
                 (static::$adjustCacheManagerUsing)($manager);
             }
 
             return $manager;
         });
+    }
+
+    /**
+     * Ensure globalCache uses the central connection for database cache stores.
+     *
+     * A freshly built CacheManager creates database stores using the current default connection, which
+     * DatabaseTenancyBootstrapper switches to the tenant connection. Since global cache should always be
+     * central, reset those stores back to their configured connection, falling back to the central one.
+     */
+    protected function makeDatabaseCacheStoresCentral(CacheManager $manager): void
+    {
+        $centralConnection = $this->app['config']['tenancy.database.central_connection'];
+
+        foreach ($this->app['config']['cache.stores'] ?? [] as $name => $store) {
+            $notAValidDatabaseStore = ! is_array($store) || ($store['driver'] ?? null) !== 'database';
+
+            if ($notAValidDatabaseStore) {
+                continue;
+            }
+
+            /** @var DatabaseStore $databaseStore */
+            $databaseStore = $manager->store($name)->getStore();
+
+            // If $store['connection'] is null, it defaults to the default DB connection (which may be tenant).
+            // Fall back to the central connection to keep the global cache central.
+            $databaseStore->setConnection(DB::connection($store['connection'] ?? $centralConnection));
+            $databaseStore->setLockConnection(DB::connection($store['lock_connection'] ?? $store['connection'] ?? $centralConnection));
+        }
     }
 
     /* Bootstrap services. */
