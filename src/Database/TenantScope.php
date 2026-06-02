@@ -13,7 +13,7 @@ use Stancl\Tenancy\Tenancy;
 class TenantScope implements Scope
 {
     /**
-     * @param Builder<covariant Model> $builder
+     * @param Builder<Model> $builder
      */
     public function apply(Builder $builder, Model $model)
     {

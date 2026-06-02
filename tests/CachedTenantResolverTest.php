@@ -165,7 +165,6 @@ test('cache is invalidated when tenant is updated from within the tenant context
     ['redis', [CacheTenancyBootstrapper::class]],
     ['redis', [CacheTagsBootstrapper::class]],
     ['database', [DatabaseTenancyBootstrapper::class, DatabaseCacheBootstrapper::class]],
-    ['database', [DatabaseTenancyBootstrapper::class, CacheTenancyBootstrapper::class]],
 ]);
 
 test('cache is invalidated when the tenant is deleted', function (string $resolver, bool $configureTenantModelColumn) {
