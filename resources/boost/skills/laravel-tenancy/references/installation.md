@@ -19,13 +19,13 @@ Use this when installing or auditing `stancl/tenancy` setup.
 composer require stancl/tenancy
 ```
 
-2. Run the installer non-interactively.
+1. Run the installer non-interactively.
 
 ```bash
 php artisan tenancy:install --no-interaction
 ```
 
-3. Confirm these files exist:
+1. Confirm these files exist:
 
 - `config/tenancy.php`
 - `routes/tenant.php`
@@ -34,19 +34,19 @@ php artisan tenancy:install --no-interaction
 - `database/migrations/2019_09_15_000020_create_domains_table.php`
 - `database/migrations/tenant`
 
-4. Review `config/tenancy.php` before running migrations.
+1. Review `config/tenancy.php` before running migrations.
 
-5. Run central migrations.
+1. Run central migrations.
 
 ```bash
 php artisan migrate
 ```
 
-6. Add tenant migrations to `database/migrations/tenant`.
+1. Add tenant migrations to `database/migrations/tenant`.
 
-7. Create tenants and domains according to the identification strategy.
+1. Create tenants and domains according to the identification strategy.
 
-8. Run tenant migrations.
+1. Run tenant migrations.
 
 ```bash
 php artisan tenants:migrate

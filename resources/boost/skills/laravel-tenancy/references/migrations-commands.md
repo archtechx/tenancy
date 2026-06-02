@@ -36,7 +36,7 @@ php artisan tenants:seed
 php artisan tenants:run cache:clear
 php artisan tenant:tinker
 php artisan tenants:list
-php artisan tenant:dump
+php artisan tenants:dump
 ```
 
 ## Maintenance And Storage

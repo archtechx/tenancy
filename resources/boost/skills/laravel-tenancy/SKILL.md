@@ -84,11 +84,11 @@ That command publishes the config, routes, provider, core migrations, and create
 ## Core Working Pattern
 
 1. Install the package and inspect `config/tenancy.php`.
-2. Decide the tenant identification strategy first: domain, subdomain, domain-or-subdomain, path, request data, or origin header.
-3. Keep central and tenant routes explicit. Use the package middleware and route modes instead of ad hoc request checks.
-4. Choose the minimum bootstrapper set that matches the app's infrastructure.
-5. For data isolation, decide between multi-database tenancy, single-database tenancy, or PostgreSQL RLS before writing application models.
-6. Test both central and tenant contexts.
+1. Decide the tenant identification strategy first: domain, subdomain, domain-or-subdomain, path, request data, or origin header.
+1. Keep central and tenant routes explicit. Use the package middleware and route modes instead of ad hoc request checks.
+1. Choose the minimum bootstrapper set that matches the app's infrastructure.
+1. For data isolation, decide between multi-database tenancy, single-database tenancy, or PostgreSQL RLS before writing application models.
+1. Test both central and tenant contexts.
 
 ## Tenant Identification
 
