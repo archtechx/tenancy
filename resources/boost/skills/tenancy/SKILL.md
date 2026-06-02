@@ -3,7 +3,7 @@ name: tenancy
 description: "Activate when the user is building or debugging multi-tenant Laravel behavior with stancl/tenancy. Use for tenancy:install, tenant identification middleware, central and tenant routes, tenant model and domain model setup, multi-database or single-database tenancy, tenant-aware bootstrappers for database/cache/filesystem/queue/session/Redis, tenant context switching with tenancy()->initialize() or tenant()->run(), tenant migrations and seeders, tenant asset routes, pending tenants, resource syncing, user impersonation, RLS, Vite bundling, or testing tenant-aware behavior."
 license: MIT
 metadata:
-  author: laravel
+  author: Samuel Štancl
 ---
 
 # Tenancy For Laravel
@@ -27,6 +27,29 @@ Use `search-docs` first when it is available for Laravel integration patterns. F
 - `references/package.md`
 
 Load `references/package.md` when the task needs package-specific detail beyond the core workflow in this file.
+
+## Feature References
+
+Load focused references when the task matches a specific package area:
+
+- `references/installation.md` for install, publishing, and setup checks
+- `references/configuration.md` for `config/tenancy.php` sections
+- `references/identification.md` for middleware and resolvers
+- `references/routing-assets.md` for tenant routes, route modes, cloned routes, and asset routes
+- `references/context-api.md` for `tenancy()`, `tenant()`, `run()`, and `central()` behavior
+- `references/bootstrappers.md` for tenant-aware Laravel service scoping
+- `references/database-tenancy.md` for database isolation and tenant database managers
+- `references/migrations-commands.md` for tenant Artisan commands
+- `references/models-domains.md` for tenant/domain models and single-database traits
+- `references/filesystem-cache-queue.md` for storage, cache, sessions, Redis, and queues
+- `references/lifecycle-jobs.md` for events, provisioning, and cleanup pipelines
+- `references/resource-syncing.md` for synced central and tenant resources
+- `references/impersonation.md` for tenant user impersonation
+- `references/pending-tenants.md` for pending tenant pools
+- `references/rls.md` for PostgreSQL row-level security
+- `references/features.md` for optional package features
+- `references/integrations.md` for URL, mail, broadcasting, Fortify, Scout, Livewire, Telescope, and Vite
+- `references/testing.md` for test coverage guidance
 
 ## Package Surface
 

@@ -2,6 +2,30 @@
 
 This reference is for package-specific details that do not need to live in `SKILL.md`.
 
+
+## Focused References
+
+Load these smaller references for topic-specific work:
+
+- `installation.md` for install, publishing, and setup checks
+- `configuration.md` for `config/tenancy.php` sections
+- `identification.md` for middleware and resolvers
+- `routing-assets.md` for tenant routes, route modes, cloned routes, and asset routes
+- `context-api.md` for `tenancy()`, `tenant()`, `run()`, and `central()` behavior
+- `bootstrappers.md` for tenant-aware Laravel service scoping
+- `database-tenancy.md` for database isolation and tenant database managers
+- `migrations-commands.md` for tenant Artisan commands
+- `models-domains.md` for tenant/domain models and single-database traits
+- `filesystem-cache-queue.md` for storage, cache, sessions, Redis, and queues
+- `lifecycle-jobs.md` for events, provisioning, and cleanup pipelines
+- `resource-syncing.md` for synced central and tenant resources
+- `impersonation.md` for tenant user impersonation
+- `pending-tenants.md` for pending tenant pools
+- `rls.md` for PostgreSQL row-level security
+- `features.md` for optional package features
+- `integrations.md` for URL, mail, broadcasting, Fortify, Scout, Livewire, Telescope, and Vite
+- `testing.md` for test coverage guidance
+
 ## Main Entry Points
 
 - `src/TenancyServiceProvider.php`
