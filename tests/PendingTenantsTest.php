@@ -268,7 +268,7 @@ test('pending tenants can have default attributes for non-nullable columns', fun
         expect($fn)->toThrow(QueryException::class);
 })->with([true, false]);
 
-test('pending tenant databases can be migrated using a job unless configured otherwise', function (bool $includeInQueries, bool $migrateWithPending) {
+test('pending tenant databases can be migrated using a job unless configured otherwise', function (bool $includeInQueries, ?bool $migrateWithPending) {
     config([
         'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
         'tenancy.pending.include_in_queries' => $includeInQueries,
@@ -293,16 +293,17 @@ test('pending tenant databases can be migrated using a job unless configured oth
 
     // MigrateDatabase includes/excludes pending tenants based on its $includePending property,
     // regardless of the tenancy.pending.include_in_queries config.
-    expect(Schema::hasTable('users'))->toBe($migrateWithPending);
+    expect(Schema::hasTable('users'))->toBe($migrateWithPending ?? $includeInQueries);
 })->with([
     'include pending in queries' => [true],
     'exclude pending from queries' => [false],
 ])->with([
     'migrate with pending' => [true],
     'migrate without pending' => [false],
+    'default to config' => [null],
 ]);
 
-test('pending tenant databases can be seeded using a job unless configured otherwise', function ($includeInQueries, $seedWithPending) {
+test('pending tenant databases can be seeded using a job unless configured otherwise', function (bool $includeInQueries, ?bool $seedWithPending) {
     config([
         'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
         'tenancy.pending.include_in_queries' => $includeInQueries,
@@ -328,13 +329,14 @@ test('pending tenant databases can be seeded using a job unless configured other
 
     // SeedDatabase includes/excludes pending tenants based on its $includePending property,
     // regardless of the tenancy.pending.include_in_queries config.
-    expect(User::where('email', 'seeded@user')->exists())->toBe($seedWithPending);
+    expect(User::where('email', 'seeded@user')->exists())->toBe($seedWithPending ?? $includeInQueries);
 })->with([
     'include pending in queries' => [true],
     'exclude pending from queries' => [false],
 ])->with([
     'seed with pending' => [true],
     'seed without pending' => [false],
+    'default to config' => [null],
 ]);
 
 test('jobs that run before tenants get fully created recognize pending tenants', function () {

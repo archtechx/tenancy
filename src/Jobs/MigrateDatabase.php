@@ -20,8 +20,12 @@ class MigrateDatabase implements ShouldQueue
     /**
      * Should pending tenants be included while migrating,
      * regardless of the tenancy.pending.include_in_queries config value.
+     *
+     * If false, pending tenants will be specifically excluded.
+     *
+     * If null, default to tenancy.pending.include_in_queries config.
      */
-    public static bool $includePending = true;
+    public static ?bool $includePending = true;
 
     public function __construct(
         protected TenantWithDatabase&Model $tenant,
@@ -31,7 +35,7 @@ class MigrateDatabase implements ShouldQueue
     {
         Artisan::call('tenants:migrate', [
             '--tenants' => [$this->tenant->getTenantKey()],
-            '--with-pending' => static::$includePending,
+            '--with-pending' => static::$includePending ?? config('tenancy.pending.include_in_queries'),
         ]);
     }
 }
