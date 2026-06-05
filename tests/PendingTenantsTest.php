@@ -111,6 +111,18 @@ test('a new tenant gets created while pulling a pending tenant if the pending po
     expect(Tenant::withPending()->get()->count())->toBe(1); // All tenants
 });
 
+test('withoutPending chained with where clauses returns correct results', function () {
+    $tenant = Tenant::create();
+    $pendingTenant = Tenant::createPending();
+
+    // The query returned the correct tenant
+    expect(Tenant::withoutPending()->where('id', $tenant->id)->first()->id)->toBe($tenant->id);
+    // No tenant with this ID exists, the query returns null
+    expect(Tenant::withoutPending()->where('id', Str::random(8) . 'nonexistent-id')->first())->toBeNull();
+    // withoutPending() correctly excludes the pending tenant from the query
+    expect(Tenant::withoutPending()->where('id', $pendingTenant->id)->first())->toBeNull();
+});
+
 test('pending tenants are included in all queries based on the include_in_queries config', function () {
     Tenant::createPending();
 
