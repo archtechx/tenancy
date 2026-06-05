@@ -150,7 +150,7 @@ test('tenant user can be impersonated on a tenant path', function () {
         ->assertRedirect('/login');
 });
 
-test('stopImpersonating can keep the user authenticated', function() {
+test('stopImpersonating can keep the user authenticated', function () {
     makeLoginRoute();
 
     Route::middleware(InitializeTenancyByPath::class)->prefix('/{tenant}')->group(getRoutes(false));
@@ -191,7 +191,7 @@ test('stopImpersonating can keep the user authenticated', function() {
         ->assertSee('You are logged in as Joe');
 });
 
-test('stopImpersonating logs out the user from the impersonation guard stored in session', function() {
+test('stopImpersonating logs out the user from the impersonation guard stored in session', function () {
     Route::middleware(InitializeTenancyByPath::class)->prefix('/{tenant}')->group(getRoutes(false));
 
     $tenant = Tenant::create([
@@ -225,11 +225,10 @@ test('stopImpersonating logs out the user from the impersonation guard stored in
         'provider' => 'users',
     ]]);
 
-    // Switch guard from 'web' to 'test' and manually log in the user through 'test'
-    auth()->shouldUse('test');
-    auth()->loginUsingId($user->id);
+    // Manually log the user in through the 'test' guard
+    auth('test')->loginUsingId($user->id);
 
-    // Should log out the user from the guard used for impersonation ('web')
+    // Should log the user out from the guard used for impersonation ('web')
     UserImpersonation::stopImpersonating();
 
     expect(auth('web')->check())->toBeFalse();
@@ -241,7 +240,7 @@ test('stopImpersonating logs out the user from the impersonation guard stored in
     // stopImpersonating should throw an exception instead of logging out
     expect(fn() => UserImpersonation::stopImpersonating())->toThrow(Exception::class);
 
-    expect(auth()->check())->toBeTrue();
+    expect(auth('test')->check())->toBeTrue();
 });
 
 test('tokens have a limited ttl', function () {
