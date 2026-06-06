@@ -13,14 +13,11 @@ use Stancl\Tenancy\Bootstrappers\CacheTagsBootstrapper;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseCacheBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
-use Stancl\Tenancy\TenancyServiceProvider;
 
 use function Stancl\Tenancy\Tests\withCacheTables;
 use function Stancl\Tenancy\Tests\withTenantDatabases;
 
 beforeEach(function () {
-    TenancyServiceProvider::$adjustCacheManagerUsing = null;
-
     config([
         'cache.default' => 'redis',
         'tenancy.cache.stores' => ['redis'],
@@ -30,10 +27,6 @@ beforeEach(function () {
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
     withCacheTables();
-});
-
-afterEach(function () {
-    TenancyServiceProvider::$adjustCacheManagerUsing = null;
 });
 
 test('global cache manager stores data in global cache', function (string $store, array $bootstrappers) {

@@ -24,14 +24,12 @@ use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Resolvers\RequestDataTenantResolver;
-use Stancl\Tenancy\TenancyServiceProvider;
 use function Stancl\Tenancy\Tests\pest;
 use function Stancl\Tenancy\Tests\withCacheTables;
 use function Stancl\Tenancy\Tests\withTenantDatabases;
 
 beforeEach($cleanup = function () {
     Tenant::$extraCustomColumns = [];
-    TenancyServiceProvider::$adjustCacheManagerUsing = null;
 });
 
 afterEach($cleanup);
