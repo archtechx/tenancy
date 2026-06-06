@@ -28,6 +28,18 @@ trait HasPending
     public static function bootHasPending(): void
     {
         static::addGlobalScope(new PendingScope());
+
+        static::creating(function (self $tenant): void {
+            if ($tenant->pending()) {
+                event(new CreatingPendingTenant($tenant));
+            }
+        });
+
+        static::created(function (self $tenant): void {
+            if ($tenant->pending()) {
+                event(new PendingTenantCreated($tenant));
+            }
+        });
     }
 
     /** Initialize the trait. */
@@ -49,22 +61,11 @@ trait HasPending
      */
     public static function createPending(array $attributes = []): Model&Tenant
     {
-        $tenant = null;
-
-        try {
-            $tenant = static::create(array_merge(static::getPendingAttributes($attributes), $attributes));
-            event(new CreatingPendingTenant($tenant));
-        } finally {
-            // Update the pending_since value only after the tenant is created so it's
-            // not marked as pending until after migrations, seeders, etc are run.
-            $tenant?->update([
-                'pending_since' => now()->timestamp,
-            ]);
-        }
-
-        event(new PendingTenantCreated($tenant));
-
-        return $tenant;
+        return static::create(array_merge(
+            static::getPendingAttributes($attributes),
+            $attributes,
+            ['pending_since' => now()->timestamp],
+        ));
     }
 
     /**
