@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Features;
 
+use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -61,9 +62,9 @@ class UserImpersonation implements Feature
 
         Auth::guard($token->auth_guard)->loginUsingId($token->user_id, $token->remember);
 
-        $token->delete();
+        session()->put('tenancy_impersonation_guard', $token->auth_guard);
 
-        session()->put('tenancy_impersonating', true);
+        $token->delete();
 
         return redirect($token->redirect_url);
     }
@@ -76,16 +77,30 @@ class UserImpersonation implements Feature
 
     public static function isImpersonating(): bool
     {
-        return session()->has('tenancy_impersonating');
+        return session()->has('tenancy_impersonation_guard');
     }
 
     /**
-     * Logout from the current domain and forget impersonation session.
+     * Stop user impersonation by forgetting the impersonation session.
+     *
+     * When $logout is true, the user will also be logged out
+     * from the impersonation guard stored in the session.
+     *
+     * Throws an exception if impersonation is not active
+     * (= the impersonation guard is not in the session).
      */
-    public static function stopImpersonating(): void
+    public static function stopImpersonating(bool $logout = true): void
     {
-        auth()->logout();
+        if (! static::isImpersonating()) {
+            throw new Exception('Not currently impersonating any user.');
+        }
 
-        session()->forget('tenancy_impersonating');
+        if ($logout) {
+            $guard = session()->get('tenancy_impersonation_guard');
+
+            auth($guard)->logout();
+        }
+
+        session()->forget('tenancy_impersonation_guard');
     }
 }
