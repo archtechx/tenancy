@@ -163,7 +163,7 @@ class TenancyUrlGenerator extends UrlGenerator
     }
 
     /**
-     * Takes a route name and an array of parameters to return the prefixed route name
+     * Takes an array of parameters and a route name to return the prefixed route name
      * and the route parameters with the tenant parameter added.
      *
      * To skip these modifications, pass the bypass parameter in route parameters.
