@@ -515,3 +515,51 @@ test('migrate fresh command only deletes tenant databases if drop_tenant_databas
         expect($tenantHasDatabase($tenant))->toBe($shouldHaveDBAfterMigrateFresh);
     }
 })->with([true, false]);
+
+test('migrate commands can skip specified tenants', function (string $command) {
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+    $tenant3 = Tenant::create();
+
+    pest()->artisan("{$command} --skip-tenants={$tenant1->getTenantKey()} --skip-tenants={$tenant2->getTenantKey()}");
+
+    tenancy()->initialize($tenant1);
+
+    expect(Schema::hasTable('users'))->toBeFalse();
+
+    tenancy()->initialize($tenant2);
+
+    expect(Schema::hasTable('users'))->toBeFalse();
+
+    tenancy()->initialize($tenant3);
+
+    expect(Schema::hasTable('users'))->toBeTrue();
+})->with([
+    'tenants:migrate',
+    'tenants:migrate-fresh',
+]);
+
+test('run command can skip specified tenants', function () {
+    $tenant1 = Tenant::create()->getTenantKey();
+    $tenant2 = Tenant::create()->getTenantKey();
+    $tenant3 = Tenant::create()->getTenantKey();
+
+    pest()->artisan("tenants:run --skip-tenants=$tenant1 --skip-tenants=$tenant2 'bar foo foo@bar foobar arg --option=option'")
+        ->doesntExpectOutputToContain("Tenant: $tenant1")
+        ->doesntExpectOutputToContain("Tenant: $tenant2")
+        ->expectsOutputToContain("Tenant: $tenant3")
+        ->assertExitCode(0);
+});
+
+test('tenants and skip-tenants options can be used together', function () {
+    $tenant1 = Tenant::create()->getTenantKey();
+    $tenant2 = Tenant::create()->getTenantKey();
+    $tenant3 = Tenant::create()->getTenantKey();
+
+    // Scope to tenant1+tenant2, then skip tenant2 — only tenant1 should run
+    pest()->artisan("tenants:run --tenants=$tenant1 --tenants=$tenant2 --skip-tenants=$tenant2 'bar foo foo@bar foobar arg --option=option'")
+        ->expectsOutputToContain("Tenant: $tenant1")
+        ->doesntExpectOutputToContain("Tenant: $tenant2")
+        ->doesntExpectOutputToContain("Tenant: $tenant3")
+        ->assertExitCode(0);
+});
