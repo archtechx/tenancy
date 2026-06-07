@@ -103,6 +103,33 @@ test('central helper doesnt change tenancy state when called in central context'
     expect(tenant())->toBeNull();
 });
 
+test('reinitialize method does nothing in the central context', function () {
+    expect(tenancy()->initialized)->toBe(false);
+    expect(fn () => tenancy()->reinitialize())->not()->toThrow(\Throwable::class);
+    expect(tenancy()->initialized)->toBe(false);
+});
+
+test('reinitialize method runs bootstrappers again for the current tenant', function () {
+    config(['tenancy.bootstrappers' => [
+        ReinitBootstrapper::class,
+    ]]);
+
+    tenancy()->initialize($tenant = Tenant::create(['reinit_bootstrapper_key' => 'foo']));
+
+    expect(tenant()->getKey())->toBe($tenant->getKey());
+    expect(app('tenancy_reinit_bootstrapper_key'))->toBe('foo');
+
+    $tenant->update(['reinit_bootstrapper_key' => 'bar']);
+
+    // Unchanged until we reinitialize...
+    expect(app('tenancy_reinit_bootstrapper_key'))->toBe('foo');
+
+    tenancy()->reinitialize();
+
+    expect(tenant()->getKey())->toBe($tenant->getKey());
+    expect(app('tenancy_reinit_bootstrapper_key'))->toBe('bar');
+});
+
 class MyBootstrapper implements TenancyBootstrapper
 {
     public function bootstrap(\Stancl\Tenancy\Contracts\Tenant $tenant): void
@@ -113,5 +140,18 @@ class MyBootstrapper implements TenancyBootstrapper
     public function revert(): void
     {
         app()->instance('tenancy_ended', true);
+    }
+}
+
+class ReinitBootstrapper implements TenancyBootstrapper
+{
+    public function bootstrap(\Stancl\Tenancy\Contracts\Tenant $tenant): void
+    {
+        app()->instance('tenancy_reinit_bootstrapper_key', $tenant->getAttribute('reinit_bootstrapper_key'));
+    }
+
+    public function revert(): void
+    {
+        app()->instance('tenancy_reinit_bootstrapper_key', null);
     }
 }

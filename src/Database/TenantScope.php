@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use Stancl\Tenancy\Tenancy;
 
+/** @implements Scope<Model> */
 class TenantScope implements Scope
 {
     /**
-     * @param Builder<Model> $builder
+     * @param Builder<covariant Model> $builder
      */
     public function apply(Builder $builder, Model $model)
     {

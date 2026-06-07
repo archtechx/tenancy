@@ -19,7 +19,7 @@ trait HasTenantOptions
         return array_merge([
             new InputOption('tenants', null, InputOption::VALUE_IS_ARRAY|InputOption::VALUE_OPTIONAL, 'The tenants to run this command for. Leave empty for all tenants', null),
             new InputOption('skip-tenants', null, InputOption::VALUE_IS_ARRAY|InputOption::VALUE_OPTIONAL, 'The tenants to skip when running this command', null),
-            new InputOption('with-pending', null, InputOption::VALUE_NONE, 'Include pending tenants in query'), // todo@pending should we also offer without-pending? if we add this, mention in docs
+            new InputOption('with-pending', null, InputOption::VALUE_OPTIONAL, 'Include pending tenants in query if true/1, exclude if false/0. Defaults to the tenancy.pending.include_in_queries config value.'),
         ], parent::getOptions());
     }
 
@@ -47,7 +47,11 @@ trait HasTenantOptions
                 $query->whereNotIn(tenancy()->model()->getTenantKeyName(), $this->option('skip-tenants'));
             })
             ->when(tenancy()->model()::hasGlobalScope(PendingScope::class), function ($query) {
-                $query->withPending(config('tenancy.pending.include_in_queries') ?: $this->option('with-pending'));
+                $includePending = $this->input->hasParameterOption('--with-pending')
+                    ? filter_var($this->option('with-pending') ?? true, FILTER_VALIDATE_BOOLEAN)
+                    : config('tenancy.pending.include_in_queries');
+
+                $query->withPending($includePending);
             });
     }
 

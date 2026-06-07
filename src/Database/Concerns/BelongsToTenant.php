@@ -27,6 +27,17 @@ trait BelongsToTenant
 
     public static function bootBelongsToTenant(): void
     {
+        if (method_exists(static::class, 'whenBooted')) {
+            // Laravel 13
+            // For context see https://github.com/calebporzio/sushi/commit/62ff7f432cac736cb1da9f46d8f471cb78914b92
+            static::whenBooted(fn () => static::configureBelongsToTenantScope());
+        } else {
+            static::configureBelongsToTenantScope();
+        }
+    }
+
+    protected static function configureBelongsToTenantScope(): void
+    {
         // If TraitRLSManager::$implicitRLS is true or this model implements RLSModel
         // Postgres RLS is used for scoping, so we don't enable the scope used with single-database tenancy.
         $implicitRLS = config('tenancy.rls.manager') === TraitRLSManager::class && TraitRLSManager::$implicitRLS;

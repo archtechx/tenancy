@@ -152,6 +152,26 @@ class Tenancy
         $this->initialized = false;
     }
 
+    /**
+     * End tenancy and initialize it again for the current tenant.
+     *
+     * This can be helpful when changing "dependencies" of bootstrappers such as
+     * attributes of the current tenant that are only read once, during bootstrap().
+     *
+     * If tenancy is not initialized, this method is a no-op.
+     */
+    public function reinitialize(): void
+    {
+        if ($this->tenant === null) {
+            return;
+        }
+
+        $tenant = $this->tenant;
+        $this->end();
+
+        $this->initialize($tenant);
+    }
+
     /** @return TenancyBootstrapper[] */
     public function getBootstrappers(): array
     {

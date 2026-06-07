@@ -23,6 +23,7 @@ use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\PreventAccessFromUnwantedDomains;
 use Stancl\Tenancy\Tests\Etc\Tenant;
+
 use function Stancl\Tenancy\Tests\pest;
 
 // todo@tests write similar low-level tests for the cache bootstrapper? including the database driver in a single-db setup
@@ -100,7 +101,7 @@ test('redis sessions are separated using the redis bootstrapper', function (bool
     expect($redisClient->getOption($redisClient::OPT_PREFIX) === "tenant_{$tenant->id}_")->toBe($bootstrappedEnabled);
 
     expect(array_filter(Redis::keys('*'), function (string $key) use ($tenant) {
-        return str($key)->startsWith("tenant_{$tenant->id}_laravel_cache_");
+        return str($key)->startsWith(formatLaravelCacheKey(prefix: "tenant_{$tenant->id}_"));
     }))->toHaveCount($bootstrappedEnabled ? 1 : 0);
 })->with([true, false]);
 
@@ -118,13 +119,13 @@ test('redis sessions are separated using the cache bootstrapper', function (bool
     Route::middleware(StartSession::class, InitializeTenancyByPath::class)->get('/{tenant}/foo', fn () => 'bar');
     pest()->get("/{$tenant->id}/foo");
 
-    expect(app('session')->driver()->getHandler()->getCache()->getStore()->getPrefix() === "laravel_cache_tenant_{$tenant->id}_")->toBe($scopeSessions);
+    expect(app('session')->driver()->getHandler()->getCache()->getStore()->getPrefix() === formatLaravelCacheKey("tenant_{$tenant->id}_"))->toBe($scopeSessions);
 
     tenancy()->end();
-    expect(app('session')->driver()->getHandler()->getCache()->getStore()->getPrefix())->toBe('laravel_cache_');
+    expect(app('session')->driver()->getHandler()->getCache()->getStore()->getPrefix())->toBe(formatLaravelCacheKey());
 
     expect(array_filter(Redis::keys('*'), function (string $key) use ($tenant) {
-        return str($key)->startsWith("foolaravel_cache_tenant_{$tenant->id}");
+        return str($key)->startsWith(formatLaravelCacheKey(prefix: 'foo', suffix: "tenant_{$tenant->id}"));
     }))->toHaveCount($scopeSessions ? 1 : 0);
 })->with([true, false]);
 
@@ -148,14 +149,14 @@ test('memcached sessions are separated using the cache bootstrapper', function (
     Route::middleware(StartSession::class, InitializeTenancyByPath::class)->get('/{tenant}/foo', fn () => 'bar');
     pest()->get("/{$tenant->id}/foo");
 
-    expect(app('session')->driver()->getHandler()->getCache()->getStore()->getPrefix() === "laravel_cache_tenant_{$tenant->id}_")->toBe($scopeSessions);
+    expect(app('session')->driver()->getHandler()->getCache()->getStore()->getPrefix() === formatLaravelCacheKey("tenant_{$tenant->id}_"))->toBe($scopeSessions);
 
     tenancy()->end();
-    expect(app('session')->driver()->getHandler()->getCache()->getStore()->getPrefix())->toBe('laravel_cache_');
+    expect(app('session')->driver()->getHandler()->getCache()->getStore()->getPrefix())->toBe(formatLaravelCacheKey());
 
     sleep(1.1); // 1s+ sleep is necessary for getAllKeys() to work. if this causes race conditions or we want to avoid the delay, we can refactor this to some type of a mock
     expect(array_filter($allMemcachedKeys(), function (string $key) use ($tenant) {
-        return str($key)->startsWith("laravel_cache_tenant_{$tenant->id}");
+        return str($key)->startsWith(formatLaravelCacheKey("tenant_{$tenant->id}"));
     }))->toHaveCount($scopeSessions ? 1 : 0);
 
     Artisan::call('cache:clear memcached');
@@ -177,13 +178,13 @@ test('dynamodb sessions are separated using the cache bootstrapper', function (b
     Route::middleware(StartSession::class, InitializeTenancyByPath::class)->get('/{tenant}/foo', fn () => 'bar');
     pest()->get("/{$tenant->id}/foo");
 
-    expect(app('session')->driver()->getHandler()->getCache()->getStore()->getPrefix() === "laravel_cache_tenant_{$tenant->id}_")->toBe($scopeSessions);
+    expect(app('session')->driver()->getHandler()->getCache()->getStore()->getPrefix() === formatLaravelCacheKey("tenant_{$tenant->id}_"))->toBe($scopeSessions);
 
     tenancy()->end();
-    expect(app('session')->driver()->getHandler()->getCache()->getStore()->getPrefix())->toBe('laravel_cache_');
+    expect(app('session')->driver()->getHandler()->getCache()->getStore()->getPrefix())->toBe(formatLaravelCacheKey());
 
     expect(array_filter($allDynamodbKeys(), function (string $key) use ($tenant) {
-        return str($key)->startsWith("laravel_cache_tenant_{$tenant->id}");
+        return str($key)->startsWith(formatLaravelCacheKey("tenant_{$tenant->id}"));
     }))->toHaveCount($scopeSessions ? 1 : 0);
 })->with([true, false]);
 
@@ -202,13 +203,13 @@ test('apc sessions are separated using the cache bootstrapper', function (bool $
     Route::middleware(StartSession::class, InitializeTenancyByPath::class)->get('/{tenant}/foo', fn () => 'bar');
     pest()->get("/{$tenant->id}/foo");
 
-    expect(app('session')->driver()->getHandler()->getCache()->getStore()->getPrefix() === "laravel_cache_tenant_{$tenant->id}_")->toBe($scopeSessions);
+    expect(app('session')->driver()->getHandler()->getCache()->getStore()->getPrefix() === formatLaravelCacheKey("tenant_{$tenant->id}_"))->toBe($scopeSessions);
 
     tenancy()->end();
-    expect(app('session')->driver()->getHandler()->getCache()->getStore()->getPrefix())->toBe('laravel_cache_');
+    expect(app('session')->driver()->getHandler()->getCache()->getStore()->getPrefix())->toBe(formatLaravelCacheKey());
 
     expect(array_filter($allApcuKeys(), function (string $key) use ($tenant) {
-        return str($key)->startsWith("laravel_cache_tenant_{$tenant->id}");
+        return str($key)->startsWith(formatLaravelCacheKey("tenant_{$tenant->id}"));
     }))->toHaveCount($scopeSessions ? 1 : 0);
 })->with([true, false]);
 
@@ -250,3 +251,13 @@ test('database sessions are separated regardless of whether the session bootstra
     // [false, true], // when the connection IS set, the session bootstrapper becomes necessary
     [false, false],
 ]);
+
+function formatLaravelCacheKey(string $suffix = '', string $prefix = ''): string
+{
+    // todo@release if we drop Laravel 12 support we can just switch to - syntax everywhere
+    if (version_compare(app()->version(), '13.0.0') >= 0) {
+        return $prefix . 'laravel-cache-' . $suffix;
+    } else {
+        return $prefix . 'laravel_cache_' . $suffix;
+    }
+}
