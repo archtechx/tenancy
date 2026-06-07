@@ -14,7 +14,7 @@ class PendingScope implements Scope
     /**
      * Apply the scope to a given Eloquent query builder.
      *
-     * @param Builder<Model> $builder
+     * @param Builder<covariant Model> $builder
      *
      * @return void
      */
@@ -58,8 +58,10 @@ class PendingScope implements Scope
     {
         $builder->macro('withoutPending', function (Builder $builder) {
             $builder->withoutGlobalScope(static::class)
-                ->whereNull($builder->getModel()->getColumnForQuery('pending_since'))
-                ->orWhereNull($builder->getModel()->getDataColumn());
+                ->where(function (Builder $query) {
+                    $query->whereNull($query->getModel()->getColumnForQuery('pending_since'))
+                        ->orWhereNull($query->getModel()->getDataColumn());
+                });
 
             return $builder;
         });
