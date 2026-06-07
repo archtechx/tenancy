@@ -14,7 +14,7 @@ class PendingScope implements Scope
     /**
      * Apply the scope to a given Eloquent query builder.
      *
-     * @param Builder<Model> $builder
+     * @param Builder<covariant Model> $builder
      *
      * @return void
      */
