@@ -571,24 +571,6 @@ test('database managers validate parameters that cannot be bound', function ($dr
 
         expect(fn () => $manager->deleteDatabase($tenant))
             ->toThrow(InvalidArgumentException::class, 'Forbidden character');
-
-        if ($driver === 'mysql') {
-            // MySQLDatabaseManager reads charset/collation from config.
-            // An exception is thrown during validation if the parameter is not a string.
-            config(['database.connections.mysql.charset' => []]);
-            DB::purge('mysql');
-
-            $tenantWithNonStringCharset = Tenant::make([
-                'tenancy_db_name' => 'valid_db_name',
-            ]);
-
-            expect(fn () => $manager->createDatabase($tenantWithNonStringCharset))
-                ->toThrow(InvalidArgumentException::class, 'Parameter has to be a string.');
-
-            // Restore the default charset
-            config(['database.connections.mysql.charset' => 'utf8mb4']);
-            DB::purge('mysql');
-        }
     } else {
         // Invalid username, createUser() and deleteUser() should
         // throw an invalid argument exception.
@@ -645,6 +627,21 @@ test('database managers validate parameters that cannot be bound', function ($dr
             ->not()->toThrow(InvalidArgumentException::class);
     }
 })->with('database_managers');
+
+test('mysql database manager validates charset and collation correctly', function () {
+    $manager = app(MySQLDatabaseManager::class);
+    $manager->setConnection('mysql');
+
+    config(['database.connections.mysql.charset' => []]);
+    DB::purge('mysql');
+
+    $tenant = Tenant::make([
+        'tenancy_db_name' => 'valid_db_name',
+    ]);
+
+    expect(fn () => $manager->createDatabase($tenant))
+        ->toThrow(InvalidArgumentException::class, 'Parameter has to be a string.');
+});
 
 test('sqlite database manager validates database names correctly', function () {
     $manager = app(SQLiteDatabaseManager::class);
