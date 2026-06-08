@@ -10,10 +10,11 @@ use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\Etc\Tenant;
-
-use function Stancl\Tenancy\Tests\pest;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
+
+use function Stancl\Tenancy\Tests\pest;
 
 $cleanup = function () {
     DatabaseTenancyBootstrapper::$harden = false;
@@ -103,21 +104,21 @@ test('harden prevents tenants from using a database of another tenant', function
 test('database tenancy bootstrapper throws an exception if DATABASE_URL is set', function (string|null $databaseUrl) {
     config(['database.connections.central.url' => $databaseUrl]);
 
-    if ($databaseUrl) {
-        pest()->expectException(Exception::class);
-    }
-
     config(['tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class]]);
 
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
     })->toListener());
 
-    $tenant1 = Tenant::create();
+    if ($databaseUrl) {
+        expect(fn() => Tenant::create())->toThrow(QueryException::class);
+    } else {
+        expect(function() {
+            $tenant1 = Tenant::create();
 
-    pest()->artisan('tenants:migrate');
+            pest()->artisan('tenants:migrate');
 
-    tenancy()->initialize($tenant1);
-
-    expect(true)->toBe(true);
+            tenancy()->initialize($tenant1);
+        })->not()->toThrow(Throwable::class);
+    }
 })->with(['abc.us-east-1.rds.amazonaws.com', null]);
