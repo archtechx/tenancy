@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Database\Concerns;
 
+use Illuminate\Support\Arr;
 use InvalidArgumentException;
 
 /**
@@ -62,7 +63,7 @@ trait ValidatesDatabaseParameters
     {
         $allowedCharacters ??= $this->allowedParameterCharacters();
 
-        foreach ((array) $parameters as $parameter) {
+        foreach (Arr::wrap($parameters) as $parameter) {
             if (is_null($parameter)) {
                 // Skip if there's nothing to validate
                 // (e.g. when $tenant->database()->getUsername() of an
