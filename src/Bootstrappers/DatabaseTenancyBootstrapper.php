@@ -71,11 +71,12 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
 
     protected function harden(Tenant $tenant): void
     {
+        /** @var \Stancl\Tenancy\Database\Models\Tenant $tenant */
         $dbName = DB::getDatabaseName();
 
         // Check if any other tenant uses this tenant's database
         if ($tenant::where($tenant->getTenantKeyName(), '!=', $tenant->getTenantKey())
-            ->where('data->tenancy_db_name', $dbName)
+            ->where($tenant::getDataColumn() . '->' . $tenant->internalPrefix() . 'db_name', $dbName)
             ->exists()) {
             throw new RuntimeException('Tenant cannot use a database of another tenant.');
         }
