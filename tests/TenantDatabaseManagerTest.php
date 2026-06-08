@@ -564,7 +564,6 @@ test('database managers validate parameters that cannot be bound', function ($dr
         // fail before we even get to actual deleteDatabase() logic.
         $tenant = Tenant::make([
             'tenancy_db_name' => $invalidDatabaseName,
-            'tenancy_db_username' => 'valid-username',
         ]);
 
         expect(fn () => $manager->createDatabase($tenant))
