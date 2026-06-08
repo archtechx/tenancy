@@ -37,6 +37,10 @@ beforeEach(function () {
     SQLiteDatabaseManager::$path = null;
 });
 
+afterEach(function () {
+    SQLiteDatabaseManager::$path = null;
+});
+
 test('databases can be created and deleted', function ($driver, $databaseManager) {
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
