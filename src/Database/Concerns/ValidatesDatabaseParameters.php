@@ -71,6 +71,10 @@ trait ValidatesDatabaseParameters
                 continue;
             }
 
+            if (is_numeric($parameter)) {
+                $parameter = (string) $parameter;
+            }
+
             if (! is_string($parameter)) {
                 // E.g. if a parameter is retrieved from the config, it isn't necessarily a string
                 throw new InvalidArgumentException('Parameter has to be a string.');
