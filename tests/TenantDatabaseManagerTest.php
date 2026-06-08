@@ -544,7 +544,7 @@ test('partial tenant connection templates get merged into the central connection
     expect($manager->connection()->getConfig('url'))->toBeNull();
 });
 
-test('database managers validate parameters that cannot be bound', function ($driver, $databaseManager) {
+test('database managers validate parameters used in raw sql statements', function ($driver, $databaseManager) {
     config()->set([
         "tenancy.database.template_tenant_connection" => $driver,
     ]);
