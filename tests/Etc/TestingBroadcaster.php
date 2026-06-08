@@ -6,7 +6,8 @@ use Illuminate\Broadcasting\Broadcasters\Broadcaster;
 
 class TestingBroadcaster extends Broadcaster {
     public function __construct(
-        public string $message = 'nothing'
+        public string $message = 'nothing',
+        public array $config = [],
     ) {}
 
     public function auth($request)
