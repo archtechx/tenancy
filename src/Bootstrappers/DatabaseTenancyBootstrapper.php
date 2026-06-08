@@ -20,6 +20,11 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
     /**
      * When true, throw an exception if a tenant gets connected to
      * another tenant's database or to the central database.
+     *
+     * If tenant's database name can be set during tenant creation by the users,
+     * the user creates a tenant that could connect to the database of another tenant.
+     * Setting $harden to true prevents this, but we keep it false by default since
+     * letting users specify the tenant database names is not that common.
      */
     public static bool $harden = false;
 
