@@ -24,8 +24,8 @@ trait ValidatesDatabaseParameters
      * Used as the default allowlist in validateParameter(), which validates non-password
      * parameters such as database names or usernames.
      *
-     * Since special characters are not used in non-password parameters commonly,
-     * we can be more strict about them to prevent SQL injection and other related issues.
+     * Since non-password parameters don't need to use as many special characters, we use
+     * a stricter allowlist here.
      */
     protected function allowedParameterCharacters(): string
     {
@@ -35,13 +35,8 @@ trait ValidatesDatabaseParameters
     /**
      * Characters allowed in database user passwords.
      *
-     * Parameters are always quoted in the SQL statements, so it's safe
-     * to allow a wider range of characters, as long as it doesn't include
-     * characters that can break out of the quoted SQL strings (so e.g.
-     * ', ", \, and ` aren't allowed).
-     *
-     * The allowlist is less strict for passwords than for other parameters
-     * because it's more common to use special characters in passwords.
+     * The allowlist for passwords is less strict than for other parameters
+     * because it's more common to use more special characters in passwords.
      */
     protected function allowedPasswordCharacters(): string
     {
