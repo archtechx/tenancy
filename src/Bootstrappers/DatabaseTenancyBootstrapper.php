@@ -59,7 +59,7 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
 
         if (static::$harden) {
             try {
-                $this->harden($tenant);
+                $this->verifyTenantCanUseDatabase($tenant);
             } catch (Throwable $e) {
                 // Revert connection back to central
                 $this->revert();
@@ -74,7 +74,7 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
         $this->database->reconnectToCentral();
     }
 
-    protected function harden(Tenant $tenant): void
+    protected function verifyTenantCanUseDatabase(Tenant $tenant): void
     {
         /** @var \Stancl\Tenancy\Database\Models\Tenant $tenant */
         $dbName = DB::getDatabaseName();
