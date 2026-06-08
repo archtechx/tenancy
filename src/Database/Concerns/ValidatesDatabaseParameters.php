@@ -85,7 +85,7 @@ trait ValidatesDatabaseParameters
 
     /**
      * Ensure password only contains allowed characters (allowedPasswordCharacters())
-     * before used in SQL statements.
+     * before being used in SQL statements.
      *
      * Used in permission controlled managers as a shorthand for calling validateParameter()
      * with the less strict allowlist to validate database user passwords.
