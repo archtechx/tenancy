@@ -21,10 +21,24 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
      * When true, throw an exception if a tenant gets connected to
      * another tenant's database or to the central database.
      *
-     * If tenant's database name can be set during tenant creation by the users,
-     * the user creates a tenant that could connect to the database of another tenant.
-     * Setting $harden to true prevents this, but we keep it false by default since
-     * letting users specify the tenant database names is not that common.
+     * This case should never come up in well-configured apps where
+     * users cannot set or edit tenant IDs or database names, so this
+     * option is disabled by default.
+     *
+     * However, applications dealing with extremely sensitive data may
+     * choose to enable this runtime check to prevent a bug or misconfiguration
+     * from creating an exploit that would let an attacker access another
+     * tenant's data or data from the central database.
+     *
+     * One way such a scenario might come up is if an application allows
+     * broad tenant attribute updates on a page for updating some fields
+     * on the tenant, without restricting that action to only a limited
+     * set of fields that are safe to edit. An attacker might be able to add
+     * something like ['tenancy_db_name' => '...'] to the request which could
+     * lead to this internal attribute being updated on an existing tenant.
+     *
+     * It's possible that enabling this setting will negate the performance
+     * benefits of cached tenant lookup.
      */
     public static bool $harden = false;
 
