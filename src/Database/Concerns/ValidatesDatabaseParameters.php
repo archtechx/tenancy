@@ -12,8 +12,8 @@ use InvalidArgumentException;
  *
  * Used where parameters can be provided by users, and where parameter binding cannot be used.
  *
- * @mixin \Stancl\Tenancy\Database\TenantDatabaseManagers\TenantDatabaseManager
- * @mixin \Stancl\Tenancy\Database\TenantDatabaseManagers\SQLiteDatabaseManager
+ * @see \Stancl\Tenancy\Database\TenantDatabaseManagers\TenantDatabaseManager
+ * @see \Stancl\Tenancy\Database\TenantDatabaseManagers\SQLiteDatabaseManager
  */
 trait ValidatesDatabaseParameters
 {
