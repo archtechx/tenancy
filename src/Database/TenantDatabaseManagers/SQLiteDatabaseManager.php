@@ -137,7 +137,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
     {
         if ($this->isInMemory($databaseName)) {
             // Named in-memory DBs are formatted like 'file:_tenancy_inmemory_tenant123?mode=memory&cache=shared'
-            $this->validateDatabaseName($databaseName, ':?=&');
+            $this->validateDatabaseName($databaseName, extraAllowedCharacters: ':?=&');
 
             $baseConfig['database'] = $databaseName;
 
