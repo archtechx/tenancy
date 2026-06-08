@@ -628,11 +628,12 @@ test('database managers validate parameters that cannot be bound', function ($dr
     }
 })->with('database_managers');
 
-test('mysql database manager validates charset and collation correctly', function () {
+test('mysql database manager validates charset and collation correctly', function (string $param) {
     $manager = app(MySQLDatabaseManager::class);
     $manager->setConnection('mysql');
 
-    config(['database.connections.mysql.charset' => []]);
+    // using a non-string value (empty array) which is invalid
+    config(["database.connections.mysql.$param" => []]);
     DB::purge('mysql');
 
     $tenant = Tenant::make([
@@ -641,7 +642,7 @@ test('mysql database manager validates charset and collation correctly', functio
 
     expect(fn () => $manager->createDatabase($tenant))
         ->toThrow(InvalidArgumentException::class, 'Parameter has to be a string.');
-});
+})->with(['charset', 'collation']);
 
 test('sqlite database manager validates database names correctly', function () {
     $manager = app(SQLiteDatabaseManager::class);
