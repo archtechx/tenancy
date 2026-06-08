@@ -28,12 +28,12 @@ beforeEach(function () use ($cleanup) {
 
 afterEach($cleanup);
 
-test('harden prevents tenants from using the central database', function () {
+test('harden prevents tenants from using the central database', function ($harden) {
     config([
         'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
     ]);
 
-    DatabaseTenancyBootstrapper::$harden = true;
+    DatabaseTenancyBootstrapper::$harden = $harden;
 
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
@@ -45,19 +45,29 @@ test('harden prevents tenants from using the central database', function () {
         'tenancy_db_name' => config('database.connections.central.database'), // Central database name
     ]);
 
-    // Harden blocks initialization for tenants that use central database
-    expect(fn () => tenancy()->initialize($tenant))->toThrow(RuntimeException::class);
+    if ($harden) {
+        // Harden blocks initialization for tenants that use central database
+        expect(fn () => tenancy()->initialize($tenant))->toThrow(RuntimeException::class);
 
-    // Connection should be reverted back to central
-    expect(DB::connection()->getName())->toBe('central');
-});
+        // Connection should be reverted back to central
+        expect(DB::connection()->getName())->toBe('central');
+    } else {
+        expect(fn() => tenancy()->initialize($tenant))->not()->toThrow(Throwable::class);
 
-test('harden prevents tenants from using a database of another tenant', function () {
+        // Connection not reverted to central
+        expect(DB::connection()->getName())->toBe('tenant');
+    }
+})->with([
+    'hardening enabled' => true,
+    'hardening disabled' => false,
+]);
+
+test('harden prevents tenants from using a database of another tenant', function ($harden) {
     config([
         'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
     ]);
 
-    DatabaseTenancyBootstrapper::$harden = true;
+    DatabaseTenancyBootstrapper::$harden = $harden;
 
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
@@ -73,12 +83,22 @@ test('harden prevents tenants from using a database of another tenant', function
         'tenancy_db_name' => $tenantDbName, // Database of another tenant
     ]);
 
-    // Harden blocks initialization for tenants that use a database of another tenant
-    expect(fn () => tenancy()->initialize($tenant))->toThrow(RuntimeException::class);
+    if ($harden) {
+        // Harden blocks initialization for tenants that use a database of another tenant
+        expect(fn () => tenancy()->initialize($tenant))->toThrow(RuntimeException::class);
 
-    // Connection should be reverted back to central
-    expect(DB::connection()->getName())->toBe('central');
-});
+        // Connection should be reverted back to central
+        expect(DB::connection()->getName())->toBe('central');
+    } else {
+        expect(fn() => tenancy()->initialize($tenant))->not()->toThrow(Throwable::class);
+
+        // Connection not reverted to central
+        expect(DB::connection()->getName())->toBe('tenant');
+    }
+})->with([
+    'hardening enabled' => true,
+    'hardening disabled' => false,
+]);
 
 test('database tenancy bootstrapper throws an exception if DATABASE_URL is set', function (string|null $databaseUrl) {
     config(['database.connections.central.url' => $databaseUrl]);
