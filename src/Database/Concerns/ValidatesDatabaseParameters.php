@@ -27,10 +27,7 @@ trait ValidatesDatabaseParameters
      * Since non-password parameters don't need to use as many special characters, we use
      * a stricter allowlist here.
      */
-    protected function allowedParameterCharacters(): string
-    {
-        return 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-';
-    }
+    public static string $allowedParameterCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-';
 
     /**
      * Characters allowed in database user passwords.
@@ -38,10 +35,7 @@ trait ValidatesDatabaseParameters
      * The allowlist for passwords is less strict than for other parameters
      * because it's more common to use more special characters in passwords.
      */
-    protected function allowedPasswordCharacters(): string
-    {
-        return ' !#$%&()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_abcdefghijklmnopqrstuvwxyz{|}~';
-    }
+    public static string $allowedPasswordCharacters = ' !#$%&()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_abcdefghijklmnopqrstuvwxyz{|}~';
 
     /**
      * Ensure that parameters (database names, usernames, etc.)
@@ -58,7 +52,7 @@ trait ValidatesDatabaseParameters
             throw new InvalidArgumentException('Parameter cannot be null.');
         }
 
-        $allowedCharacters ??= $this->allowedParameterCharacters();
+        $allowedCharacters ??= static::$allowedParameterCharacters;
 
         foreach (Arr::wrap($parameters) as $parameter) {
             if (is_null($parameter)) {
@@ -93,6 +87,6 @@ trait ValidatesDatabaseParameters
      */
     protected function validatePassword(string|null $password): void
     {
-        $this->validateParameter($password, allowedCharacters: $this->allowedPasswordCharacters());
+        $this->validateParameter($password, allowedCharacters: static::$allowedPasswordCharacters);
     }
 }

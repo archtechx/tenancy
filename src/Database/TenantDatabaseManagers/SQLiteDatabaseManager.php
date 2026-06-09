@@ -66,10 +66,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
      *
      * Includes dots to support file extensions (e.g. '.sqlite').
      */
-    protected static function allowedDatabaseNameCharacters(): string
-    {
-        return 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.';
-    }
+    public static string $allowedDatabaseNameCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.';
 
     public function createDatabase(TenantWithDatabase $tenant): bool
     {
@@ -179,7 +176,7 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
      */
     protected function validateDatabaseName(string $name, string $extraAllowedCharacters = ''): void
     {
-        $this->validateParameter($name, $this->allowedDatabaseNameCharacters() . $extraAllowedCharacters);
+        $this->validateParameter($name, static::$allowedDatabaseNameCharacters . $extraAllowedCharacters);
 
         if ($name === '') {
             throw new InvalidArgumentException('Database name cannot be empty.');
