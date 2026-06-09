@@ -92,14 +92,14 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
         /** @var \Stancl\Tenancy\Database\Models\Tenant&TenantWithDatabase $tenant */
         $tenantDbName = $tenant->database()->getName();
 
-        // Check if any other tenant uses this tenant's database
+        // Check that no other tenant uses this tenant's database
         if ($tenant::where($tenant->getTenantKeyName(), '!=', $tenant->getTenantKey())
             ->where($tenant::getDataColumn() . '->' . $tenant->internalPrefix() . 'db_name', $tenantDbName)
             ->exists()) {
             throw new RuntimeException('Tenant cannot use a database of another tenant.');
         }
 
-        // Check if the current database is not the central database
+        // Check that the current database is not the central database
         $centralDbName = DB::connection(
             config('tenancy.database.central_connection', 'central')
         )->getDatabaseName();
