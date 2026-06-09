@@ -63,7 +63,7 @@ test('harden prevents tenants from using the central database', function ($harde
     'hardening disabled' => false,
 ]);
 
-test('harden prevents tenants from using a database of another tenant', function ($harden) {
+test('harden prevents tenants from using a database of another tenant', function (bool $harden, string $connection) {
     config([
         'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
     ]);
@@ -74,15 +74,13 @@ test('harden prevents tenants from using a database of another tenant', function
         return $event->tenant;
     })->toListener());
 
-    $tenant = Tenant::create();
+    $tenant = Tenant::create(['tenancy_db_connection' => $connection]);
 
-    Tenant::create([
-        'tenancy_db_name' => $tenantDbName = 'foo' . Str::random(8),
-    ]);
+    $dbName = Str::random(8) . ($connection === 'sqlite' ? '.sqlite' : '');
 
-    $tenant->update([
-        'tenancy_db_name' => $tenantDbName, // Database of another tenant
-    ]);
+    Tenant::create(['tenancy_db_name' => $dbName, 'tenancy_db_connection' => $connection]);
+
+    $tenant->update(['tenancy_db_name' => $dbName]);
 
     if ($harden) {
         // Harden blocks initialization for tenants that use a database of another tenant
@@ -99,6 +97,9 @@ test('harden prevents tenants from using a database of another tenant', function
 })->with([
     'hardening enabled' => true,
     'hardening disabled' => false,
+])->with([
+    'mysql' => 'mysql',
+    'named sqlite' => 'sqlite',
 ]);
 
 test('database tenancy bootstrapper throws an exception if DATABASE_URL is set', function (string|null $databaseUrl) {
