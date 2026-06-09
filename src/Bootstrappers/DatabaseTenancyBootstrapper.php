@@ -89,7 +89,7 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
 
     protected function verifyTenantCanUseDatabase(Tenant $tenant): void
     {
-        /** @var \Stancl\Tenancy\Database\Models\Tenant $tenant */
+        /** @var \Stancl\Tenancy\Database\Models\Tenant&TenantWithDatabase $tenant */
         $tenantDbName = $tenant->database()->getName();
 
         // Check if any other tenant uses this tenant's database
