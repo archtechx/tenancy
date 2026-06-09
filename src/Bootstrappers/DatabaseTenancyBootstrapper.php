@@ -100,8 +100,12 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
             throw new RuntimeException('Tenant cannot use a database of another tenant.');
         }
 
-        // Check if the current database doesn't have the tenants table (i.e. it's not the central database)
-        if (Schema::hasTable($tenant->getTable())) {
+        // Check if the current database is not the central database
+        $centralDbName = DB::connection(
+            config('tenancy.database.central_connection', 'central')
+        )->getDatabaseName();
+
+        if ($dbName === $centralDbName) {
             throw new RuntimeException('Tenant cannot use the central database.');
         }
     }
