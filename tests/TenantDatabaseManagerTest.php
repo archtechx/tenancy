@@ -591,6 +591,7 @@ test('database managers validate parameters used in raw sql statements', functio
         $tenantWithInvalidDatabase = Tenant::make([
             'tenancy_db_name' => $invalidDatabaseName,
             'tenancy_db_username' => 'valid_USERNAME',
+            'tenancy_db_password' => 'valid_password',
         ]);
 
         expect(fn () => $manager->createUser($tenantWithInvalidDatabase->database()))
@@ -615,16 +616,14 @@ test('database managers validate parameters used in raw sql statements', functio
         expect(fn () => $manager->createUser($tenantWithValidPassword->database()))
             ->not()->toThrow(InvalidArgumentException::class, 'Forbidden character');
 
-        $tenantWithNullDbParameters = Tenant::make([
-            'tenancy_db_name' => null,
+        $tenantWithNullCredentials = Tenant::make([
+            'tenancy_db_name' => 'valid_db_name',
             'tenancy_db_username' => null,
             'tenancy_db_password' => null,
         ]);
 
-        // validateParameter() doesn't throw InvalidArgumentException if a parameter is null
-        // (an exception will be thrown, but not by validateParameter()).
-        expect(fn () => $manager->createUser($tenantWithNullDbParameters->database()))
-            ->not()->toThrow(InvalidArgumentException::class);
+        expect(fn () => $manager->createUser($tenantWithNullCredentials->database()))
+            ->toThrow(InvalidArgumentException::class, 'Parameter cannot be null.');
     }
 })->with('database_managers');
 

@@ -14,7 +14,7 @@ class MySQLDatabaseManager extends TenantDatabaseManager
         $charset = $this->connection()->getConfig('charset');
         $collation = $this->connection()->getConfig('collation');
 
-        $this->validateParameter([$database, $charset, $collation]);
+        $this->validateParameter(array_filter([$database, $charset, $collation], fn ($param) => $param !== null));
 
         // MySQL defaults to the server's charset and collation
         // if charset and collation are not specified.

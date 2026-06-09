@@ -50,20 +50,19 @@ trait ValidatesDatabaseParameters
      *
      * By default, only the characters in allowedParameterCharacters() are allowed.
      *
-     * Null parameters are skipped.
-     *
      * @throws InvalidArgumentException
      */
     protected function validateParameter(string|array|null $parameters, string|null $allowedCharacters = null): void
     {
+        if ($parameters === null) {
+            throw new InvalidArgumentException('Parameter cannot be null.');
+        }
+
         $allowedCharacters ??= $this->allowedParameterCharacters();
 
         foreach (Arr::wrap($parameters) as $parameter) {
             if (is_null($parameter)) {
-                // Skip if there's nothing to validate
-                // (e.g. when $tenant->database()->getUsername() of an
-                // improperly created tenant is null and it gets passed).
-                continue;
+                throw new InvalidArgumentException('Parameter cannot be null.');
             }
 
             if (is_numeric($parameter)) {
