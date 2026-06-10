@@ -41,7 +41,7 @@ trait ValidatesDatabaseParameters
      * only contains allowed characters before being used in SQL statements
      * (or paths in the case of SQLiteDatabaseManager).
      *
-     * By default, only the characters in allowedParameterCharacters() are allowed.
+     * By default, only the characters in $allowedParameterCharacters are allowed.
      *
      * @throws InvalidArgumentException
      */
@@ -56,8 +56,11 @@ trait ValidatesDatabaseParameters
         }
 
         if (! is_string($parameter)) {
-            // E.g. if a parameter is retrieved from the config, it isn't necessarily a string
             throw new InvalidArgumentException('Parameter has to be a string.');
+        }
+
+        if ($parameter === '') {
+            throw new InvalidArgumentException('Parameter cannot be an empty string.');
         }
 
         $allowedCharacters ??= static::$allowedParameterCharacters;
@@ -70,7 +73,7 @@ trait ValidatesDatabaseParameters
     }
 
     /**
-     * Ensure password only contains allowed characters (allowedPasswordCharacters())
+     * Ensure password only contains allowed characters ($allowedPasswordCharacters)
      * before being used in SQL statements.
      *
      * Used in permission controlled managers as a shorthand for calling validateParameter()
@@ -81,7 +84,11 @@ trait ValidatesDatabaseParameters
     protected function validatePassword(string|null $password): void
     {
         if (is_null($password)) {
-            throw new InvalidArgumentException('Parameter cannot be null.');
+            throw new InvalidArgumentException('Password cannot be null.');
+        }
+
+        if ($password === '') {
+            throw new InvalidArgumentException('Password cannot be an empty string.');
         }
 
         $this->validateParameter($password, allowedCharacters: static::$allowedPasswordCharacters);
