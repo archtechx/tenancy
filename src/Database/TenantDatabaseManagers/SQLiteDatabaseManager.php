@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Database\TenantDatabaseManagers;
 
 use Closure;
+use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 use PDO;
@@ -147,6 +148,11 @@ class SQLiteDatabaseManager implements TenantDatabaseManager
         }
 
         return $baseConfig;
+    }
+
+    public function getCurrentDatabaseName(Connection $connection): string
+    {
+        return $connection->getDatabaseName();
     }
 
     public function getPath(string $name): string

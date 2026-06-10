@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Database\TenantDatabaseManagers;
 
+use Illuminate\Database\Connection;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
 class PostgreSQLSchemaManager extends TenantDatabaseManager
@@ -36,5 +37,11 @@ class PostgreSQLSchemaManager extends TenantDatabaseManager
         $baseConfig['search_path'] = $databaseName;
 
         return $baseConfig;
+    }
+
+    public function getCurrentDatabaseName(Connection $connection): string
+    {
+        // Get the *schema* name (not the database name)
+        return $connection->selectOne('SELECT current_schema() AS schema')->schema;
     }
 }

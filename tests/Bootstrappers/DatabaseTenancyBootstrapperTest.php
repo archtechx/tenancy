@@ -13,6 +13,10 @@ use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\QueryException;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\MySQLDatabaseManager;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\SQLiteDatabaseManager;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLDatabaseManager;
+use Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLSchemaManager;
 
 use function Stancl\Tenancy\Tests\pest;
 
@@ -29,9 +33,21 @@ beforeEach(function () use ($cleanup) {
 
 afterEach($cleanup);
 
-test('harden prevents tenants from using the central database', function ($harden) {
+test('harden prevents tenants from using the central database', function (bool $harden, string $connection, string $manager) {
     config([
         'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
+        "tenancy.database.managers.{$connection}" => $manager,
+    ]);
+
+    // Set up and migrate the central database
+    $centralConnection = config('tenancy.database.central_connection');
+    DB::purge($centralConnection);
+    config(["database.connections.{$centralConnection}" => config("database.connections.{$connection}")]);
+
+    pest()->artisan('migrate:fresh', [
+        '--force' => true,
+        '--path' => __DIR__ . '/../../assets/migrations',
+        '--realpath' => true,
     ]);
 
     DatabaseTenancyBootstrapper::$harden = $harden;
@@ -40,20 +56,20 @@ test('harden prevents tenants from using the central database', function ($harde
         return $event->tenant;
     })->toListener());
 
-    $tenant = Tenant::create();
-
+    // Create the tenant with its own database, then repoint it at the central database/schema.
+    $tenant = Tenant::create(['tenancy_db_connection' => $connection]);
     $tenant->update([
-        'tenancy_db_name' => config('database.connections.central.database'), // Central database name
+        'tenancy_db_name' => $tenant->database()->manager()->getCurrentDatabaseName(DB::connection($centralConnection)),
     ]);
 
     if ($harden) {
-        // Harden blocks initialization for tenants that use central database
+        // Harden blocks initialization for tenants that use the central database
         expect(fn () => tenancy()->initialize($tenant))->toThrow(RuntimeException::class);
 
         // Connection should be reverted back to central
-        expect(DB::connection()->getName())->toBe('central');
+        expect(DB::connection()->getName())->toBe($centralConnection);
     } else {
-        expect(fn() => tenancy()->initialize($tenant))->not()->toThrow(Throwable::class);
+        expect(fn () => tenancy()->initialize($tenant))->not()->toThrow(Throwable::class);
 
         // Connection not reverted to central
         expect(DB::connection()->getName())->toBe('tenant');
@@ -61,11 +77,12 @@ test('harden prevents tenants from using the central database', function ($harde
 })->with([
     'hardening enabled' => true,
     'hardening disabled' => false,
-]);
+])->with('db_managers');
 
-test('harden prevents tenants from using a database of another tenant', function (bool $harden, string $connection) {
+test('harden prevents tenants from using a database of another tenant', function (bool $harden, string $connection, string $manager) {
     config([
         'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
+        "tenancy.database.managers.{$connection}" => $manager,
     ]);
 
     DatabaseTenancyBootstrapper::$harden = $harden;
@@ -97,10 +114,7 @@ test('harden prevents tenants from using a database of another tenant', function
 })->with([
     'hardening enabled' => true,
     'hardening disabled' => false,
-])->with([
-    'mysql' => 'mysql',
-    'named sqlite' => 'sqlite',
-]);
+])->with('db_managers');
 
 test('database tenancy bootstrapper throws an exception if DATABASE_URL is set', function (string|null $databaseUrl) {
     config(['database.connections.central.url' => $databaseUrl]);
@@ -123,3 +137,14 @@ test('database tenancy bootstrapper throws an exception if DATABASE_URL is set',
         })->not()->toThrow(Throwable::class);
     }
 })->with(['abc.us-east-1.rds.amazonaws.com', null]);
+
+// Database managers to test with hardening.
+// Permission controlled managers omitted as they inherit the non-perm controlled managers (= they share the same code paths),
+// each important code path is covered by testing the non-permission controlled manager, so adding permission controlled managers
+// would add unnecessary complexity to the tests.
+dataset('db_managers', [
+    'mysql' => ['mysql', MySQLDatabaseManager::class],
+    'pgsql (database)' => ['pgsql', PostgreSQLDatabaseManager::class],
+    'pgsql (schema)' => ['pgsql', PostgreSQLSchemaManager::class],
+    'sqlite' => ['sqlite', SQLiteDatabaseManager::class],
+]);
