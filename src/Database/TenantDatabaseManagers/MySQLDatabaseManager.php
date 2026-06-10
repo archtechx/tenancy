@@ -14,7 +14,7 @@ class MySQLDatabaseManager extends TenantDatabaseManager
         $charset = $this->connection()->getConfig('charset');
         $collation = $this->connection()->getConfig('collation');
 
-        $this->validateParameter(array_filter([$database, $charset, $collation], fn ($param) => $param !== null));
+        $this->validateParameter($database);
 
         // MySQL defaults to the server's charset and collation
         // if charset and collation are not specified.
@@ -23,10 +23,12 @@ class MySQLDatabaseManager extends TenantDatabaseManager
         $statement = "CREATE DATABASE `{$database}`";
 
         if ($charset !== null) {
+            $this->validateParameter($charset);
             $statement .= " CHARACTER SET `{$charset}`";
         }
 
         if ($collation !== null) {
+            $this->validateParameter($collation);
             $statement .= " COLLATE `{$collation}`";
         }
 

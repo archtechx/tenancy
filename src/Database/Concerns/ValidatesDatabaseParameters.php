@@ -38,40 +38,34 @@ trait ValidatesDatabaseParameters
     public static string $allowedPasswordCharacters = ' !#$%&()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_abcdefghijklmnopqrstuvwxyz{|}~';
 
     /**
-     * Ensure that parameters (database names, usernames, etc.)
-     * only contain allowed characters before used in SQL statements
+     * Ensure that parameter (database name, username, etc.)
+     * only contains allowed characters before being used in SQL statements
      * (or paths in the case of SQLiteDatabaseManager).
      *
      * By default, only the characters in allowedParameterCharacters() are allowed.
      *
      * @throws InvalidArgumentException
      */
-    protected function validateParameter(string|array|null $parameters, string|null $allowedCharacters = null): void
+    protected function validateParameter(mixed $parameter, string|null $allowedCharacters = null): void
     {
-        if ($parameters === null) {
+        if (is_null($parameter)) {
             throw new InvalidArgumentException('Parameter cannot be null.');
+        }
+
+        if (is_numeric($parameter)) {
+            $parameter = (string) $parameter;
+        }
+
+        if (! is_string($parameter)) {
+            // E.g. if a parameter is retrieved from the config, it isn't necessarily a string
+            throw new InvalidArgumentException('Parameter has to be a string.');
         }
 
         $allowedCharacters ??= static::$allowedParameterCharacters;
 
-        foreach (Arr::wrap($parameters) as $parameter) {
-            if (is_null($parameter)) {
-                throw new InvalidArgumentException('Parameter cannot be null.');
-            }
-
-            if (is_numeric($parameter)) {
-                $parameter = (string) $parameter;
-            }
-
-            if (! is_string($parameter)) {
-                // E.g. if a parameter is retrieved from the config, it isn't necessarily a string
-                throw new InvalidArgumentException('Parameter has to be a string.');
-            }
-
-            foreach (str_split($parameter) as $character) {
-                if (! str_contains($allowedCharacters, $character)) {
-                    throw new InvalidArgumentException("Forbidden character '{$character}' in parameter.");
-                }
+        foreach (str_split($parameter) as $character) {
+            if (! str_contains($allowedCharacters, $character)) {
+                throw new InvalidArgumentException("Forbidden character '{$character}' in parameter.");
             }
         }
     }
@@ -87,6 +81,10 @@ trait ValidatesDatabaseParameters
      */
     protected function validatePassword(string|null $password): void
     {
+        if (is_null($password)) {
+            throw new InvalidArgumentException('Parameter cannot be null.');
+        }
+
         $this->validateParameter($password, allowedCharacters: static::$allowedPasswordCharacters);
     }
 }

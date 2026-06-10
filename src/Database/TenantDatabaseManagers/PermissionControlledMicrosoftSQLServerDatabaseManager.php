@@ -24,7 +24,8 @@ class PermissionControlledMicrosoftSQLServerDatabaseManager extends MicrosoftSQL
         $username = $databaseConfig->getUsername();
         $password = $databaseConfig->getPassword();
 
-        $this->validateParameter([$database, $username]);
+        $this->validateParameter($database);
+        $this->validateParameter($username);
         $this->validatePassword($password);
 
         // Create login
