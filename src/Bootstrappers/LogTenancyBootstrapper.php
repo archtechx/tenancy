@@ -171,7 +171,6 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
             // the override is ignored and the channel config key's value remains unchanged.
             foreach ($override as $configKey => $tenantAttributeName) {
                 /** @var Tenant&Model $tenant */
-
                 $tenantAttribute = $tenant->getAttribute($tenantAttributeName);
 
                 if ($tenantAttribute !== null) {
