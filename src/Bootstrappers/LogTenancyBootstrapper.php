@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Closure;
-use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Log\LogManager;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
@@ -22,11 +21,11 @@ use Stancl\Tenancy\Contracts\Tenant;
  *
  * For this to work correctly:
  * - this bootstrapper must run *after* FilesystemTenancyBootstrapper,
- *   since FilesystemTenancyBootstrapper makes storage_path() return the tenant-specific storage path
+ *   since FilesystemTenancyBootstrapper adjusts storage_path() for the tenant
  * - storage path suffixing has to be enabled (= config('tenancy.filesystem.suffix_storage_path')
- *   has to be true), since the storage path suffix is what separates logs by tenant
+ *   must be true), since the storage path suffix is what separates filesystem-based logs
  *
- * Also supports custom channel overrides (see the $channelOverrides property).
+ * For logging channels that are not filesystem-based, see the $channelOverrides logic.
  *
  * @see Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper
  */
@@ -56,14 +55,15 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
      * Custom channel configuration overrides.
      *
      * All channels included here will be configured using the provided override.
-     * The overrides take precedence over the default ($storagePathChannels) behavior.
+     * The overrides take precedence over the $storagePathChannels behavior
+     * when both approaches are used for the same channel.
      *
      * You can either map tenant attributes to channel config keys using an array,
      * or provide a closure that returns the full channel config array.
      *
      * Examples:
-     * - Array mapping (the default approach): ['slack' => ['url' => 'webhookUrl']]
-     *      - this maps $tenant->webhookUrl to slack.url (if $tenant->webhookUrl is not null, otherwise, the override is ignored)
+     * - Array mapping: ['slack' => ['url' => 'webhookUrl']]
+     *      - this maps $tenant->webhookUrl to slack.url (if $tenant->webhookUrl is not null; otherwise the override is ignored)
      * - Closure: ['slack' => fn (Tenant $tenant, array $channel) => array_merge($channel, ['url' => $tenant->slackUrl])]
      *      - this merges ['url' => $tenant->slackUrl] into the channel's config.
      *
@@ -72,7 +72,7 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
     public static array $channelOverrides = [];
 
     public function __construct(
-        protected Config $config,
+        protected Repository $config,
         protected LogManager $logManager,
     ) {}
 
@@ -86,11 +86,11 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
             $this->forgetChannels($this->configuredChannels);
         } catch (\Throwable $exception) {
             // If an exception is thrown while updating the logging config, the logging config
-            // could be left in a corrupt (tenant) state, so we revert to the original config
-            // to e.g. avoid logging the failure in the tenant log (which would happen if
-            // the channel wasn't resolved before).
+            // could be left in a corrupt state, so we revert to the original config to
+            // to avoid logging the exception in a tenant channel or a broken channel.
             $this->revert();
 
+            // We re-throw the exception after having reverted the logging config to central.
             throw $exception;
         }
     }
@@ -116,7 +116,7 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
         /**
          * Include the default channel in the list of channels to configure/re-resolve.
          *
-         * Including the default channel is harmless (if it's not overridden or not in $storagePathChannels,
+         * Including the default channel is harmless (if it's not overridden and not in $storagePathChannels,
          * it'll just be forgotten and re-resolved on the next use with the original config), and for the
          * case where 'stack' is the default, this is necessary since the 'stack' channel will be resolved
          * and saved in the log manager, and its stale config could accidentally be used instead of the stack member channels.
@@ -150,15 +150,14 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
             if (isset(static::$channelOverrides[$channel])) {
                 $this->overrideChannelConfig($channel, static::$channelOverrides[$channel], $tenant);
             } elseif (in_array($channel, static::$storagePathChannels)) {
-                // Set storage path channels to use tenant-specific directory (default behavior).
-                // The tenant log will be located at e.g. "storage/tenant{$tenantKey}/logs/laravel.log",
-                // assuming FilesystemTenancyBootstrapper is used before this bootstrapper.
+                // Set storage path channels to use a tenant-specific directory (default behavior).
+                // The tenant log will be located at e.g. "storage/tenant{$tenantKey}/logs/laravel.log".
                 $originalChannelPath = $this->config->get("logging.channels.{$channel}.path");
                 $centralStoragePath = Str::before(storage_path(), $this->config->get('tenancy.filesystem.suffix_base') . $tenant->getTenantKey());
 
                 // The tenant log will inherit the segment that follows the storage path from the central channel path config.
-                // For example, if a channel's path is configured to storage_path('custom/logs/path.log') (storage/custom/logs/path.log),
-                // the 'custom/logs/path.log' segment will be passed to storage_path() in the tenant context (storage/tenantfoo/custom/logs/path.log).
+                // For example, if a channel's path is configured to storage_path('logs/foo.log') (storage/logs/foo.log),
+                // the 'logs/foo.log' segment will be passed to storage_path() in the tenant context (storage/tenant123/logs/foo.log).
                 $this->config->set("logging.channels.{$channel}.path", storage_path(Str::after($originalChannelPath, $centralStoragePath)));
             }
         }
@@ -172,7 +171,8 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
             // the override is ignored and the channel config key's value remains unchanged.
             foreach ($override as $configKey => $tenantAttributeName) {
                 /** @var Tenant&Model $tenant */
-                $tenantAttribute = Arr::get($tenant, $tenantAttributeName);
+
+                $tenantAttribute = $tenant->getAttribute($tenantAttributeName);
 
                 if ($tenantAttribute !== null) {
                     $this->config->set("logging.channels.{$channel}.{$configKey}", $tenantAttribute);
