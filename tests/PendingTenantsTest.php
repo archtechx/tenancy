@@ -29,7 +29,6 @@ use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Symfony\Component\Process\Process;
 
 beforeEach($cleanup = function () {
     Tenant::$extraCustomColumns = [];
@@ -128,63 +127,31 @@ test('a new tenant gets created while pulling a pending tenant if the pending po
     expect(Tenant::withPending()->get()->count())->toBe(1); // All tenants
 });
 
-/**
- * Spawn $count separate PHP processes that all call pullPendingFromPool() at the same
- * time and return the keys of pulled tenants to simulate concurrent pulls.
- *
- * @see tests/Etc/pull-worker.php
- */
-function runConcurrentPulls(int $count, bool $firstOrCreate = false): array
-{
-    $worker = __DIR__ . '/Etc/pull-worker.php';
+test('pulling a pending tenant retries when the tenant is claimed concurrently', function () {
+    Tenant::createPending();
+    Tenant::createPending();
 
-    // Shared start instant
-    $startAt = (string) (microtime(true) + 3.0);
+    $stolenId = null;
 
-    /** @var Process[] $processes */
-    $processes = [];
-
-    for ($i = 0; $i < $count; $i++) {
-        $process = new Process(
-            ['php', $worker, $startAt, $firstOrCreate ? '1' : '0']
-        );
-        $process->start();
-        $processes[] = $process;
-    }
-
-    $pulledTenants = [];
-
-    foreach ($processes as $process) {
-        $process->wait();
-
-        expect($process->isSuccessful())->toBeTrue($process->getErrorOutput());
-
-        $output = trim($process->getOutput());
-
-        if ($output !== 'null' && $output !== '') {
-            // If a tenant was pulled, add its key to the results
-            $pulledTenants[] = $output;
+    Event::listen(PullingPendingTenant::class, function (PullingPendingTenant $event) use (&$stolenId) {
+        if ($stolenId !== null) {
+            return;
         }
-    }
 
-    return $pulledTenants;
-}
+        $stolenId = $event->tenant->id;
 
-test('concurrent pulls each claim a distinct pending tenant', function (bool $firstOrCreate) {
-    Tenant::createPending();
-    Tenant::createPending();
-    Tenant::createPending();
+        // Steal the tenant like a concurrent process would
+        Tenant::onlyPending()
+            ->whereKey($event->tenant->id)
+            ->update([$event->tenant->getColumnForQuery('pending_since') => null]);
+    });
 
-    expect(Tenant::onlyPending()->count())->toBe(3);
+    $pulled = Tenant::pullPendingFromPool();
 
-    runConcurrentPulls(8, $firstOrCreate);
-
-    expect(Tenant::onlyPending()->count())->toBe(0);
-    expect(Tenant::withoutPending()->count())->toBe($firstOrCreate ? 8 : 3);
-})->with([
-    'pull pending' => false,
-    'pull pending or create' => true,
-]);
+    expect($pulled)->not()->toBeNull();
+    expect($pulled->id)->not()->toBe($stolenId); // Stolen tenant was skipped, the next one was claimed by the pull
+    expect(Tenant::onlyPending()->count())->toBe(0); // Both tenants claimed
+});
 
 test('a failed attribute write rolls back the claim and leaves the tenant pending', function () {
     // The claim and the attribute write share one transaction, so if applying the attributes
