@@ -153,9 +153,9 @@ test('pulling a pending tenant retries when the tenant is claimed concurrently',
     expect(Tenant::onlyPending()->count())->toBe(0); // Both tenants claimed
 });
 
-test('a failed attribute write rolls back the claim and leaves the tenant pending', function () {
-    // The claim and the attribute write share one transaction, so if applying the attributes
-    // fails the claim must roll back and the tenant must stay in the pool.
+test('the pull is rolled back and the tenant stays in the pool if setting attributes fails', function () {
+    // Pulling a tenant and setting its attributes happen in one transaction,
+    // so if setting the attributes fails, the whole pull rolls back and the tenant stays in the pool.
     Schema::table('tenants', function (Blueprint $table) {
         $table->string('slug')->nullable()->unique();
     });
@@ -165,9 +165,11 @@ test('a failed attribute write rolls back the claim and leaves the tenant pendin
     Tenant::create(['slug' => 'taken']);
     Tenant::createPending();
 
+    // During the pull, set slug to 'taken', which is already used by another tenant to make the attribute update throw
     expect(fn () => Tenant::pullPendingFromPool(false, ['slug' => 'taken']))
         ->toThrow(QueryException::class);
 
+    // The pull rolled back, so the tenant is still pending
     expect(Tenant::onlyPending()->count())->toBe(1);
 });
 
