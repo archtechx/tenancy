@@ -26,7 +26,7 @@ use Stancl\Tenancy\TenancyServiceProvider;
  * Notably, this bootstrapper sets TenancyServiceProvider::$adjustCacheManagerUsing to a callback
  * that ensures all affected stores still use the central connection when accessed via global cache
  * (typically the GlobalCache facade or global_cache() helper), even though this bootstrapper explicitly
- * sets the connection to tenant for all scoped cache stores. TenancyServiceProvider::makeDatabaseCacheStoresCentral()
+ * sets the connection to tenant for all scoped cache stores. Extending database store on the global cache manager
  * cannot fix globalCache on its own because it reads 'tenant' from config (set by this bootstrapper), not null,
  * so the callback is still needed to correct the connection to central for globalCache.
  */
