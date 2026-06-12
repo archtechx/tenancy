@@ -37,9 +37,4 @@ abstract class TenantDatabaseManager implements StatefulTenantDatabaseManager
 
         return $baseConfig;
     }
-
-    public function getCurrentDatabaseName(Connection $connection): string
-    {
-        return $connection->getDatabaseName();
-    }
 }

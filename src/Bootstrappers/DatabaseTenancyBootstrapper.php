@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Bootstrappers;
 
 use Exception;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
@@ -90,8 +90,7 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
     protected function verifyTenantCanUseDatabase(Tenant $tenant): void
     {
         /** @var \Stancl\Tenancy\Database\Models\Tenant&TenantWithDatabase $tenant */
-        $tenantDbConfig = $tenant->database();
-        $tenantDbName = $tenantDbConfig->getName();
+        $tenantDbName = $tenant->database()->getName();
 
         // Check that no other tenant uses this tenant's database
         if ($tenant::where($tenant->getTenantKeyName(), '!=', $tenant->getTenantKey())
@@ -100,14 +99,8 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
             throw new RuntimeException('Tenant cannot use a database of another tenant.');
         }
 
-        $manager = $tenantDbConfig->manager();
-
-        $centralConnection = DB::connection(config('tenancy.database.central_connection', 'central'));
-        $currentConnection = DB::connection();
-
-        // Throw if the current database/schema is central.
-        // At this point the connection should be the tenant's, so it should not match central.
-        if ($manager->getCurrentDatabaseName($currentConnection) === $manager->getCurrentDatabaseName($centralConnection)) {
+        if (Schema::hasTable($tenant->getTable())) {
+            // Throw if the current database/schema has the tenants table (i.e. it's not central)
             throw new RuntimeException('Tenant cannot use the central database.');
         }
     }

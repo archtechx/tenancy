@@ -39,10 +39,17 @@ test('harden prevents tenants from using the central database', function (bool $
         "tenancy.database.managers.{$connection}" => $manager,
     ]);
 
-    // Set up and migrate the central database
+    // Point the central connection at the tested connection's config and migrate it
+    // (so that the central database/schema contains the tenants table).
     $centralConnection = config('tenancy.database.central_connection');
+    $centralConfig = config("database.connections.{$connection}");
+
+    if ($connection === 'sqlite') {
+        $centralConfig['database'] = database_path($sqliteCentralDb = 'central.sqlite');
+    }
+
     DB::purge($centralConnection);
-    config(["database.connections.{$centralConnection}" => config("database.connections.{$connection}")]);
+    config(["database.connections.{$centralConnection}" => $centralConfig]);
 
     pest()->artisan('migrate:fresh', [
         '--force' => true,
@@ -56,11 +63,18 @@ test('harden prevents tenants from using the central database', function (bool $
         return $event->tenant;
     })->toListener());
 
-    // Create the tenant with its own database, then repoint it at the central database/schema.
+    // Create the tenant with its own database, then repoint it at the central database/schema
+    // (which contains the tenants table that the hardening check looks for).
     $tenant = Tenant::create(['tenancy_db_connection' => $connection]);
-    $tenant->update([
-        'tenancy_db_name' => $tenant->database()->manager()->getCurrentDatabaseName(DB::connection($centralConnection)),
-    ]);
+
+    $central = DB::connection($centralConnection);
+    $centralName = match (true) {
+        $manager === PostgreSQLSchemaManager::class => $central->selectOne('SELECT current_schema() AS schema')->schema, // Central schema name
+        $connection === 'sqlite' => $sqliteCentralDb, // Central SQLite DB name
+        default => $central->getDatabaseName(), // Central DB name
+    };
+
+    $tenant->update(['tenancy_db_name' => $centralName]);
 
     if ($harden) {
         // Harden blocks initialization for tenants that use the central database
