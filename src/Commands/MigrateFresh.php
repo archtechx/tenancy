@@ -14,6 +14,7 @@ use Stancl\Tenancy\Concerns\ParallelCommand;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface as OI;
 
 class MigrateFresh extends BaseCommand
@@ -72,11 +73,13 @@ class MigrateFresh extends BaseCommand
 
     protected function migrateTenant(TenantWithDatabase $tenant): bool
     {
-        return $this->callSilently('tenants:migrate', [
+        $output = $this->getOutput()->isVerbose() ? $this->output : new NullOutput;
+
+        return $this->runCommand('tenants:migrate', [
             '--tenants' => [$tenant->getTenantKey()],
             '--step' => $this->option('step'),
             '--force' => true,
-        ]) === 0;
+        ], $output) === 0;
     }
 
     protected function childHandle(mixed ...$args): bool
