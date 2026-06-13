@@ -366,6 +366,31 @@ test('migrate fresh command works', function () {
     expect(DB::table('users')->exists())->toBeFalse();
 });
 
+test('migrate fresh command only shows migration output when run with the verbose option', function () {
+    $tenant = Tenant::create();
+    $migratingOutput = 'Migrating tenant ' . $tenant->getTenantKey();
+
+    // CI runs pest with -v, setting SHELL_VERBOSITY to 1, so in CI, the output is verbose by default
+    $shellVerbosity = getenv('SHELL_VERBOSITY');
+    $_ENV['SHELL_VERBOSITY'] = $_SERVER['SHELL_VERBOSITY'] = 0;
+    putenv('SHELL_VERBOSITY=0');
+
+    try {
+        Artisan::call('tenants:migrate-fresh');
+        $defaultOutput = Artisan::output();
+
+        Artisan::call('tenants:migrate-fresh -v');
+        $verboseOutput = Artisan::output();
+    } finally {
+        unset($_ENV['SHELL_VERBOSITY'], $_SERVER['SHELL_VERBOSITY']);
+        $shellVerbosity === false ? putenv('SHELL_VERBOSITY') : putenv("SHELL_VERBOSITY=$shellVerbosity");
+    }
+
+    // The output is silent by default and only shown with the verbose option
+    expect($defaultOutput)->not()->toContain($migratingOutput);
+    expect($verboseOutput)->toContain($migratingOutput);
+});
+
 test('migrate fresh command respects force option in production', function () {
     // Set environment to production
     app()->detectEnvironment(fn() => 'production');
