@@ -86,14 +86,33 @@ class TenancyServiceProvider extends ServiceProvider
             // This works great for cache stores that are *directly* scoped, like Redis or
             // any other tagged or prefixed stores, but it doesn't work for the database driver.
             //
-            // When we use the DatabaseTenancyBootstrapper, it changes the default connection,
-            // and therefore the connection of the database store that will be created when
-            // this new CacheManager is instantiated again.
+            // When DatabaseTenancyBootstrapper is used, it changes the default DB connection
+            // to 'tenant'. A freshly created CacheManager would therefore instantiate database
+            // stores with the tenant connection.
             //
-            // For that reason, we also adjust the relevant stores on this new CacheManager
-            // using the callback below. It is set by DatabaseCacheBootstrapper.
+            // For that reason, we override the 'database' driver creator on this manager so that
+            // database stores are built with the central connection, and we run the
+            // $adjustCacheManagerUsing callback below (set by DatabaseCacheBootstrapper).
             $manager = new CacheManager($app);
 
+            // When DatabaseTenancyBootstrapper is used, database stores whose 'connection'
+            // config is null fall back to the default DB connection ('tenant'). Reset each
+            // such store to its explicitly configured connection, or fall back to central.
+            $centralConnection = $app['config']['tenancy.database.central_connection'];
+
+            $manager->extend('database', function ($app, array $config) use ($centralConnection) {
+                $config['connection'] ??= $centralConnection;
+
+                /** @var CacheManager $this */
+                return $this->createDatabaseDriver($config); // @phpstan-ignore method.protected
+            });
+
+            // DatabaseCacheBootstrapper explicitly writes 'tenant' into each store's 'connection'
+            // config. The database store extend above would then read 'tenant' as the
+            // configured value (not null) and use it directly, so the central connection fallback
+            // wouldn't be used.
+            //
+            // This callback is used to correct those connections back to central for globalCache.
             if (static::$adjustCacheManagerUsing !== null) {
                 (static::$adjustCacheManagerUsing)($manager);
             }
