@@ -366,6 +366,21 @@ test('migrate fresh command works', function () {
     expect(DB::table('users')->exists())->toBeFalse();
 });
 
+test('migrate fresh command only shows migration output when run with the verbose option', function () {
+    $tenant = Tenant::create();
+
+    // pest()->artisan()->expectsOutput() cannot observe the output suppression,
+    // so use Artisan::call() + Artisan::output() instead.
+
+    // By default the underlying tenants:migrate output is suppressed
+    Artisan::call('tenants:migrate-fresh');
+    expect(Artisan::output())->not()->toContain('Migrating tenant ' . $tenant->getTenantKey());
+
+    // Underlying tenants:migrate output is shown when the verbose option is passed
+    Artisan::call('tenants:migrate-fresh -v');
+    expect(Artisan::output())->toContain('Migrating tenant ' . $tenant->getTenantKey());
+});
+
 test('migrate fresh command respects force option in production', function () {
     // Set environment to production
     app()->detectEnvironment(fn() => 'production');
