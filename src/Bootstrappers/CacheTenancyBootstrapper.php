@@ -18,11 +18,11 @@ use Stancl\Tenancy\Contracts\Tenant;
  * Makes cache tenant-aware by applying a prefix.
  *
  * Using this bootstrapper together with DatabaseTenancyBootstrapper
- * with a database cache store results in double scoping. The store is scoped by
- * DB connection (entries go into the tenant's database) *and* by the prefix. This is
- * harmless for most use cases, but can produce unexpected behavior.
+ * with a database cache store will result in "double scoping". The store will be scoped
+ * by the DB connection (entries will go into the tenant's database) *and* by the prefix.
+ * This is harmless in most cases, but is important to be aware of.
  *
- * If you're using a database cache store, use DatabaseCacheBootstrapper instead of this one.
+ * If you only use database cache stores, consider using DatabaseCacheBootstrapper instead.
  *
  * @see Stancl\Tenancy\Bootstrappers\DatabaseCacheBootstrapper
  */
