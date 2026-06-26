@@ -112,8 +112,8 @@ trait HasPending
             }
 
             // Fired before the claim, so it can fire once per attempt, including for a candidate
-            // that ends up being claimed by a concurrent process (in which case the loop retries).
-            // PendingTenantPulled (below) fires exactly once, for the pulled tenant.
+            // that ends up being claimed by a different process (in which case the loop retries).
+            // PendingTenantPulled (below) fires exactly once, for the actually pulled tenant.
             event(new PullingPendingTenant($pullCandidate));
 
             $tenant = DB::transaction(function () use ($pullCandidate, $attributes): ?Tenant {
@@ -125,8 +125,8 @@ trait HasPending
                     return null;
                 }
 
-                // The tenant's pending_since was just cleared, and e.g. a PullingPendingTenant listener
-                // may have made changes to the tenant, so re-fetch it to get it in the correct state.
+                // The tenant's pending_since was just cleared, and a PullingPendingTenant listener
+                // may have made changes to the tenant, so re-fetch it to make sure it's up to date.
                 /** @var Model&Tenant $pulledTenant */
                 $pulledTenant = static::findOrFail($pullCandidate->getKey());
 
