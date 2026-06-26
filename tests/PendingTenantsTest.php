@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -124,6 +125,52 @@ test('a new tenant gets created while pulling a pending tenant if the pending po
     Tenant::pullPending();
 
     expect(Tenant::withPending()->get()->count())->toBe(1); // All tenants
+});
+
+test('pulling a pending tenant retries when the tenant is claimed concurrently', function () {
+    Tenant::createPending();
+    Tenant::createPending();
+
+    $stolenId = null;
+
+    Event::listen(PullingPendingTenant::class, function (PullingPendingTenant $event) use (&$stolenId) {
+        if ($stolenId !== null) {
+            return;
+        }
+
+        $stolenId = $event->tenant->id;
+
+        // Steal the tenant like a concurrent process would
+        Tenant::onlyPending()
+            ->whereKey($event->tenant->id)
+            ->update([$event->tenant->getColumnForQuery('pending_since') => null]);
+    });
+
+    $pulled = Tenant::pullPendingFromPool();
+
+    expect($pulled)->not()->toBeNull();
+    expect($pulled->id)->not()->toBe($stolenId); // Stolen tenant was skipped, the next one was claimed by the pull
+    expect(Tenant::onlyPending()->count())->toBe(0); // Both tenants claimed
+});
+
+test('the pull is rolled back and the tenant stays in the pool if setting attributes fails', function () {
+    // Pulling a tenant and setting its attributes happen in one transaction,
+    // so if setting the attributes fails, the whole pull rolls back and the tenant stays in the pool.
+    Schema::table('tenants', function (Blueprint $table) {
+        $table->string('slug')->nullable()->unique();
+    });
+
+    Tenant::$extraCustomColumns = ['slug'];
+
+    Tenant::create(['slug' => 'taken']);
+    Tenant::createPending();
+
+    // During the pull, set slug to 'taken', which is already used by another tenant to make the attribute update throw
+    expect(fn () => Tenant::pullPendingFromPool(false, ['slug' => 'taken']))
+        ->toThrow(QueryException::class);
+
+    // The pull rolled back, so the tenant is still pending
+    expect(Tenant::onlyPending()->count())->toBe(1);
 });
 
 test('withoutPending chained with where clauses returns correct results', function () {
