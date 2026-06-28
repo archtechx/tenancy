@@ -20,9 +20,9 @@ use Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLSchemaManager;
 
 use function Stancl\Tenancy\Tests\pest;
 
-$cleanup = function () {
+afterEach($cleanup = function () {
     DatabaseTenancyBootstrapper::$harden = false;
-};
+});
 
 beforeEach(function () use ($cleanup) {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
@@ -30,8 +30,6 @@ beforeEach(function () use ($cleanup) {
 
     $cleanup();
 });
-
-afterEach($cleanup);
 
 test('harden prevents tenants from using the central database', function (bool $harden, string $connection, string $manager) {
     config([
@@ -93,7 +91,7 @@ test('harden prevents tenants from using the central database', function (bool $
     'hardening disabled' => false,
 ])->with('db_managers');
 
-test('harden prevents tenants from using a database of another tenant', function (bool $harden, string $connection, string $manager) {
+test('harden prevents tenants from using the database of another tenant', function (bool $harden, string $connection, string $manager) {
     config([
         'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
         "tenancy.database.managers.{$connection}" => $manager,
@@ -114,7 +112,7 @@ test('harden prevents tenants from using a database of another tenant', function
     $tenant->update(['tenancy_db_name' => $dbName]);
 
     if ($harden) {
-        // Harden blocks initialization for tenants that use a database of another tenant
+        // Harden blocks initialization for tenants that use the database of another tenant
         expect(fn () => tenancy()->initialize($tenant))->toThrow(RuntimeException::class);
 
         // Connection should be reverted back to central
