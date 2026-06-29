@@ -367,8 +367,8 @@ test('stack channels that include any configured channel are re-resolved', funct
 
     // Resolve the stack channel in the central context first
     // (this caches the stack with its members still pointing at the central logs).
-    Log::channel('custom_stack')->info('central');
-    expect(file_get_contents($centralLogPath))->toContain('central');
+    Log::channel('custom_stack')->info('central log message');
+    expect(file_get_contents($centralLogPath))->toContain('central log message');
 
     tenancy()->initialize($tenant);
 
@@ -379,14 +379,26 @@ test('stack channels that include any configured channel are re-resolved', funct
     // so 'tenant log message' should be logged to the tenant log,
     // not the central log.
     expect(file_get_contents($centralLogPath))
-        ->toContain('central')
+        ->toContain('central log message')
         ->not()->toContain('tenant log message');
 
     $tenantLogPath = storage_path('logs/laravel.log');
-
     expect(file_exists($tenantLogPath))->toBeTrue();
     expect(file_get_contents($tenantLogPath))
         ->toContain('tenant log message');
+
+    tenancy()->end();
+
+    Log::channel('custom_stack')->info('central after revert');
+
+    expect(file_get_contents($centralLogPath))
+        ->toContain('central log message')
+        ->toContain('central after revert')
+        ->not()->toContain('tenant log message');
+
+    expect(file_get_contents($tenantLogPath))
+        ->toContain('tenant log message')
+        ->not()->toContain('central after revert');
 });
 
 test('slack channel uses correct webhook urls', function () {
