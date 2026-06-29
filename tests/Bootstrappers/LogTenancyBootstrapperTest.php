@@ -350,6 +350,45 @@ test('stack logs are written to all configured channels with tenant-specific pat
         ->not()->toContain('tenant');
 });
 
+test('stack channels that include any configured channel are re-resolved', function () {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+            LogTenancyBootstrapper::class,
+        ],
+        'logging.channels.custom_stack' => [
+            'driver' => 'stack',
+            'channels' => ['single'],
+        ],
+    ]);
+
+    $tenant = Tenant::create(['id' => 'stack-tenant']);
+    $centralLogPath = storage_path('logs/laravel.log');
+
+    // Resolve the stack channel in the central context first
+    // (this caches the stack with its members still pointing at the central logs).
+    Log::channel('custom_stack')->info('central');
+    expect(file_get_contents($centralLogPath))->toContain('central');
+
+    tenancy()->initialize($tenant);
+
+    Log::channel('custom_stack')->info('tenant log message');
+
+    // The stack channel should have been re-resolved with the
+    // updated (tenant) config for its member channels,
+    // so 'tenant log message' should be logged to the tenant log,
+    // not the central log.
+    expect(file_get_contents($centralLogPath))
+        ->toContain('central')
+        ->not()->toContain('tenant log message');
+
+    $tenantLogPath = storage_path('logs/laravel.log');
+
+    expect(file_exists($tenantLogPath))->toBeTrue();
+    expect(file_get_contents($tenantLogPath))
+        ->toContain('tenant log message');
+});
+
 test('slack channel uses correct webhook urls', function () {
     config([
         'logging.channels.slack.url' => 'central-webhook',

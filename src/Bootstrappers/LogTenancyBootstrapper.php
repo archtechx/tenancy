@@ -107,32 +107,37 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
      * re-resolved with the new, tenant-specific config on the next use.
      *
      * Includes:
-     * - the default channel (primarily because it can be 'stack')
      * - all channels in the $storagePathChannels array
      * - all channels that have custom overrides in the $channelOverrides property
+     * - any 'stack' channel that includes one of the above as a member
+     *
+     * Stack channels are included because once a stack has been used, it keeps logging
+     * to wherever its members pointed at that moment. So a stack used in the central
+     * context would keep writing to the central logs, even after tenancy is initialized
+     * and its member channels are configured for the tenant.
+     * Forgetting the stack forces it to be re-resolved with its members' updated (tenant)
+     * config.
+     *
+     * Only stacks one level deep are handled.
      */
     protected function getChannels(): array
     {
-        /**
-         * Include the default channel in the list of channels to configure/re-resolve.
-         *
-         * Including the default channel is harmless (if it's not overridden and not in $storagePathChannels,
-         * it'll just be forgotten and re-resolved on the next use with the original config), and for the
-         * case where 'stack' is the default, this is necessary since the 'stack' channel will be resolved
-         * and saved in the log manager, and its stale config could accidentally be used instead of the stack member channels.
-         *
-         * For example, when you use 'stack' with the 'slack' channel,
-         * if only 'slack' is forgotten, 'stack' would still use the stale cached 'slack' driver,
-         * and if only 'stack' is forgotten, the 'slack' channel's config would remain unchanged (central).
-         */
-        $defaultChannel = $this->config->get('logging.default');
+        $configuredChannels = array_unique([
+            ...static::$storagePathChannels,
+            ...array_keys(static::$channelOverrides),
+        ]);
+
+        $stackChannels = [];
+
+        foreach ($this->config->get('logging.channels') as $channel => $config) {
+            // Include stack channels that have at least one configured channel as a member
+            if (($config['driver'] ?? null) === 'stack' && array_intersect($config['channels'] ?? [], $configuredChannels)) {
+                $stackChannels[] = $channel;
+            }
+        }
 
         return array_filter(
-            array_unique([
-                $defaultChannel,
-                ...static::$storagePathChannels,
-                ...array_keys(static::$channelOverrides),
-            ]),
+            array_unique([...$configuredChannels, ...$stackChannels]),
             fn (string $channel): bool => $this->config->has("logging.channels.{$channel}")
         );
     }
