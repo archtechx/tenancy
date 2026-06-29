@@ -374,13 +374,18 @@ test('migrate fresh command only shows migration output when run with the verbos
     // so we cannot easily test commands without -v. To work around that, we temporarily
     // override $_ENV['SHELL_VERBOSITY'] immediately before executing the command. If this
     // ever stops working, try also overriding the value in $_SERVER and putenv().
-    $originalVerbosity = $_ENV['SHELL_VERBOSITY'] ?? 0;
+    $emptySentinel = new \stdClass();
+    $originalVerbosity = $_ENV['SHELL_VERBOSITY'] ?? $emptySentinel;
     try {
         $_ENV['SHELL_VERBOSITY'] = 0;
         Artisan::call('tenants:migrate-fresh');
         $defaultOutput = Artisan::output();
     } finally {
-        $_ENV['SHELL_VERBOSITY'] = $originalVerbosity;
+        if ($originalVerbosity === $emptySentinel) {
+            unset($_ENV['SHELL_VERBOSITY']);
+        } else {
+            $_ENV['SHELL_VERBOSITY'] = $originalVerbosity;
+        }
     }
 
     Artisan::call('tenants:migrate-fresh -v');
