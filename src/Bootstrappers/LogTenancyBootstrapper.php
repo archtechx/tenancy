@@ -16,8 +16,10 @@ use Stancl\Tenancy\Contracts\Tenant;
 /**
  * Enable tenant-specific logging.
  *
- * All the storage path channels are configured to use tenant
- * directories by default (see the $storagePathChannels property).
+ * Channels included in the $storagePathChannels property will be configured
+ * to write logs into the tenant's storage directory. The list includes
+ * Laravel's 'single' and 'daily' channels by default. To customize it,
+ * see the property's docblock.
  *
  * For this to work correctly:
  * - this bootstrapper must run *after* FilesystemTenancyBootstrapper,
@@ -36,13 +38,11 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
     protected array $configuredChannels = [];
 
     /**
-     * Logging channels whose paths use storage_path() by default in the logging config.
+     * Logging channels whose path is built using storage_path() (e.g. Laravel's single and daily).
      *
-     * All channels included here will be configured to use tenant-specific storage paths
-     * generated using storage_path() in the tenant context.
-     *
-     * This is the default behavior. The $channelOverrides property can be used to override
-     * this behavior (the overrides take precedence over $storagePathChannels).
+     * Channels included here will be configured to use tenant-specific storage paths
+     * generated using storage_path() in the tenant context. Overrides in the $channelOverrides
+     * property take precedence over $storagePathChannels when a channel is included in both.
      *
      * Requires FilesystemTenancyBootstrapper to run before this bootstrapper,
      * and storage path suffixing to be enabled.
@@ -54,7 +54,7 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
     /**
      * Custom channel configuration overrides.
      *
-     * All channels included here will be configured using the provided override.
+     * Channels included here will be configured using the provided override.
      * The overrides take precedence over the $storagePathChannels behavior
      * when both approaches are used for the same channel.
      *
@@ -150,7 +150,7 @@ class LogTenancyBootstrapper implements TenancyBootstrapper
             if (isset(static::$channelOverrides[$channel])) {
                 $this->overrideChannelConfig($channel, static::$channelOverrides[$channel], $tenant);
             } elseif (in_array($channel, static::$storagePathChannels)) {
-                // Set storage path channels to use a tenant-specific directory (default behavior).
+                // Set storage path channels to use a tenant-specific directory.
                 // The tenant log will be located at e.g. "storage/tenant{$tenantKey}/logs/laravel.log".
                 $originalChannelPath = $this->config->get("logging.channels.{$channel}.path");
                 $centralStoragePath = Str::before(storage_path(), $this->config->get('tenancy.filesystem.suffix_base') . $tenant->getTenantKey());
