@@ -366,6 +366,36 @@ test('migrate fresh command works', function () {
     expect(DB::table('users')->exists())->toBeFalse();
 });
 
+test('migrate fresh command only shows migration output when run with the verbose option', function () {
+    $tenant = Tenant::create();
+    $migratingOutput = 'Migrating tenant ' . $tenant->getTenantKey();
+
+    // CI runs pest with --verbose which makes Artisan::call() inherit the verbosity
+    // so we cannot easily test commands without -v. To work around that, we temporarily
+    // override $_ENV['SHELL_VERBOSITY'] immediately before executing the command. If this
+    // ever stops working, try also overriding the value in $_SERVER and putenv().
+    $emptySentinel = new \stdClass();
+    $originalVerbosity = $_ENV['SHELL_VERBOSITY'] ?? $emptySentinel;
+    try {
+        $_ENV['SHELL_VERBOSITY'] = 0;
+        Artisan::call('tenants:migrate-fresh');
+        $defaultOutput = Artisan::output();
+    } finally {
+        if ($originalVerbosity === $emptySentinel) {
+            unset($_ENV['SHELL_VERBOSITY']);
+        } else {
+            $_ENV['SHELL_VERBOSITY'] = $originalVerbosity;
+        }
+    }
+
+    Artisan::call('tenants:migrate-fresh -v');
+    $verboseOutput = Artisan::output();
+
+    // The output is silent by default and only shown with the verbose option
+    expect($defaultOutput)->not()->toContain($migratingOutput);
+    expect($verboseOutput)->toContain($migratingOutput);
+});
+
 test('migrate fresh command respects force option in production', function () {
     // Set environment to production
     app()->detectEnvironment(fn() => 'production');
@@ -515,3 +545,51 @@ test('migrate fresh command only deletes tenant databases if drop_tenant_databas
         expect($tenantHasDatabase($tenant))->toBe($shouldHaveDBAfterMigrateFresh);
     }
 })->with([true, false]);
+
+test('migrate commands can skip specified tenants', function (string $command) {
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+    $tenant3 = Tenant::create();
+
+    pest()->artisan("{$command} --skip-tenants={$tenant1->getTenantKey()} --skip-tenants={$tenant2->getTenantKey()}");
+
+    tenancy()->initialize($tenant1);
+
+    expect(Schema::hasTable('users'))->toBeFalse();
+
+    tenancy()->initialize($tenant2);
+
+    expect(Schema::hasTable('users'))->toBeFalse();
+
+    tenancy()->initialize($tenant3);
+
+    expect(Schema::hasTable('users'))->toBeTrue();
+})->with([
+    'tenants:migrate',
+    'tenants:migrate-fresh',
+]);
+
+test('run command can skip specified tenants', function () {
+    $tenant1 = Tenant::create()->getTenantKey();
+    $tenant2 = Tenant::create()->getTenantKey();
+    $tenant3 = Tenant::create()->getTenantKey();
+
+    pest()->artisan("tenants:run --skip-tenants=$tenant1 --skip-tenants=$tenant2 'bar foo foo@bar foobar arg --option=option'")
+        ->doesntExpectOutputToContain("Tenant: $tenant1")
+        ->doesntExpectOutputToContain("Tenant: $tenant2")
+        ->expectsOutputToContain("Tenant: $tenant3")
+        ->assertExitCode(0);
+});
+
+test('tenants and skip-tenants options can be used together', function () {
+    $tenant1 = Tenant::create()->getTenantKey();
+    $tenant2 = Tenant::create()->getTenantKey();
+    $tenant3 = Tenant::create()->getTenantKey();
+
+    // Scope to tenant1+tenant2, then skip tenant2 — only tenant1 should run
+    pest()->artisan("tenants:run --tenants=$tenant1 --tenants=$tenant2 --skip-tenants=$tenant2 'bar foo foo@bar foobar arg --option=option'")
+        ->expectsOutputToContain("Tenant: $tenant1")
+        ->doesntExpectOutputToContain("Tenant: $tenant2")
+        ->doesntExpectOutputToContain("Tenant: $tenant3")
+        ->assertExitCode(0);
+});
