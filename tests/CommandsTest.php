@@ -370,21 +370,21 @@ test('migrate fresh command only shows migration output when run with the verbos
     $tenant = Tenant::create();
     $migratingOutput = 'Migrating tenant ' . $tenant->getTenantKey();
 
-    // CI runs pest with -v, setting SHELL_VERBOSITY to 1, so in CI, the output is verbose by default
-    $shellVerbosity = getenv('SHELL_VERBOSITY');
-    $_ENV['SHELL_VERBOSITY'] = $_SERVER['SHELL_VERBOSITY'] = 0;
-    putenv('SHELL_VERBOSITY=0');
-
+    // CI runs pest with --verbose which makes Artisan::call() inherit the verbosity
+    // so we cannot easily test commands without -v. To work around that, we temporarily
+    // override $_ENV['SHELL_VERBOSITY'] immediately before executing the command. If this
+    // ever stops working, try also overriding the value in $_SERVER and putenv().
+    $originalVerbosity = $_ENV['SHELL_VERBOSITY'] ?? 0;
     try {
+        $_ENV['SHELL_VERBOSITY'] = 0;
         Artisan::call('tenants:migrate-fresh');
         $defaultOutput = Artisan::output();
-
-        Artisan::call('tenants:migrate-fresh -v');
-        $verboseOutput = Artisan::output();
     } finally {
-        unset($_ENV['SHELL_VERBOSITY'], $_SERVER['SHELL_VERBOSITY']);
-        $shellVerbosity === false ? putenv('SHELL_VERBOSITY') : putenv("SHELL_VERBOSITY=$shellVerbosity");
+        $_ENV['SHELL_VERBOSITY'] = $originalVerbosity;
     }
+
+    Artisan::call('tenants:migrate-fresh -v');
+    $verboseOutput = Artisan::output();
 
     // The output is silent by default and only shown with the verbose option
     expect($defaultOutput)->not()->toContain($migratingOutput);
