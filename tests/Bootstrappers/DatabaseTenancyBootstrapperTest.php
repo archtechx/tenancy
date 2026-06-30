@@ -127,7 +127,7 @@ test('harden prevents tenants from using the database of another tenant', functi
     'hardening disabled' => false,
 ])->with('db_managers');
 
-test('database tenancy bootstrapper throws an exception if DATABASE_URL is set', function (string|null $databaseUrl) {
+test('database tenancy bootstrapper throws an exception if DB_URL is set', function (string|null $databaseUrl) {
     config(['tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class]]);
 
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
