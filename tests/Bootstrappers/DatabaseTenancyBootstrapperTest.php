@@ -115,7 +115,9 @@ test('harden prevents tenants from using the database of another tenant', functi
         expect(fn () => tenancy()->initialize($tenant))->toThrow(RuntimeException::class);
 
         // Connection should be reverted back to central
-        expect(DB::connection()->getName())->toBe(config('tenancy.database.central_connection'));
+        $centralConnection = config('tenancy.database.central_connection');
+
+        expect(DB::connection()->getName())->toBe($centralConnection);
     } else {
         expect(fn() => tenancy()->initialize($tenant))->not()->toThrow(Throwable::class);
 
