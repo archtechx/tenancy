@@ -136,8 +136,6 @@ test('database tenancy bootstrapper throws an exception if DB_URL is set', funct
 
     $tenant = Tenant::create();
 
-    pest()->artisan('tenants:migrate');
-
     config(['database.connections.central.url' => $databaseUrl]);
 
     if ($databaseUrl) {
