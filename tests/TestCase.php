@@ -131,7 +131,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'cache.stores.apc' => ['driver' => 'apc'],
             'database.connections.central' => [
                 'driver' => 'mysql',
-                'url' => env('DATABASE_URL'),
+                'url' => env('DB_URL'),
                 'host' => 'mysql',
                 'port' => env('DB_PORT', '3306'),
                 'database' => 'main',
