@@ -12,7 +12,7 @@ use Stancl\Tenancy\Bootstrappers\LogTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Illuminate\Support\Facades\Log;
 
-$cleanup = function () {
+afterEach($cleanup = function () {
     LogTenancyBootstrapper::$channelOverrides = [];
     LogTenancyBootstrapper::$storagePathChannels = ['single', 'daily'];
 
@@ -26,7 +26,7 @@ $cleanup = function () {
     foreach ($logFiles as $path) {
         @unlink($path);
     }
-};
+});
 
 beforeEach(function () use ($cleanup) {
     config([
@@ -41,8 +41,6 @@ beforeEach(function () use ($cleanup) {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
-
-afterEach($cleanup);
 
 test('storage path channels get tenant-specific paths by default', function () {
     // Note that for LogTenancyBootstrapper to change the paths correctly by default,
@@ -77,7 +75,7 @@ test('storage path channels get tenant-specific paths by default', function () {
     }
 });
 
-test('all channels included in the log stack get processed correctly', function () {
+test('all channels included in a stack get processed correctly', function () {
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
@@ -181,6 +179,8 @@ test('channel config keys remain unchanged if the specified tenant override attr
 test('channel overrides take precedence over the default storage path channel updating logic', function () {
     $tenant = Tenant::create(['id' => 'tenant1']);
 
+    LogTenancyBootstrapper::$storagePathChannels = ['single'];
+
     LogTenancyBootstrapper::$channelOverrides = [
         'single' => function (Tenant $tenant, array $channel) {
             return array_merge($channel, ['path' => storage_path("logs/override-{$tenant->id}.log")]);
@@ -189,7 +189,7 @@ test('channel overrides take precedence over the default storage path channel up
 
     tenancy()->initialize($tenant);
 
-    // Should use override, not the default storage path updating behavior
+    // Should use channel override, not the storage path updating behavior
     expect(config('logging.channels.single.path'))->toEndWith('storage/logs/override-tenant1.log');
 });
 
@@ -365,17 +365,23 @@ test('stack channels that include any configured channel are re-resolved', funct
     $tenant = Tenant::create(['id' => 'stack-tenant']);
     $centralLogPath = storage_path('logs/laravel.log');
 
+    $logManager = app('log');
+
     // Resolve the stack channel in the central context first
     // (this caches the stack with its members still pointing at the central logs).
-    Log::channel('custom_stack')->info('central log message');
+    $originalStackChannel = $logManager->channel('custom_stack');
+    $originalStackChannel->info('central log message');
     expect(file_get_contents($centralLogPath))->toContain('central log message');
 
     tenancy()->initialize($tenant);
 
-    Log::channel('custom_stack')->info('tenant log message');
-
     // The stack channel should have been re-resolved with the
-    // updated (tenant) config for its member channels,
+    // updated (tenant) config for its member channels
+    $tenantStackChannel = $logManager->channel('custom_stack');
+    expect($tenantStackChannel)->not()->toBe($originalStackChannel);
+
+    $tenantStackChannel->info('tenant log message');
+
     // so 'tenant log message' should be logged to the tenant log,
     // not the central log.
     expect(file_get_contents($centralLogPath))
@@ -389,7 +395,11 @@ test('stack channels that include any configured channel are re-resolved', funct
 
     tenancy()->end();
 
-    Log::channel('custom_stack')->info('central after revert');
+    // After revert, the stack channel should get re-resolved again with the original config
+    $currentStackChannel = $logManager->channel('custom_stack');
+    expect($currentStackChannel)->not()->toBe($tenantStackChannel);
+
+    $currentStackChannel->info('central after revert');
 
     expect(file_get_contents($centralLogPath))
         ->toContain('central log message')
