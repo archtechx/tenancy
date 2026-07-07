@@ -28,7 +28,8 @@ trait TriggerSyncingEvents
             $pivot->getCentralResourceAndTenant();
         });
 
-        static::saved(static function (self $pivot) {
+        // Only attach when the pivot is created
+        static::created(static function (self $pivot) {
             /**
              * @var static&Pivot $pivot
              * @var SyncMaster|null $centralResource
