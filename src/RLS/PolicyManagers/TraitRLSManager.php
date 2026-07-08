@@ -67,7 +67,7 @@ class TraitRLSManager implements RLSPolicyManager
 
         return <<<SQL
         CREATE POLICY {$table}_rls_policy ON {$table} USING (
-            {$tenantKeyColumn}::text = current_setting('{$sessionTenantKey}')
+            {$tenantKeyColumn}::text = (select current_setting('{$sessionTenantKey}'))
         );
         SQL;
     }
@@ -87,7 +87,7 @@ class TraitRLSManager implements RLSPolicyManager
             {$parentRelationship->getForeignKeyName()} IN (
                 SELECT {$parent->getKeyName()}
                 FROM {$parent->getTable()}
-                WHERE {$tenantKeyColumn}::text = current_setting('{$sessionTenantKey}')
+                WHERE {$tenantKeyColumn}::text = (select current_setting('{$sessionTenantKey}'))
             )
         );
         SQL;
