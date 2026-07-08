@@ -185,6 +185,7 @@ return [
         // Bootstrappers\RootUrlBootstrapper::class,
         // Bootstrappers\UrlGeneratorBootstrapper::class,
         // Bootstrappers\MailConfigBootstrapper::class,
+        // Bootstrappers\LogChannelBootstrapper::class,
         // Bootstrappers\BroadcastingConfigBootstrapper::class,
         // Bootstrappers\BroadcastChannelPrefixBootstrapper::class,
 
