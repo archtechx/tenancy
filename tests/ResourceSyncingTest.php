@@ -274,6 +274,32 @@ test('attaching central resources to tenants or vice versa creates synced tenant
     });
 });
 
+test('updating pivot column does not re-create the synced tenant resource', function () {
+    // Add an extra pivot column so we can update it
+    Schema::table('tenant_users', fn (Blueprint $table) => $table->string('note')->nullable());
+
+    $centralUser = CentralUser::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter',
+    ]);
+
+    $tenant = Tenant::create();
+    migrateUsersTableForTenants();
+
+    // Attaching creates the tenant resource
+    $centralUser->tenants()->attach($tenant);
+    $tenant->run(fn () => expect(TenantUser::count())->toBe(1));
+
+    // Updating a pivot column does not re-attach and create the resource again
+    // (which would throw a duplicate entry error -- regression test for #1467)
+    $centralUser->tenants()->updateExistingPivot($tenant->getTenantKey(), ['note' => 'foo']);
+
+    $tenant->run(fn () => expect(TenantUser::count())->toBe(1));
+});
+
 test('detaching central users from tenants or vice versa force deletes the synced tenant resource', function (bool $attachUserToTenant) {
     $centralUser = CentralUser::create([
         'global_id' => 'acme',
