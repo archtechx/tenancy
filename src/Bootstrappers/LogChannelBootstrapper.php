@@ -14,7 +14,7 @@ use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
 /**
- * Enable tenant-specific logging.
+ * Use tenant-specific logging channels.
  *
  * Channels included in the $storagePathChannels property will be configured
  * to write logs into the tenant's storage directory. The list includes
@@ -31,7 +31,7 @@ use Stancl\Tenancy\Contracts\Tenant;
  *
  * @see Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper
  */
-class LogTenancyBootstrapper implements TenancyBootstrapper
+class LogChannelBootstrapper implements TenancyBootstrapper
 {
     protected array $defaultConfig = [];
 

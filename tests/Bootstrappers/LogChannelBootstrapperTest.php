@@ -8,13 +8,13 @@ use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Bootstrappers\LogTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\LogChannelBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Illuminate\Support\Facades\Log;
 
 afterEach($cleanup = function () {
-    LogTenancyBootstrapper::$channelOverrides = [];
-    LogTenancyBootstrapper::$storagePathChannels = ['single', 'daily'];
+    LogChannelBootstrapper::$channelOverrides = [];
+    LogChannelBootstrapper::$storagePathChannels = ['single', 'daily'];
 
     $logFiles = array_merge(
         glob(storage_path('logs/*.log')) ?: [],
@@ -31,7 +31,7 @@ afterEach($cleanup = function () {
 beforeEach(function () use ($cleanup) {
     config([
         'tenancy.bootstrappers' => [
-            LogTenancyBootstrapper::class,
+            LogChannelBootstrapper::class,
         ],
     ]);
 
@@ -42,12 +42,12 @@ beforeEach(function () use ($cleanup) {
 });
 
 test('storage path channels get tenant-specific paths by default', function () {
-    // Note that for LogTenancyBootstrapper to change the paths correctly by default,
+    // Note that for LogChannelBootstrapper to change the paths correctly by default,
     // the bootstrapper MUST run after FilesystemTenancyBootstrapper.
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
-            LogTenancyBootstrapper::class,
+            LogChannelBootstrapper::class,
         ],
     ]);
 
@@ -55,8 +55,8 @@ test('storage path channels get tenant-specific paths by default', function () {
     $tenant = Tenant::create();
 
     // Storage path channels are 'single' and 'daily' by default.
-    // This can be customized via LogTenancyBootstrapper::$storagePathChannels.
-    foreach (LogTenancyBootstrapper::$storagePathChannels as $channel) {
+    // This can be customized via LogChannelBootstrapper::$storagePathChannels.
+    foreach (LogChannelBootstrapper::$storagePathChannels as $channel) {
         $originalPath = config("logging.channels.{$channel}.path");
 
         tenancy()->initialize($tenant);
@@ -78,7 +78,7 @@ test('all channels included in a stack get processed correctly', function () {
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
-            LogTenancyBootstrapper::class,
+            LogChannelBootstrapper::class,
         ],
         'logging.channels.stack' => [
             'driver' => 'stack',
@@ -132,12 +132,12 @@ test('channel overrides work correctly with both arrays and closures', function 
     $tenant = Tenant::create(['webhookUrl' => 'tenant-webhook']);
 
     // Channel override closures must return an array, otherwise an exception is thrown
-    LogTenancyBootstrapper::$channelOverrides['slack'] = fn (Tenant $tenant, array $channel) => 'invalid override';
+    LogChannelBootstrapper::$channelOverrides['slack'] = fn (Tenant $tenant, array $channel) => 'invalid override';
 
     expect(fn() => tenancy()->initialize($tenant))->toThrow(InvalidArgumentException::class);
 
     // Test both array mapping and closure-based overrides
-    LogTenancyBootstrapper::$channelOverrides = [
+    LogChannelBootstrapper::$channelOverrides = [
         'slack' => ['url' => 'webhookUrl'], // slack.url will be mapped to $tenant->webhookUrl
         'single' => function (Tenant $tenant, array $channel) use ($centralStoragePath) {
             return array_merge($channel, ['path' => $centralStoragePath . "/logs/override-{$tenant->id}.log"]);
@@ -165,7 +165,7 @@ test('channel overrides work correctly with both arrays and closures', function 
 test('channel config keys remain unchanged if the specified tenant override attribute is null', function() {
     config(['logging.channels.slack.username' => 'Default username']);
 
-    LogTenancyBootstrapper::$channelOverrides = [
+    LogChannelBootstrapper::$channelOverrides = [
         'slack' => ['username' => 'nonExistentAttribute'], // $tenant->nonExistentAttribute
     ];
 
@@ -178,9 +178,9 @@ test('channel config keys remain unchanged if the specified tenant override attr
 test('channel overrides take precedence over the default storage path channel updating logic', function () {
     $tenant = Tenant::create(['id' => 'tenant1']);
 
-    LogTenancyBootstrapper::$storagePathChannels = ['single'];
+    LogChannelBootstrapper::$storagePathChannels = ['single'];
 
-    LogTenancyBootstrapper::$channelOverrides = [
+    LogChannelBootstrapper::$channelOverrides = [
         'single' => function (Tenant $tenant, array $channel) {
             return array_merge($channel, ['path' => storage_path("logs/override-{$tenant->id}.log")]);
         },
@@ -196,7 +196,7 @@ test('channels are forgotten and re-resolved during bootstrap and revert', funct
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
-            LogTenancyBootstrapper::class,
+            LogChannelBootstrapper::class,
         ],
     ]);
 
@@ -232,7 +232,7 @@ test('logs are written to tenant-specific files and do not leak between contexts
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
-            LogTenancyBootstrapper::class,
+            LogChannelBootstrapper::class,
         ],
     ]);
 
@@ -284,7 +284,7 @@ test('logs are written to tenant-specific files and do not leak between contexts
     // Channel overrides also override the default behavior for the storage path-based channels
     $tenant = Tenant::create(['id' => 'override-tenant']);
 
-    LogTenancyBootstrapper::$channelOverrides = [
+    LogChannelBootstrapper::$channelOverrides = [
         'single' => function (Tenant $tenant, array $channel) {
             // The tenant log path will be set to storage/tenantoverride-tenant/logs/custom-override-tenant.log
             return array_merge($channel, ['path' => storage_path("logs/custom-{$tenant->id}.log")]);
@@ -303,7 +303,7 @@ test('stack logs are written to all configured channels with tenant-specific pat
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
-            LogTenancyBootstrapper::class,
+            LogChannelBootstrapper::class,
         ],
         'logging.channels.stack' => [
             'driver' => 'stack',
@@ -353,7 +353,7 @@ test('stack channels that include any configured channel are re-resolved', funct
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
-            LogTenancyBootstrapper::class,
+            LogChannelBootstrapper::class,
         ],
         'logging.channels.custom_stack' => [
             'driver' => 'stack',
@@ -436,7 +436,7 @@ test('slack channel uses correct webhook urls', function () {
     $tenant2 = Tenant::create(['id' => 'tenant2', 'logging' => ['slackUrl' => 'tenant2-webhook']]);
 
     // Attribute mapping using nested attributes (dot notation) works
-    LogTenancyBootstrapper::$channelOverrides = [
+    LogChannelBootstrapper::$channelOverrides = [
         'slack' => ['url' => 'logging.slackUrl'],
     ];
 
@@ -456,7 +456,7 @@ test('tenant logs inherit the path from the central log path config', function (
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
-            LogTenancyBootstrapper::class,
+            LogChannelBootstrapper::class,
         ],
         'logging.channels.stack' => [
             'driver' => 'stack',
@@ -502,7 +502,7 @@ test('logging config is reverted to the original state if configuration fails', 
 
     // Valid override first, the config will be updated properly,
     // then an invalid override that will cause the configuration to fail and throw an exception.
-    LogTenancyBootstrapper::$channelOverrides = [
+    LogChannelBootstrapper::$channelOverrides = [
         'single' => ['path' => 'loggingPath'], // Valid override
         'slack' => fn () => 'invalid override',
     ];

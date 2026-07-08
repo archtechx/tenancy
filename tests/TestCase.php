@@ -23,7 +23,7 @@ use Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastingConfigBootstrapper;
 use Stancl\Tenancy\Bootstrappers\BroadcastChannelPrefixBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
-use Stancl\Tenancy\Bootstrappers\LogTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\LogChannelBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseCacheBootstrapper;
 use Stancl\Tenancy\Bootstrappers\TenantConfigBootstrapper;
 
@@ -193,7 +193,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         $app->singleton(RootUrlBootstrapper::class);
         $app->singleton(UrlGeneratorBootstrapper::class);
         $app->singleton(FilesystemTenancyBootstrapper::class);
-        $app->singleton(LogTenancyBootstrapper::class);
+        $app->singleton(LogChannelBootstrapper::class);
         $app->singleton(TenantConfigBootstrapper::class);
     }
 
