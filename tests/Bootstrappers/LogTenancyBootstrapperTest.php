@@ -31,7 +31,6 @@ afterEach($cleanup = function () {
 beforeEach(function () use ($cleanup) {
     config([
         'tenancy.bootstrappers' => [
-            // FilesystemTenancyBootstrapper needed for LogTenancyBootstrapper to work with storage path channels BY DEFAULT
             LogTenancyBootstrapper::class,
         ],
     ]);
