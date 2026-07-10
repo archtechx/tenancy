@@ -310,7 +310,6 @@ test('mappings specified in credentialsMap override default mapPresets', functio
         'broadcasting_key' => 'custom_value',
     ]);
 
-
     tenancy()->initialize($tenant);
 
     expect(config("broadcasting.connections.{$driver}.key"))->toBe('custom_value');

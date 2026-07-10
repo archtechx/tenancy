@@ -196,7 +196,7 @@ test('broadcasting channel helpers register channels correctly', function() {
     // Register a tenant broadcasting channel (almost identical to the original channel, just able to accept the tenant key)
     tenant_channel($channelName, $channelClosure);
 
-    // Tenant channel registered – its name is correctly prefixed ("{tenant}.user.{userId}")
+    // Tenant channel registered – its name is correctly prefixed ("{tenant}.user.{userName}")
     $tenantChannelClosure = $getChannels()->first(fn ($closure, $name) => $name === "{tenant}.$channelName");
     expect($tenantChannelClosure)->toBe($centralChannelClosure);
 
