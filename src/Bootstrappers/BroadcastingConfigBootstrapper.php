@@ -93,11 +93,12 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
             return $tenantBroadcastManager;
         });
 
-        // Swap currently bound Broadcaster instance for one that's resolved through the tenant BroadcastManager.
-        // Note that updating broadcasting config (credentials) in tenant context doesn't update the credentials
-        // used by the bound Broadcaster instance. If you need to e.g. send a notification in response to
-        // updating tenant's broadcasting credentials in tenant context, it's recommended to
-        // reinitialize tenancy after updating the credentials.
+        // Swap the currently bound Broadcaster singleton (resolved earlier with the central credentials)
+        // for one resolved through the tenant BroadcastManager, so that anything resolving the Broadcaster
+        // contract gets a broadcaster that uses the tenant's credentials instead of the stale central one.
+        // Unlike broadcasters resolved through the manager (re-resolved on each call), this instance is
+        // resolved once, so credential changes made later in tenant context don't affect it until tenancy
+        // is reinitialized.
         $this->app->extend(Broadcaster::class, function () {
             return $this->app->make(BroadcastManager::class)->connection();
         });
