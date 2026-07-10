@@ -15,7 +15,7 @@ use Stancl\Tenancy\Overrides\TenancyBroadcastManager;
 
 /**
  * Maps tenant properties to broadcasting config and overrides
- * the BroadcastManager binding with TenancyBroadcastManager.
+ * the BroadcastManager and Broadcaster bindings with tenant-aware instances.
  *
  * @see TenancyBroadcastManager
  */
@@ -73,8 +73,9 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
 
         $this->setConfig($tenant);
 
-        // Make BroadcastManager resolve to TenancyBroadcastManager. The manager:
-        // - resolves fresh broadcasters so that the updated (tenant) broadcasting config is used while broadcasting
+        // Make BroadcastManager resolve to a fresh TenancyBroadcastManager. The new manager:
+        // - has no cached broadcasters, so its broadcasters get resolved using the updated (tenant)
+        //   broadcasting config and stay cached for the duration of the tenant's context
         // - makes the tenant broadcasters inherit the channels of the original (central) broadcaster
         //   (since newly resolved broadcasters don't receive any channels by default, broadcasting on
         //   channels registered in central context, e.g. in routes/channels.php, would otherwise not
@@ -93,11 +94,8 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
         });
 
         // Swap the currently bound Broadcaster singleton (resolved earlier with the central credentials)
-        // for one resolved through the tenant BroadcastManager, so that anything resolving the Broadcaster
-        // contract gets a broadcaster that uses the tenant's credentials instead of the stale central one.
-        // Unlike broadcasters resolved through the manager (re-resolved on each call), this instance is
-        // resolved once, so credential changes made later in tenant context don't affect it until tenancy
-        // is reinitialized.
+        // for the tenant BroadcastManager's default broadcaster, so that anything resolving the Broadcaster
+        // contract gets the same tenant broadcaster that the manager uses, instead of the stale central one.
         $this->app->extend(Broadcaster::class, function () {
             return $this->app->make(BroadcastManager::class)->connection();
         });

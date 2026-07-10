@@ -9,57 +9,36 @@ use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Contracts\Broadcasting\Broadcaster as BroadcasterContract;
 
 /**
- * BroadcastManager override that always re-resolves the broadcasters in static::$tenantBroadcasters
- * when attempting to retrieve them so that they use the updated tenant-specific config
- * and passes the channels of the original (central) broadcaster
- * to the newly resolved (tenant) broadcasters.
+ * BroadcastManager override that makes the newly resolved (tenant) broadcasters
+ * inherit the channels of the original (central) broadcaster.
  *
- * Affects calls that use BroadcastManager's get() method.
+ * BroadcastingConfigBootstrapper binds a new instance of this manager on each tenancy
+ * initialization, so the broadcasters get resolved using the tenant's broadcasting config
+ * and stay cached (like in the parent manager) for the duration of the tenant's context.
  *
  * @see Stancl\Tenancy\Bootstrappers\BroadcastingConfigBootstrapper
  */
 class TenancyBroadcastManager extends BroadcastManager
 {
     /**
-     * Names of broadcasters that
-     * - should always be recreated using $this->resolve(), even when they're cached and available
-     *   in $this->drivers so that when you update broadcasting config in the tenant context,
-     *   the updated config/credentials will be used for broadcasting immediately.
-     *   Note that in cases like this, only direct config changes are reflected right away.
-     *   For the broadcasters to reflect tenant property changes made in tenant context,
-     *   you still have to reinitialize tenancy after updating the tenant properties intended
-     *   to be mapped to broadcasting config, since the properties are only mapped to config
-     *   on BroadcastingConfigBootstrapper::bootstrap().
-     * - should inherit the original broadcaster's channels (= the channels registered in
-     *   the central context, e.g. in routes/channels.php, before this manager overrides the bound BroadcastManager).
+     * Resolve the broadcaster and pass it the channels of the currently bound broadcaster
+     * (the central one, when the default driver is resolved during bootstrap).
      */
-    public static array $tenantBroadcasters = ['pusher', 'ably', 'reverb'];
-
-    /**
-     * Override the get method so that the broadcasters in static::$tenantBroadcasters
-     * - receive the original (central) broadcaster's channels
-     * - always get freshly resolved.
-     */
-    protected function get($name)
+    protected function resolve($name)
     {
-        if (in_array($name, static::$tenantBroadcasters)) {
-            /** @var Broadcaster|null $originalBroadcaster */
-            $originalBroadcaster = $this->app->make(BroadcasterContract::class);
-            $newBroadcaster = $this->resolve($name);
+        $newBroadcaster = parent::resolve($name);
 
-            // Give the channels of the original (central) broadcaster to the newly resolved one.
-            //
-            // Broadcasters only have to implement the Illuminate\Contracts\Broadcasting\Broadcaster contract
-            // which doesn't require the channels property, so we only pass the channels to
-            // Illuminate\Broadcasting\Broadcasters\Broadcaster instances (= all the default broadcasters, e.g. PusherBroadcaster).
-            if ($originalBroadcaster instanceof Broadcaster && $newBroadcaster instanceof Broadcaster) {
-                $this->passChannelsFromOriginalBroadcaster($originalBroadcaster, $newBroadcaster);
-            }
+        /** @var Broadcaster|null $originalBroadcaster */
+        $originalBroadcaster = $this->app->make(BroadcasterContract::class);
 
-            return $newBroadcaster;
+        // Broadcasters only have to implement the Illuminate\Contracts\Broadcasting\Broadcaster contract
+        // which doesn't require the channels property, so we only pass the channels to
+        // Illuminate\Broadcasting\Broadcasters\Broadcaster instances (= all the default broadcasters, e.g. PusherBroadcaster).
+        if ($originalBroadcaster instanceof Broadcaster && $newBroadcaster instanceof Broadcaster) {
+            $this->passChannelsFromOriginalBroadcaster($originalBroadcaster, $newBroadcaster);
         }
 
-        return parent::get($name);
+        return $newBroadcaster;
     }
 
     /**
