@@ -7,7 +7,6 @@ namespace Stancl\Tenancy\Bootstrappers;
 use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Config\Repository;
 use Illuminate\Contracts\Broadcasting\Broadcaster;
-use Illuminate\Contracts\Broadcasting\Factory as BroadcastingFactory;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Broadcast;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
@@ -103,10 +102,10 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
             return $this->app->make(BroadcastManager::class)->connection();
         });
 
-        // Clear the resolved Broadcast facade's Illuminate\Contracts\Broadcasting\Factory instance
-        // so that it gets re-resolved as TenancyBroadcastManager instead of the central BroadcastManager
-        // when used. E.g. the Broadcast::auth() call in BroadcastController::authenticate (/broadcasting/auth).
-        Broadcast::clearResolvedInstance(BroadcastingFactory::class);
+        // Extending the binding doesn't update the Broadcast facade's cached instance,
+        // so clear it to make the facade re-resolve to TenancyBroadcastManager instead of the central
+        // BroadcastManager — e.g. in the Broadcast::auth() call in BroadcastController (/broadcasting/auth).
+        Broadcast::clearResolvedInstance();
     }
 
     public function revert(): void
@@ -116,7 +115,7 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
         $this->app->singleton(Broadcaster::class, fn (Application $app) => $this->originalBroadcaster);
 
         // Clear the resolved Broadcast facade instance so that it gets re-resolved as the central BroadcastManager
-        Broadcast::clearResolvedInstance(BroadcastingFactory::class);
+        Broadcast::clearResolvedInstance();
 
         $this->unsetConfig();
     }
