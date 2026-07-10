@@ -12,7 +12,6 @@ use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\QueryException;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\SQLiteDatabaseManager;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLDatabaseManager;
@@ -116,7 +115,9 @@ test('harden prevents tenants from using the database of another tenant', functi
         expect(fn () => tenancy()->initialize($tenant))->toThrow(RuntimeException::class);
 
         // Connection should be reverted back to central
-        expect(DB::connection()->getName())->toBe('central');
+        $centralConnection = config('tenancy.database.central_connection');
+
+        expect(DB::connection()->getName())->toBe($centralConnection);
     } else {
         expect(fn() => tenancy()->initialize($tenant))->not()->toThrow(Throwable::class);
 
@@ -128,25 +129,22 @@ test('harden prevents tenants from using the database of another tenant', functi
     'hardening disabled' => false,
 ])->with('db_managers');
 
-test('database tenancy bootstrapper throws an exception if DATABASE_URL is set', function (string|null $databaseUrl) {
-    config(['database.connections.central.url' => $databaseUrl]);
-
+test('database tenancy bootstrapper throws an exception if DB_URL is set', function (string|null $databaseUrl) {
     config(['tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class]]);
 
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
         return $event->tenant;
     })->toListener());
 
+    $tenant = Tenant::create();
+
+    config(['database.connections.central.url' => $databaseUrl]);
+
     if ($databaseUrl) {
-        expect(fn() => Tenant::create())->toThrow(QueryException::class);
+        expect(fn() => tenancy()->initialize($tenant))
+            ->toThrow(Exception::class, 'The template connection must NOT have URL defined.');
     } else {
-        expect(function() {
-            $tenant1 = Tenant::create();
-
-            pest()->artisan('tenants:migrate');
-
-            tenancy()->initialize($tenant1);
-        })->not()->toThrow(Throwable::class);
+        expect(fn() => tenancy()->initialize($tenant))->not()->toThrow(Throwable::class);
     }
 })->with(['abc.us-east-1.rds.amazonaws.com', null]);
 

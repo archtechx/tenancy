@@ -255,4 +255,10 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             $sessionManager->getDrivers()['file']->setHandler($handler);
         }
     }
+
+    /** Get the central storage path from the bound singleton instance of this class. */
+    public static function getBoundCentralStoragePath(): string
+    {
+        return app(static::class)->originalStoragePath;
+    }
 }
