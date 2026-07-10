@@ -111,8 +111,8 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
     public function revert(): void
     {
         // Revert the bound BroadcastManager and Broadcaster singletons back to their original state
-        $this->app->singleton(BroadcastManager::class, fn (Application $app): ?BroadcastManager => $this->originalBroadcastManager);
-        $this->app->singleton(Broadcaster::class, fn (Application $app) => $this->originalBroadcaster);
+        $this->app->singleton(BroadcastManager::class, fn () => $this->originalBroadcastManager);
+        $this->app->singleton(Broadcaster::class, fn () => $this->originalBroadcaster);
 
         // Clear the resolved Broadcast facade instance so that it gets re-resolved as the central BroadcastManager
         Broadcast::clearResolvedInstance();
