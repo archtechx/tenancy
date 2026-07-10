@@ -297,8 +297,7 @@ test('mappings specified in credentialsMap override default mapPresets', functio
         'broadcasting.default' => $driver,
     ]);
 
-    // Preset used for broadcasters included in TenancyBroadcastManager::$tenantBroadcasters by default.
-    // This is the default for all tenant broadcasters, but we set it here for clarity.
+    // The preset mapping for the tested broadcaster (this is the default, we only set it here for clarity)
     BroadcastingConfigBootstrapper::$mapPresets[$driver]["broadcasting.connections.{$driver}.key"] = "{$driver}_key";
 
     // Custom mapping specified in credentialsMap should override the preset mapping for the tested broadcaster
