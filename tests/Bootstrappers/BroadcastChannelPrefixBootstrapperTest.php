@@ -208,10 +208,16 @@ test('broadcasting channel helpers register channels correctly', function() {
         return User::firstWhere('name', $userName)?->is($user) ?? false;
     });
 
-    expect($tenantChannelClosure)->not()->toBe($centralChannelClosure);
+    // Retrieve the stored closure to verify that re-registering the channel replaced it
+    // (asserting on $tenantChannelClosure wouldn't tell us what tenant_channel() actually stored)
+    $reregisteredTenantChannelClosure = $getChannels()->first(fn ($closure, $name) => $name === "{tenant}.$channelName");
 
-    expect($tenantChannelClosure($centralUser, $tenant->getTenantKey(), $centralUser->name))->toBeTrue();
-    expect($tenantChannelClosure($centralUser, $tenant->getTenantKey(), $tenantUser->name))->toBeFalse();
+    expect($reregisteredTenantChannelClosure)
+        ->toBe($tenantChannelClosure)
+        ->not()->toBe($centralChannelClosure);
+
+    expect($reregisteredTenantChannelClosure($centralUser, $tenant->getTenantKey(), $centralUser->name))->toBeTrue();
+    expect($reregisteredTenantChannelClosure($centralUser, $tenant->getTenantKey(), $tenantUser->name))->toBeFalse();
 
     tenancy()->initialize($tenant);
 
