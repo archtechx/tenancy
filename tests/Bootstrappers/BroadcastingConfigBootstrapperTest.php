@@ -152,6 +152,13 @@ test('BroadcastingConfigBootstrapper maps tenant properties to broadcaster crede
     expect(app(BroadcasterContract::class)->config['key'])->toBe('tenant1_key');
     expect(Broadcast::driver()->config['key'])->toBe('tenant1_key');
 
+    // Initializing tenancy for a tenant without the mapped property keeps the central config value
+    tenancy()->initialize(Tenant::create());
+
+    expect(config("broadcasting.connections.{$driver}.key"))->toBe('central_key');
+    expect(app(BroadcastManager::class)->driver()->config['key'])->toBe('central_key');
+    expect(app(BroadcasterContract::class)->config['key'])->toBe('central_key');
+
     tenancy()->end();
 
     expect(config("broadcasting.connections.{$driver}.key"))->toBe('central_key');
