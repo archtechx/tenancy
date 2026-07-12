@@ -8,7 +8,6 @@ use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Tests\Etc\TestingBroadcaster;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
-use Stancl\Tenancy\Overrides\TenancyBroadcastManager;
 use Stancl\Tenancy\Bootstrappers\BroadcastingConfigBootstrapper;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Contracts\Broadcasting\Broadcaster as BroadcasterContract;
@@ -45,22 +44,20 @@ beforeEach(function () use ($cleanup) {
 
 afterEach($cleanup);
 
-test('BroadcastingConfigBootstrapper binds TenancyBroadcastManager to BroadcastManager and reverts the binding when tenancy is ended', function() {
+test('BroadcastingConfigBootstrapper binds a fresh BroadcastManager and reverts the binding when tenancy is ended', function() {
     config(['tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class]]);
 
-    expect(app(BroadcastManager::class))
-        ->toBeInstanceOf(BroadcastManager::class)
-        ->not()->toBeInstanceOf(TenancyBroadcastManager::class);
+    $centralManager = app(BroadcastManager::class);
 
     tenancy()->initialize(Tenant::create());
 
-    expect(app(BroadcastManager::class))->toBeInstanceOf(TenancyBroadcastManager::class);
+    expect(app(BroadcastManager::class))
+        ->toBeInstanceOf(BroadcastManager::class)
+        ->not()->toBe($centralManager);
 
     tenancy()->end();
 
-    expect(app(BroadcastManager::class))
-        ->toBeInstanceOf(BroadcastManager::class)
-        ->not()->toBeInstanceOf(TenancyBroadcastManager::class);
+    expect(app(BroadcastManager::class))->toBe($centralManager);
 });
 
 test('ending tenancy reverts the bound broadcaster to the original instance', function() {

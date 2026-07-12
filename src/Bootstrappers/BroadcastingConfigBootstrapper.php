@@ -4,20 +4,18 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Bootstrappers;
 
+use Illuminate\Broadcasting\Broadcasters\Broadcaster;
 use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Config\Repository;
-use Illuminate\Contracts\Broadcasting\Broadcaster;
+use Illuminate\Contracts\Broadcasting\Broadcaster as BroadcasterContract;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Broadcast;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
-use Stancl\Tenancy\Overrides\TenancyBroadcastManager;
 
 /**
  * Maps tenant credentials to the broadcasting config and rebinds BroadcastManager
  * and Broadcaster so that broadcasters get resolved using the tenant credentials.
- *
- * @see TenancyBroadcastManager
  */
 class BroadcastingConfigBootstrapper implements TenancyBootstrapper
 {
@@ -37,7 +35,7 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
 
     protected array $originalConfig = [];
     protected BroadcastManager|null $originalBroadcastManager = null;
-    protected Broadcaster|null $originalBroadcaster = null;
+    protected BroadcasterContract|null $originalBroadcaster = null;
 
     public static array $mapPresets = [
         'pusher' => [
@@ -69,40 +67,55 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
     public function bootstrap(Tenant $tenant): void
     {
         $this->originalBroadcastManager = $this->app->make(BroadcastManager::class);
-        $this->originalBroadcaster = $this->app->make(Broadcaster::class);
+        $this->originalBroadcaster = $this->app->make(BroadcasterContract::class);
 
         $this->setConfig($tenant);
 
-        // Make BroadcastManager resolve to a fresh TenancyBroadcastManager. The new manager:
-        // - has no cached broadcasters, so its broadcasters get resolved using the updated (tenant)
-        //   broadcasting config and stay cached for the duration of the tenant's context
-        // - makes the tenant broadcasters inherit the channels of the original (central) broadcaster
-        //   (since newly resolved broadcasters don't receive any channels by default, broadcasting on
-        //   channels registered in central context, e.g. in routes/channels.php, would otherwise not
-        //   work with the tenant broadcasters)
-        $this->app->extend(BroadcastManager::class, function (BroadcastManager $broadcastManager) {
-            $originalCustomCreators = invade($broadcastManager)->customCreators;
-            $tenantBroadcastManager = new TenancyBroadcastManager($this->app);
+        // Make BroadcastManager resolve to a fresh manager with no cached broadcasters,
+        // so that its broadcasters get resolved using the updated (tenant) broadcasting
+        // config and stay cached for the duration of the tenant's context.
+        $this->app->extend(BroadcastManager::class, function (BroadcastManager $centralManager) {
+            $tenantManager = new BroadcastManager($this->app);
 
-            // Make TenancyBroadcastManager inherit the custom driver creators registered in the central context
+            // Pass the custom driver creators registered in the central context to the new manager
             // so that custom drivers work in tenant context without having to re-register the creators manually.
-            foreach ($originalCustomCreators as $driver => $closure) {
-                $tenantBroadcastManager->extend($driver, $closure);
+            foreach (invade($centralManager)->customCreators as $driver => $creator) {
+                $tenantManager->extend($driver, $creator);
             }
 
-            return $tenantBroadcastManager;
+            return $tenantManager;
         });
 
         // Swap the currently bound Broadcaster singleton (resolved earlier with the central credentials)
         // for the tenant BroadcastManager's default broadcaster, so that anything resolving the Broadcaster
         // contract gets the same tenant broadcaster that the manager uses, instead of the stale central one.
-        $this->app->extend(Broadcaster::class, function () {
-            return $this->app->make(BroadcastManager::class)->connection();
+        $this->app->extend(BroadcasterContract::class, function (BroadcasterContract $centralBroadcaster) {
+            $tenantBroadcaster = $this->app->make(BroadcastManager::class)->connection();
+
+            // The newly resolved broadcaster doesn't have any channel auth closures registered, so the
+            // closures registered in central context (e.g. in routes/channels.php) have to be passed to it
+            // manually, otherwise, Broadcast::auth() would throw a 403 for those channels.
+            // Since Laravel only ever uses the default broadcaster's channel auth closures for broadcasting auth,
+            // we only have to pass the channel closures to the default broadcaster.
+            //
+            // The $channels proeprty and the channel() method aren't part of the Broadcaster contract -- they come
+            // from the abstract Broadcaster class, so the closures can only be copied between broadcasters extending it
+            // (which all of Laravel's default broadcasters, e.g. PusherBroadcaster, do).
+            if ($centralBroadcaster instanceof Broadcaster && $tenantBroadcaster instanceof Broadcaster) {
+                // invade() because channels can't be retrieved through any of the broadcaster's public methods
+                $centralBroadcaster = invade($centralBroadcaster);
+
+                foreach ($centralBroadcaster->channels as $channel => $callback) {
+                    $tenantBroadcaster->channel($channel, $callback, $centralBroadcaster->retrieveChannelOptions($channel));
+                }
+            }
+
+            return $tenantBroadcaster;
         });
 
         // Extending the binding doesn't update the Broadcast facade's cached instance,
-        // so clear it to make the facade re-resolve to TenancyBroadcastManager instead of the central
-        // BroadcastManager — e.g. in the Broadcast::auth() call in BroadcastController (/broadcasting/auth).
+        // so clear it to make the facade re-resolve to the tenant BroadcastManager instead of the central
+        // one — e.g. in the Broadcast::auth() call in BroadcastController (/broadcasting/auth).
         Broadcast::clearResolvedInstance();
     }
 
@@ -110,7 +123,7 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
     {
         // Revert the bound BroadcastManager and Broadcaster singletons back to their original state
         $this->app->singleton(BroadcastManager::class, fn () => $this->originalBroadcastManager);
-        $this->app->singleton(Broadcaster::class, fn () => $this->originalBroadcaster);
+        $this->app->singleton(BroadcasterContract::class, fn () => $this->originalBroadcaster);
 
         // Clear the resolved Broadcast facade instance so that it gets re-resolved as the central BroadcastManager
         Broadcast::clearResolvedInstance();
