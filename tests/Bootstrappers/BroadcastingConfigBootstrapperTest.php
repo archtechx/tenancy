@@ -344,3 +344,21 @@ test('initializing tenancy does not fail when the broadcaster does not extend th
         ->toBeInstanceOf(get_class($contractBroadcaster))
         ->not()->toBe($centralBroadcaster);
 });
+
+test('setting the broadcaster property overrides which map preset is used', function () {
+    config([
+        'tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class],
+        'broadcasting.default' => 'testing',
+        'broadcasting.connections.testing.driver' => 'testing',
+        'broadcasting.connections.pusher.key' => 'central_key',
+    ]);
+
+    app(BroadcastManager::class)->extend('testing', fn () => new TestingBroadcaster('testing'));
+
+    // Use the pusher preset even though the default connection isn't pusher
+    BroadcastingConfigBootstrapper::$broadcaster = 'pusher';
+
+    tenancy()->initialize(Tenant::create(['pusher_key' => 'tenant_key']));
+
+    expect(config('broadcasting.connections.pusher.key'))->toBe('tenant_key');
+});
