@@ -226,7 +226,7 @@ test('tenant broadcasters receive the channels from the broadcaster bound in cen
     $getCurrentChannelsFromBoundBroadcaster = fn () => array_keys(invade(app(BroadcasterContract::class))->channels);
     $getCurrentChannelsThroughManager = fn () => array_keys(invade(app(BroadcastManager::class)->driver())->channels);
 
-    Broadcast::channel($channel = 'testing-channel', fn () => true);
+    Broadcast::channel($channel = 'testing-channel', $callback = fn () => true, $options = ['guards' => ['web']]);
 
     expect($channel)
         ->toBeIn($getCurrentChannelsThroughManager())
@@ -237,6 +237,10 @@ test('tenant broadcasters receive the channels from the broadcaster bound in cen
     expect($channel)
         ->toBeIn($getCurrentChannelsThroughManager())
         ->toBeIn($getCurrentChannelsFromBoundBroadcaster());
+
+    // The channel auth closure and the channel options are copied to the tenant broadcaster as-is
+    expect(invade(app(BroadcasterContract::class))->channels[$channel])->toBe($callback);
+    expect(invade(app(BroadcasterContract::class))->retrieveChannelOptions($channel))->toBe($options);
 
     tenancy()->initialize($tenant2);
 
