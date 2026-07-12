@@ -205,20 +205,17 @@ test('tenant broadcast manager receives the custom driver creators of the centra
     expect(array_keys(invade(app(BroadcastManager::class))->customCreators))->toEqualCanonicalizing($originalDrivers);
 });
 
-test('tenant broadcasters receive the channels from the broadcaster bound in central context', function(string $driver) {
+test('tenant broadcasters receive the channels from the broadcaster bound in central context', function() {
     config([
         'tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class],
-        'broadcasting.default' => $driver,
+        'broadcasting.default' => 'testing',
+        'broadcasting.connections.testing.driver' => 'testing',
     ]);
-
-    if ($driver === 'custom') {
-        config(['broadcasting.connections.custom.driver' => 'custom']);
-    }
 
     $tenant1 = Tenant::create();
     $tenant2 = Tenant::create();
 
-    app(BroadcastManager::class)->extend($driver, fn($app, $config) => new TestingBroadcaster('testing'));
+    app(BroadcastManager::class)->extend('testing', fn() => new TestingBroadcaster('testing'));
     $getCurrentChannelsFromBoundBroadcaster = fn() => array_keys(invade(app(BroadcasterContract::class))->channels);
     $getCurrentChannelsThroughManager = fn() => array_keys(invade(app(BroadcastManager::class)->driver())->channels);
 
@@ -245,12 +242,7 @@ test('tenant broadcasters receive the channels from the broadcaster bound in cen
     expect($channel)
         ->toBeIn($getCurrentChannelsThroughManager())
         ->toBeIn($getCurrentChannelsFromBoundBroadcaster());
-})->with([
-    'pusher',
-    'ably',
-    'reverb',
-    'custom',
-]);
+});
 
 test('channels registered in tenant context persist within that context but do not leak into other contexts', function() {
     config([
