@@ -318,3 +318,29 @@ test('mappings specified in credentialsMap override default mapPresets', functio
     'ably',
     'reverb',
 ]);
+
+test('initializing tenancy does not fail when the broadcaster does not extend the abstract Broadcaster class', function () {
+    config([
+        'tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class],
+        'broadcasting.default' => 'contract',
+        'broadcasting.connections.contract.driver' => 'contract',
+    ]);
+
+    $contractBroadcaster = new class implements BroadcasterContract {
+        public function auth($request) {}
+        public function validAuthenticationResponse($request, $result) {}
+        public function broadcast(array $channels, $event, array $payload = []) {}
+    };
+
+    app(BroadcastManager::class)->extend('contract', fn () => clone $contractBroadcaster);
+
+    $centralBroadcaster = app(BroadcasterContract::class);
+
+    // Channel auth closures only exist on broadcasters extending the abstract Broadcaster class,
+    // so the bootstrapper skips copying them instead of failing.
+    tenancy()->initialize(Tenant::create());
+
+    expect(app(BroadcasterContract::class))
+        ->toBeInstanceOf(get_class($contractBroadcaster))
+        ->not()->toBe($centralBroadcaster);
+});
