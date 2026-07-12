@@ -44,7 +44,7 @@ beforeEach(function () use ($cleanup) {
 
 afterEach($cleanup);
 
-test('BroadcastingConfigBootstrapper binds a fresh BroadcastManager and reverts the binding when tenancy is ended', function() {
+test('BroadcastingConfigBootstrapper binds a fresh BroadcastManager and reverts the binding when tenancy is ended', function () {
     config(['tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class]]);
 
     $centralManager = app(BroadcastManager::class);
@@ -60,7 +60,7 @@ test('BroadcastingConfigBootstrapper binds a fresh BroadcastManager and reverts 
     expect(app(BroadcastManager::class))->toBe($centralManager);
 });
 
-test('ending tenancy reverts the bound broadcaster to the original instance', function() {
+test('ending tenancy reverts the bound broadcaster to the original instance', function () {
     config([
         'tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class],
         'broadcasting.default' => 'testing',
@@ -85,7 +85,7 @@ test('ending tenancy reverts the bound broadcaster to the original instance', fu
     expect($originalBroadcaster)->toBe(app(BroadcasterContract::class));
 });
 
-test('BroadcastingConfigBootstrapper maps tenant properties to broadcaster credentials correctly', function(string $driver) {
+test('BroadcastingConfigBootstrapper maps tenant properties to broadcaster credentials correctly', function (string $driver) {
     config([
         'broadcasting.default' => $driver,
         "broadcasting.connections.{$driver}.key" => 'central_key',
@@ -166,7 +166,7 @@ test('BroadcastingConfigBootstrapper maps tenant properties to broadcaster crede
     'custom',
 ]);
 
-test('tenant broadcast manager receives the custom driver creators of the central broadcast manager', function() {
+test('tenant broadcast manager receives the custom driver creators of the central broadcast manager', function () {
     config([
         'tenancy.bootstrappers' => [
             BroadcastingConfigBootstrapper::class,
@@ -205,7 +205,7 @@ test('tenant broadcast manager receives the custom driver creators of the centra
     expect(array_keys(invade(app(BroadcastManager::class))->customCreators))->toEqualCanonicalizing($originalDrivers);
 });
 
-test('tenant broadcasters receive the channels from the broadcaster bound in central context', function() {
+test('tenant broadcasters receive the channels from the broadcaster bound in central context', function () {
     config([
         'tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class],
         'broadcasting.default' => 'testing',
@@ -215,11 +215,11 @@ test('tenant broadcasters receive the channels from the broadcaster bound in cen
     $tenant1 = Tenant::create();
     $tenant2 = Tenant::create();
 
-    app(BroadcastManager::class)->extend('testing', fn() => new TestingBroadcaster('testing'));
-    $getCurrentChannelsFromBoundBroadcaster = fn() => array_keys(invade(app(BroadcasterContract::class))->channels);
-    $getCurrentChannelsThroughManager = fn() => array_keys(invade(app(BroadcastManager::class)->driver())->channels);
+    app(BroadcastManager::class)->extend('testing', fn () => new TestingBroadcaster('testing'));
+    $getCurrentChannelsFromBoundBroadcaster = fn () => array_keys(invade(app(BroadcasterContract::class))->channels);
+    $getCurrentChannelsThroughManager = fn () => array_keys(invade(app(BroadcastManager::class)->driver())->channels);
 
-    Broadcast::channel($channel = 'testing-channel', fn() => true);
+    Broadcast::channel($channel = 'testing-channel', fn () => true);
 
     expect($channel)
         ->toBeIn($getCurrentChannelsThroughManager())
@@ -244,7 +244,7 @@ test('tenant broadcasters receive the channels from the broadcaster bound in cen
         ->toBeIn($getCurrentChannelsFromBoundBroadcaster());
 });
 
-test('channels registered in tenant context persist within that context but do not leak into other contexts', function() {
+test('channels registered in tenant context persist within that context but do not leak into other contexts', function () {
     config([
         'tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class],
         'broadcasting.default' => 'testing',
@@ -253,11 +253,11 @@ test('channels registered in tenant context persist within that context but do n
 
     app(BroadcastManager::class)->extend('testing', fn($app, $config) => new TestingBroadcaster('testing', $config));
 
-    Broadcast::channel('central-channel', fn() => true);
+    Broadcast::channel('central-channel', fn () => true);
 
     tenancy()->initialize(Tenant::create());
 
-    Broadcast::channel('tenant-channel', fn() => true);
+    Broadcast::channel('tenant-channel', fn () => true);
 
     // Retrieving the broadcaster again (e.g. on Broadcast::auth() during a /broadcasting/auth request)
     // returns the cached broadcaster, so the channel registered in tenant context is still available
@@ -280,7 +280,7 @@ test('channels registered in tenant context persist within that context but do n
         ->not()->toContain('tenant-channel');
 });
 
-test('mappings specified in credentialsMap override default mapPresets', function($driver) {
+test('mappings specified in credentialsMap override default mapPresets', function ($driver) {
     config([
         'tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class],
         'broadcasting.default' => $driver,
