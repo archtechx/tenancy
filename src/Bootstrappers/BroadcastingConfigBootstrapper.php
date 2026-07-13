@@ -98,15 +98,15 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
             // Since Laravel only ever uses the default broadcaster's channel auth closures for broadcasting auth,
             // we only have to pass the channel closures to the default broadcaster.
             //
-            // The $channels property and the channel() method aren't part of the Broadcaster contract -- they come
+            // The channel() and getChannels() methods aren't part of the Broadcaster contract -- they come
             // from the abstract Broadcaster class, so the closures can only be copied between broadcasters extending it
             // (which all of Laravel's default broadcasters, e.g. PusherBroadcaster, do).
             if ($centralBroadcaster instanceof Broadcaster && $tenantBroadcaster instanceof Broadcaster) {
-                // invade() because channels can't be retrieved through any of the broadcaster's public methods
-                $centralBroadcaster = invade($centralBroadcaster);
+                // invade() because the channel options can't be retrieved through any of the broadcaster's public methods
+                $channelOptions = invade($centralBroadcaster)->channelOptions;
 
-                foreach ($centralBroadcaster->channels as $channel => $callback) {
-                    $tenantBroadcaster->channel($channel, $callback, $centralBroadcaster->retrieveChannelOptions($channel));
+                foreach ($centralBroadcaster->getChannels() as $channel => $callback) {
+                    $tenantBroadcaster->channel($channel, $callback, $channelOptions[$channel] ?? []);
                 }
             }
 
