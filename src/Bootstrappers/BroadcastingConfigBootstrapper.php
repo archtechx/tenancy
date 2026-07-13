@@ -89,6 +89,9 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
         // Swap the currently bound Broadcaster singleton (resolved earlier with the central credentials)
         // for the tenant BroadcastManager's default broadcaster, so that anything resolving the Broadcaster
         // contract gets the same tenant broadcaster that the manager uses, instead of the stale central one.
+        // The closure runs immediately (the extended singleton is already resolved), and it's also what makes
+        // channel auth work in tenant context -- the broadcaster resolved here gets cached as the tenant
+        // manager's default driver and receives the central channel auth closures (see below).
         $this->app->extend(BroadcasterContract::class, function (BroadcasterContract $centralBroadcaster) {
             $tenantBroadcaster = $this->app->make(BroadcastManager::class)->connection();
 
