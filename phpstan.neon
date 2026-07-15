@@ -15,9 +15,9 @@ parameters:
     ignoreErrors:
         - identifier: trait.unused
         - identifier: missingType.iterableValue
-        -
-            message: '#Spatie\\Invade\\Invader#'
-            identifier: method.notFound
+       #-
+       #    message: '#Spatie\\Invade\\Invader#'
+       #    identifier: method.notFound
         -
             message: '#Spatie\\Invade\\Invader#'
             identifier: property.notFound
