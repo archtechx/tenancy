@@ -220,7 +220,7 @@ test('tenant broadcast manager receives the custom driver creators of the centra
     expect(array_keys(invade(app(BroadcastManager::class))->customCreators))->toEqualCanonicalizing($originalDrivers);
 });
 
-test('tenant broadcasters receive the channel auth closures from the broadcaster bound in central context', function () {
+test('tenant broadcasters receive the auth state of the broadcaster bound in central context', function () {
     config([
         'tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class],
         'broadcasting.default' => 'testing',
@@ -233,12 +233,20 @@ test('tenant broadcasters receive the channel auth closures from the broadcaster
     app(BroadcastManager::class)->extend('testing', fn () => new TestingBroadcaster('testing'));
     $getCurrentChannelsFromBoundBroadcaster = fn () => array_keys(invade(app(BroadcasterContract::class))->channels);
     $getCurrentChannelsThroughManager = fn () => array_keys(invade(app(BroadcastManager::class)->driver())->channels);
+    $resolveUser = fn () => app(BroadcasterContract::class)->resolveAuthenticatedUser(request());
 
     Broadcast::channel($channel = 'testing-channel', $callback = fn () => true, $options = ['guards' => ['web']]);
+
+    // resolveAuthenticatedUserUsing() sets the broadcaster's $authenticatedUserCallback, which should be
+    // copied to tenant broadcasters along with the channels. User authentication (/broadcasting/user-auth)
+    // only works when this callback is registered (403 otherwise), so an app that registers it in central
+    // context would get 403s from user auth in tenant context if the callback wasn't copied.
+    Broadcast::resolveAuthenticatedUserUsing(fn () => ['id' => 'central-user']);
 
     expect($channel)
         ->toBeIn($getCurrentChannelsThroughManager())
         ->toBeIn($getCurrentChannelsFromBoundBroadcaster());
+    expect($resolveUser())->toBe(['id' => 'central-user']);
 
     tenancy()->initialize($tenant1);
 
@@ -246,21 +254,25 @@ test('tenant broadcasters receive the channel auth closures from the broadcaster
         ->toBeIn($getCurrentChannelsThroughManager())
         ->toBeIn($getCurrentChannelsFromBoundBroadcaster());
 
-    // The channel auth closure and the channel options are copied to the tenant broadcaster as-is
+    // The channel auth closure, the channel options, and the authenticated user resolver
+    // are copied to the tenant broadcaster as-is
     expect(invade(app(BroadcasterContract::class))->channels[$channel])->toBe($callback);
     expect(invade(app(BroadcasterContract::class))->retrieveChannelOptions($channel))->toBe($options);
+    expect($resolveUser())->toBe(['id' => 'central-user']);
 
     tenancy()->initialize($tenant2);
 
     expect($channel)
         ->toBeIn($getCurrentChannelsThroughManager())
         ->toBeIn($getCurrentChannelsFromBoundBroadcaster());
+    expect($resolveUser())->toBe(['id' => 'central-user']);
 
     tenancy()->end();
 
     expect($channel)
         ->toBeIn($getCurrentChannelsThroughManager())
         ->toBeIn($getCurrentChannelsFromBoundBroadcaster());
+    expect($resolveUser())->toBe(['id' => 'central-user']);
 });
 
 test('channels registered in tenant context persist within that context but do not leak into other contexts', function () {
