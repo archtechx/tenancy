@@ -91,11 +91,11 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
         // contract gets the same tenant broadcaster that the manager uses, instead of the stale central one.
         // The closure runs immediately (the extended singleton is already resolved), and it's also what makes
         // channel auth work in tenant context -- the broadcaster resolved here gets cached as the tenant
-        // manager's default driver and receives the central broadcaster's auth state (see copyAuthState()).
+        // manager's default driver and receives the central broadcaster's auth properties (see copyAuthProperties()).
         $this->app->extend(BroadcasterContract::class, function (BroadcasterContract $centralBroadcaster) {
             $tenantBroadcaster = $this->app->make(BroadcastManager::class)->connection();
 
-            $this->copyAuthState($centralBroadcaster, $tenantBroadcaster);
+            $this->copyAuthProperties($centralBroadcaster, $tenantBroadcaster);
 
             return $tenantBroadcaster;
         });
@@ -107,18 +107,19 @@ class BroadcastingConfigBootstrapper implements TenancyBootstrapper
     }
 
     /**
-     * Copy the auth state (the channel auth closures, their options, and the authenticated user
-     * callback) from one broadcaster to another. A freshly resolved broadcaster has no auth state,
-     * so without the copying, channel auth and user auth would stop working (403) in tenant context.
+     * Copy the channel and auth properties (the registered channel auth closures, their
+     * options, and the authenticated user callback) from one broadcaster to another. A
+     * freshly resolved broadcaster has none of these set, so without the copying, channel
+     * auth and user auth would stop working (403) in tenant context.
      *
-     * The auth state is stored on the abstract Broadcaster class, not in the Broadcaster
-     * contract, and it's stored in protected properties. Because of that, we have
+     * These properties are stored on the abstract Broadcaster class, not in the Broadcaster
+     * contract, and they're stored in protected properties. Because of that, we have
      * to check that both broadcasters are instances of the abstract Broadcaster class and
      * use invade() to access the protected properties (for the $channels property, there
      * is a public accessor -- getChannels() -- but since invade is already used here,
      * we access the property directly for consistency).
      */
-    protected function copyAuthState(BroadcasterContract $from, BroadcasterContract $to): void
+    protected function copyAuthProperties(BroadcasterContract $from, BroadcasterContract $to): void
     {
         if (! $from instanceof Broadcaster || ! $to instanceof Broadcaster) {
             return;

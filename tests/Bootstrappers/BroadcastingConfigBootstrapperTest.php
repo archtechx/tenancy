@@ -225,7 +225,7 @@ test('tenant broadcast manager receives the custom driver creators of the centra
     expect(array_keys(invade(app(BroadcastManager::class))->customCreators))->toEqualCanonicalizing($originalDrivers);
 });
 
-test('tenant broadcasters receive the auth state of the broadcaster bound in central context', function () {
+test('tenant broadcasters receive the auth properties of the broadcaster bound in central context', function () {
     config([
         'tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class],
         'broadcasting.default' => 'testing',
