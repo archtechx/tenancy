@@ -60,7 +60,7 @@ test('BroadcastingConfigBootstrapper binds a fresh BroadcastManager and reverts 
     expect(app(BroadcastManager::class))->toBe($centralManager);
 });
 
-test('ending tenancy reverts the bound broadcaster to the original instance', function () {
+test('bound broadcaster matches the manager default driver in every context and ending tenancy reverts it to the original instance', function () {
     config([
         'tenancy.bootstrappers' => [BroadcastingConfigBootstrapper::class],
         'broadcasting.default' => 'testing',
@@ -70,6 +70,9 @@ test('ending tenancy reverts the bound broadcaster to the original instance', fu
     app(BroadcastManager::class)->extend('testing', fn ($app, $config) => new TestingBroadcaster('testing', $config));
 
     $originalBroadcaster = app(BroadcasterContract::class);
+
+    // The bound broadcaster and the manager's default driver should be the same instance in every context
+    expect(app(BroadcasterContract::class))->toBe(app(BroadcastManager::class)->driver());
 
     tenancy()->initialize(Tenant::create());
 
@@ -83,6 +86,8 @@ test('ending tenancy reverts the bound broadcaster to the original instance', fu
 
     // Ending tenancy reverts the binding back to the original broadcaster instance
     expect($originalBroadcaster)->toBe(app(BroadcasterContract::class));
+    // The bound broadcaster is still the same as the central manager's default driver
+    expect(app(BroadcasterContract::class))->toBe(app(BroadcastManager::class)->driver());
 });
 
 test('BroadcastingConfigBootstrapper maps tenant properties to broadcaster credentials correctly', function (string $driver) {
