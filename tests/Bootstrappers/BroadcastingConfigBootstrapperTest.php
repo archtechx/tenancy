@@ -12,7 +12,7 @@ use Stancl\Tenancy\Bootstrappers\BroadcastingConfigBootstrapper;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Contracts\Broadcasting\Broadcaster as BroadcasterContract;
 
-$cleanup = function () {
+afterEach($cleanup = function () {
     BroadcastingConfigBootstrapper::$broadcaster = null;
     BroadcastingConfigBootstrapper::$credentialsMap = [];
     BroadcastingConfigBootstrapper::$mapPresets = [
@@ -33,7 +33,7 @@ $cleanup = function () {
             'broadcasting.connections.ably.public' => 'ably_public',
         ],
     ];
-};
+});
 
 beforeEach(function () use ($cleanup) {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
@@ -41,8 +41,6 @@ beforeEach(function () use ($cleanup) {
 
     $cleanup();
 });
-
-afterEach($cleanup);
 
 test('each context uses its own manager and broadcaster instances, and the bound broadcaster matches the manager default driver', function () {
     config([
@@ -198,12 +196,15 @@ test('tenant broadcast manager receives the custom driver creators of the centra
     );
 
     // Current BroadcastManager instance has the original custom creators plus the newly registered testing-tenant1 creator
+    expect(array_keys(invade(app(BroadcastManager::class))->customCreators))->toContain('testing');
     expect(array_keys(invade(app(BroadcastManager::class))->customCreators))->toEqualCanonicalizing([...$originalDrivers, 'testing-tenant1']);
 
     tenancy()->initialize($tenant2);
 
     // Current BroadcastManager only has the original custom creators,
     // the creator added in the previous tenant's context doesn't persist.
+    expect(array_keys(invade(app(BroadcastManager::class))->customCreators))->toContain('testing');
+    expect(array_keys(invade(app(BroadcastManager::class))->customCreators))->not()->toContain('testing-tenant1');
     expect(array_keys(invade(app(BroadcastManager::class))->customCreators))->toEqualCanonicalizing($originalDrivers);
 
     tenancy()->end();
