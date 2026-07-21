@@ -88,6 +88,24 @@ class UniversalRouteTest extends TestCase
             ->assertSuccessful()
             ->assertSee('Tenancy is initialized.');
     }
+
+    #[Test]
+    public function universal_route_runs_custom_failed_initialization_override()
+    {
+        InitializeTenancyByDomain::$onFail = function () {
+            return 'custom failed logic.';
+        };
+
+        Route::middlewareGroup('universal', []);
+        config(['tenancy.features' => [UniversalRoutes::class]]);
+
+        Route::get('/foo', fn () => 'Tenant route')
+            ->middleware([InitializeTenancyByDomain::class]);
+
+        $this->get('http://acme.localhost/foo')
+            ->assertSuccessful()
+            ->assertSee('custom failed logic.');
+    }
 }
 
 class UniversalRouteController
