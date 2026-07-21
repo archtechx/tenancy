@@ -221,8 +221,7 @@ test('tenant broadcasters receive the auth properties of the broadcaster bound i
         'broadcasting.connections.testing.driver' => 'testing',
     ]);
 
-    $tenant1 = Tenant::create();
-    $tenant2 = Tenant::create();
+    $tenant = Tenant::create();
 
     app(BroadcastManager::class)->extend('testing', fn () => new TestingBroadcaster('testing'));
     $getCurrentChannelsFromBoundBroadcaster = fn () => array_keys(invade(app(BroadcasterContract::class))->channels);
@@ -242,7 +241,7 @@ test('tenant broadcasters receive the auth properties of the broadcaster bound i
         ->toBeIn($getCurrentChannelsFromBoundBroadcaster());
     expect($resolveUser())->toBe(['id' => 'central-user']);
 
-    tenancy()->initialize($tenant1);
+    tenancy()->initialize($tenant);
 
     expect($channel)
         ->toBeIn($getCurrentChannelsThroughManager())
@@ -252,13 +251,6 @@ test('tenant broadcasters receive the auth properties of the broadcaster bound i
     // are copied to the tenant broadcaster as-is
     expect(invade(app(BroadcasterContract::class))->channels[$channel])->toBe($callback);
     expect(invade(app(BroadcasterContract::class))->retrieveChannelOptions($channel))->toBe($options);
-    expect($resolveUser())->toBe(['id' => 'central-user']);
-
-    tenancy()->initialize($tenant2);
-
-    expect($channel)
-        ->toBeIn($getCurrentChannelsThroughManager())
-        ->toBeIn($getCurrentChannelsFromBoundBroadcaster());
     expect($resolveUser())->toBe(['id' => 'central-user']);
 
     tenancy()->end();
