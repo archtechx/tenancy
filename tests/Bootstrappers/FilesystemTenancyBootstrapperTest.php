@@ -1,6 +1,7 @@
 <?php
 
 use Stancl\JobPipeline\JobPipeline;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
@@ -297,4 +298,252 @@ test('scoped disks are scoped per tenant', function () {
 
     expect(file_get_contents(storage_path() . "/app/public/scoped_disk_prefix/foo.txt"))->toBe('central2');
     expect(file_get_contents(storage_path() . "/tenant{$tenant->id}/app/public/scoped_disk_prefix/foo.txt"))->toBe('tenant');
+});
+
+test('file cache stores are separated per tenant', function () {
+    // NOTE ABOUT REGRESSION: this is not a regression test,
+    // this just covers what wasn't covered before.
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.cache.stores' => ['file'],
+        'cache.stores.file' => [
+            'driver' => 'file',
+            'path' => storage_path('framework/cache/data'),
+            'lock_path' => storage_path('framework/cache/data'),
+        ],
+    ]);
+
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    Cache::store('file')->put('key', 'central');
+
+    tenancy()->initialize($tenant1);
+
+    expect(Cache::store('file')->get('key'))->toBeNull();
+    Cache::store('file')->put('key', 'tenant1');
+
+    tenancy()->initialize($tenant2);
+
+    expect(Cache::store('file')->get('key'))->toBeNull();
+    Cache::store('file')->put('key', 'tenant2');
+
+    tenancy()->initialize($tenant1);
+
+    expect(Cache::store('file')->get('key'))->toBe('tenant1');
+
+    tenancy()->end();
+
+    expect(Cache::store('file')->get('key'))->toBe('central');
+});
+
+test('central cache is not lost when tenancy ends', function () {
+    $path = storage_path('framework/cache/foo_file');
+    File::deleteDirectory($path);
+
+    // Use a separate 'foo' store rather than reconfiguring 'file'.
+    // TestCase::setUp() calls `cache:clear file`, which resolves the 'file' store and leaves it
+    // in the CacheManager with the default path. A later config() call can't mutate that, so a test
+    // reconfiguring 'file' would keep using storage/framework/cache/data and pass either way.
+    // The same applies to the other tests below that configure separate cache stores rather than using 'file'.
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.cache.stores' => ['foo_file'],
+        'cache.stores.foo_file' => [
+            'driver' => 'file',
+            'path' => $path,
+            'lock_path' => $path,
+        ],
+    ]);
+
+    $tenant = Tenant::create();
+
+    Cache::store('foo_file')->put('foo', 'central');
+
+    // Just initialize and revert tenancy to trigger FilesystemTenancyBootstrapper
+    tenancy()->initialize($tenant);
+    tenancy()->end();
+
+    // Nothing deleted the 'foo' entry, so its value should stay 'central' even after reverting tenancy.
+    // NOTE ABOUT REGRESSION: revert() sets the store to the hardcoded storage/framework/cache/data instead of
+    // setting it to whatever it was before initializing tenancy. So the central 'foo' entry is null.
+    expect(Cache::store('foo_file')->get('foo'))->toBe('central');
+
+    File::deleteDirectory($path);
+});
+
+test('file cache stores with different configured paths do not share a directory', function () {
+    $fooPath = storage_path('framework/cache/foo');
+    $barPath = storage_path('framework/cache/bar');
+
+    File::deleteDirectory($fooPath);
+    File::deleteDirectory($barPath);
+
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.cache.stores' => ['foo_file', 'bar_file'],
+        'cache.stores.foo_file' => [
+            'driver' => 'file',
+            'path' => $fooPath,
+            'lock_path' => $fooPath,
+        ],
+        'cache.stores.bar_file' => [
+            'driver' => 'file',
+            'path' => $barPath,
+            'lock_path' => $barPath,
+        ],
+    ]);
+
+    tenancy()->initialize(Tenant::create());
+
+    Cache::store('foo_file')->put('key', 'foo');
+    Cache::store('bar_file')->put('key', 'bar');
+
+    // NOTE ABOUT REGRESSION: both stores are pointed at the same path,
+    // so they overwrite and read each other's entries.
+    // For the same reason, flushing one of them empties the other.
+    expect(Cache::store('foo_file')->get('key'))->toBe('foo');
+    expect(Cache::store('bar_file')->get('key'))->toBe('bar');
+
+    Cache::store('bar_file')->flush();
+
+    expect(Cache::store('foo_file')->get('key'))->toBe('foo');
+
+    tenancy()->end();
+
+    File::deleteDirectory($fooPath);
+    File::deleteDirectory($barPath);
+});
+
+test('a configured lock_path is scoped separately from path', function () {
+    // A store can configure path and lock_path as two different directories.
+    // Locks should use lock_path IF CONFIGURED, not fall back into the same directory as path.
+    $centralStoragePath = storage_path();
+    $path = "{$centralStoragePath}/framework/cache/foo";
+    $lockPath = "{$centralStoragePath}/framework/cache/foo_locks";
+
+    // Delete the directories before running assertions, not just after.
+    // Cache::lock() below defaults to a lock that never expires,
+    // and this test never releases it, so a stale lock left over from
+    // a previous run would make lock() fail forever.
+    File::deleteDirectory($path);
+    File::deleteDirectory($lockPath);
+
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.cache.stores' => ['foo_file'],
+        'cache.stores.foo_file' => [
+            'driver' => 'file',
+            'path' => $path,
+            'lock_path' => $lockPath,
+        ],
+    ]);
+
+    $tenant = Tenant::create();
+    tenancy()->initialize($tenant);
+
+    expect(Cache::store('foo_file')->lock('foo')->get())->toBeTrue();
+
+    $tenantPath = "{$centralStoragePath}/tenant{$tenant->id}/framework/cache/foo";
+    $tenantLockPath = "{$centralStoragePath}/tenant{$tenant->id}/framework/cache/foo_locks";
+
+    // NOTE ABOUT REGRESSION: path and lock_path both get hardcoded to the same default directory
+    // instead of the ones configured here, so this lock directory never gets created.
+    expect(File::isDirectory($tenantLockPath))->toBeTrue();
+    expect(File::isDirectory($tenantPath))->toBeFalse();
+
+    tenancy()->end();
+
+    expect(Cache::store('foo_file')->lock('foo')->get())->toBeTrue();
+
+    // NOTE ABOUT REGRESSION: revert() has the same hardcoding bug, so lock_path is never restored
+    // to what it was configured with either.
+    expect(File::isDirectory($lockPath))->toBeTrue();
+
+    File::deleteDirectory($path);
+    File::deleteDirectory($lockPath);
+});
+
+test('a cache store without a configured lock_path is scoped without error', function () {
+    // lock_path is optional -- Laravel falls back to using path for locks when it's not set.
+    // This test covers that path through scopeCache() specifically (which none of the other tests exercise).
+    $path = storage_path('framework/cache/foo');
+    File::deleteDirectory($path);
+
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.cache.stores' => ['foo_file'],
+        'cache.stores.foo_file' => [
+            'driver' => 'file',
+            'path' => $path,
+            // No 'lock_path' key at all.
+        ],
+    ]);
+
+    tenancy()->initialize(Tenant::create());
+
+    expect(Cache::store('foo_file')->put('key', 'tenant'))->toBeTrue();
+    expect(Cache::store('foo_file')->lock('foo')->get())->toBeTrue();
+
+    tenancy()->end();
+
+    expect(Cache::store('foo_file')->put('key', 'central'))->toBeTrue();
+    expect(Cache::store('foo_file')->lock('foo')->get())->toBeTrue();
+
+    File::deleteDirectory($path);
+});
+
+test('a cache store using a path not based on storage_path() is suffixed in place, not moved under the tenant storage path', function () {
+    // $path below doesn't start with the central storage path, so scopeCachePath() has no storage
+    // path prefix to swap for the tenant's -- it appends the tenant suffix directly to $path instead.
+    // Check that tenant isolation still works for a store configured like this, and that its cache
+    // ends up at $path itself, not under the tenant's storage path.
+    $path = '/tmp/tenancy-cache-test';
+    File::deleteDirectory($path);
+
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.cache.stores' => ['foo_file'],
+        'cache.stores.foo_file' => [
+            'driver' => 'file',
+            'path' => $path,
+            'lock_path' => $path,
+        ],
+    ]);
+
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    tenancy()->initialize($tenant1);
+    Cache::store('foo_file')->put('key', 'tenant1');
+
+    tenancy()->initialize($tenant2);
+    expect(Cache::store('foo_file')->get('key'))->toBeNull();
+
+    tenancy()->initialize($tenant1);
+    expect(Cache::store('foo_file')->get('key'))->toBe('tenant1');
+
+    expect(File::isDirectory("{$path}/tenant{$tenant1->id}"))->toBeTrue();
+
+    // NOTE ABOUT REGRESSION: storage_path() is already scoped to tenant1 here (storagePath() runs
+    // before scopeCache() in bootstrap()), so this is the tenant's default cache directory
+    // the code points every store's cache at, regardless of its configured path. It should stay
+    // empty here, since foo_file is configured with its own $path that's not storage_path()-based.
+    expect(File::isDirectory(storage_path('framework/cache/data')))->toBeFalse();
+
+    tenancy()->end();
+
+    File::deleteDirectory($path);
 });
