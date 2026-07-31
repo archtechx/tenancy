@@ -46,6 +46,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         $this->storagePath($suffix);
         $this->assetHelper($suffix);
         $this->forgetDisks();
+        $this->storeOriginalCachePaths();
         $this->scopeCache($suffix);
         $this->scopeSessions($suffix);
 
@@ -200,13 +201,10 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         }
     }
 
-    public function scopeCache(string|false $suffix): void
+    /** Returns the names of the file-driver stores listed in tenancy.cache.stores. */
+    protected function fileCacheStores(): array
     {
-        if (! $this->app['config']['tenancy.filesystem.scope_cache']) {
-            return;
-        }
-
-        $stores = array_filter($this->app['config']['tenancy.cache.stores'], function ($name) {
+        return array_filter($this->app['config']['tenancy.cache.stores'], function ($name) {
             $store = $this->app['config']["cache.stores.{$name}"];
 
             if ($store === null) {
@@ -215,15 +213,36 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
             return $store['driver'] === 'file';
         });
+    }
 
-        foreach ($stores as $name) {
-            // Store the original configured cache paths, unless they're already stored --
-            // scopeCache() is also called in revert(), by which point the originals were
-            // already captured in bootstrap().
+    /**
+     * Store the original configured cache paths, so that they can be properly scoped
+     * to a tenant and restored back to the central context when tenancy ends.
+     */
+    protected function storeOriginalCachePaths(): void
+    {
+        if (! $this->app['config']['tenancy.filesystem.scope_cache']) {
+            return;
+        }
+
+        foreach ($this->fileCacheStores() as $name) {
             $this->originalCachePaths[$name] ??= [
                 'path' => $this->app['config']["cache.stores.{$name}.path"],
                 'lock_path' => $this->app['config']["cache.stores.{$name}.lock_path"],
             ];
+        }
+    }
+
+    protected function scopeCache(string|false $suffix): void
+    {
+        if (! $this->app['config']['tenancy.filesystem.scope_cache']) {
+            return;
+        }
+
+        foreach ($this->fileCacheStores() as $name) {
+            if (! isset($this->originalCachePaths[$name])) {
+                continue;
+            }
 
             $path = $this->scopeCachePath($this->originalCachePaths[$name]['path'], $suffix);
             $lockPath = $this->originalCachePaths[$name]['lock_path'];
