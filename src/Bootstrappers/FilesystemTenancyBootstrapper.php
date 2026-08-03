@@ -233,7 +233,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         }
     }
 
-    protected function scopeCache(string|false $suffix): void
+    public function scopeCache(string|false $suffix): void
     {
         if (! $this->app['config']['tenancy.filesystem.scope_cache']) {
             return;
