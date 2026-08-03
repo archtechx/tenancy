@@ -226,6 +226,8 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         }
 
         foreach ($this->fileCacheStores() as $name) {
+            // Capture the paths only once. The config holds the central values on the first
+            // bootstrap, but not necessarily later (if an earlier bootstrap threw, revert() didn't run).
             $this->originalCachePaths[$name] ??= [
                 'path' => $this->app['config']["cache.stores.{$name}.path"],
                 'lock_path' => $this->app['config']["cache.stores.{$name}.lock_path"],
@@ -241,6 +243,8 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
         foreach ($this->fileCacheStores() as $name) {
             if (! isset($this->originalCachePaths[$name])) {
+                // Only scope stores captured during bootstrap. If one was added to tenancy.cache.stores
+                // mid-request, it has no original path here -- reading it would throw when tenancy ends.
                 continue;
             }
 
