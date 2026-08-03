@@ -542,3 +542,155 @@ test('a cache store using a path not based on storage_path() is suffixed in plac
 
     File::deleteDirectory($path);
 });
+
+test('cache stores are not scoped at all when scope_cache is disabled', function () {
+    $path = storage_path('framework/cache/foo');
+    File::deleteDirectory($path);
+
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.filesystem.scope_cache' => false,
+        'tenancy.cache.stores' => ['foo_file'],
+        'cache.stores.foo_file' => [
+            'driver' => 'file',
+            'path' => $path,
+            'lock_path' => $path,
+        ],
+    ]);
+
+    tenancy()->initialize(Tenant::create());
+
+    // The store keeps its configured path, so tenants share a single cache directory
+    expect(config('cache.stores.foo_file.path'))->toBe($path);
+    Cache::store('foo_file')->put('key', 'tenant');
+    expect(File::isDirectory($path))->toBeTrue();
+
+    tenancy()->end();
+
+    expect(config('cache.stores.foo_file.path'))->toBe($path);
+    expect(Cache::store('foo_file')->get('key'))->toBe('tenant');
+
+    File::deleteDirectory($path);
+});
+
+test('a store added to tenancy.cache.stores while tenancy is initialized is skipped', function () {
+    $fooPath = storage_path('framework/cache/foo');
+    $barPath = storage_path('framework/cache/bar');
+
+    File::deleteDirectory($fooPath);
+    File::deleteDirectory($barPath);
+
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.cache.stores' => ['foo_file'],
+        'cache.stores.foo_file' => [
+            'driver' => 'file',
+            'path' => $fooPath,
+            'lock_path' => $fooPath,
+        ],
+        'cache.stores.bar_file' => [
+            'driver' => 'file',
+            'path' => $barPath,
+            'lock_path' => $barPath,
+        ],
+    ]);
+
+    $tenant = Tenant::create();
+    tenancy()->initialize($tenant);
+
+    expect(config('cache.stores.foo_file.path'))->toBe(storage_path('framework/cache/foo'));
+
+    // bar_file wasn't in tenancy.cache.stores during bootstrap, so no original path was stored for it
+    config(['tenancy.cache.stores' => ['foo_file', 'bar_file']]);
+
+    tenancy()->end();
+
+    // foo_file gets reverted, but bar_file is left with the path it's configured with
+    expect(config('cache.stores.foo_file.path'))->toBe($fooPath);
+    expect(config('cache.stores.bar_file.path'))->toBe($barPath);
+
+    File::deleteDirectory($fooPath);
+    File::deleteDirectory($barPath);
+});
+
+test('a store listed in tenancy.cache.stores that has no cache config is skipped', function () {
+    $path = storage_path('framework/cache/foo');
+    File::deleteDirectory($path);
+
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.cache.stores' => ['foo_file', 'nonexistent_store'],
+        'cache.stores.foo_file' => [
+            'driver' => 'file',
+            'path' => $path,
+            'lock_path' => $path,
+        ],
+    ]);
+
+    $tenant = Tenant::create();
+
+    // The store doesn't exist in cache.stores, so there's nothing to scope (resolving it would throw)
+    tenancy()->initialize($tenant);
+
+    expect(config('cache.stores.foo_file.path'))->toBe(storage_path('framework/cache/foo'));
+    expect(config('cache.stores.nonexistent_store'))->toBeNull();
+
+    tenancy()->end();
+
+    expect(config('cache.stores.foo_file.path'))->toBe($path);
+
+    File::deleteDirectory($path);
+});
+
+test('the original cache paths are only stored on the first bootstrap', function () {
+    // If bootstrap() throws after scopeCache(), the bootstrapper isn't reverted, so the config still
+    // holds the previous tenant's scoped paths during the next bootstrap. Storing the paths again there
+    // would lose the central ones forever.
+    $centralStoragePath = storage_path();
+    $path = "{$centralStoragePath}/framework/cache/foo";
+    File::deleteDirectory($path);
+
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.cache.stores' => ['foo_file'],
+        'cache.stores.foo_file' => [
+            'driver' => 'file',
+            'path' => $path,
+            'lock_path' => $path,
+        ],
+    ]);
+
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    // Make scopeSessions() fail for tenant1 by putting a file where its sessions directory should be.
+    // scopeSessions() runs after scopeCache(), so the cache paths are already scoped when bootstrap() throws.
+    $sessionsPath = "{$centralStoragePath}/tenant{$tenant1->id}/framework/sessions";
+    File::deleteDirectory($sessionsPath);
+    File::ensureDirectoryExists(dirname($sessionsPath));
+    File::put($sessionsPath, '');
+
+    expect(fn () => tenancy()->initialize($tenant1))->toThrow(Exception::class, "Unable to create tenant session directory [{$sessionsPath}].");
+
+    // bootstrap() threw, so the bootstrapper isn't in initializedBootstrappers and revert() gets skipped for it.
+    expect(config('cache.stores.foo_file.path'))->toBe("{$centralStoragePath}/tenant{$tenant1->id}/framework/cache/foo");
+
+    tenancy()->initialize($tenant2);
+
+    expect(config('cache.stores.foo_file.path'))->toBe("{$centralStoragePath}/tenant{$tenant2->id}/framework/cache/foo");
+
+    tenancy()->end();
+
+    expect(config('cache.stores.foo_file.path'))->toBe($path);
+
+    File::deleteDirectory("{$centralStoragePath}/tenant{$tenant1->id}");
+    File::deleteDirectory($path);
+});
