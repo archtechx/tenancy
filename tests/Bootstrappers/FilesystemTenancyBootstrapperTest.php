@@ -301,13 +301,12 @@ test('scoped disks are scoped per tenant', function () {
 });
 
 test('file cache stores are separated per tenant', function () {
-    // NOTE ABOUT REGRESSION: this is not a regression test,
-    // this just covers what wasn't covered before.
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
         ],
         'tenancy.cache.stores' => ['file'],
+        // Laravel's default 'file' store config (set explicitly here just for clarity).
         'cache.stores.file' => [
             'driver' => 'file',
             'path' => storage_path('framework/cache/data'),
@@ -369,8 +368,7 @@ test('central cache is not lost when tenancy ends', function () {
     tenancy()->end();
 
     // Nothing deleted the 'foo' entry, so its value should stay 'central' even after reverting tenancy.
-    // NOTE ABOUT REGRESSION: revert() sets the store to the hardcoded storage/framework/cache/data instead of
-    // setting it to whatever it was before initializing tenancy. So the central 'foo' entry is null.
+    // FilesystemTenancyBootstrapper::revert() makes the store use its original configured path.
     expect(Cache::store('foo_file')->get('foo'))->toBe('central');
 
     File::deleteDirectory($path);
@@ -405,9 +403,8 @@ test('file cache stores with different configured paths do not share a directory
     Cache::store('foo_file')->put('key', 'foo');
     Cache::store('bar_file')->put('key', 'bar');
 
-    // NOTE ABOUT REGRESSION: both stores are pointed at the same path,
-    // so they overwrite and read each other's entries.
-    // For the same reason, flushing one of them empties the other.
+    // Each store uses its own directory in the tenant's context, so they don't read or overwrite
+    // each other's entries, and flushing one doesn't empty the other.
     expect(Cache::store('foo_file')->get('key'))->toBe('foo');
     expect(Cache::store('bar_file')->get('key'))->toBe('bar');
 
@@ -455,8 +452,8 @@ test('a configured lock_path is scoped separately from path', function () {
     $tenantPath = "{$centralStoragePath}/tenant{$tenant->id}/framework/cache/foo";
     $tenantLockPath = "{$centralStoragePath}/tenant{$tenant->id}/framework/cache/foo_locks";
 
-    // NOTE ABOUT REGRESSION: path and lock_path both get hardcoded to the same default directory
-    // instead of the ones configured here, so this lock directory never gets created.
+    // Taking the lock creates the tenant's scoped lock_path directory.
+    // Nothing wrote a cache entry, so the tenant's scoped path directory doesn't exist (path and lock_path are scoped separately).
     expect(File::isDirectory($tenantLockPath))->toBeTrue();
     expect(File::isDirectory($tenantPath))->toBeFalse();
 
@@ -464,8 +461,7 @@ test('a configured lock_path is scoped separately from path', function () {
 
     expect(Cache::store('foo_file')->lock('foo')->get())->toBeTrue();
 
-    // NOTE ABOUT REGRESSION: revert() has the same hardcoding bug, so lock_path is never restored
-    // to what it was configured with either.
+    // After reverting, locks go back to the configured central lock_path.
     expect(File::isDirectory($lockPath))->toBeTrue();
 
     File::deleteDirectory($path);
@@ -537,10 +533,9 @@ test('a cache store using a path not based on storage_path() is suffixed in plac
 
     expect(File::isDirectory("{$path}/tenant{$tenant1->id}"))->toBeTrue();
 
-    // NOTE ABOUT REGRESSION: storage_path() is already scoped to tenant1 here (storagePath() runs
-    // before scopeCache() in bootstrap()), so this is the tenant's default cache directory
-    // the code points every store's cache at, regardless of its configured path. It should stay
-    // empty here, since foo_file is configured with its own $path that's not storage_path()-based.
+    // storage_path() is already scoped to tenant1 here (storagePath() runs before scopeCache() in
+    // bootstrap()), so this is the tenant's default cache directory. Nothing should be there, since
+    // foo_file is configured with its own $path that isn't storage_path()-based.
     expect(File::isDirectory(storage_path('framework/cache/data')))->toBeFalse();
 
     tenancy()->end();
