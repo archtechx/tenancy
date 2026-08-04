@@ -14,21 +14,8 @@ use Stancl\Tenancy\Contracts\Tenant;
 class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 {
     public array $originalDisks = [];
-
-    /**
-     * The path and lock_path each file cache store had in the central context, keyed by store name.
-     *
-     * For example:
-     * [
-     *     'file' => [
-     *         'path' => storage_path('framework/cache/data'),
-     *         'lock_path' => storage_path('framework/cache/data'),
-     *     ],
-     * ]
-     *
-     * Used to scope the store to a tenant, and to restore it back to this when tenancy ends.
-     */
     protected array $originalCachePaths = [];
+    protected array $originalCacheLockPaths = [];
     public string|null $originalAssetUrl;
     public string $originalStoragePath;
 
@@ -46,7 +33,6 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         $this->storagePath($suffix);
         $this->assetHelper($suffix);
         $this->forgetDisks();
-        $this->storeOriginalCachePaths();
         $this->scopeCache($suffix);
         $this->scopeSessions($suffix);
 
@@ -201,61 +187,40 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         }
     }
 
-    /** Returns the names of the file-driver stores listed in tenancy.cache.stores. */
-    protected function fileCacheStores(): array
-    {
-        return array_filter($this->app['config']['tenancy.cache.stores'], function ($name) {
-            $store = $this->app['config']["cache.stores.{$name}"];
-
-            if ($store === null) {
-                return false;
-            }
-
-            return $store['driver'] === 'file';
-        });
-    }
-
-    /**
-     * Store the original configured cache paths, so that they can be properly scoped
-     * to a tenant and restored back to the central context when tenancy ends.
-     */
-    protected function storeOriginalCachePaths(): void
-    {
-        if (! $this->app['config']['tenancy.filesystem.scope_cache']) {
-            return;
-        }
-
-        foreach ($this->fileCacheStores() as $name) {
-            // Capture the paths only once. The config holds the central values on the first
-            // bootstrap, but not necessarily later (if an earlier bootstrap threw, revert() didn't run).
-            $this->originalCachePaths[$name] ??= [
-                'path' => $this->app['config']["cache.stores.{$name}.path"],
-                'lock_path' => $this->app['config']["cache.stores.{$name}.lock_path"],
-            ];
-        }
-    }
-
     public function scopeCache(string|false $suffix): void
     {
         if (! $this->app['config']['tenancy.filesystem.scope_cache']) {
             return;
         }
 
-        foreach ($this->fileCacheStores() as $name) {
-            if (! isset($this->originalCachePaths[$name])) {
-                // Only scope stores captured during bootstrap. If one was added to tenancy.cache.stores
-                // mid-request, it has no original path here -- reading it would throw when tenancy ends.
+        foreach ($this->app['config']['tenancy.cache.stores'] as $name) {
+            $store = $this->app['config']["cache.stores.{$name}"];
+
+            // Only file stores have a path to scope. Skip stores that don't exist (null) or use another driver.
+            if ($store === null || $store['driver'] !== 'file') {
                 continue;
             }
 
-            $path = $this->scopeCachePath($this->originalCachePaths[$name]['path'], $suffix);
-            $lockPath = $this->originalCachePaths[$name]['lock_path'];
-            if ($lockPath !== null) {
-                // Unlike path, lock_path is optional -- if it's not set, FileStore::lock() falls
-                // back to path itself (see `$this->lockDirectory ?? $this->directory` in FileStore).
-                // Leave it null here rather than hardcoding it to $path ourselves, so a store that didn't
-                // configure a separate lock_path doesn't end up with one.
-                $lockPath = $this->scopeCachePath($lockPath, $suffix);
+            if ($suffix !== false && ! isset($this->originalCachePaths[$name])) {
+                $this->originalCachePaths[$name] = $store['path'];
+                $this->originalCacheLockPaths[$name] = $store['lock_path'] ?? null;
+            }
+
+            // Only scope stores captured during bootstrap. If one was added to tenancy.cache.stores
+            // mid-request, it has no original path here -- reading it would throw when tenancy ends.
+            if (! isset($this->originalCachePaths[$name])) {
+                continue;
+            }
+
+            $path = $suffix ? $this->tenantCachePath($this->originalCachePaths[$name], $suffix) : $this->originalCachePaths[$name];
+
+            // Unlike path, lock_path is optional -- if it's not set, FileStore::lock() falls back to path
+            // itself (see `$this->lockDirectory ?? $this->directory` in FileStore). Leave it null here rather
+            // than hardcoding it to $path ourselves, so a store that didn't configure a separate lock_path
+            // doesn't end up with one.
+            $lockPath = $this->originalCacheLockPaths[$name];
+            if ($suffix && $lockPath !== null) {
+                $lockPath = $this->tenantCachePath($lockPath, $suffix);
             }
 
             $this->app['config']["cache.stores.{$name}.path"] = $path;
@@ -268,32 +233,20 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         }
     }
 
-    /**
-     * Return a configured path ($configuredPath is e.g. storage_path('framework/cache/data')),
-     * scoped to the current tenant when called from bootstrap(),
-     * or unchanged when called from revert() (= when $suffix is false).
-     */
-    protected function scopeCachePath(string $configuredPath, string|false $suffix): string
+    /** Scope a configured cache path (path or lock_path) to the tenant identified by $suffix. */
+    protected function tenantCachePath(string $configuredPath, string $suffix): string
     {
-        if ($suffix === false) {
-            return $configuredPath;
-        }
-
         if (str_starts_with($configuredPath, $this->originalStoragePath . '/')) {
             // Swap the central storage path prefix for the tenant's.
             // For example, storage_path('framework/cache/data') becomes storage_path('tenant1/framework/cache/data').
-            $scopedPath = str($configuredPath)
+            return str($configuredPath)
                 ->after($this->originalStoragePath . '/')
                 ->prepend($this->tenantStoragePath($suffix) . '/')
                 ->toString();
-        } else {
-            // Append the tenant suffix so tenants don't share the same cache directory. $configuredPath
-            // isn't guaranteed to be storage_path()-based (e.g. it could point to a shared network
-            // mount used to keep the file cache off each server's local disk in a multi-server setup).
-            $scopedPath = rtrim($configuredPath, '/') . '/' . $suffix;
         }
 
-        return $scopedPath;
+        // Otherwise $configuredPath isn't necessarily storage_path()-based, so just append the suffix directly.
+        return rtrim($configuredPath, '/') . '/' . $suffix;
     }
 
     public function scopeSessions(string|false $suffix): void

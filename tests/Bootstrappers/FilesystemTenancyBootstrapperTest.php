@@ -500,7 +500,7 @@ test('a cache store without a configured lock_path is scoped without error', fun
 });
 
 test('a cache store using a path not based on storage_path() is suffixed in place, not moved under the tenant storage path', function () {
-    // $path below doesn't start with the central storage path, so scopeCachePath() has no storage
+    // $path below doesn't start with the central storage path, so tenantCachePath() has no storage
     // path prefix to swap for the tenant's -- it appends the tenant suffix directly to $path instead.
     // Check that tenant isolation still works for a store configured like this, and that its cache
     // ends up at $path itself, not under the tenant's storage path.
