@@ -193,7 +193,14 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             return;
         }
 
-        foreach ($this->app['config']['tenancy.cache.stores'] as $name) {
+        // On revert, restore exactly the stores captured during bootstrap -- not the current
+        // (possibly mutated) tenancy.cache.stores. Otherwise, removing a store from that
+        // config in tenant context would make revert() skip it (so the store would be stuck with a tenant-scoped path).
+        $stores = $suffix !== false
+            ? $this->app['config']['tenancy.cache.stores']
+            : array_keys($this->originalCachePaths);
+
+        foreach ($stores as $name) {
             $store = $this->app['config']["cache.stores.{$name}"];
 
             // Only file stores have a path to scope. Skip stores that don't exist (null) or use another driver.

@@ -366,11 +366,9 @@ test('file cache stores are separated per tenant', function () {
 
 test('central cache is not lost when tenancy ends', function () {
     $path = storage_path('framework/cache/foo_file');
-    $barPath = storage_path('framework/cache/bar_file');
     File::deleteDirectory($path);
-    File::deleteDirectory($barPath);
 
-    // Use a separate 'foo' store rather than reconfiguring 'file'.
+    // Use a separate 'foo_file' store rather than reconfiguring 'file'.
     // TestCase::setUp() calls `cache:clear file`, which resolves the 'file' store and leaves it
     // in the CacheManager with the default path. A later config() call can't mutate that, so a test
     // reconfiguring 'file' would keep using storage/framework/cache/data and pass either way.
@@ -384,36 +382,67 @@ test('central cache is not lost when tenancy ends', function () {
             'path' => $path,
             'lock_path' => $path,
         ],
-        'cache.stores.bar_file' => [
-            'driver' => 'file',
-            'path' => $barPath,
-            'lock_path' => $barPath,
-        ],
-        // Only include foo_file in tenancy.cache.stores,
-        // leave bar_file excluded (= not scoped by FilesystemTenancyBootstrapper) for now.
         'tenancy.cache.stores' => ['foo_file'],
     ]);
-
-    $tenant = Tenant::create();
 
     Cache::store('foo_file')->put('foo', 'central');
 
     // Just initialize and revert tenancy to trigger FilesystemTenancyBootstrapper
-    tenancy()->initialize($tenant);
-
-    // bar_file wasn't in tenancy.cache.stores during bootstrap, so no original path was stored for it,
-    // and it's left with its configured path (not scoped).
-    config(['tenancy.cache.stores' => ['foo_file', 'bar_file']]);
-    Cache::store('bar_file')->put('bar', 'not scoped');
-
+    tenancy()->initialize(Tenant::create());
     tenancy()->end();
 
     // Nothing deleted the 'foo' entry, so its value should stay 'central' even after reverting tenancy.
     // FilesystemTenancyBootstrapper::revert() makes the store use its original configured path.
     expect(Cache::store('foo_file')->get('foo'))->toBe('central');
-    expect(Cache::store('bar_file')->get('bar'))->toBe('not scoped');
 
     File::deleteDirectory($path);
+});
+
+test('scopeCache ignores changes to tenancy.cache.stores made in tenant context', function () {
+    $fooPath = storage_path('framework/cache/foo_file');
+    $barPath = storage_path('framework/cache/bar_file');
+    File::deleteDirectory($fooPath);
+    File::deleteDirectory($barPath);
+
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'cache.stores.foo_file' => [
+            'driver' => 'file',
+            'path' => $fooPath,
+            'lock_path' => $fooPath,
+        ],
+        'cache.stores.bar_file' => [
+            'driver' => 'file',
+            'path' => $barPath,
+            'lock_path' => $barPath,
+        ],
+        // Only foo_file is scoped at bootstrap()
+        'tenancy.cache.stores' => ['foo_file'],
+    ]);
+
+    Cache::store('foo_file')->put('key', 'central');
+    Cache::store('bar_file')->put('key', 'central');
+
+    tenancy()->initialize(Tenant::create());
+
+    Cache::store('foo_file')->put('key', 'tenant');
+
+    // bar_file wasn't in tenancy.cache.stores during bootstrap, so no original path was captured for it,
+    // and it uses its configured path (central, not scoped).
+    config(['tenancy.cache.stores' => ['foo_file', 'bar_file']]);
+    expect(Cache::store('bar_file')->get('key'))->toBe('central');
+
+    // Remove foo_file from tenancy.cache.stores (original path was captured during bootstrap) in tenant context
+    config(['tenancy.cache.stores' => ['bar_file']]);
+
+    tenancy()->end();
+
+    // revert() still restores foo_file to its central path
+    expect(Cache::store('foo_file')->get('key'))->toBe('central');
+
+    File::deleteDirectory($fooPath);
     File::deleteDirectory($barPath);
 });
 
