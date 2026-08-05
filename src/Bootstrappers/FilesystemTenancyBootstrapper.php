@@ -213,12 +213,6 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
                 $this->originalCacheLockPaths[$name] = $store['lock_path'] ?? null;
             }
 
-            // Only scope stores captured during bootstrap. If one was added to tenancy.cache.stores
-            // mid-request, it has no original path here -- reading it would throw when tenancy ends.
-            if (! isset($this->originalCachePaths[$name])) {
-                continue;
-            }
-
             $path = $suffix ? $this->tenantCachePath($this->originalCachePaths[$name], $suffix) : $this->originalCachePaths[$name];
 
             // Unlike path, lock_path is optional -- if it's not set, FileStore::lock() falls back to path
