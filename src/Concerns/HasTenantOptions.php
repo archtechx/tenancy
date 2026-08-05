@@ -55,9 +55,9 @@ trait HasTenantOptions
             });
     }
 
-    public function __construct()
+    public function __construct(mixed ...$args)
     {
-        parent::__construct();
+        parent::__construct(...$args);
 
         $this->specifyParameters();
     }
