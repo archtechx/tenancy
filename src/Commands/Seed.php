@@ -21,8 +21,6 @@ class Seed extends SeedCommand
      */
     protected $description = 'Seed tenant database(s).';
 
-    protected $name = 'tenants:seed';
-
     /**
      * Create a new command instance.
      *
@@ -30,7 +28,19 @@ class Seed extends SeedCommand
      */
     public function __construct(ConnectionResolverInterface $resolver)
     {
-        parent::__construct($resolver);
+        // See https://github.com/archtechx/tenancy/issues/1474
+        if (version_compare(app()->version(), '13.24.0', '>=')) {
+            $this->signature = 'tenants:seed
+                    {class? : The class name of the root seeder}
+                    {--class=Database\\Seeders\\DatabaseSeeder : The class name of the root seeder}
+                    {--database= : The database connection to seed}
+                    {--force : Force the operation to run when in production}';
+            parent::__construct($resolver);
+            $this->specifyParameters();
+        } else {
+            $this->name = 'tenants:seed';
+            parent::__construct($resolver);
+        }
     }
 
     /**
