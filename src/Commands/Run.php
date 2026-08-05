@@ -16,9 +16,7 @@ class Run extends Command
 
     protected $description = 'Run a command for tenant(s)';
 
-    protected $signature = 'tenants:run {commandname : The artisan command.}
-                            {--tenants=* : The tenant(s) to run the command for. Default: all}
-                            {--skip-tenants=* : The tenant(s) to skip}';
+    protected $signature = 'tenants:run {commandname : The artisan command.}';
 
     public function handle(): int
     {
