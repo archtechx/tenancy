@@ -83,6 +83,57 @@ test('file sessions are separated', function (bool $scopeSessions) {
     }
 })->with([true, false]);
 
+test('file sessions are separated when a custom session path is configured', function () {
+    $centralStoragePath = storage_path();
+    $configuredSessionPath = "{$centralStoragePath}/framework/foo_sessions";
+
+    config([
+        'tenancy.bootstrappers' => [FilesystemTenancyBootstrapper::class],
+        'session.driver' => 'file',
+        'session.files' => $configuredSessionPath,
+    ]);
+
+    $sessionPath = fn () => invade(app('session')->driver()->getHandler())->path;
+
+    expect($sessionPath())->toBe($configuredSessionPath);
+
+    File::cleanDirectory($configuredSessionPath); // clean up the configured sessions dir from past test runs
+
+    $tenant = Tenant::create();
+    $tenantSessionPath = "{$centralStoragePath}/tenant{$tenant->id}/framework/foo_sessions";
+
+    $tenant->enter();
+
+    // The configured path gets scoped to the tenant
+    expect($sessionPath())->toBe($tenantSessionPath);
+    // Initializing tenancy creates the tenant session dir
+    expect(is_dir($tenantSessionPath))->toBeTrue();
+
+    $tenant->leave();
+
+    // Session path reverts back to the original configured path
+    expect($sessionPath())->toBe($configuredSessionPath);
+
+    // StartSession saves the session at the end of the request, so each request below creates a session file
+    Route::middleware([StartSession::class, InitializeTenancyByPath::class])->get('/{tenant}/foo', fn () => 'bar');
+    Route::middleware(StartSession::class)->get('/central', fn () => 'bar');
+
+    expect(File::files($tenantSessionPath))->toHaveCount(0);
+
+    // Visiting a tenant route should create the session file at the configured path scoped for the tenant
+    pest()->get("/{$tenant->id}/foo");
+
+    expect(File::files($tenantSessionPath))->toHaveCount(1);
+    expect(File::files($configuredSessionPath))->toHaveCount(0);
+
+    // End tenancy to test the revert behavior (= the central session file gets created to the original configured path)
+    tenancy()->end();
+
+    pest()->get('/central');
+
+    expect(File::files($configuredSessionPath))->toHaveCount(1);
+});
+
 test('redis sessions are separated using the redis bootstrapper', function (bool $bootstrappedEnabled) {
     config([
         'tenancy.bootstrappers' => $bootstrappedEnabled ? [RedisTenancyBootstrapper::class] : [],
