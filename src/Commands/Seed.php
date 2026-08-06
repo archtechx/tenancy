@@ -20,10 +20,6 @@ class Seed extends SeedCommand
     {
         parent::__construct($resolver);
 
-        // Our --tenants/--skip-tenants/--with-pending options only get added automatically
-        // when the parent command isn't signature-based. Since Laravel 13.24, SeedCommand is,
-        // so we add them ourselves here -- checking first so we don't add them twice on older
-        // Laravel versions, where they're already there by this point.
         if (! $this->getDefinition()->hasOption('tenants')) {
             $this->specifyParameters();
         }
@@ -33,10 +29,6 @@ class Seed extends SeedCommand
     {
         parent::configure();
 
-        // We inherit SeedCommand's name ('db:seed') since we don't redeclare $name/$signature,
-        // so without this we'd overwrite Laravel's own db:seed command (see #1474). configure()
-        // always runs after the name is set, regardless of Laravel version, so setting it here
-        // is safe no matter which of $name/$signature the installed Laravel version uses.
         $this->setName('tenants:seed');
     }
 
