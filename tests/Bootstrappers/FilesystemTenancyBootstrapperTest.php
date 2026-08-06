@@ -572,7 +572,7 @@ test('a file cache store without a configured lock_path defaults to using its sc
 });
 
 test('a cache store using a path not based on storage_path() has the tenant suffix appended', function () {
-    // tenantCachePath() has no central storage path prefix to swap for the tenant's here,
+    // tenantScopedPath() has no central storage path prefix to swap for the tenant's here,
     // so it appends the tenant suffix to $path instead.
     $path = '/tmp/tenancy-cache-test';
     File::deleteDirectory($path);

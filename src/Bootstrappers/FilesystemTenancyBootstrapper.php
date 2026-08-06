@@ -16,6 +16,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
     public array $originalDisks = [];
     protected array $originalCachePaths = [];
     protected array $originalCacheLockPaths = [];
+    protected string|null $originalSessionPath = null;
     public string|null $originalAssetUrl;
     public string $originalStoragePath;
 
@@ -213,7 +214,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
                 $this->originalCacheLockPaths[$name] = $store['lock_path'] ?? null;
             }
 
-            $path = $suffix ? $this->tenantCachePath($this->originalCachePaths[$name], $suffix) : $this->originalCachePaths[$name];
+            $path = $suffix ? $this->tenantScopedPath($this->originalCachePaths[$name], $suffix) : $this->originalCachePaths[$name];
 
             // Unlike path, lock_path is optional -- if it's not set, FileStore::lock() falls back to path
             // itself (see `$this->lockDirectory ?? $this->directory` in FileStore). Leave it null here rather
@@ -221,7 +222,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             // doesn't end up with one.
             $lockPath = $this->originalCacheLockPaths[$name];
             if ($suffix && $lockPath !== null) {
-                $lockPath = $this->tenantCachePath($lockPath, $suffix);
+                $lockPath = $this->tenantScopedPath($lockPath, $suffix);
             }
 
             $this->app['config']["cache.stores.{$name}.path"] = $path;
@@ -234,8 +235,11 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         }
     }
 
-    /** Scope a configured cache path (path or lock_path) to the tenant identified by $suffix. */
-    protected function tenantCachePath(string $configuredPath, string $suffix): string
+    /**
+     * Scope a configured path (a cache store's path or lock_path, or the session path)
+     * to the tenant identified by $suffix.
+     */
+    protected function tenantScopedPath(string $configuredPath, string $suffix): string
     {
         if (str_starts_with($configuredPath, $this->originalStoragePath . '/')) {
             // Swap the central storage path prefix for the tenant's.
@@ -256,12 +260,15 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             return;
         }
 
+        $originalPath = $this->originalSessionPath ?? $this->app['config']['session.files'];
+        $this->originalSessionPath = $originalPath;
+
         $path = $suffix
-            ? $this->tenantStoragePath($suffix) . '/framework/sessions'
-            : $this->originalStoragePath . '/framework/sessions';
+            ? $this->tenantScopedPath($originalPath, $suffix)
+            : $originalPath;
 
         if (! is_dir($path)) {
-            // Create tenant framework/sessions directory if it does not exist.
+            // Create tenant session directory if it does not exist.
             // We ignore errors due to TOCTOU race conditions, instead we check for success below.
             @mkdir($path, 0750, true);
 
