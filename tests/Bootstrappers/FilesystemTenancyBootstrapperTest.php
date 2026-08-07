@@ -325,10 +325,10 @@ test('file cache stores are separated per tenant', function () {
 
     // 'redis' and 'nonexistent_store' are skipped by the driver check in scopeCache(), before it reads their path.
     // Without the skipping logic, the `$this->originalCachePaths[$name] = $store['path']`
-    // line in scopeCache() would throw an ErrorException (with 'redis', we'd get an
-    // 'Undefined array key "path"' exception, and with 'nonexistent_store',
+    // line in scopeCache() would throw an ErrorException while initializing tenancy
+    // (with 'redis', we'd get an 'Undefined array key "path"' exception, and with 'nonexistent_store',
     // we'd get 'Trying to access array offset on null').
-    expect(fn () => tenancy()->initialize($tenant1))->not()->toThrow(ErrorException::class);
+    tenancy()->initialize($tenant1);
 
     expect(Cache::store('file')->get('key'))->toBeNull();
     Cache::store('file')->put('key', 'tenant1');
