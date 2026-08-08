@@ -7,15 +7,21 @@ namespace Stancl\Tenancy\Concerns;
 use Exception;
 use Stancl\Tenancy\Contracts\Tenant;
 
+/**
+ * Requires FilesystemTenancyBootstrapper to be enabled, since the tenant symlinks
+ * point to the disk roots scoped by the bootstrapper.
+ *
+ * @see \Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper
+ */
 trait DealsWithTenantSymlinks
 {
     /**
-     * Get all possible tenant symlinks, existing or not (array of ['public path' => 'storage path']).
+     * Get all possible tenant symlinks, existing or not (array of ['public path' => 'disk root']).
      *
      * Tenants can have a symlink for each disk registered in the tenancy.filesystem.url_override config.
      * This is used for creating all possible tenant symlinks and removing all existing tenant symlinks.
-     * The same storage path can be symlinked to multiple public paths, which is why the public path
-     * is the Collection key.
+     * The same disk root can be symlinked to multiple public paths, which is why the public path
+     * is the array key.
      *
      * @return array<string, string>
      */
@@ -26,7 +32,7 @@ trait DealsWithTenantSymlinks
         $rootOverrides = config('tenancy.filesystem.root_override');
 
         $tenantKey = $tenant->getTenantKey();
-        $tenantStoragePath = tenancy()->run($tenant, fn () => storage_path());
+        $tenantDisks = tenancy()->run($tenant, fn () => config('filesystems.disks'));
 
         /** @var array<string, string> $symlinks */
         $symlinks = [];
@@ -45,9 +51,8 @@ trait DealsWithTenantSymlinks
             }
 
             $publicPath = str_replace('%tenant%', (string) $tenantKey, $publicPath);
-            $storagePath = str_replace('%storage_path%', $tenantStoragePath, $rootOverrides[$disk]);
 
-            $symlinks[public_path($publicPath)] = $storagePath;
+            $symlinks[public_path($publicPath)] = $tenantDisks[$disk]['root'];
         }
 
         return $symlinks;
