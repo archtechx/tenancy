@@ -12,19 +12,22 @@ use Stancl\Tenancy\Actions\CreateStorageSymlinksAction;
 use Stancl\Tenancy\Actions\RemoveStorageSymlinksAction;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
-test('create storage symlinks action works', function() {
+test('create storage symlinks action works', function (string $rootOverride, bool $suffixStoragePath) {
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
         ],
         'tenancy.filesystem.suffix_base' => 'tenant-',
-        'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
+        // The disk root is suffixed regardless of the suffix_storage_path config
+        'tenancy.filesystem.suffix_storage_path' => $suffixStoragePath,
+        'tenancy.filesystem.root_override.public' => $rootOverride,
         'tenancy.filesystem.url_override.public' => 'public-%tenant%'
     ]);
 
@@ -38,13 +41,19 @@ test('create storage symlinks action works', function() {
     expect(is_link($publicPath = public_path("public-$tenantKey")))->toBeFalse();
     expect(file_exists($publicPath))->toBeFalse();
 
+    Storage::disk('public')->put('foo.txt', 'tenant file');
+
     (new CreateStorageSymlinksAction)($tenant);
 
-    // The symlink exists and is valid
-    expect(is_link($publicPath = public_path("public-$tenantKey")))->toBeTrue();
-    expect(file_exists($publicPath))->toBeTrue();
-    $this->assertEquals(storage_path("app/public/"), readlink($publicPath));
-});
+    // The symlink exists and points to the directory the tenant's disk writes to
+    expect(is_link($publicPath))->toBeTrue();
+    expect(readlink($publicPath))->toBe(config('filesystems.disks.public.root'));
+    expect(file_get_contents($publicPath . '/foo.txt'))->toBe('tenant file');
+})->with([
+    'default root_override' => ['%storage_path%/app/public/', true],
+    'suffix_storage_path disabled' => ['%storage_path%/app/public/', false],
+    'custom root_override' => ['%original_storage_path%/app/public/%tenant%/', true],
+]);
 
 test('remove storage symlinks action works', function() {
     config([
