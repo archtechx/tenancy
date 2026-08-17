@@ -65,6 +65,29 @@ test('asset can be accessed using the url returned by the tenant asset helper', 
     expect($content)->toBe('bar');
 });
 
+test('tenant assets are served even when the suffix_storage_path config is set to false', function () {
+    config([
+        'tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class,
+        'tenancy.filesystem.suffix_storage_path' => false,
+    ]);
+
+    // With suffix_storage_path disabled, storage_path() stays central in tenant context
+    $centralStoragePath = storage_path();
+
+    $tenant = Tenant::create();
+    tenancy()->initialize($tenant);
+
+    $filename = 'testfile' . Str::random(8);
+    Storage::disk('public')->put($filename, 'bar');
+
+    $response = pest()->get(tenant_asset($filename), ['X-Tenant' => $tenant->id]);
+
+    // The asset is served from the tenant's storage directory, not from the central storage path
+    $response->assertSuccessful();
+    expect($response->getFile()->getPathname())
+        ->toBe("$centralStoragePath/tenant{$tenant->id}/app/public/$filename");
+});
+
 test('asset helper returns a link to tenant asset controller when asset url is null', function () {
     config(['app.asset_url' => null]);
     config(['tenancy.filesystem.asset_helper_override' => true]);
