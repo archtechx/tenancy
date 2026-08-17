@@ -9,6 +9,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
@@ -51,10 +52,25 @@ class TenantAssetController implements HasMiddleware
                 ? (static::$headers)($request)
                 : static::$headers;
 
-            return response()->file(storage_path("app/public/$path"), $headers);
+            return response()->file($this->assetRoot() . "/$path", $headers);
         } catch (Throwable) {
             abort(404);
         }
+    }
+
+    /**
+     * Assets are served from app/public inside the tenant's storage directory.
+     *
+     * The directory is resolved using the FilesystemTenancyBootstrapper (rather than storage_path(),
+     * so that it's tenant-scoped regardless of the suffix_storage_path config).
+     */
+    protected function assetRoot(): string
+    {
+        if ($tenant = tenant()) {
+            return FilesystemTenancyBootstrapper::getBoundTenantStoragePath($tenant) . '/app/public';
+        }
+
+        return storage_path('app/public');
     }
 
     /**
@@ -67,9 +83,9 @@ class TenantAssetController implements HasMiddleware
     {
         $this->abortIf($path === null, 'Empty path');
 
-        $allowedRoot = realpath(storage_path('app/public'));
+        $allowedRoot = realpath($this->assetRoot());
 
-        // `storage_path('app/public')` doesn't exist, so it cannot contain files
+        // The asset root doesn't exist, so it cannot contain files
         $this->abortIf($allowedRoot === false, "Storage root doesn't exist");
 
         $attemptedPath = realpath("{$allowedRoot}/{$path}");
