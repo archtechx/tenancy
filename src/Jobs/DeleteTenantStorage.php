@@ -35,6 +35,12 @@ class DeleteTenantStorage implements ShouldQueue
     public function handle(): void
     {
         $tenantStoragePath = FilesystemTenancyBootstrapper::getBoundTenantStoragePath($this->tenant);
+        $centralStoragePath = FilesystemTenancyBootstrapper::getBoundCentralStoragePath();
+
+        if (realpath($tenantStoragePath) === realpath($centralStoragePath)) {
+            // Never delete the central storage directory -- that would delete the files of all tenants
+            return;
+        }
 
         if (is_dir($tenantStoragePath)) {
             File::deleteDirectory($tenantStoragePath);
