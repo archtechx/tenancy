@@ -218,6 +218,17 @@ test('tenant storage gets deleted during tenant deletion when the DeletingTenant
     expect(File::isDirectory($centralStoragePath))->toBeTrue();
 })->with([true, false]);
 
+test('DeleteTenantStorage does not delete the central storage directory when the filesystem bootstrapper is disabled', function () {
+    config(['tenancy.bootstrappers' => []]);
+
+    $centralStoragePath = storage_path();
+    $tenant = Tenant::create();
+
+    (new DeleteTenantStorage($tenant))->handle();
+
+    expect(File::isDirectory($centralStoragePath))->toBeTrue();
+});
+
 test('the framework/cache directory is created when storage_path is scoped', function (bool $suffixStoragePath) {
     config([
         'tenancy.bootstrappers' => [
