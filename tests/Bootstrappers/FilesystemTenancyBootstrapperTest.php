@@ -300,70 +300,6 @@ test('scoped disks are scoped per tenant', function () {
     expect(file_get_contents(storage_path() . "/tenant{$tenant->id}/app/public/scoped_disk_prefix/foo.txt"))->toBe('tenant');
 });
 
-test('file cache stores are separated per tenant', function () {
-    config([
-        'tenancy.bootstrappers' => [
-            FilesystemTenancyBootstrapper::class,
-        ],
-        // Only stores that use the 'file' driver are scoped.
-        // The 'redis' store won't be scoped since it doesn't use the 'file' driver,
-        // and 'nonexistent_store' won't be scoped since it just doesn't exist.
-        'tenancy.cache.stores' => ['file', 'redis', 'nonexistent_store'],
-        // Laravel's default 'file' store config (set explicitly here for clarity)
-        'cache.stores.file' => [
-            'driver' => 'file',
-            'path' => storage_path('framework/cache/data'),
-            'lock_path' => storage_path('framework/cache/data'),
-        ],
-    ]);
-
-    $tenant1 = Tenant::create();
-    $tenant2 = Tenant::create();
-
-    Cache::store('file')->put('key', 'central');
-    Cache::store('redis')->put('key', 'central');
-
-    // 'redis' and 'nonexistent_store' are skipped by the driver check in scopeCache(), before it reads their path.
-    // Without the skipping logic, the `$this->originalCachePaths[$name] = $store['path']`
-    // line in scopeCache() would throw an ErrorException while initializing tenancy
-    // (with 'redis', we'd get an 'Undefined array key "path"' exception, and with 'nonexistent_store',
-    // we'd get 'Trying to access array offset on null').
-    tenancy()->initialize($tenant1);
-
-    expect(Cache::store('file')->get('key'))->toBeNull();
-    Cache::store('file')->put('key', 'tenant1');
-
-    // The 'redis' store doesn't use the file driver (no path to scope),
-    // so FilesystemTenancyBootstrapper skips it in scopeCache().
-    // The central value is retained in the tenant context.
-    expect(Cache::store('redis')->get('key'))->toBe('central');
-
-    tenancy()->initialize($tenant2);
-
-    expect(Cache::store('file')->get('key'))->toBeNull();
-    Cache::store('file')->put('key', 'tenant2');
-
-    tenancy()->initialize($tenant1);
-
-    expect(Cache::store('file')->get('key'))->toBe('tenant1');
-
-    tenancy()->end();
-
-    expect(Cache::store('file')->get('key'))->toBe('central');
-
-    // Turn FilesystemTenancyBootstrapper's cache scoping off
-    config(['tenancy.filesystem.scope_cache' => false]);
-
-    tenancy()->initialize($tenant1);
-
-    expect(Cache::store('file')->get('key'))->toBe('central');
-    Cache::store('file')->put('key', 'written in tenant context');
-
-    tenancy()->end();
-
-    expect(Cache::store('file')->get('key'))->toBe('written in tenant context');
-});
-
 test('file cache stores get their path scoped on bootstrap and restored back on revert', function () {
     $fooPath = storage_path('framework/cache/foo_file');
     $barPath = storage_path('framework/cache/bar_file');
@@ -417,6 +353,82 @@ test('file cache stores get their path scoped on bootstrap and restored back on 
 
     File::deleteDirectory($fooPath);
     File::deleteDirectory($barPath);
+});
+
+test('only file driver cache stores get scoped', function () {
+    $centralStoragePath = storage_path();
+    $fooPath = storage_path('framework/cache/foo_file');
+    File::deleteDirectory($fooPath);
+
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'cache.stores.foo_file' => [
+            'driver' => 'file',
+            'path' => $fooPath,
+        ],
+        // Only stores that use the 'file' driver are scoped.
+        // The 'redis' store won't be scoped since it doesn't use the 'file' driver,
+        // and 'nonexistent_store' won't be scoped since it just doesn't exist.
+        'tenancy.cache.stores' => ['foo_file', 'redis', 'nonexistent_store'],
+    ]);
+
+    Cache::store('redis')->put('key', 'central');
+
+    // 'redis' and 'nonexistent_store' are skipped by the driver check in scopeCache(), before it reads their path.
+    // Without the skipping logic, the `$this->originalCachePaths[$name] = $store['path']`
+    // line in scopeCache() would throw an ErrorException while initializing tenancy
+    // (with 'redis', we'd get an 'Undefined array key "path"' exception, and with 'nonexistent_store',
+    // we'd get 'Trying to access array offset on null').
+    tenancy()->initialize($tenant = Tenant::create());
+
+    // Only the file store's path gets scoped
+    expect(config('cache.stores.foo_file.path'))->toBe("{$centralStoragePath}/tenant{$tenant->id}/framework/cache/foo_file");
+    expect(config('cache.stores.redis'))->not()->toHaveKey('path');
+    expect(config('cache.stores.nonexistent_store'))->toBeNull();
+
+    // The 'redis' store doesn't use the file driver (no path to scope),
+    // so FilesystemTenancyBootstrapper skips it in scopeCache().
+    // The central value is retained in the tenant context.
+    expect(Cache::store('redis')->get('key'))->toBe('central');
+
+    tenancy()->end();
+
+    File::deleteDirectory($fooPath);
+});
+
+test('cache scoping can be disabled using the scope_cache config', function () {
+    $fooPath = storage_path('framework/cache/foo_file');
+    File::deleteDirectory($fooPath);
+
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.cache.stores' => ['foo_file'],
+        'cache.stores.foo_file' => [
+            'driver' => 'file',
+            'path' => $fooPath,
+        ],
+        'tenancy.filesystem.scope_cache' => false,
+    ]);
+
+    Cache::store('foo_file')->put('key', 'central');
+
+    tenancy()->initialize(Tenant::create());
+
+    // The store keeps using its central path, so the cache is shared between contexts
+    expect(config('cache.stores.foo_file.path'))->toBe($fooPath);
+    expect(Cache::store('foo_file')->get('key'))->toBe('central');
+
+    Cache::store('foo_file')->put('key', 'written in tenant context');
+
+    tenancy()->end();
+
+    expect(Cache::store('foo_file')->get('key'))->toBe('written in tenant context');
+
+    File::deleteDirectory($fooPath);
 });
 
 test('scopeCache ignores changes to tenancy.cache.stores made in tenant context', function () {
