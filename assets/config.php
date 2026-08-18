@@ -378,7 +378,9 @@ return [
         /**
          * Should storage_path() be suffixed.
          *
-         * Note: Disabling this will likely break local disk tenancy. Only disable this if you're using an external file storage service like S3.
+         * Note: This only affects the storage_path() helper. Disks, cache and sessions are
+         * scoped to the tenant's storage directory either way. With this disabled, files
+         * accessed using storage_path() are shared by all tenants.
          *
          * For the vast majority of applications, this feature should be enabled. But in some
          * edge cases, it can cause issues (like using Passport with Vapor - see #196), so
