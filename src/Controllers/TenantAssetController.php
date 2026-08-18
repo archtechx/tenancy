@@ -29,6 +29,13 @@ class TenantAssetController implements HasMiddleware
      */
     public static array $middleware = [];
 
+    /**
+     * Disk the assets are served from.
+     *
+     * When null, the assets are served from app/public inside the tenant's storage directory.
+     */
+    public static string|null $publicDisk = null;
+
     public static function middleware()
     {
         return array_map(
@@ -59,13 +66,25 @@ class TenantAssetController implements HasMiddleware
     }
 
     /**
-     * Assets are served from app/public inside the tenant's storage directory.
+     * Directory the assets are served from -- the root of the $publicDisk,
+     * or app/public inside the tenant's storage directory when no disk is configured.
      *
-     * The directory is resolved using the FilesystemTenancyBootstrapper (rather than storage_path(),
-     * so that it's tenant-scoped regardless of the suffix_storage_path config).
+     * The storage directory is resolved using the FilesystemTenancyBootstrapper (rather than
+     * storage_path(), so that it's tenant-scoped regardless of the suffix_storage_path config).
      */
     protected function assetRoot(): string
     {
+        if (static::$publicDisk) {
+            $diskRoot = config('filesystems.disks.' . static::$publicDisk . '.root');
+
+            if (! is_string($diskRoot)) {
+                // A disk with no root path would let the controller serve any file in the app
+                throw new Exception('Disk [' . static::$publicDisk . '] has no root path configured.');
+            }
+
+            return rtrim($diskRoot, '/');
+        }
+
         if ($tenant = tenant()) {
             return FilesystemTenancyBootstrapper::getBoundTenantStoragePath($tenant) . '/app/public';
         }

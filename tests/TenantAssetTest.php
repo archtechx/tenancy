@@ -30,6 +30,7 @@ beforeEach(function () {
     TenancyUrlGenerator::$prefixRouteNames = false;
     TenancyUrlGenerator::$passTenantParameterToRoutes = true;
     TenantAssetController::$headers = [];
+    TenantAssetController::$publicDisk = null;
 
     /** @var CloneRoutesAsTenant $cloneAction */
     $cloneAction = app(CloneRoutesAsTenant::class);
@@ -86,6 +87,47 @@ test('tenant assets are served even when the suffix_storage_path config is set t
     $response->assertSuccessful();
     expect($response->getFile()->getPathname())
         ->toBe("$centralStoragePath/tenant{$tenant->id}/app/public/$filename");
+});
+
+test('the disk used for serving tenant assets is configurable', function () {
+    config([
+        'tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class,
+        // This is tenancy's default override for the local disk's root, set it here for clarity
+        'tenancy.filesystem.root_override.local' => '%storage_path%/app/',
+    ]);
+
+    // The local disk's root is overridden to '%storage_path%/app/' (so it does not use 'app/public')
+    TenantAssetController::$publicDisk = 'local';
+
+    $tenant = Tenant::create();
+    tenancy()->initialize($tenant);
+
+    $filename = 'testfile' . Str::random(8);
+    Storage::disk('local')->put($filename, 'bar');
+    $path = Storage::disk('local')->path($filename);
+
+    $response = pest()->get(tenant_asset($filename), ['X-Tenant' => $tenant->id]);
+
+    // The asset is served from the disk's root instead of 'app/public'
+    $response->assertSuccessful();
+    expect($response->getFile()->getPathname())->toBe($path);
+});
+
+test('tenant asset controller throws when the configured disk has no root', function () {
+    config([
+        'tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class,
+        'filesystems.disks.rootless' => ['driver' => 's3'],
+    ]);
+
+    TenantAssetController::$publicDisk = 'rootless';
+
+    $tenant = Tenant::create();
+    tenancy()->initialize($tenant);
+
+    $this->withoutExceptionHandling();
+    pest()->expectExceptionMessage('Disk [rootless] has no root path configured.');
+
+    pest()->get(tenant_asset('foo.txt'), ['X-Tenant' => $tenant->id]);
 });
 
 test('asset helper returns a link to tenant asset controller when asset url is null', function () {
