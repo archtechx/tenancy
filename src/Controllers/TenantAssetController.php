@@ -112,8 +112,10 @@ class TenantAssetController implements HasMiddleware
         // User is attempting to access a nonexistent file
         $this->abortIf($attemptedPath === false, 'Accessing a nonexistent file');
 
-        // User is attempting to access a file outside the $allowedRoot folder
-        $this->abortIf(! str($attemptedPath)->startsWith($allowedRoot), 'Accessing a file outside the storage root');
+        // User is attempting to access a file outside the $allowedRoot folder.
+        // The trailing separator is needed so that sibling directories that
+        // start with the same name (e.g. app/public-private) don't pass.
+        $this->abortIf(! str($attemptedPath)->startsWith(rtrim($allowedRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR), 'Accessing a file outside the storage root');
     }
 
     /** @return void|never */
