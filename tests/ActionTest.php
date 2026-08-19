@@ -55,6 +55,30 @@ test('create storage symlinks action works', function (string $rootOverride, boo
     'custom root_override' => ['%original_storage_path%/app/public/%tenant%/', true],
 ]);
 
+test('create storage symlinks action fails for disks that are not tenant-aware', function () {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        // The public disk has both overrides configured, but it is not in
+        // tenancy.filesystem.disks, so the bootstrapper never scopes its root.
+        // Symlinking it would point every tenant's public path to the central disk root.
+        'tenancy.filesystem.disks' => ['local'],
+        'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
+        'tenancy.filesystem.url_override.public' => 'public-%tenant%',
+    ]);
+
+    /** @var Tenant $tenant */
+    $tenant = Tenant::create();
+
+    (new CreateStorageSymlinksAction)($tenant);
+
+    expect(fn () => (new CreateStorageSymlinksAction)($tenant))
+        ->toThrow(Exception::class, 'Disk public is not tenant-aware.');
+
+    expect(is_link(public_path('public-' . $tenant->getTenantKey())))->toBeFalse();
+});
+
 test('remove storage symlinks action works', function() {
     config([
         'tenancy.bootstrappers' => [
