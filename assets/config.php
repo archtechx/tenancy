@@ -357,7 +357,7 @@ return [
          * Use `php artisan tenants:link` to create a symbolic link from the tenant's storage to its public directory.
          */
         'url_override' => [
-            // Note that the local disk you add must exist in the tenancy.filesystem.root_override config
+            // Note that the local disk you add must exist in the tenancy.filesystem.disks config
             'public' => 'public-%tenant%',
         ],
 

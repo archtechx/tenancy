@@ -18,7 +18,9 @@ trait DealsWithTenantSymlinks
     /**
      * Get all possible tenant symlinks, existing or not (array of ['public path' => 'disk root']).
      *
-     * Tenants can have a symlink for each disk registered in the tenancy.filesystem.url_override config.
+     * Tenants can have a symlink for each local disk that is listed
+     * in both tenancy.filesystem.disks and tenancy.filesystem.url_override.
+     *
      * This is used for creating all possible tenant symlinks and removing all existing tenant symlinks.
      * The same disk root can be symlinked to multiple public paths, which is why the public path
      * is the array key.
@@ -29,7 +31,6 @@ trait DealsWithTenantSymlinks
     {
         $disks = config('filesystems.disks');
         $urlOverrides = config('tenancy.filesystem.url_override');
-        $rootOverrides = config('tenancy.filesystem.root_override');
 
         $tenantKey = $tenant->getTenantKey();
         $tenantDisks = tenancy()->run($tenant, fn () => config('filesystems.disks'));
@@ -38,11 +39,12 @@ trait DealsWithTenantSymlinks
         $symlinks = [];
 
         foreach ($urlOverrides as $disk => $publicPath) {
-            if (! isset($disks[$disk])) {
+            if (! $publicPath) {
+                // The disk's URL is not overridden, same as in FilesystemTenancyBootstrapper::diskUrl()
                 continue;
             }
 
-            if (! isset($rootOverrides[$disk])) {
+            if (! isset($disks[$disk])) {
                 continue;
             }
 
@@ -51,8 +53,8 @@ trait DealsWithTenantSymlinks
             }
 
             if (! in_array($disk, config('tenancy.filesystem.disks'), true)) {
-                // The bootstrapper only scopes disks listed in tenancy.filesystem.disks. Without that,
-                // the disk root stays central, and the symlink of every tenant would point to it.
+                // The bootstrapper only scopes disks listed in tenancy.filesystem.disks.
+                // Without that, the root stays central and the symlink of every tenant would point to it.
                 throw new Exception("Disk $disk is not tenant-aware. Add it to the tenancy.filesystem.disks config to make its root tenant-specific.");
             }
 
