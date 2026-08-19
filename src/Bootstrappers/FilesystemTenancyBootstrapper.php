@@ -331,8 +331,8 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
     /**
      * Get the storage path of the passed tenant (independent of the current context).
      *
-     * This is the directory the bootstrapper scopes disks, cache and sessions to,
-     * regardless of suffix_storage_path (that config option only affects the storage_path() helper).
+     * The returned path doesn't depend on suffix_storage_path -- that config option
+     * only controls whether storage_path() uses it.
      */
     public static function getBoundTenantStoragePath(Tenant $tenant): string
     {

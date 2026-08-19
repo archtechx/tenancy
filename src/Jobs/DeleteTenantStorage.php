@@ -16,13 +16,16 @@ use Stancl\Tenancy\Contracts\Tenant;
 /**
  * Delete the tenant's storage directory.
  *
- * Requires FilesystemTenancyBootstrapper to be enabled, since the deleted directory
- * is the one the bootstrapper scopes disks, cache and sessions to.
+ * Requires FilesystemTenancyBootstrapper to be enabled, since the tenant storage path
+ * is resolved from it.
  *
- * The job does not depend on the tenancy.filesystem.suffix_storage_path config,
+ * Files outside that directory (e.g. disks with an %original_storage_path%-based
+ * root_override) are not deleted.
+ *
+ * Note that this job is not affected by the tenancy.filesystem.suffix_storage_path config
  * since it doesn't use the storage_path() helper.
  *
- * @see Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper
+ * @see FilesystemTenancyBootstrapper
  */
 class DeleteTenantStorage implements ShouldQueue
 {
