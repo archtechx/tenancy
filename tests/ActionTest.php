@@ -19,7 +19,7 @@ beforeEach(function () {
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
-test('create storage symlinks action works', function (string $rootOverride, bool $suffixStoragePath) {
+test('create storage symlinks action works', function (string|null $rootOverride, bool $suffixStoragePath) {
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
@@ -53,6 +53,8 @@ test('create storage symlinks action works', function (string $rootOverride, boo
     'default root_override' => ['%storage_path%/app/public/', true],
     'suffix_storage_path disabled' => ['%storage_path%/app/public/', false],
     'custom root_override' => ['%original_storage_path%/app/public/%tenant%/', true],
+    // Without a root_override, the bootstrapper suffixes the disk's central root
+    'no root_override' => [null, true],
 ]);
 
 test('create storage symlinks action fails for disks that are not tenant-aware', function () {
@@ -75,6 +77,28 @@ test('create storage symlinks action fails for disks that are not tenant-aware',
         ->toThrow(Exception::class, 'Disk public is not tenant-aware.');
 
     expect(is_link(public_path('public-' . $tenant->getTenantKey())))->toBeFalse();
+});
+
+test('create storage symlinks action skips disks with a null url_override', function () {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.filesystem.suffix_base' => 'tenant-',
+        'tenancy.filesystem.url_override' => [
+            'public' => 'public-%tenant%',
+            // A null override means the disk's URL is not overridden, same as in the FS bootstrapper
+            'local' => null,
+        ],
+    ]);
+
+    /** @var Tenant $tenant */
+    $tenant = Tenant::create();
+
+    (new CreateStorageSymlinksAction)($tenant);
+
+    // The local disk is skipped, so the public disk still gets its symlink
+    expect(is_link(public_path('public-' . $tenant->getTenantKey())))->toBeTrue();
 });
 
 test('remove storage symlinks action works', function() {
