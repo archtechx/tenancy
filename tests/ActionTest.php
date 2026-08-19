@@ -71,8 +71,6 @@ test('create storage symlinks action fails for disks that are not tenant-aware',
     /** @var Tenant $tenant */
     $tenant = Tenant::create();
 
-    (new CreateStorageSymlinksAction)($tenant);
-
     expect(fn () => (new CreateStorageSymlinksAction)($tenant))
         ->toThrow(Exception::class, 'Disk public is not tenant-aware.');
 
