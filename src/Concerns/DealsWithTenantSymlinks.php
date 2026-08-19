@@ -50,6 +50,12 @@ trait DealsWithTenantSymlinks
                 throw new Exception("Disk $disk is not a local disk. Only local disks can be symlinked.");
             }
 
+            if (! in_array($disk, config('tenancy.filesystem.disks'), true)) {
+                // The bootstrapper only scopes disks listed in tenancy.filesystem.disks. Without that,
+                // the disk root stays central, and the symlink of every tenant would point to it.
+                throw new Exception("Disk $disk is not tenant-aware. Add it to the tenancy.filesystem.disks config to make its root tenant-specific.");
+            }
+
             $publicPath = str_replace('%tenant%', (string) $tenantKey, $publicPath);
 
             $symlinks[public_path($publicPath)] = $tenantDisks[$disk]['root'];
