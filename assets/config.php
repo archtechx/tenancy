@@ -378,7 +378,8 @@ return [
         /**
          * Should storage_path() be suffixed.
          *
-         * Note: This only affects the storage_path() helper. Disks, cache and sessions are
+         * Note: This only affects the storage_path() helper. Disks listed in the 'disks' config
+         * above, and cache and sessions if 'scope_cache' and 'scope_sessions' are enabled, are
          * scoped to the tenant's storage directory either way. With this disabled, files
          * accessed using storage_path() are shared by all tenants.
          *
