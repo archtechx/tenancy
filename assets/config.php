@@ -321,7 +321,7 @@ return [
 
     /**
      * Filesystem tenancy config. Used by FilesystemTenancyBootstrapper.
-     * https://tenancyforlaravel.com/docs/v3/tenancy-bootstrappers/#filesystem-tenancy-boostrapper.
+     * https://v4.tenancyforlaravel.com/bootstrappers/filesystem.
      */
     'filesystem' => [
         /**
@@ -337,10 +337,16 @@ return [
         /**
          * Use this for local disks.
          *
-         * See https://tenancyforlaravel.com/docs/v3/tenancy-bootstrappers/#filesystem-tenancy-boostrapper
+         * The override can use these placeholders:
+         * - %storage_path% -- the tenant's storage directory. Note that this is resolved
+         *   by the bootstrapper, so it doesn't depend on the 'suffix_storage_path' config below.
+         * - %original_storage_path% -- the central storage directory.
+         * - %tenant% -- the tenant's key.
+         *
+         * See https://v4.tenancyforlaravel.com/bootstrappers/filesystem
          */
         'root_override' => [
-            // Disks whose roots should be overridden after storage_path() is suffixed.
+            // Disks whose roots should be overridden in tenant context.
             'local' => '%storage_path%/app/',
             'public' => '%storage_path%/app/public/',
         ],
@@ -357,7 +363,8 @@ return [
          * Use `php artisan tenants:link` to create a symbolic link from the tenant's storage to its public directory.
          */
         'url_override' => [
-            // Note that the local disk you add must exist in the tenancy.filesystem.disks config
+            // Note that the local disk you add must exist in the tenancy.filesystem.disks config,
+            // and it must have a non-falsy root (i.e., not null or empty string).
             'public' => 'public-%tenant%',
         ],
 
