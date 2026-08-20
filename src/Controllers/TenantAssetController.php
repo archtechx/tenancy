@@ -14,9 +14,11 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
 /**
- * Requires FilesystemTenancyBootstrapper to be enabled, since the assets are served from
- * the tenant's storage directory (or from the root of $publicDisk), and neither is
- * tenant-specific unless the bootstrapper scopes it.
+ * Requires FilesystemTenancyBootstrapper to be enabled, since the assets are served from the
+ * tenant's storage directory, which isn't tenant-specific unless the bootstrapper scopes it.
+ *
+ * With a $publicDisk configured, the assets are served from the disk's root instead, so the
+ * bootstrapper is only needed if that root should be tenant-specific.
  *
  * @see FilesystemTenancyBootstrapper
  */
