@@ -176,7 +176,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
     {
         $diskConfig = $this->app['config']["filesystems.disks.{$disk}"];
 
-        if ($diskConfig['driver'] !== 'local' || $this->app['config']["tenancy.filesystem.url_override.{$disk}"] === null) {
+        if ($diskConfig['driver'] !== 'local' || ! $this->app['config']["tenancy.filesystem.url_override.{$disk}"]) {
             return;
         }
 
