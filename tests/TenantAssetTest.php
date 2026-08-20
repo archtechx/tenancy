@@ -31,6 +31,7 @@ beforeEach(function () {
     TenancyUrlGenerator::$passTenantParameterToRoutes = true;
     TenantAssetController::$headers = [];
     TenantAssetController::$publicDisk = null;
+    InitializeTenancyByRequestData::$onFail = null;
 
     /** @var CloneRoutesAsTenant $cloneAction */
     $cloneAction = app(CloneRoutesAsTenant::class);
@@ -128,6 +129,21 @@ test('tenant asset controller throws when the configured disk has no root', func
     pest()->expectExceptionMessage('Disk [rootless] has no root path configured.');
 
     pest()->get(tenant_asset('foo.txt'), ['X-Tenant' => $tenant->id]);
+});
+
+test('tenant assets are served from the central storage path in central context', function () {
+    config(['tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class]);
+
+    // Mimic the universal route setup (let the request through even though no tenant is identified)
+    InitializeTenancyByRequestData::$onFail = fn ($e, $request, $next) => $next($request);
+
+    $filename = 'testfile' . Str::random(8);
+    Storage::disk('public')->put($filename, 'bar');
+
+    $response = pest()->get(tenant_asset($filename));
+
+    $response->assertSuccessful();
+    expect($response->getFile()->getPathname())->toBe(storage_path("app/public/$filename"));
 });
 
 test('asset helper returns a link to tenant asset controller when asset url is null', function () {
