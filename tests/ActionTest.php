@@ -79,7 +79,7 @@ test('create storage symlinks action fails for disks that are not tenant-aware',
     expect(is_link(public_path('public-' . $tenant->getTenantKey())))->toBeFalse();
 });
 
-test('create storage symlinks action skips disks with a null url_override', function () {
+test('create storage symlinks action skips disks with no url_override', function (string|null $localUrlOverride) {
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
@@ -87,8 +87,7 @@ test('create storage symlinks action skips disks with a null url_override', func
         'tenancy.filesystem.suffix_base' => 'tenant-',
         'tenancy.filesystem.url_override' => [
             'public' => 'public-%tenant%',
-            // A null override means the disk's URL is not overridden, same as in the FS bootstrapper
-            'local' => null,
+            'local' => $localUrlOverride,
         ],
     ]);
 
@@ -99,7 +98,16 @@ test('create storage symlinks action skips disks with a null url_override', func
 
     // The local disk is skipped, so the public disk still gets its symlink
     expect(is_link(public_path('public-' . $tenant->getTenantKey())))->toBeTrue();
-});
+
+    // The bootstrapper skips the same disk, so its URL is not overridden either
+    $centralUrl = config('filesystems.disks.local.url');
+    tenancy()->initialize($tenant);
+
+    expect(config('filesystems.disks.local.url'))->toBe($centralUrl);
+})->with([
+    'null url_override' => [null],
+    'empty url_override' => [''],
+]);
 
 test('remove storage symlinks action works', function() {
     config([
