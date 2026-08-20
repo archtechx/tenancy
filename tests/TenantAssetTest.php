@@ -41,6 +41,12 @@ beforeEach(function () {
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
+afterEach(function () {
+    TenantAssetController::$headers = [];
+    TenantAssetController::$publicDisk = null;
+    InitializeTenancyByRequestData::$onFail = null;
+});
+
 test('asset can be accessed using the url returned by the tenant asset helper', function () {
     config(['tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class]);
 
@@ -229,8 +235,6 @@ test('TenantAssetController headers are configurable', function () {
 
     $response->assertSuccessful();
     $response->assertHeader('X-Foo', 'Bar');
-
-    TenantAssetController::$headers = []; // reset static property
 });
 
 test('global asset helper returns the same url regardless of tenancy initialization', function () {
