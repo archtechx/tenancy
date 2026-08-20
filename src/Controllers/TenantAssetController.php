@@ -13,6 +13,13 @@ use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
+/**
+ * Requires FilesystemTenancyBootstrapper to be enabled, since the assets are served from
+ * the tenant's storage directory (or from the root of $publicDisk), and neither is
+ * tenant-specific unless the bootstrapper scopes it.
+ *
+ * @see FilesystemTenancyBootstrapper
+ */
 class TenantAssetController implements HasMiddleware
 {
     /**
@@ -33,6 +40,10 @@ class TenantAssetController implements HasMiddleware
      * Disk the assets are served from.
      *
      * When null, the assets are served from app/public inside the tenant's storage directory.
+     *
+     * The disk has to be local and have a root configured, since the assets are read from the filesystem.
+     * It should also be listed in tenancy.filesystem.disks. FilesystemTenancyBootstrapper only scopes
+     * the roots of disks listed there, so otherwise every tenant is served the same central directory.
      */
     public static string|null $publicDisk = null;
 
@@ -66,11 +77,12 @@ class TenantAssetController implements HasMiddleware
     }
 
     /**
-     * Directory the assets are served from -- the root of the $publicDisk,
-     * or app/public inside the tenant's storage directory when no disk is configured.
+     * Directory the assets are served from -- the root of the $publicDisk, or app/public
+     * inside the tenant's storage directory when no disk is configured. With no current
+     * tenant (e.g. on a universal route), the central storage directory is used.
      *
-     * The storage directory is resolved using the FilesystemTenancyBootstrapper (rather than
-     * storage_path(), so that it's tenant-scoped regardless of the suffix_storage_path config).
+     * The tenant's storage directory is resolved using the FilesystemTenancyBootstrapper (rather
+     * than storage_path(), so that it's tenant-scoped regardless of the suffix_storage_path config).
      */
     protected function assetRoot(): string
     {
