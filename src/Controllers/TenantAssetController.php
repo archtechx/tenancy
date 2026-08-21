@@ -6,10 +6,10 @@ namespace Stancl\Tenancy\Controllers;
 
 use Closure;
 use Exception;
+use Illuminate\Filesystem\LocalFilesystemAdapter;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Filesystem\LocalFilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
