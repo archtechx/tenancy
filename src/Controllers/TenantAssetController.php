@@ -9,6 +9,8 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Filesystem\LocalFilesystemAdapter;
+use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
@@ -43,9 +45,13 @@ class TenantAssetController implements HasMiddleware
      *
      * When null, the assets are served from app/public inside the tenant's storage directory.
      *
-     * The disk has to be local and have a root configured, since the assets are read from the filesystem.
-     * It should also be listed in tenancy.filesystem.disks. FilesystemTenancyBootstrapper only scopes
-     * the roots of disks listed there, so otherwise every tenant is served the same central directory.
+     * The disk has to be local, since the assets are read from the filesystem. Disks using the
+     * 'scoped' driver are supported as long as their parent disk uses the 'local' driver.
+     *
+     * It should also be listed in tenancy.filesystem.disks -- for scoped disks, it's the parent
+     * disk that has to be listed there (since a scoped disk inherits the parent's root).
+     * FilesystemTenancyBootstrapper only scopes the roots of disks listed there, so otherwise
+     * every tenant is served the same (central) directory.
      */
     public static string|null $publicDisk = null;
 
@@ -89,14 +95,17 @@ class TenantAssetController implements HasMiddleware
     protected function assetRoot(): string
     {
         if (static::$publicDisk) {
-            $diskRoot = config('filesystems.disks.' . static::$publicDisk . '.root');
+            $disk = Storage::disk(static::$publicDisk);
 
-            if (! is_string($diskRoot)) {
-                // A disk with no root path would let the controller serve any file in the app
-                throw new Exception('Disk [' . static::$publicDisk . '] has no root path configured.');
+            if (! $disk instanceof LocalFilesystemAdapter) {
+                // The root has to be read from the resolved disk rather than from the disk's config,
+                // since the config root isn't the full root path of every local disk. Disks using the
+                // 'scoped' driver have no root in their config -- they inherit their parent disk's root --
+                // and a 'prefix' is part of the root path as well.
+                throw new Exception('Disk [' . static::$publicDisk . '] is not a local disk. Only local disks can be used for serving assets.');
             }
 
-            return rtrim($diskRoot, '/');
+            return rtrim($disk->path(''), DIRECTORY_SEPARATOR);
         }
 
         if ($tenant = tenant()) {
