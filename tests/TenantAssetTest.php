@@ -120,21 +120,91 @@ test('the disk used for serving tenant assets is configurable', function () {
     expect($response->getFile()->getPathname())->toBe($path);
 });
 
-test('tenant asset controller throws when the configured disk has no root', function () {
+test('tenant asset controller throws when the configured disk is not local', function () {
     config([
         'tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class,
-        'filesystems.disks.rootless' => ['driver' => 's3'],
+        // Add a disk that uses the s3 driver (= non-local disk).
+        // Use dummy credentials so that the s3 disk can be resolved without throwing an AWS exception.
+        'filesystems.disks.remote' => [
+            'driver' => 's3',
+            'region' => 'us-east-1',
+            'key' => 'key',
+            'secret' => 'secret',
+            'bucket' => 'bucket',
+        ],
     ]);
 
-    TenantAssetController::$publicDisk = 'rootless';
+    TenantAssetController::$publicDisk = 'remote';
 
     $tenant = Tenant::create();
     tenancy()->initialize($tenant);
 
     $this->withoutExceptionHandling();
-    pest()->expectExceptionMessage('Disk [rootless] has no root path configured.');
+    pest()->expectExceptionMessage('Disk [remote] is not a local disk.');
 
     pest()->get(tenant_asset('foo.txt'), ['X-Tenant' => $tenant->id]);
+});
+
+test('tenant assets are served from the resolved root of a scoped disk', function () {
+    config([
+        'tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class,
+        // A scoped disk has no configured root -- it inherits the root of its parent disk
+        // and appends its prefix to it, both of which happens when the disk is resolved.
+        'filesystems.disks.scoped_disk' => [
+            'driver' => 'scoped',
+            'disk' => 'public',
+            'prefix' => 'scoped_disk_prefix',
+        ],
+        // Default tenancy config, set it here for clarity
+        'tenancy.filesystem.disks' => ['local', 'public'],
+    ]);
+
+    TenantAssetController::$publicDisk = 'scoped_disk';
+
+    $tenant = Tenant::create();
+    tenancy()->initialize($tenant);
+
+    $filename = 'testfile' . Str::random(8);
+    Storage::disk('scoped_disk')->put($filename, 'bar');
+    $path = Storage::disk('scoped_disk')->path($filename);
+
+    // The parent disk is tenant-aware, so the scoped disk's root is inside the tenant's storage directory
+    expect($path)->toBe(storage_path("app/public/scoped_disk_prefix/$filename"));
+
+    $response = pest()->get(tenant_asset($filename), ['X-Tenant' => $tenant->id]);
+
+    $response->assertSuccessful();
+    expect($response->getFile()->getPathname())->toBe($path);
+});
+
+test('tenant assets are served from the resolved root of a disk with a configured prefix', function () {
+    config([
+        'tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class,
+        // A prefix is part of the disk's root path, so it has to be included in the asset root
+        'filesystems.disks.prefixed' => [
+            'driver' => 'local',
+            'root' => storage_path('app/media'),
+            'prefix' => 'foo-prefix',
+        ],
+        'tenancy.filesystem.disks' => ['prefixed'],
+        'tenancy.filesystem.root_override.prefixed' => '%storage_path%/app/media/',
+    ]);
+
+    TenantAssetController::$publicDisk = 'prefixed';
+
+    $tenant = Tenant::create();
+    tenancy()->initialize($tenant);
+
+    $filename = 'testfile' . Str::random(8);
+    Storage::disk('prefixed')->put($filename, 'bar');
+    $path = Storage::disk('prefixed')->path($filename);
+
+    expect($path)->toBe(storage_path("app/media/foo-prefix/$filename"));
+
+    $response = pest()->get(tenant_asset($filename), ['X-Tenant' => $tenant->id]);
+
+    $response->assertSuccessful();
+    expect($response->getFile()->getPathname())->toBe($path);
 });
 
 test('tenant assets are served from the central storage path in central context', function () {
