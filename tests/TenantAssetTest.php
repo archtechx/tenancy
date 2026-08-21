@@ -404,6 +404,10 @@ test('tenant asset controller throws an exception when accessing a file in a dir
 
     Storage::disk('media')->put('photo.jpg', 'public file');
 
+    pest()->get(tenant_asset('photo.jpg'), [
+        'X-Tenant' => $tenant->id,
+    ])->assertSuccessful();
+
     // A directory next to the asset root, e.g. one holding files that shouldn't be served
     mkdir($privateDirectory = storage_path('app/media-originals'), recursive: true);
     file_put_contents($privateDirectory . '/photo.jpg', 'private file');
