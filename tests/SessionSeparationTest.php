@@ -126,7 +126,7 @@ test('file sessions are separated when a custom session path is configured', fun
     expect(File::files($tenantSessionPath))->toHaveCount(1);
     expect(File::files($configuredSessionPath))->toHaveCount(0);
 
-    // End tenancy to test the revert behavior (= the central session file gets created to the original configured path)
+    // End tenancy to test the revert behavior (= the central session file gets created at the original configured path)
     tenancy()->end();
 
     pest()->get('/central');
