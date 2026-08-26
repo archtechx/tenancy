@@ -250,7 +250,8 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
                 ->toString();
         }
 
-        // Otherwise $configuredPath isn't necessarily storage_path()-based, so just append the suffix directly.
+        // Otherwise $configuredPath isn't necessarily storage_path()-based, so just append the
+        // suffix as a subdirectory, e.g. '/var/cache/foo' becomes '/var/cache/foo/tenant1'.
         return rtrim($configuredPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $suffix;
     }
 

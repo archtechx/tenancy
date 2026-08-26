@@ -571,7 +571,7 @@ test('a file cache store without a configured lock_path defaults to using its sc
     expect(File::isDirectory($path))->toBeTrue();
 });
 
-test('a cache store using a path not based on storage_path() has the tenant suffix appended', function () {
+test('a cache store using a path not based on storage_path() is scoped to a tenant subdirectory', function () {
     // tenantScopedPath() has no central storage path prefix to swap for the tenant's here,
     // so it appends the tenant suffix to $path instead.
     $path = '/tmp/tenancy-cache-test';
@@ -600,8 +600,8 @@ test('a cache store using a path not based on storage_path() has the tenant suff
     tenancy()->initialize($tenant1);
     expect(Cache::store('foo_file')->get('key'))->toBe('tenant1');
 
-    // Tenant's 'foo_file' cache directory is created at $path with
-    // the tenant suffix appended, not at the tenant-scoped storage_path().
+    // Tenant's 'foo_file' cache directory is created inside $path,
+    // not at the tenant-scoped storage_path().
     expect(File::isDirectory("{$path}/tenant{$tenant1->id}"))->toBeTrue();
     expect(File::isDirectory(storage_path('framework/cache/data')))->toBeFalse();
 
