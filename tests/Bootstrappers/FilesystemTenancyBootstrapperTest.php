@@ -350,9 +350,6 @@ test('file cache stores get their paths scoped on bootstrap and restored back on
     // revert() points each store back at its original configured path
     expect(Cache::store('foo_file')->get('key'))->toBe('central foo');
     expect(Cache::store('bar_file')->get('key'))->toBe('central bar');
-
-    File::deleteDirectory($fooPath);
-    File::deleteDirectory($barPath);
 });
 
 test('only file driver cache stores get scoped', function () {
@@ -389,8 +386,6 @@ test('only file driver cache stores get scoped', function () {
     expect(Cache::store('redis')->get('key'))->toBe('central');
 
     tenancy()->end();
-
-    File::deleteDirectory($fooPath);
 });
 
 test('cache scoping can be toggled using the scope_cache config', function (bool $scopeCache) {
@@ -431,8 +426,6 @@ test('cache scoping can be toggled using the scope_cache config', function (bool
     } else {
         expect(Cache::store('foo_file')->get('key'))->toBe('written in tenant context');
     }
-
-    File::deleteDirectory($fooPath);
 })->with([true, false]);
 
 test('scopeCache ignores changes to tenancy.cache.stores made in tenant context', function () {
@@ -477,9 +470,6 @@ test('scopeCache ignores changes to tenancy.cache.stores made in tenant context'
     expect(Cache::store('foo_file')->get('key'))->toBe('central');
     // 'bar_file' was never scoped, it still reads from the same path it was writing to in tenant context
     expect(Cache::store('bar_file')->get('key'))->toBe('written in tenant context');
-
-    File::deleteDirectory($fooPath);
-    File::deleteDirectory($barPath);
 });
 
 test('a configured lock_path is scoped separately from path', function () {
@@ -488,7 +478,7 @@ test('a configured lock_path is scoped separately from path', function () {
     $path = "{$centralStoragePath}/framework/cache/foo";
     $lockPath = "{$centralStoragePath}/framework/cache/foo_locks";
 
-    // Delete the directories before running assertions, not just after.
+    // The paths are hardcoded, so delete the directories before running the assertions.
     // Cache::store('foo_file')->lock(...) below defaults to a lock that never expires,
     // and this test never releases it, so a stale lock left over from
     // a previous run would make lock() fail forever.
@@ -529,9 +519,6 @@ test('a configured lock_path is scoped separately from path', function () {
     expect(Cache::store('foo_file')->lock('foo')->get())->toBeTrue();
     // The lock file was created at the original (central) lock_path
     expect(File::isDirectory($lockPath))->toBeTrue();
-
-    File::deleteDirectory($path);
-    File::deleteDirectory($lockPath);
 });
 
 test('a file cache store without a configured lock_path defaults to using its scoped path for locks', function () {
@@ -582,9 +569,6 @@ test('a file cache store without a configured lock_path defaults to using its sc
     expect(File::isDirectory($path))->toBeFalse();
     expect(Cache::store('foo_file')->lock('foo')->get())->toBeTrue();
     expect(File::isDirectory($path))->toBeTrue();
-
-    // Clean up directory created at the hardcoded path
-    File::deleteDirectory($path);
 });
 
 test('a cache store using a path not based on storage_path() has the tenant suffix appended', function () {
@@ -622,6 +606,4 @@ test('a cache store using a path not based on storage_path() has the tenant suff
     expect(File::isDirectory(storage_path('framework/cache/data')))->toBeFalse();
 
     tenancy()->end();
-
-    File::deleteDirectory($path);
 });
