@@ -97,7 +97,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
     protected function tenantStoragePath(string $suffix): string
     {
-        return $this->originalStoragePath . "/{$suffix}";
+        return $this->originalStoragePath . DIRECTORY_SEPARATOR . $suffix;
     }
 
     protected function assetHelper(string|false $suffix): void
@@ -241,17 +241,20 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
      */
     protected function tenantScopedPath(string $configuredPath, string $suffix): string
     {
-        if (str_starts_with($configuredPath, $this->originalStoragePath . '/')) {
+        // Normalize the path to use the separator of the current OS.
+        $configuredPath = str_replace('/', DIRECTORY_SEPARATOR, $configuredPath);
+
+        if (str_starts_with($configuredPath, $this->originalStoragePath . DIRECTORY_SEPARATOR)) {
             // Swap the central storage path prefix for the tenant's.
             // For example, storage_path('framework/cache/data') becomes storage_path('tenant1/framework/cache/data').
             return str($configuredPath)
-                ->after($this->originalStoragePath . '/')
-                ->prepend($this->tenantStoragePath($suffix) . '/')
+                ->after($this->originalStoragePath . DIRECTORY_SEPARATOR)
+                ->prepend($this->tenantStoragePath($suffix) . DIRECTORY_SEPARATOR)
                 ->toString();
         }
 
         // Otherwise $configuredPath isn't necessarily storage_path()-based, so just append the suffix directly.
-        return rtrim($configuredPath, '/') . '/' . $suffix;
+        return rtrim($configuredPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $suffix;
     }
 
     public function scopeSessions(string|false $suffix): void
