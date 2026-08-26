@@ -164,7 +164,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             // This is executed if the disk is in tenancy.filesystem.disks but does NOT have a root_override
             // This behavior is used for disks like S3.
             $newRoot = $originalRoot
-                ? rtrim($originalRoot, '/') . '/' . $suffix
+                ? rtrim($originalRoot, '/\\') . '/' . $suffix
                 : $suffix;
         }
 
