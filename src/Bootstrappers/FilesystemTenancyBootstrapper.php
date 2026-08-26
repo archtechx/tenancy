@@ -238,14 +238,15 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
      */
     protected function tenantScopedPath(string $configuredPath, string $suffix): string
     {
-        // Normalize the path to use the separator of the current OS.
+        // Normalize the paths to use the separator of the current OS.
         $configuredPath = str_replace('/', DIRECTORY_SEPARATOR, $configuredPath);
+        $storagePath = str_replace('/', DIRECTORY_SEPARATOR, $this->originalStoragePath);
 
-        if (str_starts_with($configuredPath, $this->originalStoragePath . DIRECTORY_SEPARATOR)) {
+        if (str_starts_with($configuredPath, $storagePath . DIRECTORY_SEPARATOR)) {
             // Swap the central storage path prefix for the tenant's.
             // For example, storage_path('framework/cache/data') becomes storage_path('tenant1/framework/cache/data').
             return str($configuredPath)
-                ->after($this->originalStoragePath . DIRECTORY_SEPARATOR)
+                ->after($storagePath . DIRECTORY_SEPARATOR)
                 ->prepend($this->tenantStoragePath($suffix) . DIRECTORY_SEPARATOR)
                 ->toString();
         }
