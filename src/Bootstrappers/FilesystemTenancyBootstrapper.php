@@ -97,7 +97,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
     protected function tenantStoragePath(string $suffix): string
     {
-        return $this->originalStoragePath . DIRECTORY_SEPARATOR . $suffix;
+        return rtrim($this->originalStoragePath, '/\\') . DIRECTORY_SEPARATOR . $suffix;
     }
 
     protected function assetHelper(string|false $suffix): void
