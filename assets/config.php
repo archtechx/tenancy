@@ -321,11 +321,12 @@ return [
 
     /**
      * Filesystem tenancy config. Used by FilesystemTenancyBootstrapper.
-     * https://v4.tenancyforlaravel.com/bootstrappers/filesystem.
+     * https://v4.tenancyforlaravel.com/bootstrappers/filesystem
      */
     'filesystem' => [
         /**
-         * Each disk listed in the 'disks' array will be suffixed by the suffix_base, followed by the tenant_id.
+         * Each disk listed in the 'disks' array will have its root
+         * suffixed by the suffix_base, followed by the tenant_id.
          */
         'suffix_base' => 'tenant',
         'disks' => [
@@ -337,11 +338,13 @@ return [
         /**
          * Use this for local disks.
          *
-         * The override can use these placeholders:
-         * - %storage_path% -- the tenant's storage directory. Note that this is resolved
-         *   by the bootstrapper, so it doesn't depend on the 'suffix_storage_path' config below.
+         * Customizes how the disk's root is scoped, instead of the default behavior
+         * which simply appends the tenant suffix to the original root.
+         *
+         * The overrides can reference the following placeholders:
+         * - %storage_path% -- the tenant's storage directory
          * - %original_storage_path% -- the central storage directory.
-         * - %tenant% -- the tenant's key.
+         * - %tenant% -- the tenant key.
          *
          * See https://v4.tenancyforlaravel.com/bootstrappers/filesystem
          */
@@ -364,7 +367,7 @@ return [
          */
         'url_override' => [
             // Note that the local disk you add must exist in the tenancy.filesystem.disks config,
-            // and it must have a non-falsy root (i.e., not null or empty string).
+            // and it must have a non-falsy root (not null nor an empty string).
             'public' => 'public-%tenant%',
         ],
 
@@ -385,14 +388,7 @@ return [
         /**
          * Should storage_path() be suffixed.
          *
-         * Note: This only affects the storage_path() helper. Disks listed in the 'disks' config
-         * above, and cache and sessions if 'scope_cache' and 'scope_sessions' are enabled, are
-         * scoped to the tenant's storage directory either way. With this disabled, files
-         * accessed using storage_path() are shared by all tenants.
-         *
-         * For the vast majority of applications, this feature should be enabled. But in some
-         * edge cases, it can cause issues (like using Passport with Vapor - see #196), so
-         * you may want to disable this if you are experiencing these edge case issues.
+         * Only affects the storage_path() helper, other features use the tenant storage directory regardless.
          */
         'suffix_storage_path' => true,
 

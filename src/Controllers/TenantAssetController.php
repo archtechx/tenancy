@@ -17,15 +17,11 @@ use Throwable;
 
 /**
  * Serves files from app/public inside the tenant's storage directory, or from the root
- * of the $publicDisk when one is configured.
+ * of the $publicDisk when the property is set.
  *
- * Requires FilesystemTenancyBootstrapper to be enabled since it points the public disk's
- * root at the tenant's storage directory. Without it, the disk keeps writing to the central
- * storage/app/public, so the tenant's directory is never populated and requests 404
- * (the path itself is tenant-specific either way, via getBoundTenantStoragePath()).
- *
- * With a $publicDisk configured, the assets come from that disk's root instead. The
- * bootstrapper is needed to make that root tenant-specific (see $publicDisk).
+ * Requires FilesystemTenancyBootstrapper to be enabled, so that writes to the default
+ * public disk end up in the app/public within the *tenant's* storage, or so that the
+ * public disk set in the static property is similarly scoped.
  *
  * @see FilesystemTenancyBootstrapper
  */
@@ -55,8 +51,8 @@ class TenantAssetController implements HasMiddleware
      *
      * It should also be listed in tenancy.filesystem.disks -- for scoped disks, it's the parent
      * disk that has to be listed there (since a scoped disk inherits the parent's root).
-     * FilesystemTenancyBootstrapper only scopes the roots of disks listed there, so otherwise
-     * every tenant is served the same (central) directory.
+     * FilesystemTenancyBootstrapper only scopes the roots of disks listed there, so
+     * without that every tenant would be served the same (central) directory.
      */
     public static string|null $publicDisk = null;
 
@@ -142,7 +138,7 @@ class TenantAssetController implements HasMiddleware
 
         // User is attempting to access a file outside the $allowedRoot folder.
         // The trailing separator is needed so that sibling directories that
-        // start with the same name (e.g. app/public-private) don't pass.
+        // start with the same name (e.g. app/public-private) aren't accepted.
         $this->abortIf(! str($attemptedPath)->startsWith(rtrim($allowedRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR), 'Accessing a file outside the storage root');
     }
 
