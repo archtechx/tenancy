@@ -238,22 +238,35 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
      */
     protected function tenantScopedPath(string $configuredPath, string $suffix): string
     {
-        // Normalize the paths to use the separator of the current OS.
-        $configuredPath = str_replace('/', DIRECTORY_SEPARATOR, $configuredPath);
-        $storagePath = str_replace('/', DIRECTORY_SEPARATOR, $this->originalStoragePath);
+        $configuredPath = $this->normalizePath($configuredPath);
+        $storagePath = $this->normalizePath($this->originalStoragePath);
 
         if (str_starts_with($configuredPath, $storagePath . DIRECTORY_SEPARATOR)) {
             // Swap the central storage path prefix for the tenant's.
             // For example, storage_path('framework/cache/data') becomes storage_path('tenant1/framework/cache/data').
             return str($configuredPath)
-                ->after($storagePath . DIRECTORY_SEPARATOR)
-                ->prepend($this->tenantStoragePath($suffix) . DIRECTORY_SEPARATOR)
+                ->replaceFirst($storagePath, $this->tenantStoragePath($suffix))
                 ->toString();
         }
 
         // Otherwise $configuredPath isn't necessarily storage_path()-based, so just append the
         // suffix as a subdirectory, e.g. '/var/cache/foo' becomes '/var/cache/foo/tenant1'.
-        return rtrim($configuredPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $suffix;
+        return $configuredPath . DIRECTORY_SEPARATOR . $suffix;
+    }
+
+    /** Normalize the path to use the separator of the current OS, deduplicated. */
+    protected function normalizePath(string $path): string
+    {
+        $path = str_replace('/', DIRECTORY_SEPARATOR, $path);
+
+        // On Windows, a path starting with two separators is a UNC path (e.g. '\\server\share'),
+        // so the leading separator that got collapsed by deduplicate() should be added back.
+        $uncPrefix = DIRECTORY_SEPARATOR === '\\' && str_starts_with($path, '\\\\') ? DIRECTORY_SEPARATOR : '';
+
+        return $uncPrefix . str($path)
+            ->deduplicate(DIRECTORY_SEPARATOR)
+            ->rtrim(DIRECTORY_SEPARATOR)
+            ->toString();
     }
 
     public function scopeSessions(string|false $suffix): void
