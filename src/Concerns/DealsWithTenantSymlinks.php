@@ -40,7 +40,6 @@ trait DealsWithTenantSymlinks
 
         foreach ($urlOverrides as $disk => $publicPath) {
             if (! $publicPath) {
-                // The disk's URL is not overridden, same as in FilesystemTenancyBootstrapper::diskUrl()
                 continue;
             }
 
