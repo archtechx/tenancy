@@ -155,7 +155,7 @@ class LogChannelBootstrapper implements TenancyBootstrapper
 
                 // The tenant log will inherit the segment that follows the storage path from the central channel path config.
                 // For example, if a channel's path is configured to storage_path('logs/foo.log') (storage/logs/foo.log),
-                // the '/logs/foo.log' segment will be appended to the tenant storage path (so the log will be located at storage/tenant123/logs/foo.log).
+                // the '/logs/foo.log' segment will be placed within the tenant storage path (so the log will be located at storage/tenant123/logs/foo.log).
                 $this->config->set("logging.channels.{$channel}.path", $tenantStoragePath . Str::after($originalChannelPath, $centralStoragePath));
             }
         }
