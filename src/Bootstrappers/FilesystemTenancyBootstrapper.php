@@ -254,7 +254,13 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         return $configuredPath . DIRECTORY_SEPARATOR . $suffix;
     }
 
-    /** Normalize the path to use the separator of the current OS, deduplicated. */
+    /**
+     * Normalize the path to use the separator of the current OS.
+     *
+     * The separators are also deduplicated, with two exceptions:
+     * - if the path begins with \\ on Windows (i.e. a UNC path), the *leading* separators won't end up deduplicated
+     * - if the path contains non-UTF-8 characters, the separators won't be deduplicated at all (since str()->deduplicate() only works on UTF-8 strings).
+     */
     protected function normalizePath(string $path): string
     {
         $path = str_replace('/', DIRECTORY_SEPARATOR, $path);
@@ -263,10 +269,10 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         // so the leading separator that got collapsed by deduplicate() should be added back.
         $uncPrefix = DIRECTORY_SEPARATOR === '\\' && str_starts_with($path, '\\\\') ? DIRECTORY_SEPARATOR : '';
 
-        return $uncPrefix . str($path)
-            ->deduplicate(DIRECTORY_SEPARATOR)
-            ->rtrim(DIRECTORY_SEPARATOR)
-            ->toString();
+        // Since deduplicate() only supports UTF-8 paths, paths with non-UTF-8 characters will keep the duplicate separators.
+        $path = str($path)->deduplicate(DIRECTORY_SEPARATOR)->toString() ?: $path;
+
+        return $uncPrefix . rtrim($path, DIRECTORY_SEPARATOR);
     }
 
     public function scopeSessions(string|false $suffix): void
