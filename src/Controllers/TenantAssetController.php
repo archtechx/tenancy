@@ -47,10 +47,10 @@ class TenantAssetController implements HasMiddleware
      * When null, the assets are served from app/public inside the tenant's storage directory.
      *
      * The disk has to be local, since the assets are read from the filesystem. Disks using the
-     * 'scoped' driver are supported as long as their parent disk uses the 'local' driver.
+     * 'scoped' driver are supported as long as the disk they're based on uses the 'local' driver.
      *
-     * It should also be listed in tenancy.filesystem.disks -- for scoped disks, it's the parent
-     * disk that has to be listed there (since a scoped disk inherits the parent's root).
+     * The disk also has to be listed in tenancy.filesystem.disks -- for scoped disks, it's the
+     * disk they're based on that has to be listed there (since a scoped disk inherits its root).
      * FilesystemTenancyBootstrapper only scopes the roots of disks listed there, so
      * without that every tenant would be served the same (central) directory.
      */
@@ -87,8 +87,8 @@ class TenantAssetController implements HasMiddleware
 
     /**
      * Directory the assets are served from -- the root of the $publicDisk, or app/public
-     * inside the tenant's storage directory when no disk is configured. With no current
-     * tenant (e.g. on a universal route), the central storage directory is used.
+     * inside the tenant's storage directory when no disk is configured. With no disk and
+     * no current tenant (e.g. on a universal route), the central app/public is used.
      *
      * The tenant's storage directory is resolved using the FilesystemTenancyBootstrapper (rather
      * than storage_path(), so that it's tenant-scoped regardless of the suffix_storage_path config).
@@ -99,13 +99,20 @@ class TenantAssetController implements HasMiddleware
             $disk = Storage::disk(static::$publicDisk);
 
             if (! $disk instanceof LocalFilesystemAdapter) {
-                // The root has to be read from the resolved disk rather than from the disk's config,
-                // since the config root isn't the full root path of every local disk. Disks using the
-                // 'scoped' driver have no root in their config -- they inherit their parent disk's root --
-                // and a 'prefix' is part of the root path as well.
                 throw new Exception('Disk [' . static::$publicDisk . '] is not a local disk. Only local disks can be used for serving assets.');
             }
 
+            $baseDiskName = $this->baseDiskName(static::$publicDisk);
+
+            if (! in_array($baseDiskName, config('tenancy.filesystem.disks'), true)) {
+                // FilesystemTenancyBootstrapper only scopes the roots of disks listed in tenancy.filesystem.disks.
+                // Without that, the root stays central and every tenant would be served the same directory.
+                throw new Exception("Disk [$baseDiskName] is not tenant-aware. Add it to the tenancy.filesystem.disks config to make its root tenant-specific.");
+            }
+
+            // The root is read from the resolved disk rather than from the disk's config, since the
+            // config root isn't the full root path of every local disk. Disks using the 'scoped' driver
+            // have no root in their config, and a 'prefix' is part of the root path as well.
             return rtrim($disk->path(''), DIRECTORY_SEPARATOR);
         }
 
@@ -114,6 +121,26 @@ class TenantAssetController implements HasMiddleware
         }
 
         return storage_path('app/public');
+    }
+
+    /**
+     * Name of the disk whose root the passed disk uses.
+     *
+     * Disks using the 'scoped' driver have no root of their own -- they inherit the root of their parent disk,
+     * which can be scoped as well, so the final/base parent is what has to be tenant-aware.
+     */
+    protected function baseDiskName(string $disk): string
+    {
+        while (config("filesystems.disks.$disk.driver") === 'scoped') {
+            if (! is_string($parent = config("filesystems.disks.$disk.disk"))) {
+                // Laravel allows configuring the parent inline as an array, in which case it has no name
+                throw new Exception("Disk [$disk] has its parent disk configured inline. Use a named parent disk listed in tenancy.filesystem.disks.");
+            }
+
+            $disk = $parent;
+        }
+
+        return $disk;
     }
 
     /**
