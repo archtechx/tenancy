@@ -145,6 +145,55 @@ test('tenant asset controller throws when the configured disk is not local', fun
     pest()->get(tenant_asset('foo.txt'), ['X-Tenant' => $tenant->id]);
 });
 
+test('tenant asset controller throws when the disk used for serving assets is not tenant-aware', function (string $publicDisk, string $expectedMessage) {
+    $centralStoragePath = storage_path();
+
+    config([
+        'tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class,
+        'filesystems.disks.media' => [
+            'driver' => 'local',
+            'root' => storage_path('app/media'),
+        ],
+        'filesystems.disks.scoped_media' => [
+            'driver' => 'scoped',
+            'disk' => 'media',
+            'prefix' => 'assets',
+        ],
+        'filesystems.disks.inline_scoped_media' => [
+            'driver' => 'scoped',
+            // Laravel allows configuring the parent disk inline, but such a disk
+            // has no name, so it cannot be listed in tenancy.filesystem.disks (i.e. made tenant-aware)
+            'disk' => [
+                'driver' => 'local',
+                'root' => storage_path('app/media'),
+            ],
+            'prefix' => 'assets',
+        ],
+        // 'media' isn't tenant-aware (i.e. not included in tenancy.filesystem.disks)
+        'tenancy.filesystem.root_override.media' => '%storage_path%/app/media/',
+    ]);
+
+    TenantAssetController::$publicDisk = $publicDisk;
+
+    $tenant = Tenant::create();
+    tenancy()->initialize($tenant);
+
+    Storage::disk($publicDisk)->put($filename = 'testfile' . Str::random(8), 'bar');
+
+    // The disk's root stays central
+    expect(Storage::disk($publicDisk)->path($filename))->toStartWith("$centralStoragePath/app/media/");
+
+    $this->withoutExceptionHandling();
+
+    pest()->expectExceptionMessage($expectedMessage);
+
+    pest()->get(tenant_asset($filename), ['X-Tenant' => $tenant->id]);
+})->with([
+    'disk' => ['media', 'Disk [media] is not tenant-aware.'],
+    'scoped disk' => ['scoped_media', 'Disk [media] is not tenant-aware.'],
+    'scoped disk with an inline parent disk' => ['inline_scoped_media', 'Disk [inline_scoped_media] has its parent disk configured inline.'],
+]);
+
 test('tenant assets are served from the resolved root of a scoped disk', function () {
     config([
         'tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class,
