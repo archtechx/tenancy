@@ -326,6 +326,36 @@ test('scoped disks based on a non-local disk are scoped per tenant', function ()
     expect(Storage::disk('scoped_s3')->path('foo.txt'))->toBe('scoped_s3_prefix/foo.txt');
 });
 
+test('adding a scoped disk to tenancy.filesystem.disks has no effect on the disk', function () {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'filesystems.disks.foo' => [
+            'driver' => 'scoped',
+            'disk' => 'public',
+            'prefix' => 'foo',
+        ],
+        // Only the scoped disk's parent/base disk ('public') has to be listed here.
+        // Listing 'foo' too is redundant, and it shouldn't change anything.
+        'tenancy.filesystem.disks' => ['local', 'public', 'foo'],
+    ]);
+
+    $tenant = Tenant::create();
+    tenancy()->initialize($tenant);
+
+    // The 'foo' disk's parent disk ('public') is tenant-aware, so its root is scoped the same way.
+    // It doesn't matter that 'foo' itself is tenant-aware.
+    expect(Storage::disk('foo')->path('testing.txt'))->toBe(storage_path('app/public/foo/testing.txt'));
+
+    // Scoped disks have no root or url of their own, so the bootstrapper leaves their config alone
+    expect(config('filesystems.disks.foo'))->toBe([
+        'driver' => 'scoped',
+        'disk' => 'public',
+        'prefix' => 'foo',
+    ]);
+});
+
 test('file cache stores get their paths scoped on bootstrap and restored back on revert', function () {
     $fooPath = storage_path('framework/cache/foo_file');
     $barPath = storage_path('framework/cache/bar_file');
