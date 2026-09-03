@@ -199,7 +199,7 @@ test('tenant asset controller throws when the disk used for serving assets is no
 })->with([
     'disk' => ['media', 'Disk [media] is not tenant-aware.'],
     'scoped disk' => ['scoped_media', 'Disk [media] is not tenant-aware.'],
-    'scoped disk with an inline parent disk' => ['inline_scoped_media', 'Disk [inline_scoped_media] has its parent disk configured inline.'],
+    'scoped disk with an inline parent disk' => ['inline_scoped_media', 'Disk [inline_scoped_media] has an unnamed parent disk.'],
 ]);
 
 test('tenant assets are served from the resolved root of a scoped disk', function () {

@@ -102,7 +102,11 @@ class TenantAssetController implements HasMiddleware
                 throw new Exception('Disk [' . static::$publicDisk . '] is not a local disk. Only local disks can be used for serving assets.');
             }
 
-            $baseDiskName = $this->baseDiskName(static::$publicDisk);
+            $baseDiskName = FilesystemTenancyBootstrapper::baseDiskName(static::$publicDisk);
+
+            if ($baseDiskName === null) {
+                throw new Exception('Disk [' . static::$publicDisk . '] has an unnamed parent disk. Use a named parent disk listed in tenancy.filesystem.disks.');
+            }
 
             if (! in_array($baseDiskName, config('tenancy.filesystem.disks'), true)) {
                 // FilesystemTenancyBootstrapper only scopes the roots of disks listed in tenancy.filesystem.disks.
@@ -121,26 +125,6 @@ class TenantAssetController implements HasMiddleware
         }
 
         return storage_path('app/public');
-    }
-
-    /**
-     * Name of the disk whose root the passed disk uses.
-     *
-     * Disks using the 'scoped' driver have no root of their own -- they inherit the root of their parent disk,
-     * which can be scoped as well, so the final/base parent is what has to be tenant-aware.
-     */
-    protected function baseDiskName(string $disk): string
-    {
-        while (config("filesystems.disks.$disk.driver") === 'scoped') {
-            if (! is_string($parent = config("filesystems.disks.$disk.disk"))) {
-                // Laravel allows configuring the parent inline as an array, in which case it has no name
-                throw new Exception("Disk [$disk] has its parent disk configured inline. Use a named parent disk listed in tenancy.filesystem.disks.");
-            }
-
-            $disk = $parent;
-        }
-
-        return $disk;
     }
 
     /**

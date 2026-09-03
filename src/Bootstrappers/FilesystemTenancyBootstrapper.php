@@ -128,9 +128,9 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         $scopedDisks = [];
 
         foreach ($this->app['config']['filesystems.disks'] as $name => $disk) {
-            if (isset($disk['driver'], $disk['disk'])
+            if (isset($disk['driver'])
                 && $disk['driver'] === 'scoped'
-                && in_array($disk['disk'], $tenantDisks, true)) {
+                && in_array(static::baseDiskName($name), $tenantDisks, true)) {
                 $scopedDisks[] = $name;
             }
         }
@@ -339,5 +339,35 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         $bootstrapper = app(static::class);
 
         return $bootstrapper->tenantStoragePath($bootstrapper->suffix($tenant));
+    }
+
+    /**
+     * Name of the disk whose root the passed disk uses.
+     *
+     * Disks using the 'scoped' driver have no root or url of their own -- they inherit these from their parent disk,
+     * which can be scoped as well, so only the final/base parent has to be tenant-aware.
+     *
+     * Returns null if the chain doesn't end with a named disk, i.e. when a parent disk is
+     * configured inline or when the disks reference each other.
+     */
+    public static function baseDiskName(string $disk): string|null
+    {
+        // Keep track of visited disks to avoid infinite loops in case of disks referencing each other
+        $visited = [];
+
+        while (config("filesystems.disks.$disk.driver") === 'scoped') {
+            if (in_array($disk, $visited, true)) {
+                return null;
+            }
+
+            $visited[] = $disk;
+
+            if (! is_string($disk = config("filesystems.disks.$disk.disk"))) {
+                // Laravel allows configuring the parent disk inline as an array, and such a disk has no name
+                return null;
+            }
+        }
+
+        return $disk;
     }
 }

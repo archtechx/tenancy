@@ -356,6 +356,31 @@ test('adding a scoped disk to tenancy.filesystem.disks has no effect on the disk
     ]);
 });
 
+test('scoped disks referencing each other do not make bootstrapper hang', function () {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'filesystems.disks.foo' => [
+            'driver' => 'scoped',
+            'disk' => 'bar',
+            'prefix' => 'foo',
+        ],
+        'filesystems.disks.bar' => [
+            'driver' => 'scoped',
+            'disk' => 'foo',
+            'prefix' => 'bar',
+        ],
+    ]);
+
+    expect(FilesystemTenancyBootstrapper::baseDiskName('foo'))->toBeNull();
+    expect(FilesystemTenancyBootstrapper::baseDiskName('bar'))->toBeNull();
+
+    tenancy()->initialize(Tenant::create());
+
+    expect(tenant())->not()->toBeNull();
+});
+
 test('file cache stores get their paths scoped on bootstrap and restored back on revert', function () {
     $fooPath = storage_path('framework/cache/foo_file');
     $barPath = storage_path('framework/cache/bar_file');
