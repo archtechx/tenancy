@@ -140,6 +140,11 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
     protected function diskRoot(string $disk, Tenant|false $tenant): void
     {
+        if ($this->app['config']["filesystems.disks.$disk.driver"] === 'scoped') {
+            // Skip scoped disks since they have no root to override
+            return;
+        }
+
         if ($tenant === false) {
             $this->app['config']["filesystems.disks.$disk.root"] = $this->originalDisks[$disk]['root'];
 
