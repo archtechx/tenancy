@@ -250,7 +250,7 @@ test('the framework/cache directory is created when storage_path is scoped', fun
     }
 })->with([true, false]);
 
-test('scoped disks are scoped per tenant', function () {
+test('scoped disks are scoped per tenant', function (bool $nested) {
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
@@ -260,30 +260,44 @@ test('scoped disks are scoped per tenant', function () {
             'disk' => 'public',
             'prefix' => 'scoped_disk_prefix',
         ],
+        'filesystems.disks.nested_disk' => [
+            'driver' => 'scoped',
+            'disk' => 'scoped_disk',
+            'prefix' => 'nested_disk_prefix',
+        ],
     ]);
+
+    $disk = $nested ? 'nested_disk' : 'scoped_disk';
+    $prefix = $nested ? 'scoped_disk_prefix/nested_disk_prefix' : 'scoped_disk_prefix';
 
     $tenant = Tenant::create();
 
-    Storage::disk('scoped_disk')->put('foo.txt', 'central');
-    expect(Storage::disk('scoped_disk')->get('foo.txt'))->toBe('central');
-    expect(file_get_contents(storage_path() . "/app/public/scoped_disk_prefix/foo.txt"))->toBe('central');
+    Storage::disk($disk)->put('foo.txt', 'central');
+
+    config(['filesystem.disks.public.prefix' => 'scoped_disk_prefix']);
+
+    expect(Storage::disk($disk)->get('foo.txt'))->toBe('central');
+    expect(file_get_contents(storage_path() . "/app/public/{$prefix}/foo.txt"))->toBe('central');
 
     tenancy()->initialize($tenant);
 
-    expect(Storage::disk('scoped_disk')->get('foo.txt'))->toBe(null);
-    Storage::disk('scoped_disk')->put('foo.txt', 'tenant');
-    expect(file_get_contents(storage_path() . "/app/public/scoped_disk_prefix/foo.txt"))->toBe('tenant');
-    expect(Storage::disk('scoped_disk')->get('foo.txt'))->toBe('tenant');
+    expect(Storage::disk($disk)->get('foo.txt'))->toBe(null);
+    Storage::disk($disk)->put('foo.txt', 'tenant');
+    expect(file_get_contents(storage_path() . "/app/public/{$prefix}/foo.txt"))->toBe('tenant');
+    expect(Storage::disk($disk)->get('foo.txt'))->toBe('tenant');
 
     tenancy()->end();
 
-    expect(Storage::disk('scoped_disk')->get('foo.txt'))->toBe('central');
-    Storage::disk('scoped_disk')->put('foo.txt', 'central2');
-    expect(Storage::disk('scoped_disk')->get('foo.txt'))->toBe('central2');
+    expect(Storage::disk($disk)->get('foo.txt'))->toBe('central');
+    Storage::disk($disk)->put('foo.txt', 'central2');
+    expect(Storage::disk($disk)->get('foo.txt'))->toBe('central2');
 
-    expect(file_get_contents(storage_path() . "/app/public/scoped_disk_prefix/foo.txt"))->toBe('central2');
-    expect(file_get_contents(storage_path() . "/tenant{$tenant->id}/app/public/scoped_disk_prefix/foo.txt"))->toBe('tenant');
-});
+    expect(file_get_contents(storage_path() . "/app/public/{$prefix}/foo.txt"))->toBe('central2');
+    expect(file_get_contents(storage_path() . "/tenant{$tenant->id}/app/public/{$prefix}/foo.txt"))->toBe('tenant');
+})->with([
+    'scoped disk' => false,
+    'nested scoped disk' => true,
+]);
 
 test('file cache stores get their paths scoped on bootstrap and restored back on revert', function () {
     $fooPath = storage_path('framework/cache/foo_file');
