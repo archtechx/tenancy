@@ -299,6 +299,33 @@ test('scoped disks are scoped per tenant', function (bool $nested) {
     'nested scoped disk' => true,
 ]);
 
+test('scoped disks based on a non-local disk are scoped per tenant', function () {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'filesystems.disks.scoped_s3' => [
+            'driver' => 'scoped',
+            'disk' => 's3',
+            'prefix' => 'scoped_s3_prefix',
+        ],
+        'tenancy.filesystem.disks' => ['s3'], // As long as the base disk (s3) is listed here, the scoped disk will be scoped
+    ]);
+
+    expect(Storage::disk('s3')->path('foo.txt'))->toBe('foo.txt');
+    expect(Storage::disk('scoped_s3')->path('foo.txt'))->toBe('scoped_s3_prefix/foo.txt');
+
+    $tenant = Tenant::create();
+    tenancy()->initialize($tenant);
+
+    expect(Storage::disk('s3')->path('foo.txt'))->toBe("tenant{$tenant->id}/foo.txt");
+    expect(Storage::disk('scoped_s3')->path('foo.txt'))->toBe("tenant{$tenant->id}/scoped_s3_prefix/foo.txt");
+
+    tenancy()->end();
+
+    expect(Storage::disk('scoped_s3')->path('foo.txt'))->toBe('scoped_s3_prefix/foo.txt');
+});
+
 test('file cache stores get their paths scoped on bootstrap and restored back on revert', function () {
     $fooPath = storage_path('framework/cache/foo_file');
     $barPath = storage_path('framework/cache/bar_file');
