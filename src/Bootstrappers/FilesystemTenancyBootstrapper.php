@@ -8,6 +8,7 @@ use Exception;
 use Illuminate\Foundation\Application;
 use Illuminate\Session\FileSessionHandler;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
@@ -259,21 +260,24 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
      *
      * The separators are also deduplicated, with two exceptions:
      * - if the path begins with \\ on Windows (i.e. a UNC path), the *leading* separators won't be deduplicated
-     * - if the path contains non-UTF-8 characters, the separators won't be deduplicated since str()->deduplicate() only supports UTF-8 strings)
+     * - if the path contains non-UTF-8 characters, the separators won't be deduplicated since Str::deduplicate() only supports UTF-8 strings)
      */
     protected function normalizePath(string $path): string
     {
         $path = str_replace('/', DIRECTORY_SEPARATOR, $path);
 
-        // On Windows, a path starting with two separators is a UNC path (e.g. '\\server\share'),
-        // so the leading separator that got collapsed by deduplicate() should be added back (only one \ will be kept, so we use one for the prefix).
         $uncPrefix = DIRECTORY_SEPARATOR === '\\' && str_starts_with($path, '\\\\') ? DIRECTORY_SEPARATOR : '';
 
-        // Since deduplicate() only supports UTF-8 paths, paths with non-UTF-8 characters will not
-        // be deduplicated since deduplicate() returns an empty result with unsupported strings
-        $path = str($path)->deduplicate(DIRECTORY_SEPARATOR)->toString() ?: $path;
-
-        return $uncPrefix . rtrim($path, DIRECTORY_SEPARATOR);
+        if ($deduplicated = Str::deduplicate($path, DIRECTORY_SEPARATOR)) {
+            // On Windows, a path starting with two separators is a UNC path (e.g. '\\server\share'),
+            // so the leading separator that got collapsed by deduplicate() should be added back
+            // (only one \ will be kept, so we use one for the prefix).
+            return $uncPrefix . rtrim($deduplicated, DIRECTORY_SEPARATOR);
+        } else {
+            // Because deduplicate() only supports UTF-8 paths, paths with non-UTF-8 characters will not
+            // be deduplicated since deduplicate() returns an empty result with unsupported strings
+            return rtrim($path, DIRECTORY_SEPARATOR);
+        }
     }
 
     public function scopeSessions(string|false $suffix): void
