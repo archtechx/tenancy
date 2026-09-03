@@ -258,18 +258,19 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
      * Normalize the path to use the separator of the current OS.
      *
      * The separators are also deduplicated, with two exceptions:
-     * - if the path begins with \\ on Windows (i.e. a UNC path), the *leading* separators won't end up deduplicated
-     * - if the path contains non-UTF-8 characters, the separators won't be deduplicated at all (since str()->deduplicate() only works on UTF-8 strings).
+     * - if the path begins with \\ on Windows (i.e. a UNC path), the *leading* separators won't be deduplicated
+     * - if the path contains non-UTF-8 characters, the separators won't be deduplicated since str()->deduplicate() only supports UTF-8 strings)
      */
     protected function normalizePath(string $path): string
     {
         $path = str_replace('/', DIRECTORY_SEPARATOR, $path);
 
         // On Windows, a path starting with two separators is a UNC path (e.g. '\\server\share'),
-        // so the leading separator that got collapsed by deduplicate() should be added back.
+        // so the leading separator that got collapsed by deduplicate() should be added back (only one \ will be kept, so we use one for the prefix).
         $uncPrefix = DIRECTORY_SEPARATOR === '\\' && str_starts_with($path, '\\\\') ? DIRECTORY_SEPARATOR : '';
 
-        // Since deduplicate() only supports UTF-8 paths, paths with non-UTF-8 characters will keep the duplicate separators.
+        // Since deduplicate() only supports UTF-8 paths, paths with non-UTF-8 characters will not
+        // be deduplicated since deduplicate() returns an empty result with unsupported strings
         $path = str($path)->deduplicate(DIRECTORY_SEPARATOR)->toString() ?: $path;
 
         return $uncPrefix . rtrim($path, DIRECTORY_SEPARATOR);
