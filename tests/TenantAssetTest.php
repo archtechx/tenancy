@@ -120,7 +120,7 @@ test('the disk used for serving tenant assets is configurable', function () {
     expect($response->getFile()->getPathname())->toBe($path);
 });
 
-test('tenant asset controller throws when the configured disk is not local', function () {
+test('tenant asset controller throws when the configured disk is not local', function (string $publicDisk) {
     config([
         'tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class,
         // Add a disk that uses the s3 driver (= non-local disk).
@@ -132,18 +132,26 @@ test('tenant asset controller throws when the configured disk is not local', fun
             'secret' => 'secret',
             'bucket' => 'bucket',
         ],
+        'filesystems.disks.scoped_remote' => [
+            'driver' => 'scoped',
+            'disk' => 'remote',
+            'prefix' => 'assets',
+        ],
     ]);
 
-    TenantAssetController::$publicDisk = 'remote';
+    TenantAssetController::$publicDisk = $publicDisk;
 
     $tenant = Tenant::create();
     tenancy()->initialize($tenant);
 
     $this->withoutExceptionHandling();
-    pest()->expectExceptionMessage('Disk [remote] is not a local disk.');
+    pest()->expectExceptionMessage("Disk [$publicDisk] is not a local disk.");
 
     pest()->get(tenant_asset('foo.txt'), ['X-Tenant' => $tenant->id]);
-});
+})->with([
+    'disk' => 'remote',
+    'scoped disk' => 'scoped_remote',
+]);
 
 test('tenant asset controller throws when the disk used for serving assets is not tenant-aware', function (string $publicDisk, string $expectedMessage) {
     $centralStoragePath = storage_path();
