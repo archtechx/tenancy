@@ -121,7 +121,7 @@ class TenantAssetController implements HasMiddleware
         }
 
         if ($tenant = tenant()) {
-            return FilesystemTenancyBootstrapper::getBoundTenantStoragePath($tenant) . '/app/public';
+            return FilesystemTenancyBootstrapper::getTenantStoragePath($tenant) . '/app/public';
         }
 
         return storage_path('app/public');

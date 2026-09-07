@@ -339,7 +339,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
      * Note that the returned path doesn't depend on suffix_storage_path.
      * That config option only affects the storage_path() helper.
      */
-    public static function getBoundTenantStoragePath(Tenant $tenant): string
+    public static function getTenantStoragePath(Tenant $tenant): string
     {
         $bootstrapper = app(static::class);
 
@@ -349,7 +349,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
     /**
      * Name of the disk whose root the passed disk uses.
      *
-     * Disks using the 'scoped' driver have no root or url of their own -- they inherit these from their parent disk,
+     * Disks using the 'scoped' driver have no root or url of their own -- they inherit those from their parent disk,
      * which can be scoped as well, so only the final/base parent has to be tenant-aware.
      *
      * Returns null if the chain doesn't end with a named disk, i.e. when a parent disk is
@@ -362,12 +362,14 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
         while (config("filesystems.disks.$disk.driver") === 'scoped') {
             if (in_array($disk, $visited, true)) {
+                // The disk and its parents reference each other, invalid
                 return null;
             }
 
             $visited[] = $disk;
+            $disk = config("filesystems.disks.$disk.disk");
 
-            if (! is_string($disk = config("filesystems.disks.$disk.disk"))) {
+            if (! is_string($disk)) {
                 // Laravel allows configuring the parent disk inline as an array, and such a disk has no name
                 return null;
             }
