@@ -132,12 +132,10 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
                 continue;
             }
 
-            $baseDisk = static::baseDiskName($name);
-
-            if (in_array($baseDisk, $tenantDisks, true)) {
+            if (in_array(static::baseDiskName($name), $tenantDisks, true)) {
                 $scopedDisks[] = $name;
             } elseif (in_array($name, $tenantDisks, true)) {
-                throw new Exception("A disk using the 'scoped' driver cannot be tenant-aware. List its base disk in tenancy.filesystem.disks instead.");
+                throw new Exception("Disk [$name] uses the 'scoped' driver, so it has no root to make tenant-aware. List its base disk in tenancy.filesystem.disks instead.");
             }
         }
 
@@ -359,27 +357,17 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
      * Disks using the 'scoped' driver have no root or url of their own -- they inherit those from their parent disk,
      * which can be scoped as well, so only the final/base parent has to be tenant-aware.
      *
-     * Returns null if the chain doesn't end with a named disk, i.e. when a parent disk is
-     * configured inline or when the disks reference each other.
+     * Returns null if the base disk has no name, i.e. when the disk is configured inline as an array.
      */
     public static function baseDiskName(string $disk): string|null
     {
-        // Keep track of visited disks to avoid infinite loops in case of disks referencing each other
-        $visited = [];
-
         while (config("filesystems.disks.$disk.driver") === 'scoped') {
-            if (in_array($disk, $visited, true)) {
-                // The disk and its parents reference each other, invalid
-                return null;
-            }
-
-            $visited[] = $disk;
-            $disk = config("filesystems.disks.$disk.disk");
-
-            if (! is_string($disk)) {
+            if (! is_string($parent = config("filesystems.disks.$disk.disk"))) {
                 // Laravel allows configuring the parent disk inline as an array, and such a disk has no name
                 return null;
             }
+
+            $disk = $parent;
         }
 
         return $disk;

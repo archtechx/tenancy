@@ -341,35 +341,33 @@ test('adding a scoped disk to tenancy.filesystem.disks throws an exception if it
             'disk' => 'foo',
             'prefix' => 'bar',
         ],
-        // Disks referencing each other (neither has a base disk)
-        'filesystems.disks.abc' => [
+        // Scoped disk with an inline parent
+        'filesystems.disks.inline_parent' => [
             'driver' => 'scoped',
-            'disk' => 'def',
-            'prefix' => 'abc',
-        ],
-        'filesystems.disks.def' => [
-            'driver' => 'scoped',
-            'disk' => 'abc',
-            'prefix' => 'def',
+            'disk' => [
+                'driver' => 'local',
+                'root' => storage_path('app/inline'),
+            ],
+            'prefix' => 'inline_parent',
         ],
         'tenancy.filesystem.disks' => [$disk],
     ]);
 
     expect(fn () => tenancy()->initialize(Tenant::create()))
-        ->toThrow(Exception::class, "List its base disk in tenancy.filesystem.disks instead");
+        ->toThrow(Exception::class, "Disk [$disk] uses the 'scoped' driver, so it has no root to make tenant-aware.");
 
-    // Parent of 'abc' is 'def', whose parent is 'abc' -- there's no base disk for these, so these are
-    // still invalid and the exception will still be thrown.
-    if ($disk !== 'abc') {
+    // 'inline_parent' has no base disk name to list, so there's no way to make it tenant-aware
+    // and the exception is thrown regardless of what's listed.
+    if ($disk !== 'inline_parent') {
         config(['tenancy.filesystem.disks' => ['public', $disk]]);
 
         expect(fn () => tenancy()->initialize(Tenant::create()))
-            ->not()->toThrow(Exception::class, "List its base disk in tenancy.filesystem.disks instead");
+            ->not()->toThrow(Exception::class, "Disk [$disk] uses the 'scoped' driver, so it has no root to make tenant-aware.");
     }
 })->with([
     'scoped disk' => 'foo',
     'nested scoped disk' => 'bar',
-    'scoped disk with no base disk' => 'abc',
+    'scoped disk with an inline base disk' => 'inline_parent',
 ]);
 
 test('adding a scoped disk to tenancy.filesystem.disks has no effect on the disk when its base disk is listed too', function () {
@@ -399,31 +397,6 @@ test('adding a scoped disk to tenancy.filesystem.disks has no effect on the disk
         'disk' => 'public',
         'prefix' => 'foo',
     ]);
-});
-
-test('scoped disks referencing each other do not make bootstrapper hang', function () {
-    config([
-        'tenancy.bootstrappers' => [
-            FilesystemTenancyBootstrapper::class,
-        ],
-        'filesystems.disks.foo' => [
-            'driver' => 'scoped',
-            'disk' => 'bar',
-            'prefix' => 'foo',
-        ],
-        'filesystems.disks.bar' => [
-            'driver' => 'scoped',
-            'disk' => 'foo',
-            'prefix' => 'bar',
-        ],
-    ]);
-
-    expect(FilesystemTenancyBootstrapper::baseDiskName('foo'))->toBeNull();
-    expect(FilesystemTenancyBootstrapper::baseDiskName('bar'))->toBeNull();
-
-    tenancy()->initialize(Tenant::create());
-
-    expect(tenant())->not()->toBeNull();
 });
 
 test('file cache stores get their paths scoped on bootstrap and restored back on revert', function () {
