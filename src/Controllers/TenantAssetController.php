@@ -142,6 +142,7 @@ class TenantAssetController implements HasMiddleware
         // The asset root doesn't exist, so it cannot contain files
         $this->abortIf($allowedRoot === false, "Storage root doesn't exist");
 
+        // realpath() ensures the directory exists and converts / to \ on Windows
         $attemptedPath = realpath("{$allowedRoot}/{$path}");
 
         // User is attempting to access a nonexistent file
