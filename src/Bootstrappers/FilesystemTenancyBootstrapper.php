@@ -128,10 +128,16 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         $scopedDisks = [];
 
         foreach ($this->app['config']['filesystems.disks'] as $name => $disk) {
-            if (isset($disk['driver'])
-                && $disk['driver'] === 'scoped'
-                && in_array(static::baseDiskName($name), $tenantDisks, true)) {
+            if (($disk['driver'] ?? null) !== 'scoped') {
+                continue;
+            }
+
+            $baseDisk = static::baseDiskName($name);
+
+            if (in_array($baseDisk, $tenantDisks, true)) {
                 $scopedDisks[] = $name;
+            } elseif (in_array($name, $tenantDisks, true)) {
+                throw new Exception("A disk using the 'scoped' driver cannot be tenant-aware. List its base disk in tenancy.filesystem.disks instead.");
             }
         }
 
@@ -142,6 +148,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
     {
         if ($this->app['config']["filesystems.disks.$disk.driver"] === 'scoped') {
             // Skip scoped disks since they have no root to override
+            // (reachable when a scoped disk is listed in tenancy.filesystem.disks alongside its base disk).
             return;
         }
 

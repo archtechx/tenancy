@@ -326,7 +326,53 @@ test('scoped disks based on a non-local disk are scoped per tenant', function ()
     expect(Storage::disk('scoped_s3')->path('foo.txt'))->toBe('scoped_s3_prefix/foo.txt');
 });
 
-test('adding a scoped disk to tenancy.filesystem.disks has no effect on the disk', function () {
+test('adding a scoped disk to tenancy.filesystem.disks throws an exception if its base disk is not listed', function (string $disk) {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'filesystems.disks.foo' => [
+            'driver' => 'scoped',
+            'disk' => 'public',
+            'prefix' => 'foo',
+        ],
+        'filesystems.disks.bar' => [
+            'driver' => 'scoped',
+            'disk' => 'foo',
+            'prefix' => 'bar',
+        ],
+        // Disks referencing each other (neither has a base disk)
+        'filesystems.disks.abc' => [
+            'driver' => 'scoped',
+            'disk' => 'def',
+            'prefix' => 'abc',
+        ],
+        'filesystems.disks.def' => [
+            'driver' => 'scoped',
+            'disk' => 'abc',
+            'prefix' => 'def',
+        ],
+        'tenancy.filesystem.disks' => [$disk],
+    ]);
+
+    expect(fn () => tenancy()->initialize(Tenant::create()))
+        ->toThrow(Exception::class, "List its base disk in tenancy.filesystem.disks instead");
+
+    // Parent of 'abc' is 'def', whose parent is 'abc' -- there's no base disk for these, so these are
+    // still invalid and the exception will still be thrown.
+    if ($disk !== 'abc') {
+        config(['tenancy.filesystem.disks' => ['public', $disk]]);
+
+        expect(fn () => tenancy()->initialize(Tenant::create()))
+            ->not()->toThrow(Exception::class, "List its base disk in tenancy.filesystem.disks instead");
+    }
+})->with([
+    'scoped disk' => 'foo',
+    'nested scoped disk' => 'bar',
+    'scoped disk with no base disk' => 'abc',
+]);
+
+test('adding a scoped disk to tenancy.filesystem.disks has no effect on the disk when its base disk is listed too', function () {
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
@@ -345,7 +391,6 @@ test('adding a scoped disk to tenancy.filesystem.disks has no effect on the disk
     tenancy()->initialize($tenant);
 
     // The 'foo' disk's parent disk ('public') is tenant-aware, so its root is scoped the same way.
-    // It doesn't matter that 'foo' itself is tenant-aware.
     expect(Storage::disk('foo')->path('testing.txt'))->toBe(storage_path('app/public/foo/testing.txt'));
 
     // Scoped disks have no root or url of their own, so the bootstrapper leaves their config alone
