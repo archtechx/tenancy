@@ -21,7 +21,7 @@ use Stancl\Tenancy\Contracts\Tenant;
  * Laravel's 'single' and 'daily' channels by default. To customize it,
  * see the property's docblock.
  *
- * Note that since the tenant's storage path is resolved using FilesystemTenancyBootstrapper::getBoundTenantStoragePath(),
+ * Note that since the tenant's storage path is resolved using FilesystemTenancyBootstrapper::getTenantStoragePath(),
  * which is a public static method, FilesystemTenancyBootstrapper does not have to be enabled.
  *
  * For logging channels that are not filesystem-based, see the $channelOverrides logic.
