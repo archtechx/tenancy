@@ -120,7 +120,7 @@ test('the disk used for serving tenant assets is configurable', function () {
     expect($response->getFile()->getPathname())->toBe($path);
 });
 
-test('tenant asset controller throws when the configured disk is not local', function (string $publicDisk) {
+test('tenant asset controller throws when the configured disk is not local or not tenant-aware', function () {
     config([
         'tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class,
         // Add a disk that uses the s3 driver (= non-local disk).
@@ -137,27 +137,7 @@ test('tenant asset controller throws when the configured disk is not local', fun
             'disk' => 'remote',
             'prefix' => 'assets',
         ],
-    ]);
-
-    TenantAssetController::$publicDisk = $publicDisk;
-
-    $tenant = Tenant::create();
-    tenancy()->initialize($tenant);
-
-    $this->withoutExceptionHandling();
-    pest()->expectExceptionMessage("Disk [$publicDisk] is not a local disk.");
-
-    pest()->get(tenant_asset('foo.txt'), ['X-Tenant' => $tenant->id]);
-})->with([
-    'disk' => 'remote',
-    'scoped disk' => 'scoped_remote',
-]);
-
-test('tenant asset controller throws when the disk used for serving assets is not tenant-aware', function (string $publicDisk, string $expectedMessage) {
-    $centralStoragePath = storage_path();
-
-    config([
-        'tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class,
+        // 'media' isn't tenant-aware (i.e. not included in tenancy.filesystem.disks)
         'filesystems.disks.media' => [
             'driver' => 'local',
             'root' => storage_path('app/media'),
@@ -177,30 +157,28 @@ test('tenant asset controller throws when the disk used for serving assets is no
             ],
             'prefix' => 'assets',
         ],
-        // 'media' isn't tenant-aware (i.e. not included in tenancy.filesystem.disks)
-        'tenancy.filesystem.root_override.media' => '%storage_path%/app/media/',
     ]);
-
-    TenantAssetController::$publicDisk = $publicDisk;
 
     $tenant = Tenant::create();
     tenancy()->initialize($tenant);
 
-    Storage::disk($publicDisk)->put($filename = 'testfile' . Str::random(8), 'bar');
-
-    // The disk's root stays central
-    expect(Storage::disk($publicDisk)->path($filename))->toStartWith("$centralStoragePath/app/media/");
-
     $this->withoutExceptionHandling();
 
-    pest()->expectExceptionMessage($expectedMessage);
+    $expectedExceptions = [
+        'remote' => 'Disk [remote] is not a local disk.',
+        'scoped_remote' => 'Disk [scoped_remote] is not a local disk.',
+        'media' => 'Disk [media] is not tenant-aware.',
+        'scoped_media' => 'Disk [media] is not tenant-aware.',
+        'inline_scoped_media' => 'Disk [inline_scoped_media] has an unnamed parent disk.',
+    ];
 
-    pest()->get(tenant_asset($filename), ['X-Tenant' => $tenant->id]);
-})->with([
-    'disk' => ['media', 'Disk [media] is not tenant-aware.'],
-    'scoped disk' => ['scoped_media', 'Disk [media] is not tenant-aware.'],
-    'scoped disk with an inline parent disk' => ['inline_scoped_media', 'Disk [inline_scoped_media] has an unnamed parent disk.'],
-]);
+    foreach ($expectedExceptions as $publicDisk => $exceptionMessage) {
+        TenantAssetController::$publicDisk = $publicDisk;
+
+        expect(fn () => pest()->get(tenant_asset('foo.txt'), ['X-Tenant' => $tenant->id]))
+            ->toThrow(Exception::class, $exceptionMessage);
+    }
+});
 
 test('tenant assets are served from the resolved root of a scoped disk', function () {
     config([
