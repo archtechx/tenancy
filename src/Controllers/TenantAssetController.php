@@ -20,7 +20,7 @@ use Throwable;
  * of the $publicDisk when the property is set.
  *
  * Requires FilesystemTenancyBootstrapper to be enabled, so that writes to the default
- * public disk end up in the app/public within the *tenant's* storage, or so that the
+ * public disk end up in the app/public directory within the *tenant's* storage, or so that the
  * public disk set in the static property is similarly scoped.
  *
  * @see FilesystemTenancyBootstrapper
@@ -51,8 +51,6 @@ class TenantAssetController implements HasMiddleware
      *
      * The disk also has to be listed in tenancy.filesystem.disks -- for scoped disks, it's the
      * disk they're based on that has to be listed there (since a scoped disk inherits its root).
-     * FilesystemTenancyBootstrapper only scopes the roots of disks listed there, so
-     * without that every tenant would be served the same (central) directory.
      */
     public static string|null $publicDisk = null;
 
@@ -87,11 +85,10 @@ class TenantAssetController implements HasMiddleware
 
     /**
      * Directory the assets are served from -- the root of the $publicDisk, or app/public
-     * inside the tenant's storage directory when no disk is configured. With no disk and
-     * no current tenant (e.g. on a universal route), the central app/public is used.
+     * inside the tenant's storage directory when no disk is configured. When no disk is
+     * configured and there's no current tenant, the central app/public is used.
      *
-     * The tenant's storage directory is resolved using the FilesystemTenancyBootstrapper (rather
-     * than storage_path(), so that it's tenant-scoped regardless of the suffix_storage_path config).
+     * The tenant's storage directory is resolved using the FilesystemTenancyBootstrapper::getTenantStoragePath().
      */
     protected function assetRoot(): string
     {
@@ -114,9 +111,10 @@ class TenantAssetController implements HasMiddleware
                 throw new Exception("Disk [$baseDiskName] is not tenant-aware. Add it to the tenancy.filesystem.disks config to make its root tenant-specific.");
             }
 
-            // The root is read from the resolved disk rather than from the disk's config, since the
-            // config root isn't the full root path of every local disk. Disks using the 'scoped' driver
-            // have no root in their config, and a 'prefix' is part of the root path as well.
+            // The full path is read from the resolved disk rather than from the disk's configured 'root',
+            // since the 'root' doesn't have to be the full path of every local disk:
+            // - disks using the 'scoped' driver have no 'root' in their config -- they inherit it from the parent disk
+            // - a disk's configured 'prefix' is a part of the full path as well.
             return rtrim($disk->path(''), DIRECTORY_SEPARATOR);
         }
 
