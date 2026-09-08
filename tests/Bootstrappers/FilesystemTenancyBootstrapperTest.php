@@ -146,6 +146,26 @@ test('links to storage disks with a configured root are suffixed if not overridd
     expect(storage_path())->toEqual($expectedStoragePath);
 });
 
+test('disks with a falsy url_override do not get their url overridden', function ($urlOverride) {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.filesystem.url_override.public' => $urlOverride,
+    ]);
+
+    $tenant = Tenant::create();
+
+    $centralUrl = config('filesystems.disks.public.url');
+
+    tenancy()->initialize($tenant);
+
+    expect(config('filesystems.disks.public.url'))->toBe($centralUrl);
+})->with([
+    'empty string' => [''],
+    'null' => [null],
+]);
+
 test('create and delete storage symlinks jobs work', function() {
     Event::listen(
         TenantCreated::class,

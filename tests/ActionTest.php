@@ -28,7 +28,11 @@ test('create storage symlinks action works', function (string|null $rootOverride
         // The disk root is suffixed regardless of the suffix_storage_path config
         'tenancy.filesystem.suffix_storage_path' => $suffixStoragePath,
         'tenancy.filesystem.root_override.public' => $rootOverride,
-        'tenancy.filesystem.url_override.public' => 'public-%tenant%'
+        'tenancy.filesystem.url_override' => [
+            'public' => 'public-%tenant%',
+            // Disks with a falsy url_override are skipped
+            'local' => '',
+        ],
     ]);
 
     /** @var Tenant $tenant */
@@ -49,6 +53,9 @@ test('create storage symlinks action works', function (string|null $rootOverride
     expect(is_link($publicPath))->toBeTrue();
     expect(readlink($publicPath))->toBe(config('filesystems.disks.public.root'));
     expect(file_get_contents($publicPath . '/foo.txt'))->toBe('tenant file');
+
+    // The local disk is skipped because its url_override is '' -- no symlink is created at public_path('')
+    expect(is_link(public_path('')))->toBeFalse();
 })->with([
     'default root_override' => ['%storage_path%/app/public/', true],
     'suffix_storage_path disabled' => ['%storage_path%/app/public/', false],
@@ -78,36 +85,6 @@ test('create storage symlinks action fails for disks that are not tenant-aware',
 
     expect(is_link(public_path('public-' . $tenant->getTenantKey())))->toBeFalse();
 });
-
-test('create storage symlinks action skips disks with no url_override', function (string|null $localUrlOverride) {
-    config([
-        'tenancy.bootstrappers' => [
-            FilesystemTenancyBootstrapper::class,
-        ],
-        'tenancy.filesystem.suffix_base' => 'tenant-',
-        'tenancy.filesystem.url_override' => [
-            'public' => 'public-%tenant%',
-            'local' => $localUrlOverride,
-        ],
-    ]);
-
-    /** @var Tenant $tenant */
-    $tenant = Tenant::create();
-
-    (new CreateStorageSymlinksAction)($tenant);
-
-    // The local disk is skipped, so the public disk still gets its symlink
-    expect(is_link(public_path('public-' . $tenant->getTenantKey())))->toBeTrue();
-
-    // The bootstrapper skips the same disk, so its URL is not overridden either
-    $centralUrl = config('filesystems.disks.local.url');
-    tenancy()->initialize($tenant);
-
-    expect(config('filesystems.disks.local.url'))->toBe($centralUrl);
-})->with([
-    'null url_override' => [null],
-    'empty url_override' => [''],
-]);
 
 test('remove storage symlinks action works', function() {
     config([
