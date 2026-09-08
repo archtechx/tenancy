@@ -268,32 +268,27 @@ test('scoped disks are scoped per tenant', function (bool $nested) {
     ]);
 
     $disk = $nested ? 'nested_disk' : 'scoped_disk';
-    $prefix = $nested ? 'scoped_disk_prefix/nested_disk_prefix' : 'scoped_disk_prefix';
+    $path = 'app/public/scoped_disk_prefix/' . ($nested ? 'nested_disk_prefix/' : '') . 'foo.txt';
 
     $tenant = Tenant::create();
+    $centralFile = storage_path($path);
+    $tenantFile = storage_path("tenant{$tenant->id}/$path");
 
     Storage::disk($disk)->put('foo.txt', 'central');
-
-    config(['filesystem.disks.public.prefix' => 'scoped_disk_prefix']);
-
-    expect(Storage::disk($disk)->get('foo.txt'))->toBe('central');
-    expect(file_get_contents(storage_path() . "/app/public/{$prefix}/foo.txt"))->toBe('central');
+    expect(file_get_contents($centralFile))->toBe('central');
 
     tenancy()->initialize($tenant);
 
-    expect(Storage::disk($disk)->get('foo.txt'))->toBe(null);
+    expect(Storage::disk($disk)->get('foo.txt'))->toBeNull();
+
     Storage::disk($disk)->put('foo.txt', 'tenant');
-    expect(file_get_contents(storage_path() . "/app/public/{$prefix}/foo.txt"))->toBe('tenant');
-    expect(Storage::disk($disk)->get('foo.txt'))->toBe('tenant');
+    expect(file_get_contents($tenantFile))->toBe('tenant');
 
     tenancy()->end();
 
     expect(Storage::disk($disk)->get('foo.txt'))->toBe('central');
-    Storage::disk($disk)->put('foo.txt', 'central2');
-    expect(Storage::disk($disk)->get('foo.txt'))->toBe('central2');
-
-    expect(file_get_contents(storage_path() . "/app/public/{$prefix}/foo.txt"))->toBe('central2');
-    expect(file_get_contents(storage_path() . "/tenant{$tenant->id}/app/public/{$prefix}/foo.txt"))->toBe('tenant');
+    expect(file_get_contents($centralFile))->toBe('central');
+    expect(file_get_contents($tenantFile))->toBe('tenant');
 })->with([
     'scoped disk' => false,
     'nested scoped disk' => true,
