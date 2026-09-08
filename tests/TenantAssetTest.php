@@ -180,7 +180,7 @@ test('tenant asset controller throws when the configured disk is not local or no
     }
 });
 
-test('tenant assets are served from the resolved root of a scoped disk', function () {
+test('tenant assets are served from the resolved root of the configured disk', function () {
     config([
         'tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class,
         // A scoped disk has no configured root -- it inherits the root of its parent disk
@@ -190,56 +190,36 @@ test('tenant assets are served from the resolved root of a scoped disk', functio
             'disk' => 'public',
             'prefix' => 'scoped_disk_prefix',
         ],
-        // Default tenancy config, set it here for clarity
-        'tenancy.filesystem.disks' => ['local', 'public'],
-    ]);
-
-    TenantAssetController::$publicDisk = 'scoped_disk';
-
-    $tenant = Tenant::create();
-    tenancy()->initialize($tenant);
-
-    $filename = 'testfile' . Str::random(8);
-    Storage::disk('scoped_disk')->put($filename, 'bar');
-    $path = Storage::disk('scoped_disk')->path($filename);
-
-    // The parent disk is tenant-aware, so the scoped disk's root is inside the tenant's storage directory
-    expect($path)->toBe(storage_path("app/public/scoped_disk_prefix/$filename"));
-
-    $response = pest()->get(tenant_asset($filename), ['X-Tenant' => $tenant->id]);
-
-    $response->assertSuccessful();
-    expect($response->getFile()->getPathname())->toBe($path);
-});
-
-test('tenant assets are served from the resolved root of a disk with a configured prefix', function () {
-    config([
-        'tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class,
-        // A prefix is part of the disk's root path, so it has to be included in the asset root
+        // A prefix is part of the disk's full path, so it has to be included in the asset root
         'filesystems.disks.prefixed' => [
             'driver' => 'local',
             'root' => storage_path('app/media'),
-            'prefix' => 'foo-prefix',
+            'prefix' => 'foo_prefix',
         ],
-        'tenancy.filesystem.disks' => ['prefixed'],
+        'tenancy.filesystem.disks' => ['local', 'public', 'prefixed'],
         'tenancy.filesystem.root_override.prefixed' => '%storage_path%/app/media/',
     ]);
-
-    TenantAssetController::$publicDisk = 'prefixed';
 
     $tenant = Tenant::create();
     tenancy()->initialize($tenant);
 
-    $filename = 'testfile' . Str::random(8);
-    Storage::disk('prefixed')->put($filename, 'bar');
-    $path = Storage::disk('prefixed')->path($filename);
+    foreach ([
+        'scoped_disk' => 'app/public/scoped_disk_prefix',
+        'prefixed' => 'app/media/foo_prefix',
+    ] as $publicDisk => $expectedRoot) {
+        TenantAssetController::$publicDisk = $publicDisk;
 
-    expect($path)->toBe(storage_path("app/media/foo-prefix/$filename"));
+        $filename = 'testfile' . Str::random(8);
+        Storage::disk($publicDisk)->put($filename, 'bar');
+        $path = Storage::disk($publicDisk)->path($filename);
 
-    $response = pest()->get(tenant_asset($filename), ['X-Tenant' => $tenant->id]);
+        expect($path)->toBe(storage_path("{$expectedRoot}/$filename"));
 
-    $response->assertSuccessful();
-    expect($response->getFile()->getPathname())->toBe($path);
+        $response = pest()->get(tenant_asset($filename), ['X-Tenant' => $tenant->id]);
+
+        $response->assertSuccessful();
+        expect($response->getFile()->getPathname())->toBe($path);
+    }
 });
 
 test('tenant assets are served from the central storage path in central context', function () {
