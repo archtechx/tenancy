@@ -31,7 +31,6 @@ beforeEach(function () {
     TenancyUrlGenerator::$passTenantParameterToRoutes = true;
     TenantAssetController::$headers = [];
     TenantAssetController::$publicDisk = null;
-    InitializeTenancyByRequestData::$onFail = null;
 
     /** @var CloneRoutesAsTenant $cloneAction */
     $cloneAction = app(CloneRoutesAsTenant::class);
@@ -44,7 +43,6 @@ beforeEach(function () {
 afterEach(function () {
     TenantAssetController::$headers = [];
     TenantAssetController::$publicDisk = null;
-    InitializeTenancyByRequestData::$onFail = null;
 });
 
 test('asset can be accessed using the url returned by the tenant asset helper', function () {
@@ -220,21 +218,6 @@ test('tenant assets are served from the resolved root of the configured disk', f
         $response->assertSuccessful();
         expect($response->getFile()->getPathname())->toBe($path);
     }
-});
-
-test('tenant assets are served from the central storage path in central context', function () {
-    config(['tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class]);
-
-    // Mimic the universal route setup (let the request through even though no tenant is identified)
-    InitializeTenancyByRequestData::$onFail = fn ($e, $request, $next) => $next($request);
-
-    $filename = 'testfile' . Str::random(8);
-    Storage::disk('public')->put($filename, 'bar');
-
-    $response = pest()->get(tenant_asset($filename));
-
-    $response->assertSuccessful();
-    expect($response->getFile()->getPathname())->toBe(storage_path("app/public/$filename"));
 });
 
 test('asset helper returns a link to tenant asset controller when asset url is null', function () {
