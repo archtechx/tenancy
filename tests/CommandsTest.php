@@ -259,6 +259,30 @@ test('dump command generates dump at the path specified in the tenancy migration
     expect($schemaPath)->toBeFile();
 });
 
+test('dump command generates a dump that only contains tenant tables', function () {
+    $schemaPath = 'tests/Etc/tenant-schema-test.dump';
+    $centralTables = ['domains', 'tenants'];
+    $tenantTables = ['users'];
+
+    $tenant1 = Tenant::create();
+
+    Artisan::call('tenants:migrate');
+
+    Artisan::call("tenants:dump --tenant='$tenant1->id' --path='$schemaPath'");
+
+    $dumpContent = file_get_contents($schemaPath);
+
+    // The dump includes tenant tables
+    foreach ($tenantTables as $table) {
+        expect($dumpContent)->toContain("CREATE TABLE `$table`");
+    }
+
+    // The dump doesn't include central-only tables
+    foreach ($centralTables as $table) {
+        expect($dumpContent)->not()->toContain("CREATE TABLE `$table`");
+    }
+});
+
 test('rollback command works', function () {
     $tenant = Tenant::create();
     Artisan::call('tenants:migrate');
