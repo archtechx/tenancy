@@ -185,7 +185,7 @@ test('create and delete storage symlinks jobs work', function() {
     $this->assertDirectoryDoesNotExist(public_path("public-$tenantKey"));
 });
 
-test('tenant storage gets deleted during tenant deletion when the DeletingTenant pipeline contains DeleteTenantStorage', function(bool $suffixStoragePath) {
+test('tenant storage gets deleted during tenant deletion when the DeletingTenant pipeline contains DeleteTenantStorage', function (bool $bootstrapperEnabled) {
     Event::listen(DeletingTenant::class,
         JobPipeline::make([DeleteTenantStorage::class])->send(function (DeletingTenant $event) {
             return $event->tenant;
@@ -193,40 +193,47 @@ test('tenant storage gets deleted during tenant deletion when the DeletingTenant
     );
 
     config([
-        'tenancy.bootstrappers' => [FilesystemTenancyBootstrapper::class],
-        // suffix_storage_path only affects the storage_path() helper.
-        // The disks are scoped to the tenant's storage directory either way,
-        // so the tenant files end up there.
-        'tenancy.filesystem.suffix_storage_path' => $suffixStoragePath,
-        // This is the default tenancy config -- set it here explicitly for clarity
-        'tenancy.filesystem.suffix_base' => 'tenant',
-        'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
+        'tenancy.bootstrappers' => $bootstrapperEnabled ? [FilesystemTenancyBootstrapper::class] : [],
     ]);
 
     $centralStoragePath = storage_path();
+    $tenantStoragePath = fn (Tenant $tenant) => $centralStoragePath . "/tenant{$tenant->getTenantKey()}";
+
     $tenant = Tenant::create();
-    $tenantStoragePath = $centralStoragePath . "/tenant{$tenant->getTenantKey()}";
 
-    tenancy()->initialize($tenant);
+    File::ensureDirectoryExists($tenantStoragePath($tenant));
 
-    Storage::disk('public')->put('foo.txt', 'tenant file');
-    expect(file_get_contents($tenantStoragePath . '/app/public/foo.txt'))->toBe('tenant file');
+    expect(File::isDirectory($centralStoragePath))->toBeTrue();
+    expect(File::isDirectory($tenantStoragePath($tenant)))->toBeTrue();
 
     $tenant->delete();
 
-    expect(File::isDirectory($tenantStoragePath))->toBeFalse();
     expect(File::isDirectory($centralStoragePath))->toBeTrue();
-})->with([true, false]);
+    expect(File::isDirectory($tenantStoragePath($tenant)))->toBeFalse();
+})->with([
+    'filesystem bootstrapper enabled' => true,
+    'filesystem bootstrapper disabled' => false,
+]);
 
-test('DeleteTenantStorage does not delete the central storage directory when the filesystem bootstrapper is disabled', function () {
-    config(['tenancy.bootstrappers' => []]);
-
-    $centralStoragePath = storage_path();
+test('DeleteTenantStorage never deletes the central storage directory', function () {
     $tenant = Tenant::create();
+
+    $centralStoragePath = FilesystemTenancyBootstrapper::getBoundCentralStoragePath();
+    $tenantStoragePath = FilesystemTenancyBootstrapper::getTenantStoragePath($tenant);
+
+    File::ensureDirectoryExists($centralStoragePath . '/app');
+
+    // Make the tenant storage path a symlink to the central storage directory
+    File::deleteDirectory($tenantStoragePath);
+    symlink($centralStoragePath, $tenantStoragePath);
+
+    expect(realpath($tenantStoragePath))->toBe(realpath($centralStoragePath));
 
     (new DeleteTenantStorage($tenant))->handle();
 
     expect(File::isDirectory($centralStoragePath))->toBeTrue();
+    expect(File::isDirectory($centralStoragePath . '/app'))->toBeTrue();
+    expect(is_link($tenantStoragePath))->toBeTrue();
 });
 
 test('the framework/cache directory is created when storage_path is scoped', function (bool $suffixStoragePath) {
