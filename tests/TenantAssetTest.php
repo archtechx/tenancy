@@ -445,56 +445,26 @@ test('tenant asset controller returns a 404 when accessing a nonexistent file', 
     ]);
 });
 
-test('tenant asset controller throws an exception when accessing a file in a directory whose name starts with the name of the asset root', function () {
-    config([
-        'tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class,
-        // Disk used for serving the assets -- its root is 'app/media' in the tenant's storage directory
-        'filesystems.disks.media' => ['driver' => 'local', 'root' => storage_path('app/media')],
-        'tenancy.filesystem.disks' => array_merge(config('tenancy.filesystem.disks'), ['media']),
-        'tenancy.filesystem.root_override.media' => '%storage_path%/app/media/',
-    ]);
-
-    TenantAssetController::$publicDisk = 'media';
-
-    $tenant = Tenant::create();
-    tenancy()->initialize($tenant);
-
-    Storage::disk('media')->put('photo.jpg', 'public file');
-
-    pest()->get(tenant_asset('photo.jpg'), [
-        'X-Tenant' => $tenant->id,
-    ])->assertSuccessful();
-
-    // A directory next to the asset root, e.g. one holding files that shouldn't be served
-    mkdir($privateDirectory = storage_path('app/media-originals'), recursive: true);
-    file_put_contents($privateDirectory . '/photo.jpg', 'private file');
-
-    $this->withoutExceptionHandling();
-    pest()->expectExceptionMessage('Accessing a file outside the storage root'); // outside tests this is a 404
-
-    pest()->get(tenant_asset('../media-originals/photo.jpg'), [
-        'X-Tenant' => $tenant->id,
-    ]);
-});
-
-test('test asset controller returns a 404 when accessing a file outside the storage root', function () {
+test('tenant asset controller only serves files inside the asset root', function () {
     config(['tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class]);
 
     $tenant = Tenant::create();
-
     tenancy()->initialize($tenant);
 
-    $storageRoot = storage_path("app/public");
+    Storage::disk('public')->put('photo.jpg', 'public file');
 
-    if (! is_dir($storageRoot)) {
-        mkdir(storage_path("app/public"), recursive: true);
-        file_put_contents(storage_path('app/foo.txt'), 'bar');
-    }
+    pest()->get(tenant_asset('photo.jpg'), ['X-Tenant' => $tenant->id])->assertSuccessful();
+
+    // Files outside the asset root, e.g. ones that shouldn't be served.
+    // The directory with the second file starts with the name of the asset root.
+    file_put_contents(storage_path('app/photo.jpg'), 'private file');
+    mkdir($siblingDirectory = storage_path('app/public-originals'), recursive: true);
+    file_put_contents($siblingDirectory . '/photo.jpg', 'private file');
 
     $this->withoutExceptionHandling();
-    pest()->expectExceptionMessage('Accessing a file outside the storage root'); // outside tests this is a 404
 
-    pest()->get(tenant_asset('../foo.txt'), [
-        'X-Tenant' => $tenant->id,
-    ]);
+    foreach (['../photo.jpg', '../public-originals/photo.jpg'] as $path) {
+        expect(fn () => pest()->get(tenant_asset($path), ['X-Tenant' => $tenant->id]))
+            ->toThrow(Exception::class, 'Accessing a file outside the storage root'); // outside tests this is a 404
+    }
 });
