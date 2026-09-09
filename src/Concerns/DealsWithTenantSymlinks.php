@@ -58,8 +58,16 @@ trait DealsWithTenantSymlinks
             }
 
             $publicPath = str_replace('%tenant%', (string) $tenantKey, $publicPath);
+            $diskRoot = $tenantDisks[$disk]['root'];
 
-            $symlinks[public_path($publicPath)] = $tenantDisks[$disk]['root'];
+            if ($prefix = trim($disks[$disk]['prefix'] ?? '', '/\\')) {
+                $diskRoot = rtrim($diskRoot, '/\\') . DIRECTORY_SEPARATOR . $prefix;
+
+                // Storage::url() appends the disk's prefix to the url, so the prefix has to be in the public path as well
+                $publicPath .= DIRECTORY_SEPARATOR . $prefix;
+            }
+
+            $symlinks[public_path($publicPath)] = $diskRoot;
         }
 
         return $symlinks;

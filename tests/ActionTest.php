@@ -149,3 +149,119 @@ test('removing tenant symlinks works even if the symlinks are invalid', function
 
     expect(is_link($publicPath))->toBeFalse();
 });
+
+test('disks with a prefix are symlinked correctly', function (string $prefix) {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.filesystem.suffix_base' => 'tenant-',
+        'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
+        'tenancy.filesystem.url_override.public' => 'public-%tenant%',
+        'filesystems.disks.public.prefix' => $prefix,
+    ]);
+
+    /** @var Tenant $tenant */
+    $tenant = Tenant::create();
+    $tenantKey = $tenant->getTenantKey();
+
+    // possibleTenantSymlinks() trims the prefix, do the same here for the assertions to be accurate
+    $prefix = trim($prefix, '/');
+
+    tenancy()->initialize($tenant);
+
+    Storage::disk('public')->put('foo.txt', 'tenant file');
+
+    (new CreateStorageSymlinksAction)($tenant);
+
+    expect(Storage::disk('public')->url('foo.txt'))->toBe("http://localhost/public-{$tenantKey}/{$prefix}/foo.txt");
+    expect(readlink(public_path("public-{$tenantKey}/{$prefix}")))->toBe(storage_path("app/public/{$prefix}"));
+    expect(file_get_contents(public_path("public-{$tenantKey}/{$prefix}/foo.txt")))->toBe('tenant file');
+})->with(['abc', 'abc/def', '/abc/def/']);
+
+test('symlinks of prefixed disks only expose the prefixed directory', function () {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
+        'tenancy.filesystem.url_override.public' => 'public-%tenant%',
+        'filesystems.disks.public.prefix' => 'abc',
+    ]);
+
+    /** @var Tenant $tenant */
+    $tenant = Tenant::create();
+    $tenantKey = $tenant->getTenantKey();
+
+    tenancy()->initialize($tenant);
+
+    Storage::disk('public')->put('foo.txt', 'tenant file');
+
+    // The disk cannot reach this file, neither should the symlink
+    File::put(storage_path('app/public/sibling.txt'), 'file next to the prefixed directory');
+
+    (new CreateStorageSymlinksAction)($tenant);
+
+    expect(file_exists(public_path("public-{$tenantKey}/sibling.txt")))->toBeFalse();
+    expect(file_get_contents(public_path("public-{$tenantKey}/abc/foo.txt")))->toBe('tenant file');
+});
+
+test('removing a prefixed disk symlink removes the directories created for it', function () {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
+        'tenancy.filesystem.url_override.public' => 'public-%tenant%',
+        'filesystems.disks.public.prefix' => 'abc/def',
+    ]);
+
+    /** @var Tenant $tenant */
+    $tenant = Tenant::create();
+    $tenantKey = $tenant->getTenantKey();
+
+    tenancy()->initialize($tenant);
+
+    Storage::disk('public')->put('foo.txt', 'tenant file');
+
+    (new CreateStorageSymlinksAction)($tenant);
+
+    $symlink = public_path("public-{$tenantKey}/abc/def");
+    $diskRoot = readlink($symlink);
+
+    (new RemoveStorageSymlinksAction)($tenant);
+
+    // The symlink and every directory created for it are deleted
+    expect(is_link($symlink))->toBeFalse();
+    expect(file_exists(public_path("public-{$tenantKey}")))->toBeFalse();
+    // public_path() itself is not deleted
+    expect(is_dir(public_path()))->toBeTrue();
+    // The directory that the symlink points to is untouched
+    expect(file_get_contents($diskRoot . '/foo.txt'))->toBe('tenant file');
+});
+
+test('non-empty directories are not removed with the symlink', function () {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.filesystem.root_override.public' => '%storage_path%/app/public/',
+        'tenancy.filesystem.url_override.public' => 'public-%tenant%',
+        'filesystems.disks.public.prefix' => 'abc/def',
+    ]);
+
+    /** @var Tenant $tenant */
+    $tenant = Tenant::create();
+    $tenantKey = $tenant->getTenantKey();
+
+    tenancy()->initialize($tenant);
+
+    (new CreateStorageSymlinksAction)($tenant);
+
+    File::put(public_path("public-{$tenantKey}/abc/actual-file.txt"), 'foo');
+
+    (new RemoveStorageSymlinksAction)($tenant);
+
+    expect(is_link(public_path("public-{$tenantKey}/abc/def")))->toBeFalse();
+    expect(file_get_contents(public_path("public-{$tenantKey}/abc/actual-file.txt")))->toBe('foo');
+});

@@ -32,12 +32,24 @@ class RemoveStorageSymlinksAction
 
     protected function removeLink(string $publicPath, Tenant $tenant): void
     {
+        $files = app()->make('files');
+
         if ($this->symlinkExists($publicPath)) {
             event(new RemovingStorageSymlink($tenant));
 
-            app()->make('files')->delete($publicPath);
+            $files->delete($publicPath);
 
             event(new StorageSymlinkRemoved($tenant));
+        }
+
+        // Remove the directories CreateStorageSymlinksAction created for the symlink
+        // until a non-empty one is reached.
+        $directory = dirname($publicPath);
+
+        while ($directory !== public_path() && $files->isEmptyDirectory($directory)) {
+            $files->deleteDirectory($directory);
+
+            $directory = dirname($directory);
         }
     }
 }
