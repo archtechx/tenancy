@@ -83,6 +83,8 @@ test('tenant assets are served even when the suffix_storage_path config is set t
     $tenant = Tenant::create();
     tenancy()->initialize($tenant);
 
+    expect(storage_path())->toBe($centralStoragePath);
+
     $filename = 'testfile' . Str::random(8);
     Storage::disk('public')->put($filename, 'bar');
 
