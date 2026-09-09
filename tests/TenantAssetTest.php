@@ -398,9 +398,10 @@ test('tenant asset controller only serves files inside the asset root', function
 
     pest()->get(tenant_asset('photo.jpg'), ['X-Tenant' => $tenant->id])->assertSuccessful();
 
-    // Files outside the asset root, e.g. ones that shouldn't be served.
-    // The directory with the second file starts with the name of the asset root.
+    // Files outside the asset root
     file_put_contents(storage_path('app/photo.jpg'), 'private file');
+
+    // This path starts with the asset root but is a sibling dir, not a child. Regression assertion
     mkdir($siblingDirectory = storage_path('app/public-originals'), recursive: true);
     file_put_contents($siblingDirectory . '/photo.jpg', 'private file');
 
