@@ -17,6 +17,12 @@ use Illuminate\Support\Facades\Storage;
 beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+
+    RemoveStorageSymlinksAction::$removeNestedDirectories = false;
+});
+
+afterEach(function () {
+    RemoveStorageSymlinksAction::$removeNestedDirectories = false;
 });
 
 test('create storage symlinks action works', function (string|null $rootOverride, bool $suffixStoragePath) {
@@ -207,6 +213,8 @@ test('symlinks of prefixed disks only expose the prefixed directory', function (
 });
 
 test('removing a prefixed disk symlink removes the directories created for it', function () {
+    RemoveStorageSymlinksAction::$removeNestedDirectories = true;
+
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
@@ -241,6 +249,8 @@ test('removing a prefixed disk symlink removes the directories created for it', 
 });
 
 test('non-empty directories are not removed with the symlink', function () {
+    RemoveStorageSymlinksAction::$removeNestedDirectories = true;
+
     config([
         'tenancy.bootstrappers' => [
             FilesystemTenancyBootstrapper::class,
