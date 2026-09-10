@@ -16,7 +16,7 @@ use Stancl\Tenancy\Contracts\Tenant;
 trait DealsWithTenantSymlinks
 {
     /**
-     * Get all possible tenant symlinks, existing or not (array of ['public path' => 'disk root']).
+     * Get all possible tenant symlinks, existing or not (array of ['public path' => 'disk root with the disk's prefix appended']).
      *
      * Tenants can have a symlink for each local disk that is listed
      * in both tenancy.filesystem.disks and tenancy.filesystem.url_override.
@@ -61,9 +61,11 @@ trait DealsWithTenantSymlinks
             $diskRoot = $tenantDisks[$disk]['root'];
 
             if ($prefix = trim($disks[$disk]['prefix'] ?? '', '/\\')) {
+                // Append the disk's prefix to the disk root
                 $diskRoot = rtrim($diskRoot, '/\\') . DIRECTORY_SEPARATOR . $prefix;
 
-                // Storage::url() appends the disk's prefix to the url, so the prefix has to be in the public path as well
+                // Append the same prefix to the public path.
+                // Storage::url() appends the disk's prefix to the url, so the prefix has to be in the public path as well.
                 $publicPath .= DIRECTORY_SEPARATOR . $prefix;
             }
 
