@@ -279,7 +279,7 @@ test('trait rls manager generates queries correctly', function() {
     expect($manager->generateQueries())->toContain(
         <<<SQL
         CREATE POLICY posts_rls_policy ON posts USING (
-            tenant_id::text = current_setting('my.current_tenant')
+            tenant_id::text = (select current_setting('my.current_tenant'))
         );
         SQL,
         <<<SQL
@@ -287,7 +287,7 @@ test('trait rls manager generates queries correctly', function() {
             post_id IN (
                 SELECT id
                 FROM posts
-                WHERE tenant_id::text = current_setting('my.current_tenant')
+                WHERE tenant_id::text = (select current_setting('my.current_tenant'))
             )
         );
         SQL,

@@ -528,7 +528,7 @@ class TableRLSManager implements RLSPolicyManager
 
             if ($table === tenancy()->model()->getTable()) {
                 // Convert tenant key to text to match the session variable type
-                $query .= "{$column}::text = current_setting('{$sessionTenantKey}')\n";
+                $query .= "{$column}::text = (select current_setting('{$sessionTenantKey}'))\n";
                 continue;
             }
 
