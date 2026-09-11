@@ -30,6 +30,7 @@ beforeEach(function () {
     TenancyUrlGenerator::$prefixRouteNames = false;
     TenancyUrlGenerator::$passTenantParameterToRoutes = true;
     TenantAssetController::$headers = [];
+    TenantAssetController::$publicDisk = null;
 
     /** @var CloneRoutesAsTenant $cloneAction */
     $cloneAction = app(CloneRoutesAsTenant::class);
@@ -37,6 +38,11 @@ beforeEach(function () {
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+});
+
+afterEach(function () {
+    TenantAssetController::$headers = [];
+    TenantAssetController::$publicDisk = null;
 });
 
 test('asset can be accessed using the url returned by the tenant asset helper', function () {
@@ -63,6 +69,157 @@ test('asset can be accessed using the url returned by the tenant asset helper', 
     fclose($f);
 
     expect($content)->toBe('bar');
+});
+
+test('tenant assets are served even when the suffix_storage_path config is set to false', function () {
+    config([
+        'tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class,
+        'tenancy.filesystem.suffix_storage_path' => false,
+    ]);
+
+    // With suffix_storage_path disabled, storage_path() stays central in tenant context
+    $centralStoragePath = storage_path();
+
+    $tenant = Tenant::create();
+    tenancy()->initialize($tenant);
+
+    expect(storage_path())->toBe($centralStoragePath);
+
+    $filename = 'testfile' . Str::random(8);
+    Storage::disk('public')->put($filename, 'bar');
+
+    $response = pest()->get(tenant_asset($filename), ['X-Tenant' => $tenant->id]);
+
+    // The asset is served from the tenant's storage directory, not from the central storage path
+    $response->assertSuccessful();
+    expect($response->getFile()->getPathname())
+        ->toBe("$centralStoragePath/tenant{$tenant->id}/app/public/$filename");
+});
+
+test('the disk used for serving tenant assets is configurable', function () {
+    config([
+        'tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class,
+        // This is tenancy's default override for the local disk's root, set it here for clarity
+        'tenancy.filesystem.root_override.local' => '%storage_path%/app/',
+    ]);
+
+    // The local disk's root is overridden to '%storage_path%/app/' (so it does not use 'app/public')
+    TenantAssetController::$publicDisk = 'local';
+
+    $tenant = Tenant::create();
+    tenancy()->initialize($tenant);
+
+    $filename = 'testfile' . Str::random(8);
+    Storage::disk('local')->put($filename, 'bar');
+    $path = Storage::disk('local')->path($filename);
+
+    $response = pest()->get(tenant_asset($filename), ['X-Tenant' => $tenant->id]);
+
+    // The asset is served from the disk's root instead of 'app/public'
+    $response->assertSuccessful();
+    expect($response->getFile()->getPathname())->toBe($path);
+});
+
+test('tenant asset controller throws when the configured disk is not local or not tenant-aware', function () {
+    config([
+        'tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class,
+        // Add a disk that uses the s3 driver (= non-local disk).
+        // Use dummy credentials so that the s3 disk can be resolved without throwing an AWS exception.
+        'filesystems.disks.remote' => [
+            'driver' => 's3',
+            'region' => 'us-east-1',
+            'key' => 'key',
+            'secret' => 'secret',
+            'bucket' => 'bucket',
+        ],
+        'filesystems.disks.scoped_remote' => [
+            'driver' => 'scoped',
+            'disk' => 'remote',
+            'prefix' => 'assets',
+        ],
+        // 'media' isn't tenant-aware (i.e. not included in tenancy.filesystem.disks)
+        'filesystems.disks.media' => [
+            'driver' => 'local',
+            'root' => storage_path('app/media'),
+        ],
+        'filesystems.disks.scoped_media' => [
+            'driver' => 'scoped',
+            'disk' => 'media',
+            'prefix' => 'assets',
+        ],
+        'filesystems.disks.inline_scoped_media' => [
+            'driver' => 'scoped',
+            // Laravel allows configuring the parent disk inline, but such a disk
+            // has no name, so it cannot be listed in tenancy.filesystem.disks (i.e. made tenant-aware)
+            'disk' => [
+                'driver' => 'local',
+                'root' => storage_path('app/media'),
+            ],
+            'prefix' => 'assets',
+        ],
+    ]);
+
+    $tenant = Tenant::create();
+    tenancy()->initialize($tenant);
+
+    $this->withoutExceptionHandling();
+
+    $expectedExceptions = [
+        'remote' => 'Disk [remote] is not a local disk.',
+        'scoped_remote' => 'Disk [scoped_remote] is not a local disk.',
+        'media' => 'Disk [media] is not tenant-aware.',
+        'scoped_media' => 'Disk [media] is not tenant-aware.',
+        'inline_scoped_media' => 'Disk [inline_scoped_media] has an unnamed parent disk.',
+    ];
+
+    foreach ($expectedExceptions as $publicDisk => $exceptionMessage) {
+        TenantAssetController::$publicDisk = $publicDisk;
+
+        expect(fn () => pest()->get(tenant_asset('foo.txt'), ['X-Tenant' => $tenant->id]))
+            ->toThrow(Exception::class, $exceptionMessage);
+    }
+});
+
+test('tenant assets are served from the resolved root of the configured disk', function () {
+    config([
+        'tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class,
+        // A scoped disk has no configured root -- it inherits the root of its parent disk
+        // and appends its prefix to it, both of which happens when the disk is resolved.
+        'filesystems.disks.scoped_disk' => [
+            'driver' => 'scoped',
+            'disk' => 'public',
+            'prefix' => 'scoped_disk_prefix',
+        ],
+        // A prefix is part of the disk's full path, so it has to be included in the asset root
+        'filesystems.disks.prefixed' => [
+            'driver' => 'local',
+            'root' => storage_path('app/media'),
+            'prefix' => 'foo_prefix',
+        ],
+        'tenancy.filesystem.disks' => ['local', 'public', 'prefixed'],
+        'tenancy.filesystem.root_override.prefixed' => '%storage_path%/app/media/',
+    ]);
+
+    $tenant = Tenant::create();
+    tenancy()->initialize($tenant);
+
+    foreach ([
+        'scoped_disk' => 'app/public/scoped_disk_prefix',
+        'prefixed' => 'app/media/foo_prefix',
+    ] as $publicDisk => $expectedRoot) {
+        TenantAssetController::$publicDisk = $publicDisk;
+
+        $filename = 'testfile' . Str::random(8);
+        Storage::disk($publicDisk)->put($filename, 'bar');
+        $path = Storage::disk($publicDisk)->path($filename);
+
+        expect($path)->toBe(storage_path("{$expectedRoot}/$filename"));
+
+        $response = pest()->get(tenant_asset($filename), ['X-Tenant' => $tenant->id]);
+
+        $response->assertSuccessful();
+        expect($response->getFile()->getPathname())->toBe($path);
+    }
 });
 
 test('asset helper returns a link to tenant asset controller when asset url is null', function () {
@@ -148,8 +305,6 @@ test('TenantAssetController headers are configurable', function () {
 
     $response->assertSuccessful();
     $response->assertHeader('X-Foo', 'Bar');
-
-    TenantAssetController::$headers = []; // reset static property
 });
 
 test('global asset helper returns the same url regardless of tenancy initialization', function () {
@@ -233,24 +388,27 @@ test('tenant asset controller returns a 404 when accessing a nonexistent file', 
     ]);
 });
 
-test('test asset controller returns a 404 when accessing a file outside the storage root', function () {
+test('tenant asset controller only serves files inside the asset root', function () {
     config(['tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class]);
 
     $tenant = Tenant::create();
-
     tenancy()->initialize($tenant);
 
-    $storageRoot = storage_path("app/public");
+    Storage::disk('public')->put('photo.jpg', 'public file');
 
-    if (! is_dir($storageRoot)) {
-        mkdir(storage_path("app/public"), recursive: true);
-        file_put_contents(storage_path('app/foo.txt'), 'bar');
-    }
+    pest()->get(tenant_asset('photo.jpg'), ['X-Tenant' => $tenant->id])->assertSuccessful();
+
+    // Files outside the asset root
+    file_put_contents(storage_path('app/photo.jpg'), 'private file');
+
+    // This path starts with the asset root but is a sibling dir, not a child. Regression assertion
+    mkdir($siblingDirectory = storage_path('app/public-originals'), recursive: true);
+    file_put_contents($siblingDirectory . '/photo.jpg', 'private file');
 
     $this->withoutExceptionHandling();
-    pest()->expectExceptionMessage('Accessing a file outside the storage root'); // outside tests this is a 404
 
-    pest()->get(tenant_asset('../foo.txt'), [
-        'X-Tenant' => $tenant->id,
-    ]);
+    foreach (['../photo.jpg', '../public-originals/photo.jpg'] as $path) {
+        expect(fn () => pest()->get(tenant_asset($path), ['X-Tenant' => $tenant->id]))
+            ->toThrow(Exception::class, 'Accessing a file outside the storage root'); // outside tests this is a 404
+    }
 });

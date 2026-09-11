@@ -321,11 +321,12 @@ return [
 
     /**
      * Filesystem tenancy config. Used by FilesystemTenancyBootstrapper.
-     * https://tenancyforlaravel.com/docs/v3/tenancy-bootstrappers/#filesystem-tenancy-boostrapper.
+     * https://v4.tenancyforlaravel.com/bootstrappers/filesystem
      */
     'filesystem' => [
         /**
-         * Each disk listed in the 'disks' array will be suffixed by the suffix_base, followed by the tenant_id.
+         * Each disk listed in the 'disks' array will have its root
+         * suffixed by the suffix_base, followed by the tenant_id.
          */
         'suffix_base' => 'tenant',
         'disks' => [
@@ -337,10 +338,18 @@ return [
         /**
          * Use this for local disks.
          *
-         * See https://tenancyforlaravel.com/docs/v3/tenancy-bootstrappers/#filesystem-tenancy-boostrapper
+         * Customizes how the disk's root is scoped, instead of the default behavior
+         * which simply appends the tenant suffix to the original root.
+         *
+         * The overrides can reference the following placeholders:
+         * - %storage_path% -- the tenant's storage directory
+         * - %original_storage_path% -- the central storage directory.
+         * - %tenant% -- the tenant key.
+         *
+         * See https://v4.tenancyforlaravel.com/bootstrappers/filesystem
          */
         'root_override' => [
-            // Disks whose roots should be overridden after storage_path() is suffixed.
+            // Disks whose roots should be overridden in tenant context.
             'local' => '%storage_path%/app/',
             'public' => '%storage_path%/app/public/',
         ],
@@ -357,7 +366,8 @@ return [
          * Use `php artisan tenants:link` to create a symbolic link from the tenant's storage to its public directory.
          */
         'url_override' => [
-            // Note that the local disk you add must exist in the tenancy.filesystem.root_override config
+            // Note that the local disk you add must exist in the tenancy.filesystem.disks config,
+            // and it must have a non-falsy root (not null nor an empty string).
             'public' => 'public-%tenant%',
         ],
 
@@ -378,11 +388,7 @@ return [
         /**
          * Should storage_path() be suffixed.
          *
-         * Note: Disabling this will likely break local disk tenancy. Only disable this if you're using an external file storage service like S3.
-         *
-         * For the vast majority of applications, this feature should be enabled. But in some
-         * edge cases, it can cause issues (like using Passport with Vapor - see #196), so
-         * you may want to disable this if you are experiencing these edge case issues.
+         * Only affects the storage_path() helper, other features use the tenant storage directory regardless.
          */
         'suffix_storage_path' => true,
 

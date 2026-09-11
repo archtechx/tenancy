@@ -9,7 +9,6 @@ use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Bootstrappers\LogChannelBootstrapper;
-use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Illuminate\Support\Facades\Log;
 
 afterEach($cleanup = function () {
@@ -42,15 +41,6 @@ beforeEach(function () use ($cleanup) {
 });
 
 test('storage path channels get tenant-specific paths by default', function () {
-    // Note that for LogChannelBootstrapper to change the paths correctly by default,
-    // the bootstrapper MUST run after FilesystemTenancyBootstrapper.
-    config([
-        'tenancy.bootstrappers' => [
-            FilesystemTenancyBootstrapper::class,
-            LogChannelBootstrapper::class,
-        ],
-    ]);
-
     $centralStoragePath = storage_path();
     $tenant = Tenant::create();
 
@@ -76,10 +66,6 @@ test('storage path channels get tenant-specific paths by default', function () {
 
 test('all channels included in a stack get processed correctly', function () {
     config([
-        'tenancy.bootstrappers' => [
-            FilesystemTenancyBootstrapper::class,
-            LogChannelBootstrapper::class,
-        ],
         'logging.channels.stack' => [
             'driver' => 'stack',
             'channels' => ['single', 'daily'],
@@ -176,30 +162,24 @@ test('channel config keys remain unchanged if the specified tenant override attr
 });
 
 test('channel overrides take precedence over the default storage path channel updating logic', function () {
+    $centralStoragePath = storage_path();
     $tenant = Tenant::create(['id' => 'tenant1']);
 
     LogChannelBootstrapper::$storagePathChannels = ['single'];
 
     LogChannelBootstrapper::$channelOverrides = [
-        'single' => function (Tenant $tenant, array $channel) {
-            return array_merge($channel, ['path' => storage_path("logs/override-{$tenant->id}.log")]);
+        'single' => function (Tenant $tenant, array $channel) use ($centralStoragePath) {
+            return array_merge($channel, ['path' => "{$centralStoragePath}/logs/override-{$tenant->id}.log"]);
         },
     ];
 
     tenancy()->initialize($tenant);
 
     // Should use channel override, not the storage path updating behavior
-    expect(config('logging.channels.single.path'))->toEndWith('storage/logs/override-tenant1.log');
+    expect(config('logging.channels.single.path'))->toBe("{$centralStoragePath}/logs/override-tenant1.log");
 });
 
 test('channels are forgotten and re-resolved during bootstrap and revert', function () {
-    config([
-        'tenancy.bootstrappers' => [
-            FilesystemTenancyBootstrapper::class,
-            LogChannelBootstrapper::class,
-        ],
-    ]);
-
     $logManager = app('log');
     $originalChannel = $logManager->channel('single');
     $originalSinglePath = config('logging.channels.single.path');
@@ -229,14 +209,8 @@ test('channels are forgotten and re-resolved during bootstrap and revert', funct
 
 // Test real usage
 test('logs are written to tenant-specific files and do not leak between contexts', function () {
-    config([
-        'tenancy.bootstrappers' => [
-            FilesystemTenancyBootstrapper::class,
-            LogChannelBootstrapper::class,
-        ],
-    ]);
-
-    $centralLogPath = storage_path('logs/laravel.log');
+    $centralStoragePath = storage_path();
+    $centralLogPath = "{$centralStoragePath}/logs/laravel.log";
 
     Log::channel('single')->info('central');
 
@@ -244,15 +218,11 @@ test('logs are written to tenant-specific files and do not leak between contexts
 
     [$tenant1, $tenant2] = [Tenant::create(['id' => 'tenant1']), Tenant::create(['id' => 'tenant2'])];
 
-    tenancy()->runForMultiple([$tenant1, $tenant2], function (Tenant $tenant) use ($centralLogPath) {
+    tenancy()->runForMultiple([$tenant1, $tenant2], function (Tenant $tenant) use ($centralStoragePath) {
         Log::channel('single')->info($tenant->id);
 
-        $tenantLogPath = storage_path('logs/laravel.log');
-
         // The log gets saved to the tenant's storage directory (default behavior)
-        expect($tenantLogPath)
-            ->not()->toBe($centralLogPath)
-            ->toEndWith("storage/tenant{$tenant->id}/logs/laravel.log");
+        $tenantLogPath = "{$centralStoragePath}/tenant{$tenant->id}/logs/laravel.log";
 
         expect(file_get_contents($tenantLogPath))
             ->toContain($tenant->id)
@@ -268,14 +238,14 @@ test('logs are written to tenant-specific files and do not leak between contexts
     // Tenant log messages didn't leak to logs of other tenants
     tenancy()->initialize($tenant1);
 
-    expect(file_get_contents(storage_path('logs/laravel.log')))
+    expect(file_get_contents("{$centralStoragePath}/tenant{$tenant1->id}/logs/laravel.log"))
         ->toContain('tenant1')
         ->not()->toContain('central')
         ->not()->toContain('tenant2');
 
     tenancy()->initialize($tenant2);
 
-    expect(file_get_contents(storage_path('logs/laravel.log')))
+    expect(file_get_contents("{$centralStoragePath}/tenant{$tenant2->id}/logs/laravel.log"))
         ->toContain('tenant2')
         ->not()->toContain('central')
         ->not()->toContain('tenant1');
@@ -285,9 +255,8 @@ test('logs are written to tenant-specific files and do not leak between contexts
     $tenant = Tenant::create(['id' => 'override-tenant']);
 
     LogChannelBootstrapper::$channelOverrides = [
-        'single' => function (Tenant $tenant, array $channel) {
-            // The tenant log path will be set to storage/tenantoverride-tenant/logs/custom-override-tenant.log
-            return array_merge($channel, ['path' => storage_path("logs/custom-{$tenant->id}.log")]);
+        'single' => function (Tenant $tenant, array $channel) use ($centralStoragePath) {
+            return array_merge($channel, ['path' => "{$centralStoragePath}/tenant{$tenant->id}/logs/custom-{$tenant->id}.log"]);
         },
     ];
 
@@ -296,21 +265,18 @@ test('logs are written to tenant-specific files and do not leak between contexts
 
     Log::channel('single')->info('tenant-override');
 
-    expect(file_get_contents(storage_path('logs/custom-override-tenant.log')))->toContain('tenant-override');
+    expect(file_get_contents("{$centralStoragePath}/tenantoverride-tenant/logs/custom-override-tenant.log"))->toContain('tenant-override');
 });
 
 test('stack logs are written to all configured channels with tenant-specific paths', function () {
     config([
-        'tenancy.bootstrappers' => [
-            FilesystemTenancyBootstrapper::class,
-            LogChannelBootstrapper::class,
-        ],
         'logging.channels.stack' => [
             'driver' => 'stack',
             'channels' => ['single', 'daily'],
         ],
     ]);
 
+    $centralStoragePath = storage_path();
     $tenant = Tenant::create(['id' => 'stack-tenant']);
     $today = now()->format('Y-m-d');
 
@@ -327,8 +293,8 @@ test('stack logs are written to all configured channels with tenant-specific pat
     // Tenant context stack log
     tenancy()->initialize($tenant);
     Log::channel('stack')->info('tenant');
-    $tenantSingleLogPath = storage_path('logs/laravel.log');
-    $tenantDailyLogPath = storage_path("logs/laravel-{$today}.log");
+    $tenantSingleLogPath = "{$centralStoragePath}/tenant{$tenant->id}/logs/laravel.log";
+    $tenantDailyLogPath = "{$centralStoragePath}/tenant{$tenant->id}/logs/laravel-{$today}.log";
 
     expect(file_get_contents($tenantSingleLogPath))->toContain('tenant');
     expect(file_get_contents($tenantDailyLogPath))->toContain('tenant');
@@ -351,18 +317,15 @@ test('stack logs are written to all configured channels with tenant-specific pat
 
 test('stack channels that include any configured channel are re-resolved', function () {
     config([
-        'tenancy.bootstrappers' => [
-            FilesystemTenancyBootstrapper::class,
-            LogChannelBootstrapper::class,
-        ],
         'logging.channels.custom_stack' => [
             'driver' => 'stack',
             'channels' => ['single'],
         ],
     ]);
 
+    $centralStoragePath = storage_path();
     $tenant = Tenant::create(['id' => 'stack-tenant']);
-    $centralLogPath = storage_path('logs/laravel.log');
+    $centralLogPath = "{$centralStoragePath}/logs/laravel.log";
 
     $logManager = app('log');
 
@@ -387,7 +350,7 @@ test('stack channels that include any configured channel are re-resolved', funct
         ->toContain('central log message')
         ->not()->toContain('tenant log message');
 
-    $tenantLogPath = storage_path('logs/laravel.log');
+    $tenantLogPath = "{$centralStoragePath}/tenant{$tenant->id}/logs/laravel.log";
     expect(file_exists($tenantLogPath))->toBeTrue();
     expect(file_get_contents($tenantLogPath))
         ->toContain('tenant log message');
@@ -454,10 +417,6 @@ test('slack channel uses correct webhook urls', function () {
 
 test('tenant logs inherit the path from the central log path config', function () {
     config([
-        'tenancy.bootstrappers' => [
-            FilesystemTenancyBootstrapper::class,
-            LogChannelBootstrapper::class,
-        ],
         'logging.channels.stack' => [
             'driver' => 'stack',
             'channels' => ['single', 'daily'],
@@ -466,6 +425,7 @@ test('tenant logs inherit the path from the central log path config', function (
         'logging.channels.daily.path' => storage_path('logs/daily/custom-name.log'),
     ]);
 
+    $centralStoragePath = storage_path();
     $tenant = Tenant::create();
     $today = now()->format('Y-m-d');
 
@@ -476,18 +436,17 @@ test('tenant logs inherit the path from the central log path config', function (
 
     tenancy()->initialize($tenant);
 
-    // Tenant log is located at storage/tenantX/logs/custom-name.log
     Log::channel('stack')->info($tenant->id);
 
     // The filename from the central config is preserved in tenant context
     expect(config('logging.channels.single.path'))->toEndWith('logs/single/custom-name.log');
     expect(config('logging.channels.daily.path'))->toEndWith('logs/daily/custom-name.log');
 
-    expect(file_get_contents(storage_path('logs/single/custom-name.log')))
+    expect(file_get_contents("{$centralStoragePath}/tenant{$tenant->id}/logs/single/custom-name.log"))
         ->toContain($tenant->id)
         ->not()->toContain('central');
 
-    expect(file_get_contents(storage_path("logs/daily/custom-name-{$today}.log")))
+    expect(file_get_contents("{$centralStoragePath}/tenant{$tenant->id}/logs/daily/custom-name-{$today}.log"))
         ->toContain($tenant->id)
         ->not()->toContain('central');
 });
