@@ -18,7 +18,8 @@ class RemoveStorageSymlinksAction
     /**
      * Should the directories created for nested symlinks be removed along with the symlink.
      *
-     * Before enabling this, make sure you understand the removeLink() method and its implications.
+     * Before enabling this, make sure you understand the removeLink() method
+     * and the high stakes of recursively removing parent directories (even if the logic should be sound).
      *
      * @see CreateStorageSymlinksAction
      */
