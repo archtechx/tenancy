@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Events\TenancyEnded;
+use Stancl\Tenancy\Events\StorageSymlinkCreated;
+use Stancl\Tenancy\Events\StorageSymlinkRemoved;
+use Stancl\Tenancy\Events\CreatingStorageSymlink;
+use Stancl\Tenancy\Events\RemovingStorageSymlink;
 use Stancl\Tenancy\Database\Models\Tenant;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
@@ -53,7 +57,12 @@ test('create storage symlinks action works', function (string|null $rootOverride
 
     Storage::disk('public')->put('foo.txt', 'tenant file');
 
+    Event::fake([CreatingStorageSymlink::class, StorageSymlinkCreated::class]);
+
     (new CreateStorageSymlinksAction)($tenant);
+
+    Event::assertDispatched(CreatingStorageSymlink::class, fn (CreatingStorageSymlink $event) => $event->tenant->is($tenant));
+    Event::assertDispatched(StorageSymlinkCreated::class, fn (StorageSymlinkCreated $event) => $event->tenant->is($tenant));
 
     // The symlink exists and points to the directory the tenant's disk writes to
     expect(is_link($publicPath))->toBeTrue();
@@ -114,11 +123,25 @@ test('remove storage symlinks action works', function() {
     expect(is_link($publicPath = public_path("public-$tenantKey")))->toBeTrue();
     expect(file_exists($publicPath))->toBeTrue();
 
+    Event::fake([RemovingStorageSymlink::class, StorageSymlinkRemoved::class]);
+
     (new RemoveStorageSymlinksAction)($tenant);
+
+    Event::assertDispatched(RemovingStorageSymlink::class, fn (RemovingStorageSymlink $event) => $event->tenant->is($tenant));
+    Event::assertDispatched(StorageSymlinkRemoved::class, fn (StorageSymlinkRemoved $event) => $event->tenant->is($tenant));
 
     // The symlink doesn't exist
     expect(is_link($publicPath))->toBeFalse();
     expect(file_exists($publicPath))->toBeFalse();
+
+    // Flush
+    Event::fake([RemovingStorageSymlink::class, StorageSymlinkRemoved::class]);
+
+    // Nothing happens when there are no symlinks
+    (new RemoveStorageSymlinksAction)($tenant);
+
+    Event::assertNotDispatched(RemovingStorageSymlink::class);
+    Event::assertNotDispatched(StorageSymlinkRemoved::class);
 });
 
 test('removing tenant symlinks works even if the symlinks are invalid', function() {
