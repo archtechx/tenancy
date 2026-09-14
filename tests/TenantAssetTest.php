@@ -17,6 +17,7 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper;
 use Stancl\Tenancy\Controllers\TenantAssetController;
+use Stancl\Tenancy\Enums\RouteMode;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
@@ -177,6 +178,23 @@ test('tenant asset controller throws when the configured disk is not local or no
 
         expect(fn () => pest()->get(tenant_asset('foo.txt'), ['X-Tenant' => $tenant->id]))
             ->toThrow(Exception::class, $exceptionMessage);
+    }
+});
+
+test('tenant assets cannot be served in central context', function () {
+    config([
+        'tenancy.identification.default_middleware' => InitializeTenancyByRequestData::class,
+        // Make the asset route skip tenant identification
+        'tenancy.default_route_mode' => RouteMode::UNIVERSAL,
+    ]);
+
+    $this->withoutExceptionHandling();
+
+    foreach ([null, 'local'] as $publicDisk) {
+        TenantAssetController::$publicDisk = $publicDisk;
+
+        expect(fn () => pest()->get(tenant_asset('foo.txt')))
+            ->toThrow(Exception::class, 'Tenant assets can only be served in tenant context.');
     }
 });
 

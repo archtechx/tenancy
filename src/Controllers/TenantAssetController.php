@@ -85,13 +85,16 @@ class TenantAssetController implements HasMiddleware
 
     /**
      * Directory the assets are served from -- the root of the $publicDisk, or app/public
-     * inside the tenant's storage directory when no disk is configured. When no disk is
-     * configured and there's no current tenant, the central app/public is used.
+     * inside the tenant's storage directory when no disk is configured.
      *
      * The tenant's storage directory is resolved using the FilesystemTenancyBootstrapper::getTenantStoragePath().
      */
     protected function assetRoot(): string
     {
+        if (! tenant()) {
+            throw new Exception('Tenant assets can only be served in tenant context.');
+        }
+
         if (static::$publicDisk) {
             $disk = Storage::disk(static::$publicDisk);
 
@@ -118,11 +121,7 @@ class TenantAssetController implements HasMiddleware
             return rtrim($disk->path(''), DIRECTORY_SEPARATOR);
         }
 
-        if ($tenant = tenant()) {
-            return FilesystemTenancyBootstrapper::getTenantStoragePath($tenant) . '/app/public';
-        }
-
-        return storage_path('app/public');
+        return FilesystemTenancyBootstrapper::getTenantStoragePath(tenant()) . '/app/public';
     }
 
     /**
