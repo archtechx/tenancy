@@ -47,6 +47,12 @@ class CreateStorageSymlinksAction
             mkdir($storagePath, 0777, true);
         }
 
+        // The public path of a prefixed disk includes the prefix,
+        // and its parent directories may not exist yet.
+        if (! is_dir($publicParent = dirname($publicPath))) {
+            mkdir($publicParent, 0777, true);
+        }
+
         if ($relativeLink) {
             app()->make('files')->relativeLink($storagePath, $publicPath);
         } else {

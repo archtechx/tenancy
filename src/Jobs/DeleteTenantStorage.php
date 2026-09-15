@@ -10,8 +10,20 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\File;
+use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
+/**
+ * Delete the tenant's storage directory.
+ *
+ * The directory is used by the FilesystemTenancyBootstrapper for:
+ * - scoped storage_path() when suffix_storage_path is enabled
+ * - scoped cache when enabled
+ * - scoped sessions when enabled
+ * - scoped disks when enabled
+ *
+ * @see FilesystemTenancyBootstrapper
+ */
 class DeleteTenantStorage implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
@@ -22,17 +34,11 @@ class DeleteTenantStorage implements ShouldQueue
 
     public function handle(): void
     {
-        if (config('tenancy.filesystem.suffix_storage_path') === false) {
-            // Skip storage deletion if path suffixing is disabled
-            return;
-        }
+        $tenantStoragePath = FilesystemTenancyBootstrapper::getTenantStoragePath($this->tenant);
+        $centralStoragePath = FilesystemTenancyBootstrapper::getBoundCentralStoragePath();
 
-        $centralStoragePath = tenancy()->central(fn () => storage_path());
-        $tenantStoragePath = tenancy()->run($this->tenant, fn () => storage_path());
-
-        if ($tenantStoragePath === $centralStoragePath) {
-            // Check again to ensure the tenant storage path is distinct from the central storage path
-            // to avoid any accidental central storage path deletion
+        if (realpath($tenantStoragePath) === realpath($centralStoragePath)) {
+            // Never delete the central storage directory
             return;
         }
 
