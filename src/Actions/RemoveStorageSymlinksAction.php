@@ -68,7 +68,10 @@ class RemoveStorageSymlinksAction
         // Remove the directories CreateStorageSymlinksAction created for the symlink
         // until a non-empty one is reached.
         while (str_starts_with(rtrim($directory, '/\\'), rtrim($publicRoot, '/\\') . DIRECTORY_SEPARATOR) && $files->isEmptyDirectory($directory)) {
-            $files->deleteDirectory($directory);
+            if (! @rmdir($directory)) {
+                // Stop the loop if the directory couldn't be removed
+                break;
+            }
 
             $directory = dirname($directory);
         }
