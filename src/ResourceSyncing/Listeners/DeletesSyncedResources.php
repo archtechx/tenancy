@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\ResourceSyncing\Listeners;
 
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\ResourceSyncing\SyncMaster;
-use Illuminate\Contracts\Database\Eloquent\Builder;
 
 trait DeletesSyncedResources
 {
