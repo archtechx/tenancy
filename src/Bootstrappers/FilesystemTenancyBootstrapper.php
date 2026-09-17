@@ -8,12 +8,16 @@ use Exception;
 use Illuminate\Foundation\Application;
 use Illuminate\Session\FileSessionHandler;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
 class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 {
     public array $originalDisks = [];
+    protected array $originalCachePaths = [];
+    protected array $originalCacheLockPaths = [];
+    protected string|null $originalSessionPath = null;
     public string|null $originalAssetUrl;
     public string $originalStoragePath;
 
@@ -94,7 +98,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
     protected function tenantStoragePath(string $suffix): string
     {
-        return $this->originalStoragePath . "/{$suffix}";
+        return rtrim($this->originalStoragePath, '/\\') . DIRECTORY_SEPARATOR . $suffix;
     }
 
     protected function assetHelper(string|false $suffix): void
@@ -161,7 +165,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             // This is executed if the disk is in tenancy.filesystem.disks but does NOT have a root_override
             // This behavior is used for disks like S3.
             $newRoot = $originalRoot
-                ? rtrim($originalRoot, '/') . '/' . $suffix
+                ? rtrim($originalRoot, '/\\') . '/' . $suffix
                 : $suffix;
         }
 
@@ -191,29 +195,88 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             return;
         }
 
-        $storagePath = $suffix
-            ? $this->tenantStoragePath($suffix)
-            : $this->originalStoragePath;
-
-        $stores = array_filter($this->app['config']['tenancy.cache.stores'], function ($name) {
-            $store = $this->app['config']["cache.stores.{$name}"];
-
-            if ($store === null) {
-                return false;
-            }
-
-            return $store['driver'] === 'file';
-        });
+        $stores = $suffix !== false
+            ? $this->app['config']['tenancy.cache.stores']
+            : array_keys($this->originalCachePaths);
 
         foreach ($stores as $name) {
-            $path = $storagePath . '/framework/cache/data';
+            $store = $this->app['config']["cache.stores.{$name}"];
+
+            // Only file stores have a path to scope. Skip stores that don't exist (null) or use another driver.
+            if ($store === null || $store['driver'] !== 'file') {
+                continue;
+            }
+
+            if ($suffix !== false && ! isset($this->originalCachePaths[$name])) {
+                $this->originalCachePaths[$name] = $store['path'];
+                $this->originalCacheLockPaths[$name] = $store['lock_path'] ?? null;
+            }
+
+            $path = $suffix ? $this->tenantScopedPath($this->originalCachePaths[$name], $suffix) : $this->originalCachePaths[$name];
+
+            // Unlike path, lock_path is optional -- if it's not set, FileStore::lock() falls back to path
+            // itself (see `$this->lockDirectory ?? $this->directory` in FileStore). Leave it null here rather
+            // than hardcoding it to $path ourselves, so a store that didn't configure a separate lock_path
+            // doesn't end up with one.
+            $lockPath = $this->originalCacheLockPaths[$name];
+            if ($suffix && $lockPath !== null) {
+                $lockPath = $this->tenantScopedPath($lockPath, $suffix);
+            }
+
             $this->app['config']["cache.stores.{$name}.path"] = $path;
-            $this->app['config']["cache.stores.{$name}.lock_path"] = $path;
+            $this->app['config']["cache.stores.{$name}.lock_path"] = $lockPath;
 
             /** @var \Illuminate\Cache\FileStore $store */
             $store = $this->app['cache']->store($name)->getStore();
             $store->setDirectory($path);
-            $store->setLockDirectory($path);
+            $store->setLockDirectory($lockPath);
+        }
+    }
+
+    /**
+     * Scope a configured path (a cache store's path or lock_path, or the session path)
+     * to the tenant identified by $suffix.
+     */
+    protected function tenantScopedPath(string $configuredPath, string $suffix): string
+    {
+        $configuredPath = $this->normalizePath($configuredPath);
+        $storagePath = $this->normalizePath($this->originalStoragePath);
+
+        if (str_starts_with($configuredPath, $storagePath . DIRECTORY_SEPARATOR)) {
+            // Swap the central storage path prefix for the tenant's.
+            // For example, storage_path('framework/cache/data') becomes storage_path('tenant1/framework/cache/data').
+            return str($configuredPath)
+                ->replaceFirst($storagePath, $this->tenantStoragePath($suffix))
+                ->toString();
+        }
+
+        // Otherwise $configuredPath isn't necessarily storage_path()-based, so just append the
+        // suffix as a subdirectory, e.g. '/var/cache/foo' becomes '/var/cache/foo/tenant1'.
+        return $configuredPath . DIRECTORY_SEPARATOR . $suffix;
+    }
+
+    /**
+     * Normalize the path to use the separator of the current OS.
+     *
+     * The separators are also deduplicated, with two exceptions:
+     * - if the path begins with \\ on Windows (i.e. a UNC path), the *leading* separators won't be deduplicated
+     * - if the path contains non-UTF-8 characters, the separators won't be deduplicated since Str::deduplicate() only supports UTF-8 strings)
+     */
+    protected function normalizePath(string $path): string
+    {
+        $path = str_replace('/', DIRECTORY_SEPARATOR, $path);
+
+        $uncPrefix = DIRECTORY_SEPARATOR === '\\' && str_starts_with($path, '\\\\') ? DIRECTORY_SEPARATOR : '';
+
+        if ($deduplicated = Str::deduplicate($path, DIRECTORY_SEPARATOR)) {
+            // On Windows, a path starting with two separators is a UNC path (e.g. '\\server\share'),
+            // so the leading separator that got collapsed by deduplicate() should be added back
+            // (only one \ will be kept, so we use one for the prefix).
+            return $uncPrefix . rtrim($deduplicated, DIRECTORY_SEPARATOR);
+        } else {
+            // Because deduplicate() only supports UTF-8 paths, paths with non-UTF-8 characters will not
+            // be deduplicated since deduplicate() returns an empty result with unsupported strings
+            return rtrim($path, DIRECTORY_SEPARATOR);
         }
     }
 
@@ -223,12 +286,15 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             return;
         }
 
+        $originalPath = $this->originalSessionPath ?? $this->app['config']['session.files'];
+        $this->originalSessionPath = $originalPath;
+
         $path = $suffix
-            ? $this->tenantStoragePath($suffix) . '/framework/sessions'
-            : $this->originalStoragePath . '/framework/sessions';
+            ? $this->tenantScopedPath($originalPath, $suffix)
+            : $originalPath;
 
         if (! is_dir($path)) {
-            // Create tenant framework/sessions directory if it does not exist.
+            // Create tenant session directory if it does not exist.
             // We ignore errors due to TOCTOU race conditions, instead we check for success below.
             @mkdir($path, 0750, true);
 

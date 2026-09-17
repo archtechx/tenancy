@@ -103,7 +103,7 @@ class TenancyServiceProvider extends ServiceProvider
                 $config['connection'] ??= $centralConnection;
 
                 /** @var CacheManager $this */
-                return $this->createDatabaseDriver($config); // @phpstan-ignore method.protected
+                return $this->createDatabaseDriver($config);
             });
 
             // DatabaseCacheBootstrapper explicitly writes 'tenant' into each store's 'connection'
