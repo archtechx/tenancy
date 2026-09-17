@@ -1198,6 +1198,42 @@ test('force deleting a central resource force deletes tenant resources that are 
     migrateUsersTableForTenants();
     addExtraColumns(true);
 
+    foreach ([
+        fn ($user, $tenant) => $user->forceDelete(),
+        fn ($user, $tenant) => $user->tenants()->detach($tenant),
+    ] as $triggerForceDelete) {
+        $centralUser = CentralUserWithSoftDeletes::create([
+            'global_id' => 'user',
+            'name' => 'Central user',
+            'email' => 'central@localhost',
+            'password' => 'password',
+            'role' => 'commenter',
+            'foo' => 'foo',
+        ]);
+
+        $centralUser->tenants()->attach($tenant1);
+
+        tenancy()->initialize($tenant1);
+
+        TenantUserWithSoftDeletes::firstWhere('global_id', 'user')->delete();
+
+        tenancy()->end();
+
+        $triggerForceDelete($centralUser, $tenant1);
+
+        tenancy()->initialize($tenant1);
+
+        expect(TenantUserWithSoftDeletes::withTrashed()->firstWhere('global_id', 'user'))->toBeNull();
+
+        tenancy()->end();
+    }
+});
+
+test('trashing a central resource does not affect tenant resources that are already trashed', function () {
+    [$tenant1] = createTenantsAndRunMigrations();
+    migrateUsersTableForTenants();
+    addExtraColumns(true);
+
     $centralUser = CentralUserWithSoftDeletes::create([
         'global_id' => 'user',
         'name' => 'Central user',
@@ -1226,14 +1262,6 @@ test('force deleting a central resource force deletes tenant resources that are 
     $centralUser->delete();
 
     expect(TenantUserWithSoftDeletes::withTrashed()->firstWhere('global_id', 'user')->deleted_at)->toEqual($tenantUserDeletedAt);
-
-    tenancy()->end();
-
-    $centralUser->forceDelete();
-
-    tenancy()->initialize($tenant1);
-
-    expect(TenantUserWithSoftDeletes::withTrashed()->firstWhere('global_id', 'user'))->toBeNull();
 });
 
 test('resource creation works correctly when tenant resource provides defaults in the creation attributes', function () {
