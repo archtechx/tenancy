@@ -44,13 +44,13 @@ class CreateStorageSymlinksAction
 
         // Make sure the storage path exists before we create a symlink
         if (! is_dir($storagePath)) {
-            mkdir($storagePath, 0777, true);
+            @mkdir($storagePath, 0750, true);
         }
 
         // The public path of a prefixed disk includes the prefix,
         // and its parent directories may not exist yet.
         if (! is_dir($publicParent = dirname($publicPath))) {
-            mkdir($publicParent, 0777, true);
+            @mkdir($publicParent, 0750, true);
         }
 
         if ($relativeLink) {
