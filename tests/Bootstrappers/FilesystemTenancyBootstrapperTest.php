@@ -146,6 +146,26 @@ test('links to storage disks with a configured root are suffixed if not overridd
     expect(storage_path())->toEqual($expectedStoragePath);
 });
 
+test('disks with a falsy url_override do not get their url overridden', function ($urlOverride) {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'tenancy.filesystem.url_override.public' => $urlOverride,
+    ]);
+
+    $tenant = Tenant::create();
+
+    $centralUrl = config('filesystems.disks.public.url');
+
+    tenancy()->initialize($tenant);
+
+    expect(config('filesystems.disks.public.url'))->toBe($centralUrl);
+})->with([
+    'empty string' => [''],
+    'null' => [null],
+]);
+
 test('create and delete storage symlinks jobs work', function() {
     Event::listen(
         TenantCreated::class,
@@ -185,63 +205,55 @@ test('create and delete storage symlinks jobs work', function() {
     $this->assertDirectoryDoesNotExist(public_path("public-$tenantKey"));
 });
 
-test('tenant storage gets deleted during tenant deletion when the DeletingTenant pipeline contains DeleteTenantStorage', function() {
+test('tenant storage gets deleted during tenant deletion when the DeletingTenant pipeline contains DeleteTenantStorage', function (bool $bootstrapperEnabled) {
     Event::listen(DeletingTenant::class,
         JobPipeline::make([DeleteTenantStorage::class])->send(function (DeletingTenant $event) {
             return $event->tenant;
         })->shouldBeQueued(false)->toListener()
     );
 
+    config([
+        'tenancy.bootstrappers' => $bootstrapperEnabled ? [FilesystemTenancyBootstrapper::class] : [],
+    ]);
+
     $centralStoragePath = storage_path();
-    tenancy()->initialize(Tenant::create());
+    $tenantStoragePath = fn (Tenant $tenant) => $centralStoragePath . "/tenant{$tenant->getTenantKey()}";
 
-    // FilesystemTenancyBootstrapper not enabled,
-    // tenant and central storage path is the same,
-    // the storage deletion will be skipped.
-    $tenantStoragePath = storage_path();
-    expect($tenantStoragePath)->toBe($centralStoragePath);
-    expect(File::isDirectory($centralStoragePath))->toBeTrue();
-    tenant()->delete();
+    $tenant = Tenant::create();
+
+    File::ensureDirectoryExists($tenantStoragePath($tenant));
 
     expect(File::isDirectory($centralStoragePath))->toBeTrue();
+    expect(File::isDirectory($tenantStoragePath($tenant)))->toBeTrue();
 
-    config([
-        'tenancy.bootstrappers' => [FilesystemTenancyBootstrapper::class],
-        'tenancy.filesystem.suffix_storage_path' => false,
-    ]);
-
-    tenancy()->initialize(Tenant::create());
-
-    $tenantStoragePath = storage_path();
-
-    // FilesystemTenancyBootstrapper enabled,
-    // but tenant and central storage path is still the same
-    // because suffix_storage_path is false.
-    // The storage deletion will be skipped.
-    expect($tenantStoragePath)->toBe($centralStoragePath);
-    expect(File::isDirectory($centralStoragePath))->toBeTrue();
-    tenant()->delete();
+    $tenant->delete();
 
     expect(File::isDirectory($centralStoragePath))->toBeTrue();
+    expect(File::isDirectory($tenantStoragePath($tenant)))->toBeFalse();
+})->with([
+    'filesystem bootstrapper enabled' => true,
+    'filesystem bootstrapper disabled' => false,
+]);
 
-    config([
-        'tenancy.bootstrappers' => [FilesystemTenancyBootstrapper::class],
-        'tenancy.filesystem.suffix_storage_path' => true,
-    ]);
+test('DeleteTenantStorage never deletes the central storage directory', function () {
+    $tenant = Tenant::create();
 
-    tenancy()->initialize(Tenant::create());
-    $tenantStoragePath = storage_path();
+    $centralStoragePath = FilesystemTenancyBootstrapper::getBoundCentralStoragePath();
+    $tenantStoragePath = FilesystemTenancyBootstrapper::getTenantStoragePath($tenant);
 
-    // FilesystemTenancyBootstrapper enabled,
-    // suffix_storage_path enabled, so the two paths are distinct.
-    // Tenant storage will be deleted.
-    expect($tenantStoragePath)->not()->toBe($centralStoragePath);
-    expect(File::isDirectory($tenantStoragePath))->toBeTrue();
+    File::ensureDirectoryExists($centralStoragePath . '/app');
 
-    tenant()->delete();
+    // Make the tenant storage path a symlink to the central storage directory
+    File::deleteDirectory($tenantStoragePath);
+    symlink($centralStoragePath, $tenantStoragePath);
 
-    expect(File::isDirectory($tenantStoragePath))->toBeFalse();
+    expect(realpath($tenantStoragePath))->toBe(realpath($centralStoragePath));
+
+    (new DeleteTenantStorage($tenant))->handle();
+
     expect(File::isDirectory($centralStoragePath))->toBeTrue();
+    expect(File::isDirectory($centralStoragePath . '/app'))->toBeTrue();
+    expect(is_link($tenantStoragePath))->toBeTrue();
 });
 
 test('the framework/cache directory is created when storage_path is scoped', function (bool $suffixStoragePath) {
@@ -275,29 +287,106 @@ test('scoped disks are scoped per tenant', function () {
             'disk' => 'public',
             'prefix' => 'scoped_disk_prefix',
         ],
+        'filesystems.disks.nested_disk' => [
+            'driver' => 'scoped',
+            'disk' => 'scoped_disk',
+            'prefix' => 'nested_disk_prefix',
+        ],
     ]);
 
+    foreach (['scoped_disk' => '', 'nested_disk' => '/nested_disk_prefix'] as $disk => $nested_prefix) {
+        $path = "app/public/scoped_disk_prefix{$nested_prefix}/foo.txt";
+
+        $tenant = Tenant::create();
+        $centralFile = storage_path($path);
+        $tenantFile = storage_path("tenant{$tenant->id}/$path");
+
+        Storage::disk($disk)->put('foo.txt', 'central');
+        expect(file_get_contents($centralFile))->toBe('central');
+
+        tenancy()->initialize($tenant);
+
+        expect(Storage::disk($disk)->get('foo.txt'))->toBeNull();
+
+        Storage::disk($disk)->put('foo.txt', 'tenant');
+        expect(file_get_contents($tenantFile))->toBe('tenant');
+
+        tenancy()->end();
+
+        expect(Storage::disk($disk)->get('foo.txt'))->toBe('central');
+        expect(file_get_contents($centralFile))->toBe('central');
+        expect(file_get_contents($tenantFile))->toBe('tenant');
+    }
+});
+
+test('scoped disks based on a non-local disk are scoped per tenant', function () {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'filesystems.disks.scoped_s3' => [
+            'driver' => 'scoped',
+            'disk' => 's3',
+            'prefix' => 'scoped_s3_prefix',
+        ],
+        'tenancy.filesystem.disks' => ['s3'], // As long as the base disk (s3) is listed here, the scoped disk will be scoped
+    ]);
+
+    expect(Storage::disk('s3')->path('foo.txt'))->toBe('foo.txt');
+    expect(Storage::disk('scoped_s3')->path('foo.txt'))->toBe('scoped_s3_prefix/foo.txt');
+
     $tenant = Tenant::create();
-
-    Storage::disk('scoped_disk')->put('foo.txt', 'central');
-    expect(Storage::disk('scoped_disk')->get('foo.txt'))->toBe('central');
-    expect(file_get_contents(storage_path() . "/app/public/scoped_disk_prefix/foo.txt"))->toBe('central');
-
     tenancy()->initialize($tenant);
 
-    expect(Storage::disk('scoped_disk')->get('foo.txt'))->toBe(null);
-    Storage::disk('scoped_disk')->put('foo.txt', 'tenant');
-    expect(file_get_contents(storage_path() . "/app/public/scoped_disk_prefix/foo.txt"))->toBe('tenant');
-    expect(Storage::disk('scoped_disk')->get('foo.txt'))->toBe('tenant');
+    expect(Storage::disk('s3')->path('foo.txt'))->toBe("tenant{$tenant->id}/foo.txt");
+    expect(Storage::disk('scoped_s3')->path('foo.txt'))->toBe("tenant{$tenant->id}/scoped_s3_prefix/foo.txt");
 
     tenancy()->end();
 
-    expect(Storage::disk('scoped_disk')->get('foo.txt'))->toBe('central');
-    Storage::disk('scoped_disk')->put('foo.txt', 'central2');
-    expect(Storage::disk('scoped_disk')->get('foo.txt'))->toBe('central2');
+    expect(Storage::disk('scoped_s3')->path('foo.txt'))->toBe('scoped_s3_prefix/foo.txt');
+});
 
-    expect(file_get_contents(storage_path() . "/app/public/scoped_disk_prefix/foo.txt"))->toBe('central2');
-    expect(file_get_contents(storage_path() . "/tenant{$tenant->id}/app/public/scoped_disk_prefix/foo.txt"))->toBe('tenant');
+test('adding a scoped disk to tenancy.filesystem.disks throws an exception if its base disk is not listed', function () {
+    config([
+        'tenancy.bootstrappers' => [
+            FilesystemTenancyBootstrapper::class,
+        ],
+        'filesystems.disks.foo' => [
+            'driver' => 'scoped',
+            'disk' => 'public',
+            'prefix' => 'foo',
+        ],
+        'filesystems.disks.bar' => [
+            'driver' => 'scoped',
+            'disk' => 'foo',
+            'prefix' => 'bar',
+        ],
+        // There's no way for a scoped disk with an array parent to have the parent listed in tenancy.filesystem.disks
+        'filesystems.disks.inline_base' => [
+            'driver' => 'scoped',
+            'disk' => [
+                'driver' => 'local',
+                'root' => storage_path('app/inline'),
+            ],
+            'prefix' => 'inline_base',
+        ],
+    ]);
+
+    $initializeTenancy = fn () => tenancy()->initialize(Tenant::create());
+
+    config(['tenancy.filesystem.disks' => ['foo']]);
+    expect($initializeTenancy)->toThrow(Exception::class, "Disk [foo] uses the 'scoped' driver, so it has no root to make tenant-aware.");
+
+    config(['tenancy.filesystem.disks' => ['bar']]);
+    expect($initializeTenancy)->toThrow(Exception::class, "Disk [bar] uses the 'scoped' driver, so it has no root to make tenant-aware.");
+
+    config(['tenancy.filesystem.disks' => ['inline_base']]);
+    expect($initializeTenancy)->toThrow(Exception::class, "Disk [inline_base] uses the 'scoped' driver, so it has no root to make tenant-aware.");
+
+    config(['tenancy.filesystem.disks' => ['public', 'foo', 'bar']]);
+    expect($initializeTenancy)->not()->toThrow(Throwable::class);
+
+    // No way to make the 'inline_base' disk work
 });
 
 test('file cache stores get their paths scoped on bootstrap and restored back on revert', function () {

@@ -128,10 +128,14 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         $scopedDisks = [];
 
         foreach ($this->app['config']['filesystems.disks'] as $name => $disk) {
-            if (isset($disk['driver'], $disk['disk'])
-                && $disk['driver'] === 'scoped'
-                && in_array($disk['disk'], $tenantDisks, true)) {
+            if (($disk['driver'] ?? null) !== 'scoped') {
+                continue;
+            }
+
+            if (in_array(static::baseDiskName($name), $tenantDisks, true)) {
                 $scopedDisks[] = $name;
+            } elseif (in_array($name, $tenantDisks, true)) {
+                throw new Exception("Disk [$name] uses the 'scoped' driver, so it has no root to make tenant-aware. List its base disk in tenancy.filesystem.disks instead.");
             }
         }
 
@@ -140,6 +144,12 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
     protected function diskRoot(string $disk, Tenant|false $tenant): void
     {
+        if ($this->app['config']["filesystems.disks.$disk.driver"] === 'scoped') {
+            // Skip scoped disks since they have no root to override
+            // (reachable when a scoped disk is listed in tenancy.filesystem.disks alongside its base disk).
+            return;
+        }
+
         if ($tenant === false) {
             $this->app['config']["filesystems.disks.$disk.root"] = $this->originalDisks[$disk]['root'];
 
@@ -176,7 +186,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
     {
         $diskConfig = $this->app['config']["filesystems.disks.{$disk}"];
 
-        if ($diskConfig['driver'] !== 'local' || $this->app['config']["tenancy.filesystem.url_override.{$disk}"] === null) {
+        if ($diskConfig['driver'] !== 'local' || ! $this->app['config']["tenancy.filesystem.url_override.{$disk}"]) {
             return;
         }
 
@@ -326,5 +336,40 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
     public static function getBoundCentralStoragePath(): string
     {
         return app(static::class)->originalStoragePath;
+    }
+
+    /**
+     * Get the storage path of the passed tenant (independent of the current context).
+     *
+     * Note that the returned path doesn't depend on suffix_storage_path.
+     * That config option only affects the storage_path() helper.
+     */
+    public static function getTenantStoragePath(Tenant $tenant): string
+    {
+        $bootstrapper = app(static::class);
+
+        return $bootstrapper->tenantStoragePath($bootstrapper->suffix($tenant));
+    }
+
+    /**
+     * Name of the disk whose root the passed disk uses.
+     *
+     * Disks using the 'scoped' driver have no root or url of their own -- they inherit those from their parent disk,
+     * which can be scoped as well, so only the final/base parent has to be tenant-aware.
+     *
+     * Returns null if the base disk has no name, i.e. when the disk is configured inline as an array.
+     */
+    public static function baseDiskName(string $disk): string|null
+    {
+        while (config("filesystems.disks.$disk.driver") === 'scoped') {
+            if (! is_string($parent = config("filesystems.disks.$disk.disk"))) {
+                // Laravel allows configuring the parent disk inline as an array, and such a disk has no name
+                return null;
+            }
+
+            $disk = $parent;
+        }
+
+        return $disk;
     }
 }
