@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\ResourceSyncing\Listeners;
 
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Stancl\Tenancy\ResourceSyncing\Syncable;
 use Stancl\Tenancy\ResourceSyncing\SyncMaster;
 
 trait DeletesSyncedResources
@@ -14,16 +14,20 @@ trait DeletesSyncedResources
     {
         $tenantResourceClass = $centralResource->getTenantModelName();
 
-        /** @var (Syncable&Model)|null $tenantResource */
-        $tenantResource = $tenantResourceClass::firstWhere(
+        /** @var Builder $query */
+        $query = $tenantResourceClass::where(
             $centralResource->getGlobalIdentifierKeyName(),
             $centralResource->getGlobalIdentifierKey()
         );
 
         if ($force) {
-            $tenantResource?->forceDelete();
+            if ($query->hasMacro('withTrashed')) {
+                $query->withTrashed(); // @phpstan-ignore method.notFound
+            }
+
+            $query->first()?->forceDelete();
         } else {
-            $tenantResource?->delete();
+            $query->first()?->delete();
         }
     }
 }
