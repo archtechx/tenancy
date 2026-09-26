@@ -91,6 +91,18 @@ test('central helper reverts back to tenant context', function () {
     expect(tenant())->toBe($tenant);
 });
 
+test('central helper reverts back to tenant context when the callback throws', function () {
+    withTenantDatabases();
+
+    tenancy()->initialize($tenant = Tenant::create());
+
+    expect(fn () => tenancy()->central(function () {
+        throw new Exception('central callback failed');
+    }))->toThrow(Exception::class, 'central callback failed');
+
+    expect(tenant())->toBe($tenant);
+});
+
 test('central helper doesnt change tenancy state when called in central context', function () {
     expect(tenancy()->initialized)->toBeFalse();
     expect(tenant())->toBeNull();
