@@ -116,15 +116,15 @@ class Tenancy
 
         $this->end();
 
-        // This callback will usually not accept arguments, but the previous
-        // Tenant is the only value that can be useful here, so we pass that.
-        $result = $callback($previousTenant);
-
-        if ($previousTenant) {
-            $this->initialize($previousTenant);
+        try {
+            // This callback will usually not accept arguments, but the previous
+            // Tenant is the only value that can be useful here, so we pass that.
+            return $callback($previousTenant);
+        } finally {
+            if ($previousTenant) {
+                $this->initialize($previousTenant);
+            }
         }
-
-        return $result;
     }
 
     /**
@@ -151,19 +151,21 @@ class Tenancy
 
         $originalTenant = $this->tenant;
 
-        foreach ($tenants as $tenant) {
-            if (! $tenant instanceof Tenant) {
-                $tenant = $this->find($tenant);
+        try {
+            foreach ($tenants as $tenant) {
+                if (! $tenant instanceof Tenant) {
+                    $tenant = $this->find($tenant);
+                }
+
+                $this->initialize($tenant);
+                $callback($tenant);
             }
-
-            $this->initialize($tenant);
-            $callback($tenant);
-        }
-
-        if ($originalTenant) {
-            $this->initialize($originalTenant);
-        } else {
-            $this->end();
+        } finally {
+            if ($originalTenant) {
+                $this->initialize($originalTenant);
+            } else {
+                $this->end();
+            }
         }
     }
 }

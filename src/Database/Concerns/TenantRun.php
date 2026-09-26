@@ -20,15 +20,16 @@ trait TenantRun
         /** @var Tenant $this */
         $originalTenant = tenant();
 
-        tenancy()->initialize($this);
-        $result = $callback($this);
+        try {
+            tenancy()->initialize($this);
 
-        if ($originalTenant) {
-            tenancy()->initialize($originalTenant);
-        } else {
-            tenancy()->end();
+            return $callback($this);
+        } finally {
+            if ($originalTenant) {
+                tenancy()->initialize($originalTenant);
+            } else {
+                tenancy()->end();
+            }
         }
-
-        return $result;
     }
 }
