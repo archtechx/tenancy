@@ -36,4 +36,5 @@ test('tenant route helper generates correct url', function () {
 
     expect(tenant_route('foo.localhost', 'foo', ['a' => 'as', 'b' => 'df']))->toBe('http://foo.localhost/abcdef/as/df');
     expect(tenant_route('foo.localhost', 'foo', []))->toBe('http://foo.localhost/abcdef');
+    expect(tenant_route('foo.localhost', 'foo', ['email' => 'foo@localhost']))->toBe('http://foo.localhost/abcdef?email=foo%40localhost');
 });
