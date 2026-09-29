@@ -19,14 +19,14 @@ test('tenant redirect macro replaces only the hostname', function () {
     })->name('home');
 
     Route::get('/redirect', function () {
-        return redirect()->route('home')->domain('abcd');
+        return redirect()->route('home', ['email' => 'foo@localhost'])->domain('abcd');
     });
 
     $tenant = Tenant::create();
     tenancy()->initialize($tenant);
 
     pest()->get('/redirect')
-        ->assertRedirect('http://abcd/foobar');
+        ->assertRedirect('http://abcd/foobar?email=foo%40localhost');
 });
 
 test('tenant route helper generates correct url', function () {
