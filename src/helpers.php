@@ -109,7 +109,7 @@ if (! function_exists('tenant_route')) {
          */
         $hostname = parse_url($url, PHP_URL_HOST);
 
-        return (string) str($url)->replaceFirst('//' . $hostname, '//' . $domain);
+        return (string) str($url)->replaceFirst('://' . $hostname, '://' . $domain);
     }
 }
 
