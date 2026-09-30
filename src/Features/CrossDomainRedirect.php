@@ -22,7 +22,7 @@ class CrossDomainRedirect implements Feature
              */
             $hostname = parse_url($url, PHP_URL_HOST);
 
-            $this->setTargetUrl((string) str($url)->replace($hostname, $domain));
+            $this->setTargetUrl((string) str($url)->replaceFirst('://' . $hostname, '://' . $domain));
 
             return $this;
         });

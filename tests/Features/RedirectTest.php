@@ -19,14 +19,14 @@ test('tenant redirect macro replaces only the hostname', function () {
     })->name('home');
 
     Route::get('/redirect', function () {
-        return redirect()->route('home')->domain('abcd');
+        return redirect()->route('home', ['email' => 'foo@localhost'])->domain('abcd');
     });
 
     $tenant = Tenant::create();
     tenancy()->initialize($tenant);
 
     pest()->get('/redirect')
-        ->assertRedirect('http://abcd/foobar');
+        ->assertRedirect('http://abcd/foobar?email=foo%40localhost');
 });
 
 test('tenant route helper generates correct url', function () {
@@ -36,4 +36,5 @@ test('tenant route helper generates correct url', function () {
 
     expect(tenant_route('foo.localhost', 'foo', ['a' => 'as', 'b' => 'df']))->toBe('http://foo.localhost/abcdef/as/df');
     expect(tenant_route('foo.localhost', 'foo', []))->toBe('http://foo.localhost/abcdef');
+    expect(tenant_route('foo.localhost', 'foo', ['email' => 'foo@localhost']))->toBe('http://foo.localhost/abcdef?email=foo%40localhost');
 });
