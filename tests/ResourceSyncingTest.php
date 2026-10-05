@@ -467,6 +467,44 @@ test('attaching tenant to central resource works correctly even when using a sin
     });
 });
 
+// https://github.com/archtechx/tenancy/issues/1486
+test('creating a central resource while tenancy is initialized and then attaching the tenant maps the tenant once', function () {
+    config(['tenancy.models.tenant' => MorphTenant::class]);
+
+    [$tenant] = createTenantsAndRunMigrations();
+
+    tenancy()->initialize($tenant);
+
+    // BaseCentralUser uses CentralConnection and the default (polymorphic) tenants() relationship.
+    // E.g. a tenant admin panel inviting a brand-new user.
+    $centralUser = BaseCentralUser::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'password',
+        'role' => 'commenter',
+    ]);
+
+    // At this point, tenant_resources should have no mapping for this tenant yet, and the
+    // tenant user shouldn't exist -- the explicit attach() below is what's documented to create it.
+    tenancy()->end();
+
+    $tenant->run(function () {
+        expect(BaseTenantUser::count())->toBe(0);
+    });
+
+    expect(DB::table('tenant_resources')->where('resource_global_id', 'acme')->count())->toBe(0);
+
+    $centralUser->tenants()->attach($tenant);
+
+    $tenant->run(function () {
+        expect(BaseTenantUser::whereGlobalId('acme')->count())->toBe(1);
+    });
+
+    expect(DB::table('tenant_resources')->where('resource_global_id', 'acme')->count())->toBe(1);
+    expect($centralUser->tenants()->count())->toBe(1);
+});
+
 test('attaching central resource to tenant works correctly even when using a single pivot table for multiple models', function () {
     config(['tenancy.models.tenant' => MorphTenant::class]);
 

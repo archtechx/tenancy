@@ -102,7 +102,22 @@ class UpdateOrCreateSyncedResource extends QueueableListener
 
         $mappingExists = $centralModel->tenants->contains($currentTenantMapping);
 
-        if (! $mappingExists) {
+        // $event->model is the model that triggered this event. When it's a SyncMaster (a central
+        // resource saved while tenancy is initialized, e.g. `CentralUser::create()`), the resource
+        // doesn't exist in the tenant database yet -- only the pivot's "created" event (handled by
+        // CreateTenantResource) creates it. Attaching here, with events disabled to avoid
+        // re-triggering this listener, would therefore create a mapping without ever creating the
+        // tenant resource for it, and the documented `$centralResource->tenants()->attach($tenant)`
+        // call would still be needed, inserting a second, duplicate pivot row for the same mapping
+        // (see https://github.com/archtechx/tenancy/issues/1486). We leave establishing the mapping
+        // entirely to that explicit, event-enabled attach() call in this case, since it's both
+        // necessary and sufficient on its own.
+        //
+        // When $event->model is instead a plain Syncable (a tenant resource saved/created directly
+        // in tenant context, e.g. `TenantCompany::create()`), the resource already exists -- it's
+        // the model that triggered the event -- so no further attach() call is coming, and we do
+        // need to create the mapping here for it to exist at all.
+        if (! $mappingExists && ! $event->model instanceof SyncMaster) {
             // Here we should call TenantPivot, but we call general Pivot, so that this works
             // even if people use their own pivot model that is not based on our TenantPivot
             Pivot::withoutEvents(function () use ($centralModel, $event) {
