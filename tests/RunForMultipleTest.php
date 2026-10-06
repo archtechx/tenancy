@@ -71,3 +71,22 @@ test('runForMultiple runs the passed closure for the right tenants', function() 
         });
     }
 });
+
+test('runForMultiple reverts to the original context when the closure throws', function (bool $startInTenantContext) {
+    $tenants = [Tenant::create(), Tenant::create()];
+    $originalTenant = $startInTenantContext ? Tenant::create() : null;
+
+    if ($originalTenant) {
+        tenancy()->initialize($originalTenant);
+    }
+
+    expect(fn () => tenancy()->runForMultiple($tenants, function () {
+        throw new Exception('runForMultiple callback failed');
+    }))->toThrow(Exception::class, 'runForMultiple callback failed');
+
+    expect(tenancy()->initialized)->toBe($startInTenantContext);
+    expect(tenant())->toBe($originalTenant);
+})->with([
+    'from central context' => false,
+    'from tenant context' => true,
+]);
