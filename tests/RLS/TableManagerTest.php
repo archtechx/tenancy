@@ -582,7 +582,7 @@ test('table rls manager generates queries correctly', function() {
     expect(array_values(app(TableRLSManager::class)->generateQueries()))->toEqualCanonicalizing([
         <<<SQL
         CREATE POLICY authors_rls_policy ON authors USING (
-            tenant_id::text = current_setting('my.current_tenant')
+            tenant_id::text = (select current_setting('my.current_tenant'))
         );
         SQL,
         <<<SQL
@@ -590,7 +590,7 @@ test('table rls manager generates queries correctly', function() {
             author_id IN (
                 SELECT id
                 FROM authors
-                WHERE tenant_id::text = current_setting('my.current_tenant')
+                WHERE tenant_id::text = (select current_setting('my.current_tenant'))
             )
         );
         SQL,
@@ -602,7 +602,7 @@ test('table rls manager generates queries correctly', function() {
                 WHERE author_id IN (
                     SELECT id
                     FROM authors
-                    WHERE tenant_id::text = current_setting('my.current_tenant')
+                    WHERE tenant_id::text = (select current_setting('my.current_tenant'))
                 )
             )
         );
@@ -652,7 +652,7 @@ test('table rls manager generates queries correctly', function() {
     expect(app(TableRLSManager::class)->generateQueries($paths))->toContain(
         <<<SQL
         CREATE POLICY primaries_rls_policy ON primaries USING (
-            tenant_id::text = current_setting('my.current_tenant')
+            tenant_id::text = (select current_setting('my.current_tenant'))
         );
         SQL,
         <<<SQL
@@ -660,7 +660,7 @@ test('table rls manager generates queries correctly', function() {
             primary_id IN (
                 SELECT id
                 FROM primaries
-                WHERE tenant_id::text = current_setting('my.current_tenant')
+                WHERE tenant_id::text = (select current_setting('my.current_tenant'))
             )
         );
         SQL,
@@ -672,7 +672,7 @@ test('table rls manager generates queries correctly', function() {
                 WHERE primary_id IN (
                     SELECT id
                     FROM primaries
-                    WHERE tenant_id::text = current_setting('my.current_tenant')
+                    WHERE tenant_id::text = (select current_setting('my.current_tenant'))
                 )
             )
         );
