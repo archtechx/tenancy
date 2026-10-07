@@ -18,19 +18,26 @@ class Seed extends SeedCommand
 
     public function __construct(ConnectionResolverInterface $resolver)
     {
-        // See https://github.com/archtechx/tenancy/issues/1474
-        if (version_compare(app()->version(), '13.24.0', '>=')) {
-            $this->signature = 'tenants:seed
-                    {class? : The class name of the root seeder}
-                    {--class=Database\\Seeders\\DatabaseSeeder : The class name of the root seeder}
-                    {--database= : The database connection to seed}
-                    {--force : Force the operation to run when in production}';
-            parent::__construct($resolver);
+        parent::__construct($resolver);
+
+        // Our --tenants/--skip-tenants/--with-pending options only get added automatically
+        // when the parent command isn't signature-based. Since Laravel 13.24, SeedCommand is,
+        // so we add them ourselves here -- checking first so we don't add them twice on older
+        // Laravel versions, where they're already there by this point.
+        if (! $this->getDefinition()->hasOption('tenants')) {
             $this->specifyParameters();
-        } else {
-            $this->name = 'tenants:seed';
-            parent::__construct($resolver);
         }
+    }
+
+    protected function configure(): void
+    {
+        parent::configure();
+
+        // We inherit SeedCommand's name ('db:seed') since we don't redeclare $name/$signature,
+        // so without this we'd overwrite Laravel's own db:seed command (see #1474). configure()
+        // always runs after the name is set, regardless of Laravel version, so setting it here
+        // is safe no matter which of $name/$signature the installed Laravel version uses.
+        $this->setName('tenants:seed');
     }
 
     public function handle(): int

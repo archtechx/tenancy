@@ -16,7 +16,9 @@ use Stancl\Tenancy\Jobs\DeleteDatabase;
 use Illuminate\Database\DatabaseManager;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Events\TenantDeleted;
+use Stancl\Tenancy\Commands\Seed;
 use Stancl\Tenancy\Tests\Etc\TestSeeder;
+use Illuminate\Database\Console\Seeds\SeedCommand;
 use Stancl\Tenancy\Events\DeletingTenant;
 use Stancl\Tenancy\Events\DatabaseMigrated;
 use Stancl\Tenancy\Tests\Etc\ExampleSeeder;
@@ -286,6 +288,16 @@ test('seed command works', function () {
         expect($user->count())->toBe(1)
             ->and($user->first()->email)->toBe('seeded@user');
     });
+});
+
+test('tenants:seed does not overwrite db:seed', function () {
+    $commands = Artisan::all();
+
+    expect($commands)->toHaveKey('db:seed')
+        ->and($commands)->toHaveKey('tenants:seed')
+        ->and($commands['db:seed'])->toBeInstanceOf(SeedCommand::class)
+        ->and($commands['db:seed'])->not()->toBeInstanceOf(Seed::class)
+        ->and($commands['tenants:seed'])->toBeInstanceOf(Seed::class);
 });
 
 test('database connection is switched to default after running commands', function (bool $initializeTenancy) {
