@@ -11,6 +11,7 @@ use Stancl\Tenancy\Listeners\QueueableListener;
 use Stancl\Tenancy\ResourceSyncing\Events\SyncedResourceDeleted;
 use Stancl\Tenancy\ResourceSyncing\Syncable;
 use Stancl\Tenancy\ResourceSyncing\SyncMaster;
+use Stancl\Tenancy\ResourceSyncing\ModelNotSyncMasterException;
 
 /**
  * Deletes pivot records when a synced resource is deleted.
@@ -24,6 +25,11 @@ class DeleteResourceMapping extends QueueableListener
 
     public function handle(SyncedResourceDeleted $event): void
     {
+         if (! $event->tenant && ! $event->model instanceof SyncMaster) {
+            // If we're trying to delete a tenant resource in the central context
+            throw new ModelNotSyncMasterException(get_class($event->model));
+        }
+
         $centralResource = $this->getCentralResource($event->model);
 
         if (! $centralResource) {

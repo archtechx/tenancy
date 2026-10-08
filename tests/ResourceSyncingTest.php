@@ -248,6 +248,26 @@ test('updating tenant resources from central context throws an exception', funct
     TenantUser::first()->update(['password' => 'foobar']);
 });
 
+test('deleting tenant resources from central context throws an exception', function () {
+    $tenant = Tenant::create();
+    migrateUsersTableForTenants();
+
+    tenancy()->initialize($tenant);
+
+    TenantUser::create([
+        'global_id' => 'foo',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter',
+    ]);
+
+    tenancy()->end();
+
+    pest()->expectException(ModelNotSyncMasterException::class);
+    TenantUser::first()->delete();
+});
+
 test('attaching central resources to tenants or vice versa creates synced tenant resource', function () {
     $createCentralUser = fn () => CentralUser::create([
         'name' => 'John Doe',
