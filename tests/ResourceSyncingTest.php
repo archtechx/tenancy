@@ -274,6 +274,28 @@ test('attaching central resources to tenants or vice versa creates synced tenant
     });
 });
 
+test('attaching central resources to tenants or vice versa works in tenant context', function () {
+    $createCentralUser = fn () => CentralUser::create([
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter',
+    ]);
+
+    $tenant = Tenant::create();
+
+    migrateUsersTableForTenants();
+
+    $tenant->run(function () use ($tenant, $createCentralUser) {
+        expect(TenantUser::all())->toHaveCount(0);
+
+        $tenant->customPivotUsers()->attach($createCentralUser());
+        $createCentralUser()->tenants()->attach($tenant);
+
+        expect(TenantUser::all())->toHaveCount(2);
+    });
+});
+
 test('updating pivot column does not re-create the synced tenant resource', function () {
     // Add an extra pivot column so we can update it
     Schema::table('tenant_users', fn (Blueprint $table) => $table->string('note')->nullable());
@@ -924,6 +946,32 @@ test('deleting SyncMaster automatically deletes its Syncables', function (bool $
     'polymorphic pivot' => true,
     'basic pivot' => false,
 ]);
+
+test('deleting central resource in tenant context deletes all of its mappings', function () {
+    [$tenant1, $tenant2] = createTenantsAndRunMigrations();
+
+    $centralUser = CentralUser::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter',
+    ]);
+
+    $centralUser->tenants()->attach($tenant1);
+    $centralUser->tenants()->attach($tenant2);
+
+    expect(DB::table('tenant_users')->where('global_user_id', 'acme')->count())->toBe(2);
+
+    tenancy()->initialize($tenant1);
+
+    $centralUser->delete();
+
+    tenancy()->end();
+
+    // All the mappings are deleted
+    expect(DB::table('tenant_users')->where('global_user_id', 'acme')->count())->toBe(0);
+});
 
 test('tenant pivot records are deleted along with the tenants to which they belong', function (bool $dbLevelOnCascadeDelete, bool $morphPivot) {
     [$tenant] = createTenantsAndRunMigrations();
