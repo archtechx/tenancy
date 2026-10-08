@@ -9,9 +9,9 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Stancl\Tenancy\Listeners\QueueableListener;
 use Stancl\Tenancy\ResourceSyncing\Events\SyncedResourceDeleted;
+use Stancl\Tenancy\ResourceSyncing\ModelNotSyncMasterException;
 use Stancl\Tenancy\ResourceSyncing\Syncable;
 use Stancl\Tenancy\ResourceSyncing\SyncMaster;
-use Stancl\Tenancy\ResourceSyncing\ModelNotSyncMasterException;
 
 /**
  * Deletes pivot records when a synced resource is deleted.
