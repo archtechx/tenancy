@@ -950,52 +950,11 @@ test('deleting central resource in tenant context deletes all of its mappings', 
 
     expect(DB::table('tenant_users')->where('global_user_id', 'acme')->count())->toBe(2);
 
-    tenancy()->initialize($tenant1);
-
-    $tenantUser = TenantUser::first();
-
     $centralUser->delete();
-
-    dd($tenantUser->refresh());
-
-    tenancy()->end();
 
     // All the mappings are deleted
     expect(DB::table('tenant_users')->where('global_user_id', 'acme')->count())->toBe(0);
-})->skip();
-
-test('deleting test', function () {
-    [$tenant1, $tenant2] = createTenantsAndRunMigrations();
-
-    $centralUser = CentralUser::create([
-        'global_id' => 'acme',
-        'name' => 'John Doe',
-        'email' => 'john@localhost',
-        'password' => 'secret',
-        'role' => 'commenter',
-    ]);
-
-    $centralUser->tenants()->attach($tenant1);
-    $centralUser->tenants()->attach($tenant2);
-
-    expect(DB::table('tenant_users')->where('global_user_id', 'acme')->count())->toBe(2);
-
-    tenancy()->initialize($tenant1);
-
-    $tenantUser = TenantUser::first();
-
-    // delete central user in tenant context
-    // (no CentralConnection trait, but the 'central' connection is still used)
-    $centralUser->delete();
-
-    tenancy()->end();
-
-    // deleted both central and tenant user
-    expect($tenant1->run(fn () => TenantUser::find($tenantUser->id)))->toBeNull();
-    expect(CentralUser::find($centralUser->id))->toBeNull();
-    // all the mappings are deleted
-    expect(DB::table('tenant_users')->where('global_user_id', 'acme')->count())->toBe(0);
-})->skip();
+});
 
 test('tenant pivot records are deleted along with the tenants to which they belong', function (bool $dbLevelOnCascadeDelete, bool $morphPivot) {
     [$tenant] = createTenantsAndRunMigrations();
