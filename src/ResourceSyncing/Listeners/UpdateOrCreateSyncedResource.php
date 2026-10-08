@@ -15,7 +15,6 @@ use Stancl\Tenancy\Database\TenantCollection;
 use Stancl\Tenancy\Listeners\QueueableListener;
 use Stancl\Tenancy\ResourceSyncing\Events\SyncedResourceSaved;
 use Stancl\Tenancy\ResourceSyncing\Events\SyncedResourceSavedInForeignDatabase;
-use Stancl\Tenancy\ResourceSyncing\ModelNotSyncMasterException;
 use Stancl\Tenancy\ResourceSyncing\ParsesCreationAttributes;
 use Stancl\Tenancy\ResourceSyncing\Syncable;
 use Stancl\Tenancy\ResourceSyncing\SyncMaster;
@@ -57,11 +56,6 @@ class UpdateOrCreateSyncedResource extends QueueableListener
 
     protected function getTenantsForCentralModel(Syncable $centralModel): TenantCollection
     {
-        if (! $centralModel instanceof SyncMaster) {
-            // If we're trying to use a tenant User model instead of the central User model, for example.
-            throw new ModelNotSyncMasterException(get_class($centralModel));
-        }
-
         /** @var Tenant&Model&SyncMaster $centralModel */
 
         // Since this model is "dirty" (taken by reference from the event), it might have the tenants

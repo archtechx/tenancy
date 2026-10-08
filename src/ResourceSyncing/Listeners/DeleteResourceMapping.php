@@ -25,11 +25,6 @@ class DeleteResourceMapping extends QueueableListener
 
     public function handle(SyncedResourceDeleted $event): void
     {
-         if (! $event->tenant && ! $event->model instanceof SyncMaster) {
-            // If we're trying to delete a tenant resource in the central context
-            throw new ModelNotSyncMasterException(get_class($event->model));
-        }
-
         $centralResource = $this->getCentralResource($event->model);
 
         if (! $centralResource) {
