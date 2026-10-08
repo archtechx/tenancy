@@ -31,7 +31,6 @@ use Stancl\Tenancy\ResourceSyncing\TenantPivot as BasePivot;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\ResourceSyncing\Events\SyncMasterRestored;
 use Stancl\Tenancy\ResourceSyncing\Events\SyncedResourceSaved;
-use Stancl\Tenancy\ResourceSyncing\ModelNotSyncMasterException;
 use Stancl\Tenancy\ResourceSyncing\Listeners\CreateTenantResource;
 use Stancl\Tenancy\ResourceSyncing\Listeners\DeleteResourceInTenant;
 use Stancl\Tenancy\ResourceSyncing\Listeners\DeleteResourcesInTenants;
@@ -53,6 +52,7 @@ use Stancl\Tenancy\ResourceSyncing\Events\SyncedResourceDeleted;
 use Stancl\Tenancy\ResourceSyncing\Listeners\DeleteAllTenantMappings;
 use Stancl\Tenancy\ResourceSyncing\Listeners\DeleteResourceMapping;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Stancl\Tenancy\Database\Concerns\TenantConnection;
 
 beforeEach(function () {
     config(['tenancy.bootstrappers' => [
@@ -149,6 +149,11 @@ test('resources created with the same global id in different tenant dbs will be 
 test('SyncedResourceSaved event gets triggered when resource gets created or when its synced attributes get updated', function () {
     Event::fake(SyncedResourceSaved::class);
 
+    $tenant = Tenant::create();
+    migrateUsersTableForTenants();
+
+    tenancy()->initialize($tenant);
+
     // Create resource
     $user = TenantUser::create([
         'name' => 'Foo',
@@ -225,27 +230,7 @@ test('only synced columns get updated by the syncing logic', function () {
         'email' => 'john@foreignhost', // Synced
         'password' => 'secret',
         'role' => 'superadmin', // Unsynced
-    ], TenantUser::first()->getAttributes());
-});
-
-test('updating tenant resources from central context throws an exception', function () {
-    $tenant = Tenant::create();
-    migrateUsersTableForTenants();
-
-    tenancy()->initialize($tenant);
-
-    TenantUser::create([
-        'global_id' => 'foo',
-        'name' => 'John Doe',
-        'email' => 'john@localhost',
-        'password' => 'secret',
-        'role' => 'commenter',
-    ]);
-
-    tenancy()->end();
-
-    pest()->expectException(ModelNotSyncMasterException::class);
-    TenantUser::first()->update(['password' => 'foobar']);
+    ], CentralUser::first()->getAttributes());
 });
 
 test('attaching central resources to tenants or vice versa creates synced tenant resource', function () {
@@ -270,6 +255,28 @@ test('attaching central resources to tenants or vice versa creates synced tenant
 
     $tenant->run(function () {
         // two (separate) central users were created, so there are now two separate tenant users in the tenant's database
+        expect(TenantUser::all())->toHaveCount(2);
+    });
+});
+
+test('attaching central resources to tenants or vice versa works in tenant context', function () {
+    $createCentralUser = fn () => CentralUser::create([
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter',
+    ]);
+
+    $tenant = Tenant::create();
+
+    migrateUsersTableForTenants();
+
+    $tenant->run(function () use ($tenant, $createCentralUser) {
+        expect(TenantUser::all())->toHaveCount(0);
+
+        $tenant->customPivotUsers()->attach($createCentralUser());
+        $createCentralUser()->tenants()->attach($tenant);
+
         expect(TenantUser::all())->toHaveCount(2);
     });
 });
@@ -645,7 +652,9 @@ test('synced columns are updated in other tenant dbs where the resource exists',
     expect($centralUser->role)->toBe('commenter'); // Unsynced
 
     // This works when the change comes from the central DB – all tenant resources get updated
-    $centralUser->update(['name' => 'John 0']);
+    $tenant1->run(function () use ($centralUser) {
+        $centralUser->update(['name' => 'John 0']);
+    });
 
     tenancy()->runForMultiple([$tenant1, $tenant2, $tenant3], function () {
         expect(TenantUser::first()->name)->toBe('John 0');
@@ -924,6 +933,28 @@ test('deleting SyncMaster automatically deletes its Syncables', function (bool $
     'polymorphic pivot' => true,
     'basic pivot' => false,
 ]);
+
+test('deleting central resource in tenant context deletes all of its mappings', function () {
+    [$tenant1, $tenant2] = createTenantsAndRunMigrations();
+
+    $centralUser = CentralUser::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter',
+    ]);
+
+    $centralUser->tenants()->attach($tenant1);
+    $centralUser->tenants()->attach($tenant2);
+
+    expect(DB::table('tenant_users')->where('global_user_id', 'acme')->count())->toBe(2);
+
+    $centralUser->delete();
+
+    // All the mappings are deleted
+    expect(DB::table('tenant_users')->where('global_user_id', 'acme')->count())->toBe(0);
+});
 
 test('tenant pivot records are deleted along with the tenants to which they belong', function (bool $dbLevelOnCascadeDelete, bool $morphPivot) {
     [$tenant] = createTenantsAndRunMigrations();
@@ -1675,7 +1706,7 @@ class CentralCompany extends Model implements SyncMaster
 
 class TenantCompany extends Model implements Syncable
 {
-    use ResourceSyncing;
+    use ResourceSyncing, TenantConnection;
 
     protected $table = 'companies';
 
