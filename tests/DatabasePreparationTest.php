@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Illuminate\Database\QueryException;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Console\ClosureCommand;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
@@ -12,13 +12,13 @@ use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Events\TenantCreated;
-use Stancl\Tenancy\Listeners\BootstrapTenancy;
-use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Events\TenantDeleted;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Jobs\DeleteDatabase;
 use Stancl\Tenancy\Jobs\MigrateDatabase;
 use Stancl\Tenancy\Jobs\SeedDatabase;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Foundation\Auth\User as Authenticable;
 use Stancl\Tenancy\Tests\Etc\TestSeeder;
@@ -121,6 +121,21 @@ test('the pipeline stops when seeding the tenant database fails without an excep
 
     expect(fn () => Tenant::create())->toThrow(RuntimeException::class, 'tenants:seed');
     expect(RecordJobRan::$ran)->toBeFalse();
+});
+
+test('seeding in production without --force fails with a hint about seeder_parameters', function () {
+    app()['env'] = 'production';
+
+    // See the previous test for why tenants:seed is replaced
+    app(ConsoleKernel::class)->registerCommand(new ClosureCommand('tenants:seed {--tenants=*} {--with-pending=}', fn () => 1));
+
+    Event::listen(TenantCreated::class, JobPipeline::make([
+        SeedDatabase::class,
+    ])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    expect(fn () => Tenant::create())->toThrow(RuntimeException::class, "set '--force' => true in tenancy.seeder_parameters");
 });
 
 test('custom job can be added to the pipeline', function () {

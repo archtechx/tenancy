@@ -42,7 +42,15 @@ class SeedDatabase implements ShouldQueue
         // Throw instead of returning false so that the failure isn't silently
         // swallowed by the pipeline, and so that queued pipelines fail loudly
         if ($exitCode !== 0) {
-            throw new RuntimeException("tenants:seed failed for tenant {$this->tenant->getTenantKey()} with exit code {$exitCode}. Output: " . trim(Artisan::output()));
+            $message = "tenants:seed failed for tenant {$this->tenant->getTenantKey()} with exit code {$exitCode}.";
+
+            // Most likely cause: the command declined to run in production without --force
+            if (app()->isProduction() && ! (config('tenancy.seeder_parameters')['--force'] ?? false)) {
+                $message .= " To seed tenant databases in production, set '--force' => true in tenancy.seeder_parameters,"
+                    . ' or remove SeedDatabase from the pipeline if seeding in production is not intended.';
+            }
+
+            throw new RuntimeException($message . ' Output: ' . trim(Artisan::output()));
         }
     }
 }
