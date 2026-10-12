@@ -447,6 +447,29 @@ test('tokens are cleaned up when in wrong tenant context before aborting', funct
     expect(ImpersonationToken::find($token->token))->toBeNull();
 });
 
+test('impersonation aborts and does not mark the session when the user does not exist in the tenant', function () {
+    Route::middleware(InitializeTenancyByDomain::class)->group(getRoutes());
+
+    $tenant = Tenant::create();
+    $tenant->domains()->create([
+        'domain' => 'foo.localhost',
+    ]);
+    migrateTenants();
+
+    // No user with this ID exists in the tenant database
+    $token = tenancy()->impersonate($tenant, '999', '/dashboard');
+
+    pest()->get('http://foo.localhost/impersonate/' . $token->token)
+        ->assertStatus(403);
+
+    expect(UserImpersonation::isImpersonating())->toBeFalse();
+    expect(session('tenancy_impersonation_guard'))->toBeNull();
+    expect(auth('web')->check())->toBeFalse();
+
+    // The token is single-use, so it's deleted even though the login failed
+    expect(ImpersonationToken::find($token->token))->toBeNull();
+});
+
 test('expired impersonation tokens can be cleaned up using a command', function () {
     $tenant = Tenant::create();
     migrateTenants();
