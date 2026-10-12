@@ -127,3 +127,35 @@ Central config in `config/tenancy.php` controls:
 - Enabled bootstrappers and features
 - Identification middleware and resolvers
 - Cache and storage prefixes
+
+## Subagents
+
+Subagents may work in separate checkouts to make concurrent changes: jj workspaces under `.workspaces/`, or git
+worktrees (e.g. under `.claude/worktrees/`). If your working directory is one of these, you're in a separate
+checkout, and Docker Compose treats it as a separate project. `./test` won't reach the main checkout's
+containers, and those containers mount the main checkout, so they wouldn't test your changes anyway.
+
+Decide whether you need to run tests yourself:
+
+- If you're confident in your changes, don't start containers. Say which tests should be run, and the parent
+  agent runs them after integrating your work.
+- If the work would benefit from running tests several times, start your own Compose project. It uses about
+  2 GB of RAM while idle. The `test` image is built for your project on first start; when the build cache is
+  warm this takes seconds and practically no disk space, but after a cache prune it's a full rebuild that
+  takes a few minutes.
+
+To set up and use your own project:
+
+1. If your directory name doesn't already start with `tenancy-`, give the project a unique name by writing
+   it to `.env` (gitignored), so it applies to every `docker compose` and `./test` call:
+   `echo "COMPOSE_PROJECT_NAME=tenancy-$(basename "$PWD")" > .env`
+2. `docker compose up -d`
+3. `docker compose exec test composer install` (`vendor/` isn't shared between checkouts)
+4. Run tests as described above. The full suite takes about 2 minutes, so run only the relevant tests unless
+   the change is likely to affect many of them.
+5. When you're done, including after failures: `docker compose down -v --rmi local`. This removes the
+   containers, their database volumes, and the image your project built.
+
+When creating a workspace for a subagent, the parent agent should name its directory `tenancy-<something-unique>`
+(e.g. `.workspaces/tenancy-foo`). The directory name is the default Compose project name, so this prevents
+collisions with other repos' workspaces even if the subagent doesn't set `COMPOSE_PROJECT_NAME`.
