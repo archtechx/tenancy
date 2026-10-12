@@ -103,22 +103,17 @@ test('mappings specified in credentialsMap override default mapPresets', functio
     MailConfigBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'custom_smtp_password'];
 
     tenancy()->initialize(Tenant::create([
+        'smtp_host' => 'tenant.host',
         'smtp_password' => 'preset_value',
         'custom_smtp_password' => 'custom_value',
     ]));
 
+    // Custom mapping is used
     expect(config('mail.mailers.smtp.password'))->toBe('custom_value');
+
+    // Preset mappings that aren't overridden still apply
+    expect(config('mail.mailers.smtp.host'))->toBe('tenant.host');
 
     // Initializing tenancy doesn't write the preset mappings into the public static property
     expect(MailConfigBootstrapper::$credentialsMap)->toBe(['mail.mailers.smtp.password' => 'custom_smtp_password']);
-
-    // Preset mappings that aren't overridden still apply
-    tenancy()->end();
-    tenancy()->initialize(Tenant::create([
-        'smtp_host' => 'tenant.host',
-        'custom_smtp_password' => 'custom_value',
-    ]));
-
-    expect(config('mail.mailers.smtp.host'))->toBe('tenant.host');
-    expect(config('mail.mailers.smtp.password'))->toBe('custom_value');
 });
