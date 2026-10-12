@@ -500,7 +500,9 @@ test('a token cannot be redeemed twice by concurrent requests', function () {
 
     // Request A continues with the token it already loaded. It must not be able to log in.
     expect(fn () => UserImpersonation::makeResponse($tokenSeenByRequestA))
-        ->toThrow(HttpException::class);
+        ->toThrow(function (HttpException $e) {
+            expect($e->getStatusCode())->toBe(403);
+        });
 
     expect(auth()->check())->toBeFalse();
     expect(UserImpersonation::isImpersonating())->toBeFalse();
