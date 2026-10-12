@@ -294,6 +294,56 @@ test('trait rls manager generates queries correctly', function() {
     );
 });
 
+test('models without rls policies are still scoped when using implicit rls', function (string $model) {
+    // With implicit RLS, models using BelongsToTenant don't get the TenantScope,
+    // regardless of whether the RLS manager generates a policy for their table.
+    TraitRLSManager::$implicitRLS = true;
+
+    // Article is excluded from discovery, UndiscoveredNote is outside of $modelDirectories
+    Schema::table('articles', function (Blueprint $table) {
+        $table->string('tenant_id')->nullable();
+    });
+
+    Schema::create('notes', function (Blueprint $table) {
+        $table->id();
+        $table->string('text');
+        $table->string('tenant_id');
+        $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
+    });
+
+    pest()->artisan('tenants:rls');
+
+    $table = (new $model)->getTable();
+
+    // No RLS policy is created for the model's table
+    expect(DB::select('SELECT policyname FROM pg_policies WHERE tablename = ?', [$table]))->toBeEmpty();
+
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    $tenant1->run(fn () => $model::create(['text' => 'tenant1 record']));
+    $tenant2->run(fn () => $model::create(['text' => 'tenant2 record']));
+
+    tenancy()->initialize($tenant1);
+
+    // The model should only see the current tenant's records, either via RLS or via the TenantScope
+    expect($model::pluck('text')->all())->toBe(['tenant1 record']);
+})->with([
+    'model excluded from discovery' => Article::class,
+    'model outside of model directories' => UndiscoveredNote::class,
+]);
+
+class UndiscoveredNote extends Model
+{
+    use BelongsToTenant;
+
+    public $table = 'notes';
+
+    protected $guarded = [];
+
+    public $timestamps = false;
+}
+
 class NonRLSPost extends Model
 {
     use BelongsToTenant;
