@@ -66,8 +66,11 @@ class CreateUserWithRLSPolicies extends Command
         // Enable RLS scoping on the table (without this, queries won't be scoped using RLS)
         DB::statement("ALTER TABLE {$table} ENABLE ROW LEVEL SECURITY");
 
+        // Apply the current $forceRls setting, including un-forcing tables that were forced previously
         if (static::$forceRls) {
             DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
+        } else {
+            DB::statement("ALTER TABLE {$table} NO FORCE ROW LEVEL SECURITY");
         }
     }
 
@@ -147,12 +150,14 @@ class CreateUserWithRLSPolicies extends Command
             if ($createPolicy) {
                 DB::statement($policyQuery);
 
-                $this->enableRLS($table);
-
                 $createdPolicies[] = $table . " ($hash)";
             } else {
                 $this->components->info("Table '{$table}' already has an up to date RLS policy.");
             }
+
+            // Enable (and force or un-force) RLS on every run, even when the policy is up to date,
+            // so that changes to $forceRls get applied to tables with existing policies
+            $this->enableRLS($table);
         }
 
         if (! empty($createdPolicies)) {

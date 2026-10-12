@@ -241,3 +241,49 @@ test('queries will stop working when the tenant session variable is not set', fu
         VALUES ('post2', ?, ?)
     SQL, [$tenant->id, $authorId]))->toThrow(QueryException::class);
 })->with([TableRLSManager::class, TraitRLSManager::class])->with([true, false]);
+
+test('rls command updates the forced state of rls on tables when forceRls changes', function (string $manager) {
+    config(['tenancy.rls.manager' => $manager]);
+
+    $tables = array_keys(app($manager)->generateQueries());
+    $rlsState = fn () => collect($tables)->mapWithKeys(fn (string $table) => [
+        $table => (array) DB::selectOne('SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = ?::regclass', [$table]),
+    ])->all();
+
+    CreateUserWithRLSPolicies::$forceRls = true;
+    pest()->artisan('tenants:rls');
+
+    foreach ($rlsState() as $state) {
+        expect($state)->toBe(['relrowsecurity' => true, 'relforcerowsecurity' => true]);
+    }
+
+    // The policies are up to date, but the tables should no longer be forced
+    CreateUserWithRLSPolicies::$forceRls = false;
+    pest()->artisan('tenants:rls');
+
+    foreach ($rlsState() as $state) {
+        expect($state)->toBe(['relrowsecurity' => true, 'relforcerowsecurity' => false]);
+    }
+
+    // Enabling forceRls again should force the tables again
+    CreateUserWithRLSPolicies::$forceRls = true;
+    pest()->artisan('tenants:rls');
+
+    foreach ($rlsState() as $state) {
+        expect($state)->toBe(['relrowsecurity' => true, 'relforcerowsecurity' => true]);
+    }
+
+    // RLS also gets (re-)enabled on tables that have an up to date policy
+    foreach ($tables as $table) {
+        DB::statement("ALTER TABLE {$table} DISABLE ROW LEVEL SECURITY");
+    }
+
+    pest()->artisan('tenants:rls');
+
+    foreach ($rlsState() as $state) {
+        expect($state)->toBe(['relrowsecurity' => true, 'relforcerowsecurity' => true]);
+    }
+})->with([
+    TableRLSManager::class,
+    TraitRLSManager::class,
+]);
