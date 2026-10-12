@@ -241,3 +241,32 @@ test('queries will stop working when the tenant session variable is not set', fu
         VALUES ('post2', ?, ?)
     SQL, [$tenant->id, $authorId]))->toThrow(QueryException::class);
 })->with([TableRLSManager::class, TraitRLSManager::class])->with([true, false]);
+
+test('rls user cannot access central tables that do not have rls policies', function (string $manager) {
+    config(['tenancy.rls.manager' => $manager]);
+
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+    $tenant2->domains()->create(['domain' => 'tenant2.localhost']);
+
+    pest()->artisan('tenants:rls');
+
+    // The tenants and domains tables have no RLS policies,
+    // and the Tenant and Domain models always use the central connection.
+    expect(DB::select("SELECT tablename FROM pg_policies WHERE tablename IN ('tenants', 'domains')"))->toBeEmpty();
+
+    tenancy()->initialize($tenant1);
+
+    expect(DB::selectOne('SELECT current_user AS name')->name)->toBe(config('tenancy.rls.user.username'));
+
+    // In tenant context, the RLS user shouldn't be able to read other tenants or their domains
+    expect(fn () => DB::select('SELECT * FROM tenants'))->toThrow(QueryException::class, 'permission denied');
+    expect(fn () => DB::select('SELECT * FROM domains'))->toThrow(QueryException::class, 'permission denied');
+
+    // ...or modify them
+    expect(fn () => DB::update("UPDATE domains SET domain = 'hijacked.localhost' WHERE tenant_id = ?", [$tenant2->id]))
+        ->toThrow(QueryException::class, 'permission denied');
+})->with([
+    TableRLSManager::class,
+    TraitRLSManager::class,
+]);
