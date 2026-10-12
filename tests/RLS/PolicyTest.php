@@ -287,3 +287,30 @@ test('rls command updates the forced state of rls on tables when forceRls change
     TableRLSManager::class,
     TraitRLSManager::class,
 ]);
+
+test('rls command disables rls on tables whose zombie policy was their last policy', function (bool $userDefinedPolicy) {
+    Schema::create('foo', function (Blueprint $table) {
+        $table->id();
+    });
+
+    // foo isn't related to the tenants table, so this policy is a zombie
+    DB::statement('CREATE POLICY foo_rls_policy_abc123 ON foo USING (true)');
+    DB::statement('ALTER TABLE foo ENABLE ROW LEVEL SECURITY, FORCE ROW LEVEL SECURITY');
+
+    if ($userDefinedPolicy) {
+        DB::statement('CREATE POLICY foo_custom_policy ON foo USING (true)');
+    }
+
+    pest()->artisan('tenants:rls');
+
+    expect(DB::select("SELECT policyname FROM pg_policies WHERE tablename = 'foo'"))
+        ->toHaveCount($userDefinedPolicy ? 1 : 0);
+
+    // RLS is only turned off when the table has no policies left,
+    // a user-defined policy keeps it enabled (and forced) as it was
+    expect((array) DB::selectOne("SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = 'foo'::regclass"))
+        ->toBe(['relrowsecurity' => $userDefinedPolicy, 'relforcerowsecurity' => $userDefinedPolicy]);
+})->with([
+    'no policies left' => false,
+    'user-defined policy left' => true,
+]);

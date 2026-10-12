@@ -214,6 +214,10 @@ class CreateUserWithRLSPolicies extends Command
      * but is not included in $rlsQueries, this can happen e.g. when changing $scopeByDefault.
      * For these tables -- that have an existing policy but now SHOULDN'T have one -- we drop
      * the existing policies.
+     *
+     * If that leaves the table with no policies at all, we also disable RLS on it, since
+     * a table with RLS enabled and no policies denies all rows to the RLS user. Tables
+     * that still have other (e.g. user-defined) policies are left as they are.
      */
     protected function dropZombiePolicies(array $tablesThatShouldHavePolicies): int
     {
@@ -228,6 +232,14 @@ class CreateUserWithRLSPolicies extends Command
 
                 $this->components->warn("RLS policy for table '{$table->tablename}' dropped (zombie).");
                 $zombies++;
+
+                $hasPolicies = DB::selectOne('SELECT EXISTS (SELECT 1 FROM pg_policy WHERE polrelid = ?::regclass) AS has_policies', [$table->tablename])->has_policies;
+
+                if (! $hasPolicies) {
+                    DB::statement("ALTER TABLE {$table->tablename} DISABLE ROW LEVEL SECURITY, NO FORCE ROW LEVEL SECURITY");
+
+                    $this->components->warn("RLS disabled on table '{$table->tablename}' (no policies left).");
+                }
             }
         }
 
