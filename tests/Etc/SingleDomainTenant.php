@@ -11,7 +11,7 @@ use Stancl\Tenancy\Contracts\SingleDomainTenant as SingleDomainTenantContract;
 
 class SingleDomainTenant extends BaseTenant implements SingleDomainTenantContract, TenantWithDatabase
 {
-    use Concerns\ConvertsDomainsToLowercase, Concerns\HasDatabase;
+    use Concerns\ConvertsDomainsToLowercase, Concerns\EnsuresDomainIsNotOccupied, Concerns\HasDatabase;
 
     public static function getCustomColumns(): array
     {

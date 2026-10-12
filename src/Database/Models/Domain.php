@@ -21,8 +21,8 @@ use Stancl\Tenancy\Tenancy;
 class Domain extends Model implements Contracts\Domain
 {
     use Concerns\CentralConnection,
-        Concerns\EnsuresDomainIsNotOccupied,
         Concerns\ConvertsDomainsToLowercase,
+        Concerns\EnsuresDomainIsNotOccupied,
         Concerns\InvalidatesTenantsResolverCache;
 
     protected $guarded = [];

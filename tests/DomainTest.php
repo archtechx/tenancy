@@ -54,10 +54,16 @@ test('a domain can belong to only one tenant', function () {
 
     $tenant2 = DomainTenant::create();
 
-    pest()->expectException(DomainOccupiedByOtherTenantException::class);
-    $tenant2->domains()->create([
+    expect(fn () => $tenant2->domains()->create([
         'domain' => 'foo.localhost',
-    ]);
+    ]))->toThrow(DomainOccupiedByOtherTenantException::class);
+
+    // On case-sensitive DBs (PostgreSQL, SQLite), this only throws DomainOccupiedByOtherTenantException
+    // because ConvertsDomainsToLowercase runs before EnsuresDomainIsNotOccupied. The central DB used
+    // in tests is MySQL with a case-insensitive collation, so this passes with either trait order.
+    expect(fn () => $tenant2->domains()->create([
+        'domain' => 'FOO.localhost',
+    ]))->toThrow(DomainOccupiedByOtherTenantException::class);
 });
 
 test('an exception is thrown if tenant cannot be identified', function () {
