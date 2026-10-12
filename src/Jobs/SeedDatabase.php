@@ -11,6 +11,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Artisan;
+use RuntimeException;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
 class SeedDatabase implements ShouldQueue
@@ -33,9 +34,15 @@ class SeedDatabase implements ShouldQueue
 
     public function handle(): void
     {
-        Artisan::call('tenants:seed', [
+        $exitCode = Artisan::call('tenants:seed', [
             '--tenants' => [$this->tenant->getTenantKey()],
             '--with-pending' => static::$includePending ?? config('tenancy.pending.include_in_queries'),
         ]);
+
+        // Throw instead of returning false so that the failure isn't silently
+        // swallowed by the pipeline, and so that queued pipelines fail loudly
+        if ($exitCode !== 0) {
+            throw new RuntimeException("tenants:seed failed for tenant {$this->tenant->getTenantKey()} with exit code {$exitCode}. Output: " . trim(Artisan::output()));
+        }
     }
 }
