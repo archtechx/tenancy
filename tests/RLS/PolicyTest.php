@@ -314,3 +314,21 @@ test('rls command disables rls on tables whose zombie policy was their last poli
     'no policies left' => false,
     'user-defined policy left' => true,
 ]);
+
+test('rls command does not alter tables whose rls state is up to date', function (string $manager, bool $forceRls) {
+    CreateUserWithRLSPolicies::$forceRls = $forceRls;
+    config(['tenancy.rls.manager' => $manager]);
+
+    pest()->artisan('tenants:rls');
+
+    DB::enableQueryLog();
+
+    pest()->artisan('tenants:rls');
+
+    // ALTER TABLE takes an ACCESS EXCLUSIVE lock even if it doesn't change anything
+    expect(collect(DB::getQueryLog())->pluck('query')->filter(fn (string $query) => str($query)->contains('ALTER TABLE')))
+        ->toBeEmpty();
+})->with([
+    TableRLSManager::class,
+    TraitRLSManager::class,
+])->with([true, false]);
