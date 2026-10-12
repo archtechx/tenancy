@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Features;
 
 use Exception;
+use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -60,7 +61,15 @@ class UserImpersonation implements Feature
             abort(403);
         }
 
-        Auth::guard($token->auth_guard)->loginUsingId($token->user_id, $token->remember);
+        /** @var StatefulGuard $guard */
+        $guard = Auth::guard($token->auth_guard);
+
+        if (! $guard->loginUsingId($token->user_id, $token->remember)) {
+            // The token is single-use, so it's deleted regardless of whether the login succeeded
+            $token->delete();
+
+            abort(403);
+        }
 
         session()->put('tenancy_impersonation_guard', $token->auth_guard);
 
