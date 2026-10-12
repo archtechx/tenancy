@@ -9,7 +9,9 @@ trait ConvertsDomainsToLowercase
     public static function bootConvertsDomainsToLowercase(): void
     {
         static::saving(function ($model) {
-            $model->domain = strtolower($model->domain);
+            if ($model->domain !== null) {
+                $model->domain = strtolower($model->domain);
+            }
         });
     }
 }
