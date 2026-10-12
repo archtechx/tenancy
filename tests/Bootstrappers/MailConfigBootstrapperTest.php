@@ -6,13 +6,14 @@ use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
+use Stancl\Tenancy\Tests\Etc\Tenant;
 
 beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
     Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 });
 
-test('MailTenancyBootstrapper maps tenant mail credentials to config as specified in the $credentialsMap property and makes the mailer use tenant credentials', function() {
+test('MailConfigBootstrapper maps tenant mail credentials to config as specified in the $credentialsMap property and makes the mailer use tenant credentials', function() {
     MailConfigBootstrapper::$credentialsMap = [
         'mail.mailers.smtp.username' => 'smtp_username',
         'mail.mailers.smtp.password' => 'smtp_password'
@@ -38,7 +39,7 @@ test('MailTenancyBootstrapper maps tenant mail credentials to config as specifie
     assertMailerTransportUsesPassword($password);
 });
 
-test('MailTenancyBootstrapper reverts the config and mailer credentials to default when tenancy ends', function() {
+test('MailConfigBootstrapper reverts the config and mailer credentials to default when tenancy ends', function() {
     MailConfigBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'smtp_password'];
     config([
         'mail.default' => 'smtp',
