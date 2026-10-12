@@ -471,9 +471,6 @@ test('impersonation aborts and does not mark the session when the user does not 
 });
 
 test('a token cannot be redeemed twice by concurrent requests', function () {
-    // DISCUSS: this test currently fails. Token lookup, login and deletion
-    // aren't atomic, so two requests that both load the token before either
-    // of them deletes it can both log in.
     $tenant = Tenant::create();
     migrateTenants();
 

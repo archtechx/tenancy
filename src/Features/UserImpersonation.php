@@ -44,11 +44,16 @@ class UserImpersonation implements Feature
         $token = $token instanceof Model ? $token : static::modelClass()::findOrFail($token);
         $ttl ??= static::$ttl;
 
+        // Tokens are single-use, so the token is consumed before anything else happens. Deleting it with
+        // a single query lets the database decide which request gets to use the token if multiple requests
+        // try to use it at the same time. Only the request that actually deleted the token can continue.
+        if (static::modelClass()::query()->whereKey($token->getKey())->delete() !== 1) {
+            abort(403);
+        }
+
         $tokenExpired = $token->created_at->diffInSeconds(now()) > $ttl;
 
         if ($tokenExpired) {
-            $token->delete();
-
             abort(403);
         }
 
@@ -56,8 +61,6 @@ class UserImpersonation implements Feature
         $currentTenantId = (string) tenant()->getTenantKey();
 
         if ($tokenTenantId !== $currentTenantId) {
-            $token->delete();
-
             abort(403);
         }
 
@@ -65,15 +68,10 @@ class UserImpersonation implements Feature
         $guard = Auth::guard($token->auth_guard);
 
         if (! $guard->loginUsingId($token->user_id, $token->remember)) {
-            // The token is single-use, so it's deleted regardless of whether the login succeeded
-            $token->delete();
-
             abort(403);
         }
 
         session()->put('tenancy_impersonation_guard', $token->auth_guard);
-
-        $token->delete();
 
         return redirect($token->redirect_url);
     }
