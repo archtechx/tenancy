@@ -470,6 +470,44 @@ test('impersonation aborts and does not mark the session when the user does not 
     expect(ImpersonationToken::find($token->token))->toBeNull();
 });
 
+test('a token cannot be redeemed twice by concurrent requests', function () {
+    $tenant = Tenant::create();
+    migrateTenants();
+
+    $user = $tenant->run(function () {
+        return ImpersonationUser::create([
+            'name' => 'foo',
+            'email' => 'foo@bar',
+            'password' => bcrypt('password'),
+        ]);
+    });
+
+    $token = tenancy()->impersonate($tenant, $user->id, '/dashboard');
+
+    tenancy()->initialize($tenant);
+
+    // Request A looks up the token...
+    $tokenSeenByRequestA = ImpersonationToken::findOrFail($token->token);
+
+    // ...then request B redeems it fully before request A gets to log in and delete it
+    UserImpersonation::makeResponse($token->token);
+
+    expect(ImpersonationToken::find($token->token))->toBeNull();
+
+    // Reset the state left behind by request B
+    UserImpersonation::stopImpersonating();
+    expect(auth()->check())->toBeFalse();
+
+    // Request A continues with the token it already loaded. It must not be able to log in.
+    expect(fn () => UserImpersonation::makeResponse($tokenSeenByRequestA))
+        ->toThrow(function (HttpException $e) {
+            expect($e->getStatusCode())->toBe(403);
+        });
+
+    expect(auth()->check())->toBeFalse();
+    expect(UserImpersonation::isImpersonating())->toBeFalse();
+});
+
 test('expired impersonation tokens can be cleaned up using a command', function () {
     $tenant = Tenant::create();
     migrateTenants();
