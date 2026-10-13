@@ -28,7 +28,7 @@ class Tenancy
     /**
      * Custom callback for providing a list of bootstrappers to use.
      * When this is null, config('tenancy.bootstrappers') is used.
-     * @var ?Closure(): list<TenancyBootstrapper>
+     * @var ?Closure(?Tenant): list<class-string<TenancyBootstrapper>>
      */
     public ?Closure $getBootstrappersUsing = null;
 
@@ -175,23 +175,46 @@ class Tenancy
     /** @return TenancyBootstrapper[] */
     public function getBootstrappers(): array
     {
+        // Here we instantiate the bootstrappers and return them.
+        return array_map('app', $this->getBootstrapperClasses());
+    }
+
+    /**
+     * Get the class names of the bootstrappers for the current context.
+     *
+     * These come from config('tenancy.bootstrappers'), or from the $getBootstrappersUsing
+     * callback if set. The callback receives the current tenant, or null if tenancy
+     * isn't initialized.
+     *
+     * @return list<class-string<TenancyBootstrapper>>
+     */
+    protected function getBootstrapperClasses(): array
+    {
         // If no callback for getting bootstrappers is set, we return the ones in config.
         $resolve = $this->getBootstrappersUsing ?? function (?Tenant $tenant) {
             return config('tenancy.bootstrappers');
         };
 
-        // Here we instantiate the bootstrappers and return them.
-        return array_map('app', $resolve($this->tenant));
+        return $resolve($this->tenant);
     }
 
     /**
-     * Check if a bootstrapper is being used.
+     * Check if a bootstrapper is in the bootstrapper list for the current context.
+     *
+     * Checks the class names from getBootstrapperClasses() without instantiating them.
+     * Subclasses of the passed bootstrapper count as a match.
      *
      * @param class-string<TenancyBootstrapper> $bootstrapper
      */
     public function usingBootstrapper(string $bootstrapper): bool
     {
-        return in_array($bootstrapper, static::getBootstrappers(), true);
+        foreach ($this->getBootstrapperClasses() as $class) {
+            if (is_a($class, $bootstrapper, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
