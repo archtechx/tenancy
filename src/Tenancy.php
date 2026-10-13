@@ -180,7 +180,11 @@ class Tenancy
     }
 
     /**
-     * Get the class names of the bootstrappers that should be used for the current tenant.
+     * Get the class names of the bootstrappers for the current context.
+     *
+     * These come from config('tenancy.bootstrappers'), or from the $getBootstrappersUsing
+     * callback if set. The callback receives the current tenant, or null if tenancy
+     * isn't initialized.
      *
      * @return list<class-string<TenancyBootstrapper>>
      */
@@ -195,11 +199,10 @@ class Tenancy
     }
 
     /**
-     * Check if a bootstrapper is being used.
+     * Check if a bootstrapper is in the bootstrapper list for the current context.
      *
-     * Checks the configured bootstrapper class names (config('tenancy.bootstrappers'),
-     * or the $getBootstrappersUsing callback if set) without instantiating them.
-     * Subclasses of the passed bootstrapper count as the bootstrapper being used.
+     * Checks the class names from getBootstrapperClasses() without instantiating them.
+     * Subclasses of the passed bootstrapper count as a match.
      *
      * @param class-string<TenancyBootstrapper> $bootstrapper
      */
