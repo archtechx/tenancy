@@ -151,10 +151,8 @@ test('database tenancy bootstrapper throws an exception if DB_URL is set', funct
     }
 })->with(['abc.us-east-1.rds.amazonaws.com', null]);
 
-// The tests below demonstrate that tenant attributes prefixed with tenancy_db_ are passed
-// into the tenant connection config verbatim, so anyone who can write tenant attributes (e.g.
-// via mass assignment -- the Tenant model is unguarded) can repoint the tenant connection.
-// They currently FAIL, since nothing restricts these keys and $harden doesn't catch them.
+// The tests below verify that anyone who can write tenant attributes (e.g. via mass assignment --
+// the Tenant model is unguarded) cannot repoint the tenant connection using tenancy_db_* attributes.
 
 test('tenancy_db_url cannot point the tenant connection at a different database server', function () {
     config(['tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class]]);
@@ -228,6 +226,27 @@ test('harden prevents tenants from using the database of another tenant via conn
     'isolation_level (SQL injection)' => fn (string $db) => [
         'tenancy_db_isolation_level' => "READ COMMITTED; USE `{$db}`",
     ],
+]);
+
+test('tenant connection config values are validated', function (array $attributes) {
+    config(['tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class]]);
+
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    $tenant = Tenant::create();
+    $tenant->update($attributes);
+
+    expect(fn () => tenancy()->initialize($tenant))->toThrow(InvalidArgumentException::class);
+    expect(DB::getDefaultConnection())->toBe(config('tenancy.database.central_connection'));
+})->with([
+    'host' => [['tenancy_db_host' => 'mysql;dbname=foo']],
+    'port' => [['tenancy_db_port' => '3306;dbname=foo']],
+    'charset' => [['tenancy_db_charset' => "utf8mb4'; DROP DATABASE foo; --"]],
+    'collation' => [['tenancy_db_collation' => "utf8mb4_unicode_ci' --"]],
+    'username' => [['tenancy_db_username' => 'root;']],
+    'password' => [['tenancy_db_password' => "pass'word"]],
 ]);
 
 test('harden prevents tenants from using the central database when a table prefix is set', function () {

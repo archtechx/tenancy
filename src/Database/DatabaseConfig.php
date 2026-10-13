@@ -9,17 +9,35 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
+use Stancl\Tenancy\Database\Concerns\ValidatesDatabaseParameters;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase as Tenant;
 use Stancl\Tenancy\Database\Exceptions\DatabaseManagerNotRegisteredException;
 use Stancl\Tenancy\Database\Exceptions\NoConnectionSetException;
 
 class DatabaseConfig
 {
+    use ValidatesDatabaseParameters;
+
     /** The tenant whose database we're dealing with. */
     public Tenant&Model $tenant;
 
     /** Additional config for the database connection, specific to this tenant. */
     public array $tenantConfig;
+
+    /**
+     * Connection config keys that can be set on the tenant using tenancy_db_* attributes.
+     *
+     * Values of these keys are validated in validateTenantConfig() before they're used
+     * in the connection config. If you add a key here, make sure validateTenantConfig()
+     * handles it correctly -- by default, values have to pass validateParameter().
+     *
+     * Keys like 'url', 'read', 'write' or 'options' should NOT be added here, since they'd
+     * let anyone who can write tenant attributes make the tenant connection use any database.
+     *
+     * @var string[]
+     */
+    public static array $tenantConfigKeys = ['host', 'port', 'username', 'password', 'charset', 'collation'];
 
     /**
      * Database username generator (can be set by the developer.).
@@ -164,7 +182,7 @@ class DatabaseConfig
         $templateConnection = $this->getTemplateConnection();
 
         return $this->manager()->makeConnectionConfig(
-            array_merge($templateConnection, $this->tenantConfig),
+            array_merge($templateConnection, $this->validateTenantConfig($this->tenantConfig)),
             $this->getName()
         );
     }
@@ -174,7 +192,7 @@ class DatabaseConfig
      */
     public function hostConnection(): array
     {
-        $config = $this->tenantConfig;
+        $config = $this->validateTenantConfig($this->tenantConfig);
         $templateConnection = $this->getTemplateConnection();
 
         if ($this->managerForDriver($this->getTemplateConnectionDriver()) instanceof Contracts\ManagesDatabaseUsers) {
@@ -189,6 +207,38 @@ class DatabaseConfig
         }
 
         return array_replace($templateConnection, $config);
+    }
+
+    /**
+     * Ensure the tenant-specific config only contains allowed keys with valid values.
+     *
+     * Some of these values end up in DSNs (host, port) or SQL statements
+     * executed on connect (charset, collation), so they're validated
+     * using the same rules as the parameters used in DB managers.
+     *
+     * @throws InvalidArgumentException
+     */
+    protected function validateTenantConfig(array $config): array
+    {
+        foreach ($config as $key => $value) {
+            if (! in_array($key, static::$tenantConfigKeys, true)) {
+                throw new InvalidArgumentException("Tenant database config key '{$key}' is not allowed.");
+            }
+
+            if (is_null($value)) {
+                // Null values unset the template connection's value (e.g. charset)
+                continue;
+            }
+
+            match ($key) {
+                'password' => $this->validatePassword($value),
+                'port' => $this->validateParameter($value, '0123456789'),
+                'host' => $this->validateParameter($value, static::$allowedParameterCharacters . '.:'),
+                default => $this->validateParameter($value),
+            };
+        }
+
+        return $config;
     }
 
     /**

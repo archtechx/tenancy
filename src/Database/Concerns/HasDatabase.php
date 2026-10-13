@@ -20,22 +20,16 @@ trait HasDatabase
         /** @var TenantWithDatabase&Model $this */
         $databaseConfig = [];
 
-        foreach (array_keys($this->getAttributes()) as $key) {
-            if (str($key)->startsWith($this->internalPrefix() . 'db_')) {
-                if ($key === $this->internalPrefix() . 'db_name') {
-                    // Remove DB name because we set that separately
-                    continue;
-                }
+        // Only known keys are read from the tenant's attributes. Passing all tenancy_db_* attributes
+        // to the connection config would let anyone who can write tenant attributes (e.g. via mass
+        // assignment) set keys like 'url', 'read', 'write', or 'options', and repoint the connection.
+        foreach (DatabaseConfig::$tenantConfigKeys as $key) {
+            $attribute = $this->internalPrefix() . 'db_' . $key;
 
-                if ($key === $this->internalPrefix() . 'db_connection') {
-                    // Remove DB connection because that's not used for the connection *contents*.
-                    // Instead the code uses getInternal('db_connection').
-                    continue;
-                }
-
+            if (array_key_exists($attribute, $this->getAttributes())) {
                 // We use getAttribute() instead of getting the value directly from the attributes array
                 // to support encrypted columns and any other types of casts.
-                $databaseConfig[str($key)->after($this->internalPrefix() . 'db_')->toString()] = $this->getAttribute($key);
+                $databaseConfig[$key] = $this->getAttribute($attribute);
             }
         }
 
