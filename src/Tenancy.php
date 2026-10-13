@@ -271,8 +271,15 @@ class Tenancy
     }
 
     /**
-     * Run a callback in the central context.
-     * Atomic, safely reverts to previous context.
+     * Run a callback in the central context and revert to the previous context afterwards.
+     *
+     * Exceptions thrown by the callback are not handled: they propagate in the central
+     * context and the previous tenant is not re-initialized. Code that catches such
+     * an exception and continues will keep running in the central context and can
+     * reinitialize manually as needed.
+     *
+     * The reason for this is that tenants can have their own logging configured, and exceptions
+     * thrown in the central context should be reported using the central logger.
      */
     public function central(Closure $callback): mixed
     {
@@ -294,6 +301,9 @@ class Tenancy
     /**
      * Run a callback for multiple tenants.
      *
+     * The original context is restored afterwards, even if the callback
+     * throws an exception (in which case the remaining tenants are skipped).
+     *
      * @param array<Tenant>|array<string|int>|\Traversable|string|int|null $tenants
      */
     public function runForMultiple($tenants, Closure $callback): void
@@ -314,20 +324,22 @@ class Tenancy
 
         $originalTenant = $this->tenant;
 
-        foreach ($tenants as $tenant) {
-            if (! $tenant instanceof Tenant) {
-                $tenant = $this->find($tenant);
+        try {
+            foreach ($tenants as $tenant) {
+                if (! $tenant instanceof Tenant) {
+                    $tenant = $this->find($tenant);
+                }
+
+                /** @var Tenant $tenant */
+                $this->initialize($tenant);
+                $callback($tenant);
             }
-
-            /** @var Tenant $tenant */
-            $this->initialize($tenant);
-            $callback($tenant);
-        }
-
-        if ($originalTenant) {
-            $this->initialize($originalTenant);
-        } else {
-            $this->end();
+        } finally {
+            if ($originalTenant) {
+                $this->initialize($originalTenant);
+            } else {
+                $this->end();
+            }
         }
     }
 
