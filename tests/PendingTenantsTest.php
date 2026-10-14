@@ -344,6 +344,47 @@ test('parallel commands respect tenant options when chunking tenants', function 
     expect($chunks->flatten()->all())->toEqualCanonicalizing([$keys[1], $keys[2], $keys[3]]);
 });
 
+test('migrate fresh command migrates pending tenants when --with-pending is passed', function () {
+    config([
+        'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
+        'tenancy.pending.include_in_queries' => false,
+    ]);
+
+    Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+    Event::listen(TenantCreated::class, JobPipeline::make([
+        CreateDatabase::class,
+        MigrateDatabase::class,
+    ])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    $pendingTenant = Tenant::createPending();
+
+    $insertUser = fn () => $pendingTenant->run(function () {
+        DB::table('users')->insert(['name' => 'foo', 'email' => 'foo@bar.test', 'password' => 'password']);
+    });
+
+    // The database is wiped and migrated again, not just wiped
+    $assertWipedAndMigrated = fn () => $pendingTenant->run(function () {
+        expect(Schema::hasTable('users'))->toBeTrue();
+        expect(DB::table('users')->count())->toBe(0);
+    });
+
+    // All tenants
+    $insertUser();
+    pest()->artisan('tenants:migrate-fresh', ['--with-pending' => true])->assertSuccessful();
+    $assertWipedAndMigrated();
+
+    // Only the pending tenant, passed in --tenants
+    $insertUser();
+    pest()->artisan('tenants:migrate-fresh', [
+        '--tenants' => [$pendingTenant->getTenantKey()],
+        '--with-pending' => true,
+    ])->assertSuccessful();
+    $assertWipedAndMigrated();
+});
+
 test('pending tenants can have default attributes for non-nullable columns', function (bool $withPendingAttributes) {
     Schema::table('tenants', function (Blueprint $table) {
         $table->string('slug')->unique();
