@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+You're working on version 4, which is the unreleased `master` branch with no tags at the moment.
+
 ## Development Commands
 
 ### Testing
