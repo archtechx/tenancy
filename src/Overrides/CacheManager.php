@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Overrides;
 
+use ArrayObject;
 use Illuminate\Cache\CacheManager as BaseCacheManager;
 use function Illuminate\Support\enum_value;
 use Mockery;
@@ -40,8 +41,9 @@ class CacheManager extends BaseCacheManager
     /**
      * Get a memoized cache driver instance that uses the tenant's tags.
      *
-     * The memoized repository is bound per tenant, so memoized
-     * values never leak between tenants or the central context.
+     * Memoized repositories are kept per driver and tenant in a single scoped
+     * binding, so memoized values never leak between tenants or the central
+     * context, and are reset along with other scoped instances.
      *
      * @param string|null $driver
      * @return \Illuminate\Contracts\Cache\Repository
@@ -50,20 +52,30 @@ class CacheManager extends BaseCacheManager
     {
         $driver = enum_value($driver) ?? $this->getDefaultDriver();
 
-        $bindingKey = "cache.__memoized:{$driver}:tenant:" . tenant()->getTenantKey();
+        $this->app->scopedIf('cache.__memoized:tenancy', static fn () => new ArrayObject);
 
-        $isSpy = isset($this->app['cache']) && $this->app['cache'] instanceof LegacyMockInterface;
+        /** @var ArrayObject<string, \Illuminate\Contracts\Cache\Repository> $repositories */
+        $repositories = $this->app->make('cache.__memoized:tenancy');
 
-        $this->app->scopedIf($bindingKey, function () use ($driver, $isSpy) {
+        $key = $driver . ':' . tenant()->getTenantKey();
+
+        if (! isset($repositories[$key])) {
+            $isSpy = isset($this->app['cache']) && $this->app['cache'] instanceof LegacyMockInterface;
+
             $repository = $this->repository(
                 new TenantMemoizedStore($driver, $this->store($driver)->tags($this->tenantTags())),
                 ['events' => false]
             );
 
-            return $isSpy ? Mockery::spy($repository) : $repository;
-        });
+            if ($isSpy) {
+                /** @var \Illuminate\Contracts\Cache\Repository $repository */
+                $repository = Mockery::spy($repository);
+            }
 
-        return $this->app->make($bindingKey);
+            $repositories[$key] = $repository;
+        }
+
+        return $repositories[$key];
     }
 
     /** @return string[] */

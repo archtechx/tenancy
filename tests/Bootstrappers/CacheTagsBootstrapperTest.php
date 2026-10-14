@@ -203,3 +203,25 @@ test('memoized cache can be spied on in tenant context', function () {
 
     Cache::memo()->shouldHaveReceived('get')->with('foo')->once();
 });
+
+test('memoized repositories do not add container bindings per tenant and are reset with scoped instances', function () {
+    $memoBindings = fn () => collect(array_keys(app()->getBindings()))
+        ->filter(fn (string $key) => str_starts_with($key, 'cache.__memoized'))
+        ->count();
+
+    $before = $memoBindings();
+
+    foreach (range(1, 3) as $_) {
+        tenancy()->initialize(Tenant::create());
+        cache()->memo()->get('foo');
+    }
+
+    expect($memoBindings())->toBe($before + 1);
+
+    $repository = cache()->memo();
+    expect(cache()->memo())->toBe($repository);
+
+    app()->forgetScopedInstances();
+
+    expect(cache()->memo())->not()->toBe($repository);
+});
