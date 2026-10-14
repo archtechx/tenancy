@@ -50,15 +50,40 @@ class CreateUserWithRLSPolicies extends Command
             return Command::FAILURE;
         }
 
+        $databaseConfig = $this->makeDatabaseConfig($manager, $username, $password);
+
         $this->components->info(
-            $manager->createUser($this->makeDatabaseConfig($manager, $username, $password))
+            $manager->createUser($databaseConfig)
                 ? "RLS user '{$username}' has been created."
                 : "RLS user '{$username}' already exists."
         );
 
+        $this->restrictPermissions($manager, $username, $databaseConfig->getName());
+
         $this->createTablePolicies();
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * The manager's createUser() grants the user all permissions on all tables in the schema.
+     * That's what the schema manager does for tenant schemas, but the RLS user
+     * shares the schema with the central app, so we take away permissions
+     * that would let it get around the RLS policies.
+     *
+     * Since createUser() grants the permissions again each time this command runs,
+     * the revokes are also applied on every run.
+     */
+    protected function restrictPermissions(PermissionControlledPostgreSQLSchemaManager $manager, string $username, string $schema): void
+    {
+        $connection = $manager->connection();
+
+        // Prevent the RLS user from creating its own tables. Tables owned by the RLS user wouldn't be subject to RLS policies
+        $connection->statement("REVOKE CREATE ON SCHEMA \"{$schema}\" FROM \"{$username}\"");
+
+        // TRUNCATE isn't subject to RLS policies, so a tenant could wipe all tenants' rows.
+        // TRIGGER would let the RLS user attach triggers that run with the privileges of whoever modifies the table.
+        $connection->statement("REVOKE TRUNCATE, TRIGGER ON ALL TABLES IN SCHEMA \"{$schema}\" FROM \"{$username}\"");
     }
 
     protected function enableRLS(string $table): void

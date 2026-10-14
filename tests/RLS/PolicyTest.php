@@ -242,30 +242,64 @@ test('queries will stop working when the tenant session variable is not set', fu
     SQL, [$tenant->id, $authorId]))->toThrow(QueryException::class);
 })->with([TableRLSManager::class, TraitRLSManager::class])->with([true, false]);
 
-test('rls user cannot access central tables that do not have rls policies', function (string $manager) {
+test('rls user can access tables that do not have rls policies', function (string $manager) {
+    config(['tenancy.rls.manager' => $manager]);
+
+    // Not related to the tenants table, e.g. data shared by all tenants
+    Schema::create('settings', function (Blueprint $table) {
+        $table->id();
+        $table->string('value');
+    });
+
+    DB::table('settings')->insert(['value' => 'foo']);
+
+    $tenant = Tenant::create();
+
+    pest()->artisan('tenants:rls');
+
+    expect(DB::select("SELECT tablename FROM pg_policies WHERE tablename = 'settings'"))->toBeEmpty();
+
+    tenancy()->initialize($tenant);
+
+    expect(DB::selectOne('SELECT current_user AS name')->name)->toBe(config('tenancy.rls.user.username'));
+
+    // Tables without policies are accessible in full from the tenant context
+    expect(DB::table('settings')->pluck('value')->all())->toBe(['foo']);
+
+    DB::table('settings')->update(['value' => 'bar']);
+
+    tenancy()->end();
+
+    expect(DB::table('settings')->pluck('value')->all())->toBe(['bar']);
+})->with([
+    TableRLSManager::class,
+    TraitRLSManager::class,
+]);
+
+test('rls user cannot truncate tables or create its own tables', function (string $manager) {
     config(['tenancy.rls.manager' => $manager]);
 
     $tenant1 = Tenant::create();
     $tenant2 = Tenant::create();
-    $tenant2->domains()->create(['domain' => 'tenant2.localhost']);
 
+    // Run the command twice to make sure the permissions don't get granted again on subsequent runs
+    pest()->artisan('tenants:rls');
     pest()->artisan('tenants:rls');
 
-    // The tenants and domains tables have no RLS policies,
-    // and the Tenant and Domain models always use the central connection.
-    expect(DB::select("SELECT tablename FROM pg_policies WHERE tablename IN ('tenants', 'domains')"))->toBeEmpty();
+    tenancy()->initialize($tenant2);
+    DB::insert("INSERT INTO authors (name, tenant_id) VALUES ('author', ?)", [$tenant2->id]);
 
     tenancy()->initialize($tenant1);
 
-    expect(DB::selectOne('SELECT current_user AS name')->name)->toBe(config('tenancy.rls.user.username'));
+    // TRUNCATE isn't subject to RLS policies, so it'd delete other tenants' records too
+    expect(fn () => DB::statement('TRUNCATE authors CASCADE'))->toThrow(QueryException::class, 'permission denied');
 
-    // In tenant context, the RLS user shouldn't be able to read other tenants or their domains
-    expect(fn () => DB::select('SELECT * FROM tenants'))->toThrow(QueryException::class, 'permission denied');
-    expect(fn () => DB::select('SELECT * FROM domains'))->toThrow(QueryException::class, 'permission denied');
+    // Tables owned by the RLS user wouldn't be subject to RLS policies
+    expect(fn () => DB::statement('CREATE TABLE foo (id int)'))->toThrow(QueryException::class, 'permission denied');
 
-    // ...or modify them
-    expect(fn () => DB::update("UPDATE domains SET domain = 'hijacked.localhost' WHERE tenant_id = ?", [$tenant2->id]))
-        ->toThrow(QueryException::class, 'permission denied');
+    tenancy()->initialize($tenant2);
+
+    expect(DB::select('SELECT * FROM authors'))->toHaveCount(1);
 })->with([
     TableRLSManager::class,
     TraitRLSManager::class,
