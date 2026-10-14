@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Overrides;
 
 use Illuminate\Cache\CacheManager as BaseCacheManager;
-use Illuminate\Cache\MemoizedStore;
 use function Illuminate\Support\enum_value;
 
 class CacheManager extends BaseCacheManager
@@ -53,7 +52,7 @@ class CacheManager extends BaseCacheManager
 
         $this->app->scopedIf($bindingKey, function () use ($driver) {
             return $this->repository(
-                new MemoizedStore($driver, $this->store($driver)->tags($this->tenantTags())),
+                new TenantMemoizedStore($driver, $this->store($driver)->tags($this->tenantTags())),
                 ['events' => false]
             );
         });

@@ -167,3 +167,22 @@ test('flushing memoized cache only flushes the current tenant', function () {
     tenancy()->initialize($tenant1);
     expect(cache()->memo()->get('foo'))->toBe('bar');
 });
+
+test('memoized tagged cache is separated between tenants', function () {
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    tenancy()->initialize($tenant1);
+    cache()->memo()->tags(['foo'])->put('bar', 'baz');
+    expect(cache()->memo()->tags(['foo'])->get('bar'))->toBe('baz');
+    expect(cache()->tags(['foo'])->get('bar'))->toBe('baz');
+
+    tenancy()->initialize($tenant2);
+    expect(cache()->memo()->tags(['foo'])->get('bar'))->toBeNull();
+
+    cache()->memo()->tags(['foo'])->put('bar', 'xyz');
+    expect(cache()->memo()->tags(['foo'])->get('bar'))->toBe('xyz');
+
+    tenancy()->initialize($tenant1);
+    expect(cache()->memo()->tags(['foo'])->get('bar'))->toBe('baz');
+});
