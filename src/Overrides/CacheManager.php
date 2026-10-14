@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Overrides;
 
 use Illuminate\Cache\CacheManager as BaseCacheManager;
+use Illuminate\Cache\MemoizedStore;
+use function Illuminate\Support\enum_value;
 
 class CacheManager extends BaseCacheManager
 {
@@ -16,7 +18,7 @@ class CacheManager extends BaseCacheManager
      */
     public function __call($method, $parameters)
     {
-        $tags = [config('tenancy.cache.tag_base') . tenant()->getTenantKey()];
+        $tags = $this->tenantTags();
 
         if ($method === 'tags') {
             $count = count($parameters);
@@ -32,5 +34,36 @@ class CacheManager extends BaseCacheManager
         }
 
         return $this->store()->tags($tags)->$method(...$parameters);
+    }
+
+    /**
+     * Get a memoized cache driver instance that uses the tenant's tags.
+     *
+     * The memoized repository is bound per tenant, so memoized
+     * values never leak between tenants or the central context.
+     *
+     * @param string|null $driver
+     * @return \Illuminate\Contracts\Cache\Repository
+     */
+    public function memo($driver = null)
+    {
+        $driver = enum_value($driver) ?? $this->getDefaultDriver();
+
+        $bindingKey = "cache.__memoized:{$driver}:tenant:" . tenant()->getTenantKey();
+
+        $this->app->scopedIf($bindingKey, function () use ($driver) {
+            return $this->repository(
+                new MemoizedStore($driver, $this->store($driver)->tags($this->tenantTags())),
+                ['events' => false]
+            );
+        });
+
+        return $this->app->make($bindingKey);
+    }
+
+    /** @return string[] */
+    protected function tenantTags(): array
+    {
+        return [config('tenancy.cache.tag_base') . tenant()->getTenantKey()];
     }
 }

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
@@ -110,4 +111,59 @@ test('cache is persisted when reidentification is used', function () {
 
     tenancy()->initialize($tenant1);
     expect(cache('foo'))->toBe('bar');
+});
+
+test('memoized cache is separated between tenants', function () {
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    tenancy()->initialize($tenant1);
+    cache()->memo()->put('foo', 'bar');
+    expect(cache()->memo()->get('foo'))->toBe('bar');
+
+    tenancy()->initialize($tenant2);
+    expect(cache()->memo()->get('foo'))->toBeNull();
+
+    cache()->memo()->put('foo', 'xyz');
+    expect(cache()->memo()->get('foo'))->toBe('xyz');
+
+    tenancy()->initialize($tenant1);
+    expect(cache()->memo()->get('foo'))->toBe('bar');
+});
+
+test('memoized cache does not leak from the central context', function () {
+    cache()->memo()->put('foo', 'central');
+    expect(cache()->memo()->get('foo'))->toBe('central');
+
+    tenancy()->initialize(Tenant::create());
+    expect(cache()->memo()->get('foo'))->toBeNull();
+
+    tenancy()->end();
+    expect(cache()->memo()->get('foo'))->toBe('central');
+});
+
+test('memoized cache uses tenant tags', function () {
+    tenancy()->initialize(Tenant::create());
+
+    Cache::memo()->put('foo', 'bar');
+
+    expect(cache()->get('foo'))->toBe('bar');
+    expect(cache()->tags([])->get('foo'))->toBe('bar');
+    expect(Cache::memo()->get('foo'))->toBe('bar');
+});
+
+test('flushing memoized cache only flushes the current tenant', function () {
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    tenancy()->initialize($tenant1);
+    cache()->memo()->put('foo', 'bar');
+
+    tenancy()->initialize($tenant2);
+    cache()->memo()->put('foo', 'xyz');
+    cache()->memo()->flush();
+    expect(cache()->memo()->get('foo'))->toBeNull();
+
+    tenancy()->initialize($tenant1);
+    expect(cache()->memo()->get('foo'))->toBe('bar');
 });
