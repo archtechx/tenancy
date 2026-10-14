@@ -169,6 +169,11 @@ test('flushing memoized cache only flushes the current tenant', function () {
 });
 
 test('memoized tagged cache is separated between tenants', function () {
+    // todo@release if we drop Laravel 12 support we can remove this check
+    if (version_compare(app()->version(), '13.0.0') < 0) {
+        pest()->markTestSkipped('Memoized cache does not support tags before Laravel 13.');
+    }
+
     $tenant1 = Tenant::create();
     $tenant2 = Tenant::create();
 
