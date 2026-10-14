@@ -77,6 +77,9 @@ class MigrateFresh extends BaseCommand
 
         return $this->runCommand('tenants:migrate', [
             '--tenants' => [$tenant->getTenantKey()],
+            // The tenant was already selected by this command, so don't let
+            // the nested command filter it out if it's pending
+            '--with-pending' => true,
             '--step' => $this->option('step'),
             '--force' => true,
         ], $output) === 0;
