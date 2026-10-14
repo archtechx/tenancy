@@ -186,3 +186,15 @@ test('memoized tagged cache is separated between tenants', function () {
     tenancy()->initialize($tenant1);
     expect(cache()->memo()->tags(['foo'])->get('bar'))->toBe('baz');
 });
+
+test('memoized cache can be spied on in tenant context', function () {
+    tenancy()->initialize(Tenant::create());
+
+    cache()->put('foo', 'bar');
+
+    Cache::spy();
+
+    expect(Cache::memo()->get('foo'))->toBe('bar');
+
+    Cache::memo()->shouldHaveReceived('get')->with('foo')->once();
+});

@@ -6,6 +6,8 @@ namespace Stancl\Tenancy\Overrides;
 
 use Illuminate\Cache\CacheManager as BaseCacheManager;
 use function Illuminate\Support\enum_value;
+use Mockery;
+use Mockery\LegacyMockInterface;
 
 class CacheManager extends BaseCacheManager
 {
@@ -50,11 +52,15 @@ class CacheManager extends BaseCacheManager
 
         $bindingKey = "cache.__memoized:{$driver}:tenant:" . tenant()->getTenantKey();
 
-        $this->app->scopedIf($bindingKey, function () use ($driver) {
-            return $this->repository(
+        $isSpy = isset($this->app['cache']) && $this->app['cache'] instanceof LegacyMockInterface;
+
+        $this->app->scopedIf($bindingKey, function () use ($driver, $isSpy) {
+            $repository = $this->repository(
                 new TenantMemoizedStore($driver, $this->store($driver)->tags($this->tenantTags())),
                 ['events' => false]
             );
+
+            return $isSpy ? Mockery::spy($repository) : $repository;
         });
 
         return $this->app->make($bindingKey);
