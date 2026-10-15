@@ -40,7 +40,8 @@ trait BelongsToTenant
     {
         // If TraitRLSManager::$implicitRLS is true or this model implements RLSModel
         // Postgres RLS is used for scoping, so we don't enable the scope used with single-database tenancy.
-        $implicitRLS = config('tenancy.rls.manager') === TraitRLSManager::class && TraitRLSManager::$implicitRLS;
+        $rlsManager = config('tenancy.rls.manager');
+        $implicitRLS = is_a($rlsManager, TraitRLSManager::class, true) && $rlsManager::$implicitRLS;
 
         if (! $implicitRLS && ! (new static) instanceof RLSModel) {
             static::addGlobalScope(new TenantScope);
