@@ -276,6 +276,60 @@ test('rls user can access tables that do not have rls policies', function (strin
     TraitRLSManager::class,
 ]);
 
+test('foreign key actions on tables without rls policies affect rows of all tenants', function (string $manager) {
+    config(['tenancy.rls.manager' => $manager]);
+
+    // Data shared by all tenants, not related to the tenants table
+    Schema::create('categories', function (Blueprint $table) {
+        $table->id();
+        $table->string('name');
+    });
+
+    // Posts are scoped to tenants, and reference a shared category
+    Schema::table('posts', function (Blueprint $table) {
+        $table->foreignId('category_id')->nullable()->constrained('categories')->cascadeOnDelete();
+    });
+
+    $categoryId = DB::table('categories')->insertGetId(['name' => 'news']);
+
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    foreach ([$tenant1, $tenant2] as $tenant) {
+        DB::table('posts')->insert([
+            'text' => "{$tenant->id} post",
+            'tenant_id' => $tenant->id,
+            'author_id' => DB::table('authors')->insertGetId(['name' => 'author', 'tenant_id' => $tenant->id]),
+            'category_id' => $categoryId,
+        ]);
+    }
+
+    pest()->artisan('tenants:rls');
+
+    expect(DB::select("SELECT tablename FROM pg_policies WHERE tablename = 'categories'"))->toBeEmpty();
+
+    tenancy()->initialize($tenant1);
+
+    // Posts are scoped, so tenant1 only sees its own post
+    expect(DB::table('posts')->pluck('text')->all())->toBe(["{$tenant1->id} post"]);
+
+    // Deleting a shared category from the tenant context isn't scoped by RLS, and neither is the
+    // ON DELETE CASCADE it triggers -- Postgres doesn't apply RLS to foreign key actions
+    DB::table('categories')->where('id', $categoryId)->delete();
+
+    tenancy()->initialize($tenant2);
+
+    // tenant2's post was deleted too
+    expect(DB::table('posts')->count())->toBe(0);
+
+    tenancy()->end();
+
+    expect(DB::table('posts')->count())->toBe(0);
+})->with([
+    TableRLSManager::class,
+    TraitRLSManager::class,
+]);
+
 test('rls user cannot truncate tables or create triggers', function (string $manager) {
     config(['tenancy.rls.manager' => $manager]);
 
