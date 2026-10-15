@@ -78,10 +78,11 @@ class CreateUserWithRLSPolicies extends Command
     {
         $connection = $manager->connection();
 
-        // Prevent the RLS user from creating its own tables. Tables owned by the RLS user wouldn't be subject to RLS policies
+        // Tables created by the RLS user would be owned by it, and table owners can bypass or drop RLS policies.
+        // Note that on Postgres 14 and older, PUBLIC has CREATE on the public schema by default, so this alone doesn't prevent it.
         $connection->statement("REVOKE CREATE ON SCHEMA \"{$schema}\" FROM \"{$username}\"");
 
-        // TRUNCATE isn't subject to RLS policies, so a tenant could wipe all tenants' rows.
+        // TRUNCATE isn't subject to RLS policies, so truncating a table in the tenant context would delete all tenants' rows.
         // TRIGGER would let the RLS user attach triggers that run with the privileges of whoever modifies the table.
         $connection->statement("REVOKE TRUNCATE, TRIGGER ON ALL TABLES IN SCHEMA \"{$schema}\" FROM \"{$username}\"");
     }
