@@ -28,9 +28,13 @@ class TraitRLSManager implements RLSPolicyManager
     public static array $modelDirectories = ['app/Models'];
 
     /**
-     * Scope queries of all tenant models using RLS by default.
+     * Scope queries of all tenant models only using RLS (without the global scopes).
      *
-     * To use RLS scoping only for some models, you can keep this disabled and
+     * This only disables the global scopes. If the manager discovers
+     * a given model and it's not excluded, RLS is always applied
+     * regardless of whether the global scopes are applied.
+     *
+     * To use RLS-only scoping only for some models, you can keep this disabled and
      * make the models of your choice implement the RLSModel interface.
      */
     public static bool $implicitRLS = false;
