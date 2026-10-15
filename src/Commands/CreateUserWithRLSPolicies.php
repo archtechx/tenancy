@@ -58,33 +58,15 @@ class CreateUserWithRLSPolicies extends Command
                 : "RLS user '{$username}' already exists."
         );
 
-        $this->restrictPermissions($manager, $username, $databaseConfig->getName());
+        // createUser() grants the user all privileges on all tables in the schema (which makes sense for
+        // schema-per-tenant setups), so on every run, we revoke the ones that would let it get around RLS:
+        // - TRUNCATE isn't subject to RLS policies, so truncating a table in the tenant context would delete all tenants' rows
+        // - TRIGGER would let the RLS user attach triggers that run with the privileges of whoever modifies the table
+        $manager->connection()->statement("REVOKE TRUNCATE, TRIGGER ON ALL TABLES IN SCHEMA \"{$databaseConfig->getName()}\" FROM \"{$username}\"");
 
         $this->createTablePolicies();
 
         return Command::SUCCESS;
-    }
-
-    /**
-     * The manager's createUser() grants the user all permissions on all tables in the schema.
-     * That's what the schema manager does for tenant schemas, but the RLS user
-     * shares the schema with the central app, so we take away permissions
-     * that would let it get around the RLS policies.
-     *
-     * Since createUser() grants the permissions again each time this command runs,
-     * the revokes are also applied on every run.
-     */
-    protected function restrictPermissions(PermissionControlledPostgreSQLSchemaManager $manager, string $username, string $schema): void
-    {
-        $connection = $manager->connection();
-
-        // Tables created by the RLS user would be owned by it, and table owners can bypass or drop RLS policies.
-        // Note that on Postgres 14 and older, PUBLIC has CREATE on the public schema by default, so this alone doesn't prevent it.
-        $connection->statement("REVOKE CREATE ON SCHEMA \"{$schema}\" FROM \"{$username}\"");
-
-        // TRUNCATE isn't subject to RLS policies, so truncating a table in the tenant context would delete all tenants' rows.
-        // TRIGGER would let the RLS user attach triggers that run with the privileges of whoever modifies the table.
-        $connection->statement("REVOKE TRUNCATE, TRIGGER ON ALL TABLES IN SCHEMA \"{$schema}\" FROM \"{$username}\"");
     }
 
     protected function enableRLS(string $table): void

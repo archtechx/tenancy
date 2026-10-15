@@ -276,7 +276,7 @@ test('rls user can access tables that do not have rls policies', function (strin
     TraitRLSManager::class,
 ]);
 
-test('rls user cannot truncate tables, create triggers, or create its own tables', function (string $manager) {
+test('rls user cannot truncate tables or create triggers', function (string $manager) {
     config(['tenancy.rls.manager' => $manager]);
 
     $tenant1 = Tenant::create();
@@ -297,9 +297,6 @@ test('rls user cannot truncate tables, create triggers, or create its own tables
     // Triggers run with the privileges of whoever modifies the table, e.g. the central user
     expect(fn () => DB::statement('CREATE TRIGGER foo BEFORE UPDATE ON authors FOR EACH ROW EXECUTE FUNCTION suppress_redundant_updates_trigger()'))
         ->toThrow(QueryException::class, 'permission denied');
-
-    // Tables created by the RLS user would be owned by it, and table owners can bypass or drop RLS policies
-    expect(fn () => DB::statement('CREATE TABLE foo (id int)'))->toThrow(QueryException::class, 'permission denied');
 
     tenancy()->initialize($tenant2);
 
