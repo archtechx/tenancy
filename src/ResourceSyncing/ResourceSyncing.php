@@ -56,7 +56,7 @@ trait ResourceSyncing
     public function triggerSyncEvent(): void
     {
         /** @var Syncable&Model $this */
-        event(new SyncedResourceSaved($this, tenant()));
+        event(new SyncedResourceSaved($this, $this instanceof SyncMaster ? null : tenant()));
     }
 
     public function triggerDeleteEvent(bool $forceDelete = false): void
@@ -66,7 +66,7 @@ trait ResourceSyncing
             event(new SyncMasterDeleted($this, $forceDelete));
         }
 
-        event(new SyncedResourceDeleted($this, tenant(), $forceDelete));
+        event(new SyncedResourceDeleted($this, $this instanceof SyncMaster ? null : tenant(), $forceDelete));
     }
 
     public function triggerRestoreEvent(): void
