@@ -244,3 +244,121 @@ test('queries will stop working when the tenant session variable is not set', fu
         VALUES ('post2', ?, ?)
     SQL, [$tenant->id, $authorId]))->toThrow(QueryException::class);
 })->with([TableRLSManager::class, TraitRLSManager::class])->with([true, false]);
+
+test('rls user can access tables that do not have rls policies', function (string $manager) {
+    config(['tenancy.rls.manager' => $manager]);
+
+    // Not related to the tenants table, e.g. data shared by all tenants
+    Schema::create('settings', function (Blueprint $table) {
+        $table->id();
+        $table->string('value');
+    });
+
+    DB::table('settings')->insert(['value' => 'foo']);
+
+    $tenant = Tenant::create();
+
+    pest()->artisan('tenants:rls');
+
+    expect(DB::select("SELECT tablename FROM pg_policies WHERE tablename = 'settings'"))->toBeEmpty();
+
+    tenancy()->initialize($tenant);
+
+    expect(DB::selectOne('SELECT current_user AS name')->name)->toBe(config('tenancy.rls.user.username'));
+
+    // Tables without policies are accessible in full from the tenant context
+    expect(DB::table('settings')->pluck('value')->all())->toBe(['foo']);
+
+    DB::table('settings')->update(['value' => 'bar']);
+
+    tenancy()->end();
+
+    expect(DB::table('settings')->pluck('value')->all())->toBe(['bar']);
+})->with([
+    TableRLSManager::class,
+    TraitRLSManager::class,
+]);
+
+test('foreign key actions on tables without rls policies affect rows of all tenants', function (string $manager) {
+    config(['tenancy.rls.manager' => $manager]);
+
+    // Data shared by all tenants, not related to the tenants table
+    Schema::create('categories', function (Blueprint $table) {
+        $table->id();
+        $table->string('name');
+    });
+
+    // Posts are scoped to tenants, and reference a shared category
+    Schema::table('posts', function (Blueprint $table) {
+        $table->foreignId('category_id')->nullable()->constrained('categories')->cascadeOnDelete();
+    });
+
+    $categoryId = DB::table('categories')->insertGetId(['name' => 'news']);
+
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    foreach ([$tenant1, $tenant2] as $tenant) {
+        DB::table('posts')->insert([
+            'text' => "{$tenant->id} post",
+            'tenant_id' => $tenant->id,
+            'author_id' => DB::table('authors')->insertGetId(['name' => 'author', 'tenant_id' => $tenant->id]),
+            'category_id' => $categoryId,
+        ]);
+    }
+
+    pest()->artisan('tenants:rls');
+
+    expect(DB::select("SELECT tablename FROM pg_policies WHERE tablename = 'categories'"))->toBeEmpty();
+
+    tenancy()->initialize($tenant1);
+
+    // Posts are scoped, so tenant1 only sees its own post
+    expect(DB::table('posts')->pluck('text')->all())->toBe(["{$tenant1->id} post"]);
+
+    // Deleting a shared category from the tenant context isn't scoped by RLS, and neither is the
+    // ON DELETE CASCADE it triggers -- Postgres doesn't apply RLS to foreign key actions
+    DB::table('categories')->where('id', $categoryId)->delete();
+
+    tenancy()->initialize($tenant2);
+
+    // tenant2's post was deleted too
+    expect(DB::table('posts')->count())->toBe(0);
+
+    tenancy()->end();
+
+    expect(DB::table('posts')->count())->toBe(0);
+})->with([
+    TableRLSManager::class,
+    TraitRLSManager::class,
+]);
+
+test('rls user cannot truncate tables or create triggers', function (string $manager) {
+    config(['tenancy.rls.manager' => $manager]);
+
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    // Run the command twice to make sure the permissions don't get granted again on subsequent runs
+    pest()->artisan('tenants:rls');
+    pest()->artisan('tenants:rls');
+
+    tenancy()->initialize($tenant2);
+    DB::insert("INSERT INTO authors (name, tenant_id) VALUES ('author', ?)", [$tenant2->id]);
+
+    tenancy()->initialize($tenant1);
+
+    // TRUNCATE isn't subject to RLS policies, so it'd delete other tenants' records too
+    expect(fn () => DB::statement('TRUNCATE authors CASCADE'))->toThrow(QueryException::class, 'permission denied');
+
+    // Triggers run with the privileges of whoever modifies the table, e.g. the central user
+    expect(fn () => DB::statement('CREATE TRIGGER foo BEFORE UPDATE ON authors FOR EACH ROW EXECUTE FUNCTION suppress_redundant_updates_trigger()'))
+        ->toThrow(QueryException::class, 'permission denied');
+
+    tenancy()->initialize($tenant2);
+
+    expect(DB::select('SELECT * FROM authors'))->toHaveCount(1);
+})->with([
+    TableRLSManager::class,
+    TraitRLSManager::class,
+]);

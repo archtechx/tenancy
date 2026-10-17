@@ -50,11 +50,19 @@ class CreateUserWithRLSPolicies extends Command
             return Command::FAILURE;
         }
 
+        $databaseConfig = $this->makeDatabaseConfig($manager, $username, $password);
+
         $this->components->info(
-            $manager->createUser($this->makeDatabaseConfig($manager, $username, $password))
+            $manager->createUser($databaseConfig)
                 ? "RLS user '{$username}' has been created."
                 : "RLS user '{$username}' already exists."
         );
+
+        // createUser() grants the user all privileges on all tables in the schema (which makes sense for
+        // schema-per-tenant setups), so on every run, we revoke the ones that would let it get around RLS:
+        // - TRUNCATE isn't subject to RLS policies, so truncating a table in the tenant context would delete all tenants' rows
+        // - TRIGGER would let the RLS user attach triggers that run with the privileges of whoever modifies the table
+        $manager->connection()->statement("REVOKE TRUNCATE, TRIGGER ON ALL TABLES IN SCHEMA \"{$databaseConfig->getName()}\" FROM \"{$username}\"");
 
         $this->createTablePolicies();
 
