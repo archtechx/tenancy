@@ -16,6 +16,8 @@ namespace Stancl\Tenancy\Database\Concerns;
  *
  * This only controls whether the global scopes are used. Models discovered
  * by the trait manager and not excluded are always scoped with RLS regardless.
+ * Models in TraitRLSManager::$excludedModels keep their global scopes even if
+ * they implement this interface.
  *
  * @see \Stancl\Tenancy\RLS\PolicyManagers\TraitRLSManager
  * @see BelongsToTenant

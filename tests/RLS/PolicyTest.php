@@ -83,6 +83,9 @@ beforeEach(function () {
 
 afterEach(function () {
     CreateUserWithRLSPolicies::$forceRls = true;
+    TraitRLSManager::$implicitRLS = false;
+    TraitRLSManager::$modelDirectories = ['app/Models'];
+    TraitRLSManager::$excludedModels = [];
 });
 
 // Regression test for https://github.com/archtechx/tenancy/pull/1280

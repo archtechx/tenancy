@@ -81,6 +81,9 @@ beforeEach(function () {
 
 afterEach(function () {
     CreateUserWithRLSPolicies::$forceRls = true;
+    TraitRLSManager::$implicitRLS = false;
+    TraitRLSManager::$modelDirectories = ['app/Models'];
+    TraitRLSManager::$excludedModels = [];
 });
 
 test('correct rls policies get created with the correct hash using trait manager', function () {
@@ -293,6 +296,37 @@ test('trait rls manager generates queries correctly', function() {
         SQL,
     );
 });
+
+test('excluded models keep their global scopes', function (bool $implicitRLS) {
+    TraitRLSManager::$implicitRLS = $implicitRLS;
+    TraitRLSManager::$excludedModels = [Article::class, NonRLSPost::class, NonRLSComment::class];
+    Model::clearBootedModels();
+
+    // Excluded models don't get RLS policies, so they keep the global scopes even
+    // with implicit RLS or when implementing RLSModel (Article implements RLSModel)
+    expect(Article::make()->hasGlobalScope(TenantScope::class))->toBeTrue();
+    expect(NonRLSPost::make()->hasGlobalScope(TenantScope::class))->toBeTrue();
+    expect(NonRLSComment::make()->hasGlobalScope(ParentModelScope::class))->toBeTrue();
+
+    Schema::table('articles', function (Blueprint $table) {
+        $table->string('tenant_id')->nullable();
+    });
+
+    pest()->artisan('tenants:rls');
+
+    // No RLS policy is created for the excluded model's table
+    expect(DB::select('SELECT policyname FROM pg_policies WHERE tablename = ?', ['articles']))->toBeEmpty();
+
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    $tenant1->run(fn () => Article::create(['text' => 'tenant1 article']));
+    $tenant2->run(fn () => Article::create(['text' => 'tenant2 article']));
+
+    // Queries are scoped using the global scope
+    $tenant1->run(fn () => expect(Article::pluck('text')->all())->toBe(['tenant1 article']));
+    $tenant2->run(fn () => expect(Article::pluck('text')->all())->toBe(['tenant2 article']));
+})->with([true, false]);
 
 class NonRLSPost extends Model
 {
