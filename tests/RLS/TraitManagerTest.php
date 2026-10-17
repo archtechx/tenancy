@@ -81,6 +81,9 @@ beforeEach(function () {
 
 afterEach(function () {
     CreateUserWithRLSPolicies::$forceRls = true;
+    TraitRLSManager::$implicitRLS = false;
+    TraitRLSManager::$modelDirectories = ['app/Models'];
+    TraitRLSManager::$excludedModels = [];
 });
 
 test('correct rls policies get created with the correct hash using trait manager', function () {
