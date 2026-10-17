@@ -39,7 +39,13 @@ class TraitRLSManager implements RLSPolicyManager
      */
     public static bool $implicitRLS = false;
 
-    /** @var array<class-string<Model>> */
+    /**
+     * Models excluded from discovery. These don't get RLS policies,
+     * so the single-database traits always apply their global scopes
+     * on them, even with implicit RLS or when they implement RLSModel.
+     *
+     * @var array<class-string<Model>>
+     */
     public static array $excludedModels = [];
 
     public function generateQueries(): array
