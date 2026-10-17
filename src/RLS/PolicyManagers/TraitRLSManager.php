@@ -115,11 +115,14 @@ class TraitRLSManager implements RLSPolicyManager
 
         return array_filter(array_map(function (SplFileInfo $file) {
             $fileContents = str($file->getContents());
-            $class = $fileContents->after("\nclass ")->before("\n")->explode(' ')->first();
 
-            if ($fileContents->contains('namespace ')) {
+            // Class name, optionally preceded by modifiers (e.g. "final class Foo", "abstract readonly class Foo")
+            $class = $fileContents->match('/^\s*(?:(?:final|abstract|readonly)\s+)*class\s+(\w+)/m')->toString();
+            $namespace = $fileContents->match('/^\s*namespace\s+([\w\\\\]+)\s*;/m')->toString();
+
+            if ($class && $namespace) {
                 try {
-                    return ($fileContents->after('namespace ')->before(';')->toString() . '\\' . $class)::make();
+                    return ($namespace . '\\' . $class)::make();
                 } catch (\Throwable $th) {
                     // Skip non-instantiable classes – we only care about models, and those are instantiable
                 }

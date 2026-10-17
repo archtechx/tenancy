@@ -14,6 +14,7 @@ use Stancl\Tenancy\Database\TenantScope;
 use Illuminate\Database\Schema\Blueprint;
 use Stancl\Tenancy\Tests\RLS\Etc\Article;
 use Stancl\Tenancy\Tests\RLS\Etc\Comment;
+use Stancl\Tenancy\Tests\RLS\Etc\FinalPost;
 use Stancl\Tenancy\Database\ParentModelScope;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
@@ -90,8 +91,8 @@ test('correct rls policies get created with the correct hash using trait manager
     $tables = collect($manager->getModels())
         ->filter(fn (Model $model) => $manager->modelBelongsToTenant($model) || $manager->modelBelongsToTenantIndirectly($model))
         ->map(fn (Model $model) => $model->getTable())
-        ->values()
         ->unique()
+        ->values()
         ->toArray();
 
     $getRLSPolicies = fn () => DB::select('SELECT policyname, tablename FROM pg_policies');
@@ -292,6 +293,24 @@ test('trait rls manager generates queries correctly', function() {
         );
         SQL,
     );
+});
+
+test('trait rls manager discovers models declared as final classes', function () {
+    // Exclude Post so that the posts policy can only be generated thanks to FinalPost (which also uses the posts table)
+    TraitRLSManager::$excludedModels = [Article::class, Post::class];
+
+    /** @var TraitRLSManager $manager */
+    $manager = app(TraitRLSManager::class);
+
+    $discoveredModels = array_map(fn (Model $model) => $model::class, $manager->getModels());
+
+    expect($discoveredModels)->toContain(FinalPost::class);
+    expect($discoveredModels)->not()->toContain(Post::class);
+    expect($manager->generateQueries())->toHaveKey('posts');
+
+    pest()->artisan('tenants:rls');
+
+    expect(DB::select("SELECT policyname FROM pg_policies WHERE tablename = 'posts'"))->toHaveCount(1);
 });
 
 class NonRLSPost extends Model
