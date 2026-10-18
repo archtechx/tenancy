@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
@@ -14,7 +15,6 @@ use Stancl\Tenancy\Database\TenantScope;
 use Illuminate\Database\Schema\Blueprint;
 use Stancl\Tenancy\Tests\RLS\Etc\Article;
 use Stancl\Tenancy\Tests\RLS\Etc\Comment;
-use Stancl\Tenancy\Tests\RLS\Etc\FinalPost;
 use Stancl\Tenancy\Database\ParentModelScope;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
@@ -295,23 +295,31 @@ test('trait rls manager generates queries correctly', function() {
     );
 });
 
-test('trait rls manager discovers models declared as final classes', function () {
-    // Exclude Post so that the posts policy can only be generated thanks to FinalPost (which also uses the posts table)
-    TraitRLSManager::$excludedModels = [Article::class, Post::class];
+test('trait rls manager discovers final models and handles crlf line endings', function (array $classDef) {
+    // The file contents are built here so that editors and git can't normalize the line endings.
+    $directory = sys_get_temp_dir() . '/tenancy_model_discovery_' . uniqid();
+    mkdir($directory);
 
-    /** @var TraitRLSManager $manager */
-    $manager = app(TraitRLSManager::class);
+    file_put_contents($directory . '/Post.php', implode("\r\n", array_merge([
+        '<?php',
+        '',
+        'namespace Stancl\Tenancy\Tests\RLS\Etc;',
+        '',
+    ], $classDef)));
 
-    $discoveredModels = array_map(fn (Model $model) => $model::class, $manager->getModels());
+    TraitRLSManager::$modelDirectories = [$directory];
 
-    expect($discoveredModels)->toContain(FinalPost::class);
-    expect($discoveredModels)->not()->toContain(Post::class);
-    expect($manager->generateQueries())->toHaveKey('posts');
+    try {
+        $discoveredModels = array_map(fn (Model $model) => $model::class, app(TraitRLSManager::class)->getModels());
 
-    pest()->artisan('tenants:rls');
-
-    expect(DB::select("SELECT policyname FROM pg_policies WHERE tablename = 'posts'"))->toHaveCount(1);
-});
+        expect(array_values($discoveredModels))->toBe([Post::class]);
+    } finally {
+        File::deleteDirectory($directory);
+    }
+})->with([
+    [['final class Post {}']],
+    [['final class Post', '{', '}', '']],
+]);
 
 class NonRLSPost extends Model
 {

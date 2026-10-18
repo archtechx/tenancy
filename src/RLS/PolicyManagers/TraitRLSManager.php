@@ -116,8 +116,9 @@ class TraitRLSManager implements RLSPolicyManager
         return array_filter(array_map(function (SplFileInfo $file) {
             $fileContents = str($file->getContents());
 
-            // Class name, optionally preceded by modifiers (e.g. "final class Foo", "abstract readonly class Foo")
-            $class = $fileContents->match('/^\s*(?:(?:final|abstract|readonly)\s+)*class\s+(\w+)/m')->toString();
+            // Class name, optionally preceded by "final". Abstract classes can't be instantiated,
+            // and readonly classes can't extend Model, so neither modifier needs to be matched.
+            $class = $fileContents->match('/^\s*(?:final\s+)?class\s+(\w+)/m')->toString();
             $namespace = $fileContents->match('/^\s*namespace\s+([\w\\\\]+)\s*;/m')->toString();
 
             if ($class && $namespace) {
