@@ -114,25 +114,18 @@ class TraitRLSManager implements RLSPolicyManager
 
         $modelFiles = Finder::create()->files()->name('*.php')->in(static::$modelDirectories);
 
-        return array_filter(array_map(function (SplFileInfo $file) {
-            $class = $this->getClassDeclaredInFile($file->getContents());
-
-            if ($class) {
-                try {
-                    return $class::make();
-                } catch (\Throwable $th) {
-                    // Skip non-instantiable classes – we only care about models, and those are instantiable
-                }
-            }
-
-            return null;
-        }, iterator_to_array($modelFiles)), fn (object|null $object) => $object instanceof Model && ! in_array($object::class, static::$excludedModels));
+        return collect($modelFiles)
+            ->map(fn (SplFileInfo $file) => $this->getConcreteClassDeclaredIn($file->getContents()))
+            ->filter(fn (string|null $class) => $class && is_a($class, Model::class, true) && ! in_array($class, static::$excludedModels))
+            ->map(fn (string $class) => new $class)
+            ->all();
     }
 
     /**
-     * Get the fully qualified name of the first named class declared in the passed PHP code.
+     * Get the fully qualified name of the first named class declared in the passed PHP code,
+     * or null if that class is abstract.
      */
-    protected function getClassDeclaredInFile(string $code): string|null
+    protected function getConcreteClassDeclaredIn(string $code): string|null
     {
         $tokens = array_values(array_filter(PhpToken::tokenize($code), fn (PhpToken $token) => ! $token->isIgnorable()));
         $namespace = null;
@@ -145,6 +138,10 @@ class TraitRLSManager implements RLSPolicyManager
             }
 
             // Requiring a name after "class" skips Foo::class and anonymous classes
+            if ($token->is(T_ABSTRACT)) {
+                return null;
+            }
+
             if ($namespace && $token->is(T_CLASS) && $next?->is(T_STRING)) {
                 return $namespace . '\\' . $next->text;
             }
