@@ -295,17 +295,12 @@ test('trait rls manager generates queries correctly', function() {
     );
 });
 
-test('trait rls manager discovers final models and handles crlf line endings', function (array $classDef) {
+test('trait rls manager discovers models regardless of how their file is formatted', function (array $lines) {
     // The file contents are built here so that editors and git can't normalize the line endings.
     $directory = sys_get_temp_dir() . '/tenancy_model_discovery_' . uniqid();
     mkdir($directory);
 
-    file_put_contents($directory . '/Post.php', implode("\r\n", array_merge([
-        '<?php',
-        '',
-        'namespace Stancl\Tenancy\Tests\RLS\Etc;',
-        '',
-    ], $classDef)));
+    file_put_contents($directory . '/Post.php', implode("\r\n", ['<?php', '', ...$lines]));
 
     TraitRLSManager::$modelDirectories = [$directory];
 
@@ -317,8 +312,21 @@ test('trait rls manager discovers final models and handles crlf line endings', f
         File::deleteDirectory($directory);
     }
 })->with([
-    [['final class Post {}']],
-    [['final class Post', '{', '}', '']],
+    'declaration spread over lines' => [[
+        'namespace Stancl\Tenancy\Tests\RLS\Etc;',
+        '',
+        '/**',
+        'class Foo is not declared here',
+        '*/',
+        '#[ObservedBy(PostObserver::class)]',
+        "final\tclass  Post",
+        '{',
+        '}',
+        '',
+    ]],
+    'declaration on one line' => [[
+        'namespace Stancl\Tenancy\Tests\RLS\Etc { /** @mixin Builder */ #[ObservedBy(PostObserver::class)] final class Post{} }',
+    ]],
 ]);
 
 class NonRLSPost extends Model

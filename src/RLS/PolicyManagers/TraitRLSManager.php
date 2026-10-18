@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\RLS\PolicyManagers;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use PhpToken;
 use Stancl\Tenancy\Database\Concerns\BelongsToPrimaryModel;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 use Symfony\Component\Finder\Finder;
@@ -114,16 +115,11 @@ class TraitRLSManager implements RLSPolicyManager
         $modelFiles = Finder::create()->files()->name('*.php')->in(static::$modelDirectories);
 
         return array_filter(array_map(function (SplFileInfo $file) {
-            $fileContents = str($file->getContents());
+            $class = $this->getClassDeclaredInFile($file->getContents());
 
-            // Class name, optionally preceded by "final". Abstract classes can't be instantiated,
-            // and readonly classes can't extend Model, so neither modifier needs to be matched.
-            $class = $fileContents->match('/^\s*(?:final\s+)?class\s+(\w+)/m')->toString();
-            $namespace = $fileContents->match('/^\s*namespace\s+([\w\\\\]+)\s*;/m')->toString();
-
-            if ($class && $namespace) {
+            if ($class) {
                 try {
-                    return ($namespace . '\\' . $class)::make();
+                    return $class::make();
                 } catch (\Throwable $th) {
                     // Skip non-instantiable classes – we only care about models, and those are instantiable
                 }
@@ -131,6 +127,30 @@ class TraitRLSManager implements RLSPolicyManager
 
             return null;
         }, iterator_to_array($modelFiles)), fn (object|null $object) => $object instanceof Model && ! in_array($object::class, static::$excludedModels));
+    }
+
+    /**
+     * Get the fully qualified name of the first named class declared in the passed PHP code.
+     */
+    protected function getClassDeclaredInFile(string $code): string|null
+    {
+        $tokens = array_values(array_filter(PhpToken::tokenize($code), fn (PhpToken $token) => ! $token->isIgnorable()));
+        $namespace = null;
+
+        foreach ($tokens as $i => $token) {
+            $next = $tokens[$i + 1] ?? null;
+
+            if ($token->is(T_NAMESPACE) && $next?->is([T_STRING, T_NAME_QUALIFIED])) {
+                $namespace = $next->text;
+            }
+
+            // Requiring a name after "class" skips Foo::class and anonymous classes
+            if ($namespace && $token->is(T_CLASS) && $next?->is(T_STRING)) {
+                return $namespace . '\\' . $next->text;
+            }
+        }
+
+        return null;
     }
 
     public function modelBelongsToTenant(Model $model): bool
