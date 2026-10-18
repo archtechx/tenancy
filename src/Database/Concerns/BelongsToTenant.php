@@ -39,11 +39,16 @@ trait BelongsToTenant
     protected static function configureBelongsToTenantScope(): void
     {
         // If TraitRLSManager::$implicitRLS is true or this model implements RLSModel
-        // Postgres RLS is used for scoping, so we don't enable the scope used with single-database tenancy.
+        // Postgres RLS is used for scoping, so we don't enable the scope used with single-database tenancy
+        // (unless the model is excluded from TraitRLSManager's discovery).
         $rlsManager = config('tenancy.rls.manager');
-        $implicitRLS = is_a($rlsManager, TraitRLSManager::class, true) && $rlsManager::$implicitRLS;
+        $traitRLS = is_a($rlsManager, TraitRLSManager::class, true);
+        $implicitRLS = $traitRLS && $rlsManager::$implicitRLS;
 
-        if (! $implicitRLS && ! (new static) instanceof RLSModel) {
+        // Excluded models don't get RLS policies, so they always keep the global scope
+        $excluded = $traitRLS && in_array(static::class, $rlsManager::$excludedModels, true);
+
+        if ($excluded || (! $implicitRLS && ! (new static) instanceof RLSModel)) {
             static::addGlobalScope(new TenantScope);
         }
     }

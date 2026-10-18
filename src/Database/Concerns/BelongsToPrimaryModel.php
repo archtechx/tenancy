@@ -25,9 +25,13 @@ trait BelongsToPrimaryModel
     protected static function configureBelongsToPrimaryModelScope()
     {
         $rlsManager = config('tenancy.rls.manager');
-        $implicitRLS = is_a($rlsManager, TraitRLSManager::class, true) && $rlsManager::$implicitRLS;
+        $traitRLS = is_a($rlsManager, TraitRLSManager::class, true);
+        $implicitRLS = $traitRLS && $rlsManager::$implicitRLS;
 
-        if (! $implicitRLS && ! (new static) instanceof RLSModel) {
+        // Excluded models don't get RLS policies, so they always keep the global scope
+        $excluded = $traitRLS && in_array(static::class, $rlsManager::$excludedModels, true);
+
+        if ($excluded || (! $implicitRLS && ! (new static) instanceof RLSModel)) {
             static::addGlobalScope(new ParentModelScope);
         }
     }
