@@ -137,11 +137,13 @@ class TraitRLSManager implements RLSPolicyManager
                 $namespace = $next->text;
             }
 
-            // Requiring a name after "class" skips Foo::class and anonymous classes
+            // Abstract classes can't be used
             if ($token->is(T_ABSTRACT)) {
                 return null;
             }
 
+            // The "class" keyword also appears in Foo::class and in anonymous classes (new class { ... }),
+            // but only in a class declaration is it followed by a name
             if ($namespace && $token->is(T_CLASS) && $next?->is(T_STRING)) {
                 return $namespace . '\\' . $next->text;
             }
