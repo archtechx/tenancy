@@ -121,6 +121,14 @@ Tests use Docker with MySQL/PostgreSQL/Redis. The `./test` script runs Pest test
 - Middleware and identification testing
 - Resource syncing validation
 
+#### Debugging tests
+
+If you're developing some feature and you encounter `SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry` errors, it's likely that some PHP errors were thrown in past test runs and prevented the test cleanup from running properly.
+
+To fix this, simply delete the database memory by shutting down containers and starting them again: `docker compose restart mysql`.
+
+Same thing for `SQLSTATE[HY000]: General error: 1615 Prepared statement needs to be re-prepared`. Just run `docker compose restart mysql`.
+
 ### Configuration
 
 Central config in `config/tenancy.php` controls:
