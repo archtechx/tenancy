@@ -38,6 +38,10 @@ class InitializeTenancyByDomainOrSubdomain extends InitializeTenancyBySubdomain
             }
         }
 
+        if (static::$forceReset) {
+            $this->tenancy->end();
+        }
+
         try {
             $this->tenancy->initialize(
                 $this->resolver->resolve($subdomain ?? $domain)
@@ -64,6 +68,12 @@ class InitializeTenancyByDomainOrSubdomain extends InitializeTenancyBySubdomain
             }
         }
 
-        return $next($request);
+        $response = $next($request);
+
+        if (static::$terminateTenancy) {
+            $this->tenancy->end();
+        }
+
+        return $response;
     }
 }
