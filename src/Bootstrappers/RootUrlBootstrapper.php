@@ -35,6 +35,8 @@ class RootUrlBootstrapper implements TenancyBootstrapper
 
     protected string|null $originalRootUrl = null;
 
+    protected string|null $originalAppUrl = null;
+
     /**
      * Overriding the root url may cause issues in *some* tests, so you can disable
      * the behavior by setting this property to false.
@@ -61,6 +63,7 @@ class RootUrlBootstrapper implements TenancyBootstrapper
         }
 
         $this->originalRootUrl = $this->app['url']->to('/');
+        $this->originalAppUrl = $this->config->get('app.url');
 
         $newRootUrl = (static::$rootUrlOverride)($tenant, $this->originalRootUrl);
 
@@ -72,7 +75,7 @@ class RootUrlBootstrapper implements TenancyBootstrapper
     {
         if ($this->originalRootUrl) {
             $this->app['url']->forceRootUrl($this->originalRootUrl);
-            $this->config->set('app.url', $this->originalRootUrl);
+            $this->config->set('app.url', $this->originalAppUrl);
         }
     }
 }
