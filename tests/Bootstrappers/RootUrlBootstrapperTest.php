@@ -13,7 +13,6 @@ use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Bootstrappers\UrlGeneratorBootstrapper;
 use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Overrides\TenancyUrlGenerator;
-use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
@@ -72,7 +71,7 @@ test('root url bootstrapper overrides the root url when tenancy gets initialized
     expect(config('app.url'))->toBe($baseUrl);
 });
 
-test('root url bootstrapper restores the original app url when tenancy ends during a request', function () {
+test('root url bootstrapper reverts the root url and app url to their own original values', function () {
     config([
         'tenancy.bootstrappers' => [RootUrlBootstrapper::class],
         'app.url' => 'http://localhost',
@@ -80,14 +79,11 @@ test('root url bootstrapper restores the original app url when tenancy ends duri
 
     RootUrlBootstrapper::$rootUrlOverride = fn (Tenant $tenant) => 'http://' . $tenant->getTenantKey() . '.localhost';
 
-    Route::get('/app-url', function () {
-        tenancy()->end();
+    URL::forceRootUrl('http://central.localhost');
 
-        return config('app.url');
-    })->middleware(InitializeTenancyBySubdomain::class);
+    tenancy()->initialize(Tenant::create());
+    tenancy()->end();
 
-    Tenant::create(['id' => 'acme'])->createDomain('acme');
-
-    // If tenancy ends inside a request, the original configured app.url is restored
-    pest()->get('http://acme.localhost/app-url')->assertContent('http://localhost');
+    expect(URL::to('/'))->toBe('http://central.localhost');
+    expect(config('app.url'))->toBe('http://localhost');
 });
