@@ -55,12 +55,12 @@ abstract class IdentificationMiddleware
             return $onFail($e, $request, $next);
         }
 
-        $response = $next($request);
-
-        if (static::$terminateTenancy) {
-            $this->tenancy->end();
+        try {
+            return $next($request);
+        } finally {
+            if (static::$terminateTenancy) {
+                $this->tenancy->end();
+            }
         }
-
-        return $response;
     }
 }

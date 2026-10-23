@@ -68,12 +68,12 @@ class InitializeTenancyByDomainOrSubdomain extends InitializeTenancyBySubdomain
             }
         }
 
-        $response = $next($request);
-
-        if (static::$terminateTenancy) {
-            $this->tenancy->end();
+        try {
+            return $next($request);
+        } finally {
+            if (static::$terminateTenancy) {
+                $this->tenancy->end();
+            }
         }
-
-        return $response;
     }
 }

@@ -79,18 +79,6 @@ test('terminateTenancy ends tenancy before subsequent central requests with kern
     expect(pest()->get('http://localhost/central-route')->getContent())->toBe('central');
 });
 
-// Currently fails. Exceptions are normally converted to responses inside $next(), but with
-// withoutExceptionHandling() they propagate through the identification middleware, so the end() call after
-// $next() is never reached. Proposed fix in IdentificationMiddleware::initializeTenancy() and
-// InitializeTenancyByDomainOrSubdomain::handle():
-//
-//     try {
-//         return $next($request);
-//     } finally {
-//         if (static::$terminateTenancy) {
-//             $this->tenancy->end();
-//         }
-//     }
 test('terminateTenancy ends tenancy even if an exception propagates out of the request', function (string $middleware) {
     IdentificationMiddleware::$terminateTenancy = true;
 
