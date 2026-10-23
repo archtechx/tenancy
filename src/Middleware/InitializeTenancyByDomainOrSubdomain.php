@@ -38,10 +38,6 @@ class InitializeTenancyByDomainOrSubdomain extends InitializeTenancyBySubdomain
             }
         }
 
-        if (static::$forceReset) {
-            $this->tenancy->end();
-        }
-
         try {
             $this->tenancy->initialize(
                 $this->resolver->resolve($subdomain ?? $domain)

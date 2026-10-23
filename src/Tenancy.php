@@ -84,6 +84,10 @@ class Tenancy
         }
 
         if ($this->initialized && $this->tenant?->getTenantKey() === $tenant->getTenantKey()) {
+            // Replace tenant with the more up to date version of the model
+            // which may have newer attributes or relations like domains
+            $this->tenant = $tenant;
+
             return;
         }
 

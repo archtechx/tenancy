@@ -11,12 +11,10 @@ use Stancl\Tenancy\Tests\Etc\Tenant;
 use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
-    IdentificationMiddleware::$forceReset = false;
     IdentificationMiddleware::$terminateTenancy = false;
 });
 
 afterEach(function () {
-    IdentificationMiddleware::$forceReset = false;
     IdentificationMiddleware::$terminateTenancy = false;
 });
 
@@ -24,27 +22,6 @@ dataset('domain identification middleware', [
     InitializeTenancyByDomain::class,
     InitializeTenancyByDomainOrSubdomain::class,
 ]);
-
-test('forceReset makes the tenant get re-resolved on each request', function (bool $forceReset, string $expectedDomains, string $middleware) {
-    IdentificationMiddleware::$forceReset = $forceReset;
-
-    Route::get('/domains', fn () => tenant()->domains->pluck('domain')->sort()->join(','))
-        ->middleware($middleware);
-
-    $tenant = Tenant::create();
-    $tenant->domains()->create(['domain' => 'a.localhost']);
-
-    pest()->get('http://a.localhost/domains')->assertSee('a.localhost');
-
-    $tenant->domains()->create(['domain' => 'b.localhost']);
-
-    // Without forceReset, initialize() is a noop since the resolved tenant matches tenant(),
-    // so tenant() is still the instance from the first request, with stale loaded relations.
-    expect(pest()->get('http://a.localhost/domains')->getContent())->toBe($expectedDomains);
-})->with([
-    'forceReset enabled' => [true, 'a.localhost,b.localhost'],
-    'forceReset disabled' => [false, 'a.localhost'],
-])->with('domain identification middleware');
 
 test('terminateTenancy ends tenancy after the request', function (bool $terminateTenancy, string $middleware) {
     IdentificationMiddleware::$terminateTenancy = $terminateTenancy;

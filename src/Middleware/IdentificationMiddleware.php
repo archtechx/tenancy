@@ -19,16 +19,6 @@ abstract class IdentificationMiddleware
     public static ?Closure $onFail = null;
 
     /**
-     * Should Tenancy be ended before attempting to identify a tenant.
-     *
-     * This can be useful in tests when the tenant should be re-resolved between
-     * requests (e.g. due to a change in a loaded relation, like domains) but
-     * would normally persist due to initialize() being a noop when the resolved
-     * tenant matches tenant().
-     */
-    public static bool $forceReset = false;
-
-    /**
      * Should Tenancy be ended before returning the response.
      *
      * This can be useful in tests if it's unergonomic that the test stays in the
@@ -40,10 +30,6 @@ abstract class IdentificationMiddleware
     public function initializeTenancy(Request $request, Closure $next, mixed ...$resolverArguments): mixed
     {
         try {
-            if (static::$forceReset) {
-                $this->tenancy->end();
-            }
-
             $this->tenancy->initialize(
                 $this->resolver->resolve(...$resolverArguments)
             );
