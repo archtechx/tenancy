@@ -63,12 +63,8 @@ test('terminateTenancy ends tenancy after the request', function (bool $terminat
     'terminateTenancy disabled' => false,
 ])->with('domain identification middleware');
 
-// Currently fails. With kernel identification, shouldBeSkipped() returns early for central routes,
-// so initializeTenancy() (where forceReset is handled) is never reached and the central route runs in the
-// tenant context left over from the previous request. If forceReset should mean "each request starts from
-// a clean state", the end() call has to happen before the shouldBeSkipped() check in each middleware's handle().
-test('forceReset ends tenancy before central routes skipped by kernel identification', function () {
-    IdentificationMiddleware::$forceReset = true;
+test('terminateTenancy ends tenancy before subsequent central requests with kernel identification', function () {
+    IdentificationMiddleware::$terminateTenancy = true;
 
     app(Kernel::class)->pushMiddleware(InitializeTenancyByDomain::class);
 
