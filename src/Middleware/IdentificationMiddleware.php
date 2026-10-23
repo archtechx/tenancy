@@ -22,7 +22,7 @@ abstract class IdentificationMiddleware
      * Should Tenancy be ended before returning the response.
      *
      * This can be useful in tests if it's unergonomic that the test stays in the
-     * tenant context after making a request to a tenant page.
+     * tenant context after making a request to a tenant route.
      */
     public static bool $terminateTenancy = false;
 
