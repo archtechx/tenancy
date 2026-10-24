@@ -178,7 +178,7 @@ test('rls command recreates policies if the force option is passed', function (s
     DB::enableQueryLog();
     DB::statement($policyCreationQuery = "CREATE POLICY {$policyNameWithHash} ON posts");
 
-    pest()->artisan('tenants:rls', ['--force' => true]);
+    pest()->artisan('tenants:rls --force');
 
     $postsPolicyCreationQueries = collect(DB::getQueryLog())
         ->pluck('query')

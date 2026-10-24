@@ -18,7 +18,7 @@ use Stancl\Tenancy\RLS\PolicyManagers\RLSPolicyManager;
  */
 class CreateUserWithRLSPolicies extends Command
 {
-    protected $signature = 'tenants:rls {--force= : Create RLS policies even if they already exist.}';
+    protected $signature = 'tenants:rls {--force : Create RLS policies even if they already exist.}';
 
     protected $description = "Creates RLS policies for all tables related to the tenant table. Also creates the RLS user if it doesn't exist yet";
 
