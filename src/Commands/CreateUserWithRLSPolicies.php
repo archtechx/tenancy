@@ -36,6 +36,9 @@ class CreateUserWithRLSPolicies extends Command
      * involved (e.g. central connection user not being the same user that
      * creates tables, or the created "RLS user" creating some tables) you
      * should take care with how you configure this.
+     *
+     * Tables with existing policies are only updated when their policies get
+     * recreated, so after changing this, run `tenants:rls --force`.
      */
     public static bool $forceRls = true;
 
@@ -63,24 +66,14 @@ class CreateUserWithRLSPolicies extends Command
 
     protected function enableRLS(string $table): void
     {
-        // ALTER TABLE takes an ACCESS EXCLUSIVE lock even when it doesn't change anything,
-        // so we only run it on tables whose RLS state doesn't match the expected state
-        $state = DB::selectOne('SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = ?::regclass', [$table]);
-
-        $statements = [];
-
         // Enable RLS scoping on the table (without this, queries won't be scoped using RLS)
-        if (! $state->relrowsecurity) {
-            $statements[] = 'ENABLE ROW LEVEL SECURITY';
-        }
+        DB::statement("ALTER TABLE {$table} ENABLE ROW LEVEL SECURITY");
 
         // Apply the current $forceRls setting, including un-forcing tables that were forced previously
-        if ($state->relforcerowsecurity !== static::$forceRls) {
-            $statements[] = static::$forceRls ? 'FORCE ROW LEVEL SECURITY' : 'NO FORCE ROW LEVEL SECURITY';
-        }
-
-        if ($statements) {
-            DB::statement("ALTER TABLE {$table} " . implode(', ', $statements));
+        if (static::$forceRls) {
+            DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
+        } else {
+            DB::statement("ALTER TABLE {$table} NO FORCE ROW LEVEL SECURITY");
         }
     }
 
@@ -160,14 +153,12 @@ class CreateUserWithRLSPolicies extends Command
             if ($createPolicy) {
                 DB::statement($policyQuery);
 
+                $this->enableRLS($table);
+
                 $createdPolicies[] = $table . " ($hash)";
             } else {
                 $this->components->info("Table '{$table}' already has an up to date RLS policy.");
             }
-
-            // Check the RLS state on every run, even when the policy is up to date,
-            // so that changes to $forceRls get applied to tables with existing policies
-            $this->enableRLS($table);
         }
 
         if (! empty($createdPolicies)) {

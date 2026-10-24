@@ -242,7 +242,7 @@ test('queries will stop working when the tenant session variable is not set', fu
     SQL, [$tenant->id, $authorId]))->toThrow(QueryException::class);
 })->with([TableRLSManager::class, TraitRLSManager::class])->with([true, false]);
 
-test('rls command updates the forced state of rls on tables when forceRls changes', function (string $manager) {
+test('rls command with the force option updates the forced state of rls on tables when forceRls changes', function (string $manager) {
     config(['tenancy.rls.manager' => $manager]);
 
     $tables = array_keys(app($manager)->generateQueries());
@@ -257,9 +257,9 @@ test('rls command updates the forced state of rls on tables when forceRls change
         expect($state)->toBe(['relrowsecurity' => true, 'relforcerowsecurity' => true]);
     }
 
-    // The policies are up to date, but the tables should no longer be forced
+    // The policies are up to date, so the force option is needed to un-force the tables
     CreateUserWithRLSPolicies::$forceRls = false;
-    pest()->artisan('tenants:rls');
+    pest()->artisan('tenants:rls', ['--force' => true]);
 
     foreach ($rlsState() as $state) {
         expect($state)->toBe(['relrowsecurity' => true, 'relforcerowsecurity' => false]);
@@ -267,18 +267,7 @@ test('rls command updates the forced state of rls on tables when forceRls change
 
     // Enabling forceRls again should force the tables again
     CreateUserWithRLSPolicies::$forceRls = true;
-    pest()->artisan('tenants:rls');
-
-    foreach ($rlsState() as $state) {
-        expect($state)->toBe(['relrowsecurity' => true, 'relforcerowsecurity' => true]);
-    }
-
-    // RLS also gets (re-)enabled on tables that have an up to date policy
-    foreach ($tables as $table) {
-        DB::statement("ALTER TABLE {$table} DISABLE ROW LEVEL SECURITY");
-    }
-
-    pest()->artisan('tenants:rls');
+    pest()->artisan('tenants:rls', ['--force' => true]);
 
     foreach ($rlsState() as $state) {
         expect($state)->toBe(['relrowsecurity' => true, 'relforcerowsecurity' => true]);
@@ -314,21 +303,3 @@ test('rls command disables rls on tables whose zombie policy was their last poli
     'no policies left' => false,
     'user-defined policy left' => true,
 ]);
-
-test('rls command does not alter tables whose rls state is up to date', function (string $manager, bool $forceRls) {
-    CreateUserWithRLSPolicies::$forceRls = $forceRls;
-    config(['tenancy.rls.manager' => $manager]);
-
-    pest()->artisan('tenants:rls');
-
-    DB::enableQueryLog();
-
-    pest()->artisan('tenants:rls');
-
-    // ALTER TABLE takes an ACCESS EXCLUSIVE lock even if it doesn't change anything
-    expect(collect(DB::getQueryLog())->pluck('query')->filter(fn (string $query) => str($query)->contains('ALTER TABLE')))
-        ->toBeEmpty();
-})->with([
-    TableRLSManager::class,
-    TraitRLSManager::class,
-])->with([true, false]);
