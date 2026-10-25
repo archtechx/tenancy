@@ -411,29 +411,18 @@ test('rls command disables rls on unscoped tables left without policies', functi
     }
 
     $rlsState = fn (string $table) => (array) DB::selectOne('SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = ?::regclass', [$table]);
-    $enabled = ['relrowsecurity' => true, 'relforcerowsecurity' => true];
-    $disabled = ['relrowsecurity' => false, 'relforcerowsecurity' => false];
     $policyCount = fn () => count(DB::select("SELECT 1 FROM pg_policies WHERE tablename IN ('foo', 'bar')"));
 
     expect($policyCount())->toBe(3);
 
     $tenant = Tenant::create();
-
-    // With $disableRlsOnTablesWithoutPolicies off, the zombie policies get dropped, but RLS stays enabled
-    CreateUserWithRLSPolicies::$disableRlsOnTablesWithoutPolicies = false;
     pest()->artisan('tenants:rls');
 
+    // The zombie policies are dropped, RLS gets disabled on tables without policies, bar still has the user-defined policy
     expect($policyCount())->toBe(1);
-    expect($rlsState('foo'))->toBe($enabled);
-    expect($rlsState('"AuditLog"'))->toBe($enabled);
-
-    CreateUserWithRLSPolicies::$disableRlsOnTablesWithoutPolicies = true;
-    pest()->artisan('tenants:rls');
-
-    // RLS gets disabled on tables without policies, bar still has the user-defined policy
-    expect($rlsState('foo'))->toBe($disabled);
-    expect($rlsState('"AuditLog"'))->toBe($disabled);
-    expect($rlsState('bar'))->toBe($enabled);
+    expect($rlsState('foo'))->toBe(['relrowsecurity' => false, 'relforcerowsecurity' => false]);
+    expect($rlsState('"AuditLog"'))->toBe(['relrowsecurity' => false, 'relforcerowsecurity' => false]);
+    expect($rlsState('bar'))->toBe(['relrowsecurity' => true, 'relforcerowsecurity' => true]);
 
     tenancy()->initialize($tenant);
 
@@ -448,28 +437,38 @@ test('rls command disables rls on tables that stopped being scoped after their p
     config(['tenancy.rls.manager' => TableRLSManager::class]);
 
     $tenant = Tenant::create();
+    $otherTenant = Tenant::create();
     $authorId = DB::table('authors')->insertGetId(['name' => 'author', 'tenant_id' => $tenant->id]);
     $postId = DB::table('posts')->insertGetId(['text' => 'post', 'author_id' => $authorId]);
     DB::table('comments')->insert(['text' => 'comment', 'post_id' => $postId]);
 
+    $rlsState = fn () => (array) DB::selectOne("SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = 'comments'::regclass");
+    $comments = fn (Tenant $tenant) => tenancy()->run($tenant, fn () => DB::table('comments')->count());
+
     pest()->artisan('tenants:rls');
 
-    expect((array) DB::selectOne("SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = 'comments'::regclass"))
-        ->toBe(['relrowsecurity' => true, 'relforcerowsecurity' => true]);
+    // comments are scoped, so only the tenant that owns the comment can see it
+    expect($rlsState())->toBe(['relrowsecurity' => true, 'relforcerowsecurity' => true]);
+    expect($comments($tenant))->toBe(1);
+    expect($comments($otherTenant))->toBe(0);
 
     // Stop scoping comments the way a migration would
     Tenancy::dropRLSPolicies('comments');
     Schema::table('comments', fn (Blueprint $table) => $table->unsignedBigInteger('post_id')->comment('no-rls')->change());
 
+    // With $disableRlsOnTablesWithoutPolicies off, RLS stays enabled with no policies, so even the owner can't see the comment
+    CreateUserWithRLSPolicies::$disableRlsOnTablesWithoutPolicies = false;
     pest()->artisan('tenants:rls');
 
-    expect((array) DB::selectOne("SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = 'comments'::regclass"))
-        ->toBe(['relrowsecurity' => false, 'relforcerowsecurity' => false]);
+    expect($rlsState())->toBe(['relrowsecurity' => true, 'relforcerowsecurity' => true]);
+    expect($comments($tenant))->toBe(0);
 
-    // comments aren't scoped anymore, so another tenant can see the comment too
-    tenancy()->initialize(Tenant::create());
+    CreateUserWithRLSPolicies::$disableRlsOnTablesWithoutPolicies = true;
+    pest()->artisan('tenants:rls');
 
-    expect(DB::table('comments')->count())->toBe(1);
+    // comments aren't scoped anymore, so any tenant can see the comment
+    expect($rlsState())->toBe(['relrowsecurity' => false, 'relforcerowsecurity' => false]);
+    expect($comments($otherTenant))->toBe(1);
 });
 
 test('rls command disables rls on tables without policies in a schema whose name needs quoting', function () {
