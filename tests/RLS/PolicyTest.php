@@ -526,3 +526,25 @@ test('rls command disables rls on tables without policies in a schema whose name
         DB::statement('DROP SCHEMA "TenantData" CASCADE');
     }
 });
+
+test('policies whose names only look like rls policy names are ignored', function () {
+    config(['tenancy.rls.manager' => TableRLSManager::class]);
+
+    Schema::create('foo', fn (Blueprint $table) => $table->id());
+
+    // These would match our LIKE patterns if _ (a single-character wildcard) wasn't escaped
+    DB::statement('CREATE POLICY postsxrlsxpolicy ON posts USING (true)');
+    DB::statement('CREATE POLICY fooxrlsxpolicy ON foo USING (true)');
+
+    expect(DB::select('SELECT 1 FROM pg_policies'))->toHaveCount(2);
+
+    pest()->artisan('tenants:rls');
+
+    // tenants:rls creates a bunch of default policies
+    expect(DB::select('SELECT 1 FROM pg_policies'))->toHaveCount(5);
+
+    // only the default policy for posts is matched, not the postsxrlsxpolicy one
+    expect(Tenancy::dropRLSPolicies('posts'))->toBe(1);
+
+    expect(DB::select("SELECT 1 FROM pg_policies WHERE policyname IN ('postsxrlsxpolicy', 'fooxrlsxpolicy')"))->toHaveCount(2);
+});
