@@ -393,46 +393,55 @@ test('rls command with the force option updates the forced state of rls on table
     TraitRLSManager::class,
 ]);
 
-test('rls command disables rls on tables whose zombie policy was their last policy', function () {
+// todo@rls handle quoting everywhere else as well
+test('rls command disables rls on unscoped tables left without policies', function () {
     Schema::create('foo', fn (Blueprint $table) => $table->id());
+    Schema::create('bar', fn (Blueprint $table) => $table->id());
+    DB::statement('CREATE TABLE "AuditLog" (id int PRIMARY KEY)'); // Name that needs quoting
     DB::table('foo')->insert([['id' => 1], ['id' => 2]]);
+    DB::table('bar')->insert([['id' => 1], ['id' => 2]]);
 
-    // foo isn't related to the tenants table, so this policy is a zombie
+    // These tables aren't related to the tenants table, so the *_rls_policy_* policies are zombies
     DB::statement('CREATE POLICY foo_rls_policy_abc123 ON foo USING (true)');
-    DB::statement('ALTER TABLE foo ENABLE ROW LEVEL SECURITY, FORCE ROW LEVEL SECURITY');
+    DB::statement('CREATE POLICY bar_rls_policy_abc123 ON bar USING (true)');
+    DB::statement('CREATE POLICY bar_custom_policy ON bar USING (id = 1)');
+
+    foreach (['foo', 'bar', '"AuditLog"'] as $table) {
+        DB::statement("ALTER TABLE {$table} ENABLE ROW LEVEL SECURITY, FORCE ROW LEVEL SECURITY");
+    }
+
+    $rlsState = fn (string $table) => (array) DB::selectOne('SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = ?::regclass', [$table]);
+    $enabled = ['relrowsecurity' => true, 'relforcerowsecurity' => true];
+    $disabled = ['relrowsecurity' => false, 'relforcerowsecurity' => false];
+    $policyCount = fn () => count(DB::select("SELECT 1 FROM pg_policies WHERE tablename IN ('foo', 'bar')"));
+
+    expect($policyCount())->toBe(3);
 
     $tenant = Tenant::create();
+
+    // With $disableRlsOnTablesWithoutPolicies off, the zombie policies get dropped, but RLS stays enabled
+    CreateUserWithRLSPolicies::$disableRlsOnTablesWithoutPolicies = false;
     pest()->artisan('tenants:rls');
 
-    expect((array) DB::selectOne("SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = 'foo'::regclass"))
-        ->toBe(['relrowsecurity' => false, 'relforcerowsecurity' => false]);
+    expect($policyCount())->toBe(1);
+    expect($rlsState('foo'))->toBe($enabled);
+    expect($rlsState('"AuditLog"'))->toBe($enabled);
+
+    CreateUserWithRLSPolicies::$disableRlsOnTablesWithoutPolicies = true;
+    pest()->artisan('tenants:rls');
+
+    // RLS gets disabled on tables without policies, bar still has the user-defined policy
+    expect($rlsState('foo'))->toBe($disabled);
+    expect($rlsState('"AuditLog"'))->toBe($disabled);
+    expect($rlsState('bar'))->toBe($enabled);
 
     tenancy()->initialize($tenant);
 
     // With RLS left enabled and no policies, the RLS user would see no rows
     expect(DB::table('foo')->count())->toBe(2);
-});
-
-test('rls command keeps rls enabled on tables with other policies after dropping a zombie policy', function () {
-    Schema::create('foo', fn (Blueprint $table) => $table->id());
-    DB::table('foo')->insert([['id' => 1], ['id' => 2]]);
-
-    // foo isn't related to the tenants table, so this policy is a zombie
-    DB::statement('CREATE POLICY foo_rls_policy_abc123 ON foo USING (true)');
-    DB::statement('CREATE POLICY foo_custom_policy ON foo USING (id = 1)');
-    DB::statement('ALTER TABLE foo ENABLE ROW LEVEL SECURITY, FORCE ROW LEVEL SECURITY');
-
-    expect(DB::select("SELECT policyname FROM pg_policies WHERE tablename = 'foo'"))->toHaveCount(2);
-
-    $tenant = Tenant::create();
-    pest()->artisan('tenants:rls');
-
-    expect(DB::select("SELECT policyname FROM pg_policies WHERE tablename = 'foo'"))->toHaveCount(1);
-
-    tenancy()->initialize($tenant);
 
     // The user-defined policy still applies
-    expect(DB::table('foo')->pluck('id')->all())->toBe([1]);
+    expect(DB::table('bar')->pluck('id')->all())->toBe([1]);
 });
 
 test('rls command disables rls on tables that stopped being scoped after their policies were dropped', function () {
@@ -444,6 +453,9 @@ test('rls command disables rls on tables that stopped being scoped after their p
     DB::table('comments')->insert(['text' => 'comment', 'post_id' => $postId]);
 
     pest()->artisan('tenants:rls');
+
+    expect((array) DB::selectOne("SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = 'comments'::regclass"))
+        ->toBe(['relrowsecurity' => true, 'relforcerowsecurity' => true]);
 
     // Stop scoping comments the way a migration would
     Tenancy::dropRLSPolicies('comments');
@@ -460,54 +472,6 @@ test('rls command disables rls on tables that stopped being scoped after their p
     expect(DB::table('comments')->count())->toBe(1);
 });
 
-test('rls command keeps rls enabled on tables without policies if disableRlsOnTablesWithoutPolicies is false', function () {
-    CreateUserWithRLSPolicies::$disableRlsOnTablesWithoutPolicies = false;
-
-    Schema::create('foo', fn (Blueprint $table) => $table->id());
-    DB::statement('ALTER TABLE foo ENABLE ROW LEVEL SECURITY');
-
-    pest()->artisan('tenants:rls');
-
-    expect(DB::selectOne("SELECT relrowsecurity FROM pg_class WHERE oid = 'foo'::regclass")->relrowsecurity)->toBeTrue();
-});
-
-test('rls policies in other schemas are ignored', function () {
-    config(['tenancy.rls.manager' => TableRLSManager::class]);
-
-    $postsPolicy = 'posts_rls_policy_' . app(CreateUserWithRLSPolicies::class)->hashPolicy(app(TableRLSManager::class)->generateQueries()['posts'])[0];
-
-    // Tables with the same names as central tables, with policies named like ours
-    DB::statement('DROP SCHEMA IF EXISTS other CASCADE');
-    DB::statement('CREATE SCHEMA other');
-    DB::statement('CREATE TABLE other.posts (id int)');
-    DB::statement('CREATE TABLE other.foo (id int)');
-    DB::statement("CREATE POLICY {$postsPolicy} ON other.posts USING (true)");
-    DB::statement('CREATE POLICY foo_rls_policy ON other.foo USING (true)');
-
-    try {
-        pest()->artisan('tenants:rls');
-
-        // The central posts table gets its policy even though other.posts has a policy with the same name
-        expect(DB::select("SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'posts'"))->toHaveCount(1);
-
-        expect(Tenancy::dropRLSPolicies('posts'))->toBe(1);
-
-        expect(DB::select("SELECT 1 FROM pg_policies WHERE schemaname = 'other'"))->toHaveCount(2);
-    } finally {
-        DB::statement('DROP SCHEMA other CASCADE');
-    }
-});
-
-// todo@rls handle quoting everywhere else as well
-test('rls command disables rls on tables without policies whose names need quoting', function () {
-    DB::statement('CREATE TABLE "AuditLog" (id int PRIMARY KEY)');
-    DB::statement('ALTER TABLE "AuditLog" ENABLE ROW LEVEL SECURITY');
-
-    pest()->artisan('tenants:rls');
-
-    expect(DB::selectOne("SELECT relrowsecurity FROM pg_class WHERE oid = '\"AuditLog\"'::regclass")->relrowsecurity)->toBeFalse();
-});
-
 test('rls command disables rls on tables without policies in a schema whose name needs quoting', function () {
     DB::statement('DROP SCHEMA IF EXISTS "TenantData" CASCADE');
     DB::statement('CREATE SCHEMA "TenantData"');
@@ -518,6 +482,8 @@ test('rls command disables rls on tables without policies in a schema whose name
         // Make "TenantData" the current schema
         DB::statement('SET search_path TO "TenantData", public');
 
+        expect(DB::selectOne('SELECT relrowsecurity FROM pg_class WHERE oid = \'"TenantData".foo\'::regclass')->relrowsecurity)->toBeTrue();
+
         pest()->artisan('tenants:rls');
 
         expect(DB::selectOne('SELECT relrowsecurity FROM pg_class WHERE oid = \'"TenantData".foo\'::regclass')->relrowsecurity)->toBeFalse();
@@ -527,8 +493,10 @@ test('rls command disables rls on tables without policies in a schema whose name
     }
 });
 
-test('policies whose names only look like rls policy names are ignored', function () {
+test('policies in other schemas or with names that only look like rls policy names are ignored', function () {
     config(['tenancy.rls.manager' => TableRLSManager::class]);
+
+    $postsPolicy = 'posts_rls_policy_' . app(CreateUserWithRLSPolicies::class)->hashPolicy(app(TableRLSManager::class)->generateQueries()['posts'])[0];
 
     Schema::create('foo', fn (Blueprint $table) => $table->id());
 
@@ -536,15 +504,29 @@ test('policies whose names only look like rls policy names are ignored', functio
     DB::statement('CREATE POLICY postsxrlsxpolicy ON posts USING (true)');
     DB::statement('CREATE POLICY fooxrlsxpolicy ON foo USING (true)');
 
-    expect(DB::select('SELECT 1 FROM pg_policies'))->toHaveCount(2);
+    // Tables with the same names as central tables, with policies named like ours
+    DB::statement('DROP SCHEMA IF EXISTS other CASCADE');
+    DB::statement('CREATE SCHEMA other');
+    DB::statement('CREATE TABLE other.posts (id int)');
+    DB::statement('CREATE TABLE other.foo (id int)');
+    DB::statement("CREATE POLICY {$postsPolicy} ON other.posts USING (true)");
+    DB::statement('CREATE POLICY foo_rls_policy ON other.foo USING (true)');
 
-    pest()->artisan('tenants:rls');
+    $foreignPolicyCount = fn () => count(DB::select("SELECT 1 FROM pg_policies WHERE schemaname = 'other' OR policyname IN ('postsxrlsxpolicy', 'fooxrlsxpolicy')"));
 
-    // tenants:rls creates a bunch of default policies
-    expect(DB::select('SELECT 1 FROM pg_policies'))->toHaveCount(5);
+    try {
+        expect(DB::select('SELECT 1 FROM pg_policies'))->toHaveCount(4);
 
-    // only the default policy for posts is matched, not the postsxrlsxpolicy one
-    expect(Tenancy::dropRLSPolicies('posts'))->toBe(1);
+        pest()->artisan('tenants:rls');
 
-    expect(DB::select("SELECT 1 FROM pg_policies WHERE policyname IN ('postsxrlsxpolicy', 'fooxrlsxpolicy')"))->toHaveCount(2);
+        // tenants:rls creates policies for authors, posts and comments, even though other.posts has a policy with the expected name
+        expect(DB::select('SELECT 1 FROM pg_policies'))->toHaveCount(7);
+        expect($foreignPolicyCount())->toBe(4);
+
+        // Only our policy for posts is dropped
+        expect(Tenancy::dropRLSPolicies('posts'))->toBe(1);
+        expect($foreignPolicyCount())->toBe(4);
+    } finally {
+        DB::statement('DROP SCHEMA other CASCADE');
+    }
 });
