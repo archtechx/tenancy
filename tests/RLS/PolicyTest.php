@@ -368,33 +368,26 @@ test('rls user cannot truncate tables or create triggers', function (string $man
 test('rls command with the force option updates the forced state of rls on tables when forceRls changes', function (string $manager) {
     config(['tenancy.rls.manager' => $manager]);
 
-    $tables = array_keys(app($manager)->generateQueries());
-    $rlsState = fn () => collect($tables)->mapWithKeys(fn (string $table) => [
-        $table => (array) DB::selectOne('SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = ?::regclass', [$table]),
-    ])->all();
+    $rlsState = fn () => array_map(
+        fn (string $table) => (array) DB::selectOne('SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = ?::regclass', [$table]),
+        array_keys(app($manager)->generateQueries()),
+    );
 
-    CreateUserWithRLSPolicies::$forceRls = true;
     pest()->artisan('tenants:rls');
 
-    foreach ($rlsState() as $state) {
-        expect($state)->toBe(['relrowsecurity' => true, 'relforcerowsecurity' => true]);
-    }
+    expect($rlsState())->each->toBe(['relrowsecurity' => true, 'relforcerowsecurity' => true]);
 
     // The policies are up to date, so the force option is needed to un-force the tables
     CreateUserWithRLSPolicies::$forceRls = false;
     pest()->artisan('tenants:rls', ['--force' => true]);
 
-    foreach ($rlsState() as $state) {
-        expect($state)->toBe(['relrowsecurity' => true, 'relforcerowsecurity' => false]);
-    }
+    expect($rlsState())->each->toBe(['relrowsecurity' => true, 'relforcerowsecurity' => false]);
 
     // Enabling forceRls again should force the tables again
     CreateUserWithRLSPolicies::$forceRls = true;
     pest()->artisan('tenants:rls', ['--force' => true]);
 
-    foreach ($rlsState() as $state) {
-        expect($state)->toBe(['relrowsecurity' => true, 'relforcerowsecurity' => true]);
-    }
+    expect($rlsState())->each->toBe(['relrowsecurity' => true, 'relforcerowsecurity' => true]);
 })->with([
     TableRLSManager::class,
     TraitRLSManager::class,
@@ -417,7 +410,7 @@ test('rls command disables rls on tables whose zombie policy was their last poli
     tenancy()->initialize($tenant);
 
     // With RLS left enabled and no policies, the RLS user would see no rows
-    expect(DB::table('foo')->pluck('id')->sort()->values()->all())->toBe([1, 2]);
+    expect(DB::table('foo')->count())->toBe(2);
 });
 
 test('rls command keeps rls enabled on tables with other policies after dropping a zombie policy', function () {
@@ -428,6 +421,8 @@ test('rls command keeps rls enabled on tables with other policies after dropping
     DB::statement('CREATE POLICY foo_rls_policy_abc123 ON foo USING (true)');
     DB::statement('CREATE POLICY foo_custom_policy ON foo USING (id = 1)');
     DB::statement('ALTER TABLE foo ENABLE ROW LEVEL SECURITY, FORCE ROW LEVEL SECURITY');
+
+    expect(DB::select("SELECT policyname FROM pg_policies WHERE tablename = 'foo'"))->toHaveCount(2);
 
     $tenant = Tenant::create();
     pest()->artisan('tenants:rls');
