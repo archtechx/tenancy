@@ -277,29 +277,42 @@ test('rls command with the force option updates the forced state of rls on table
     TraitRLSManager::class,
 ]);
 
-test('rls command disables rls on tables whose zombie policy was their last policy', function (bool $userDefinedPolicy) {
-    Schema::create('foo', function (Blueprint $table) {
-        $table->id();
-    });
+test('rls command disables rls on tables whose zombie policy was their last policy', function () {
+    Schema::create('foo', fn (Blueprint $table) => $table->id());
+    DB::table('foo')->insert([['id' => 1], ['id' => 2]]);
 
     // foo isn't related to the tenants table, so this policy is a zombie
     DB::statement('CREATE POLICY foo_rls_policy_abc123 ON foo USING (true)');
     DB::statement('ALTER TABLE foo ENABLE ROW LEVEL SECURITY, FORCE ROW LEVEL SECURITY');
 
-    if ($userDefinedPolicy) {
-        DB::statement('CREATE POLICY foo_custom_policy ON foo USING (true)');
-    }
-
+    $tenant = Tenant::create();
     pest()->artisan('tenants:rls');
 
-    expect(DB::select("SELECT policyname FROM pg_policies WHERE tablename = 'foo'"))
-        ->toHaveCount($userDefinedPolicy ? 1 : 0);
-
-    // RLS is only turned off when the table has no policies left,
-    // a user-defined policy keeps it enabled (and forced) as it was
     expect((array) DB::selectOne("SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = 'foo'::regclass"))
-        ->toBe(['relrowsecurity' => $userDefinedPolicy, 'relforcerowsecurity' => $userDefinedPolicy]);
-})->with([
-    'no policies left' => false,
-    'user-defined policy left' => true,
-]);
+        ->toBe(['relrowsecurity' => false, 'relforcerowsecurity' => false]);
+
+    tenancy()->initialize($tenant);
+
+    // With RLS left enabled and no policies, the RLS user would see no rows
+    expect(DB::table('foo')->pluck('id')->sort()->values()->all())->toBe([1, 2]);
+});
+
+test('rls command keeps rls enabled on tables with other policies after dropping a zombie policy', function () {
+    Schema::create('foo', fn (Blueprint $table) => $table->id());
+    DB::table('foo')->insert([['id' => 1], ['id' => 2]]);
+
+    // foo isn't related to the tenants table, so this policy is a zombie
+    DB::statement('CREATE POLICY foo_rls_policy_abc123 ON foo USING (true)');
+    DB::statement('CREATE POLICY foo_custom_policy ON foo USING (id = 1)');
+    DB::statement('ALTER TABLE foo ENABLE ROW LEVEL SECURITY, FORCE ROW LEVEL SECURITY');
+
+    $tenant = Tenant::create();
+    pest()->artisan('tenants:rls');
+
+    expect(DB::select("SELECT policyname FROM pg_policies WHERE tablename = 'foo'"))->toHaveCount(1);
+
+    tenancy()->initialize($tenant);
+
+    // The user-defined policy still applies
+    expect(DB::table('foo')->pluck('id')->all())->toBe([1]);
+});
