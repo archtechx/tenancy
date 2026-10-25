@@ -512,3 +512,22 @@ test('rls command disables rls on tables without policies whose names need quoti
 
     expect(DB::selectOne("SELECT relrowsecurity FROM pg_class WHERE oid = '\"AuditLog\"'::regclass")->relrowsecurity)->toBeFalse();
 });
+
+test('rls command disables rls on tables without policies in a schema whose name needs quoting', function () {
+    DB::statement('DROP SCHEMA IF EXISTS "TenantData" CASCADE');
+    DB::statement('CREATE SCHEMA "TenantData"');
+    DB::statement('CREATE TABLE "TenantData".foo (id int PRIMARY KEY)');
+    DB::statement('ALTER TABLE "TenantData".foo ENABLE ROW LEVEL SECURITY');
+
+    try {
+        // Make "TenantData" the current schema
+        DB::statement('SET search_path TO "TenantData", public');
+
+        pest()->artisan('tenants:rls');
+
+        expect(DB::selectOne('SELECT relrowsecurity FROM pg_class WHERE oid = \'"TenantData".foo\'::regclass')->relrowsecurity)->toBeFalse();
+    } finally {
+        DB::statement('SET search_path TO public');
+        DB::statement('DROP SCHEMA "TenantData" CASCADE');
+    }
+});

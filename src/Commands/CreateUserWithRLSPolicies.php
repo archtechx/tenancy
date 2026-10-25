@@ -267,14 +267,15 @@ class CreateUserWithRLSPolicies extends Command
         /** @var \stdClass[] $tables */
         $tables = DB::select(<<<'SQL'
             SELECT relname, format('%I.%I', current_schema(), relname) AS qualified_name FROM pg_class
-            WHERE relnamespace = current_schema()::regnamespace
+            WHERE relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = current_schema())
             AND relrowsecurity
             AND NOT EXISTS (SELECT 1 FROM pg_policy WHERE polrelid = pg_class.oid)
         SQL);
 
         foreach ($tables as $table) {
             if (! in_array($table->relname, $tablesThatShouldHavePolicies, true)) {
-                // Unlike the tables we generate policies for, these may have names that need quoting
+                // Unlike the tables we generate policies for, these may have names that need quoting,
+                // so we use qualified_name (quoted using format('%I.%I') in the query above)
                 DB::statement("ALTER TABLE {$table->qualified_name} DISABLE ROW LEVEL SECURITY, NO FORCE ROW LEVEL SECURITY");
 
                 $this->components->warn("RLS disabled on table '{$table->relname}' (no policies).");
