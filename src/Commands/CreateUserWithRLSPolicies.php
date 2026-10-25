@@ -196,7 +196,8 @@ class CreateUserWithRLSPolicies extends Command
     {
         return DB::selectOne(<<<SQL
             SELECT * FROM pg_policies
-            WHERE tablename = '{$table}'
+            WHERE schemaname = current_schema()
+            AND tablename = '{$table}'
             AND policyname LIKE '{$table}\_rls\_policy%';
         SQL);
     }
@@ -236,7 +237,7 @@ class CreateUserWithRLSPolicies extends Command
     protected function dropZombiePolicies(array $tablesThatShouldHavePolicies): int
     {
         /** @var \stdClass[] $tablesWithRLSPolicies */
-        $tablesWithRLSPolicies = DB::select("SELECT tablename, policyname FROM pg_policies WHERE policyname LIKE '%\_rls\_policy%'");
+        $tablesWithRLSPolicies = DB::select("SELECT tablename, policyname FROM pg_policies WHERE schemaname = current_schema() AND policyname LIKE '%\_rls\_policy%'");
 
         $zombies = 0;
 

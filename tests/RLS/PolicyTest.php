@@ -354,3 +354,30 @@ test('rls command keeps rls enabled on tables without policies if disableRlsOnTa
 
     expect(DB::selectOne("SELECT relrowsecurity FROM pg_class WHERE oid = 'foo'::regclass")->relrowsecurity)->toBeTrue();
 });
+
+test('rls policies in other schemas are ignored', function () {
+    config(['tenancy.rls.manager' => TableRLSManager::class]);
+
+    $postsPolicy = 'posts_rls_policy_' . app(CreateUserWithRLSPolicies::class)->hashPolicy(app(TableRLSManager::class)->generateQueries()['posts'])[0];
+
+    // Tables with the same names as central tables, with policies named like ours
+    DB::statement('DROP SCHEMA IF EXISTS other CASCADE');
+    DB::statement('CREATE SCHEMA other');
+    DB::statement('CREATE TABLE other.posts (id int)');
+    DB::statement('CREATE TABLE other.foo (id int)');
+    DB::statement("CREATE POLICY {$postsPolicy} ON other.posts USING (true)");
+    DB::statement('CREATE POLICY foo_rls_policy ON other.foo USING (true)');
+
+    try {
+        pest()->artisan('tenants:rls');
+
+        // The central posts table gets its policy even though other.posts has a policy with the same name
+        expect(DB::select("SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'posts'"))->toHaveCount(1);
+
+        expect(Tenancy::dropRLSPolicies('posts'))->toBe(1);
+
+        expect(DB::select("SELECT 1 FROM pg_policies WHERE schemaname = 'other'"))->toHaveCount(2);
+    } finally {
+        DB::statement('DROP SCHEMA other CASCADE');
+    }
+});
