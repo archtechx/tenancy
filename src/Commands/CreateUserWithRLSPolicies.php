@@ -42,6 +42,19 @@ class CreateUserWithRLSPolicies extends Command
      */
     public static bool $forceRls = true;
 
+    /**
+     * Disable RLS on tables that have RLS enabled but no policies, and that
+     * shouldn't have an RLS policy based on the current RLS policy manager.
+     *
+     * A table with RLS enabled and no policies denies all rows to the RLS user.
+     * This happens e.g. when a table stops being scoped and its policy has been
+     * dropped in a migration using dropRLSPolicies(), or as a zombie policy.
+     *
+     * Set this to false if you have tables that intentionally have RLS enabled
+     * without any policies (to block the RLS user from accessing them).
+     */
+    public static bool $disableRlsOnTablesWithoutPolicies = true;
+
     public function handle(PermissionControlledPostgreSQLSchemaManager $manager): int
     {
         $username = config('tenancy.rls.user.username');
@@ -126,6 +139,10 @@ class CreateUserWithRLSPolicies extends Command
 
         if ($zombiePolicies > 0) {
             $this->components->warn("Dropped {$zombiePolicies} zombie RLS policies.");
+        }
+
+        if (static::$disableRlsOnTablesWithoutPolicies) {
+            $this->disableRLSOnTablesWithoutPolicies(array_keys($rlsQueries));
         }
 
         $createdPolicies = [];
@@ -215,10 +232,6 @@ class CreateUserWithRLSPolicies extends Command
      * but is not included in $rlsQueries, this can happen e.g. when changing $scopeByDefault.
      * For these tables -- that have an existing policy but now SHOULDN'T have one -- we drop
      * the existing policies.
-     *
-     * If that leaves the table with no policies at all, we also disable RLS on it, since
-     * a table with RLS enabled and no policies denies all rows to the RLS user. Tables
-     * that still have other (e.g. user-defined) policies are left as they are.
      */
     protected function dropZombiePolicies(array $tablesThatShouldHavePolicies): int
     {
@@ -233,17 +246,29 @@ class CreateUserWithRLSPolicies extends Command
 
                 $this->components->warn("RLS policy for table '{$table->tablename}' dropped (zombie).");
                 $zombies++;
-
-                $hasPolicies = DB::selectOne('SELECT EXISTS (SELECT 1 FROM pg_policy WHERE polrelid = ?::regclass) AS has_policies', [$table->tablename])->has_policies;
-
-                if (! $hasPolicies) {
-                    DB::statement("ALTER TABLE {$table->tablename} DISABLE ROW LEVEL SECURITY, NO FORCE ROW LEVEL SECURITY");
-
-                    $this->components->warn("RLS disabled on table '{$table->tablename}' (no policies left).");
-                }
             }
         }
 
         return $zombies;
+    }
+
+    /** @see $disableRlsOnTablesWithoutPolicies */
+    protected function disableRLSOnTablesWithoutPolicies(array $tablesThatShouldHavePolicies): void
+    {
+        /** @var \stdClass[] $tables */
+        $tables = DB::select(<<<'SQL'
+            SELECT relname FROM pg_class
+            WHERE relnamespace = current_schema()::regnamespace
+            AND relrowsecurity
+            AND NOT EXISTS (SELECT 1 FROM pg_policy WHERE polrelid = pg_class.oid)
+        SQL);
+
+        foreach ($tables as $table) {
+            if (! in_array($table->relname, $tablesThatShouldHavePolicies, true)) {
+                DB::statement("ALTER TABLE {$table->relname} DISABLE ROW LEVEL SECURITY, NO FORCE ROW LEVEL SECURITY");
+
+                $this->components->warn("RLS disabled on table '{$table->relname}' (no policies).");
+            }
+        }
     }
 }

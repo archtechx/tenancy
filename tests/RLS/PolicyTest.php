@@ -22,6 +22,7 @@ use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
     CreateUserWithRLSPolicies::$forceRls = true;
+    CreateUserWithRLSPolicies::$disableRlsOnTablesWithoutPolicies = true;
     TraitRLSManager::$excludedModels = [Article::class];
     TraitRLSManager::$modelDirectories = [__DIR__ . '/Etc'];
 
@@ -83,6 +84,7 @@ beforeEach(function () {
 
 afterEach(function () {
     CreateUserWithRLSPolicies::$forceRls = true;
+    CreateUserWithRLSPolicies::$disableRlsOnTablesWithoutPolicies = true;
 });
 
 // Regression test for https://github.com/archtechx/tenancy/pull/1280
@@ -315,4 +317,40 @@ test('rls command keeps rls enabled on tables with other policies after dropping
 
     // The user-defined policy still applies
     expect(DB::table('foo')->pluck('id')->all())->toBe([1]);
+});
+
+test('rls command disables rls on tables that stopped being scoped after their policies were dropped', function () {
+    config(['tenancy.rls.manager' => TableRLSManager::class]);
+
+    $tenant = Tenant::create();
+    $authorId = DB::table('authors')->insertGetId(['name' => 'author', 'tenant_id' => $tenant->id]);
+    $postId = DB::table('posts')->insertGetId(['text' => 'post', 'author_id' => $authorId]);
+    DB::table('comments')->insert(['text' => 'comment', 'post_id' => $postId]);
+
+    pest()->artisan('tenants:rls');
+
+    // Stop scoping comments the way a migration would
+    Tenancy::dropRLSPolicies('comments');
+    Schema::table('comments', fn (Blueprint $table) => $table->unsignedBigInteger('post_id')->comment('no-rls')->change());
+
+    pest()->artisan('tenants:rls');
+
+    expect((array) DB::selectOne("SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = 'comments'::regclass"))
+        ->toBe(['relrowsecurity' => false, 'relforcerowsecurity' => false]);
+
+    // comments aren't scoped anymore, so another tenant can see the comment too
+    tenancy()->initialize(Tenant::create());
+
+    expect(DB::table('comments')->count())->toBe(1);
+});
+
+test('rls command keeps rls enabled on tables without policies if disableRlsOnTablesWithoutPolicies is false', function () {
+    CreateUserWithRLSPolicies::$disableRlsOnTablesWithoutPolicies = false;
+
+    Schema::create('foo', fn (Blueprint $table) => $table->id());
+    DB::statement('ALTER TABLE foo ENABLE ROW LEVEL SECURITY');
+
+    pest()->artisan('tenants:rls');
+
+    expect(DB::selectOne("SELECT relrowsecurity FROM pg_class WHERE oid = 'foo'::regclass")->relrowsecurity)->toBeTrue();
 });
