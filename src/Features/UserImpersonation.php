@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Features;
 
+use Exception;
+use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -42,11 +44,16 @@ class UserImpersonation implements Feature
         $token = $token instanceof Model ? $token : static::modelClass()::findOrFail($token);
         $ttl ??= static::$ttl;
 
+        // Tokens are single-use, so the token is consumed before anything else happens. Deleting it with
+        // a single query lets the database decide which request gets to use the token if multiple requests
+        // try to use it at the same time. Only the request that actually deleted the token can continue.
+        if (static::modelClass()::query()->whereKey($token->getKey())->delete() !== 1) {
+            abort(403);
+        }
+
         $tokenExpired = $token->created_at->diffInSeconds(now()) > $ttl;
 
         if ($tokenExpired) {
-            $token->delete();
-
             abort(403);
         }
 
@@ -54,16 +61,17 @@ class UserImpersonation implements Feature
         $currentTenantId = (string) tenant()->getTenantKey();
 
         if ($tokenTenantId !== $currentTenantId) {
-            $token->delete();
-
             abort(403);
         }
 
-        Auth::guard($token->auth_guard)->loginUsingId($token->user_id, $token->remember);
+        /** @var StatefulGuard $guard */
+        $guard = Auth::guard($token->auth_guard);
 
-        $token->delete();
+        if (! $guard->loginUsingId($token->user_id, $token->remember)) {
+            abort(403);
+        }
 
-        session()->put('tenancy_impersonating', true);
+        session()->put('tenancy_impersonation_guard', $token->auth_guard);
 
         return redirect($token->redirect_url);
     }
@@ -76,16 +84,30 @@ class UserImpersonation implements Feature
 
     public static function isImpersonating(): bool
     {
-        return session()->has('tenancy_impersonating');
+        return session()->has('tenancy_impersonation_guard');
     }
 
     /**
-     * Logout from the current domain and forget impersonation session.
+     * Stop user impersonation by forgetting the impersonation session.
+     *
+     * When $logout is true, the user will also be logged out
+     * from the impersonation guard stored in the session.
+     *
+     * Throws an exception if impersonation is not active
+     * (= the impersonation guard is not in the session).
      */
-    public static function stopImpersonating(): void
+    public static function stopImpersonating(bool $logout = true): void
     {
-        auth()->logout();
+        if (! static::isImpersonating()) {
+            throw new Exception('Not currently impersonating any user.');
+        }
 
-        session()->forget('tenancy_impersonating');
+        if ($logout) {
+            $guard = session()->get('tenancy_impersonation_guard');
+
+            auth($guard)->logout();
+        }
+
+        session()->forget('tenancy_impersonation_guard');
     }
 }

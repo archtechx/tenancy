@@ -21,11 +21,15 @@ use Stancl\Tenancy\TenancyServiceProvider;
  *
  * By default, this bootstrapper scopes ALL cache stores that use the database driver. If you only
  * want to scope SOME stores, set the static $stores property to an array of names of the stores
- * you want to scope. These stores must use 'database' as their driver.
+ * you want to scope. Those stores must use 'database' as their driver.
  *
  * Notably, this bootstrapper sets TenancyServiceProvider::$adjustCacheManagerUsing to a callback
  * that ensures all affected stores still use the central connection when accessed via global cache
- * (typicaly the GlobalCache facade or global_cache() helper).
+ * (typically the GlobalCache facade or global_cache() helper). The code in TenancyServiceProvider
+ * that uses `extend()` callbacks to make database stores on the global cache manager use the central
+ * connection only corrects stores scoped by the Database*Tenancy*Bootstrapper. This bootstrapper
+ * also changes the stores' connection in the *config* to 'tenant' which doesn't let that callback
+ * change the connection back to central on the global cache manager.
  */
 class DatabaseCacheBootstrapper implements TenancyBootstrapper
 {

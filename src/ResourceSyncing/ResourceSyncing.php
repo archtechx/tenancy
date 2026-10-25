@@ -106,7 +106,7 @@ trait ResourceSyncing
     }
 
     /**
-     * @return BelongsToMany<\Illuminate\Database\Eloquent\Model&\Stancl\Tenancy\Database\Contracts\TenantWithDatabase, $this>
+     * @return BelongsToMany<Model&TenantWithDatabase, $this>
      */
     public function tenants(): BelongsToMany
     {

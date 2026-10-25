@@ -28,6 +28,18 @@ trait HasPending
     public static function bootHasPending(): void
     {
         static::addGlobalScope(new PendingScope());
+
+        static::creating(function (self $tenant): void {
+            if ($tenant->pending()) {
+                event(new CreatingPendingTenant($tenant));
+            }
+        });
+
+        static::created(function (self $tenant): void {
+            if ($tenant->pending()) {
+                event(new PendingTenantCreated($tenant));
+            }
+        });
     }
 
     /** Initialize the trait. */
@@ -49,22 +61,11 @@ trait HasPending
      */
     public static function createPending(array $attributes = []): Model&Tenant
     {
-        $tenant = null;
-
-        try {
-            $tenant = static::create(array_merge(static::getPendingAttributes($attributes), $attributes));
-            event(new CreatingPendingTenant($tenant));
-        } finally {
-            // Update the pending_since value only after the tenant is created so it's
-            // not marked as pending until after migrations, seeders, etc are run.
-            $tenant?->update([
-                'pending_since' => now()->timestamp,
-            ]);
-        }
-
-        event(new PendingTenantCreated($tenant));
-
-        return $tenant;
+        return static::create(array_merge(
+            static::getPendingAttributes($attributes),
+            $attributes,
+            ['pending_since' => now()->timestamp],
+        ));
     }
 
     /**
@@ -99,27 +100,51 @@ trait HasPending
      */
     public static function pullPendingFromPool(bool $firstOrCreate = false, array $attributes = []): ?Tenant
     {
-        $tenant = DB::transaction(function () use ($attributes): ?Tenant {
-            /** @var (Model&Tenant)|null $tenant */
-            $tenant = static::onlyPending()->first();
+        // Attempt pulling a pending tenant.
+        // The loop handles the case where a single tenant is being pulled by multiple processes at the same time.
+        // If a tenant was pulled by a concurrent process, try pulling the next one in the pool.
+        while (true) {
+            /** @var (Model&Tenant)|null $pullCandidate */
+            $pullCandidate = static::onlyPending()->first();
 
-            if ($tenant !== null) {
-                event(new PullingPendingTenant($tenant));
-                $tenant->update(array_merge($attributes, [
-                    'pending_since' => null,
-                ]));
+            if ($pullCandidate === null) {
+                return $firstOrCreate ? static::create($attributes) : null;
             }
 
+            // Fired before the claim, so it can fire once per attempt, including for a candidate
+            // that ends up being claimed by a different process (in which case the loop retries).
+            // PendingTenantPulled (below) fires exactly once, for the actually pulled tenant.
+            event(new PullingPendingTenant($pullCandidate));
+
+            $tenant = DB::transaction(function () use ($pullCandidate, $attributes): ?Tenant {
+                $tenantWasPulled = static::onlyPending()
+                    ->whereKey($pullCandidate->getKey())
+                    ->update([$pullCandidate->getColumnForQuery('pending_since') => null]) > 0;
+
+                if (! $tenantWasPulled) {
+                    return null;
+                }
+
+                // The tenant's pending_since was just cleared, and a PullingPendingTenant listener
+                // may have made changes to the tenant, so re-fetch it to make sure it's up to date.
+                /** @var Model&Tenant $pulledTenant */
+                $pulledTenant = static::findOrFail($pullCandidate->getKey());
+
+                if (! empty($attributes)) {
+                    $pulledTenant->update($attributes);
+                }
+
+                return $pulledTenant;
+            });
+
+            if ($tenant === null) {
+                // If another pull claimed this tenant first, try claiming the next one
+                continue;
+            }
+
+            event(new PendingTenantPulled($tenant));
+
             return $tenant;
-        });
-
-        if ($tenant === null) {
-            return $firstOrCreate ? static::create($attributes) : null;
         }
-
-        // Only triggered if a tenant that was pulled from the pool is returned
-        event(new PendingTenantPulled($tenant));
-
-        return $tenant;
     }
 }

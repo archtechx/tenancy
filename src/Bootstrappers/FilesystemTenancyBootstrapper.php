@@ -4,15 +4,20 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Bootstrappers;
 
+use Exception;
 use Illuminate\Foundation\Application;
 use Illuminate\Session\FileSessionHandler;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
 class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 {
     public array $originalDisks = [];
+    protected array $originalCachePaths = [];
+    protected array $originalCacheLockPaths = [];
+    protected string|null $originalSessionPath = null;
     public string|null $originalAssetUrl;
     public string $originalStoragePath;
 
@@ -75,8 +80,13 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             : $this->originalStoragePath . '/framework/cache';
 
         if (! is_dir($path)) {
-            // Create tenant framework/cache directory if it does not exist
-            mkdir($path, 0750, true);
+            // Create tenant framework/cache directory if it does not exist.
+            // We ignore errors due to TOCTOU race conditions, instead we check for success below.
+            @mkdir($path, 0750, true);
+
+            if (! is_dir($path)) {
+                throw new Exception("Unable to create tenant storage directory [{$path}].");
+            }
         }
 
         if ($suffix === false) {
@@ -88,7 +98,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
     protected function tenantStoragePath(string $suffix): string
     {
-        return $this->originalStoragePath . "/{$suffix}";
+        return rtrim($this->originalStoragePath, '/\\') . DIRECTORY_SEPARATOR . $suffix;
     }
 
     protected function assetHelper(string|false $suffix): void
@@ -118,10 +128,14 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
         $scopedDisks = [];
 
         foreach ($this->app['config']['filesystems.disks'] as $name => $disk) {
-            if (isset($disk['driver'], $disk['disk'])
-                && $disk['driver'] === 'scoped'
-                && in_array($disk['disk'], $tenantDisks, true)) {
+            if (($disk['driver'] ?? null) !== 'scoped') {
+                continue;
+            }
+
+            if (in_array(static::baseDiskName($name), $tenantDisks, true)) {
                 $scopedDisks[] = $name;
+            } elseif (in_array($name, $tenantDisks, true)) {
+                throw new Exception("Disk [$name] uses the 'scoped' driver, so it has no root to make tenant-aware. List its base disk in tenancy.filesystem.disks instead.");
             }
         }
 
@@ -130,6 +144,12 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
     protected function diskRoot(string $disk, Tenant|false $tenant): void
     {
+        if ($this->app['config']["filesystems.disks.$disk.driver"] === 'scoped') {
+            // Skip scoped disks since they have no root to override
+            // (reachable when a scoped disk is listed in tenancy.filesystem.disks alongside its base disk).
+            return;
+        }
+
         if ($tenant === false) {
             $this->app['config']["filesystems.disks.$disk.root"] = $this->originalDisks[$disk]['root'];
 
@@ -155,7 +175,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             // This is executed if the disk is in tenancy.filesystem.disks but does NOT have a root_override
             // This behavior is used for disks like S3.
             $newRoot = $originalRoot
-                ? rtrim($originalRoot, '/') . '/' . $suffix
+                ? rtrim($originalRoot, '/\\') . '/' . $suffix
                 : $suffix;
         }
 
@@ -166,7 +186,7 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
     {
         $diskConfig = $this->app['config']["filesystems.disks.{$disk}"];
 
-        if ($diskConfig['driver'] !== 'local' || $this->app['config']["tenancy.filesystem.url_override.{$disk}"] === null) {
+        if ($diskConfig['driver'] !== 'local' || ! $this->app['config']["tenancy.filesystem.url_override.{$disk}"]) {
             return;
         }
 
@@ -185,29 +205,88 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             return;
         }
 
-        $storagePath = $suffix
-            ? $this->tenantStoragePath($suffix)
-            : $this->originalStoragePath;
-
-        $stores = array_filter($this->app['config']['tenancy.cache.stores'], function ($name) {
-            $store = $this->app['config']["cache.stores.{$name}"];
-
-            if ($store === null) {
-                return false;
-            }
-
-            return $store['driver'] === 'file';
-        });
+        $stores = $suffix !== false
+            ? $this->app['config']['tenancy.cache.stores']
+            : array_keys($this->originalCachePaths);
 
         foreach ($stores as $name) {
-            $path = $storagePath . '/framework/cache/data';
+            $store = $this->app['config']["cache.stores.{$name}"];
+
+            // Only file stores have a path to scope. Skip stores that don't exist (null) or use another driver.
+            if ($store === null || $store['driver'] !== 'file') {
+                continue;
+            }
+
+            if ($suffix !== false && ! isset($this->originalCachePaths[$name])) {
+                $this->originalCachePaths[$name] = $store['path'];
+                $this->originalCacheLockPaths[$name] = $store['lock_path'] ?? null;
+            }
+
+            $path = $suffix ? $this->tenantScopedPath($this->originalCachePaths[$name], $suffix) : $this->originalCachePaths[$name];
+
+            // Unlike path, lock_path is optional -- if it's not set, FileStore::lock() falls back to path
+            // itself (see `$this->lockDirectory ?? $this->directory` in FileStore). Leave it null here rather
+            // than hardcoding it to $path ourselves, so a store that didn't configure a separate lock_path
+            // doesn't end up with one.
+            $lockPath = $this->originalCacheLockPaths[$name];
+            if ($suffix && $lockPath !== null) {
+                $lockPath = $this->tenantScopedPath($lockPath, $suffix);
+            }
+
             $this->app['config']["cache.stores.{$name}.path"] = $path;
-            $this->app['config']["cache.stores.{$name}.lock_path"] = $path;
+            $this->app['config']["cache.stores.{$name}.lock_path"] = $lockPath;
 
             /** @var \Illuminate\Cache\FileStore $store */
             $store = $this->app['cache']->store($name)->getStore();
             $store->setDirectory($path);
-            $store->setLockDirectory($path);
+            $store->setLockDirectory($lockPath);
+        }
+    }
+
+    /**
+     * Scope a configured path (a cache store's path or lock_path, or the session path)
+     * to the tenant identified by $suffix.
+     */
+    protected function tenantScopedPath(string $configuredPath, string $suffix): string
+    {
+        $configuredPath = $this->normalizePath($configuredPath);
+        $storagePath = $this->normalizePath($this->originalStoragePath);
+
+        if (str_starts_with($configuredPath, $storagePath . DIRECTORY_SEPARATOR)) {
+            // Swap the central storage path prefix for the tenant's.
+            // For example, storage_path('framework/cache/data') becomes storage_path('tenant1/framework/cache/data').
+            return str($configuredPath)
+                ->replaceFirst($storagePath, $this->tenantStoragePath($suffix))
+                ->toString();
+        }
+
+        // Otherwise $configuredPath isn't necessarily storage_path()-based, so just append the
+        // suffix as a subdirectory, e.g. '/var/cache/foo' becomes '/var/cache/foo/tenant1'.
+        return $configuredPath . DIRECTORY_SEPARATOR . $suffix;
+    }
+
+    /**
+     * Normalize the path to use the separator of the current OS.
+     *
+     * The separators are also deduplicated, with two exceptions:
+     * - if the path begins with \\ on Windows (i.e. a UNC path), the *leading* separators won't be deduplicated
+     * - if the path contains non-UTF-8 characters, the separators won't be deduplicated since Str::deduplicate() only supports UTF-8 strings)
+     */
+    protected function normalizePath(string $path): string
+    {
+        $path = str_replace('/', DIRECTORY_SEPARATOR, $path);
+
+        $uncPrefix = DIRECTORY_SEPARATOR === '\\' && str_starts_with($path, '\\\\') ? DIRECTORY_SEPARATOR : '';
+
+        if ($deduplicated = Str::deduplicate($path, DIRECTORY_SEPARATOR)) {
+            // On Windows, a path starting with two separators is a UNC path (e.g. '\\server\share'),
+            // so the leading separator that got collapsed by deduplicate() should be added back
+            // (only one \ will be kept, so we use one for the prefix).
+            return $uncPrefix . rtrim($deduplicated, DIRECTORY_SEPARATOR);
+        } else {
+            // Because deduplicate() only supports UTF-8 paths, paths with non-UTF-8 characters will not
+            // be deduplicated since deduplicate() returns an empty result with unsupported strings
+            return rtrim($path, DIRECTORY_SEPARATOR);
         }
     }
 
@@ -217,13 +296,21 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
             return;
         }
 
+        $originalPath = $this->originalSessionPath ?? $this->app['config']['session.files'];
+        $this->originalSessionPath = $originalPath;
+
         $path = $suffix
-            ? $this->tenantStoragePath($suffix) . '/framework/sessions'
-            : $this->originalStoragePath . '/framework/sessions';
+            ? $this->tenantScopedPath($originalPath, $suffix)
+            : $originalPath;
 
         if (! is_dir($path)) {
-            // Create tenant framework/sessions directory if it does not exist
-            mkdir($path, 0750, true);
+            // Create tenant session directory if it does not exist.
+            // We ignore errors due to TOCTOU race conditions, instead we check for success below.
+            @mkdir($path, 0750, true);
+
+            if (! is_dir($path)) {
+                throw new Exception("Unable to create tenant session directory [{$path}].");
+            }
         }
 
         $this->app['config']['session.files'] = $path;
@@ -243,5 +330,46 @@ class FilesystemTenancyBootstrapper implements TenancyBootstrapper
 
             $sessionManager->getDrivers()['file']->setHandler($handler);
         }
+    }
+
+    /** Get the central storage path from the bound singleton instance of this class. */
+    public static function getBoundCentralStoragePath(): string
+    {
+        return app(static::class)->originalStoragePath;
+    }
+
+    /**
+     * Get the storage path of the passed tenant (independent of the current context).
+     *
+     * Note that the returned path doesn't depend on suffix_storage_path.
+     * That config option only affects the storage_path() helper.
+     */
+    public static function getTenantStoragePath(Tenant $tenant): string
+    {
+        $bootstrapper = app(static::class);
+
+        return $bootstrapper->tenantStoragePath($bootstrapper->suffix($tenant));
+    }
+
+    /**
+     * Name of the disk whose root the passed disk uses.
+     *
+     * Disks using the 'scoped' driver have no root or url of their own -- they inherit those from their parent disk,
+     * which can be scoped as well, so only the final/base parent has to be tenant-aware.
+     *
+     * Returns null if the base disk has no name, i.e. when the disk is configured inline as an array.
+     */
+    public static function baseDiskName(string $disk): string|null
+    {
+        while (config("filesystems.disks.$disk.driver") === 'scoped') {
+            if (! is_string($parent = config("filesystems.disks.$disk.disk"))) {
+                // Laravel allows configuring the parent disk inline as an array, and such a disk has no name
+                return null;
+            }
+
+            $disk = $parent;
+        }
+
+        return $disk;
     }
 }

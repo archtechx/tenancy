@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
@@ -81,6 +82,9 @@ beforeEach(function () {
 
 afterEach(function () {
     CreateUserWithRLSPolicies::$forceRls = true;
+    TraitRLSManager::$implicitRLS = false;
+    TraitRLSManager::$modelDirectories = ['app/Models'];
+    TraitRLSManager::$excludedModels = [];
 });
 
 test('correct rls policies get created with the correct hash using trait manager', function () {
@@ -90,8 +94,8 @@ test('correct rls policies get created with the correct hash using trait manager
     $tables = collect($manager->getModels())
         ->filter(fn (Model $model) => $manager->modelBelongsToTenant($model) || $manager->modelBelongsToTenantIndirectly($model))
         ->map(fn (Model $model) => $model->getTable())
-        ->values()
         ->unique()
+        ->values()
         ->toArray();
 
     $getRLSPolicies = fn () => DB::select('SELECT policyname, tablename FROM pg_policies');
@@ -293,6 +297,71 @@ test('trait rls manager generates queries correctly', function() {
         SQL,
     );
 });
+
+test('excluded models keep their global scopes', function (bool $implicitRLS) {
+    TraitRLSManager::$implicitRLS = $implicitRLS;
+    TraitRLSManager::$excludedModels = [Article::class, NonRLSPost::class, NonRLSComment::class];
+    Model::clearBootedModels();
+
+    // Excluded models don't get RLS policies, so they keep the global scopes even
+    // with implicit RLS or when implementing RLSModel (Article implements RLSModel)
+    expect(Article::make()->hasGlobalScope(TenantScope::class))->toBeTrue();
+    expect(NonRLSPost::make()->hasGlobalScope(TenantScope::class))->toBeTrue();
+    expect(NonRLSComment::make()->hasGlobalScope(ParentModelScope::class))->toBeTrue();
+
+    Schema::table('articles', function (Blueprint $table) {
+        $table->string('tenant_id')->nullable();
+    });
+
+    pest()->artisan('tenants:rls');
+
+    // No RLS policy is created for the excluded model's table
+    expect(DB::select('SELECT policyname FROM pg_policies WHERE tablename = ?', ['articles']))->toBeEmpty();
+
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    $tenant1->run(fn () => Article::create(['text' => 'tenant1 article']));
+    $tenant2->run(fn () => Article::create(['text' => 'tenant2 article']));
+
+    // Queries are scoped using the global scope
+    $tenant1->run(fn () => expect(Article::pluck('text')->all())->toBe(['tenant1 article']));
+    $tenant2->run(fn () => expect(Article::pluck('text')->all())->toBe(['tenant2 article']));
+})->with([true, false]);
+
+test('trait rls manager discovers models regardless of how their file is formatted', function (array $lines) {
+    // The file contents are built here so that editors and git can't normalize the line endings.
+    $directory = sys_get_temp_dir() . '/tenancy_model_discovery_' . uniqid();
+    mkdir($directory);
+
+    file_put_contents($directory . '/Post.php', implode("\r\n", ['<?php', '', ...$lines]));
+
+    TraitRLSManager::$modelDirectories = [$directory];
+
+    try {
+        $discoveredModels = array_map(fn (Model $model) => $model::class, app(TraitRLSManager::class)->getModels());
+
+        expect(array_values($discoveredModels))->toBe([Post::class]);
+    } finally {
+        File::deleteDirectory($directory);
+    }
+})->with([
+    'declaration spread over lines' => [[
+        'namespace Stancl\Tenancy\Tests\RLS\Etc;',
+        '',
+        '/**',
+        'class Foo is not declared here',
+        '*/',
+        '#[ObservedBy(PostObserver::class)]',
+        "final\tclass  Post",
+        '{',
+        '}',
+        '',
+    ]],
+    'declaration on one line' => [[
+        'namespace Stancl\Tenancy\Tests\RLS\Etc { /** @mixin Builder */ #[ObservedBy(PostObserver::class)] final class Post{} }',
+    ]],
+]);
 
 class NonRLSPost extends Model
 {

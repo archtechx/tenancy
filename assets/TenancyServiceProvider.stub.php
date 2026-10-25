@@ -53,8 +53,6 @@ class TenancyServiceProvider extends ServiceProvider
                 ])->send(function (Events\TenantCreated $event) {
                     return $event->tenant;
                 })->shouldBeQueued(false),
-
-                // Listeners\CreateTenantStorage::class,
             ],
             Events\SavingTenant::class => [],
             Events\TenantSaved::class => [],
@@ -64,11 +62,10 @@ class TenancyServiceProvider extends ServiceProvider
                 JobPipeline::make([
                     Jobs\DeleteDomains::class,
                     // Jobs\RemoveStorageSymlinks::class,
+                    // Jobs\DeleteTenantStorage::class,
                 ])->send(function (Events\DeletingTenant $event) {
                     return $event->tenant;
                 })->shouldBeQueued(false),
-
-                // Listeners\DeleteTenantStorage::class,
             ],
             Events\TenantDeleted::class => [
                 JobPipeline::make([

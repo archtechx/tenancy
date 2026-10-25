@@ -31,10 +31,12 @@ class PreventAccessFromUnwantedDomains
     {
         $route = tenancy()->getRoute($request);
 
-        if ($this->shouldBeSkipped($route) || tenancy()->routeIsUniversal($route)) {
+        if ($this->shouldBeSkipped($route)) {
             return $next($request);
         }
 
+        // If the route is universal, neither of these checks will pass and the logic will
+        // fall through to the $next($request) call at the end.
         if ($this->accessingTenantRouteFromCentralDomain($request, $route) || $this->accessingCentralRouteFromTenantDomain($request, $route)) {
             $abortRequest = static::$abortRequest ?? function () {
                 abort(404);

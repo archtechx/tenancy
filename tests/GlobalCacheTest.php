@@ -165,6 +165,7 @@ test('global cache is always central', function (string $store, array $bootstrap
     ['redis', [CacheTagsBootstrapper::class]],
     ['redis', [CacheTenancyBootstrapper::class]],
     ['database', [DatabaseTenancyBootstrapper::class, DatabaseCacheBootstrapper::class]],
+    ['database', [DatabaseTenancyBootstrapper::class, CacheTenancyBootstrapper::class]],
 ])->with([
     'helper',
     'facade',

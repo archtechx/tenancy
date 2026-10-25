@@ -12,16 +12,22 @@ class MicrosoftSQLDatabaseManager extends TenantDatabaseManager
     {
         $database = $tenant->database()->getName();
 
+        $this->validateParameter($database);
+
         return $this->connection()->statement("CREATE DATABASE [{$database}]");
     }
 
     public function deleteDatabase(TenantWithDatabase $tenant): bool
     {
-        return $this->connection()->statement("DROP DATABASE [{$tenant->database()->getName()}]");
+        $database = $tenant->database()->getName();
+
+        $this->validateParameter($database);
+
+        return $this->connection()->statement("DROP DATABASE [{$database}]");
     }
 
     public function databaseExists(string $name): bool
     {
-        return (bool) $this->connection()->select("SELECT name FROM master.sys.databases WHERE name = '$name'");
+        return (bool) $this->connection()->select('SELECT name FROM master.sys.databases WHERE name = ?', [$name]);
     }
 }

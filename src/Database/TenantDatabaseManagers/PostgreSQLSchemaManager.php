@@ -10,17 +10,25 @@ class PostgreSQLSchemaManager extends TenantDatabaseManager
 {
     public function createDatabase(TenantWithDatabase $tenant): bool
     {
-        return $this->connection()->statement("CREATE SCHEMA \"{$tenant->database()->getName()}\"");
+        $name = $tenant->database()->getName();
+
+        $this->validateParameter($name);
+
+        return $this->connection()->statement("CREATE SCHEMA \"{$name}\"");
     }
 
     public function deleteDatabase(TenantWithDatabase $tenant): bool
     {
-        return $this->connection()->statement("DROP SCHEMA \"{$tenant->database()->getName()}\" CASCADE");
+        $name = $tenant->database()->getName();
+
+        $this->validateParameter($name);
+
+        return $this->connection()->statement("DROP SCHEMA \"{$name}\" CASCADE");
     }
 
     public function databaseExists(string $name): bool
     {
-        return (bool) $this->connection()->select("SELECT schema_name FROM information_schema.schemata WHERE schema_name = '$name'");
+        return (bool) $this->connection()->select('SELECT schema_name FROM information_schema.schemata WHERE schema_name = ?', [$name]);
     }
 
     public function makeConnectionConfig(array $baseConfig, string $databaseName): array

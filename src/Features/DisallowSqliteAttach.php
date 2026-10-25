@@ -74,8 +74,8 @@ class DisallowSqliteAttach implements Feature
         // @phpstan-ignore method.notFound
         $pdo->setAuthorizer(static function (int $action): int {
             return $action === 24 // SQLITE_ATTACH
-                ? PDO\Sqlite::DENY
-                : PDO\Sqlite::OK;
+                ? PDO\Sqlite::DENY // @phpstan-ignore classConstant.notFound
+                : PDO\Sqlite::OK; // @phpstan-ignore classConstant.notFound
         });
     }
 }

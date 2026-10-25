@@ -274,6 +274,32 @@ test('attaching central resources to tenants or vice versa creates synced tenant
     });
 });
 
+test('updating pivot column does not re-create the synced tenant resource', function () {
+    // Add an extra pivot column so we can update it
+    Schema::table('tenant_users', fn (Blueprint $table) => $table->string('note')->nullable());
+
+    $centralUser = CentralUser::create([
+        'global_id' => 'acme',
+        'name' => 'John Doe',
+        'email' => 'john@localhost',
+        'password' => 'secret',
+        'role' => 'commenter',
+    ]);
+
+    $tenant = Tenant::create();
+    migrateUsersTableForTenants();
+
+    // Attaching creates the tenant resource
+    $centralUser->tenants()->attach($tenant);
+    $tenant->run(fn () => expect(TenantUser::count())->toBe(1));
+
+    // Updating a pivot column does not re-attach and create the resource again
+    // (which would throw a duplicate entry error -- regression test for #1467)
+    $centralUser->tenants()->updateExistingPivot($tenant->getTenantKey(), ['note' => 'foo']);
+
+    $tenant->run(fn () => expect(TenantUser::count())->toBe(1));
+});
+
 test('detaching central users from tenants or vice versa force deletes the synced tenant resource', function (bool $attachUserToTenant) {
     $centralUser = CentralUser::create([
         'global_id' => 'acme',
@@ -1165,6 +1191,77 @@ test('using forceDelete on a central resource with soft deletes force deletes th
     tenancy()->initialize($tenant2);
 
     expect(TenantUserWithSoftDeletes::withTrashed()->firstWhere('global_id', 'user'))->toBeNull();
+});
+
+test('force deleting a central resource force deletes tenant resources that are already trashed', function () {
+    [$tenant1] = createTenantsAndRunMigrations();
+    migrateUsersTableForTenants();
+    addExtraColumns(true);
+
+    foreach ([
+        fn ($user, $tenant) => $user->forceDelete(),
+        fn ($user, $tenant) => $user->tenants()->detach($tenant),
+    ] as $triggerForceDelete) {
+        $centralUser = CentralUserWithSoftDeletes::create([
+            'global_id' => 'user',
+            'name' => 'Central user',
+            'email' => 'central@localhost',
+            'password' => 'password',
+            'role' => 'commenter',
+            'foo' => 'foo',
+        ]);
+
+        $centralUser->tenants()->attach($tenant1);
+
+        tenancy()->initialize($tenant1);
+
+        TenantUserWithSoftDeletes::firstWhere('global_id', 'user')->delete();
+
+        tenancy()->end();
+
+        $triggerForceDelete($centralUser, $tenant1);
+
+        tenancy()->initialize($tenant1);
+
+        expect(TenantUserWithSoftDeletes::withTrashed()->firstWhere('global_id', 'user'))->toBeNull();
+
+        tenancy()->end();
+    }
+});
+
+test('trashing a central resource does not affect tenant resources that are already trashed', function () {
+    [$tenant1] = createTenantsAndRunMigrations();
+    migrateUsersTableForTenants();
+    addExtraColumns(true);
+
+    $centralUser = CentralUserWithSoftDeletes::create([
+        'global_id' => 'user',
+        'name' => 'Central user',
+        'email' => 'central@localhost',
+        'password' => 'password',
+        'role' => 'commenter',
+        'foo' => 'foo',
+    ]);
+
+    $centralUser->tenants()->attach($tenant1);
+
+    tenancy()->initialize($tenant1);
+
+    // Trash the tenant resource a day in the past so that deleting it again would update deleted_at
+    $this->travelTo(now()->subDay());
+
+    TenantUserWithSoftDeletes::firstWhere('global_id', 'user')->delete();
+
+    $this->travelBack();
+
+    $tenantUserDeletedAt = TenantUserWithSoftDeletes::withTrashed()->firstWhere('global_id', 'user')->deleted_at;
+
+    expect($tenantUserDeletedAt)->not()->toBeNull();
+
+    // Trashing the central resource doesn't touch already trashed tenant resources
+    $centralUser->delete();
+
+    expect(TenantUserWithSoftDeletes::withTrashed()->firstWhere('global_id', 'user')->deleted_at)->toEqual($tenantUserDeletedAt);
 });
 
 test('resource creation works correctly when tenant resource provides defaults in the creation attributes', function () {

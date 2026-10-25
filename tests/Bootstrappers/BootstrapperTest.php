@@ -247,3 +247,66 @@ function getDiskPrefix(string $disk): string
 
     return $prefix;
 }
+
+test('usingBootstrapper checks the configured bootstrappers without instantiating them', function () {
+    config(['tenancy.bootstrappers' => [
+        DatabaseTenancyBootstrapper::class,
+        UsingBootstrapper_ThrowingBootstrapper::class,
+    ]]);
+
+    expect(tenancy()->usingBootstrapper(DatabaseTenancyBootstrapper::class))->toBeTrue();
+    expect(tenancy()->usingBootstrapper(UsingBootstrapper_ThrowingBootstrapper::class))->toBeTrue();
+    expect(tenancy()->usingBootstrapper(RedisTenancyBootstrapper::class))->toBeFalse();
+});
+
+test('usingBootstrapper treats subclasses of a bootstrapper as that bootstrapper being used', function () {
+    config(['tenancy.bootstrappers' => [UsingBootstrapper_ChildBootstrapper::class]]);
+
+    expect(tenancy()->usingBootstrapper(UsingBootstrapper_ThrowingBootstrapper::class))->toBeTrue();
+    expect(tenancy()->usingBootstrapper(UsingBootstrapper_ChildBootstrapper::class))->toBeTrue();
+
+    config(['tenancy.bootstrappers' => [UsingBootstrapper_ThrowingBootstrapper::class]]);
+
+    // A parent class being used doesn't mean its subclass is being used
+    expect(tenancy()->usingBootstrapper(UsingBootstrapper_ChildBootstrapper::class))->toBeFalse();
+});
+
+test('usingBootstrapper respects the getBootstrappersUsing callback', function () {
+    config(['tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class]]);
+
+    $tenant = Tenant::create(['redis' => true]);
+
+    tenancy()->getBootstrappersUsing = function (?Tenant $tenant) {
+        return $tenant?->redis ? [RedisTenancyBootstrapper::class] : [];
+    };
+
+    // Central context, the callback receives null
+    expect(tenancy()->usingBootstrapper(RedisTenancyBootstrapper::class))->toBeFalse();
+    expect(tenancy()->usingBootstrapper(DatabaseTenancyBootstrapper::class))->toBeFalse();
+
+    // The callback receives the current tenant
+    tenancy()->initialize($tenant);
+
+    expect(tenancy()->usingBootstrapper(RedisTenancyBootstrapper::class))->toBeTrue();
+    expect(tenancy()->usingBootstrapper(DatabaseTenancyBootstrapper::class))->toBeFalse();
+});
+
+class UsingBootstrapper_ThrowingBootstrapper implements \Stancl\Tenancy\Contracts\TenancyBootstrapper
+{
+    public function __construct()
+    {
+        throw new Exception('This bootstrapper should not be instantiated');
+    }
+
+    public function bootstrap(\Stancl\Tenancy\Contracts\Tenant $tenant): void
+    {
+    }
+
+    public function revert(): void
+    {
+    }
+}
+
+class UsingBootstrapper_ChildBootstrapper extends UsingBootstrapper_ThrowingBootstrapper
+{
+}

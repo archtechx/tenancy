@@ -28,6 +28,9 @@ trait ManagesPostgresUsers
         $username = $databaseConfig->getUsername();
         $password = $databaseConfig->getPassword();
 
+        $this->validateParameter($username);
+        $this->validatePassword($password);
+
         $createUser = ! $this->userExists($username);
 
         if ($createUser) {
@@ -43,6 +46,8 @@ trait ManagesPostgresUsers
     {
         // Tenant DB username
         $username = $databaseConfig->getUsername();
+
+        $this->validateParameter($username);
 
         // Tenant host connection config
         $connectionName = $this->connection()->getConfig('name');
@@ -77,6 +82,6 @@ trait ManagesPostgresUsers
 
     public function userExists(string $username): bool
     {
-        return (bool) $this->connection()->selectOne("SELECT usename FROM pg_user WHERE usename = '{$username}'");
+        return (bool) $this->connection()->select('SELECT usename FROM pg_user WHERE usename = ?', [$username]);
     }
 }

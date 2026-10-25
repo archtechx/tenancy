@@ -30,7 +30,6 @@ if (! function_exists('tenant')) {
             return app(Tenant::class);
         }
 
-        // @phpstan-ignore-next-line nullsafe.neverNull
         return app(Tenant::class)?->getAttribute($key);
     }
 }
@@ -110,7 +109,7 @@ if (! function_exists('tenant_route')) {
          */
         $hostname = parse_url($url, PHP_URL_HOST);
 
-        return (string) str($url)->replace($hostname, $domain);
+        return (string) str($url)->replaceFirst('://' . $hostname, '://' . $domain);
     }
 }
 

@@ -89,13 +89,14 @@ test('tenant user can be impersonated on a tenant domain', function () {
         ->assertSee('You are logged in as Joe');
 
     expect(UserImpersonation::isImpersonating())->toBeTrue();
-    expect(session('tenancy_impersonating'))->toBeTrue();
+    expect(session('tenancy_impersonation_guard'))->toBe('web');
+    expect($token->auth_guard)->toBe('web');
 
     // Leave impersonation
     UserImpersonation::stopImpersonating();
 
     expect(UserImpersonation::isImpersonating())->toBeFalse();
-    expect(session('tenancy_impersonating'))->toBeNull();
+    expect(session('tenancy_impersonation_guard'))->toBeNull();
 
     // Assert can't access the tenant dashboard
     pest()->get('http://foo.localhost/dashboard')
@@ -135,17 +136,111 @@ test('tenant user can be impersonated on a tenant path', function () {
         ->assertSee('You are logged in as Joe');
 
     expect(UserImpersonation::isImpersonating())->toBeTrue();
-    expect(session('tenancy_impersonating'))->toBeTrue();
+    expect(session('tenancy_impersonation_guard'))->toBe('web');
+    expect($token->auth_guard)->toBe('web');
 
     // Leave impersonation
     UserImpersonation::stopImpersonating();
 
     expect(UserImpersonation::isImpersonating())->toBeFalse();
-    expect(session('tenancy_impersonating'))->toBeNull();
+    expect(session('tenancy_impersonation_guard'))->toBeNull();
 
     // Assert can't access the tenant dashboard
     pest()->get('/acme/dashboard')
         ->assertRedirect('/login');
+});
+
+test('stopImpersonating can keep the user authenticated', function () {
+    makeLoginRoute();
+
+    Route::middleware(InitializeTenancyByPath::class)->prefix('/{tenant}')->group(getRoutes(false));
+
+    $tenant = Tenant::create([
+        'id' => 'acme',
+        'tenancy_db_name' => 'db' . Str::random(16),
+    ]);
+
+    migrateTenants();
+
+    $user = $tenant->run(function () {
+        return ImpersonationUser::create([
+            'name' => 'Joe',
+            'email' => 'joe@local',
+            'password' => bcrypt('secret'),
+        ]);
+    });
+
+    // Impersonate the user
+    $token = tenancy()->impersonate($tenant, $user->id, '/acme/dashboard');
+
+    pest()->get('/acme/impersonate/' . $token->token)
+        ->assertRedirect('/acme/dashboard');
+
+    expect(UserImpersonation::isImpersonating())->toBeTrue();
+
+    // Stop impersonating without logging out
+    UserImpersonation::stopImpersonating(false);
+
+    // The impersonation session key should be cleared
+    expect(UserImpersonation::isImpersonating())->toBeFalse();
+    expect(session('tenancy_impersonation_guard'))->toBeNull();
+
+    // The user should still be authenticated
+    pest()->get('/acme/dashboard')
+        ->assertSuccessful()
+        ->assertSee('You are logged in as Joe');
+});
+
+test('stopImpersonating logs out the user from the impersonation guard stored in session', function () {
+    Route::middleware(InitializeTenancyByPath::class)->prefix('/{tenant}')->group(getRoutes(false));
+
+    $tenant = Tenant::create([
+        'id' => 'acme',
+        'tenancy_db_name' => 'db' . Str::random(16),
+    ]);
+
+    migrateTenants();
+
+    $user = $tenant->run(function () {
+        return ImpersonationUser::create([
+            'name' => 'Joe',
+            'email' => 'joe@local',
+            'password' => bcrypt('secret'),
+        ]);
+    });
+
+    // Impersonate the user
+    $token = tenancy()->impersonate($tenant, $user->id, '/acme/dashboard');
+
+    pest()->get('/acme/impersonate/' . $token->token)
+        ->assertRedirect('/acme/dashboard');
+
+    expect(session('tenancy_impersonation_guard'))->toBe('web');
+
+    // Impersonation logged in the user using the current guard ('web')
+    expect(auth('web')->check())->toBeTrue();
+
+    config(['auth.guards.test' => [
+        'driver' => 'session',
+        'provider' => 'users',
+    ]]);
+
+    // Manually log the user in through the 'test' guard
+    auth('test')->loginUsingId($user->id);
+
+    // Should log the user out from the guard used for impersonation ('web')
+    UserImpersonation::stopImpersonating();
+
+    expect(auth('web')->check())->toBeFalse();
+    expect(auth('test')->check())->toBeTrue();
+
+    expect(UserImpersonation::isImpersonating())->toBeFalse();
+
+    // tenancy_impersonation_guard isn't in the session anymore,
+    // stopImpersonating should throw an exception instead of logging out
+    expect(fn() => UserImpersonation::stopImpersonating())->toThrow(Exception::class);
+
+    expect(auth('test')->check())->toBeTrue();
 });
 
 test('tokens have a limited ttl', function () {
@@ -350,6 +445,67 @@ test('tokens are cleaned up when in wrong tenant context before aborting', funct
         ->toThrow(HttpException::class); // Abort with 403
 
     expect(ImpersonationToken::find($token->token))->toBeNull();
+});
+
+test('impersonation aborts and does not mark the session when the user does not exist in the tenant', function () {
+    Route::middleware(InitializeTenancyByDomain::class)->group(getRoutes());
+
+    $tenant = Tenant::create();
+    $tenant->domains()->create([
+        'domain' => 'foo.localhost',
+    ]);
+    migrateTenants();
+
+    // No user with this ID exists in the tenant database
+    $token = tenancy()->impersonate($tenant, '999', '/dashboard');
+
+    pest()->get('http://foo.localhost/impersonate/' . $token->token)
+        ->assertStatus(403);
+
+    expect(UserImpersonation::isImpersonating())->toBeFalse();
+    expect(session('tenancy_impersonation_guard'))->toBeNull();
+    expect(auth('web')->check())->toBeFalse();
+
+    // The token is single-use, so it's deleted even though the login failed
+    expect(ImpersonationToken::find($token->token))->toBeNull();
+});
+
+test('a token cannot be redeemed twice by concurrent requests', function () {
+    $tenant = Tenant::create();
+    migrateTenants();
+
+    $user = $tenant->run(function () {
+        return ImpersonationUser::create([
+            'name' => 'foo',
+            'email' => 'foo@bar',
+            'password' => bcrypt('password'),
+        ]);
+    });
+
+    $token = tenancy()->impersonate($tenant, $user->id, '/dashboard');
+
+    tenancy()->initialize($tenant);
+
+    // Request A looks up the token...
+    $tokenSeenByRequestA = ImpersonationToken::findOrFail($token->token);
+
+    // ...then request B redeems it fully before request A gets to log in and delete it
+    UserImpersonation::makeResponse($token->token);
+
+    expect(ImpersonationToken::find($token->token))->toBeNull();
+
+    // Reset the state left behind by request B
+    UserImpersonation::stopImpersonating();
+    expect(auth()->check())->toBeFalse();
+
+    // Request A continues with the token it already loaded. It must not be able to log in.
+    expect(fn () => UserImpersonation::makeResponse($tokenSeenByRequestA))
+        ->toThrow(function (HttpException $e) {
+            expect($e->getStatusCode())->toBe(403);
+        });
+
+    expect(auth()->check())->toBeFalse();
+    expect(UserImpersonation::isImpersonating())->toBeFalse();
 });
 
 test('expired impersonation tokens can be cleaned up using a command', function () {
