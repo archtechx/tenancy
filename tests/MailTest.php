@@ -95,3 +95,25 @@ test('initializing and ending tenancy binds a fresh MailManager instance without
 
     expect($mailers())->toHaveCount(0);
 });
+
+test('mappings specified in credentialsMap override default mapPresets', function () {
+    config(['mail.mailers.smtp.password' => 'DEFAULT']);
+
+    // Custom mapping for a config key that's also mapped by the smtp preset (to smtp_password)
+    MailConfigBootstrapper::$credentialsMap = ['mail.mailers.smtp.password' => 'custom_smtp_password'];
+
+    tenancy()->initialize(Tenant::create([
+        'smtp_host' => 'tenant.host',
+        'smtp_password' => 'preset_value',
+        'custom_smtp_password' => 'custom_value',
+    ]));
+
+    // Custom mapping is used
+    expect(config('mail.mailers.smtp.password'))->toBe('custom_value');
+
+    // Preset mappings that aren't overridden still apply
+    expect(config('mail.mailers.smtp.host'))->toBe('tenant.host');
+
+    // Initializing tenancy doesn't write the preset mappings into the public static property
+    expect(MailConfigBootstrapper::$credentialsMap)->toBe(['mail.mailers.smtp.password' => 'custom_smtp_password']);
+});

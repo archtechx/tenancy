@@ -71,3 +71,38 @@ test('runForMultiple runs the passed closure for the right tenants', function() 
         });
     }
 });
+
+test('runForMultiple reverts to the original context when the callback throws an exception', function (bool $startInTenantContext) {
+    $originalTenant = $startInTenantContext ? Tenant::create() : null;
+    $tenants = [Tenant::create(), Tenant::create(), Tenant::create()];
+
+    if ($originalTenant) {
+        tenancy()->initialize($originalTenant);
+    }
+
+    $visited = [];
+
+    expect(function () use ($tenants, &$visited) {
+        tenancy()->runForMultiple($tenants, function (Tenant $tenant) use ($tenants, &$visited) {
+            $visited[] = $tenant->getTenantKey();
+
+            if ($tenant->is($tenants[1])) {
+                throw new Exception('foo');
+            }
+        });
+    })->toThrow(Exception::class, 'foo');
+
+    // The exception stops the loop, the remaining tenants are skipped
+    expect($visited)->toBe([$tenants[0]->getTenantKey(), $tenants[1]->getTenantKey()]);
+
+    if ($originalTenant) {
+        expect(tenancy()->initialized)->toBeTrue();
+        expect(tenant()->getTenantKey())->toBe($originalTenant->getTenantKey());
+    } else {
+        expect(tenancy()->initialized)->toBeFalse();
+        expect(tenant())->toBeNull();
+    }
+})->with([
+    'central context' => false,
+    'tenant context' => true,
+]);

@@ -18,7 +18,7 @@ trait BelongsToTenant
     use FillsCurrentTenant;
 
     /**
-     * @return BelongsTo<\Illuminate\Database\Eloquent\Model&\Stancl\Tenancy\Contracts\Tenant, $this>
+     * @return BelongsTo<\Illuminate\Database\Eloquent\Model&Tenant, $this>
      */
     public function tenant(): BelongsTo
     {
@@ -39,10 +39,16 @@ trait BelongsToTenant
     protected static function configureBelongsToTenantScope(): void
     {
         // If TraitRLSManager::$implicitRLS is true or this model implements RLSModel
-        // Postgres RLS is used for scoping, so we don't enable the scope used with single-database tenancy.
-        $implicitRLS = config('tenancy.rls.manager') === TraitRLSManager::class && TraitRLSManager::$implicitRLS;
+        // Postgres RLS is used for scoping, so we don't enable the scope used with single-database tenancy
+        // (unless the model is excluded from TraitRLSManager's discovery).
+        $rlsManager = config('tenancy.rls.manager');
+        $traitRLS = is_a($rlsManager, TraitRLSManager::class, true);
+        $implicitRLS = $traitRLS && $rlsManager::$implicitRLS;
 
-        if (! $implicitRLS && ! (new static) instanceof RLSModel) {
+        // Excluded models don't get RLS policies, so they always keep the global scope
+        $excluded = $traitRLS && in_array(static::class, $rlsManager::$excludedModels, true);
+
+        if ($excluded || (! $implicitRLS && ! (new static) instanceof RLSModel)) {
             static::addGlobalScope(new TenantScope);
         }
     }

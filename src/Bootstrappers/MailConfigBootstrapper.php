@@ -40,7 +40,6 @@ class MailConfigBootstrapper implements TenancyBootstrapper
         protected Application $app
     ) {
         static::$mailer ??= $config->get('mail.default');
-        static::$credentialsMap = array_merge(static::$credentialsMap, static::$mapPresets[static::$mailer] ?? []);
     }
 
     public function bootstrap(Tenant $tenant): void
@@ -60,7 +59,13 @@ class MailConfigBootstrapper implements TenancyBootstrapper
 
     protected function setConfig(Tenant $tenant): void
     {
-        foreach (static::$credentialsMap as $configKey => $storageKey) {
+        // Mappings specified in $credentialsMap take precedence over the preset mappings
+        $credentialsMap = array_merge(
+            static::$mapPresets[static::$mailer] ?? [],
+            static::$credentialsMap,
+        );
+
+        foreach ($credentialsMap as $configKey => $storageKey) {
             $override = data_get($tenant, $storageKey);
 
             if ($override !== null) {

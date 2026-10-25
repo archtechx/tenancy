@@ -16,7 +16,7 @@ use Stancl\Tenancy\Tenancy;
 trait HasDomains
 {
     /**
-     * @return HasMany<\Illuminate\Database\Eloquent\Model&\Stancl\Tenancy\Contracts\Domain, $this>
+     * @return HasMany<\Illuminate\Database\Eloquent\Model&Domain, $this>
      */
     public function domains(): HasMany
     {

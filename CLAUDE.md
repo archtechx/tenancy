@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+You're working on version 4, which is the unreleased `master` branch with no tags at the moment.
+
 ## Development Commands
 
 ### Testing
@@ -118,6 +120,14 @@ Tests use Docker with MySQL/PostgreSQL/Redis. The `./test` script runs Pest test
 - Multi-database scenarios (central + tenant databases)
 - Middleware and identification testing
 - Resource syncing validation
+
+#### Debugging tests
+
+If you're developing some feature and you encounter `SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry` errors, it's likely that some PHP errors were thrown in past test runs and prevented the test cleanup from running properly.
+
+To fix this, simply delete the database memory by shutting down containers and starting them again: `docker compose restart mysql`.
+
+Same thing for `SQLSTATE[HY000]: General error: 1615 Prepared statement needs to be re-prepared`. Just run `docker compose restart mysql`.
 
 ### Configuration
 

@@ -70,3 +70,20 @@ test('root url bootstrapper overrides the root url when tenancy gets initialized
     expect(URL::to('/'))->toBe($baseUrl);
     expect(config('app.url'))->toBe($baseUrl);
 });
+
+test('root url bootstrapper reverts the root url and app url to their own original values', function () {
+    config([
+        'tenancy.bootstrappers' => [RootUrlBootstrapper::class],
+        'app.url' => 'http://localhost',
+    ]);
+
+    RootUrlBootstrapper::$rootUrlOverride = fn (Tenant $tenant) => 'http://' . $tenant->getTenantKey() . '.localhost';
+
+    URL::forceRootUrl('http://central.localhost');
+
+    tenancy()->initialize(Tenant::create());
+    tenancy()->end();
+
+    expect(URL::to('/'))->toBe('http://central.localhost');
+    expect(config('app.url'))->toBe('http://localhost');
+});
