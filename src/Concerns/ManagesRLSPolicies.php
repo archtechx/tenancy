@@ -17,7 +17,7 @@ trait ManagesRLSPolicies
     {
         return array_map(
             fn (stdClass $policy) => $policy->policyname,
-            DB::select("SELECT policyname FROM pg_policies WHERE tablename = '{$table}' AND policyname LIKE '%_rls_policy%'")
+            DB::select("SELECT policyname FROM pg_policies WHERE tablename = '{$table}' AND policyname LIKE '%\_rls\_policy%'")
         );
     }
 
