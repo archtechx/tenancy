@@ -502,3 +502,13 @@ test('rls policies in other schemas are ignored', function () {
         DB::statement('DROP SCHEMA other CASCADE');
     }
 });
+
+// todo@rls handle quoting everywhere else as well
+test('rls command disables rls on tables without policies whose names need quoting', function () {
+    DB::statement('CREATE TABLE "AuditLog" (id int PRIMARY KEY)');
+    DB::statement('ALTER TABLE "AuditLog" ENABLE ROW LEVEL SECURITY');
+
+    pest()->artisan('tenants:rls');
+
+    expect(DB::selectOne("SELECT relrowsecurity FROM pg_class WHERE oid = '\"AuditLog\"'::regclass")->relrowsecurity)->toBeFalse();
+});
