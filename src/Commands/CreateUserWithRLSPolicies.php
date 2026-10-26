@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\DatabaseConfig;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledPostgreSQLSchemaManager;
+use Stancl\Tenancy\RLS\Exceptions\RLSPolicyNameTooLongException;
 use Stancl\Tenancy\RLS\PolicyManagers\RLSPolicyManager;
 
 /**
@@ -143,6 +144,15 @@ class CreateUserWithRLSPolicies extends Command
         $rlsPolicyManager = app(config('tenancy.rls.manager'));
         $rlsQueries = $rlsPolicyManager->generateQueries();
 
+        // Hash the policies before making any changes, so that a policy name that's too long doesn't leave the policies partially updated
+        $hashedQueries = [];
+
+        foreach ($rlsQueries as $table => $query) {
+            [$hash, $policyQuery] = $this->hashPolicy($query);
+
+            $hashedQueries[$table] = [$hash, $policyQuery, $this->policyName($table, $hash)];
+        }
+
         $zombiePolicies = $this->dropZombiePolicies(array_keys($rlsQueries));
 
         if ($zombiePolicies > 0) {
@@ -155,10 +165,7 @@ class CreateUserWithRLSPolicies extends Command
 
         $createdPolicies = [];
 
-        foreach ($rlsQueries as $table => $query) {
-            [$hash, $policyQuery] = $this->hashPolicy($query);
-            $expectedName = $table . '_rls_policy_' . $hash;
-
+        foreach ($hashedQueries as $table => [$hash, $policyQuery, $expectedName]) {
             $tableRLSPolicy = $this->findTableRLSPolicy($table);
             $olderPolicyExists = $tableRLSPolicy && $tableRLSPolicy->policyname !== $expectedName;
 
@@ -234,6 +241,27 @@ class CreateUserWithRLSPolicies extends Command
         $policyQuery = $firstLine . "\n" . $body . "\n" . $lastLine;
 
         return [$hash, $policyQuery];
+    }
+
+    /**
+     * Get the name of a table's RLS policy with the passed hash.
+     *
+     * @throws RLSPolicyNameTooLongException When Postgres would truncate the policy name
+     */
+    protected function policyName(string $table, string $hash): string
+    {
+        $suffix = '_rls_policy_' . $hash;
+        $policyName = $table . $suffix;
+
+        // Postgres silently truncates longer identifiers (NAMEDATALEN - 1). A truncated name would never
+        // match the expected name, and it may not match our LIKE patterns used for finding the policies.
+        $limit = 63;
+
+        if (strlen($policyName) > $limit) {
+            throw new RLSPolicyNameTooLongException($table, $policyName, $limit, $limit - strlen($suffix));
+        }
+
+        return $policyName;
     }
 
     /**
