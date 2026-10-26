@@ -227,7 +227,7 @@ test('rls command throws an exception when a policy name would be truncated by p
         "The RLS policy name for table '{$tooLongTable}' would be longer than 63 bytes",
     );
 
-    // The exception is thrown before any changes are made
+    // The exception is thrown before any policies are changed
     expect($policyCount())->toBe(5);
 });
 
