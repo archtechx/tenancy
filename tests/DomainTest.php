@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Database\Models;
@@ -58,12 +59,21 @@ test('a domain can belong to only one tenant', function () {
         'domain' => 'foo.localhost',
     ]))->toThrow(DomainOccupiedByOtherTenantException::class);
 
-    // On case-sensitive DBs (PostgreSQL, SQLite), this only throws DomainOccupiedByOtherTenantException
-    // because ConvertsDomainsToLowercase runs before EnsuresDomainIsNotOccupied. The central DB used
-    // in tests is MySQL with a case-insensitive collation, so this passes with either trait order.
+    // Make the column compare case-sensitively, like it does by default on PostgreSQL and SQLite.
+    // The default collation (utf8mb4_unicode_ci) would find 'foo.localhost' when checking 'FOO.localhost'
+    // even if the domain wasn't lowercased before EnsuresDomainIsNotOccupied runs.
+    DB::statement('ALTER TABLE domains MODIFY domain VARCHAR(255) COLLATE utf8mb4_bin NOT NULL');
+
+    expect(Domain::where('domain', 'FOO.localhost')->exists())->toBeFalse();
+    expect(Domain::where('domain', 'foo.localhost')->exists())->toBeTrue();
+
+    // Throws DomainOccupiedByOtherTenantException (instead of UniqueConstraintViolationException)
+    // only if ConvertsDomainsToLowercase runs before EnsuresDomainIsNotOccupied
     expect(fn () => $tenant2->domains()->create([
         'domain' => 'FOO.localhost',
     ]))->toThrow(DomainOccupiedByOtherTenantException::class);
+
+    expect($tenant2->domains()->count())->toBe(0);
 });
 
 test('an exception is thrown if tenant cannot be identified', function () {
