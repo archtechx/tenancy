@@ -107,7 +107,19 @@ test('tenant has to have a unique domain', function() {
 
     // Checked by the EnsuresDomainIsNotOccupied trait
     expect(fn () => SingleDomainTenant::create(['domain' => 'bar']))->toThrow(DomainOccupiedByOtherTenantException::class);
+
+    // Make the column compare case-sensitively, like it does by default on PostgreSQL and SQLite.
+    // The default collation (utf8mb4_unicode_ci) would find 'bar' when checking 'BAR'
+    // even if the domain wasn't lowercased before EnsuresDomainIsNotOccupied runs.
+    DB::statement('ALTER TABLE tenants MODIFY domain VARCHAR(255) COLLATE utf8mb4_bin NULL');
+
+    expect(SingleDomainTenant::where('domain', 'BAR')->exists())->toBeFalse();
+    expect(SingleDomainTenant::where('domain', 'bar')->exists())->toBeTrue();
+
+    // Throws DomainOccupiedByOtherTenantException (instead of UniqueConstraintViolationException)
+    // only if ConvertsDomainsToLowercase runs before EnsuresDomainIsNotOccupied
     expect(fn () => SingleDomainTenant::create(['domain' => 'BAR']))->toThrow(DomainOccupiedByOtherTenantException::class);
+    expect(SingleDomainTenant::count())->toBe(1);
 
     // Enforced by the unique index when model events are bypassed
     expect(fn () => DB::table('tenants')->insert(['id' => 'foo', 'domain' => 'bar', 'data' => '{}']))->toThrow(UniqueConstraintViolationException::class);
