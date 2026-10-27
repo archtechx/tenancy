@@ -28,7 +28,7 @@ class Tenancy
     /**
      * Custom callback for providing a list of bootstrappers to use.
      * When this is null, config('tenancy.bootstrappers') is used.
-     * @var ?Closure(): list<TenancyBootstrapper>
+     * @var ?Closure(?Tenant): list<class-string<TenancyBootstrapper>>
      */
     public ?Closure $getBootstrappersUsing = null;
 
@@ -84,6 +84,10 @@ class Tenancy
         }
 
         if ($this->initialized && $this->tenant?->getTenantKey() === $tenant->getTenantKey()) {
+            // Replace tenant with the more up to date version of the model
+            // which may have newer attributes or relations like domains
+            $this->tenant = $tenant;
+
             return;
         }
 
@@ -175,23 +179,46 @@ class Tenancy
     /** @return TenancyBootstrapper[] */
     public function getBootstrappers(): array
     {
+        // Here we instantiate the bootstrappers and return them.
+        return array_map('app', $this->getBootstrapperClasses());
+    }
+
+    /**
+     * Get the class names of the bootstrappers for the current context.
+     *
+     * These come from config('tenancy.bootstrappers'), or from the $getBootstrappersUsing
+     * callback if set. The callback receives the current tenant, or null if tenancy
+     * isn't initialized.
+     *
+     * @return list<class-string<TenancyBootstrapper>>
+     */
+    protected function getBootstrapperClasses(): array
+    {
         // If no callback for getting bootstrappers is set, we return the ones in config.
         $resolve = $this->getBootstrappersUsing ?? function (?Tenant $tenant) {
             return config('tenancy.bootstrappers');
         };
 
-        // Here we instantiate the bootstrappers and return them.
-        return array_map('app', $resolve($this->tenant));
+        return $resolve($this->tenant);
     }
 
     /**
-     * Check if a bootstrapper is being used.
+     * Check if a bootstrapper is in the bootstrapper list for the current context.
+     *
+     * Checks the class names from getBootstrapperClasses() without instantiating them.
+     * Subclasses of the passed bootstrapper count as a match.
      *
      * @param class-string<TenancyBootstrapper> $bootstrapper
      */
     public function usingBootstrapper(string $bootstrapper): bool
     {
-        return in_array($bootstrapper, static::getBootstrappers(), true);
+        foreach ($this->getBootstrapperClasses() as $class) {
+            if (is_a($class, $bootstrapper, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -248,8 +275,15 @@ class Tenancy
     }
 
     /**
-     * Run a callback in the central context.
-     * Atomic, safely reverts to previous context.
+     * Run a callback in the central context and revert to the previous context afterwards.
+     *
+     * Exceptions thrown by the callback are not handled: they propagate in the central
+     * context and the previous tenant is not re-initialized. Code that catches such
+     * an exception and continues will keep running in the central context and can
+     * reinitialize manually as needed.
+     *
+     * The reason for this is that tenants can have their own logging configured, and exceptions
+     * thrown in the central context should be reported using the central logger.
      */
     public function central(Closure $callback): mixed
     {
@@ -271,6 +305,9 @@ class Tenancy
     /**
      * Run a callback for multiple tenants.
      *
+     * The original context is restored afterwards, even if the callback
+     * throws an exception (in which case the remaining tenants are skipped).
+     *
      * @param array<Tenant>|array<string|int>|\Traversable|string|int|null $tenants
      */
     public function runForMultiple($tenants, Closure $callback): void
@@ -291,20 +328,22 @@ class Tenancy
 
         $originalTenant = $this->tenant;
 
-        foreach ($tenants as $tenant) {
-            if (! $tenant instanceof Tenant) {
-                $tenant = $this->find($tenant);
+        try {
+            foreach ($tenants as $tenant) {
+                if (! $tenant instanceof Tenant) {
+                    $tenant = $this->find($tenant);
+                }
+
+                /** @var Tenant $tenant */
+                $this->initialize($tenant);
+                $callback($tenant);
             }
-
-            /** @var Tenant $tenant */
-            $this->initialize($tenant);
-            $callback($tenant);
-        }
-
-        if ($originalTenant) {
-            $this->initialize($originalTenant);
-        } else {
-            $this->end();
+        } finally {
+            if ($originalTenant) {
+                $this->initialize($originalTenant);
+            } else {
+                $this->end();
+            }
         }
     }
 
