@@ -175,6 +175,11 @@ test('domains are converted to lowercase when saved', function () {
     $tenant->update(['domain' => 'FOO.localhost']);
 
     expect($tenant->fresh()->domain)->toBe('foo.localhost');
+
+    // Empty domains are converted to null
+    $tenant->update(['domain' => '']);
+
+    expect($tenant->fresh()->domain)->toBeNull();
 });
 
 test('tenants list command works with single domain tenants', function () {
