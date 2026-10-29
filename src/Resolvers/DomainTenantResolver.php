@@ -24,11 +24,6 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
     {
         $domain = $args[0];
 
-        // E.g. origin identification without an Origin header
-        if ($domain === '') {
-            throw new TenantCouldNotBeIdentifiedOnDomainException($domain);
-        }
-
         $tenant = static::findTenantByDomain($domain);
 
         /** @var (Tenant&Model)|null $tenant */
@@ -43,6 +38,11 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
 
     public static function findTenantByDomain(string $domain): (Tenant&Model)|null
     {
+        // E.g. origin identification without an Origin header
+        if ($domain === '') {
+            return null;
+        }
+
         /** @var Tenant&Model $tenantModel */
         $tenantModel = tenancy()->model();
 
