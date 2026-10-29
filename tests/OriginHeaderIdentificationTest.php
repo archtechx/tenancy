@@ -81,6 +81,42 @@ test('onfail logic can be customized', function() {
         ->withHeader('Origin', 'bar.localhost') // 'bar'/'bar.localhost' is not an existing tenant domain
         ->post('home')
         ->assertSee('onFail message');
+
+    // parse_url() returns false for these, they should go through $onFail rather than throw
+    foreach (['http://', 'http:///foo', 'https://:80'] as $origin) {
+        pest()
+            ->withHeader('Origin', $origin)
+            ->post('home')
+            ->assertSee('onFail message');
+    }
+});
+
+test("origin 'null' does not identify a tenant whose domain is 'null'", function () {
+    $tenant = Tenant::create();
+
+    $tenant->domains()->create([
+        'domain' => 'null',
+    ]);
+
+    pest()
+        ->withHeader('Origin', 'null.localhost')
+        ->post('home')
+        ->assertSee($tenant->id);
+
+    tenancy()->end();
+
+    pest()
+        ->withHeader('Origin', 'https://null.localhost')
+        ->post('home')
+        ->assertSee($tenant->id);
+
+    tenancy()->end();
+
+    // Browsers send 'null' for opaque origins (e.g. sandboxed iframes), it should be treated like a missing header
+    // With any non-empty domain value other than 'null' the below assertion would fail (request would succeed) since
+    // our Origin header handling logic accepts subdomains, variants with http(s) protocols, and pure domains/hostnames
+    expect(fn () => pest()->withoutExceptionHandling()->withHeader('Origin', 'null')->post('home'))->toThrow(TenantCouldNotBeIdentifiedOnDomainException::class);
+    expect(tenancy()->initialized)->toBeFalse();
 });
 
 test('origin identification can be used with universal routes', function () {
@@ -107,7 +143,17 @@ test('origin identification can be used with universal routes', function () {
         ->assertSee('central');
 
     pest()
-        // no header
+        ->withHeader('Origin', 'null')
+        ->post('universal')
+        ->assertSee('central');
+
+    pest()
+        ->withHeader('Origin', 'http://')
+        ->post('universal')
+        ->assertSee('central');
+
+    pest()
+        ->flushHeaders() // no header
         ->post('universal')
         ->assertSee('central');
 });
