@@ -43,7 +43,7 @@ class InitializeTenancyByDomainOrSubdomain extends InitializeTenancyBySubdomain
                 $this->resolver->resolve($subdomain ?? $domain)
             );
         } catch (TenantCouldNotBeIdentifiedException $e) {
-            if ($subdomain) {
+            if ($subdomain !== null) {
                 try {
                     $this->tenancy->initialize(
                         $this->resolver->resolve($domain)

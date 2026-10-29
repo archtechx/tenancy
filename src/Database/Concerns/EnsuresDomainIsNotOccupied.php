@@ -11,6 +11,10 @@ trait EnsuresDomainIsNotOccupied
     public static function bootEnsuresDomainIsNotOccupied(): void
     {
         static::saving(function ($self) {
+            if ($self->domain === null) {
+                return;
+            }
+
             if ($domain = $self->newQuery()->where('domain', $self->domain)->first()) {
                 if ($domain->getKey() !== $self->getKey()) {
                     throw new DomainOccupiedByOtherTenantException($self->domain);
