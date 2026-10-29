@@ -14,6 +14,7 @@ use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
 use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Commands\CreateUserWithRLSPolicies;
+use Stancl\Tenancy\RLS\Exceptions\RLSPolicyNameTooLongException;
 use Stancl\Tenancy\RLS\PolicyManagers\TableRLSManager;
 use Stancl\Tenancy\RLS\PolicyManagers\TraitRLSManager;
 use Stancl\Tenancy\Bootstrappers\PostgresRLSBootstrapper;
@@ -194,6 +195,47 @@ test('rls command recreates policies if the force option is passed', function (s
     TableRLSManager::class,
     TraitRLSManager::class,
 ]);
+
+test('rls command throws an exception when a policy name would be truncated by postgres', function () {
+    config(['tenancy.rls.manager' => TableRLSManager::class]);
+
+    $createScopedTable = fn (string $name) => Schema::create($name, function (Blueprint $table) {
+        $table->id();
+        $table->string('tenant_id');
+        $table->foreign('tenant_id')->references('id')->on('tenants');
+    });
+
+    $policyCount = fn () => count(DB::select('SELECT 1 FROM pg_policies'));
+
+    // Establish initial policy count
+    pest()->artisan('tenants:rls');
+    expect($policyCount())->toBe(3);
+
+    // The policy name of a 45-character table is exactly 63 bytes long, the longest identifier Postgres allows
+    $createScopedTable($longestTable = str_repeat('a', 45));
+
+    pest()->artisan('tenants:rls');
+    expect($policyCount())->toBe(4);
+
+    pest()->artisan('tenants:rls')->expectsOutputToContain("Table '{$longestTable}' already has an up to date RLS policy.");
+    expect($policyCount())->toBe(4);
+
+    $createScopedTable($tooLongTable = str_repeat('a', 46));
+
+    // A zombie policy that tenants:rls would drop before creating the policies.
+    // The purpose of this is to check that tenants:rls doesn't reach the cleanup
+    // logic when it gets aborted early by the too long table name case
+    DB::statement('CREATE POLICY tenants_rls_policy_abc123 ON tenants USING (true)');
+    expect($policyCount())->toBe(5);
+
+    expect(fn () => pest()->artisan('tenants:rls')->run())->toThrow(
+        RLSPolicyNameTooLongException::class,
+        "The RLS policy name for table '{$tooLongTable}' would be longer than 63 bytes",
+    );
+
+    // The exception is thrown before any policies are changed
+    expect($policyCount())->toBe(5);
+});
 
 test('dropRLSPolicies only drops RLS policies', function () {
     DB::statement('CREATE POLICY "comments_dummy_rls_policy" ON comments USING (true)');
