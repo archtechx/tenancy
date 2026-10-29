@@ -144,7 +144,8 @@ class CreateUserWithRLSPolicies extends Command
         $rlsPolicyManager = app(config('tenancy.rls.manager'));
         $rlsQueries = $rlsPolicyManager->generateQueries();
 
-        // Hash the policies before changing any of them, so that a policy name that's too long doesn't leave the policies partially updated
+        // Hash the policies before changing any of them, so that when a policy name is
+        // too long, the command aborts here without leaving the policies partially updated
         $hashedQueries = [];
 
         foreach ($rlsQueries as $table => $query) {

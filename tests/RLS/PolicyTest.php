@@ -207,6 +207,10 @@ test('rls command throws an exception when a policy name would be truncated by p
 
     $policyCount = fn () => count(DB::select('SELECT 1 FROM pg_policies'));
 
+    // Establish initial policy count
+    pest()->artisan('tenants:rls');
+    expect($policyCount())->toBe(3);
+
     // The policy name of a 45-character table is exactly 63 bytes long, the longest identifier Postgres allows
     $createScopedTable($longestTable = str_repeat('a', 45));
 
@@ -218,7 +222,9 @@ test('rls command throws an exception when a policy name would be truncated by p
 
     $createScopedTable($tooLongTable = str_repeat('a', 46));
 
-    // A zombie policy that tenants:rls would drop before creating the policies
+    // A zombie policy that tenants:rls would drop before creating the policies.
+    // The purpose of this is to check that tenants:rls doesn't reach the cleanup
+    // logic when it gets aborted early by the too long table name case
     DB::statement('CREATE POLICY tenants_rls_policy_abc123 ON tenants USING (true)');
     expect($policyCount())->toBe(5);
 
