@@ -100,6 +100,20 @@ test('cache is invalidated when a single domain tenants domain is updated', func
     DB::flushQueryLog();
     expect($tenant->is(app(DomainTenantResolver::class)->resolve('baz')))->toBeTrue();
     pest()->assertEmpty(DB::getQueryLog()); // resolving using current subdomain for the second time
+
+    // '0' is falsy, but it's a valid subdomain
+    $tenant->update(['domain' => '0']);
+
+    expect($tenant->is(app(DomainTenantResolver::class)->resolve('0')))->toBeTrue();
+    DB::flushQueryLog();
+    expect($tenant->is(app(DomainTenantResolver::class)->resolve('0')))->toBeTrue();
+    pest()->assertEmpty(DB::getQueryLog()); // '0' is cached
+
+    $tenant->update(['domain' => 'qux']);
+
+    DB::flushQueryLog();
+    expect(fn () => $tenant->is(app(DomainTenantResolver::class)->resolve('0')))->toThrow(TenantCouldNotBeIdentifiedOnDomainException::class);
+    pest()->assertNotEmpty(DB::getQueryLog()); // '0' is not in cache anymore
 });
 
 test('tenant has to have a unique domain', function() {
