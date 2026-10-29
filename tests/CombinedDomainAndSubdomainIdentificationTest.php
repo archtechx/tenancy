@@ -57,4 +57,12 @@ test('domain records can be either in domain syntax or subdomain syntax', functi
 
     // Domain format
     pest()->get('http://bar.localhost/test')->assertSee('bar');
+
+    tenancy()->end();
+
+    // Domain format with a falsy subdomain
+    $zero = Tenant::create(['id' => 'zero']);
+    $zero->domains()->create(['domain' => '0.localhost']);
+
+    pest()->get('http://0.localhost/test')->assertSee('zero');
 });

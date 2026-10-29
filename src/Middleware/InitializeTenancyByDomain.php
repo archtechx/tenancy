@@ -47,7 +47,7 @@ class InitializeTenancyByDomain extends IdentificationMiddleware
         $domain = $this->getDomain($request);
 
         // Mainly used with origin identification if the header isn't specified and e.g. universal routes are used
-        if (! $domain) {
+        if ($domain === '') {
             return false;
         }
 
