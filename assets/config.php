@@ -463,6 +463,16 @@ return [
         'include_in_queries' => true,
 
         /**
+         * If enabled, identification middleware won't identify pending tenants, regardless of
+         * include_in_queries. Instead, they throw TenantIsPendingException, which extends
+         * TenantCouldNotBeIdentifiedException, so $onFail handles it like any other failed identification.
+         *
+         * This only affects identification middleware. It doesn't affect tenant resolvers,
+         * tenancy()->find(), initializing tenancy manually, or initializing tenancy in queued jobs.
+         */
+        'exclude_from_identification' => true,
+
+        /**
          * Defines how many pending tenants you want to have ready in the pending tenant pool.
          * This depends on the volume of tenants you're creating.
          */

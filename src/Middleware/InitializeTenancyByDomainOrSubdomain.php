@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Stancl\Tenancy\Concerns\UsableWithEarlyIdentification;
 use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
+use Stancl\Tenancy\Exceptions\TenantIsPendingException;
 use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 
 class InitializeTenancyByDomainOrSubdomain extends InitializeTenancyBySubdomain
@@ -23,6 +24,10 @@ class InitializeTenancyByDomainOrSubdomain extends InitializeTenancyBySubdomain
             return $next($request);
         }
 
+        $onFail = static::$onFail ?? function ($e) {
+            throw $e;
+        };
+
         $domain = $this->getDomain($request);
         $subdomain = null;
 
@@ -30,36 +35,27 @@ class InitializeTenancyByDomainOrSubdomain extends InitializeTenancyBySubdomain
             $subdomain = $this->makeSubdomain($domain);
 
             if ($subdomain instanceof Exception) {
-                $onFail = static::$onFail ?? function ($e) {
-                    throw $e;
-                };
-
                 return $onFail($subdomain, $request, $next);
             }
         }
 
         try {
             $this->tenancy->initialize(
-                $this->resolver->resolve($subdomain ?? $domain)
+                $this->resolveTenant($subdomain ?? $domain)
             );
+        } catch (TenantIsPendingException $e) {
+            // Catch this subtype of TenantCouldNotBeIdentifiedException first to fail early
+            return $onFail($e, $request, $next);
         } catch (TenantCouldNotBeIdentifiedException $e) {
             if ($subdomain !== null) {
                 try {
                     $this->tenancy->initialize(
-                        $this->resolver->resolve($domain)
+                        $this->resolveTenant($domain)
                     );
                 } catch (TenantCouldNotBeIdentifiedException $e) {
-                    $onFail = static::$onFail ?? function ($e) {
-                        throw $e;
-                    };
-
                     return $onFail($e, $request, $next);
                 }
             } else {
-                $onFail = static::$onFail ?? function ($e) {
-                    throw $e;
-                };
-
                 return $onFail($e, $request, $next);
             }
         }

@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\IdentificationMiddleware;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomainOrSubdomain;
+use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
+use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
+use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
+use Stancl\Tenancy\Exceptions\TenantIsPendingException;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use function Stancl\Tenancy\Tests\pest;
 
@@ -73,3 +77,35 @@ test('terminateTenancy ends tenancy even if an exception propagates out of the r
     expect(fn () => pest()->get('http://a.localhost/exception'))->toThrow(Exception::class, 'foo');
     expect(tenancy()->initialized)->toBeFalse();
 })->with('domain identification middleware');
+
+test('pending tenants can be excluded from identification', function (string $middleware, string $url) {
+    config([
+        'tenancy.pending.include_in_queries' => true,
+        'tenancy.pending.exclude_from_identification' => false,
+    ]);
+
+    Route::get($middleware === InitializeTenancyByPath::class ? '/{tenant}/bar' : '/bar', fn () => tenant('id'))->middleware($middleware);
+
+    $tenant = Tenant::createPending();
+    $tenant->domains()->create(['domain' => 'foo.test']);
+    $tenant->domains()->create(['domain' => 'foo']);
+
+    $url = str_replace('{id}', $tenant->id, $url);
+
+    pest()->get($url)->assertSee($tenant->id);
+
+    tenancy()->end();
+    config(['tenancy.pending.exclude_from_identification' => true]);
+    pest()->withoutExceptionHandling();
+
+    // With InitializeTenancyByDomainOrSubdomain, this also checks that the full domain fallback doesn't replace the exception
+    expect(fn () => pest()->get($url))->toThrow(fn (TenantIsPendingException $e) => expect($e->tenant->is($tenant))->toBeTrue());
+    expect(tenancy()->initialized)->toBeFalse();
+})->with([
+    'domain' => [InitializeTenancyByDomain::class, 'http://foo.test/bar'],
+    'subdomain' => [InitializeTenancyBySubdomain::class, 'http://foo.localhost/bar'],
+    'domain or subdomain (domain)' => [InitializeTenancyByDomainOrSubdomain::class, 'http://foo.test/bar'],
+    'domain or subdomain (subdomain)' => [InitializeTenancyByDomainOrSubdomain::class, 'http://foo.localhost/bar'],
+    'path' => [InitializeTenancyByPath::class, 'http://localhost/{id}/bar'],
+    'request data' => [InitializeTenancyByRequestData::class, 'http://localhost/bar?tenant={id}'],
+]);
