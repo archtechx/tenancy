@@ -139,19 +139,16 @@ test('tenant has to have a unique domain', function() {
     expect(fn () => DB::table('tenants')->insert(['id' => 'foo', 'domain' => 'bar', 'data' => '{}']))->toThrow(UniqueConstraintViolationException::class);
 });
 
-test('multiple tenants can be created without a domain', function () {
-    $tenant1 = SingleDomainTenant::create();
-    $tenant2 = SingleDomainTenant::create(['domain' => null]);
+test('multiple tenants without a domain can be created and updated', function () {
+    $tenants = collect([
+        SingleDomainTenant::create(),
+        SingleDomainTenant::create(['domain' => null]),
+        SingleDomainTenant::create(),
+    ]);
 
-    expect($tenant1->domain)->toBeNull();
-    expect($tenant2->domain)->toBeNull();
+    expect(DB::table('tenants')->whereNull('domain')->count())->toBe(3);
 
-    expect(DB::table('tenants')->whereNull('domain')->count())->toBe(2);
-});
-
-test('tenant without a domain can be updated when other tenants without a domain exist', function () {
-    $tenants = collect(range(1, 3))->map(fn () => SingleDomainTenant::create());
-
+    // The domain traits' saving listeners also run on update, while other tenants without a domain exist
     foreach ($tenants as $tenant) {
         $tenant->update(['foo' => 'bar']);
 
