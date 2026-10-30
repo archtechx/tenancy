@@ -41,7 +41,7 @@ class InitializeTenancyByDomainOrSubdomain extends InitializeTenancyBySubdomain
 
         try {
             $this->tenancy->initialize(
-                $this->resolveTenant($subdomain ?? $domain)
+                $this->resolver->resolve($subdomain ?? $domain)
             );
         } catch (TenantIsPendingException $e) {
             // Catch this subtype of TenantCouldNotBeIdentifiedException first to fail early
@@ -50,7 +50,7 @@ class InitializeTenancyByDomainOrSubdomain extends InitializeTenancyBySubdomain
             if ($subdomain !== null) {
                 try {
                     $this->tenancy->initialize(
-                        $this->resolveTenant($domain)
+                        $this->resolver->resolve($domain)
                     );
                 } catch (TenantCouldNotBeIdentifiedException $e) {
                     return $onFail($e, $request, $next);

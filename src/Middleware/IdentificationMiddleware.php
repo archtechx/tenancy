@@ -6,10 +6,8 @@ namespace Stancl\Tenancy\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Contracts\TenantResolver;
-use Stancl\Tenancy\Exceptions\TenantIsPendingException;
 use Stancl\Tenancy\Tenancy;
 
 /**
@@ -33,7 +31,7 @@ abstract class IdentificationMiddleware
     {
         try {
             $this->tenancy->initialize(
-                $this->resolveTenant(...$resolverArguments)
+                $this->resolver->resolve(...$resolverArguments)
             );
         } catch (TenantCouldNotBeIdentifiedException $e) {
             $onFail = static::$onFail ?? function ($e) {
@@ -50,23 +48,5 @@ abstract class IdentificationMiddleware
                 $this->tenancy->end();
             }
         }
-    }
-
-    /**
-     * Resolve the tenant using the resolver, rejecting pending tenants
-     * if they're excluded from identification.
-     *
-     * @throws TenantCouldNotBeIdentifiedException
-     */
-    protected function resolveTenant(mixed ...$resolverArguments): Tenant
-    {
-        /** @var Tenant $tenant */
-        $tenant = $this->resolver->resolve(...$resolverArguments);
-
-        if (config('tenancy.pending.exclude_from_identification', true) && method_exists($tenant, 'pending') && $tenant->pending()) {
-            throw new TenantIsPendingException($tenant);
-        }
-
-        return $tenant;
     }
 }
