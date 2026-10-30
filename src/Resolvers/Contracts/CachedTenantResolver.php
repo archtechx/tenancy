@@ -40,12 +40,13 @@ abstract class CachedTenantResolver implements TenantResolver
         }
 
         $tenant = $this->resolveWithoutCache(...$args);
+        $pending = method_exists($tenant, 'pending') && $tenant->pending();
 
-        if (config('tenancy.pending.exclude_from_identification', true) && method_exists($tenant, 'pending') && $tenant->pending()) {
+        if ($pending && config('tenancy.pending.exclude_from_identification', true)) {
             throw new TenantIsPendingException($tenant);
         }
 
-        if ($key) {
+        if ($key && ! $pending) {
             $this->cache->put($key, $tenant, static::cacheTTL());
         }
 

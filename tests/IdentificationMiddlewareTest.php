@@ -81,10 +81,11 @@ test('terminateTenancy ends tenancy even if an exception propagates out of the r
     expect(tenancy()->initialized)->toBeFalse();
 })->with('domain identification middleware');
 
-test('pending tenants can be excluded from identification', function (string $middleware, string $url) {
+test('pending tenants can be excluded from identification and are not cached', function (string $middleware, string $resolver, string $url) {
     config([
         'tenancy.pending.include_in_queries' => true,
         'tenancy.pending.exclude_from_identification' => false,
+        'tenancy.identification.resolvers.' . $resolver . '.cache' => true,
     ]);
 
     Route::get($middleware === InitializeTenancyByPath::class ? '/{tenant}/bar' : '/bar', fn () => tenant('id'))->middleware($middleware);
@@ -94,8 +95,10 @@ test('pending tenants can be excluded from identification', function (string $mi
     $tenant->domains()->create(['domain' => 'foo']);
 
     $url = str_replace('{id}', $tenant->id, $url);
+    $cached = fn () => collect(app($resolver)->getPossibleCacheKeys($tenant))->contains(fn (string $key) => global_cache()->has($key));
 
     pest()->get($url)->assertSee($tenant->id);
+    expect($cached())->toBeFalse(); // pending tenants are never cached regardless of exclude_from_identification setting
 
     tenancy()->end();
     config(['tenancy.pending.exclude_from_identification' => true]);
@@ -104,45 +107,17 @@ test('pending tenants can be excluded from identification', function (string $mi
     // With InitializeTenancyByDomainOrSubdomain, this also checks that the full domain fallback doesn't replace the exception
     expect(fn () => pest()->get($url))->toThrow(fn (TenantIsPendingException $e) => expect($e->tenant->is($tenant))->toBeTrue());
     expect(tenancy()->initialized)->toBeFalse();
-})->with([
-    'domain' => [InitializeTenancyByDomain::class, 'http://foo.test/bar'],
-    'subdomain' => [InitializeTenancyBySubdomain::class, 'http://foo.localhost/bar'],
-    'domain or subdomain (domain)' => [InitializeTenancyByDomainOrSubdomain::class, 'http://foo.test/bar'],
-    'domain or subdomain (subdomain)' => [InitializeTenancyByDomainOrSubdomain::class, 'http://foo.localhost/bar'],
-    'path' => [InitializeTenancyByPath::class, 'http://localhost/{id}/bar'],
-    'request data' => [InitializeTenancyByRequestData::class, 'http://localhost/bar?tenant={id}'],
-]);
-
-test('pending tenants are not cached by resolvers', function (string $middleware, string $resolver, string $url) {
-    config([
-        'tenancy.pending.include_in_queries' => true,
-        'tenancy.identification.resolvers.' . $resolver . '.cache' => true,
-    ]);
-
-    Route::get($middleware === InitializeTenancyByPath::class ? '/{tenant}/bar' : '/bar', fn () => tenant('id'))->middleware($middleware);
-
-    $tenant = Tenant::createPending();
-    $tenant->domains()->create(['domain' => 'foo.test']);
-
-    $url = str_replace('{id}', $tenant->id, $url);
-
-    pest()->withoutExceptionHandling();
-
-    expect(fn () => pest()->get($url))->toThrow(TenantIsPendingException::class);
-
-    foreach (app($resolver)->getPossibleCacheKeys($tenant) as $key) {
-        expect(global_cache()->has($key))->toBeFalse();
-    }
+    expect($cached())->toBeFalse();
 
     Tenant::pullPendingFromPool();
 
     pest()->get($url)->assertSee($tenant->id);
-
-    foreach (app($resolver)->getPossibleCacheKeys($tenant) as $key) {
-        expect(global_cache()->has($key))->toBeTrue();
-    }
+    expect($cached())->toBeTrue();
 })->with([
     'domain' => [InitializeTenancyByDomain::class, DomainTenantResolver::class, 'http://foo.test/bar'],
+    'subdomain' => [InitializeTenancyBySubdomain::class, DomainTenantResolver::class, 'http://foo.localhost/bar'],
+    'domain or subdomain (domain)' => [InitializeTenancyByDomainOrSubdomain::class, DomainTenantResolver::class, 'http://foo.test/bar'],
+    'domain or subdomain (subdomain)' => [InitializeTenancyByDomainOrSubdomain::class, DomainTenantResolver::class, 'http://foo.localhost/bar'],
     'path' => [InitializeTenancyByPath::class, PathTenantResolver::class, 'http://localhost/{id}/bar'],
     'request data' => [InitializeTenancyByRequestData::class, RequestDataTenantResolver::class, 'http://localhost/bar?tenant={id}'],
 ]);
