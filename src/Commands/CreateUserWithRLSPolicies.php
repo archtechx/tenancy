@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\DatabaseConfig;
 use Stancl\Tenancy\Database\TenantDatabaseManagers\PermissionControlledPostgreSQLSchemaManager;
+use Stancl\Tenancy\RLS\Exceptions\RLSPolicyNameTooLongException;
 use Stancl\Tenancy\RLS\PolicyManagers\RLSPolicyManager;
 
 /**
@@ -18,7 +19,7 @@ use Stancl\Tenancy\RLS\PolicyManagers\RLSPolicyManager;
  */
 class CreateUserWithRLSPolicies extends Command
 {
-    protected $signature = 'tenants:rls {--force= : Create RLS policies even if they already exist.}';
+    protected $signature = 'tenants:rls {--force : Create RLS policies even if they already exist.}';
 
     protected $description = "Creates RLS policies for all tables related to the tenant table. Also creates the RLS user if it doesn't exist yet";
 
@@ -36,8 +37,24 @@ class CreateUserWithRLSPolicies extends Command
      * involved (e.g. central connection user not being the same user that
      * creates tables, or the created "RLS user" creating some tables) you
      * should take care with how you configure this.
+     *
+     * Tables with existing policies are only updated when their policies get
+     * recreated, so after changing this, run `tenants:rls --force`.
      */
     public static bool $forceRls = true;
+
+    /**
+     * Disable RLS on tables that have RLS enabled but no policies, and that
+     * shouldn't have an RLS policy based on the current RLS policy manager.
+     *
+     * A table with RLS enabled and no policies denies all rows to the RLS user.
+     * This happens e.g. when a table stops being scoped and its policy has been
+     * dropped in a migration using dropRLSPolicies(), or as a zombie policy.
+     *
+     * Set this to false if you have tables that intentionally have RLS enabled
+     * without any policies (to block the RLS user from accessing them).
+     */
+    public static bool $disableRlsOnTablesWithoutPolicies = true;
 
     public function handle(PermissionControlledPostgreSQLSchemaManager $manager): int
     {
@@ -50,11 +67,19 @@ class CreateUserWithRLSPolicies extends Command
             return Command::FAILURE;
         }
 
+        $databaseConfig = $this->makeDatabaseConfig($manager, $username, $password);
+
         $this->components->info(
-            $manager->createUser($this->makeDatabaseConfig($manager, $username, $password))
+            $manager->createUser($databaseConfig)
                 ? "RLS user '{$username}' has been created."
                 : "RLS user '{$username}' already exists."
         );
+
+        // createUser() grants the user all privileges on all tables in the schema (which makes sense for
+        // schema-per-tenant setups), so on every run, we revoke the ones that would let it get around RLS:
+        // - TRUNCATE isn't subject to RLS policies, so truncating a table in the tenant context would delete all tenants' rows
+        // - TRIGGER would let the RLS user attach triggers that run with the privileges of whoever modifies the table
+        $manager->connection()->statement("REVOKE TRUNCATE, TRIGGER ON ALL TABLES IN SCHEMA \"{$databaseConfig->getName()}\" FROM \"{$username}\"");
 
         $this->createTablePolicies();
 
@@ -66,8 +91,11 @@ class CreateUserWithRLSPolicies extends Command
         // Enable RLS scoping on the table (without this, queries won't be scoped using RLS)
         DB::statement("ALTER TABLE {$table} ENABLE ROW LEVEL SECURITY");
 
+        // Apply the current $forceRls setting, including un-forcing tables that were forced previously
         if (static::$forceRls) {
             DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
+        } else {
+            DB::statement("ALTER TABLE {$table} NO FORCE ROW LEVEL SECURITY");
         }
     }
 
@@ -116,18 +144,29 @@ class CreateUserWithRLSPolicies extends Command
         $rlsPolicyManager = app(config('tenancy.rls.manager'));
         $rlsQueries = $rlsPolicyManager->generateQueries();
 
+        // Hash the policies before changing any of them, so that when a policy name is
+        // too long, the command aborts here without leaving the policies partially updated
+        $hashedQueries = [];
+
+        foreach ($rlsQueries as $table => $query) {
+            [$hash, $policyQuery] = $this->hashPolicy($query);
+
+            $hashedQueries[$table] = [$hash, $policyQuery, $this->policyName($table, $hash)];
+        }
+
         $zombiePolicies = $this->dropZombiePolicies(array_keys($rlsQueries));
 
         if ($zombiePolicies > 0) {
             $this->components->warn("Dropped {$zombiePolicies} zombie RLS policies.");
         }
 
+        if (static::$disableRlsOnTablesWithoutPolicies) {
+            $this->disableRLSOnTablesWithoutPolicies(array_keys($rlsQueries));
+        }
+
         $createdPolicies = [];
 
-        foreach ($rlsQueries as $table => $query) {
-            [$hash, $policyQuery] = $this->hashPolicy($query);
-            $expectedName = $table . '_rls_policy_' . $hash;
-
+        foreach ($hashedQueries as $table => [$hash, $policyQuery, $expectedName]) {
             $tableRLSPolicy = $this->findTableRLSPolicy($table);
             $olderPolicyExists = $tableRLSPolicy && $tableRLSPolicy->policyname !== $expectedName;
 
@@ -173,8 +212,9 @@ class CreateUserWithRLSPolicies extends Command
     {
         return DB::selectOne(<<<SQL
             SELECT * FROM pg_policies
-            WHERE tablename = '{$table}'
-            AND policyname LIKE '{$table}_rls_policy%';
+            WHERE schemaname = current_schema()
+            AND tablename = '{$table}'
+            AND policyname LIKE '{$table}\_rls\_policy%';
         SQL);
     }
 
@@ -205,6 +245,27 @@ class CreateUserWithRLSPolicies extends Command
     }
 
     /**
+     * Get the name of a table's RLS policy with the passed hash.
+     *
+     * @throws RLSPolicyNameTooLongException When Postgres would truncate the policy name
+     */
+    protected function policyName(string $table, string $hash): string
+    {
+        $suffix = '_rls_policy_' . $hash;
+        $policyName = $table . $suffix;
+
+        // Postgres silently truncates longer identifiers (NAMEDATALEN - 1). A truncated name would never
+        // match the expected name, and it may not match our LIKE patterns used for finding the policies.
+        $limit = 63;
+
+        if (strlen($policyName) > $limit) {
+            throw new RLSPolicyNameTooLongException($table, $policyName, $limit, $limit - strlen($suffix));
+        }
+
+        return $policyName;
+    }
+
+    /**
      * Here we handle an edge case where a table may have an existing RLS policy
      * but is not included in $rlsQueries, this can happen e.g. when changing $scopeByDefault.
      * For these tables -- that have an existing policy but now SHOULDN'T have one -- we drop
@@ -213,7 +274,7 @@ class CreateUserWithRLSPolicies extends Command
     protected function dropZombiePolicies(array $tablesThatShouldHavePolicies): int
     {
         /** @var \stdClass[] $tablesWithRLSPolicies */
-        $tablesWithRLSPolicies = DB::select("SELECT tablename, policyname FROM pg_policies WHERE policyname LIKE '%_rls_policy%'");
+        $tablesWithRLSPolicies = DB::select("SELECT tablename, policyname FROM pg_policies WHERE schemaname = current_schema() AND policyname LIKE '%\_rls\_policy%'");
 
         $zombies = 0;
 
@@ -227,5 +288,27 @@ class CreateUserWithRLSPolicies extends Command
         }
 
         return $zombies;
+    }
+
+    /** @see $disableRlsOnTablesWithoutPolicies */
+    protected function disableRLSOnTablesWithoutPolicies(array $tablesThatShouldHavePolicies): void
+    {
+        /** @var \stdClass[] $tables */
+        $tables = DB::select(<<<'SQL'
+            SELECT relname, format('%I.%I', current_schema(), relname) AS qualified_name FROM pg_class
+            WHERE relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = current_schema())
+            AND relrowsecurity
+            AND NOT EXISTS (SELECT 1 FROM pg_policy WHERE polrelid = pg_class.oid)
+        SQL);
+
+        foreach ($tables as $table) {
+            if (! in_array($table->relname, $tablesThatShouldHavePolicies, true)) {
+                // Unlike the tables we generate policies for, these may have names that need quoting,
+                // so we use qualified_name (quoted using format('%I.%I') in the query above)
+                DB::statement("ALTER TABLE {$table->qualified_name} DISABLE ROW LEVEL SECURITY, NO FORCE ROW LEVEL SECURITY");
+
+                $this->components->warn("RLS disabled on table '{$table->relname}' (no policies).");
+            }
+        }
     }
 }

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
 use Stancl\Tenancy\Contracts\TenantResolver;
+use Stancl\Tenancy\Exceptions\TenantIsPendingException;
 
 abstract class CachedTenantResolver implements TenantResolver
 {
@@ -30,23 +31,25 @@ abstract class CachedTenantResolver implements TenantResolver
      */
     public function resolve(mixed ...$args): Tenant
     {
-        if (! static::shouldCache()) {
-            $tenant = $this->resolveWithoutCache(...$args);
-            $this->resolved($tenant, ...$args);
+        $key = static::shouldCache() ? $this->formatCacheKey(...$args) : null;
 
-            return $tenant;
-        }
-
-        $key = $this->formatCacheKey(...$args);
-
-        if ($tenant = $this->cache->get($key)) {
+        if ($key && $tenant = $this->cache->get($key)) {
             $this->resolved($tenant, ...$args);
 
             return $tenant;
         }
 
         $tenant = $this->resolveWithoutCache(...$args);
-        $this->cache->put($key, $tenant, static::cacheTTL());
+        $pending = method_exists($tenant, 'pending') && $tenant->pending();
+
+        if ($pending && config('tenancy.pending.exclude_from_identification', true)) {
+            throw new TenantIsPendingException($tenant);
+        }
+
+        if ($key && ! $pending) {
+            $this->cache->put($key, $tenant, static::cacheTTL());
+        }
+
         $this->resolved($tenant, ...$args);
 
         return $tenant;

@@ -34,7 +34,8 @@
         "spatie/valuestore": "^1.2.5",
         "pestphp/pest": "^4.0",
         "larastan/larastan": "^3.0",
-        "league/flysystem-path-prefixing": "^3.0"
+        "league/flysystem-path-prefixing": "^3.0",
+        "friendsofphp/php-cs-fixer": "^3.95"
     },
     "autoload": {
         "psr-4": {
@@ -82,7 +83,7 @@
         "coverage": "open coverage/phpunit/html/index.html",
         "phpstan": "vendor/bin/phpstan --memory-limit=256M",
         "phpstan-pro": "vendor/bin/phpstan --memory-limit=256M --pro",
-        "cs": "PHP_CS_FIXER_IGNORE_ENV=1 php-cs-fixer fix --config=.php-cs-fixer.php",
+        "cs": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php",
         "test": [
             "Composer\\Config::disableProcessTimeout",
             "./test --no-coverage"

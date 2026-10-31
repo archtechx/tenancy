@@ -113,7 +113,7 @@ test('secondary models ARE scoped to the current tenant when accessed directly a
         expect(SingleDatabasePost::count())->toBe(1);
         expect(ScopedComment::count())->toBe(1);
         // whereas...
-        expect(Comment::count())->toBe(2);
+        expect(BaseComment::count())->toBe(2);
     });
 
     // Global context

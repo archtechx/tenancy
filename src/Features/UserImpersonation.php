@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Features;
 
 use Exception;
+use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -43,11 +44,16 @@ class UserImpersonation implements Feature
         $token = $token instanceof Model ? $token : static::modelClass()::findOrFail($token);
         $ttl ??= static::$ttl;
 
+        // Tokens are single-use, so the token is consumed before anything else happens. Deleting it with
+        // a single query lets the database decide which request gets to use the token if multiple requests
+        // try to use it at the same time. Only the request that actually deleted the token can continue.
+        if (static::modelClass()::query()->whereKey($token->getKey())->delete() !== 1) {
+            abort(403);
+        }
+
         $tokenExpired = $token->created_at->diffInSeconds(now()) > $ttl;
 
         if ($tokenExpired) {
-            $token->delete();
-
             abort(403);
         }
 
@@ -55,16 +61,17 @@ class UserImpersonation implements Feature
         $currentTenantId = (string) tenant()->getTenantKey();
 
         if ($tokenTenantId !== $currentTenantId) {
-            $token->delete();
-
             abort(403);
         }
 
-        Auth::guard($token->auth_guard)->loginUsingId($token->user_id, $token->remember);
+        /** @var StatefulGuard $guard */
+        $guard = Auth::guard($token->auth_guard);
+
+        if (! $guard->loginUsingId($token->user_id, $token->remember)) {
+            abort(403);
+        }
 
         session()->put('tenancy_impersonation_guard', $token->auth_guard);
-
-        $token->delete();
 
         return redirect($token->redirect_url);
     }

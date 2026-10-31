@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use Stancl\Tenancy\Tests\Etc\Tenant;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByOriginHeader;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 use function Stancl\Tenancy\Tests\pest;
 
 beforeEach(function () {
@@ -57,6 +59,19 @@ test('tenant routes are not accessible on central domains while using origin ide
         ->assertStatus(500);
 });
 
+test('requests without an origin header cannot identify a tenant with an empty domain', function () {
+    $tenant = Tenant::create();
+
+    // Inserted directly since ConvertsDomainsToLowercase converts empty domains to null
+    DB::table('domains')->insert(['domain' => '', 'tenant_id' => $tenant->id]);
+
+    expect($tenant->domains()->pluck('domain')->all())->toBe(['']);
+
+    // Without an Origin header, the middleware passes an empty domain to the resolver
+    expect(fn () => pest()->withoutExceptionHandling()->post('home'))->toThrow(TenantCouldNotBeIdentifiedOnDomainException::class);
+    expect(tenancy()->initialized)->toBeFalse();
+});
+
 test('onfail logic can be customized', function() {
     InitializeTenancyByOriginHeader::$onFail = function () {
         return response('onFail message');
@@ -66,6 +81,42 @@ test('onfail logic can be customized', function() {
         ->withHeader('Origin', 'bar.localhost') // 'bar'/'bar.localhost' is not an existing tenant domain
         ->post('home')
         ->assertSee('onFail message');
+
+    // parse_url() returns false for these, they should go through $onFail rather than throw
+    foreach (['http://', 'http:///foo', 'https://:80'] as $origin) {
+        pest()
+            ->withHeader('Origin', $origin)
+            ->post('home')
+            ->assertSee('onFail message');
+    }
+});
+
+test("origin 'null' does not identify a tenant whose domain is 'null'", function () {
+    $tenant = Tenant::create();
+
+    $tenant->domains()->create([
+        'domain' => 'null',
+    ]);
+
+    pest()
+        ->withHeader('Origin', 'null.localhost')
+        ->post('home')
+        ->assertSee($tenant->id);
+
+    tenancy()->end();
+
+    pest()
+        ->withHeader('Origin', 'https://null.localhost')
+        ->post('home')
+        ->assertSee($tenant->id);
+
+    tenancy()->end();
+
+    // Browsers send 'null' for opaque origins (e.g. sandboxed iframes), it should be treated like a missing header
+    // With any non-empty domain value other than 'null' the below assertion would fail (request would succeed) since
+    // our Origin header handling logic accepts subdomains, variants with http(s) protocols, and pure domains/hostnames
+    expect(fn () => pest()->withoutExceptionHandling()->withHeader('Origin', 'null')->post('home'))->toThrow(TenantCouldNotBeIdentifiedOnDomainException::class);
+    expect(tenancy()->initialized)->toBeFalse();
 });
 
 test('origin identification can be used with universal routes', function () {
@@ -92,7 +143,17 @@ test('origin identification can be used with universal routes', function () {
         ->assertSee('central');
 
     pest()
-        // no header
+        ->withHeader('Origin', 'null')
+        ->post('universal')
+        ->assertSee('central');
+
+    pest()
+        ->withHeader('Origin', 'http://')
+        ->post('universal')
+        ->assertSee('central');
+
+    pest()
+        ->flushHeaders() // no header
         ->post('universal')
         ->assertSee('central');
 });
