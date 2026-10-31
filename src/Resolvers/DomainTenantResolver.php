@@ -38,6 +38,11 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
 
     public static function findTenantByDomain(string $domain): (Tenant&Model)|null
     {
+        // E.g. origin identification without an Origin header
+        if ($domain === '') {
+            return null;
+        }
+
         /** @var Tenant&Model $tenantModel */
         $tenantModel = tenancy()->model();
 
@@ -95,7 +100,7 @@ class DomainTenantResolver extends Contracts\CachedTenantResolver
             $domains = array_filter([
                 $tenant->getOriginal('domain'), // Previous domain
                 $tenant->domain, // Current domain
-            ]);
+            ], fn ($domain) => $domain !== null);
         } elseif (method_exists($tenant, 'domains') && $tenant->domains() instanceof Relation) {
             $tenant->unsetRelation('domains');
 

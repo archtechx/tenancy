@@ -8,6 +8,7 @@ use ArrayAccess;
 use Countable;
 use Exception;
 use FFI;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Console\Input\InputOption;
@@ -18,6 +19,11 @@ trait ParallelCommand
     protected bool $runningConcurrently = false;
 
     abstract protected function childHandle(mixed ...$args): bool;
+
+    /**
+     * @return Builder<\Stancl\Tenancy\Contracts\Tenant&\Illuminate\Database\Eloquent\Model>
+     */
+    abstract protected function getTenantsQuery(?array $tenantKeys = null): Builder;
 
     public function addProcessesOption(): void
     {
@@ -141,7 +147,10 @@ trait ParallelCommand
     protected function getTenantChunks(): Collection
     {
         $idCol = tenancy()->model()->getTenantKeyName();
-        $tenants = tenancy()->model()->orderBy($idCol, 'asc')->pluck($idCol);
+
+        // Use the same query as getTenants() so that the --tenants, --skip-tenants,
+        // and --with-pending options are respected when building the chunks
+        $tenants = $this->getTenantsQuery()->orderBy($idCol, 'asc')->pluck($idCol);
 
         return $tenants->chunk((int) ceil($tenants->count() / $this->getProcesses()))->map(function ($chunk) {
             $chunk = array_values($chunk->all());

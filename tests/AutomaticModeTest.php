@@ -57,6 +57,36 @@ test('context is switched when tenancy is reinitialized', function () {
     expect(app('tenancy_initialized_for_tenant'))->toBe('foobar');
 });
 
+test('initializing tenancy for the current tenant replaces the tenant instance without running bootstrappers again', function () {
+    config(['tenancy.bootstrappers' => [
+        MyBootstrapper::class,
+    ]]);
+
+    $tenant = Tenant::create([
+        'id' => 'acme',
+    ]);
+    $tenant->domains()->create(['domain' => 'a.localhost']);
+
+    tenancy()->initialize($tenant);
+
+    expect(tenant()->domains->pluck('domain')->all())->toBe(['a.localhost']);
+    expect(app('tenancy_initialized_for_tenant'))->toBe('acme');
+
+    $tenant->domains()->create(['domain' => 'b.localhost']);
+    app()->instance('tenancy_initialized_for_tenant', 'not bootstrapped again');
+
+    tenancy()->initialize($freshTenant = Tenant::find('acme'));
+
+    // tenant() is replaced with the passed instance, instead of keeping the
+    // previous instance with its stale loaded relations
+    expect(tenant())->toBe($freshTenant)->not()->toBe($tenant);
+    expect(tenant()->domains->pluck('domain')->sort()->values()->all())->toBe(['a.localhost', 'b.localhost']);
+
+    // Tenancy isn't ended and bootstrappers aren't run again
+    expect(tenancy()->initialized)->toBeTrue();
+    expect(app('tenancy_initialized_for_tenant'))->toBe('not bootstrapped again');
+});
+
 test('central helper runs callbacks in the central state', function () {
     withTenantDatabases();
 
@@ -89,6 +119,21 @@ test('central helper reverts back to tenant context', function () {
     });
 
     expect(tenant())->toBe($tenant);
+});
+
+test('central helper does not revert to tenant context when the callback throws an exception', function () {
+    withTenantDatabases();
+
+    tenancy()->initialize(Tenant::create());
+
+    // The exception propagates (and would be reported) in the central context, where it occurred.
+    // See the central() docblock.
+    expect(fn () => tenancy()->central(function () {
+        throw new Exception('foo');
+    }))->toThrow(Exception::class, 'foo');
+
+    expect(tenancy()->initialized)->toBeFalse();
+    expect(tenant())->toBeNull();
 });
 
 test('central helper doesnt change tenancy state when called in central context', function () {

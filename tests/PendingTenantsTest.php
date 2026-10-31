@@ -22,6 +22,8 @@ use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Jobs\MigrateDatabase;
 use Stancl\Tenancy\Jobs\SeedDatabase;
+use Stancl\Tenancy\Commands\Migrate;
+use Symfony\Component\Console\Input\ArrayInput;
 use Stancl\Tenancy\Tests\Etc\User;
 use Stancl\Tenancy\Tests\Etc\TestSeeder;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
@@ -292,6 +294,96 @@ test('commands exclude pending tenants when falsy --with-pending is passed', fun
         $command->assertSuccessful();
     }
 })->with([true, false]);
+
+test('parallel commands respect tenant options when chunking tenants', function () {
+    config(['tenancy.pending.include_in_queries' => false]);
+
+    $tenants = collect([
+        Tenant::create(),
+        Tenant::create(),
+        Tenant::createPending(),
+        Tenant::createPending(),
+    ]);
+
+    $keys = $tenants->map->getTenantKey()->all();
+    $nonPendingKeys = $tenants->reject->pending()->map->getTenantKey()->values()->all();
+
+    // We use a fake command to observe the getTenantChunks() logic since it isn't perfectly
+    // observable from the outside if we ran this with -p (also container doesn't have pcntl)
+    $command = new class(app('migrator'), app('events')) extends Migrate {
+        protected function getProcesses(): int
+        {
+            return 2;
+        }
+    };
+
+    $getChunks = function (array $parameters) use ($command) {
+        $command->setInput(new ArrayInput($parameters, $command->getDefinition()));
+
+        return (fn () => $this->getTenantChunks())->call($command);
+    };
+
+    // Pending tenants are included in the chunks when --with-pending is passed
+    $chunks = $getChunks(['--with-pending' => null]);
+    expect($chunks->map(fn ($chunk) => count($chunk))->all())->toBe([2, 2]);
+    expect($chunks->flatten()->all())->toEqualCanonicalizing($keys);
+
+    // Pending tenants are excluded from the chunks when --with-pending isn't passed (include_in_queries is false)
+    $chunks = $getChunks([]);
+    expect($chunks->map(fn ($chunk) => count($chunk))->all())->toBe([1, 1]);
+    expect($chunks->flatten()->all())->toEqualCanonicalizing($nonPendingKeys);
+
+    // Chunks are sized based on the tenants passed in --tenants, not on all tenants
+    $chunks = $getChunks(['--tenants' => [$keys[0], $keys[3]], '--with-pending' => null]);
+    expect($chunks->map(fn ($chunk) => count($chunk))->all())->toBe([1, 1]);
+    expect($chunks->flatten()->all())->toEqualCanonicalizing([$keys[0], $keys[3]]);
+
+    // Tenants passed in --skip-tenants are excluded from the chunks
+    $chunks = $getChunks(['--skip-tenants' => [$keys[0]], '--with-pending' => null]);
+    expect($chunks->map(fn ($chunk) => count($chunk))->all())->toBe([2, 1]);
+    expect($chunks->flatten()->all())->toEqualCanonicalizing([$keys[1], $keys[2], $keys[3]]);
+});
+
+test('migrate fresh command migrates pending tenants when --with-pending is passed', function () {
+    config([
+        'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
+        'tenancy.pending.include_in_queries' => false,
+    ]);
+
+    Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+    Event::listen(TenantCreated::class, JobPipeline::make([
+        CreateDatabase::class,
+        MigrateDatabase::class,
+    ])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    $pendingTenant = Tenant::createPending();
+
+    $insertUser = fn () => $pendingTenant->run(function () {
+        DB::table('users')->insert(['name' => 'foo', 'email' => 'foo@bar.test', 'password' => 'password']);
+    });
+
+    // The database is wiped and migrated again, not just wiped
+    $assertWipedAndMigrated = fn () => $pendingTenant->run(function () {
+        expect(Schema::hasTable('users'))->toBeTrue();
+        expect(DB::table('users')->count())->toBe(0);
+    });
+
+    // All tenants
+    $insertUser();
+    pest()->artisan('tenants:migrate-fresh', ['--with-pending' => true])->assertSuccessful();
+    $assertWipedAndMigrated();
+
+    // Only the pending tenant, passed in --tenants
+    $insertUser();
+    pest()->artisan('tenants:migrate-fresh', [
+        '--tenants' => [$pendingTenant->getTenantKey()],
+        '--with-pending' => true,
+    ])->assertSuccessful();
+    $assertWipedAndMigrated();
+});
 
 test('pending tenants can have default attributes for non-nullable columns', function (bool $withPendingAttributes) {
     Schema::table('tenants', function (Blueprint $table) {

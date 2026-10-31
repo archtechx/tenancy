@@ -24,7 +24,7 @@ class TenantList extends Command
 
         foreach ($tenants as $tenant) {
             /** @var Model&Tenant $tenant */
-            $domains = $tenant instanceof SingleDomainTenant ? collect([$tenant->domain]) : $tenant->domains?->pluck('domain');
+            $domains = $tenant instanceof SingleDomainTenant ? collect([$tenant->domain])->filter(fn ($domain) => $domain !== null && $domain !== '') : $tenant->domains?->pluck('domain');
 
             $this->components->twoColumnDetail($this->tenantCLI($tenant), $this->domainsCLI($domains));
         }
@@ -46,7 +46,7 @@ class TenantList extends Command
      */
     protected function domainsCLI(?Collection $domains): ?string
     {
-        if (! $domains) {
+        if (! $domains || $domains->isEmpty()) {
             return null;
         }
 
