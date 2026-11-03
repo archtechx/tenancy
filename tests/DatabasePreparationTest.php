@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Console\ClosureCommand;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Stancl\JobPipeline\JobPipeline;
@@ -78,12 +76,12 @@ test('database can be seeded after tenant creation', function () {
     });
 });
 
-test('the pipeline stops when migrating the tenant database fails without an exception', function () {
-    // The tenant's database doesn't exist (CreateDatabase isn't in the pipeline), so
-    // tenants:migrate fails, but --skip-failing makes it return 1 instead of throwing
+test('the pipeline stops when a tenant migration fails', function () {
+    // A failing migration throws, so the exception propagates out of Artisan::call()
+    // in MigrateDatabase instead of being turned into a nonzero exit code
     config([
         'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
-        'tenancy.migration_parameters' => ['--force' => true, '--skip-failing' => true],
+        'tenancy.migration_parameters.--path' => [__DIR__ . '/Etc/failing_migrations'],
     ]);
 
     Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
@@ -92,50 +90,15 @@ test('the pipeline stops when migrating the tenant database fails without an exc
     RecordJobRan::$ran = false;
 
     Event::listen(TenantCreated::class, JobPipeline::make([
-        MigrateDatabase::class,
-        RecordJobRan::class,
-    ])->send(function (TenantCreated $event) {
-        return $event->tenant;
-    })->toListener());
-
-    expect(fn () => Tenant::create())->toThrow(RuntimeException::class, 'tenants:migrate');
-    expect(RecordJobRan::$ran)->toBeFalse();
-});
-
-test('the pipeline stops when seeding the tenant database fails without an exception', function () {
-    // tenants:seed only returns a nonzero exit code without throwing when it can't confirm
-    // running in production, which would prompt for confirmation in tests. Replace the
-    // command with one that just fails instead.
-    app(ConsoleKernel::class)->registerCommand(new ClosureCommand('tenants:seed {--tenants=*} {--with-pending=}', fn () => 1));
-
-    RecordJobRan::$ran = false;
-
-    Event::listen(TenantCreated::class, JobPipeline::make([
         CreateDatabase::class,
         MigrateDatabase::class,
-        SeedDatabase::class,
         RecordJobRan::class,
     ])->send(function (TenantCreated $event) {
         return $event->tenant;
     })->toListener());
 
-    expect(fn () => Tenant::create())->toThrow(RuntimeException::class, 'tenants:seed');
+    expect(fn () => Tenant::create())->toThrow(QueryException::class, 'invalid sql');
     expect(RecordJobRan::$ran)->toBeFalse();
-});
-
-test('seeding in production without --force fails with a hint about seeder_parameters', function () {
-    app()['env'] = 'production';
-
-    // See the previous test for why tenants:seed is replaced
-    app(ConsoleKernel::class)->registerCommand(new ClosureCommand('tenants:seed {--tenants=*} {--with-pending=}', fn () => 1));
-
-    Event::listen(TenantCreated::class, JobPipeline::make([
-        SeedDatabase::class,
-    ])->send(function (TenantCreated $event) {
-        return $event->tenant;
-    })->toListener());
-
-    expect(fn () => Tenant::create())->toThrow(RuntimeException::class, "set '--force' => true in tenancy.seeder_parameters");
 });
 
 test('custom job can be added to the pipeline', function () {
