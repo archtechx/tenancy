@@ -91,10 +91,16 @@ class DatabaseTenancyBootstrapper implements TenancyBootstrapper
     {
         /** @var \Stancl\Tenancy\Database\Models\Tenant&TenantWithDatabase $tenant */
         $tenantDbName = $tenant->database()->getName();
+        $dbNameColumn = $tenant->internalPrefix() . 'db_name';
+
+        // The DB name is stored in the data column, unless it's a custom column
+        if (! in_array($dbNameColumn, $tenant::getCustomColumns(), true)) {
+            $dbNameColumn = $tenant::getDataColumn() . '->' . $dbNameColumn;
+        }
 
         // Check that no other tenant uses this tenant's database
         if ($tenant::where($tenant->getTenantKeyName(), '!=', $tenant->getTenantKey())
-            ->where($tenant::getDataColumn() . '->' . $tenant->internalPrefix() . 'db_name', $tenantDbName)
+            ->where($dbNameColumn, $tenantDbName)
             ->exists()) {
             throw new RuntimeException('Tenant cannot use a database of another tenant.');
         }
