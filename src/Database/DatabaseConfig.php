@@ -26,18 +26,34 @@ class DatabaseConfig
     public array $tenantConfig;
 
     /**
-     * Connection config keys that can be set on the tenant using tenancy_db_* attributes.
+     * Connection config keys that can be set on the tenant using tenancy_db_* attributes
+     * (e.g. tenancy_db_host sets 'host'), and how their values are validated.
+     * Using any other key throws an exception when the tenant connection is created.
      *
-     * Values of these keys are validated in validateTenantConfig() before they're used
-     * in the connection config. If you add a key here, make sure validateTenantConfig()
-     * handles it correctly -- by default, values have to pass validateParameter().
+     * Each key can be listed as:
+     * - 'key' -- the value has to pass the default validation (defaultValidator()),
+     *   which only allows a small set of characters, so that the value can't be used
+     *   for injection in DSNs or in SQL executed on connect (e.g. charset, timezone)
+     * - 'key' => fn (mixed $value): bool -- the value is rejected if the closure returns false
+     * - 'key' => null -- the value is used as it is
      *
-     * Keys like 'url', 'read', 'write' or 'options' should NOT be added here, since they'd
-     * let anyone who can write tenant attributes make the tenant connection use any database.
+     * Set this to null to allow all keys and use all values as they are.
      *
-     * @var string[]
+     * Be careful with keys like 'url', 'read', 'write', 'options' or 'isolation_level'
+     * (or setting this to null). Anyone who can write tenant attributes (e.g. via mass
+     * assignment) could use them to point the tenant connection at any database
+     * or execute SQL on connect.
+     *
+     * Usernames and passwords aren't validated by default since PDO drivers pass them
+     * to the server separately or escape them, and DB managers validate them before
+     * using them in SQL statements.
+     *
+     * @var array<int|string, string|(Closure(mixed): bool)|null>|null
      */
-    public static array $tenantConfigKeys = ['host', 'port', 'username', 'password', 'charset', 'collation'];
+    public static array|null $tenantConfigKeys = [
+        'host', 'port', 'charset', 'collation',
+        'username' => null, 'password' => null,
+    ];
 
     /**
      * Database username generator (can be set by the developer.).
@@ -210,35 +226,77 @@ class DatabaseConfig
     }
 
     /**
-     * Ensure the tenant-specific config only contains allowed keys with valid values.
-     *
-     * Some of these values end up in DSNs (host, port) or SQL statements
-     * executed on connect (charset, collation), so they're validated
-     * using the same rules as the parameters used in DB managers.
+     * Ensure the tenant-specific config only contains keys allowed
+     * in $tenantConfigKeys, with values that pass their validation.
      *
      * @throws InvalidArgumentException
      */
     protected function validateTenantConfig(array $config): array
     {
+        if (static::$tenantConfigKeys === null) {
+            return $config;
+        }
+
+        $validators = [];
+
+        foreach (static::$tenantConfigKeys as $key => $validator) {
+            if (is_int($key)) {
+                /** @var string $validator Keys listed without a validator use the default validation */
+                $validators[$validator] = $this->defaultValidator($validator);
+            } else {
+                $validators[$key] = $validator;
+            }
+        }
+
         foreach ($config as $key => $value) {
-            if (! in_array($key, static::$tenantConfigKeys, true)) {
-                throw new InvalidArgumentException("Tenant database config key '{$key}' is not allowed.");
+            if (! array_key_exists($key, $validators)) {
+                throw new InvalidArgumentException(
+                    "Tenant database config key '{$key}' (set on tenant {$this->tenant->getTenantKey()} using the internal db_{$key} attribute) is not allowed. " .
+                    "If this is intended, add '{$key}' to DatabaseConfig::\$tenantConfigKeys."
+                );
             }
 
-            if (is_null($value)) {
-                // Null values unset the template connection's value (e.g. charset)
+            $validator = $validators[$key];
+
+            if ($validator !== null && ! $validator instanceof Closure) {
+                throw new InvalidArgumentException("DatabaseConfig::\$tenantConfigKeys['{$key}'] has to be a closure or null.");
+            }
+
+            // Null values aren't validated since they only unset the template connection's value (e.g. charset)
+            if ($value === null || $validator === null) {
                 continue;
             }
 
-            match ($key) {
-                'password' => $this->validatePassword($value),
-                'port' => $this->validateParameter($value, '0123456789'),
-                'host' => $this->validateParameter($value, static::$allowedParameterCharacters . '.:'),
-                default => $this->validateParameter($value),
-            };
+            // Validators either return false or throw (e.g. validateParameter() in default validators)
+            try {
+                if ($validator($value) === false) {
+                    throw new InvalidArgumentException('The value did not pass the validation closure.');
+                }
+            } catch (InvalidArgumentException $e) {
+                throw new InvalidArgumentException(
+                    "Invalid value of tenant database config key '{$key}' (set on tenant {$this->tenant->getTenantKey()}): {$e->getMessage()}",
+                    previous: $e,
+                );
+            }
         }
 
         return $config;
+    }
+
+    /**
+     * Validation used for keys listed in $tenantConfigKeys without a validator.
+     *
+     * @return Closure(mixed): void
+     */
+    protected function defaultValidator(string $key): Closure
+    {
+        $allowedCharacters = match ($key) {
+            'host' => static::$allowedParameterCharacters . '.:',
+            'port' => '0123456789',
+            default => null, // validateParameter() uses $allowedParameterCharacters
+        };
+
+        return fn (mixed $value) => $this->validateParameter($value, $allowedCharacters);
     }
 
     /**

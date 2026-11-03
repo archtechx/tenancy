@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Event;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Database\DatabaseConfig;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Jobs\CreateDatabase;
@@ -21,8 +22,11 @@ use Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLSchemaManager;
 
 use function Stancl\Tenancy\Tests\pest;
 
-afterEach($cleanup = function () {
+$defaultTenantConfigKeys = DatabaseConfig::$tenantConfigKeys;
+
+afterEach($cleanup = function () use ($defaultTenantConfigKeys) {
     DatabaseTenancyBootstrapper::$harden = false;
+    DatabaseConfig::$tenantConfigKeys = $defaultTenantConfigKeys;
     Tenant::$extraCustomColumns = [];
 });
 
@@ -152,9 +156,10 @@ test('database tenancy bootstrapper throws an exception if DB_URL is set', funct
 })->with(['abc.us-east-1.rds.amazonaws.com', null]);
 
 // The tests below verify that anyone who can write tenant attributes (e.g. via mass assignment --
-// the Tenant model is unguarded) cannot repoint the tenant connection using tenancy_db_* attributes.
+// the Tenant model is unguarded) cannot use tenancy_db_* attributes to repoint the tenant connection
+// or execute SQL on connect.
 
-test('tenancy_db_url cannot point the tenant connection at a different database server', function () {
+test('tenant database config keys that are not allowed prevent initialization', function () {
     config(['tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class]]);
 
     Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
@@ -162,115 +167,108 @@ test('tenancy_db_url cannot point the tenant connection at a different database 
     })->toListener());
 
     $tenant = Tenant::create();
+    $centralConnection = config('tenancy.database.central_connection');
 
-    // mysql2 stands in for a server controlled by an attacker. Give it a database with
-    // the tenant's name so that the testing-only "database exists" check passes too.
-    config(['database.connections.mysql2' => array_merge(config('database.connections.central'), ['host' => 'mysql2', 'url' => null])]);
-    DB::connection('mysql2')->statement("CREATE DATABASE `{$tenant->database()->getName()}`");
-    DB::purge('mysql2');
+    // Initialization works before any of the attributes are set
+    tenancy()->initialize($tenant);
+    expect(DB::getDefaultConnection())->toBe('tenant');
+    tenancy()->end();
 
-    $centralHostname = DB::connection('central')->selectOne('SELECT @@hostname AS h')->h;
+    $attributes = [
+        // Overrides host, database and credentials, and can set any other key using the query string
+        'url' => 'mysql://root:password@mysql2:3306/foo',
+        // Merged over the top-level config, including the database name
+        'read' => ['database' => 'foo'],
+        'write' => ['database' => 'foo'],
+        // MySqlConnector interpolates isolation_level into a SET statement executed after "use `<tenant db>`"
+        'isolation_level' => 'READ COMMITTED; USE `foo`',
+        // Would make the harden check's Schema::hasTable('tenants') look for a prefixed table
+        'prefix' => 'x_',
+        'options' => [PDO::MYSQL_ATTR_INIT_COMMAND => 'USE foo'],
+    ];
 
-    $tenant->update(['tenancy_db_url' => 'mysql://root:password@mysql2:3306']);
+    foreach ($attributes as $key => $value) {
+        $tenant->setAttribute("tenancy_db_{$key}", $value);
 
-    DatabaseTenancyBootstrapper::$harden = true;
+        expect(fn () => tenancy()->initialize($tenant))->toThrow(InvalidArgumentException::class, "Tenant database config key '{$key}'");
+        expect(DB::getDefaultConnection())->toBe($centralConnection);
 
-    try {
-        tenancy()->initialize($tenant);
-    } catch (Throwable) {
-        // Refusing to initialize tenancy is an acceptable outcome
-    }
-
-    if (DB::getDefaultConnection() === 'tenant') {
-        expect(DB::selectOne('SELECT @@hostname AS h')->h)->toBe($centralHostname);
-    } else {
-        expect(DB::getDefaultConnection())->toBe(config('tenancy.database.central_connection'));
+        // Initialization failed in the bootstrapper, so tenancy has to be ended before initializing it again
+        tenancy()->end();
+        $tenant->offsetUnset("tenancy_db_{$key}");
     }
 });
 
-test('harden prevents tenants from using the database of another tenant via connection config attributes', function (Closure $attributes) {
-    config(['tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class]]);
+test('allowed tenant database config values are used in the tenant connection config', function () {
+    $tenant = Tenant::create([
+        'tenancy_db_host' => 'abc.us-east-1.rds.amazonaws.com',
+        'tenancy_db_port' => 3307,
+        'tenancy_db_charset' => 'utf8',
+        'tenancy_db_collation' => 'utf8_unicode_ci',
+        // Usernames and passwords aren't validated by default, so they can contain any characters
+        'tenancy_db_username' => 'tenant.user@example',
+        'tenancy_db_password' => "pa'ss\"word\\",
+    ]);
 
-    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
-        return $event->tenant;
-    })->toListener());
+    expect($tenant->database()->connection())->toMatchArray([
+        'host' => 'abc.us-east-1.rds.amazonaws.com',
+        'port' => 3307,
+        'charset' => 'utf8',
+        'collation' => 'utf8_unicode_ci',
+        'username' => 'tenant.user@example',
+        'password' => "pa'ss\"word\\",
+    ]);
+});
 
-    $victim = Tenant::create();
-    $victimDb = $victim->database()->getName();
-    $attacker = Tenant::create();
-
-    // Note that tenancy_db_name is left untouched, so the harden check looking for other
-    // tenants with the same tenancy_db_name doesn't trigger
-    $attacker->update($attributes($victimDb));
-
-    DatabaseTenancyBootstrapper::$harden = true;
-
-    try {
-        tenancy()->initialize($attacker);
-    } catch (Throwable) {
-        // Refusing to initialize tenancy is an acceptable outcome
-    }
-
-    if (DB::getDefaultConnection() === 'tenant') {
-        expect(DB::selectOne('SELECT DATABASE() AS db')->db)->not()->toBe($victimDb);
-    } else {
-        expect(DB::getDefaultConnection())->toBe(config('tenancy.database.central_connection'));
-    }
-})->with([
-    'url' => fn (string $db) => ['tenancy_db_url' => "mysql://mysql/{$db}"],
-    'read/write' => fn (string $db) => [
-        'tenancy_db_read' => ['database' => $db],
-        'tenancy_db_write' => ['database' => $db],
-    ],
-    // MySqlConnector interpolates isolation_level into a SET statement executed after "use `<tenant db>`"
-    'isolation_level (SQL injection)' => fn (string $db) => [
-        'tenancy_db_isolation_level' => "READ COMMITTED; USE `{$db}`",
-    ],
-]);
-
-test('tenant connection config values are validated', function (array $attributes) {
-    config(['tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class]]);
-
-    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
-        return $event->tenant;
-    })->toListener());
-
+test('tenant database config keys can be allowed with default, custom or no validation', function () {
     $tenant = Tenant::create();
-    $tenant->update($attributes);
 
-    expect(fn () => tenancy()->initialize($tenant))->toThrow(InvalidArgumentException::class);
-    expect(DB::getDefaultConnection())->toBe(config('tenancy.database.central_connection'));
-})->with([
-    'host' => [['tenancy_db_host' => 'mysql;dbname=foo']],
-    'port' => [['tenancy_db_port' => '3306;dbname=foo']],
-    'charset' => [['tenancy_db_charset' => "utf8mb4'; DROP DATABASE foo; --"]],
-    'collation' => [['tenancy_db_collation' => "utf8mb4_unicode_ci' --"]],
-    'username' => [['tenancy_db_username' => 'root;']],
-    'password' => [['tenancy_db_password' => "pass'word"]],
-]);
+    // Get the tenant's connection config with the attribute set
+    $connectionConfig = function (string $key, mixed $value) use ($tenant): array {
+        $tenant->setAttribute("tenancy_db_{$key}", $value);
 
-test('harden prevents tenants from using the central database when a table prefix is set', function () {
-    config(['tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class]]);
+        try {
+            return $tenant->database()->connection();
+        } finally {
+            $tenant->offsetUnset("tenancy_db_{$key}");
+        }
+    };
 
-    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
-        return $event->tenant;
-    })->toListener());
+    $invalidValue = fn (string $key) => "Invalid value of tenant database config key '{$key}' (set on tenant {$tenant->getTenantKey()})";
 
-    $tenant = Tenant::create();
-    $centralDb = DB::connection('central')->getDatabaseName();
-
-    // The harden check uses Schema::hasTable('tenants'), which applies the connection's table prefix
-    $tenant->update(['tenancy_db_name' => $centralDb, 'tenancy_db_prefix' => 'x_']);
-
-    DatabaseTenancyBootstrapper::$harden = true;
-
-    try {
-        tenancy()->initialize($tenant);
-    } catch (Throwable) {
-        // Expected
+    // Keys allowed by default use the default validation, except for username and password
+    foreach ([
+        'host' => 'mysql;dbname=foo',
+        'port' => '3306;dbname=foo',
+        'charset' => "utf8mb4'; DROP DATABASE foo; --",
+        'collation' => "utf8mb4_unicode_ci' --",
+    ] as $key => $value) {
+        expect(fn () => $connectionConfig($key, $value))->toThrow(InvalidArgumentException::class, $invalidValue($key));
     }
 
-    expect(DB::getDefaultConnection())->toBe(config('tenancy.database.central_connection'));
+    // Added keys without a value use the default validation
+    expect(fn () => $connectionConfig('sslmode', 'require'))->toThrow(InvalidArgumentException::class, "Tenant database config key 'sslmode'");
+    DatabaseConfig::$tenantConfigKeys[] = 'sslmode';
+    expect($connectionConfig('sslmode', 'require'))->toMatchArray(['sslmode' => 'require']);
+    expect(fn () => $connectionConfig('sslmode', 'require;host=foo'))->toThrow(InvalidArgumentException::class, $invalidValue('sslmode'));
+
+    // Added keys with a closure use custom validation
+    DatabaseConfig::$tenantConfigKeys['timezone'] = fn (mixed $value) => in_array($value, timezone_identifiers_list(), true);
+    expect($connectionConfig('timezone', 'Europe/Prague'))->toMatchArray(['timezone' => 'Europe/Prague']);
+    expect(fn () => $connectionConfig('timezone', "UTC'; DROP DATABASE foo; --"))->toThrow(InvalidArgumentException::class, $invalidValue('timezone'));
+
+    // Added keys with null aren't validated
+    DatabaseConfig::$tenantConfigKeys['options'] = null;
+    expect($connectionConfig('options', [PDO::ATTR_TIMEOUT => 5]))->toMatchArray(['options' => [PDO::ATTR_TIMEOUT => 5]]);
+
+    // Values other than closures and null are a misconfiguration
+    DatabaseConfig::$tenantConfigKeys['application_name'] = 'foo';
+    expect(fn () => $connectionConfig('application_name', 'foo'))->toThrow(InvalidArgumentException::class, 'has to be a closure or null');
+
+    // With null, all keys are allowed and no values are validated
+    DatabaseConfig::$tenantConfigKeys = null;
+    expect($connectionConfig('url', 'mysql://foo'))->toMatchArray(['url' => 'mysql://foo']);
+    expect($connectionConfig('charset', "utf8mb4' --"))->toMatchArray(['charset' => "utf8mb4' --"]);
 });
 
 test('harden prevents tenants from using the database of another tenant when tenancy_db_name is a custom column', function () {
