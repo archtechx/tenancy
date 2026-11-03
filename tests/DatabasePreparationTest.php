@@ -6,12 +6,17 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Stancl\JobPipeline\JobPipeline;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
+use Stancl\Tenancy\Events\TenancyEnded;
+use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Events\TenantDeleted;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Jobs\DeleteDatabase;
 use Stancl\Tenancy\Jobs\MigrateDatabase;
 use Stancl\Tenancy\Jobs\SeedDatabase;
+use Stancl\Tenancy\Listeners\BootstrapTenancy;
+use Stancl\Tenancy\Listeners\RevertToCentralContext;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Foundation\Auth\User as Authenticable;
 use Stancl\Tenancy\Tests\Etc\TestSeeder;
@@ -69,6 +74,31 @@ test('database can be seeded after tenant creation', function () {
     $tenant->run(function () {
         expect(User::first()->name)->toBe('Seeded User');
     });
+});
+
+test('the pipeline stops when a tenant migration fails', function () {
+    // A failing migration throws, so the exception propagates out of Artisan::call()
+    // in MigrateDatabase instead of being turned into a nonzero exit code
+    config([
+        'tenancy.bootstrappers' => [DatabaseTenancyBootstrapper::class],
+        'tenancy.migration_parameters.--path' => [__DIR__ . '/Etc/failing_migrations'],
+    ]);
+
+    Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
+    Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+
+    RecordJobRan::$ran = false;
+
+    Event::listen(TenantCreated::class, JobPipeline::make([
+        CreateDatabase::class,
+        MigrateDatabase::class,
+        RecordJobRan::class,
+    ])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    expect(fn () => Tenant::create())->toThrow(QueryException::class, 'invalid sql');
+    expect(RecordJobRan::$ran)->toBeFalse();
 });
 
 test('custom job can be added to the pipeline', function () {
@@ -178,5 +208,15 @@ class CreateSuperuser
         $this->tenant->run(function () {
             User::create(['name' => 'Foo', 'email' => 'foo@bar.com', 'password' => 'secret']);
         });
+    }
+}
+
+class RecordJobRan
+{
+    public static bool $ran = false;
+
+    public function handle(): void
+    {
+        static::$ran = true;
     }
 }
