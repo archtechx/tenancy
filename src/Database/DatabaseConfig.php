@@ -275,13 +275,16 @@ class DatabaseConfig
                 continue;
             }
 
-            if ($validator === true) {
-                $validator = $this->defaultValidator($key);
-            }
-
-            // Validators either return false or throw (e.g. validateParameter() in default validators)
+            // Validation errors are rethrown with the key and tenant (closures can either return false or throw)
             try {
-                if ($validator($value) === false) {
+                if ($validator === true) {
+                    // Default validation
+                    $this->validateParameter($value, match ($key) {
+                        'host' => static::$allowedParameterCharacters . '.:',
+                        'port' => '0123456789',
+                        default => null, // $allowedParameterCharacters
+                    });
+                } elseif ($validator($value) === false) {
                     throw new InvalidArgumentException('The value did not pass the validation closure.');
                 }
             } catch (InvalidArgumentException $e) {
@@ -293,22 +296,6 @@ class DatabaseConfig
         }
 
         return $config;
-    }
-
-    /**
-     * The default validation, used for keys without a custom validator.
-     *
-     * @return Closure(mixed): void
-     */
-    protected function defaultValidator(string $key): Closure
-    {
-        $allowedCharacters = match ($key) {
-            'host' => static::$allowedParameterCharacters . '.:',
-            'port' => '0123456789',
-            default => null, // validateParameter() uses $allowedParameterCharacters
-        };
-
-        return fn (mixed $value) => $this->validateParameter($value, $allowedCharacters);
     }
 
     /**
