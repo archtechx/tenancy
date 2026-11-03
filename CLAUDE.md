@@ -129,6 +129,8 @@ To fix this, simply delete the database memory by shutting down containers and s
 
 Same thing for `SQLSTATE[HY000]: General error: 1615 Prepared statement needs to be re-prepared`. Just run `docker compose restart mysql`.
 
+After restarting MySQL, wait 10 seconds before running tests.
+
 ### Configuration
 
 Central config in `config/tenancy.php` controls:
