@@ -6,6 +6,7 @@ namespace Stancl\Tenancy\Database;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -26,34 +27,22 @@ class DatabaseConfig
     public array $tenantConfig;
 
     /**
-     * Connection config keys that can be set on the tenant using tenancy_db_* attributes
-     * (e.g. tenancy_db_host sets 'host'), and how their values are validated.
-     * Using any other key throws an exception when the tenant connection is created.
+     * Connection config keys the tenant can set using tenancy_db_* attributes (null = any key).
      *
-     * Each key can be listed as:
-     * - 'key' -- the value has to pass the default validation (defaultValidator()),
-     *   which only allows a small set of characters, so that the value can't be used
-     *   for injection in DSNs or in SQL executed on connect (e.g. charset, timezone)
-     * - 'key' => fn (mixed $value): bool -- the value is rejected if the closure returns false
-     * - 'key' => null -- the value is used as it is
-     *
-     * Set this to null to allow all keys and use all values as they are.
-     *
-     * Be careful with keys like 'url', 'read', 'write', 'options' or 'isolation_level'
-     * (or setting this to null). Anyone who can write tenant attributes (e.g. via mass
-     * assignment) could use them to point the tenant connection at any database
-     * or execute SQL on connect.
-     *
-     * Usernames and passwords aren't validated by default since PDO drivers pass them
-     * to the server separately or escape them, and DB managers validate them before
-     * using them in SQL statements.
-     *
-     * @var array<int|string, string|(Closure(mixed): bool)|null>|null
+     * @see allow()
+     * @var string[]|null
      */
-    public static array|null $tenantConfigKeys = [
-        'host', 'port', 'charset', 'collation',
-        'username' => null, 'password' => null,
-    ];
+    protected array|null $allowedKeys = ['host', 'port', 'charset', 'collation', 'username', 'password'];
+
+    /**
+     * How values of each key are validated ('*' = keys without their own entry).
+     * Usernames and passwords aren't validated since PDO drivers pass them to the server separately
+     * or escape them, and DB managers validate them before using them in SQL statements.
+     *
+     * @see validate()
+     * @var array<string, (Closure(mixed): mixed)|bool>
+     */
+    protected array $validators = ['*' => true, 'username' => false, 'password' => false];
 
     /**
      * Database username generator (can be set by the developer.).
@@ -124,6 +113,43 @@ class DatabaseConfig
     public static function generatePasswordsUsing(Closure $passwordGenerator): void
     {
         static::$passwordGenerator = $passwordGenerator;
+    }
+
+    /**
+     * Allow the tenant to set these connection config keys using tenancy_db_* attributes ('*' allows any key).
+     * Be careful with keys like 'url', 'read', 'write' or 'options', which could be used
+     * to point the tenant connection at any database or execute SQL on connect.
+     *
+     * @param string|string[] $keys
+     */
+    public function allow(string|array $keys): static
+    {
+        $keys = Arr::wrap($keys);
+
+        if (in_array('*', $keys, true)) {
+            $this->allowedKeys = null;
+        } elseif ($this->allowedKeys !== null) {
+            $this->allowedKeys = [...$this->allowedKeys, ...$keys];
+        }
+
+        return $this;
+    }
+
+    /**
+     * Validate values of these keys using the default rules (true), a closure
+     * that returns false for invalid values, or not at all (false).
+     * '*' applies to keys without their own validator.
+     *
+     * @param string|string[] $keys
+     * @param (Closure(mixed): mixed)|bool $validator
+     */
+    public function validate(string|array $keys, Closure|bool $validator = true): static
+    {
+        foreach (Arr::wrap($keys) as $key) {
+            $this->validators[$key] = $validator;
+        }
+
+        return $this;
     }
 
     public function getName(): string
@@ -226,45 +252,31 @@ class DatabaseConfig
     }
 
     /**
-     * Ensure the tenant-specific config only contains keys allowed
-     * in $tenantConfigKeys, with values that pass their validation.
+     * Ensure the tenant-specific config only contains allowed keys with valid values.
      *
+     * @see allow()
+     * @see validate()
      * @throws InvalidArgumentException
      */
     protected function validateTenantConfig(array $config): array
     {
-        if (static::$tenantConfigKeys === null) {
-            return $config;
-        }
-
-        $validators = [];
-
-        foreach (static::$tenantConfigKeys as $key => $validator) {
-            if (is_int($key)) {
-                /** @var string $validator Keys listed without a validator use the default validation */
-                $validators[$validator] = $this->defaultValidator($validator);
-            } else {
-                $validators[$key] = $validator;
-            }
-        }
-
         foreach ($config as $key => $value) {
-            if (! array_key_exists($key, $validators)) {
+            if ($this->allowedKeys !== null && ! in_array($key, $this->allowedKeys, true)) {
                 throw new InvalidArgumentException(
                     "Tenant database config key '{$key}' (set on tenant {$this->tenant->getTenantKey()} using the internal db_{$key} attribute) is not allowed. " .
-                    "If this is intended, add '{$key}' to DatabaseConfig::\$tenantConfigKeys."
+                    "If this is intended, allow it in your tenant model: parent::database()->allow('{$key}')."
                 );
             }
 
-            $validator = $validators[$key];
-
-            if ($validator !== null && ! $validator instanceof Closure) {
-                throw new InvalidArgumentException("DatabaseConfig::\$tenantConfigKeys['{$key}'] has to be a closure or null.");
-            }
+            $validator = $this->validators[$key] ?? $this->validators['*'];
 
             // Null values aren't validated since they only unset the template connection's value (e.g. charset)
-            if ($value === null || $validator === null) {
+            if ($value === null || $validator === false) {
                 continue;
+            }
+
+            if ($validator === true) {
+                $validator = $this->defaultValidator($key);
             }
 
             // Validators either return false or throw (e.g. validateParameter() in default validators)
@@ -284,7 +296,7 @@ class DatabaseConfig
     }
 
     /**
-     * Validation used for keys listed in $tenantConfigKeys without a validator.
+     * The default validation, used for keys without a custom validator.
      *
      * @return Closure(mixed): void
      */

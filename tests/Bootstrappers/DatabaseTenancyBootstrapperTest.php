@@ -22,11 +22,8 @@ use Stancl\Tenancy\Database\TenantDatabaseManagers\PostgreSQLSchemaManager;
 
 use function Stancl\Tenancy\Tests\pest;
 
-$defaultTenantConfigKeys = DatabaseConfig::$tenantConfigKeys;
-
-afterEach($cleanup = function () use ($defaultTenantConfigKeys) {
+afterEach($cleanup = function () {
     DatabaseTenancyBootstrapper::$harden = false;
-    DatabaseConfig::$tenantConfigKeys = $defaultTenantConfigKeys;
     Tenant::$extraCustomColumns = [];
 });
 
@@ -220,21 +217,22 @@ test('allowed tenant database config values are used in the tenant connection co
     ]);
 });
 
-test('tenant database config keys can be allowed with default, custom or no validation', function () {
-    $tenant = Tenant::create();
+test('tenant database config keys can be allowed and validated using default rules, closures, or not at all', function () {
+    $tenant = new Tenant(['id' => 'acme']);
 
-    // Get the tenant's connection config with the attribute set
-    $connectionConfig = function (string $key, mixed $value) use ($tenant): array {
-        $tenant->setAttribute("tenancy_db_{$key}", $value);
+    // Get the tenant connection config using the passed tenant database config, optionally configuring the allowed keys and validators
+    $connection = function (array $config, Closure|null $configure = null) use ($tenant): array {
+        $databaseConfig = new DatabaseConfig($tenant, $config);
 
-        try {
-            return $tenant->database()->connection();
-        } finally {
-            $tenant->offsetUnset("tenancy_db_{$key}");
+        if ($configure) {
+            $configure($databaseConfig);
         }
+
+        return $databaseConfig->connection();
     };
 
-    $invalidValue = fn (string $key) => "Invalid value of tenant database config key '{$key}' (set on tenant {$tenant->getTenantKey()})";
+    $notAllowed = fn (string $key) => "Tenant database config key '{$key}' (set on tenant acme";
+    $invalidValue = fn (string $key) => "Invalid value of tenant database config key '{$key}' (set on tenant acme)";
 
     // Keys allowed by default use the default validation, except for username and password
     foreach ([
@@ -243,32 +241,36 @@ test('tenant database config keys can be allowed with default, custom or no vali
         'charset' => "utf8mb4'; DROP DATABASE foo; --",
         'collation' => "utf8mb4_unicode_ci' --",
     ] as $key => $value) {
-        expect(fn () => $connectionConfig($key, $value))->toThrow(InvalidArgumentException::class, $invalidValue($key));
+        expect(fn () => $connection([$key => $value]))->toThrow(InvalidArgumentException::class, $invalidValue($key));
     }
 
-    // Added keys without a value use the default validation
-    expect(fn () => $connectionConfig('sslmode', 'require'))->toThrow(InvalidArgumentException::class, "Tenant database config key 'sslmode'");
-    DatabaseConfig::$tenantConfigKeys[] = 'sslmode';
-    expect($connectionConfig('sslmode', 'require'))->toMatchArray(['sslmode' => 'require']);
-    expect(fn () => $connectionConfig('sslmode', 'require;host=foo'))->toThrow(InvalidArgumentException::class, $invalidValue('sslmode'));
+    expect($connection(['username' => 'user.name@example', 'password' => "pa'ss\"word"]))
+        ->toMatchArray(['username' => 'user.name@example', 'password' => "pa'ss\"word"]);
 
-    // Added keys with a closure use custom validation
-    DatabaseConfig::$tenantConfigKeys['timezone'] = fn (mixed $value) => in_array($value, timezone_identifiers_list(), true);
-    expect($connectionConfig('timezone', 'Europe/Prague'))->toMatchArray(['timezone' => 'Europe/Prague']);
-    expect(fn () => $connectionConfig('timezone', "UTC'; DROP DATABASE foo; --"))->toThrow(InvalidArgumentException::class, $invalidValue('timezone'));
+    // Allowed keys use the default validation
+    $allowSsl = fn (DatabaseConfig $config) => $config->allow(['sslmode', 'sslcert']);
+    expect(fn () => $connection(['sslmode' => 'require']))->toThrow(InvalidArgumentException::class, $notAllowed('sslmode'));
+    expect($connection(['sslmode' => 'require'], $allowSsl))->toMatchArray(['sslmode' => 'require']);
+    expect(fn () => $connection(['sslmode' => 'require;host=foo'], $allowSsl))->toThrow(InvalidArgumentException::class, $invalidValue('sslmode'));
 
-    // Added keys with null aren't validated
-    DatabaseConfig::$tenantConfigKeys['options'] = null;
-    expect($connectionConfig('options', [PDO::ATTR_TIMEOUT => 5]))->toMatchArray(['options' => [PDO::ATTR_TIMEOUT => 5]]);
+    // Validation can be changed for multiple keys at once, regardless of the order of allow() and validate() calls
+    $sslConfig = ['sslmode' => 'verify-full', 'sslcert' => '/etc/ssl/client.crt'];
+    expect(fn () => $connection($sslConfig, $allowSsl))->toThrow(InvalidArgumentException::class, $invalidValue('sslcert'));
+    expect($connection($sslConfig, fn (DatabaseConfig $config) => $allowSsl($config)->validate(['sslmode', 'sslcert'], false)))->toMatchArray($sslConfig);
+    expect($connection($sslConfig, fn (DatabaseConfig $config) => $allowSsl($config->validate(['sslmode', 'sslcert'], false))))->toMatchArray($sslConfig);
 
-    // Values other than closures and null are a misconfiguration
-    DatabaseConfig::$tenantConfigKeys['application_name'] = 'foo';
-    expect(fn () => $connectionConfig('application_name', 'foo'))->toThrow(InvalidArgumentException::class, 'has to be a closure or null');
+    // Custom validation
+    $allowTimezone = fn (DatabaseConfig $config) => $config->allow('timezone')->validate('timezone', fn (mixed $value) => in_array($value, timezone_identifiers_list(), true));
+    expect($connection(['timezone' => 'Europe/Prague'], $allowTimezone))->toMatchArray(['timezone' => 'Europe/Prague']);
+    expect(fn () => $connection(['timezone' => "UTC'; DROP DATABASE foo; --"], $allowTimezone))->toThrow(InvalidArgumentException::class, $invalidValue('timezone'));
 
-    // With null, all keys are allowed and no values are validated
-    DatabaseConfig::$tenantConfigKeys = null;
-    expect($connectionConfig('url', 'mysql://foo'))->toMatchArray(['url' => 'mysql://foo']);
-    expect($connectionConfig('charset', "utf8mb4' --"))->toMatchArray(['charset' => "utf8mb4' --"]);
+    // Allowing all keys still validates values using the default rules
+    expect(fn () => $connection(['url' => 'mysql://foo'], fn (DatabaseConfig $config) => $config->allow('*')))->toThrow(InvalidArgumentException::class, $invalidValue('url'));
+
+    // Turning off validation for all keys without their own validator
+    $allowAnything = fn (DatabaseConfig $config) => $config->allow('*')->validate('*', false);
+    expect($connection(['url' => 'mysql://foo', 'charset' => "utf8mb4' --"], $allowAnything))->toMatchArray(['url' => 'mysql://foo', 'charset' => "utf8mb4' --"]);
+    expect(fn () => $connection(['host' => 'mysql;dbname=foo'], fn (DatabaseConfig $config) => $allowAnything($config)->validate('host')))->toThrow(InvalidArgumentException::class, $invalidValue('host'));
 });
 
 test('harden prevents tenants from using the database of another tenant when tenancy_db_name is a custom column', function () {
