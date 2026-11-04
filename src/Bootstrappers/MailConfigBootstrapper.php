@@ -6,6 +6,7 @@ namespace Stancl\Tenancy\Bootstrappers;
 
 use Illuminate\Config\Repository;
 use Illuminate\Foundation\Application;
+use Illuminate\Mail\MailManager;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
@@ -44,8 +45,7 @@ class MailConfigBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant): void
     {
-        // Forget the mail manager instance to clear the cached mailers
-        $this->app->forgetInstance('mail.manager');
+        $this->forgetMailers();
 
         $this->setConfig($tenant);
     }
@@ -54,7 +54,25 @@ class MailConfigBootstrapper implements TenancyBootstrapper
     {
         $this->unsetConfig();
 
-        $this->app->forgetInstance('mail.manager');
+        $this->forgetMailers();
+    }
+
+    /**
+     * Clear the mailers cached by the MailManager so that they get resolved again using the current config.
+     *
+     * The mailers are cleared on the existing MailManager instead of binding a new one, because the existing
+     * instance is also held outside the container -- by the Mail facade, and by the MailChannel cached in the
+     * ChannelManager singleton (used for mail notifications). Keeping the instance also keeps the custom
+     * transports registered using Mail::extend().
+     */
+    protected function forgetMailers(): void
+    {
+        $manager = $this->app->resolved('mail.manager') ? $this->app->make('mail.manager') : null;
+
+        // The bound manager can also be e.g. a MailFake, which doesn't cache any transports
+        if ($manager instanceof MailManager) {
+            $manager->forgetMailers();
+        }
     }
 
     protected function setConfig(Tenant $tenant): void
