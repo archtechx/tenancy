@@ -1,4 +1,4 @@
-ARG PHP_VERSION=8.4
+ARG PHP_VERSION=8.5
 FROM php:${PHP_VERSION}-cli-bookworm
 SHELL ["/bin/bash", "-c"]
 
@@ -23,26 +23,7 @@ RUN docker-php-ext-install zip && docker-php-ext-enable zip
 RUN docker-php-ext-install intl && docker-php-ext-enable intl
 RUN docker-php-ext-install pdo_mysql && docker-php-ext-enable pdo_mysql
 RUN docker-php-ext-install pdo_pgsql && docker-php-ext-enable pdo_pgsql
-
-RUN if [[ "${PHP_VERSION}" == *"8.5"* ]]; then \
-    mkdir sqlsrv \
-    && cd sqlsrv \
-    && pecl download pdo_sqlsrv-5.12.0 \
-    && tar xzf pdo_sqlsrv-5.12.0.tgz \
-    && cd pdo_sqlsrv-5.12.0 \
-    && sed -i 's/= dbh->error_mode;/= static_cast<pdo_error_mode>(dbh->error_mode);/' pdo_dbh.cpp \
-    && sed -i 's/zval_ptr_dtor( &dbh->query_stmt_zval );/OBJ_RELEASE(dbh->query_stmt_obj);dbh->query_stmt_obj=NULL;/' php_pdo_sqlsrv_int.h \
-    && phpize \
-    && ./configure --with-php-config=$(which php-config) \
-    && make -j$(nproc) \
-    && cp modules/pdo_sqlsrv.so $(php -r 'echo ini_get("extension_dir");') \
-    && cd / \
-    && rm -rf /sqlsrv; \
-else \
-    pecl install pdo_sqlsrv; \
-fi
-
-RUN docker-php-ext-enable pdo_sqlsrv
+RUN pecl install pdo_sqlsrv && docker-php-ext-enable pdo_sqlsrv
 
 RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
 RUN echo "apc.enable_cli=1" >> "$PHP_INI_DIR/php.ini"
