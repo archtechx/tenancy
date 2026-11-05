@@ -8,20 +8,17 @@ use Illuminate\Database\Connectors\ConnectionFactory;
 use Illuminate\Database\SQLiteConnection;
 use Illuminate\Support\Facades\DB;
 use PDO;
+use Pdo\Sqlite;
 use Stancl\Tenancy\Contracts\Feature;
 
 class DisallowSqliteAttach implements Feature
 {
-    public static string|false|null $extensionPath = null;
-
     public function bootstrap(): void
     {
         // Handle any already resolved connections
         foreach (DB::getConnections() as $connection) {
             if ($connection instanceof SQLiteConnection) {
-                if (! $this->setAuthorizer($connection->getPdo())) {
-                    return;
-                }
+                $this->setAuthorizer($connection->getPdo());
             }
         }
 
@@ -34,48 +31,14 @@ class DisallowSqliteAttach implements Feature
         });
     }
 
-    protected function setAuthorizer(PDO $pdo): bool
+    protected function setAuthorizer(PDO $pdo): void
     {
-        if (PHP_VERSION_ID >= 80500) {
-            $this->setNativeAuthorizer($pdo);
+        assert($pdo instanceof Sqlite);
 
-            return true;
-        }
-
-        static $loadExtensionSupported = method_exists($pdo, 'loadExtension');
-
-        if ((! $loadExtensionSupported) ||
-            (static::$extensionPath === false) ||
-            (PHP_INT_SIZE !== 8)
-        ) return false;
-
-        $suffix = match (PHP_OS_FAMILY) {
-            'Linux' => 'so',
-            'Windows' => 'dll',
-            'Darwin' => 'dylib',
-            default => 'error',
-        };
-
-        if ($suffix === 'error') return false;
-
-        $arch = php_uname('m');
-        $arm = $arch === 'aarch64' || $arch === 'arm64';
-
-        static::$extensionPath ??= realpath(base_path('vendor/stancl/tenancy/extensions/lib/' . ($arm ? 'arm/' : '') . 'noattach.' . $suffix));
-        if (static::$extensionPath === false) return false;
-
-        $pdo->loadExtension(static::$extensionPath); // @phpstan-ignore method.notFound
-
-        return true;
-    }
-
-    protected function setNativeAuthorizer(PDO $pdo): void
-    {
-        // @phpstan-ignore method.notFound
         $pdo->setAuthorizer(static function (int $action): int {
             return $action === 24 // SQLITE_ATTACH
-                ? PDO\Sqlite::DENY // @phpstan-ignore classConstant.notFound
-                : PDO\Sqlite::OK; // @phpstan-ignore classConstant.notFound
+                ? Sqlite::DENY
+                : Sqlite::OK;
         });
     }
 }
