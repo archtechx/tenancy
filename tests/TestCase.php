@@ -26,6 +26,7 @@ use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\LogChannelBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseCacheBootstrapper;
 use Stancl\Tenancy\Bootstrappers\TenantConfigBootstrapper;
+use Stancl\Tenancy\Bootstrappers\Integrations\ScoutPrefixBootstrapper;
 
 use function Stancl\Tenancy\Tests\pest;
 
@@ -195,6 +196,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         $app->singleton(FilesystemTenancyBootstrapper::class);
         $app->singleton(LogChannelBootstrapper::class);
         $app->singleton(TenantConfigBootstrapper::class);
+        $app->singleton(ScoutPrefixBootstrapper::class);
     }
 
     protected function getPackageProviders($app)
