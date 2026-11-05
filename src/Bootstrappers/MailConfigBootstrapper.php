@@ -79,7 +79,7 @@ class MailConfigBootstrapper implements TenancyBootstrapper
     {
         // Mappings specified in $credentialsMap take precedence over the preset mappings
         $credentialsMap = array_merge(
-            static::$mapPresets[static::$mailer] ?? [],
+            static::$mailer !== null ? (static::$mapPresets[static::$mailer] ?? []) : [],
             static::$credentialsMap,
         );
 
