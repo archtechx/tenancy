@@ -23,8 +23,12 @@ class PreventAccessFromUnwantedDomains
 
     /**
      * Set this property if you want to customize the on-fail behavior.
+     *
+     * @var Closure(Request, Closure): mixed
      */
-    public static ?Closure $abortRequest;
+    public static Closure $abortRequest = static function () {
+        abort(404);
+    };
 
     /** @return \Illuminate\Http\Response|mixed */
     public function handle(Request $request, Closure $next): mixed
@@ -38,11 +42,7 @@ class PreventAccessFromUnwantedDomains
         // If the route is universal, neither of these checks will pass and the logic will
         // fall through to the $next($request) call at the end.
         if ($this->accessingTenantRouteFromCentralDomain($request, $route) || $this->accessingCentralRouteFromTenantDomain($request, $route)) {
-            $abortRequest = static::$abortRequest ?? function () {
-                abort(404);
-            };
-
-            return $abortRequest($request, $next);
+            return (static::$abortRequest)($request, $next);
         }
 
         return $next($request);

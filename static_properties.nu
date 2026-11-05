@@ -27,6 +27,8 @@ def "main docs" [...paths: string]: nothing -> string {
     (("{/* GENERATED_BEGIN */}\n" + (props ...$paths
         | each { update props { each { if ($in | str ends-with "= [") {
             $"($in)/* ... */];"
+        } else if ($in | str ends-with "{") {
+            $"($in) /* ... */ };"
         } else { $in }}}}
         | each { $"```php /public static .*$/\n// File: ($in.file)\n($in.props | str join "\n\n")\n```"}
         | str join "\n\n"))
@@ -51,7 +53,7 @@ def props [...paths: string]: nothing -> table<file: string, props: list<string>
         [("src/**/*.php" | into glob)]
     })
         | each { { name: $in.name, content: (open $in.name) } }
-        | find -nr 'public static (?!.*function)'
+        | find -nr 'public static (?!function)'
         | par-each {|file|
             let lines = $file.content | lines
             mut docblock_start = 0
