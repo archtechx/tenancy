@@ -9,6 +9,7 @@ use Dotenv\Dotenv;
 use Aws\DynamoDb\DynamoDbClient;
 use Stancl\Tenancy\Tests\Etc\Tenant;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Artisan;
 use Stancl\Tenancy\Facades\GlobalCache;
@@ -90,6 +91,15 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         ]);
 
         file_put_contents(database_path('central.sqlite'), '');
+
+        // Drop tenant databases created by previous tests (and previous test runs). If they pile up,
+        // MySQL exceeds its table_definition_cache and queries start failing with
+        // "1615 Prepared statement needs to be re-prepared".
+        foreach (Schema::connection('central')->getSchemas() as $schema) {
+            if (! $schema['default']) {
+                Schema::connection('central')->dropDatabaseIfExists($schema['name']);
+            }
+        }
 
         pest()->artisan('migrate:fresh', [
             '--force' => true,
