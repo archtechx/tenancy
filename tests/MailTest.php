@@ -159,7 +159,7 @@ test('queued mail notifications use the credentials of the tenant they were disp
         'mail.mailers.smtp.password' => 'central',
         'tenancy.bootstrappers' => [MailConfigBootstrapper::class, QueueTenancyBootstrapper::class],
     ]);
-    QueueTenancyBootstrapper::__constructStatic(app());
+    QueueTenancyBootstrapper::onRegister(app());
 
     $tenant1 = Tenant::create(['smtp_password' => 'tenant1']);
     $tenant2 = Tenant::create(['smtp_password' => 'tenant2']);
