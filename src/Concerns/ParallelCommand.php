@@ -8,10 +8,12 @@ use ArrayAccess;
 use Countable;
 use Exception;
 use FFI;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Console\Input\InputOption;
+use Throwable;
 
 trait ParallelCommand
 {
@@ -59,9 +61,22 @@ trait ParallelCommand
             return $pid;
         } else {
             // Child
-            DB::reconnect();
+            try {
+                DB::reconnect();
 
-            exit($this->childHandle(...$args) ? 0 : 1);
+                // 1 means that the child finished its chunk, but failed for some tenants
+                exit($this->childHandle(...$args) ? 0 : 1);
+            } catch (Throwable $e) {
+                // Handle the exception like the console kernel would and exit. If the exception
+                // propagated, the child would continue executing the code that called this command
+                // (e.g. when the command is called using Artisan::call() in a test).
+                $handler = app(ExceptionHandler::class);
+                $handler->report($e);
+                $handler->renderForConsole($this->output, $e);
+
+                // Any exit code other than 0 and 1 means that the child stopped before finishing its chunk
+                exit(2);
+            }
         }
     }
 
@@ -167,6 +182,7 @@ trait ParallelCommand
     {
         $processes = $this->getProcesses();
         $success = true;
+        $stoppedEarly = false;
         $pids = [];
 
         if ($args !== null && count($args) < $processes) {
@@ -199,14 +215,23 @@ trait ParallelCommand
 
                 if ($exitCode === 0) {
                     $this->components->success("Child process [$i] (PID $pid) finished successfully.");
-                } else {
+                } elseif ($exitCode === 1) {
                     $success = false;
                     $this->components->error("Child process [$i] (PID $pid) completed with failures.");
+                } else {
+                    $success = false;
+                    $stoppedEarly = true;
+                    $this->components->error("Child process [$i] (PID $pid) stopped after a failure. The remaining tenants in its chunk were not processed.");
                 }
             } else {
                 $success = false;
+                $stoppedEarly = true;
                 $this->components->error("Child process [$i] (PID $pid) exited abnormally.");
             }
+        }
+
+        if ($stoppedEarly) {
+            $this->components->error('Some tenants were not processed. Fix the errors above and run the command again.');
         }
 
         return $success ? 0 : 1;

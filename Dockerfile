@@ -19,11 +19,12 @@ RUN pecl install apcu && docker-php-ext-enable apcu
 RUN pecl install pcov && docker-php-ext-enable pcov
 RUN pecl install redis-6.3.0RC1 && docker-php-ext-enable redis
 RUN pecl install memcached && docker-php-ext-enable memcached
+RUN pecl install pdo_sqlsrv && docker-php-ext-enable pdo_sqlsrv
 RUN docker-php-ext-install zip && docker-php-ext-enable zip
 RUN docker-php-ext-install intl && docker-php-ext-enable intl
 RUN docker-php-ext-install pdo_mysql && docker-php-ext-enable pdo_mysql
 RUN docker-php-ext-install pdo_pgsql && docker-php-ext-enable pdo_pgsql
-RUN pecl install pdo_sqlsrv && docker-php-ext-enable pdo_sqlsrv
+RUN docker-php-ext-install pcntl && docker-php-ext-enable pcntl
 
 RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
 RUN echo "apc.enable_cli=1" >> "$PHP_INI_DIR/php.ini"

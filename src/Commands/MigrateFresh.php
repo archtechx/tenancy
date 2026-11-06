@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Commands;
 
 use Illuminate\Console\ConfirmableTrait;
+use Illuminate\Console\View\TaskResult;
 use Illuminate\Database\Console\Migrations\BaseCommand;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\LazyCollection;
@@ -30,6 +31,7 @@ class MigrateFresh extends BaseCommand
         $this->addOption('drop-views', null, InputOption::VALUE_NONE, 'Drop views along with tenant tables.', null);
         $this->addOption('step', null, InputOption::VALUE_NONE, 'Force the migrations to be run so they can be rolled back individually.');
         $this->addOption('force', null, InputOption::VALUE_NONE, 'Force the command to run when in production.', null);
+        $this->addOption('skip-failing', description: 'Continue execution if migration fails for a tenant');
         $this->addProcessesOption();
 
         $this->setName('tenants:migrate-fresh');
@@ -41,25 +43,13 @@ class MigrateFresh extends BaseCommand
             return 1;
         }
 
-        $success = true;
-
         if ($this->getProcesses() > 1) {
             return $this->runConcurrently($this->getTenantChunks()->map(function ($chunk) {
                 return $this->getTenants($chunk);
             }));
         }
 
-        tenancy()->runForMultiple($this->getTenants(), function ($tenant) use (&$success) {
-            $this->components->info("Tenant: {$tenant->getTenantKey()}");
-            $this->components->task('Dropping tables', function () use (&$success) {
-                $success = $success && $this->wipeDB();
-            });
-            $this->components->task('Migrating', function () use ($tenant, &$success) {
-                $success = $success && $this->migrateTenant($tenant);
-            });
-        });
-
-        return $success ? 0 : 1;
+        return $this->migrateFreshTenants($this->getTenants()) ? 0 : 1;
     }
 
     protected function wipeDB(): bool
@@ -93,8 +83,6 @@ class MigrateFresh extends BaseCommand
     }
 
     /**
-     * Only used when running concurrently.
-     *
      * @param LazyCollection<covariant int|string, \Stancl\Tenancy\Contracts\Tenant&\Illuminate\Database\Eloquent\Model> $tenants
      */
     protected function migrateFreshTenants(LazyCollection $tenants): bool
@@ -103,27 +91,48 @@ class MigrateFresh extends BaseCommand
 
         foreach ($tenants as $tenant) {
             try {
-                $this->components->info("Migrating (fresh) tenant {$tenant->getTenantKey()}");
+                if ($this->runningConcurrently) {
+                    $this->components->info("Migrating (fresh) tenant {$tenant->getTenantKey()}");
 
-                $tenant->run(function ($tenant) use (&$success) {
-                    $this->components->info("Wiping database of tenant {$tenant->getTenantKey()}", OI::VERBOSITY_VERY_VERBOSE);
-                    if ($this->wipeDB()) {
-                        $this->components->info("Wiped database of tenant {$tenant->getTenantKey()}", OI::VERBOSITY_VERBOSE);
-                    } else {
-                        $success = false;
-                        $this->components->error("Wiping database of tenant {$tenant->getTenantKey()} failed!");
-                    }
+                    $tenant->run(function ($tenant) use (&$success) {
+                        $this->components->info("Wiping database of tenant {$tenant->getTenantKey()}", OI::VERBOSITY_VERY_VERBOSE);
+                        if ($this->wipeDB()) {
+                            $this->components->info("Wiped database of tenant {$tenant->getTenantKey()}", OI::VERBOSITY_VERBOSE);
+                        } else {
+                            $success = false;
+                            $this->components->error("Wiping database of tenant {$tenant->getTenantKey()} failed! Skipping migrations.");
 
-                    $this->components->info("Migrating database of tenant {$tenant->getTenantKey()}", OI::VERBOSITY_VERY_VERBOSE);
-                    if ($this->migrateTenant($tenant)) {
-                        $this->components->info("Migrated database of tenant {$tenant->getTenantKey()}", OI::VERBOSITY_VERBOSE);
-                    } else {
-                        $success = false;
-                        $this->components->error("Migrating database of tenant {$tenant->getTenantKey()} failed!");
-                    }
+                            return;
+                        }
 
-                    $this->components->success("Migrated (fresh) tenant {$tenant->getTenantKey()}");
-                });
+                        $this->components->info("Migrating database of tenant {$tenant->getTenantKey()}", OI::VERBOSITY_VERY_VERBOSE);
+                        if ($this->migrateTenant($tenant)) {
+                            $this->components->info("Migrated database of tenant {$tenant->getTenantKey()}", OI::VERBOSITY_VERBOSE);
+                            $this->components->success("Migrated (fresh) tenant {$tenant->getTenantKey()}");
+                        } else {
+                            $success = false;
+                            $this->components->error("Migrating database of tenant {$tenant->getTenantKey()} failed!");
+                        }
+                    });
+                } else {
+                    $this->components->info("Tenant: {$tenant->getTenantKey()}");
+
+                    $tenant->run(function ($tenant) use (&$success) {
+                        $wiped = false;
+
+                        $this->components->task('Dropping tables', function () use (&$success, &$wiped) {
+                            return $this->taskResult($wiped = $this->wipeDB(), $success);
+                        });
+
+                        $this->components->task('Migrating', function () use ($tenant, $wiped, &$success) {
+                            if (! $wiped) {
+                                return TaskResult::Skipped->value;
+                            }
+
+                            return $this->taskResult($this->migrateTenant($tenant), $success);
+                        });
+                    });
+                }
             } catch (TenantDatabaseDoesNotExistException|QueryException $e) {
                 $this->components->error("Migration failed for tenant {$tenant->getTenantKey()}: {$e->getMessage()}");
                 $success = false;
@@ -135,5 +144,15 @@ class MigrateFresh extends BaseCommand
         }
 
         return $success;
+    }
+
+    /** Mark the command as failed if the task failed and return the value for the task component. */
+    protected function taskResult(bool $taskSucceeded, bool &$success): int
+    {
+        if (! $taskSucceeded) {
+            $success = false;
+        }
+
+        return $taskSucceeded ? TaskResult::Success->value : TaskResult::Failure->value;
     }
 }
