@@ -30,6 +30,8 @@ use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
 use function Stancl\Tenancy\Tests\pest;
 use Stancl\Tenancy\Events\MigratingDatabase;
+use Stancl\Tenancy\Commands\Migrate;
+use Symfony\Component\Console\Exception\InvalidOptionException;
 
 beforeEach(function () {
     if (file_exists($schemaPath = 'tests/Etc/tenant-schema-test.dump')) {
@@ -508,6 +510,58 @@ test('migrate fresh command skips migrating tenants whose database could not be 
     'sequentially' => 1,
     'with multiple processes' => 2,
 ]);
+
+test('parallel commands throw an exception instead of exiting when the process count is invalid', function (string $command, int $processes) {
+    // Previously, the command called exit(1), which ended the whole test run
+    expect(fn () => Artisan::call($command, ['--processes' => $processes]))->toThrow(InvalidOptionException::class);
+})->with([
+    'tenants:migrate',
+    'tenants:rollback',
+    'tenants:migrate-fresh',
+])->with([
+    'less than 1' => 0,
+    'more than the maximum' => Migrate::MAX_PROCESSES + 1,
+]);
+
+test('migrate command restores the template tenant connection when it throws an exception', function () {
+    $originalTemplateConnection = config('tenancy.database.template_tenant_connection');
+
+    expect(fn () => Artisan::call('tenants:migrate', ['--database' => 'central', '--processes' => 0]))->toThrow(InvalidOptionException::class);
+
+    expect(config('tenancy.database.template_tenant_connection'))->toBe($originalTemplateConnection);
+});
+
+test('parallel commands process the remaining chunks when forking a child process fails', function () {
+    // Chunks are made from sorted tenant keys, so with three processes, each child migrates one tenant
+    $prefix = Str::lower(Str::random(8));
+    $tenants = [Tenant::create(['id' => "$prefix-a"]), Tenant::create(['id' => "$prefix-b"]), Tenant::create(['id' => "$prefix-c"])];
+
+    $command = new class(app('migrator'), app('events')) extends Migrate {
+        protected int $forks = 0;
+
+        protected function forkProcess(mixed ...$args): int
+        {
+            // Fail to fork the second child process
+            return $this->forks++ === 1 ? -1 : parent::forkProcess(...$args);
+        }
+    };
+
+    // Replaces the tenants:migrate command
+    Artisan::registerCommand($command);
+
+    expect(Artisan::call('tenants:migrate', ['--processes' => 3]))->toBe(1);
+
+    // Only the children that were forked are reported, with the index of their chunk
+    expect($output = Artisan::output())->toContain('Unable to fork process (iteration 1)!')
+        ->and($output)->toMatch('/Child process \[0\] \(PID \d+\) finished successfully/')
+        ->and($output)->not()->toContain('Child process [1]')
+        ->and($output)->toMatch('/Child process \[2\] \(PID \d+\) finished successfully/')
+        ->and($output)->toContain('Some tenants were not processed');
+
+    expect($tenants[0]->run(fn () => Schema::hasTable('users')))->toBeTrue();
+    expect($tenants[1]->run(fn () => Schema::hasTable('users')))->toBeFalse();
+    expect($tenants[2]->run(fn () => Schema::hasTable('users')))->toBeTrue();
+});
 
 test('migrate fresh command respects force option in production', function () {
     // Set environment to production

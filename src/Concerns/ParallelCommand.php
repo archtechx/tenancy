@@ -12,6 +12,8 @@ use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\Console\Exception\InvalidOptionException;
+use Symfony\Component\Console\Exception\RuntimeException;
 use Symfony\Component\Console\Input\InputOption;
 use Throwable;
 
@@ -139,18 +141,15 @@ trait ParallelCommand
         }
 
         if ($processes < 1) {
-            $this->components->error('Minimum value for processes is 1. Try specifying -p manually.');
-            exit(1);
+            throw new InvalidOptionException('Minimum value for processes is 1. Try specifying -p manually.');
         }
 
         if ($processes > static::MAX_PROCESSES && ! $forceProcesses) {
-            $this->components->error('Maximum value for processes is ' . static::MAX_PROCESSES . ' provided value: ' . $processes);
-            exit(1);
+            throw new InvalidOptionException('Maximum value for processes is ' . static::MAX_PROCESSES . ' provided value: ' . $processes);
         }
 
         if ($processes > 1 && ! function_exists('pcntl_fork')) {
-            $this->components->error('The pcntl extension is required for parallel migrations to work.');
-            exit(1);
+            throw new RuntimeException('The pcntl extension is required for parallel migrations to work.');
         }
 
         return $processes;
@@ -195,13 +194,16 @@ trait ParallelCommand
             $pid = $this->forkProcess($args !== null ? $args[$i] : null);
 
             if ($pid === -1) {
+                // The chunk is not processed, but the chunks of the other children still might be
+                $success = false;
+                $stoppedEarly = true;
                 $this->components->error("Unable to fork process (iteration $i)!");
-                if ($i === 0) {
-                    exit(1);
-                }
+
+                continue;
             }
 
-            $pids[] = $pid;
+            // Keyed by iteration so that the child processes are reported with the right index
+            $pids[$i] = $pid;
         }
 
         // Fork equivalent of joining an array of join handles
