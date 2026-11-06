@@ -309,7 +309,7 @@ test('parallel commands respect tenant options when chunking tenants', function 
     $nonPendingKeys = $tenants->reject->pending()->map->getTenantKey()->values()->all();
 
     // We use a fake command to observe the getTenantChunks() logic since it isn't perfectly
-    // observable from the outside if we ran this with -p (also container doesn't have pcntl)
+    // observable from the outside if we ran this with -p
     $command = new class(app('migrator'), app('events')) extends Migrate {
         protected function getProcesses(): int
         {
