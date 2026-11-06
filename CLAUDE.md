@@ -161,11 +161,12 @@ To set up and use your own project:
 1. If your directory name doesn't already start with `tenancy-`, give the project a unique name by writing
    it to `.env` (gitignored), so it applies to every `docker compose` and `./test` call:
    `echo "COMPOSE_PROJECT_NAME=tenancy-$(basename "$PWD")" > .env`
-2. `docker compose up -d`
-3. `docker compose exec test composer install` (`vendor/` isn't shared between checkouts)
-4. Run tests as described above. The full suite takes about 2 minutes, so run only the relevant tests unless
+2. If you're on an ARM system, run `composer docker-m1` to symlink the override file
+3. `docker compose up -d`
+4. `docker compose exec test composer install` (`vendor/` isn't shared between checkouts)
+5. Run tests as described above. The full suite takes about 2 minutes, so run only the relevant tests unless
    the change is likely to affect many of them.
-5. When you're done, including after failures: `docker compose down -v --rmi local`. This removes the
+6. When you're done, including after failures: `docker compose down -v --rmi local`. This removes the
    containers, their database volumes, and the image your project built.
 
 When creating a workspace for a subagent, the parent agent should name its directory `tenancy-<something-unique>`
