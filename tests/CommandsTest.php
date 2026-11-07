@@ -505,6 +505,49 @@ test('run command accepts arguments and options correctly', function() {
         ->assertExitCode(0);
 });
 
+test('run command returns the exit code of the failed command', function () {
+    $tenantId1 = Tenant::create()->getTenantKey();
+    $tenantId2 = Tenant::create()->getTenantKey();
+
+    pest()->artisan("tenants:run --tenants=$tenantId1 --tenants=$tenantId2 'exit-code 0'")
+        ->assertExitCode(0);
+
+    // The command still runs for the remaining tenants after it fails for one
+    pest()->artisan("tenants:run --tenants=$tenantId1 --tenants=$tenantId2 'exit-code 3'")
+        ->expectsOutputToContain("Exiting with code 3 for tenant $tenantId1")
+        ->expectsOutputToContain("Exiting with code 3 for tenant $tenantId2")
+        ->assertExitCode(3);
+});
+
+test('run command writes the output of the command to its own output', function () {
+    $tenantId = Tenant::create()->getTenantKey();
+
+    expect(Artisan::call("tenants:run --tenants=$tenantId 'exit-code 0'"))->toBe(0);
+
+    expect(Artisan::output())
+        ->toContain("Tenant: $tenantId")
+        ->toContain("Exiting with code 0 for tenant $tenantId");
+});
+
+test('output options passed to the command run by the run command only apply to that command', function () {
+    $tenantId1 = Tenant::create()->getTenantKey();
+    $tenantId2 = Tenant::create()->getTenantKey();
+
+    Artisan::call("tenants:run --tenants=$tenantId1 --tenants=$tenantId2 'exit-code 0 -q'");
+
+    expect(Artisan::output())
+        ->toContain("Tenant: $tenantId1")
+        ->toContain("Tenant: $tenantId2")
+        ->not->toContain('Exiting with code 0');
+
+    Artisan::call("tenants:run --tenants=$tenantId1 --tenants=$tenantId2 'exit-code 0 --ansi'");
+
+    // The output passed by Artisan::call() isn't decorated, so it shouldn't contain any ANSI escape codes
+    expect(Artisan::output())
+        ->toContain("Tenant: $tenantId2")
+        ->not->toContain("\e[");
+});
+
 test('migrate fresh command only deletes tenant databases if drop_tenant_databases_on_migrate_fresh is true', function (bool $dropTenantDBsOnMigrateFresh) {
     Event::listen(DeletingTenant::class,
         JobPipeline::make([DeleteDomains::class])->send(function (DeletingTenant $event) {
