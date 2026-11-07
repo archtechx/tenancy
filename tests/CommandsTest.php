@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Stancl\Tenancy\Tests\Etc\User;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Tests\Etc\Tenant;
@@ -14,6 +15,7 @@ use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Jobs\CreateDatabase;
 use Stancl\Tenancy\Jobs\DeleteDatabase;
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Database\Console\WipeCommand;
 use Stancl\Tenancy\Events\TenantCreated;
 use Stancl\Tenancy\Events\TenantDeleted;
 use Stancl\Tenancy\Tests\Etc\TestSeeder;
@@ -28,6 +30,8 @@ use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
 use function Stancl\Tenancy\Tests\pest;
 use Stancl\Tenancy\Events\MigratingDatabase;
+use Stancl\Tenancy\Commands\Migrate;
+use Symfony\Component\Console\Exception\InvalidOptionException;
 
 beforeEach(function () {
     if (file_exists($schemaPath = 'tests/Etc/tenant-schema-test.dump')) {
@@ -394,6 +398,169 @@ test('migrate fresh command only shows migration output when run with the verbos
     // The output is silent by default and only shown with the verbose option
     expect($defaultOutput)->not()->toContain($migratingOutput);
     expect($verboseOutput)->toContain($migratingOutput);
+});
+
+test('migrate fresh command works with multiple processes', function () {
+    $tenants = [Tenant::create(), Tenant::create(), Tenant::create()];
+
+    expect(Artisan::call('tenants:migrate-fresh', ['--processes' => 3]))->toBe(0);
+
+    foreach ($tenants as $tenant) {
+        expect($tenant->run(fn () => Schema::hasTable('users')))->toBeTrue();
+    }
+});
+
+test('migrate fresh command with multiple processes only continues after a failure if skip-failing is passed', function (bool $skipFailing) {
+    // Chunks are made from sorted tenant keys, so with two processes,
+    // the first two tenants are migrated by the same child process
+    $prefix = Str::lower(Str::random(8));
+    $tenants = [Tenant::create(['id' => "$prefix-a"]), Tenant::create(['id' => "$prefix-b"]), Tenant::create(['id' => "$prefix-c"])];
+
+    $databaseToDrop = $tenants[0]->run(fn () => DB::connection()->getDatabaseName());
+    DB::statement("DROP DATABASE `$databaseToDrop`");
+
+    // If an exception propagated out of a child process, the child would continue running the test
+    // suite (including this test's teardown) instead of exiting, which would create the marker file
+    //
+    // This tests for a regression where an exception thrown in a forked child didn't make it exit.
+    // Instead, the exception went up the call stack the child inherited from the parent, which in
+    // the case of Artisan::call() in a test means back into this test closure. The child's copy of
+    // this test then fails, its teardown runs (creating the marker file below), and the child goes
+    // on running any remaining tests. The parent waits for all children to exit before
+    // Artisan::call() returns, so the marker exists by the time it's checked below.
+    $parentPid = getmypid();
+    $escapedChildMarker = sys_get_temp_dir() . '/tenancy-escaped-child-' . $parentPid;
+    $this->beforeApplicationDestroyed(function () use ($parentPid, $escapedChildMarker) {
+        if (getmypid() !== $parentPid) {
+            touch($escapedChildMarker);
+        }
+    });
+
+    try {
+        expect(Artisan::call('tenants:migrate-fresh', array_filter([
+            '--processes' => 2,
+            '--skip-failing' => $skipFailing,
+        ])))->toBe(1);
+
+        expect(file_exists($escapedChildMarker))->toBeFalse();
+    } finally {
+        @unlink($escapedChildMarker);
+    }
+
+    // The output distinguishes a child that skipped a failed tenant from a child that stopped
+    $output = Artisan::output();
+    $notProcessedMessage = 'Some tenants were not processed';
+
+    if ($skipFailing) {
+        expect($output)->toContain('Child process [0]')
+            ->and($output)->toContain('completed with failures')
+            ->and($output)->not()->toContain('stopped after a failure')
+            ->and($output)->not()->toContain($notProcessedMessage);
+    } else {
+        expect($output)->toContain('stopped after a failure')
+            ->and($output)->not()->toContain('completed with failures')
+            ->and($output)->toContain($notProcessedMessage);
+    }
+
+    expect($tenants[1]->run(fn () => Schema::hasTable('users')))->toBe($skipFailing);
+    expect($tenants[2]->run(fn () => Schema::hasTable('users')))->toBeTrue();
+})->with([true, false]);
+
+test('migrate fresh command only continues after a failure if skip-failing is passed', function () {
+    $tenants = [Tenant::create(), $tenantWithoutDatabase = Tenant::create(), Tenant::create()];
+
+    $databaseToDrop = $tenantWithoutDatabase->run(fn () => DB::connection()->getDatabaseName());
+    DB::statement("DROP DATABASE `$databaseToDrop`");
+
+    expect(fn () => Artisan::call('tenants:migrate-fresh'))->toThrow(TenantDatabaseDoesNotExistException::class);
+    expect(Artisan::call('tenants:migrate-fresh', ['--skip-failing' => true]))->toBe(1);
+
+    expect($tenants[0]->run(fn () => Schema::hasTable('users')))->toBeTrue();
+    expect($tenants[2]->run(fn () => Schema::hasTable('users')))->toBeTrue();
+});
+
+test('migrate fresh command skips migrating tenants whose database could not be wiped', function (int $processes) {
+    // The tenants' databases are created, but not migrated
+    $tenants = [Tenant::create(), Tenant::create()];
+
+    // Make db:wipe fail for every tenant. A prohibited db:wipe (this is also what
+    // DB::prohibitDestructiveCommands() does) returns a non-zero exit code instead of throwing.
+    WipeCommand::prohibit();
+
+    try {
+        expect(Artisan::call('tenants:migrate-fresh', ['--processes' => $processes]))->toBe(1);
+    } finally {
+        WipeCommand::prohibit(false);
+    }
+
+    // The migrations were skipped for every tenant
+    foreach ($tenants as $tenant) {
+        expect($tenant->run(fn () => Schema::hasTable('users')))->toBeFalse();
+    }
+
+    // Output of child processes isn't captured, so the output is only checked when running sequentially
+    if ($processes === 1) {
+        // Each tenant shows "Dropping tables ... FAIL" and "Migrating ... SKIPPED", which also
+        // means that wiping was attempted for every tenant, not just the first one
+        $output = Artisan::output();
+        expect(substr_count($output, 'FAIL'))->toBe(count($tenants));
+        expect(substr_count($output, 'SKIPPED'))->toBe(count($tenants));
+    }
+})->with([
+    'sequentially' => 1,
+    'with multiple processes' => 2,
+]);
+
+test('parallel commands throw an exception instead of exiting when the process count is invalid', function (string $command, int $processes) {
+    // Previously, the command called exit(1), which ended the whole test run
+    expect(fn () => Artisan::call($command, ['--processes' => $processes]))->toThrow(InvalidOptionException::class);
+})->with([
+    'tenants:migrate',
+    'tenants:rollback',
+    'tenants:migrate-fresh',
+])->with([
+    'less than 1' => 0,
+    'more than the maximum' => Migrate::MAX_PROCESSES + 1,
+]);
+
+test('migrate command restores the template tenant connection when it throws an exception', function () {
+    $originalTemplateConnection = config('tenancy.database.template_tenant_connection');
+
+    expect(fn () => Artisan::call('tenants:migrate', ['--database' => 'central', '--processes' => 0]))->toThrow(InvalidOptionException::class);
+
+    expect(config('tenancy.database.template_tenant_connection'))->toBe($originalTemplateConnection);
+});
+
+test('parallel commands process the remaining chunks when forking a child process fails', function () {
+    // Chunks are made from sorted tenant keys, so with three processes, each child migrates one tenant
+    $prefix = Str::lower(Str::random(8));
+    $tenants = [Tenant::create(['id' => "$prefix-a"]), Tenant::create(['id' => "$prefix-b"]), Tenant::create(['id' => "$prefix-c"])];
+
+    $command = new class(app('migrator'), app('events')) extends Migrate {
+        protected int $forks = 0;
+
+        protected function forkProcess(mixed ...$args): int
+        {
+            // Fail to fork the second child process
+            return $this->forks++ === 1 ? -1 : parent::forkProcess(...$args);
+        }
+    };
+
+    // Replaces the tenants:migrate command
+    Artisan::registerCommand($command);
+
+    expect(Artisan::call('tenants:migrate', ['--processes' => 3]))->toBe(1);
+
+    // Only the children that were forked are reported, with the index of their chunk
+    expect($output = Artisan::output())->toContain('Unable to fork process (iteration 1)!')
+        ->and($output)->toMatch('/Child process \[0\] \(PID \d+\) finished successfully/')
+        ->and($output)->not()->toContain('Child process [1]')
+        ->and($output)->toMatch('/Child process \[2\] \(PID \d+\) finished successfully/')
+        ->and($output)->toContain('Some tenants were not processed');
+
+    expect($tenants[0]->run(fn () => Schema::hasTable('users')))->toBeTrue();
+    expect($tenants[1]->run(fn () => Schema::hasTable('users')))->toBeFalse();
+    expect($tenants[2]->run(fn () => Schema::hasTable('users')))->toBeTrue();
 });
 
 test('migrate fresh command respects force option in production', function () {
