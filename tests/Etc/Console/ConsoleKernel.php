@@ -13,5 +13,7 @@ class ConsoleKernel extends Kernel
         AnotherExampleCommand::class,
         ExampleQuestionCommand::class,
         AddUserCommand::class,
+        FailingTenantAwareCommand::class,
+        IsolatableTenantAwareCommand::class,
     ];
 }
