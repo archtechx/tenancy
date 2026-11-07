@@ -60,7 +60,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             'endpoint' => 'http://dynamodb:8000',
             'credentials' => [
                 'key' => env('TENANCY_TEST_DYNAMODB_KEY', 'DUMMYIDEXAMPLE'),
-                'secret' => env('TENANCY_TEST_DYNAMODB_KEY', 'DUMMYEXAMPLEKEY'),
+                'secret' => env('TENANCY_TEST_DYNAMODB_SECRET', 'DUMMYEXAMPLEKEY'),
             ],
         ]);
 
