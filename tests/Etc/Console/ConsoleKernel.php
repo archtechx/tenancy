@@ -15,5 +15,6 @@ class ConsoleKernel extends Kernel
         AddUserCommand::class,
         FailingTenantAwareCommand::class,
         IsolatableTenantAwareCommand::class,
+        ExitCodeCommand::class,
     ];
 }

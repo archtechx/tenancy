@@ -8,7 +8,6 @@ use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\Kernel;
 use Stancl\Tenancy\Concerns\HasTenantOptions;
 use Symfony\Component\Console\Input\StringInput;
-use Symfony\Component\Console\Output\ConsoleOutput;
 
 class Run extends Command
 {
@@ -24,15 +23,25 @@ class Run extends Command
         $commandName = $this->argument('commandname');
 
         $stringInput = new StringInput($commandName);
+        $exitCode = 0;
 
-        tenancy()->runForMultiple($this->getTenants(), function ($tenant) use ($stringInput) {
+        tenancy()->runForMultiple($this->getTenants(), function ($tenant) use ($stringInput, &$exitCode) {
             $this->components->info("Tenant: {$tenant->getTenantKey()}");
 
-            $this->getLaravel()
+            $verbosity = $this->output->getVerbosity();
+            $decorated = $this->output->isDecorated();
+
+            $tenantExitCode = $this->getLaravel()
                 ->make(Kernel::class)
-                ->handle($stringInput, new ConsoleOutput);
+                ->handle($stringInput, $this->output);
+
+            // Output options passed to the command (e.g. -q or --no-ansi) shouldn't persist beyond its run
+            $this->output->setVerbosity($verbosity);
+            $this->output->setDecorated($decorated);
+
+            $exitCode = $exitCode ?: $tenantExitCode;
         });
 
-        return 0;
+        return $exitCode;
     }
 }
