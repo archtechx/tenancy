@@ -1,0 +1,1 @@
+{{ tenant('id') }} is down, retry after {{ $retryAfter }}

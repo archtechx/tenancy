@@ -18,9 +18,10 @@ trait MaintenanceMode
             'maintenance_mode' => [
                 'except' => $data['except'] ?? null,
                 'redirect' => $data['redirect'] ?? null,
+                'render' => $data['render'] ?? null,
                 'retry' => $data['retry'] ?? null,
                 'refresh' => $data['refresh'] ?? null,
-                'secret' => $data['secret'] ?? null,
+                'secret' => isset($data['secret']) ? (string) $data['secret'] : null,
                 'status' => $data['status'] ?? 503,
             ],
         ]);
