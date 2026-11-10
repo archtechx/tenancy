@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Stancl\Tenancy\Middleware;
 
 use Closure;
+use Illuminate\Foundation\Exceptions\RegisterErrorViewPaths;
+use Illuminate\Foundation\Http\MaintenanceModeBypassCookie;
 use Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Throwable;
 
 class CheckTenantForMaintenanceMode extends CheckForMaintenanceMode
 {
@@ -25,8 +28,13 @@ class CheckTenantForMaintenanceMode extends CheckForMaintenanceMode
         if (tenant('maintenance_mode')) {
             $data = tenant('maintenance_mode');
 
-            if (isset($data['secret']) && $request->path() === $data['secret']) {
-                return $this->bypassResponse($data['secret']);
+            $data['secret'] = filled($data['secret'] ?? null) ? $data['secret'] : null;
+
+            $secret = $request->query('maintenance_secret');
+
+            if (is_string($data['secret']) && is_string($secret) && hash_equals($data['secret'], $secret)) {
+                return redirect($request->fullUrlWithoutQuery('maintenance_secret'))
+                    ->withCookie(MaintenanceModeBypassCookie::create($data['secret']));
             }
 
             if ($this->hasValidBypassCookie($request, $data) ||
@@ -34,7 +42,7 @@ class CheckTenantForMaintenanceMode extends CheckForMaintenanceMode
                 return $next($request);
             }
 
-            if (isset($data['redirect'])) {
+            if (isset($data['redirect']) && ! $request->expectsJson()) {
                 $path = $data['redirect'] === '/'
                     ? $data['redirect']
                     : trim($data['redirect'], '/');
@@ -44,12 +52,19 @@ class CheckTenantForMaintenanceMode extends CheckForMaintenanceMode
                 }
             }
 
-            if (isset($data['template'])) {
-                return response(
-                    $data['template'],
-                    (int) ($data['status'] ?? 503),
-                    $this->getHeaders($data)
-                );
+            if (isset($data['render']) && ! $request->expectsJson()) {
+                try {
+                    (new RegisterErrorViewPaths)();
+
+                    return response(
+                        view($data['render'], ['retryAfter' => $data['retry'] ?? null])->render(),
+                        (int) ($data['status'] ?? 503),
+                        $this->getHeaders($data)
+                    );
+                } catch (Throwable $e) {
+                    // Fall back to the default maintenance mode response
+                    report($e);
+                }
             }
 
             throw new HttpException(
@@ -61,5 +76,10 @@ class CheckTenantForMaintenanceMode extends CheckForMaintenanceMode
         }
 
         return $next($request);
+    }
+
+    public function getExcludedPaths()
+    {
+        return array_merge(parent::getExcludedPaths(), tenant('maintenance_mode')['except'] ?? []);
     }
 }
