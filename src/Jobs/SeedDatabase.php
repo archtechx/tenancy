@@ -11,6 +11,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Artisan;
+use Stancl\Tenancy\Commands\Seed;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
 class SeedDatabase implements ShouldQueue
@@ -33,9 +34,10 @@ class SeedDatabase implements ShouldQueue
 
     public function handle(): void
     {
-        Artisan::call('tenants:seed', [
+        // The job is for a specific tenant, which Seed's tenants query scope shouldn't filter out
+        Seed::withoutTenantsQueryScope(fn () => Artisan::call('tenants:seed', [
             '--tenants' => [$this->tenant->getTenantKey()],
             '--with-pending' => static::$includePending ?? config('tenancy.pending.include_in_queries'),
-        ]);
+        ]));
     }
 }

@@ -75,14 +75,14 @@ class MigrateFresh extends BaseCommand
     {
         $output = $this->getOutput()->isVerbose() ? $this->output : new NullOutput;
 
-        return $this->runCommand('tenants:migrate', [
+        // The tenant was already selected by this command, so don't let the nested
+        // command filter it out if it's pending or excluded by Migrate's scope
+        return Migrate::withoutTenantsQueryScope(fn () => $this->runCommand('tenants:migrate', [
             '--tenants' => [$tenant->getTenantKey()],
-            // The tenant was already selected by this command, so don't let
-            // the nested command filter it out if it's pending
             '--with-pending' => true,
             '--step' => $this->option('step'),
             '--force' => true,
-        ], $output) === 0;
+        ], $output)) === 0;
     }
 
     protected function childHandle(mixed ...$args): bool
