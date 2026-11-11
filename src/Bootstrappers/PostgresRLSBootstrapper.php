@@ -6,8 +6,10 @@ namespace Stancl\Tenancy\Bootstrappers;
 
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Support\ConfigurationUrlParser;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
+use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\DatabaseManager as TenantConnectionManager;
 
 /**
@@ -31,7 +33,8 @@ class PostgresRLSBootstrapper implements TenancyBootstrapper
 
     public function bootstrap(Tenant $tenant): void
     {
-        $this->connectToTenant();
+        /** @var TenantWithDatabase $tenant */
+        $this->connectToTenant($tenant);
 
         $tenantSessionKey = $this->config->get('tenancy.rls.session_variable_name');
 
@@ -45,18 +48,21 @@ class PostgresRLSBootstrapper implements TenancyBootstrapper
         $this->tenantConnectionManager->reconnectToCentral();
     }
 
-    protected function connectToTenant(): void
+    protected function connectToTenant(TenantWithDatabase $tenant): void
     {
-        $centralConnection = $this->config->get('tenancy.database.central_connection');
-
         $this->tenantConnectionManager->purgeTenantConnection();
 
-        $tenantConnection = array_merge($this->config->get('database.connections.' . $centralConnection), [
+        // Resolve the URL into individual keys, so that the URL's credentials don't take precedence over the RLS user's
+        $centralConnection = (new ConfigurationUrlParser)->parseConfiguration(
+            $this->config->get('database.connections.' . $this->config->get('tenancy.database.central_connection'))
+        );
+
+        $tenantConnection = array_merge($centralConnection, [
             'username' => $this->config->get('tenancy.rls.user.username'),
             'password' => $this->config->get('tenancy.rls.user.password'),
         ]);
 
-        $this->config['database.connections.tenant'] = $tenantConnection;
+        $this->config['database.connections.tenant'] = $tenant->database()->applyToSubConfigs($centralConnection, $tenantConnection);
 
         $this->tenantConnectionManager->setDefaultConnection('tenant');
     }

@@ -323,6 +323,64 @@ test('rls user can access tables that do not have rls policies', function (strin
     TraitRLSManager::class,
 ]);
 
+// Regression test for https://github.com/archtechx/tenancy/issues/1524
+test('tenant connection uses the rls user credentials when the central connection has a url', function () {
+    // Credentials in the URL take precedence over the username and password keys. Previously, the URL
+    // got copied to the tenant connection, so the tenant connection used the central user's credentials.
+    config(['database.connections.central.url' => 'pgsql://root:password@postgres:5432/main']);
+    DB::purge('central');
+
+    $tenant = Tenant::create();
+
+    pest()->artisan('tenants:rls');
+
+    tenancy()->initialize($tenant);
+
+    expect(DB::selectOne('SELECT current_user AS name')->name)->toBe(config('tenancy.rls.user.username'));
+
+    tenancy()->end();
+
+    expect(DB::selectOne('SELECT current_user AS name')->name)->toBe('root');
+});
+
+// Laravel merges the read, write and direct (pooled Postgres) configs over the top-level connection config when connecting.
+// Previously, credentials in these configs were used instead of the RLS user's credentials.
+test('tenant connection uses the rls user credentials when the central connection has read, write and direct configs with credentials', function () {
+    $credentials = ['username' => 'root', 'password' => 'password'];
+
+    config([
+        // A list of read configs, one of which gets picked randomly
+        'database.connections.central.read' => [$credentials, $credentials],
+        'database.connections.central.write' => $credentials,
+        'database.connections.central.direct' => $credentials,
+    ]);
+    DB::purge('central');
+
+    $tenant = Tenant::create();
+
+    pest()->artisan('tenants:rls');
+
+    tenancy()->initialize($tenant);
+
+    $rlsUser = config('tenancy.rls.user.username');
+
+    // todo@release if we drop Laravel 12 support, remove this check (Laravel 12 doesn't have direct connections)
+    $hasDirectConnections = method_exists(DB::connection(), 'hasDirectConnection');
+
+    expect(DB::connection('tenant::read')->selectOne('SELECT current_user AS name')->name)->toBe($rlsUser);
+    expect(DB::connection('tenant::write')->selectOne('SELECT current_user AS name')->name)->toBe($rlsUser);
+
+    if ($hasDirectConnections) {
+        expect(DB::connection('tenant::direct')->selectOne('SELECT current_user AS name')->name)->toBe($rlsUser);
+    }
+
+    tenancy()->end();
+
+    if ($hasDirectConnections) {
+        expect(DB::connection('central::direct')->selectOne('SELECT current_user AS name')->name)->toBe('root');
+    }
+});
+
 test('foreign key actions on tables without rls policies affect rows of all tenants', function (string $manager) {
     config(['tenancy.rls.manager' => $manager]);
 
