@@ -50,11 +50,13 @@ class DatabaseManager
         $this->config['database.connections.tenant'] = $tenant->database()->connection();
     }
 
-    /** Purge the tenant database connection. */
+    /** Purge the tenant database connection, including its read, write and direct variants (e.g. 'tenant::direct'). */
     public function purgeTenantConnection(): void
     {
-        if (array_key_exists('tenant', $this->database->getConnections())) {
-            $this->database->purge('tenant');
+        foreach (array_keys($this->database->getConnections()) as $connection) {
+            if ($connection === 'tenant' || str_starts_with($connection, 'tenant::')) {
+                $this->database->purge($connection);
+            }
         }
 
         unset($this->config['database.connections.tenant']);

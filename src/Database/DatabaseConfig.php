@@ -7,6 +7,7 @@ namespace Stancl\Tenancy\Database;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Illuminate\Support\ConfigurationUrlParser;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -189,19 +190,22 @@ class DatabaseConfig
         return $this->getTemplateConnection()['driver'];
     }
 
+    /**
+     * The template connection config, with the URL (if any) resolved into individual keys.
+     */
     public function getTemplateConnection(): array
     {
         if ($template = $this->tenant->getInternal('db_connection')) {
-            return config("database.connections.{$template}");
-        }
-
-        if ($template = config('tenancy.database.template_tenant_connection')) {
-            return is_array($template)
-                ? array_merge($this->getCentralConnection(), $template)
+            $template = config("database.connections.{$template}");
+        } elseif ($template = config('tenancy.database.template_tenant_connection')) {
+            $template = is_array($template)
+                ? $this->mergeIntoCentralConnection($template)
                 : config("database.connections.{$template}");
+        } else {
+            $template = $this->getCentralConnection();
         }
 
-        return $this->getCentralConnection();
+        return (new ConfigurationUrlParser)->parseConfiguration($template);
     }
 
     protected function getCentralConnection(): array
@@ -209,6 +213,24 @@ class DatabaseConfig
         $centralConnectionName = config('tenancy.database.central_connection');
 
         return config("database.connections.{$centralConnectionName}");
+    }
+
+    /**
+     * Keys of the partial template take precedence over the central connection's URL.
+     * A 'url' key in the partial template replaces the central connection's URL (null removes it).
+     */
+    protected function mergeIntoCentralConnection(array $partialTemplate): array
+    {
+        $centralConnection = $this->getCentralConnection();
+
+        // If only the central connection has a 'url', parse it here so that when the
+        // output of this method is parsed later in getTemplateConnection(), the central
+        // 'url' won't override the individual keys of the partial template.
+        if (! array_key_exists('url', $partialTemplate)) {
+            $centralConnection = (new ConfigurationUrlParser)->parseConfiguration($centralConnection);
+        }
+
+        return array_merge($centralConnection, $partialTemplate);
     }
 
     public function getTenantHostConnectionName(): string
@@ -223,10 +245,12 @@ class DatabaseConfig
     {
         $templateConnection = $this->getTemplateConnection();
 
-        return $this->manager()->makeConnectionConfig(
+        $connection = $this->manager()->makeConnectionConfig(
             array_merge($templateConnection, $this->validateTenantConfig($this->tenantConfig)),
             $this->getName()
         );
+
+        return $this->applyToSubConfigs($templateConnection, $connection);
     }
 
     /**
@@ -244,11 +268,65 @@ class DatabaseConfig
             unset($config['username'], $config['password']);
         }
 
-        if (! $config) {
-            return $templateConnection;
+        return $this->applyToSubConfigs($templateConnection, array_replace($templateConnection, $config));
+    }
+
+    /**
+     * Apply the values in which $connection differs from $base (e.g. the tenant's database name or credentials)
+     * to the read, write and direct configs of $connection, since Laravel merges them over the top-level config
+     * when connecting.
+     *
+     * Throws if both $connection and one of its read, write or direct configs use a host or port that differs
+     * from $base's, since combining the two would be unpredictable.
+     */
+    public function applyToSubConfigs(array $base, array $connection): array
+    {
+        $changedValues = array_filter(
+            Arr::except($connection, ['read', 'write', 'direct']),
+            fn (mixed $value, string $key) => ! array_key_exists($key, $base) || ! $this->sameValue($value, $base[$key]),
+            ARRAY_FILTER_USE_BOTH,
+        );
+
+        $usesOtherServer = Arr::hasAny($changedValues, ['host', 'port']);
+
+        $apply = function (array $subConfig, string $type) use ($base, $changedValues, $usesOtherServer): array {
+            // Merging a tenant's host or port into a replica's config has unpredictable behavior so we don't support it
+            if ($usesOtherServer) {
+                foreach (Arr::only($subConfig, ['host', 'port']) as $key => $value) {
+                    if (! $this->sameValue($value, $base[$key] ?? null)) {
+                        throw new InvalidArgumentException(
+                            "The '{$type}' config sets its own '{$key}' (" . json_encode($value) . '), ' .
+                            "so it can't be used with the host and port set for tenant {$this->tenant->getTenantKey()}. " .
+                            'Use a different template connection for this tenant.'
+                        );
+                    }
+                }
+            }
+
+            // Laravel merges the sub-config over the top-level config, so the changed values it sets have to be replaced
+            return array_merge($subConfig, array_intersect_key($changedValues, $subConfig));
+        };
+
+        foreach (['read', 'write', 'direct'] as $type) {
+            if (! empty($connection[$type])) {
+                // Each of these can also be a list of configs, one of which gets picked randomly
+                $connection[$type] = isset($connection[$type][0])
+                    ? array_map(fn (array $subConfig) => $apply($subConfig, $type), $connection[$type])
+                    : $apply($connection[$type], $type);
+            }
         }
 
-        return array_replace($templateConnection, $config);
+        return $connection;
+    }
+
+    /** Ports can be both ints (e.g. when parsed from a URL) and strings. */
+    protected function sameValue(mixed $a, mixed $b): bool
+    {
+        if (is_int($a) || is_int($b)) {
+            return (string) $a === (string) $b;
+        }
+
+        return $a === $b;
     }
 
     /**

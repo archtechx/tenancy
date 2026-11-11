@@ -314,6 +314,37 @@ test('tenant database can be created on a foreign server by using the host from 
     expect($manager->databaseExists($name))->toBeTrue();
 });
 
+test('tenant database is created on the tenant host when the template connection has a url', function () {
+    config([
+        'tenancy.database.managers.mysql' => MySQLDatabaseManager::class,
+        'tenancy.database.template_tenant_connection' => 'mysql',
+        'database.connections.mysql.url' => 'mysql://root:password@mysql:3306/main',
+    ]);
+
+    Event::listen(TenantCreated::class, JobPipeline::make([CreateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    $name = 'foo' . Str::random(8);
+    $tenant = Tenant::create([
+        'tenancy_db_name' => $name,
+        'tenancy_db_host' => 'mysql2',
+    ]);
+
+    /** @var MySQLDatabaseManager $manager */
+    $manager = $tenant->database()->manager();
+
+    // Previously, the URL's host took precedence over the tenant's host, so the database got created on 'mysql'
+    expect($manager->connection()->getConfig('host'))->toBe('mysql2');
+    expect($manager->databaseExists($name))->toBeTrue();
+
+    $manager->setConnection('mysql');
+    expect($manager->databaseExists($name))->toBeFalse();
+
+    $manager->setConnection($tenant->database()->getTenantHostConnectionName());
+    $manager->deleteDatabase($tenant);
+});
+
 test('database credentials can be provided to PermissionControlledMySQLDatabaseManager by specifying a connection', function () {
     config([
         'tenancy.database.managers.mysql' => PermissionControlledMySQLDatabaseManager::class,
