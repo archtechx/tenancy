@@ -381,6 +381,74 @@ test('tenant connection uses the rls user credentials when the central connectio
     }
 });
 
+test('rls scopes queries that use the read connection', function (bool $sticky) {
+    config([
+        // The read connection connects to the same server, the application name tells the sessions apart
+        'database.connections.central.read' => ['application_name' => 'replica'],
+        'database.connections.central.write' => [],
+        'database.connections.central.sticky' => $sticky,
+    ]);
+    DB::purge('central');
+
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+
+    foreach ([$tenant1, $tenant2] as $tenant) {
+        DB::table('authors')->insert(['name' => "{$tenant->id} author", 'tenant_id' => $tenant->id]);
+    }
+
+    pest()->artisan('tenants:rls');
+
+    $authors = fn () => array_map(fn (object $row) => (array) $row, DB::select(
+        "SELECT name, current_setting('application_name') AS application_name FROM authors"
+    ));
+
+    tenancy()->initialize($tenant1);
+
+    expect($authors())->toBe([['name' => "{$tenant1->id} author", 'application_name' => 'replica']]);
+
+    // The write connection doesn't get opened by reads
+    expect(DB::connection()->getRawPdo())->toBeInstanceOf(Closure::class);
+
+    tenancy()->initialize($tenant2);
+
+    expect($authors())->toBe([['name' => "{$tenant2->id} author", 'application_name' => 'replica']]);
+})->with([
+    'sticky' => true,
+    'not sticky' => false,
+]);
+
+// Known limitation: tenant::read and tenant::write are separate connections, the session variable is only set on the tenant connection
+test('queries scoped by rls fail on the tenant::read and tenant::write connections', function () {
+    $tenant = Tenant::create();
+
+    pest()->artisan('tenants:rls');
+
+    tenancy()->initialize($tenant);
+
+    // 'tenant' connection itself works
+    expect(DB::connection('tenant')->table('authors')->count())->toBe(0);
+
+    // But '::read' and '::write' connections don't
+    expect(fn () => DB::connection('tenant::read')->table('authors')->count())->toThrow(QueryException::class, 'unrecognized configuration parameter');
+    expect(fn () => DB::connection('tenant::write')->table('authors')->count())->toThrow(QueryException::class, 'unrecognized configuration parameter');
+});
+
+// Known limitation: reconnecting replaces the tenant connection's PDOs with ones that don't have the session variable set
+test('queries scoped by rls fail after reconnecting the tenant connection', function () {
+    $tenant = Tenant::create();
+
+    pest()->artisan('tenants:rls');
+
+    tenancy()->initialize($tenant);
+
+    expect(DB::table('authors')->count())->toBe(0);
+
+    DB::reconnect();
+
+    expect(fn () => DB::table('authors')->count())->toThrow(QueryException::class, 'unrecognized configuration parameter');
+});
+
 test('foreign key actions on tables without rls policies affect rows of all tenants', function (string $manager) {
     config(['tenancy.rls.manager' => $manager]);
 

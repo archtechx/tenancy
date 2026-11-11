@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Bootstrappers;
 
+use Closure;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\ConfigurationUrlParser;
+use PDO;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
@@ -14,9 +16,10 @@ use Stancl\Tenancy\Database\DatabaseManager as TenantConnectionManager;
 
 /**
  * When initializing tenancy, use the tenant connection with the configured RLS user credentials
- * and set the configured session variable to the current tenant's key.
+ * and set the configured session variable to the current tenant's key. The variable is set on the
+ * connection's write and read PDOs when they connect, since each PDO is a separate Postgres session.
  *
- * When ending tenancy, reset the session variable (to invalidate the connection)
+ * When ending tenancy, reset the session variable on the connected PDOs (to invalidate them)
  * and switch back to the central connection again.
  *
  * This bootstrapper is intended to be used with Postgres RLS.
@@ -37,13 +40,26 @@ class PostgresRLSBootstrapper implements TenancyBootstrapper
         $this->connectToTenant($tenant);
 
         $tenantSessionKey = $this->config->get('tenancy.rls.session_variable_name');
+        $setTenantKey = "SET {$tenantSessionKey} = '{$tenant->getTenantKey()}'";
 
-        $this->database->statement("SET {$tenantSessionKey} = '{$tenant->getTenantKey()}'");
+        $connection = $this->database->connection('tenant');
+
+        // Set the variable when each PDO connects. statement() would only set it on the write PDO
+        // (connecting it right away), and with 'sticky', reads would go to the write PDO too
+        $connection->setPdo($this->execOnConnect($connection->getRawPdo(), $setTenantKey));
+        $connection->setReadPdo($this->execOnConnect($connection->getRawReadPdo(), $setTenantKey));
     }
 
     public function revert(): void
     {
-        $this->database->statement("RESET {$this->config->get('tenancy.rls.session_variable_name')}");
+        $connection = $this->database->connection('tenant');
+
+        // Only reset the connected PDOs. statement() would only reach the write PDO, and it'd connect it if it isn't connected yet
+        foreach ([$connection->getRawPdo(), $connection->getRawReadPdo()] as $pdo) {
+            if ($pdo instanceof PDO) {
+                $pdo->exec("RESET {$this->config->get('tenancy.rls.session_variable_name')}");
+            }
+        }
 
         $this->tenantConnectionManager->reconnectToCentral();
     }
@@ -65,5 +81,22 @@ class PostgresRLSBootstrapper implements TenancyBootstrapper
         $this->config['database.connections.tenant'] = $tenant->database()->applyToSubConfigs($centralConnection, $tenantConnection);
 
         $this->tenantConnectionManager->setDefaultConnection('tenant');
+    }
+
+    /** Execute the statement on the PDO once it's connected. */
+    protected function execOnConnect(PDO|Closure|null $pdo, string $statement): PDO|Closure|null
+    {
+        if ($pdo instanceof Closure) {
+            return function () use ($pdo, $statement) {
+                $pdo = $pdo();
+                $pdo->exec($statement);
+
+                return $pdo;
+            };
+        }
+
+        $pdo?->exec($statement);
+
+        return $pdo;
     }
 }
