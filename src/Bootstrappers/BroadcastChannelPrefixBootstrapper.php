@@ -137,7 +137,7 @@ class BroadcastChannelPrefixBootstrapper implements TenancyBootstrapper
     {
         static::$broadcasterOverrides['ably'] = $override ?? function (BroadcastManager $broadcastManager): void {
             $broadcastManager->extend('ably', function ($app, $config) use ($broadcastManager) {
-                return new class($broadcastManager->ably($config)) extends AblyBroadcaster {
+                return new class($broadcastManager->ably($config)) extends AblyBroadcaster { // @phpstan-ignore argument.type
                     protected function formatChannels(array $channels)
                     {
                         $formatChannel = function (string $channel) {
