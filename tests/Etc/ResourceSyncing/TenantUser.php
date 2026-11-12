@@ -7,10 +7,11 @@ namespace Stancl\Tenancy\Tests\Etc\ResourceSyncing;
 use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\ResourceSyncing\ResourceSyncing;
 use Stancl\Tenancy\ResourceSyncing\Syncable;
+use Stancl\Tenancy\Database\Concerns\TenantConnection;
 
 class TenantUser extends Model implements Syncable
 {
-    use ResourceSyncing;
+    use ResourceSyncing, TenantConnection;
 
     protected $table = 'users';
 
