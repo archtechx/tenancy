@@ -39,15 +39,16 @@ class PostgresRLSBootstrapper implements TenancyBootstrapper
         /** @var TenantWithDatabase $tenant */
         $this->connectToTenant($tenant);
 
-        $tenantSessionKey = $this->config->get('tenancy.rls.session_variable_name');
-        $setTenantKey = "SET {$tenantSessionKey} = '{$tenant->getTenantKey()}'";
+        // set_config() is used instead of SET because SET doesn't support bindings
+        $query = 'SELECT set_config(?, ?, false)';
+        $bindings = [$this->config->get('tenancy.rls.session_variable_name'), $tenant->getTenantKey()];
 
         $connection = $this->database->connection('tenant');
 
         // Set the variable when each PDO connects. statement() would only set it on the write PDO
         // (connecting it right away), and with 'sticky', reads would go to the write PDO too
-        $connection->setPdo($this->execOnConnect($connection->getRawPdo(), $setTenantKey));
-        $connection->setReadPdo($this->execOnConnect($connection->getRawReadPdo(), $setTenantKey));
+        $connection->setPdo($this->executeOnConnect($connection->getRawPdo(), $query, $bindings));
+        $connection->setReadPdo($this->executeOnConnect($connection->getRawReadPdo(), $query, $bindings));
     }
 
     public function revert(): void
@@ -83,19 +84,23 @@ class PostgresRLSBootstrapper implements TenancyBootstrapper
         $this->tenantConnectionManager->setDefaultConnection('tenant');
     }
 
-    /** Execute the statement on the PDO once it's connected. */
-    protected function execOnConnect(PDO|Closure|null $pdo, string $statement): PDO|Closure|null
+    /**
+     * Execute the query on the PDO once it's connected.
+     *
+     * @param array<int, mixed> $bindings
+     */
+    protected function executeOnConnect(PDO|Closure|null $pdo, string $query, array $bindings): PDO|Closure|null
     {
         if ($pdo instanceof Closure) {
-            return function () use ($pdo, $statement) {
+            return function () use ($pdo, $query, $bindings) {
                 $pdo = $pdo();
-                $pdo->exec($statement);
+                $pdo->prepare($query)->execute($bindings);
 
                 return $pdo;
             };
         }
 
-        $pdo?->exec($statement);
+        $pdo?->prepare($query)->execute($bindings);
 
         return $pdo;
     }

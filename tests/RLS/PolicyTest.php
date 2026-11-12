@@ -418,6 +418,21 @@ test('rls scopes queries that use the read connection', function (bool $sticky) 
     'not sticky' => false,
 ]);
 
+// This just tests that the logic setting the session variable properly uses parameters
+test('rls scopes queries for tenants whose key contains sql', function () {
+    $tenant = Tenant::create();
+    DB::table('authors')->insert(['name' => 'author', 'tenant_id' => $tenant->id]);
+
+    $sessionVariableName = config('tenancy.rls.session_variable_name');
+    $otherTenant = Tenant::create(['id' => "foo'; SET {$sessionVariableName} = '{$tenant->id}'; --"]);
+
+    pest()->artisan('tenants:rls');
+
+    tenancy()->initialize($otherTenant);
+
+    expect(DB::table('authors')->count())->toBe(0);
+});
+
 // Known limitation: tenant::read and tenant::write are separate connections, the session variable is only set on the tenant connection
 test('queries scoped by rls fail on the tenant::read and tenant::write connections', function () {
     $tenant = Tenant::create();
