@@ -24,6 +24,7 @@ use Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\PersistentQueueTenancyBootstrapper;
 use Stancl\Tenancy\Listeners\QueueableListener;
+use Stancl\Tenancy\TenancyServiceProvider;
 use function Stancl\Tenancy\Tests\pest;
 use function Stancl\Tenancy\Tests\withTenantDatabases;
 
@@ -54,8 +55,19 @@ function withQueueBootstrapper(string $class) {
         $class,
     ]]);
 
-    $class::__constructStatic(app());
+    $class::onRegister(app());
 }
+
+test('the service provider registers job listeners for configured queue bootstrappers', function (string $bootstrapper) {
+    TenancyServiceProvider::$configure = fn () => config(['tenancy.bootstrappers' => [$bootstrapper]]);
+
+    $listenerCount = fn () => count(Event::getRawListeners()[JobProcessing::class] ?? []);
+    $listenersBefore = $listenerCount();
+
+    (new TenancyServiceProvider(app()))->register();
+
+    expect($listenerCount())->toBe($listenersBefore + 1);
+})->with('queue_bootstrappers');
 
 test('tenant id is passed to tenant queues', function (string $bootstrapper) {
     withQueueBootstrapper($bootstrapper);

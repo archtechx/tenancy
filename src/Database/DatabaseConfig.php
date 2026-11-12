@@ -50,53 +50,36 @@ class DatabaseConfig
      *
      * @var Closure(Model&Tenant, self): string
      */
-    public static Closure $usernameGenerator;
+    public static Closure $usernameGenerator = static function (): string {
+        return Str::random(16);
+    };
 
     /**
      * Database password generator (can be set by the developer.).
      *
      * @var Closure(Model&Tenant, self): string
      */
-    public static Closure $passwordGenerator;
+    public static Closure $passwordGenerator = static function (): string {
+        return Hash::make(Str::random(32));
+    };
 
     /**
      * Database name generator (can be set by the developer.).
      *
      * @var Closure(Model&Tenant, self): string
      */
-    public static Closure $databaseNameGenerator;
+    public static Closure $databaseNameGenerator = static function (Model&Tenant $tenant, self $self): string {
+        $suffix = config('tenancy.database.suffix');
 
-    public static function __constructStatic(): void
-    {
-        if (! isset(static::$usernameGenerator)) {
-            static::$usernameGenerator = function () {
-                return Str::random(16);
-            };
+        if (! $suffix && $self->getTemplateConnection()['driver'] === 'sqlite') {
+            $suffix = '.sqlite';
         }
 
-        if (! isset(static::$passwordGenerator)) {
-            static::$passwordGenerator = function () {
-                return Hash::make(Str::random(32));
-            };
-        }
-
-        if (! isset(static::$databaseNameGenerator)) {
-            static::$databaseNameGenerator = function (Model&Tenant $tenant, self $self) {
-                $suffix = config('tenancy.database.suffix');
-
-                if (! $suffix && $self->getTemplateConnection()['driver'] === 'sqlite') {
-                    $suffix = '.sqlite';
-                }
-
-                return config('tenancy.database.prefix') . $tenant->getTenantKey() . $suffix;
-            };
-        }
-    }
+        return config('tenancy.database.prefix') . $tenant->getTenantKey() . $suffix;
+    };
 
     public function __construct(Model&Tenant $tenant, array $databaseConfig)
     {
-        static::__constructStatic();
-
         $this->tenant = $tenant;
         $this->tenantConfig = $databaseConfig;
     }

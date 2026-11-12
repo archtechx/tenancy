@@ -63,6 +63,8 @@ beforeEach(function () {
         return $event->tenant;
     })->toListener());
 
+    $this->originalDatabaseNameGenerator = DatabaseConfig::$databaseNameGenerator;
+
     DatabaseConfig::generateDatabaseNamesUsing(function () {
         return 'db' . Str::random(16);
     });
@@ -120,6 +122,7 @@ beforeEach(function () {
 
 afterEach(function () {
     UpdateOrCreateSyncedResource::$scopeGetModelQuery = null;
+    DatabaseConfig::generateDatabaseNamesUsing($this->originalDatabaseNameGenerator);
 
     // Reset global scopes on models (should happen automatically but to make this more explicit)
     Model::clearBootedModels();

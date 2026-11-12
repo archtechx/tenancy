@@ -13,10 +13,11 @@ use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Queue\Events\JobRetryRequested;
 use Illuminate\Queue\QueueManager;
 use Illuminate\Support\Testing\Fakes\QueueFake;
+use Stancl\Tenancy\Contracts\HasRegisterHook;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 
-class QueueTenancyBootstrapper implements TenancyBootstrapper
+class QueueTenancyBootstrapper implements TenancyBootstrapper, HasRegisterHook
 {
     /** @var Repository */
     protected $config;
@@ -29,7 +30,7 @@ class QueueTenancyBootstrapper implements TenancyBootstrapper
      * However, we're registering a hook to initialize tenancy. Therefore,
      * we need to register the hook at service provider execution time.
      */
-    public static function __constructStatic(Application $app): void
+    public static function onRegister(Application $app): void
     {
         static::setUpJobListener($app->make(Dispatcher::class));
     }
