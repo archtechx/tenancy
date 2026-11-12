@@ -9,6 +9,7 @@ use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\ConfigurationUrlParser;
 use PDO;
+use PDOException;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
 use Stancl\Tenancy\Contracts\Tenant;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
@@ -58,7 +59,11 @@ class PostgresRLSBootstrapper implements TenancyBootstrapper
         // Only reset the connected PDOs. statement() would only reach the write PDO, and it'd connect it if it isn't connected yet
         foreach ([$connection->getRawPdo(), $connection->getRawReadPdo()] as $pdo) {
             if ($pdo instanceof PDO) {
-                $pdo->exec("RESET {$this->config->get('tenancy.rls.session_variable_name')}");
+                try {
+                    $pdo->exec("RESET {$this->config->get('tenancy.rls.session_variable_name')}");
+                } catch (PDOException) {
+                    // The PDOs get discarded below, so a failed reset (e.g. after a lost connection) shouldn't prevent ending tenancy
+                }
             }
         }
 

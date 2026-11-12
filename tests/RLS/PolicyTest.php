@@ -433,6 +433,22 @@ test('rls scopes queries for tenants whose key contains sql', function () {
     expect(DB::table('authors')->count())->toBe(0);
 });
 
+test('tenancy can be ended after the tenant connection was lost', function () {
+    $tenant = Tenant::create();
+
+    pest()->artisan('tenants:rls');
+
+    tenancy()->initialize($tenant);
+
+    $pid = DB::selectOne('SELECT pg_backend_pid() AS pid')->pid;
+    DB::connection('central')->select('SELECT pg_terminate_backend(?)', [$pid]);
+
+    tenancy()->end();
+
+    expect(tenancy()->initialized)->toBeFalse();
+    expect(DB::getDefaultConnection())->toBe('central');
+});
+
 // Known limitation: tenant::read and tenant::write are separate connections, the session variable is only set on the tenant connection
 test('queries scoped by rls fail on the tenant::read and tenant::write connections', function () {
     $tenant = Tenant::create();
