@@ -11,6 +11,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Artisan;
+use Stancl\Tenancy\Commands\Migrate;
 use Stancl\Tenancy\Database\Contracts\TenantWithDatabase;
 
 class MigrateDatabase implements ShouldQueue
@@ -33,9 +34,10 @@ class MigrateDatabase implements ShouldQueue
 
     public function handle(): void
     {
-        Artisan::call('tenants:migrate', [
+        // The job is for a specific tenant, which Migrate's tenants query scope shouldn't filter out
+        Migrate::withoutTenantsQueryScope(fn () => Artisan::call('tenants:migrate', [
             '--tenants' => [$this->tenant->getTenantKey()],
             '--with-pending' => static::$includePending ?? config('tenancy.pending.include_in_queries'),
-        ]);
+        ]));
     }
 }

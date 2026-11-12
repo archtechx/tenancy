@@ -28,6 +28,11 @@ use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Database\Exceptions\TenantDatabaseDoesNotExistException;
 use function Stancl\Tenancy\Tests\pest;
 use Stancl\Tenancy\Events\MigratingDatabase;
+use Stancl\Tenancy\Commands\Migrate;
+use Stancl\Tenancy\Commands\MigrateFresh;
+use Stancl\Tenancy\Jobs\MigrateDatabase;
+use Illuminate\Database\Eloquent\Builder;
+use Symfony\Component\Console\Input\ArrayInput;
 
 beforeEach(function () {
     if (file_exists($schemaPath = 'tests/Etc/tenant-schema-test.dump')) {
@@ -52,6 +57,9 @@ beforeEach(function () {
 });
 
 afterEach(function () {
+    Migrate::$scopeTenantsQuery = null;
+    MigrateFresh::$scopeTenantsQuery = null;
+
     // Cleanup tenancy config cache
     if (file_exists(base_path('config/tenancy.php'))) {
         unlink(base_path('config/tenancy.php'));
@@ -635,4 +643,106 @@ test('tenants and skip-tenants options can be used together', function () {
         ->doesntExpectOutputToContain("Tenant: $tenant2")
         ->doesntExpectOutputToContain("Tenant: $tenant3")
         ->assertExitCode(0);
+});
+
+test('migrate command only runs for tenants matching its tenants query scope', function () {
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+    $tenant3 = Tenant::create();
+
+    Migrate::$scopeTenantsQuery = fn (Builder $query) => $query->whereKey([$tenant1->getTenantKey(), $tenant2->getTenantKey()]);
+
+    pest()->artisan('tenants:migrate')->assertSuccessful();
+
+    expect($tenant1->run(fn () => Schema::hasTable('users')))->toBeTrue();
+    expect($tenant2->run(fn () => Schema::hasTable('users')))->toBeTrue();
+    expect($tenant3->run(fn () => Schema::hasTable('users')))->toBeFalse();
+});
+
+test('parallel commands only run for tenants matching the tenants query scope', function () {
+    $tenant1 = Tenant::create()->getTenantKey();
+    $tenant2 = Tenant::create()->getTenantKey();
+    Tenant::create();
+
+    Migrate::$scopeTenantsQuery = fn (Builder $query) => $query->whereKey([$tenant1, $tenant2]);
+
+    // The test container doesn't have pcntl, so we override getProcesses() and call getTenantChunks() directly
+    // todo@release we might be able to switch to just using -p here and in places that do similar things
+    $command = new class(app('migrator'), app('events')) extends Migrate {
+        protected function getProcesses(): int
+        {
+            return 2;
+        }
+    };
+
+    $command->setInput(new ArrayInput([], $command->getDefinition()));
+
+    $chunks = (fn () => $this->getTenantChunks())->call($command);
+
+    expect($chunks->map(fn ($chunk) => count($chunk))->all())->toBe([1, 1]);
+    expect($chunks->flatten()->all())->toEqualCanonicalizing([$tenant1, $tenant2]);
+});
+
+test('tenants query scope is combined with the tenants option', function () {
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+    $tenant3 = Tenant::create();
+
+    Migrate::$scopeTenantsQuery = fn (Builder $query) => $query
+        ->where('id', $tenant1->getTenantKey())
+        ->orWhere('id', $tenant2->getTenantKey());
+
+    // The scope's orWhere doesn't let tenant2 bypass --tenants
+    pest()->artisan('tenants:migrate', [
+        '--tenants' => [$tenant1->getTenantKey(), $tenant3->getTenantKey()],
+    ])->assertSuccessful();
+
+    expect($tenant1->run(fn () => Schema::hasTable('users')))->toBeTrue();
+    expect($tenant2->run(fn () => Schema::hasTable('users')))->toBeFalse();
+    expect($tenant3->run(fn () => Schema::hasTable('users')))->toBeFalse();
+});
+
+test('tenants query scope only applies to the command it was set on', function () {
+    $tenant1 = Tenant::create()->getTenantKey();
+    $tenant2 = Tenant::create()->getTenantKey();
+
+    Migrate::$scopeTenantsQuery = fn (Builder $query) => $query->whereKey($tenant1);
+
+    pest()->artisan("tenants:run 'bar foo foo@bar foobar arg --option=option'")
+        ->expectsOutputToContain("Tenant: $tenant1")
+        ->expectsOutputToContain("Tenant: $tenant2")
+        ->assertExitCode(0);
+});
+
+test('migrate fresh command migrates the tenants it wipes even if the migrate command scope excludes them', function () {
+    $tenant1 = Tenant::create();
+    $tenant2 = Tenant::create();
+    $tenant3 = Tenant::create();
+
+    MigrateFresh::$scopeTenantsQuery = fn (Builder $query) => $query->whereKey($tenant1->getTenantKey());
+    Migrate::$scopeTenantsQuery = fn (Builder $query) => $query->whereKey($tenant2->getTenantKey());
+
+    pest()->artisan('tenants:migrate-fresh')->assertSuccessful();
+
+    expect($tenant1->run(fn () => Schema::hasTable('users')))->toBeTrue();
+    expect($tenant2->run(fn () => Schema::hasTable('users')))->toBeFalse();
+    expect($tenant3->run(fn () => Schema::hasTable('users')))->toBeFalse();
+
+    // tenants:migrate is still scoped after migrate-fresh
+    pest()->artisan('tenants:migrate')->assertSuccessful();
+
+    expect($tenant2->run(fn () => Schema::hasTable('users')))->toBeTrue();
+    expect($tenant3->run(fn () => Schema::hasTable('users')))->toBeFalse();
+});
+
+test('migrate database job migrates its tenant regardless of the tenants query scope', function () {
+    Event::listen(TenantCreated::class, JobPipeline::make([MigrateDatabase::class])->send(function (TenantCreated $event) {
+        return $event->tenant;
+    })->toListener());
+
+    Migrate::$scopeTenantsQuery = fn (Builder $query) => $query->whereRaw('1 = 0');
+
+    $tenant = Tenant::create();
+
+    expect($tenant->run(fn () => Schema::hasTable('users')))->toBeTrue();
 });

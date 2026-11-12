@@ -4,16 +4,42 @@ declare(strict_types=1);
 
 namespace Stancl\Tenancy\Concerns;
 
+use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\LazyCollection;
 use Stancl\Tenancy\Database\Concerns\PendingScope;
 use Symfony\Component\Console\Input\InputOption;
 
 /**
- * Adds 'tenants', 'skip-tenants', and 'with-pending' options.
+ * Adds 'tenants', 'skip-tenants', and 'with-pending' options,
+ * and the $scopeTenantsQuery hook.
  */
 trait HasTenantOptions
 {
+    /**
+     * Scope the query that selects the tenants this command runs for. Each command has its own scope.
+     *
+     * Example: Migrate::$scopeTenantsQuery = fn (Builder $query) => $query->where('region', config('app.region'));
+     */
+    public static Closure|null $scopeTenantsQuery = null;
+
+    /**
+     * Run the callback with this command's tenants query scope disabled.
+     *
+     * Used when calling the command for a tenant that was already selected elsewhere.
+     */
+    public static function withoutTenantsQueryScope(Closure $callback): mixed
+    {
+        $scope = static::$scopeTenantsQuery;
+        static::$scopeTenantsQuery = null;
+
+        try {
+            return $callback();
+        } finally {
+            static::$scopeTenantsQuery = $scope;
+        }
+    }
+
     protected function getOptions()
     {
         return array_merge([
@@ -36,7 +62,7 @@ trait HasTenantOptions
      */
     protected function getTenantsQuery(?array $tenantKeys = null): Builder
     {
-        return tenancy()->query()
+        $query = tenancy()->query()
             ->when($tenantKeys, function ($query) use ($tenantKeys) {
                 $query->whereIn(tenancy()->model()->getTenantKeyName(), $tenantKeys);
             })
@@ -53,6 +79,12 @@ trait HasTenantOptions
 
                 $query->withPending($includePending);
             });
+
+        if ($scope = static::$scopeTenantsQuery) {
+            $query->where(fn (Builder $query) => $scope($query));
+        }
+
+        return $query;
     }
 
     public function __construct(mixed ...$args)
